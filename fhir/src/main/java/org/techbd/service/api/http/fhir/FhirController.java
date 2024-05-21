@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.service.api.http.Helpers;
+import org.techbd.service.api.http.InteractionsFilter;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,6 +31,7 @@ public class FhirController {
     @GetMapping("/")
     public String home(final Model model) {
         model.addAttribute("version", this.appVersion);
+        model.addAttribute("interactionsCount", InteractionsFilter.getObservables().size());
         return "index";
     }
 
@@ -62,5 +64,11 @@ public class FhirController {
         var ri = Helpers.getRequestInfo(request, payload);
         // Validate the bundle
         return ri;
+    }
+
+    @GetMapping("/admin/observe/interactions")
+    @ResponseBody
+    public Map<?, ?> observeInteractions() {
+        return InteractionsFilter.getObservables();
     }
 }

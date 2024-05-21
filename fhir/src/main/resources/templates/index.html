@@ -14,9 +14,12 @@
         <article class="prose prose-table:table-fixed">
             <h1>Technology by Design (TechBD) FHIR Server <span th:text=" ${version}">X.Y.Z</span></h1>
             <ul>
+                <li><a href="/admin/observe/sessions"><b>TODO</b>: Recent FHIR Bundle Sessions</a></li>
+                <li><a href="/admin/observe/interactions">Recent HTTP Request/Response Interactions (<span th:text="${interactionsCount}"></span>)</a></li>
                 <li><a href="/docs/api/interactive/index.html">Interactive OpenAPI Documentation and Playground</a></li>
                 <li><a href="https://tech-by-design.github.io/docs.techbd.org/">TechBD Technical Documentation Microsite</a></li>
                 <li><a href="https://tech-by-design.github.io/docs.techbd.org/1115-hub/fhir-services/regression-test-results/">Regression Test Results</a></li>
+                <li><a href="/actuator">Management Endpoints Catalog</a></li>
             </ul>
         </article>
 
