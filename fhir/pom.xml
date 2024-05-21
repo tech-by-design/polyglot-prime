@@ -13,7 +13,7 @@
 	<version>0.50.0</version>
 	<packaging>war</packaging>
 	<name>fhir</name>
-	<description>Demo project for Spring Boot</description>
+	<description>TechBD FHIR Server</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>
@@ -85,6 +85,11 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-site-plugin</artifactId>
+				<version>4.0.0-M14</version>
+			</plugin>
 		</plugins>
 		<resources>
 			<resource>
@@ -94,4 +99,13 @@
 		</resources>	
 	</build>
 
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+				<version>3.2.5</version>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>
