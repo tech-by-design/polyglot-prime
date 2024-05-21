@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+    <title>TechBD FHIR Server</title>
+</head>
+
+<body class="bg-gray-100">
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+
+        <article class="prose prose-table:table-fixed">
+            <h1>Technology by Design (TechBD) FHIR Server <span th:text=" ${version}">X.Y.Z</span></h1>
+            <ul>
+                <li><a href="/docs/api/interactive/index.html">Interactive OpenAPI Documentation and Playground</a></li>
+                <li><a href="https://tech-by-design.github.io/docs.techbd.org/">TechBD Technical Documentation Microsite</a></li>
+                <li><a href="https://tech-by-design.github.io/docs.techbd.org/1115-hub/fhir-services/regression-test-results/">Regression Test Results</a></li>
+            </ul>
+        </article>
+
+    </div>
+</body>
+
+</html>

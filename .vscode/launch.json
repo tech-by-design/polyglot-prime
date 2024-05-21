@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-FhirApplication<fhir>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "org.techbd.service.api.http.fhir.FhirApplication",
+            "projectName": "fhir",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
