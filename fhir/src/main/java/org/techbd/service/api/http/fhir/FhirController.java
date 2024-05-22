@@ -33,7 +33,7 @@ public class FhirController {
     @GetMapping("/")
     public String home(final Model model) {
         model.addAttribute("version", this.appVersion);
-        model.addAttribute("interactionsCount", InteractionsFilter.getObservables().size());
+        model.addAttribute("interactionsCount", InteractionsFilter.interactions.getHistory().size());
         return "index";
     }
 
@@ -79,6 +79,6 @@ public class FhirController {
     @GetMapping("/admin/observe/interaction/recent.json")
     @ResponseBody
     public List<?> observeRecentInteractions() {
-        return new ArrayList<>(InteractionsFilter.getObservables().values());
+        return new ArrayList<>(InteractionsFilter.interactions.getHistory().values());
     }
 }

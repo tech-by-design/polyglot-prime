@@ -121,6 +121,7 @@
                     originalData = data;
                     const rowData = data.map(interaction => ({
                         requestEncounteredAt: interaction.request.encounteredAt,
+                        interactionId: interaction.interactionId,
                         tenantId: interaction.tenant.tenantId,
                         method: interaction.request.method,
                         uri: interaction.request.uri,

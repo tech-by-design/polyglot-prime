@@ -1,17 +1,8 @@
 package org.techbd.service.api.http;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -22,139 +13,42 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebFilter;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-record Tenant(String tenantId, String name) {
-    public Tenant(@NonNull String tenantId) {
-        this(tenantId, "unspecified");
-    }
-
-    public Tenant(final @NonNull HttpServletRequest request) {
-        this(request.getHeader("TECH_BD_FHIR_SERVICE_QE_IDENTIFIER"),
-                request.getHeader("TECH_BD_FHIR_SERVICE_QE_NAME"));
-    }
-}
-
-record Header(String name, String value) {
-}
-
-record RequestEncountered(
-        UUID requestId,
-        Tenant tenant,
-        String method,
-        String uri,
-        String clientIpAddress,
-        String userAgent,
-        Instant encounteredAt,
-        List<Header> headers,
-        Map<String, String[]> parameters,
-        String contentType,
-        String queryString,
-        String protocol,
-        String servletSessionId,
-        List<Cookie> cookies,
-        byte[] requestBody) {
-
-    public RequestEncountered(HttpServletRequest request, byte[] body) throws IOException {
-        this(
-                UUID.randomUUID(),
-                new Tenant(request),
-                request.getMethod(),
-                request.getRequestURI(),
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent"),
-                Instant.now(),
-                StreamSupport
-                        .stream(((Iterable<String>) () -> request.getHeaderNames().asIterator()).spliterator(),
-                                false)
-                        .map(headerName -> new Header(headerName, request.getHeader(headerName)))
-                        .collect(Collectors.toList()),
-                request.getParameterMap(),
-                request.getContentType(), // Content type
-                request.getQueryString(), // Query string
-                request.getProtocol(), // Protocol
-                request.getSession(false) != null ? request.getSession(false).getId() : null,
-                Arrays.asList(request.getCookies() != null ? request.getCookies() : new Cookie[0]),
-                body // Request body
-        );
-    }
-}
-
-record ResponseEncountered(
-        UUID requestId,
-        UUID responseId,
-        int status,
-        Instant encounteredAt,
-        List<Header> headers,
-        byte[] responseBody) {
-
-    public ResponseEncountered(HttpServletResponse response, RequestEncountered requestEncountered,
-            byte[] responseBody) {
-        this(
-                requestEncountered.requestId(),
-                UUID.randomUUID(),
-                response.getStatus(),
-                Instant.now(),
-                response.getHeaderNames().stream()
-                        .map(headerName -> new Header(headerName, response.getHeader(headerName)))
-                        .collect(Collectors.toList()),
-                responseBody);
-    }
-}
-
-record RequestResponseEncountered(
-        UUID interactionId,
-        Tenant tenant,
-        RequestEncountered request,
-        ResponseEncountered response) {
-    public RequestResponseEncountered(RequestEncountered request, ResponseEncountered response) {
-        this(request.requestId(), request.tenant(), request, response);
-    }
-}
 
 @Component
 @WebFilter(urlPatterns = "/*")
 @Order(-999)
 public class InteractionsFilter extends OncePerRequestFilter {
-    @Value("${org.techbd.service.api.http.filter.recent-req-resp-observables-max}")
-    private static int maxObservables = 50;
-
-    private static final Map<UUID, RequestResponseEncountered> observables = Collections
-            .synchronizedMap(new LinkedHashMap<>() {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<UUID, RequestResponseEncountered> eldest) {
-                    return size() > InteractionsFilter.maxObservables;
-                }
-            });
+    public static final Interactions interactions = new Interactions();
 
     protected static final void setActiveRequestTenant(final @NonNull HttpServletRequest request,
-            final @NonNull Tenant tenant) {
+            final @NonNull Interactions.Tenant tenant) {
         request.setAttribute("activeHttpRequestTenant", tenant);
     }
 
-    public static final Tenant getActiveRequestTenant(final @NonNull HttpServletRequest request) {
-        return (Tenant) request.getAttribute("activeHttpRequestTenant");
+    public static final Interactions.Tenant getActiveRequestTenant(final @NonNull HttpServletRequest request) {
+        return (Interactions.Tenant) request.getAttribute("activeHttpRequestTenant");
     }
 
     protected static final void setActiveRequestEnc(final @NonNull HttpServletRequest request,
-            final @NonNull RequestEncountered re) {
+            final @NonNull Interactions.RequestEncountered re) {
         request.setAttribute("activeHttpRequestEncountered", re);
         setActiveRequestTenant(request, re.tenant());
     }
 
-    public static final RequestEncountered getActiveRequestEnc(final @NonNull HttpServletRequest request) {
-        return (RequestEncountered) request.getAttribute("activeHttpRequestEncountered");
+    public static final Interactions.RequestEncountered getActiveRequestEnc(final @NonNull HttpServletRequest request) {
+        return (Interactions.RequestEncountered) request.getAttribute("activeHttpRequestEncountered");
     }
 
     protected static final void setActiveInteraction(final @NonNull HttpServletRequest request,
-            final @NonNull RequestResponseEncountered rre) {
+            final @NonNull Interactions.RequestResponseEncountered rre) {
         request.setAttribute("activeHttpInteraction", rre);
     }
 
-    public static final RequestResponseEncountered getActiveInteraction(final @NonNull HttpServletRequest request) {
-        return (RequestResponseEncountered) request.getAttribute("activeHttpInteraction");
+    public static final Interactions.RequestResponseEncountered getActiveInteraction(
+            final @NonNull HttpServletRequest request) {
+        return (Interactions.RequestResponseEncountered) request.getAttribute("activeHttpInteraction");
     }
 
     @Override
@@ -166,37 +60,54 @@ public class InteractionsFilter extends OncePerRequestFilter {
             return;
         }
 
-        final var req = new ContentCachingRequestWrapper(origRequest);
-        final var requestBody = req.getContentAsByteArray();
+        final var mutatableReq = new ContentCachingRequestWrapper(origRequest);
+        final var requestBody = mutatableReq.getContentAsByteArray();
 
         // Prepare a serializable RequestEncountered as early as possible in
         // request cycle and store it as an attribute so that other filters
         // and controllers can use the common "active request" instance.
-        RequestEncountered requestEncountered = new RequestEncountered(req, requestBody);
+        final var requestEncountered = new Interactions.RequestEncountered(mutatableReq, requestBody);
         InteractionsFilter.setActiveRequestEnc(origRequest, requestEncountered);
 
-        final var resp = new ContentCachingResponseWrapper(origResponse);
+        final var mutatableResp = new ContentCachingResponseWrapper(origResponse);
 
-        chain.doFilter(req, resp);
+        chain.doFilter(mutatableReq, mutatableResp);
 
         // TODO: for large response bodies this may be quite expensive in terms
         // of memory so we might want to store in S3, disk, etc. instead.
-        final var responseBody = resp.getContentAsByteArray();
-        resp.copyBodyToResponse();
+        // TODO: perhaps we should allow persistence args to specify what parts to store
+        // (with/without body?)
+        final var responseBody = mutatableResp.getContentAsByteArray();
 
-        RequestResponseEncountered observed = new RequestResponseEncountered(requestEncountered,
-                new ResponseEncountered(resp, requestEncountered, responseBody));
-        observables.put(observed.interactionId(), observed);
+        final var rre = new Interactions.RequestResponseEncountered(requestEncountered,
+                new Interactions.ResponseEncountered(mutatableResp, requestEncountered, responseBody));
+        interactions.addHistory(rre);
 
-        InteractionsFilter.setActiveInteraction(req, observed);
-    }
+        InteractionsFilter.setActiveInteraction(mutatableReq, rre);
+        final var ps = new Interactions.PersistenceSuggestion(mutatableReq);
+        final var strategy = ps.getStrategy();
+        mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_ARGS", ps.strategyJson());
+        if (strategy != null) {
+            mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY", strategy.getClass().getName());
+            List<Interactions.Header> additionalHeaders = null;
+            switch (strategy) {
+                case Interactions.PersistenceSuggestion.StrategyResult.Persist p -> {
+                    final var instance = p.instance();
+                    mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_INSTANCE", instance.getClass().getName());
+                    additionalHeaders = instance.persist(rre);
+                }
+                case Interactions.PersistenceSuggestion.StrategyResult.Invalid invalid -> {
+                    additionalHeaders = invalid.headers();
+                }
+            }
+            if (additionalHeaders != null) {
+                for (Interactions.Header header : additionalHeaders) {
+                    mutatableResp.setHeader(header.name(), header.value());
+                }
+            }
+        }
 
-    @Override
-    public void destroy() {
-        // Cleanup code if needed
-    }
-
-    public static Map<UUID, RequestResponseEncountered> getObservables() {
-        return Collections.unmodifiableMap(observables);
+        // do this last, after all other mutations are completed
+        mutatableResp.copyBodyToResponse();
     }
 }
