@@ -1,5 +1,7 @@
 package org.techbd.service.api.http.fhir;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +50,7 @@ public class FhirController {
         return "metadata.xml";
     }
 
+    @Operation(summary = "TODO")
     @PostMapping(value = {"/Bundle"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Map<String, Object> handleBundle(final @RequestBody @Nonnull Map<String, Object> payload,
@@ -57,6 +60,7 @@ public class FhirController {
         return ri;
     }
 
+    @Operation(summary = "TODO")
     @PostMapping(value = {"/Bundle/$validate"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Map<String, Object> validateBundle(final @RequestBody @Nonnull Map<String, Object> payload,
@@ -67,8 +71,14 @@ public class FhirController {
     }
 
     @GetMapping("/admin/observe/interactions")
+    public String observeInteractions() {
+        return "interactions";
+    }
+
+    @Operation(summary = "Recent HTTP Request/Response Interactions")
+    @GetMapping("/admin/observe/interaction/recent.json")
     @ResponseBody
-    public Map<?, ?> observeInteractions() {
-        return InteractionsFilter.getObservables();
+    public List<?> observeRecentInteractions() {
+        return new ArrayList<>(InteractionsFilter.getObservables().values());
     }
 }

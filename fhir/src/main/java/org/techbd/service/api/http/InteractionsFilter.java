@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -102,10 +101,8 @@ record RequestResponseEncountered(
 @WebFilter(urlPatterns = "/*")
 @Order(-999)
 public class InteractionsFilter extends OncePerRequestFilter {
-    private final static Logger LOG = Logger.getLogger(InteractionsFilter.class.getName());
-
     @Value("${org.techbd.service.api.http.filter.recent-req-resp-observables-max}")
-    private static int maxObservables = 1000;
+    private static int maxObservables = 50;
 
     private static final Map<UUID, RequestResponseEncountered> observables = Collections
             .synchronizedMap(new LinkedHashMap<>() {
@@ -138,8 +135,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
         RequestResponseEncountered observed = new RequestResponseEncountered(requestEncountered,
                 new ResponseEncountered(resp, requestEncountered, responseBody));
         observables.put(observed.interactionId(), observed);
-
-        LOG.info(observed.interactionId().toString() + " " + Integer.valueOf(observables.size()).toString());
     }
 
     @Override
@@ -150,5 +145,4 @@ public class InteractionsFilter extends OncePerRequestFilter {
     public static Map<UUID, RequestResponseEncountered> getObservables() {
         return Collections.unmodifiableMap(observables);
     }
-
 }
