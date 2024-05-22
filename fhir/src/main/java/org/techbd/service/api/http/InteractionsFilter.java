@@ -26,11 +26,23 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+record Tenant(String tenantId, String name) {
+    public Tenant(@NonNull String tenantId) {
+        this(tenantId, "unspecified");
+    }
+
+    public Tenant(final @NonNull HttpServletRequest request) {
+        this(request.getHeader("TECH_BD_FHIR_SERVICE_QE_IDENTIFIER"),
+                request.getHeader("TECH_BD_FHIR_SERVICE_QE_NAME"));
+    }
+}
+
 record Header(String name, String value) {
 }
 
 record RequestEncountered(
         UUID requestId,
+        Tenant tenant,
         String method,
         String uri,
         String clientIpAddress,
@@ -41,20 +53,22 @@ record RequestEncountered(
         String contentType,
         String queryString,
         String protocol,
-        String sessionId,
+        String servletSessionId,
         List<Cookie> cookies,
         byte[] requestBody) {
 
     public RequestEncountered(HttpServletRequest request, byte[] body) throws IOException {
         this(
                 UUID.randomUUID(),
+                new Tenant(request),
                 request.getMethod(),
                 request.getRequestURI(),
                 request.getRemoteAddr(),
                 request.getHeader("User-Agent"),
                 Instant.now(),
                 StreamSupport
-                        .stream(((Iterable<String>) () -> request.getHeaderNames().asIterator()).spliterator(), false)
+                        .stream(((Iterable<String>) () -> request.getHeaderNames().asIterator()).spliterator(),
+                                false)
                         .map(headerName -> new Header(headerName, request.getHeader(headerName)))
                         .collect(Collectors.toList()),
                 request.getParameterMap(),
@@ -69,6 +83,7 @@ record RequestEncountered(
 }
 
 record ResponseEncountered(
+        UUID requestId,
         UUID responseId,
         int status,
         Instant encounteredAt,
@@ -78,6 +93,7 @@ record ResponseEncountered(
     public ResponseEncountered(HttpServletResponse response, RequestEncountered requestEncountered,
             byte[] responseBody) {
         this(
+                requestEncountered.requestId(),
                 UUID.randomUUID(),
                 response.getStatus(),
                 Instant.now(),
@@ -90,10 +106,11 @@ record ResponseEncountered(
 
 record RequestResponseEncountered(
         UUID interactionId,
+        Tenant tenant,
         RequestEncountered request,
         ResponseEncountered response) {
     public RequestResponseEncountered(RequestEncountered request, ResponseEncountered response) {
-        this(request.requestId(), request, response);
+        this(request.requestId(), request.tenant(), request, response);
     }
 }
 
@@ -112,6 +129,34 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 }
             });
 
+    protected static final void setActiveRequestTenant(final @NonNull HttpServletRequest request,
+            final @NonNull Tenant tenant) {
+        request.setAttribute("activeHttpRequestTenant", tenant);
+    }
+
+    public static final Tenant getActiveRequestTenant(final @NonNull HttpServletRequest request) {
+        return (Tenant) request.getAttribute("activeHttpRequestTenant");
+    }
+
+    protected static final void setActiveRequestEnc(final @NonNull HttpServletRequest request,
+            final @NonNull RequestEncountered re) {
+        request.setAttribute("activeHttpRequestEncountered", re);
+        setActiveRequestTenant(request, re.tenant());
+    }
+
+    public static final RequestEncountered getActiveRequestEnc(final @NonNull HttpServletRequest request) {
+        return (RequestEncountered) request.getAttribute("activeHttpRequestEncountered");
+    }
+
+    protected static final void setActiveInteraction(final @NonNull HttpServletRequest request,
+            final @NonNull RequestResponseEncountered rre) {
+        request.setAttribute("activeHttpInteraction", rre);
+    }
+
+    public static final RequestResponseEncountered getActiveInteraction(final @NonNull HttpServletRequest request) {
+        return (RequestResponseEncountered) request.getAttribute("activeHttpInteraction");
+    }
+
     @Override
     protected void doFilterInternal(final @NonNull HttpServletRequest origRequest,
             @NonNull final HttpServletResponse origResponse, @NonNull final FilterChain chain)
@@ -122,19 +167,28 @@ public class InteractionsFilter extends OncePerRequestFilter {
         }
 
         final var req = new ContentCachingRequestWrapper(origRequest);
+        final var requestBody = req.getContentAsByteArray();
+
+        // Prepare a serializable RequestEncountered as early as possible in
+        // request cycle and store it as an attribute so that other filters
+        // and controllers can use the common "active request" instance.
+        RequestEncountered requestEncountered = new RequestEncountered(req, requestBody);
+        InteractionsFilter.setActiveRequestEnc(origRequest, requestEncountered);
+
         final var resp = new ContentCachingResponseWrapper(origResponse);
 
         chain.doFilter(req, resp);
 
-        final var requestBody = req.getContentAsByteArray();
+        // TODO: for large response bodies this may be quite expensive in terms
+        // of memory so we might want to store in S3, disk, etc. instead.
         final var responseBody = resp.getContentAsByteArray();
-
         resp.copyBodyToResponse();
 
-        RequestEncountered requestEncountered = new RequestEncountered(origRequest, requestBody);
         RequestResponseEncountered observed = new RequestResponseEncountered(requestEncountered,
                 new ResponseEncountered(resp, requestEncountered, responseBody));
         observables.put(observed.interactionId(), observed);
+
+        InteractionsFilter.setActiveInteraction(req, observed);
     }
 
     @Override

@@ -53,21 +53,21 @@ public class FhirController {
     @Operation(summary = "TODO")
     @PostMapping(value = {"/Bundle"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Map<String, Object> handleBundle(final @RequestBody @Nonnull Map<String, Object> payload,
-            HttpServletRequest request) {
-        var ri = Helpers.getRequestInfo(request, payload);
-        // Process the bundle
-        return ri;
+    public Object handleBundle(final @RequestBody @Nonnull Map<String, Object> payload,
+            final HttpServletRequest request) {
+        var activeReqEnc = InteractionsFilter.getActiveRequestEnc(request);
+        // Process the bundle using activeReqEnc.requestId() as the orch session ID
+        return activeReqEnc;
     }
 
     @Operation(summary = "TODO")
     @PostMapping(value = {"/Bundle/$validate"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Map<String, Object> validateBundle(final @RequestBody @Nonnull Map<String, Object> payload,
+    public Object validateBundle(final @RequestBody @Nonnull Map<String, Object> payload,
             HttpServletRequest request) {
-        var ri = Helpers.getRequestInfo(request, payload);
-        // Validate the bundle
-        return ri;
+        var activeReqEnc = InteractionsFilter.getActiveRequestEnc(request);
+        // Validate the bundle using activeReqEnc.requestId() as the orch session ID
+        return activeReqEnc;
     }
 
     @GetMapping("/admin/observe/interactions")

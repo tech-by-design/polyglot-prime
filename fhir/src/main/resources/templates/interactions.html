@@ -92,6 +92,7 @@
                         return link;
                     }
                 },
+                { headerName: "Tenant ID", field: "tenantId", sortable: true, filter: true },
                 { headerName: "Method", field: "method", sortable: true, filter: true },
                 { headerName: "URI", field: "uri", sortable: true, filter: true },
                 { headerName: "Response Status", field: "status", sortable: true, filter: true },
@@ -120,7 +121,7 @@
                     originalData = data;
                     const rowData = data.map(interaction => ({
                         requestEncounteredAt: interaction.request.encounteredAt,
-                        interactionId: interaction.interactionId,
+                        tenantId: interaction.tenant.tenantId,
                         method: interaction.request.method,
                         uri: interaction.request.uri,
                         status: interaction.response.status,
