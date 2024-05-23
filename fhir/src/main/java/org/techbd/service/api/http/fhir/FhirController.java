@@ -68,7 +68,8 @@ public class FhirController {
 
         final var session = engine.session()
                 .withPayloads(List.of(payload))
-                .withFhirProfileUrl("http://example.com/fhirProfile")
+                .withFhirProfileUrl(
+                        "https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json")
                 .addHapiValidationEngine()
                 .addHl7ValidationEngine()
                 .addInfernoValidationEngine()

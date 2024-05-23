@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.validation.FhirValidator;
+import ca.uhn.fhir.validation.ValidationOptions;
 
 /**
  * The {@code OrchestrationEngine} class is responsible for managing and
@@ -188,19 +189,22 @@ public class OrchestrationEngine {
         private final String fhirProfileUrl;
         private final FhirContext fhirContext;
         private final FhirValidator validator;
+        private final ValidationOptions options;
 
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.fhirContext = FhirContext.forR4();
-            // TODO: use fhirProfileUrl in the validator; there will be only one
-            // HapiValidationEngine for any given profileUrl per OrchestrationEngine.
+            this.options = new ValidationOptions();
+            if (this.fhirProfileUrl != null) {
+                this.options.addProfile(this.fhirProfileUrl);
+            }
             this.validator = fhirContext.newValidator();
         }
 
         @Override
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             try {
-                final var hapiVR = validator.validateWithResult(payload);
+                final var hapiVR = validator.validateWithResult(payload, this.options);
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
                     public boolean isValid() {
