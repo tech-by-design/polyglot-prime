@@ -44,7 +44,7 @@ public class Interactions {
             .synchronizedMap(new LinkedHashMap<>() {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<UUID, RequestResponseEncountered> eldest) {
-                    return size() > Interactions.MAX_IN_MEMORY_HISTORY;
+                    return size() > MAX_IN_MEMORY_HISTORY;
                 }
             });
 
@@ -57,7 +57,7 @@ public class Interactions {
         return Collections.unmodifiableMap(history);
     }
 
-    public static record Tenant(String tenantId, String name) {
+    public record Tenant(String tenantId, String name) {
         public Tenant(@NonNull String tenantId) {
             this(tenantId, "unspecified");
         }
@@ -68,13 +68,13 @@ public class Interactions {
         }
     }
 
-    public static record Header(String name, String value) {
-        public static final Header persistenceError(String message) {
+    public record Header(String name, String value) {
+        public static Header persistenceError(String message) {
             return new Header("TECH_BD_FHIR_SERVICE_PERSIST_ERROR", message);
         }
     }
 
-    public static record RequestEncountered(
+    public record RequestEncountered(
             UUID requestId,
             Tenant tenant,
             String method,
@@ -116,7 +116,7 @@ public class Interactions {
         }
     }
 
-    public static record ResponseEncountered(
+    public record ResponseEncountered(
             UUID requestId,
             UUID responseId,
             int status,
@@ -138,7 +138,7 @@ public class Interactions {
         }
     }
 
-    public static record RequestResponseEncountered(
+    public record RequestResponseEncountered(
             UUID interactionId,
             Tenant tenant,
             RequestEncountered request,
@@ -148,8 +148,8 @@ public class Interactions {
         }
     }
 
-    public static interface PersistenceStrategy {
-        static final Map<String, PersistenceStrategy> CACHED = new HashMap<>();
+    public interface PersistenceStrategy {
+        Map<String, PersistenceStrategy> CACHED = new HashMap<>();
 
         // returns NULL if no header(s) should be persisted or list of Headers for
         // informing callers in response headers for location of where storage occurs
@@ -202,7 +202,7 @@ public class Interactions {
             // Convert object to JSON string
             String jsonString;
             try {
-                jsonString = Interactions.objectMapper.writeValueAsString(rre);
+                jsonString = objectMapper.writeValueAsString(rre);
             } catch (JsonProcessingException e) {
                 return List.of(Header.persistenceError("Failed to convert object to JSON: " + e.toString()));
             }
@@ -250,7 +250,7 @@ public class Interactions {
                 return new StrategyResult.Persist(existing);
             }
 
-            final var result = Interactions.jsonText.getJsonObject(strategyJson());
+            final var result = jsonText.getJsonObject(strategyJson());
             switch (result) {
                 case JsonText.JsonObjectResult.ValidUntypedResult validUntypedResult -> {
                     // shape of JSON is { nature: "", arg1: x, arg2: y, etc. }

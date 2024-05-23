@@ -74,7 +74,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         // request cycle and store it as an attribute so that other filters
         // and controllers can use the common "active request" instance.
         final var requestEncountered = new Interactions.RequestEncountered(mutatableReq, requestBody);
-        InteractionsFilter.setActiveRequestEnc(origRequest, requestEncountered);
+        setActiveRequestEnc(origRequest, requestEncountered);
 
         final var mutatableResp = new ContentCachingResponseWrapper(origResponse);
 
@@ -90,7 +90,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 new Interactions.ResponseEncountered(mutatableResp, requestEncountered, responseBody));
         interactions.addHistory(rre);
 
-        InteractionsFilter.setActiveInteraction(mutatableReq, rre);
+        setActiveInteraction(mutatableReq, rre);
         final var ps = new Interactions.PersistenceSuggestion(mutatableReq, defaultPersistStratregy,
                 fsPersistDefaultHome);
         final var strategy = ps.getStrategy();
