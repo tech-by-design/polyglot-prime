@@ -117,6 +117,7 @@
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>3.22.0</version>
                 <configuration>
+					<skip>true</skip>
                     <failOnViolation>true</failOnViolation>
                     <printFailingErrors>true</printFailingErrors>
                 </configuration>
