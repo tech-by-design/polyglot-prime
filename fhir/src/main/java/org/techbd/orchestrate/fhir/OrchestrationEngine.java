@@ -141,10 +141,12 @@ public class OrchestrationEngine {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o)
+            if (this == o) {
                 return true;
-            if (o == null || getClass() != o.getClass())
+            }
+            if (o == null || getClass() != o.getClass()) {
                 return false;
+            }
             ValidationEngineKey that = (ValidationEngineKey) o;
             return type == that.type && Objects.equals(fhirProfileUrl, that.fhirProfileUrl);
         }

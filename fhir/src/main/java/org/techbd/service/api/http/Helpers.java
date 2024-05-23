@@ -14,12 +14,12 @@ public class Helpers {
         StringBuilder url = new StringBuilder();
         url.append(scheme).append("://").append(serverName);
 
-        if ((scheme.equals("http") && serverPort != 80) || (scheme.equals("https") && serverPort != 443)) {
+        if (("http".equals(scheme) && serverPort != 80) || ("https".equals(scheme) && serverPort != 443)) {
             url.append(":").append(serverPort);
         }
 
         url.append(contextPath);
         return url.toString();
     }
-    
+
 }
