@@ -67,8 +67,6 @@ class OrchestrationEngineTest {
         assertThat(retrievedSession2.getFhirProfileUrl()).isEqualTo("http://example.com/fhirProfile");
         assertThat(retrievedSession2.getValidationResults()).hasSize(1);
         assertThat(retrievedSession2.getValidationResults().get(0).isValid()).isTrue();
-        assertThat(retrievedSession2.getValidationResults().get(0).getIssues()).extracting("message")
-            .containsExactly("HL7 validation successful");
     }
 
     @Test

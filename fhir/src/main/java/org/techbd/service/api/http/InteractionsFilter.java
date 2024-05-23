@@ -24,7 +24,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
     @Value("${org.techbd.service.api.http.interactions.default-persist-strategy:diagnostics}")
     private String defaultPersistStratregy = "diagnostics";
 
-    @Value("${org.techbd.service.api.http.interactions.fs-persist-home}")
+    @Value("${org.techbd.service.api.http.interactions.fs-persist-home:}")
     private String fsPersistDefaultHome = System.getProperty("user.dir");
 
     public static final Interactions interactions = new Interactions();

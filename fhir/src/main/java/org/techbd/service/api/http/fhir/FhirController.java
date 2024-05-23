@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.service.api.http.Helpers;
 import org.techbd.service.api.http.InteractionsFilter;
 
@@ -25,6 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 @Tag(name = "FHIR Endpoints", description = "FHIR Bundles API")
 public class FhirController {
+    final OrchestrationEngine engine = new OrchestrationEngine();
 
     // retrieve from properties file which is injected from pom.xml
     @Value("${org.techbd.service.api.http.fhir.FhirApplication.version}")
@@ -51,7 +53,7 @@ public class FhirController {
     }
 
     @Operation(summary = "TODO")
-    @PostMapping(value = {"/Bundle"}, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/Bundle" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Object handleBundle(final @RequestBody @Nonnull Map<String, Object> payload,
             final HttpServletRequest request) {
@@ -60,14 +62,24 @@ public class FhirController {
         return activeReqEnc;
     }
 
-    @Operation(summary = "TODO")
-    @PostMapping(value = {"/Bundle/$validate"}, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/Bundle/$validate" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Object validateBundle(final @RequestBody @Nonnull Map<String, Object> payload,
-            HttpServletRequest request) {
-        var activeReqEnc = InteractionsFilter.getActiveRequestEnc(request);
-        // Validate the bundle using activeReqEnc.requestId() as the orch session ID
-        return activeReqEnc;
+    public Object validateBundle(final @RequestBody @Nonnull String payload, HttpServletRequest request) {
+
+        final var session = engine.session()
+                .withPayloads(List.of(payload))
+                .withFhirProfileUrl("http://example.com/fhirProfile")
+                .addHapiValidationEngine()
+                .addHl7ValidationEngine()
+                .addInfernoValidationEngine()
+                .build();
+        engine.orchestrate(session);
+
+        final var result = Map.of(
+                "OperationOutcome",
+                Map.of("validationResults", session.getValidationResults(), "request",
+                        InteractionsFilter.getActiveRequestEnc(request)));
+        return result;
     }
 
     @GetMapping("/admin/observe/interactions")

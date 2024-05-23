@@ -158,13 +158,24 @@ public class OrchestrationEngine {
     // Inner classes and interfaces
 
     public interface ValidationResult {
+        String getProfileUrl();
+
+        String getEngine();
+
         boolean isValid();
 
         List<ValidationIssue> getIssues();
     }
 
+    public record SourceLocation(Integer line, Integer column, String diagnostics) {
+    }
+
     public interface ValidationIssue {
         String getMessage();
+
+        SourceLocation getLocation();
+
+        String getSeverity();
     }
 
     public interface ValidationEngine {
@@ -193,7 +204,7 @@ public class OrchestrationEngine {
                     public boolean isValid() {
                         return hapiVR.isSuccessful();
                     }
-    
+
                     @Override
                     public List<OrchestrationEngine.ValidationIssue> getIssues() {
                         return hapiVR.getMessages().stream()
@@ -202,18 +213,40 @@ public class OrchestrationEngine {
                                     public String getMessage() {
                                         return issue.getMessage();
                                     }
+
+                                    @Override
+                                    public SourceLocation getLocation() {
+                                        return new SourceLocation(issue.getLocationLine(), issue.getLocationCol(),
+                                                issue.getLocationString());
+                                    }
+
+                                    @Override
+                                    public String getSeverity() {
+                                        return issue.getSeverity().toString();
+                                    }
+
                                 })
                                 .collect(Collectors.toList());
                     }
+
+                    @Override
+                    public String getProfileUrl() {
+                        return HapiValidationEngine.this.fhirProfileUrl;
+                    }
+
+                    @Override
+                    public String getEngine() {
+                        return ValidationEngineIdentifier.HAPI.toString();
+                    }
                 };
-    
+
             } catch (Exception e) {
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
                     public boolean isValid() {
                         return false;
                     }
-    
+
                     @Override
                     public List<OrchestrationEngine.ValidationIssue> getIssues() {
                         return List.of(new OrchestrationEngine.ValidationIssue() {
@@ -221,10 +254,30 @@ public class OrchestrationEngine {
                             public String getMessage() {
                                 return e.getMessage();
                             }
+
+                            @Override
+                            public SourceLocation getLocation() {
+                                return new SourceLocation(null, null, e.getClass().getName());
+                            }
+
+                            @Override
+                            public String getSeverity() {
+                                return "FATAL";
+                            }
                         });
                     }
+
+                    @Override
+                    public String getProfileUrl() {
+                        return HapiValidationEngine.this.fhirProfileUrl;
+                    }
+
+                    @Override
+                    public String getEngine() {
+                        return ValidationEngineIdentifier.HAPI.toString();
+                    }
                 };
-    
+
             }
 
         }
@@ -260,12 +313,17 @@ public class OrchestrationEngine {
 
                 @Override
                 public List<ValidationIssue> getIssues() {
-                    return List.of(new ValidationIssue() {
-                        @Override
-                        public String getMessage() {
-                            return "HL7 validation successful";
-                        }
-                    });
+                    return List.of();
+                }
+
+                @Override
+                public String getProfileUrl() {
+                    return Hl7ValidationEngine.this.fhirProfileUrl;
+                }
+
+                @Override
+                public String getEngine() {
+                    return ValidationEngineIdentifier.HL7.toString();
                 }
             };
         }
@@ -301,12 +359,17 @@ public class OrchestrationEngine {
 
                 @Override
                 public List<ValidationIssue> getIssues() {
-                    return List.of(new ValidationIssue() {
-                        @Override
-                        public String getMessage() {
-                            return "Inferno validation successful";
-                        }
-                    });
+                    return List.of();
+                }
+
+                @Override
+                public String getProfileUrl() {
+                    return InfernoValidationEngine.this.fhirProfileUrl;
+                }
+
+                @Override
+                public String getEngine() {
+                    return ValidationEngineIdentifier.INFERNO.toString();
                 }
             };
         }
