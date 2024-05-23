@@ -22,4 +22,21 @@ public class Helpers {
         return url.toString();
     }
 
+    /**
+     * Finds the first non-null and non-empty header value from the given header names.
+     *
+     * @param request the HttpServletRequest object
+     * @param headerNames the array of header names to check
+     * @return the first non-null and non-empty header value, or null if none found
+     */
+    public static String findFirstHeaderValue(HttpServletRequest request, String... headerNames) {
+        for (String headerName : headerNames) {
+            String headerValue = request.getHeader(headerName);
+            if (headerValue != null && !headerValue.isEmpty()) {
+                return headerValue;
+            }
+        }
+        return null;
+    }
+
 }

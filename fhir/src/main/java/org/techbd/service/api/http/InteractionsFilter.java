@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.techbd.service.api.http.fhir.SwaggerConfig;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,10 +22,10 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebFilter(urlPatterns = "/*")
 @Order(-999)
 public class InteractionsFilter extends OncePerRequestFilter {
-    @Value("${org.techbd.service.api.http.interactions.default-persist-strategy:diagnostics}")
-    private String defaultPersistStratregy = "diagnostics";
+    @Value("${org.techbd.service.api.http.interactions.default-persist-strategy:#{null}}")
+    private String defaultPersistStrategy;
 
-    @Value("${org.techbd.service.api.http.interactions.fs-persist-home:}")
+    @Value("${org.techbd.service.api.http.interactions.fs-persist-home:#{null}}")
     private String fsPersistDefaultHome = System.getProperty("user.dir");
 
     public static final Interactions interactions = new Interactions();
@@ -91,17 +92,20 @@ public class InteractionsFilter extends OncePerRequestFilter {
         interactions.addHistory(rre);
 
         setActiveInteraction(mutatableReq, rre);
-        final var ps = new Interactions.PersistenceSuggestion(mutatableReq, defaultPersistStratregy,
-                fsPersistDefaultHome);
+
+        // we want to find our persistence strategy in either properties or in header;
+        // because TECH_BD_INTERACTION_PERSISTENCE is global, document it in SwaggerConfig.customGlobalHeaders
+        final var ps = new Interactions.PersistenceSuggestion(mutatableReq, defaultPersistStrategy,
+                fsPersistDefaultHome, SwaggerConfig.REQ_HEADER_TECH_BD_INTERACTION_PERSISTENCE);
         final var strategy = ps.getStrategy();
-        mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_ARGS", ps.strategyJson());
+        mutatableResp.setHeader(SwaggerConfig.RESP_HEADER_TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_ARGS, ps.strategyJson());
         if (strategy != null) {
-            mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY", strategy.getClass().getName());
+            mutatableResp.setHeader(SwaggerConfig.RESP_HEADER_TECH_BD_INTERACTION_PERSISTENCE_STRATEGY, strategy.getClass().getName());
             List<Interactions.Header> additionalHeaders = null;
             switch (strategy) {
                 case Interactions.PersistenceSuggestion.StrategyResult.Persist p -> {
                     final var instance = p.instance();
-                    mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_INSTANCE",
+                    mutatableResp.setHeader(SwaggerConfig.RESP_HEADER_TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_INSTANCE,
                             instance.getClass().getName());
                     additionalHeaders = instance.persist(rre);
                 }

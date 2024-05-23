@@ -11,6 +11,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.service.api.http.Helpers;
@@ -27,6 +29,9 @@ import jakarta.servlet.http.HttpServletRequest;
 @Tag(name = "FHIR Endpoints", description = "FHIR Bundles API")
 public class FhirController {
     final OrchestrationEngine engine = new OrchestrationEngine();
+
+    @Value("${org.techbd.service.api.http.fhir.FhirController.defaultFhirProfileUrl:#{null}}")
+    private String defaultFhirProfileUrl;
 
     // retrieve from properties file which is injected from pom.xml
     @Value("${org.techbd.service.api.http.fhir.FhirApplication.version}")
@@ -64,18 +69,24 @@ public class FhirController {
 
     @PostMapping(value = { "/Bundle/$validate" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Object validateBundle(final @RequestBody @Nonnull String payload, HttpServletRequest request) {
+    public Object validateBundle(final @RequestBody @Nonnull String payload,
+            @RequestHeader(value = SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_QE_IDENTIFIER, required = true) String tenantId,
+            @RequestParam(value = "fhirProfileUrl", required = false) String fhirProfileUrlParam,
+            @RequestHeader(value = "TECH_BD_FHIR_SERVICE_STRUCT_DEFN_PROFILE_URI", required = false) String fhirProfileUrlHeader,
+            HttpServletRequest request) {
 
+        final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
+                : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : defaultFhirProfileUrl;
         final var session = engine.session()
                 .withPayloads(List.of(payload))
-                .withFhirProfileUrl(
-                        "https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json")
+                .withFhirProfileUrl(fhirProfileUrl)
                 .addHapiValidationEngine()
                 .addHl7ValidationEngine()
                 .addInfernoValidationEngine()
                 .build();
         engine.orchestrate(session);
 
+        // TODO: need option to add/remove `request` based on query param or header
         final var result = Map.of(
                 "OperationOutcome",
                 Map.of("validationResults", session.getValidationResults(), "request",

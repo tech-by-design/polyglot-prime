@@ -13,17 +13,20 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
+import org.techbd.service.api.http.fhir.SwaggerConfig;
 import org.techbd.util.JsonText;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
@@ -38,6 +41,7 @@ public class Interactions {
     private static final JsonText jsonText = new JsonText();
     private static final ObjectMapper objectMapper = JsonMapper.builder()
             .findAndAddModules()
+            .enable(SerializationFeature.INDENT_OUTPUT)
             .build();
 
     private final Map<UUID, RequestResponseEncountered> history = Collections
@@ -63,14 +67,14 @@ public class Interactions {
         }
 
         public Tenant(final @NonNull HttpServletRequest request) {
-            this(request.getHeader("TECH_BD_FHIR_SERVICE_QE_IDENTIFIER"),
-                    request.getHeader("TECH_BD_FHIR_SERVICE_QE_NAME"));
+            this(request.getHeader(SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_QE_IDENTIFIER),
+                    request.getHeader(SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_QE_NAME));
         }
     }
 
     public record Header(String name, String value) {
         public static Header persistenceError(String message) {
-            return new Header("TECH_BD_FHIR_SERVICE_PERSIST_ERROR", message);
+            return new Header(SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_PERSIST_ERROR, message);
         }
     }
 
@@ -183,6 +187,7 @@ public class Interactions {
         }
 
         public List<Header> persist(final @NotNull RequestResponseEncountered rre) {
+            // TODO: implement this to store asynchronously via jClouds API
             return Arrays.asList(new Header("TECH_BD_INTERACTION_PERSISTENCE_RESULT", "AWS-object-id"));
         }
     }
@@ -231,8 +236,9 @@ public class Interactions {
     public record PersistenceSuggestion(String strategyJson, String defaultFsHome) {
 
         public PersistenceSuggestion(final @NonNull HttpServletRequest request,
-                final @NonNull String defaultStrategyJson, final @NonNull String defaultFsHome) {
-            this(request.getHeader("TECH_BD_INTERACTION_PERSISTENCE"), defaultFsHome);
+                final String defaultStrategyJson, final @NonNull String defaultFsHome, String... headers) {
+            this(Optional.ofNullable(Helpers.findFirstHeaderValue(request, headers)).orElse(defaultStrategyJson),
+                    defaultFsHome);
         }
 
         public PersistenceStrategy cached(final @NonNull PersistenceStrategy ps) {
@@ -271,8 +277,9 @@ public class Interactions {
                                 return new StrategyResult.Persist(this.cached(new BlobStorePersistence(
                                         validUntypedResult.jsonObject(), validUntypedResult.originalText())));
                             }
+                            // TODO case "sftp" should persist asynchronously to SFTP
+                            // see https://github.com/hierynomus/sshj and https://ssh-comparison.quendi.de/comparison/cipher.html
                             default: {
-                                // TODO: Handle the default behavior
                                 return null;
                             }
                         }
@@ -288,17 +295,17 @@ public class Interactions {
                     }
                 }
                 case JsonText.JsonObjectResult.ValidResultClassNotFound classNotFoundResult -> {
-                    // TODO: add exceptions into Header
+                    // TODO: add exceptions into Response Header
                     return new StrategyResult.Invalid(
                             List.of(Header.persistenceError(strategyJson), Header.persistenceError("class not found")));
                 }
                 case JsonText.JsonObjectResult.ValidResultClassNotInstantiated classNotInstantiatedResult -> {
-                    // TODO: add exceptions into Header
+                    // TODO: add exceptions into Response Header
                     return new StrategyResult.Invalid(List.of(Header.persistenceError(strategyJson),
                             Header.persistenceError("class not instantiatable (check shape and constructor)")));
                 }
                 case JsonText.JsonObjectResult.InvalidResult invalidResult -> {
-                    // TODO: add exceptions into Header
+                    // TODO: add exceptions into Response Header
                     return new StrategyResult.Invalid(List.of(Header.persistenceError(strategyJson),
                             Header.persistenceError("TODO: add exceptions")));
                 }
