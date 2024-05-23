@@ -1,7 +1,12 @@
 package org.techbd.service.api.http;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,10 +17,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.techbd.util.JsonText;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,12 +32,11 @@ import jakarta.validation.constraints.NotNull;
 
 @Component
 public class Interactions {
-    @Value("${org.techbd.service.api.http.filter.interactions-fs-persist-home}")
-    private static final String FS_PERSIST_HOME = System.getProperty("user.dir");
-
-    @Value("${org.techbd.service.api.http.filter.interactions-history-in-memory-max}")
     private static final int MAX_IN_MEMORY_HISTORY = 50;
     private static final JsonText jsonText = new JsonText();
+    private static final ObjectMapper objectMapper = JsonMapper.builder()
+            .findAndAddModules()
+            .build();
 
     private final Map<UUID, RequestResponseEncountered> history = Collections
             .synchronizedMap(new LinkedHashMap<>() {
@@ -179,19 +186,50 @@ public class Interactions {
     }
 
     public static class FileSysPersistence implements PersistenceStrategy {
-        public FileSysPersistence(final Map<String, Object> args, final String origJson) {
+        private String fsHome;
 
+        public FileSysPersistence(final String fsHomeDefault, final Map<String, Object> args, final String origJson) {
+            this.fsHome = fsHomeDefault;
+            final var fsHome = args.get("home");
+            if (fsHome != null && fsHome instanceof String)
+                this.fsHome = (String) fsHome;
         }
 
         public List<Header> persist(final @NotNull RequestResponseEncountered rre) {
-            return Arrays.asList(new Header("TECH_BD_INTERACTION_PERSISTENCE_RESULT", "fs:" + FS_PERSIST_HOME));
+            // Convert object to JSON string
+            String jsonString;
+            try {
+                jsonString = Interactions.objectMapper.writeValueAsString(rre);
+            } catch (JsonProcessingException e) {
+                return List.of(Header.persistenceError("Failed to convert object to JSON: " + e.toString()));
+            }
+
+            // we store the file in fsHome/<Year>/<Month>/<Day>/<Hour>/<interactionId>.json
+            String formattedDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd/HH"));
+            String formattedFilePath = String.format("%s/%s/%s.json", fsHome, formattedDate, rre.interactionId);
+
+            // Write the JSON string to the file
+            Path path = Path.of(formattedFilePath);
+            try {
+                Files.createDirectories(path.getParent());
+                try (FileWriter fileWriter = new FileWriter(new java.io.File(formattedFilePath))) {
+                    fileWriter.write(jsonString);
+                }
+            } catch (IOException e) {
+                return List.of(
+                        Header.persistenceError("Unable to write JSON to " + formattedFilePath + ": " + e.toString()));
+            }
+
+            // return the location where the file was stored in the response header
+            return Arrays.asList(new Header("TECH_BD_INTERACTION_PERSISTENCE_FS_RESULT", formattedFilePath));
         }
     }
 
-    public static record PersistenceSuggestion(String strategyJson) {
+    public record PersistenceSuggestion(String strategyJson, String defaultFsHome) {
 
-        public PersistenceSuggestion(final @NonNull HttpServletRequest request) {
-            this(request.getHeader("TECH_BD_INTERACTION_PERSISTENCE"));
+        public PersistenceSuggestion(final @NonNull HttpServletRequest request,
+                final @NonNull String defaultStrategyJson, final @NonNull String defaultFsHome) {
+            this(request.getHeader("TECH_BD_INTERACTION_PERSISTENCE"), defaultFsHome);
         }
 
         public PersistenceStrategy cached(final @NonNull PersistenceStrategy ps) {
@@ -202,6 +240,11 @@ public class Interactions {
         public StrategyResult getStrategy() {
             if (strategyJson() == null)
                 return new StrategyResult.Persist(new DiagnosticPersistence());
+
+            final var existing = PersistenceStrategy.CACHED.get(strategyJson());
+            if (existing != null) {
+                return new StrategyResult.Persist(existing);
+            }
 
             final var result = Interactions.jsonText.getJsonObject(strategyJson());
             switch (result) {
@@ -217,7 +260,8 @@ public class Interactions {
                             }
                             case "fs": {
                                 return new StrategyResult.Persist(this.cached(new FileSysPersistence(
-                                        validUntypedResult.jsonObject(), validUntypedResult.originalText())));
+                                        defaultFsHome(), validUntypedResult.jsonObject(),
+                                        validUntypedResult.originalText())));
                             }
                             case "aws-s3": {
                                 return new StrategyResult.Persist(this.cached(new BlobStorePersistence(

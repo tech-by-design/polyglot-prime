@@ -3,6 +3,7 @@ package org.techbd.service.api.http;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,12 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebFilter(urlPatterns = "/*")
 @Order(-999)
 public class InteractionsFilter extends OncePerRequestFilter {
+    @Value("${org.techbd.service.api.http.interactions.default-persist-strategy:diagnostics}")
+    private String defaultPersistStratregy = "diagnostics";
+
+    @Value("${org.techbd.service.api.http.interactions.fs-persist-home}")
+    private String fsPersistDefaultHome = System.getProperty("user.dir");
+
     public static final Interactions interactions = new Interactions();
 
     protected static final void setActiveRequestTenant(final @NonNull HttpServletRequest request,
@@ -84,7 +91,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
         interactions.addHistory(rre);
 
         InteractionsFilter.setActiveInteraction(mutatableReq, rre);
-        final var ps = new Interactions.PersistenceSuggestion(mutatableReq);
+        final var ps = new Interactions.PersistenceSuggestion(mutatableReq, defaultPersistStratregy,
+                fsPersistDefaultHome);
         final var strategy = ps.getStrategy();
         mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_ARGS", ps.strategyJson());
         if (strategy != null) {
@@ -93,7 +101,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
             switch (strategy) {
                 case Interactions.PersistenceSuggestion.StrategyResult.Persist p -> {
                     final var instance = p.instance();
-                    mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_INSTANCE", instance.getClass().getName());
+                    mutatableResp.setHeader("TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_INSTANCE",
+                            instance.getClass().getName());
                     additionalHeaders = instance.persist(rre);
                 }
                 case Interactions.PersistenceSuggestion.StrategyResult.Invalid invalid -> {
