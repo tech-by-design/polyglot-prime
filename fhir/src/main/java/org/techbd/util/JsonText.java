@@ -1,10 +1,16 @@
 package org.techbd.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 public class JsonText {
 
@@ -90,4 +96,32 @@ public class JsonText {
             }
         }
     }
+
+    public static class ByteArrayToStringOrJsonSerializer extends StdSerializer<byte[]> {
+
+        public ByteArrayToStringOrJsonSerializer() {
+            this(null);
+        }
+    
+        public ByteArrayToStringOrJsonSerializer(Class<byte[]> t) {
+            super(t);
+        }
+    
+        @Override
+        public void serialize(byte[] value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            String stringValue = new String(value);
+    
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(stringValue);
+    
+                // If we reach here, stringValue is valid JSON
+                gen.writeTree(jsonNode);
+            } catch (JsonParseException e) {
+                // stringValue is not valid JSON, write it as a string
+                gen.writeString(stringValue);
+            }
+        }
+    }
+    
 }

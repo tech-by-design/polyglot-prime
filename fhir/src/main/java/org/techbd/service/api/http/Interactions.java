@@ -20,9 +20,11 @@ import java.util.stream.StreamSupport;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.techbd.util.JsonText;
+import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import jakarta.servlet.http.Cookie;
@@ -87,7 +89,7 @@ public class Interactions {
             String protocol,
             String servletSessionId,
             List<Cookie> cookies,
-            byte[] requestBody) {
+            @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class) byte[] requestBody) {
 
         public RequestEncountered(HttpServletRequest request, byte[] body) throws IOException {
             this(
@@ -120,7 +122,7 @@ public class Interactions {
             int status,
             Instant encounteredAt,
             List<Header> headers,
-            byte[] responseBody) {
+            @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class) byte[] responseBody) {
 
         public ResponseEncountered(HttpServletResponse response, RequestEncountered requestEncountered,
                 byte[] responseBody) {

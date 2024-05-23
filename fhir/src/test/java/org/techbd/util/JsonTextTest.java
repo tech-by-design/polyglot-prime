@@ -1,6 +1,11 @@
 package org.techbd.util;
 
 import org.junit.jupiter.api.Test;
+import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.util.List;
 import java.util.Map;
@@ -9,51 +14,52 @@ import static org.assertj.core.api.Assertions.*;
 
 class JsonTextTest {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final JsonText jsonText = new JsonText();
 
     @Test
     void testValidUntypedJson() {
         String jsonString = """
-        {
-            "name": "John Doe",
-            "age": 30
-        }
-        """;
+                {
+                    "name": "John Doe",
+                    "age": 30
+                }
+                """;
 
         JsonText.JsonObjectResult result = jsonText.getJsonObject(jsonString);
-        
+
         assertThat(result).isInstanceOf(JsonText.JsonObjectResult.ValidUntypedResult.class);
         assertThat(result.isValid()).isTrue();
         assertThat(result.originalText()).isEqualTo(jsonString);
-        
+
         Map<String, Object> jsonObject = ((JsonText.JsonObjectResult.ValidUntypedResult) result).jsonObject();
         assertThat(jsonObject).containsEntry("name", "John Doe")
-                              .containsEntry("age", 30);
+                .containsEntry("age", 30);
     }
 
     @Test
     void testValidTypedJson() {
         String jsonString = """
-        {
-            "$class": "org.techbd.util.JsonTextTest$SyntheticDynamicClassFixture",
-            "name": "John Doe",
-            "age": 30
-        }
-        """;
+                {
+                    "$class": "org.techbd.util.JsonTextTest$SyntheticDynamicClassFixture",
+                    "name": "John Doe",
+                    "age": 30
+                }
+                """;
 
         JsonText.JsonObjectResult result = jsonText.getJsonObject(jsonString);
-        
+
         assertThat(result).isInstanceOf(JsonText.JsonObjectResult.ValidResult.class);
         assertThat(result.isValid()).isTrue();
         assertThat(result.originalText()).isEqualTo(jsonString);
-        
+
         Map<String, Object> jsonObject = ((JsonText.JsonObjectResult.ValidResult<?>) result).jsonObject();
         assertThat(jsonObject).containsEntry("name", "John Doe")
-                              .containsEntry("age", 30);
-        
+                .containsEntry("age", 30);
+
         Object instance = ((JsonText.JsonObjectResult.ValidResult<?>) result).instance();
         assertThat(instance).isInstanceOf(SyntheticDynamicClassFixture.class);
-        
+
         SyntheticDynamicClassFixture myClassInstance = (SyntheticDynamicClassFixture) instance;
         assertThat(myClassInstance.getName()).isEqualTo("John Doe");
         assertThat(myClassInstance.getAge()).isEqualTo(30);
@@ -62,23 +68,23 @@ class JsonTextTest {
     @Test
     void testClassNotFound() {
         String jsonString = """
-        {
-            "$class": "org.techbd.util.NonExistentClass",
-            "name": "John Doe",
-            "age": 30
-        }
-        """;
+                {
+                    "$class": "org.techbd.util.NonExistentClass",
+                    "name": "John Doe",
+                    "age": 30
+                }
+                """;
 
         JsonText.JsonObjectResult result = jsonText.getJsonObject(jsonString);
-        
+
         assertThat(result).isInstanceOf(JsonText.JsonObjectResult.ValidResultClassNotFound.class);
         assertThat(result.isValid()).isFalse();
         assertThat(result.originalText()).isEqualTo(jsonString);
-        
+
         Map<String, Object> jsonObject = ((JsonText.JsonObjectResult.ValidResultClassNotFound) result).jsonObject();
         assertThat(jsonObject).containsEntry("name", "John Doe")
-                              .containsEntry("age", 30);
-        
+                .containsEntry("age", 30);
+
         assertThat(((JsonText.JsonObjectResult.ValidResultClassNotFound) result).className())
                 .isEqualTo("org.techbd.util.NonExistentClass");
     }
@@ -86,24 +92,25 @@ class JsonTextTest {
     @Test
     void testClassNotInstantiated() {
         String jsonString = """
-        {
-            "$class": "org.techbd.util.JsonTextTest$SyntheticDynamicClassFixtureWithImproperConstructor",
-            "name": "John Doe"
-        }
-        """;
+                {
+                    "$class": "org.techbd.util.JsonTextTest$SyntheticDynamicClassFixtureWithImproperConstructor",
+                    "name": "John Doe"
+                }
+                """;
 
         JsonText.JsonObjectResult result = jsonText.getJsonObject(jsonString);
-        
+
         assertThat(result).isInstanceOf(JsonText.JsonObjectResult.ValidResultClassNotInstantiated.class);
         assertThat(result.isValid()).isFalse();
         assertThat(result.originalText()).isEqualTo(jsonString);
-        
-        Map<String, Object> jsonObject = ((JsonText.JsonObjectResult.ValidResultClassNotInstantiated) result).jsonObject();
+
+        Map<String, Object> jsonObject = ((JsonText.JsonObjectResult.ValidResultClassNotInstantiated) result)
+                .jsonObject();
         assertThat(jsonObject).containsEntry("name", "John Doe");
-        
+
         assertThat(((JsonText.JsonObjectResult.ValidResultClassNotInstantiated) result).className())
                 .isEqualTo("org.techbd.util.JsonTextTest$SyntheticDynamicClassFixtureWithImproperConstructor");
-        
+
         Exception exception = ((JsonText.JsonObjectResult.ValidResultClassNotInstantiated) result).exception();
         assertThat(exception).isNotNull();
     }
@@ -113,25 +120,25 @@ class JsonTextTest {
         String jsonString = "invalid json";
 
         JsonText.JsonObjectResult result = jsonText.getJsonObject(jsonString);
-        
+
         assertThat(result).isInstanceOf(JsonText.JsonObjectResult.InvalidResult.class);
         assertThat(result.isValid()).isFalse();
         assertThat(result.originalText()).isEqualTo(jsonString);
-        
+
         List<Exception> exceptions = ((JsonText.JsonObjectResult.InvalidResult) result).exceptions();
         assertThat(exceptions).hasSize(1)
-                              .first().isInstanceOf(com.fasterxml.jackson.core.JsonParseException.class);
+                .first().isInstanceOf(com.fasterxml.jackson.core.JsonParseException.class);
     }
 
     @Test
     void testSwitchMatcher() {
         String jsonString = """
-        {
-            "$class": "org.techbd.util.JsonTextTest$SyntheticDynamicClassFixture",
-            "name": "John Doe",
-            "age": 30
-        }
-        """;
+                {
+                    "$class": "org.techbd.util.JsonTextTest$SyntheticDynamicClassFixture",
+                    "name": "John Doe",
+                    "age": 30
+                }
+                """;
 
         JsonText.JsonObjectResult result = jsonText.getJsonObject(jsonString);
 
@@ -139,12 +146,12 @@ class JsonTextTest {
             case JsonText.JsonObjectResult.ValidUntypedResult validUntypedResult -> {
                 assertThat(validUntypedResult.isValid()).isTrue();
                 assertThat(validUntypedResult.jsonObject()).containsEntry("name", "John Doe")
-                                                           .containsEntry("age", 30);
+                        .containsEntry("age", 30);
             }
             case JsonText.JsonObjectResult.ValidResult<?> validResult -> {
                 assertThat(validResult.isValid()).isTrue();
                 assertThat(validResult.jsonObject()).containsEntry("name", "John Doe")
-                                                    .containsEntry("age", 30);
+                        .containsEntry("age", 30);
                 Object instance = validResult.instance();
                 assertThat(instance).isInstanceOf(SyntheticDynamicClassFixture.class);
                 SyntheticDynamicClassFixture myClassInstance = (SyntheticDynamicClassFixture) instance;
@@ -215,4 +222,59 @@ class JsonTextTest {
                     '}';
         }
     }
+
+    public record SyntheticBytesRecord(
+            @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class) byte[] data) {
+    }
+
+    @Test
+    void testSerializeValidJson() throws JsonProcessingException {
+        byte[] jsonData = "{\"key\":\"value\"}".getBytes();
+        SyntheticBytesRecord record = new SyntheticBytesRecord(jsonData);
+
+        String json = objectMapper.writeValueAsString(record);
+
+        assertThat(json).isEqualTo("{\"data\":{\"key\":\"value\"}}");
+    }
+
+    @Test
+    void testSerializeInvalidJson() throws JsonProcessingException {
+        byte[] stringData = "Hello, World!".getBytes();
+        SyntheticBytesRecord record = new SyntheticBytesRecord(stringData);
+
+        String json = objectMapper.writeValueAsString(record);
+
+        assertThat(json).isEqualTo("{\"data\":\"Hello, World!\"}");
+    }
+
+    @Test
+    void testSerializeEmptyJson() throws JsonProcessingException {
+        byte[] emptyData = "".getBytes();
+        SyntheticBytesRecord record = new SyntheticBytesRecord(emptyData);
+
+        String json = objectMapper.writeValueAsString(record);
+
+        assertThat(json).isEqualTo("{\"data\":null}");
+    }
+
+    @Test
+    void testSerializeNestedJson() throws JsonProcessingException {
+        byte[] nestedJsonData = "{\"nested\":{\"key\":\"value\"}}".getBytes();
+        SyntheticBytesRecord record = new SyntheticBytesRecord(nestedJsonData);
+
+        String json = objectMapper.writeValueAsString(record);
+
+        assertThat(json).isEqualTo("{\"data\":{\"nested\":{\"key\":\"value\"}}}");
+    }
+
+    @Test
+    void testSerializeArrayJson() throws JsonProcessingException {
+        byte[] arrayJsonData = "[{\"key1\":\"value1\"},{\"key2\":\"value2\"}]".getBytes();
+        SyntheticBytesRecord record = new SyntheticBytesRecord(arrayJsonData);
+
+        String json = objectMapper.writeValueAsString(record);
+
+        assertThat(json).isEqualTo("{\"data\":[{\"key1\":\"value1\"},{\"key2\":\"value2\"}]}");
+    }
+
 }
