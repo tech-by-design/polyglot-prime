@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.service.api.http.Helpers;
 import org.techbd.service.api.http.InteractionsFilter;
 
@@ -71,13 +72,16 @@ public class FhirController {
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
             @RequestHeader(value = SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_QE_IDENTIFIER, required = true) String tenantId,
-            @RequestParam(value = "fhirProfileUrl", required = false) String fhirProfileUrlParam,
+            @RequestParam(value = "profile", required = false) String fhirProfileUrlParam, // "profile" is the same name
+                                                                                           // that HL7 validator uses
             @RequestHeader(value = "TECH_BD_FHIR_SERVICE_STRUCT_DEFN_PROFILE_URI", required = false) String fhirProfileUrlHeader,
+            @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             HttpServletRequest request) {
 
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : defaultFhirProfileUrl;
         final var session = engine.session()
+                .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
                 .addHapiValidationEngine()
@@ -86,11 +90,13 @@ public class FhirController {
                 .build();
         engine.orchestrate(session);
 
-        // TODO: need option to add/remove `request` based on query param or header
-        final var result = Map.of(
-                "OperationOutcome",
-                Map.of("validationResults", session.getValidationResults(), "request",
-                        InteractionsFilter.getActiveRequestEnc(request)));
+        final var opOutcome = Map.of("validationResults", session.getValidationResults(), "device",
+                session.getDevice());
+        final var result = Map.of("OperationOutcome", opOutcome);
+        if (includeRequestInOutcome) {
+            opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
+        }
+
         return result;
     }
 

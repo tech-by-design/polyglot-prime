@@ -1,5 +1,7 @@
 package org.techbd.orchestrate.fhir;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -394,7 +396,23 @@ public class OrchestrationEngine {
         }
     }
 
+    public record Device(String deviceId, String deviceName) {
+        public static Device INSTANCE = createDefault();
+
+        public static Device createDefault() {
+            try {
+                InetAddress localHost = InetAddress.getLocalHost();
+                String ipAddress = localHost.getHostAddress();
+                String hostName = localHost.getHostName();
+                return new Device(ipAddress, hostName);
+            } catch (UnknownHostException e) {
+                return new Device("Unable to retrieve the localhost information", e.toString());
+            }
+        }
+    }
+
     public static class OrchestrationSession {
+        private final Device device;
         private final List<String> payloads;
         private final List<ValidationEngine> validationEngines;
         private final List<ValidationResult> validationResults;
@@ -405,6 +423,7 @@ public class OrchestrationEngine {
             this.validationEngines = Collections.unmodifiableList(builder.validationEngines);
             this.validationResults = new ArrayList<>();
             this.fhirProfileUrl = builder.fhirProfileUrl;
+            this.device = builder.device;
         }
 
         public List<String> getPayloads() {
@@ -417,6 +436,10 @@ public class OrchestrationEngine {
 
         public List<ValidationResult> getValidationResults() {
             return validationResults;
+        }
+
+        public Device getDevice() {
+            return device;
         }
 
         public String getFhirProfileUrl() {
@@ -436,12 +459,19 @@ public class OrchestrationEngine {
             private final OrchestrationEngine engine;
             private final List<String> payloads = new ArrayList<>();
             private final List<ValidationEngine> validationEngines = new ArrayList<>();
+            private Device device = Device.INSTANCE;
             private String fhirProfileUrl;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
             }
 
+            public Builder onDevice(@NotNull final Device device) {
+                this.device = device;
+                return this;
+            }
+
+            
             public Builder withPayloads(@NotNull final List<String> payloads) {
                 this.payloads.addAll(payloads);
                 return this;
