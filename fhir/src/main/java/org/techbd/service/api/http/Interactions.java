@@ -193,8 +193,9 @@ public class Interactions {
         public FileSysPersistence(final String fsHomeDefault, final Map<String, Object> args, final String origJson) {
             this.fsHome = fsHomeDefault;
             final var fsHome = args.get("home");
-            if (fsHome != null && fsHome instanceof String)
+            if (fsHome != null && fsHome instanceof String) {
                 this.fsHome = (String) fsHome;
+            }
         }
 
         public List<Header> persist(final @NotNull RequestResponseEncountered rre) {
@@ -240,8 +241,9 @@ public class Interactions {
         }
 
         public StrategyResult getStrategy() {
-            if (strategyJson() == null)
+            if (strategyJson() == null) {
                 return new StrategyResult.Persist(new DiagnosticPersistence());
+            }
 
             final var existing = PersistenceStrategy.CACHED.get(strategyJson());
             if (existing != null) {
@@ -268,6 +270,10 @@ public class Interactions {
                             case "aws-s3": {
                                 return new StrategyResult.Persist(this.cached(new BlobStorePersistence(
                                         validUntypedResult.jsonObject(), validUntypedResult.originalText())));
+                            }
+                            default: {
+                                // TODO: Handle the default behavior
+                                return null;
                             }
                         }
                     }
