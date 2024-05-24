@@ -33,7 +33,7 @@ class OrchestrationEngineTest {
         List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0).getValidationResults();
         assertThat(results).hasSize(1);
         assertThat(results.get(0).isValid()).isFalse();
-        assertThat(results.get(0).getIssues()).extracting("message").containsExactly("HAPI-1971: Unable to determine encoding (e.g. XML / JSON) on validation input. Is this a valid FHIR resource body?");
+        assertThat(results.get(0).getIssues()).extracting("message").containsExactly("HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: 'n' (must be '{')");
     }
 
     @Test
@@ -60,7 +60,7 @@ class OrchestrationEngineTest {
         assertThat(retrievedSession1.getValidationResults()).hasSize(1);
         assertThat(retrievedSession1.getValidationResults().get(0).isValid()).isFalse();
         assertThat(retrievedSession1.getValidationResults().get(0).getIssues()).extracting("message")
-            .containsExactly("HAPI-1971: Unable to determine encoding (e.g. XML / JSON) on validation input. Is this a valid FHIR resource body?");
+            .containsExactly("HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: 'p' (must be '{')");
 
         OrchestrationEngine.OrchestrationSession retrievedSession2 = engine.getSessions().get(1);
         assertThat(retrievedSession2.getPayloads()).containsExactly("payload2");
