@@ -10,11 +10,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import jakarta.validation.constraints.NotNull;
+import org.techbd.util.JsonText.JsonTextSerializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.StrictErrorHandler;
 import ca.uhn.fhir.validation.FhirValidator;
 import ca.uhn.fhir.validation.ValidationOptions;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * The {@code OrchestrationEngine} class is responsible for managing and
@@ -170,6 +174,8 @@ public class OrchestrationEngine {
         boolean isValid();
 
         List<ValidationIssue> getIssues();
+
+        String getOperationOutcome();
     }
 
     public record SourceLocation(Integer line, Integer column, String diagnostics) {
@@ -206,8 +212,18 @@ public class OrchestrationEngine {
         @Override
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             try {
-                final var hapiVR = validator.validateWithResult(payload, this.options);
+                final var strictParser = fhirContext.newJsonParser(); 
+                strictParser.setParserErrorHandler(new StrictErrorHandler());
+                final var parsedResource = strictParser.parseResource(payload);
+                final var hapiVR = validator.validateWithResult(parsedResource, this.options);
                 return new OrchestrationEngine.ValidationResult() {
+                    @Override
+                    @JsonSerialize(using = JsonTextSerializer.class)
+                    public String getOperationOutcome() {
+                        final var jp = FhirContext.forR4Cached().newJsonParser();
+                        return jp.encodeResourceToString(hapiVR.toOperationOutcome());
+                    }
+
                     @Override
                     public boolean isValid() {
                         return hapiVR.isSuccessful();
@@ -250,6 +266,11 @@ public class OrchestrationEngine {
 
             } catch (Exception e) {
                 return new OrchestrationEngine.ValidationResult() {
+                    @Override
+                    public String getOperationOutcome() {
+                        return null;
+                    }
+
                     @Override
                     public boolean isValid() {
                         return false;
@@ -315,6 +336,11 @@ public class OrchestrationEngine {
         public ValidationResult validate(@NotNull final String payload) {
             return new ValidationResult() {
                 @Override
+                public String getOperationOutcome() {
+                    return null;
+                }
+
+                @Override
                 public boolean isValid() {
                     return true;
                 }
@@ -360,6 +386,11 @@ public class OrchestrationEngine {
         @Override
         public ValidationResult validate(@NotNull final String payload) {
             return new ValidationResult() {
+                @Override
+                public String getOperationOutcome() {
+                    return null;
+                }
+
                 @Override
                 public boolean isValid() {
                     return true;

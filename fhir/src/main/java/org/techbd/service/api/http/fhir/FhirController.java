@@ -31,7 +31,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class FhirController {
     final OrchestrationEngine engine = new OrchestrationEngine();
 
-    @Value("${org.techbd.service.api.http.fhir.FhirController.defaultFhirProfileUrl:#{null}}")
+    @Value("${org.techbd.service.api.http.fhir.FhirController.defaultFhirProfileUrl:https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json}")
     private String defaultFhirProfileUrl;
 
     // retrieve from properties file which is injected from pom.xml
@@ -90,7 +90,8 @@ public class FhirController {
                 .build();
         engine.orchestrate(session);
 
-        final var opOutcome = Map.of("validationResults", session.getValidationResults(), "device",
+        final var opOutcome = Map.of("resourceType", "OperationOutcome", "validationResults",
+                session.getValidationResults(), "device",
                 session.getDevice());
         final var result = Map.of("OperationOutcome", opOutcome);
         if (includeRequestInOutcome) {

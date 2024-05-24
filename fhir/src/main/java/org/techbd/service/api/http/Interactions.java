@@ -279,6 +279,8 @@ public class Interactions {
                             }
                             // TODO case "sftp" should persist asynchronously to SFTP
                             // see https://github.com/hierynomus/sshj and https://ssh-comparison.quendi.de/comparison/cipher.html
+                            // TODO case "webhook" should use HTTP Client to post to given URL
+                            // see https://chatgpt.com/c/fc6defbd-55a8-4f93-a79d-ca2495bfe54a
                             default: {
                                 return null;
                             }
