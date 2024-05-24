@@ -1,14 +1,22 @@
 package org.techbd.service.api.http.fhir;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -112,4 +120,28 @@ public class FhirController {
     public List<?> observeRecentInteractions() {
         return new ArrayList<>(InteractionsFilter.interactions.getHistory().values());
     }
+
+    @Operation(summary = "Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.")
+    @GetMapping("/mock/shinny-data-lake/1115-validate/{resourcePath}.json")
+    public ResponseEntity<String> getJsonFile(
+            @PathVariable String resourcePath,
+            @RequestParam(required = false, defaultValue = "0") long simulateLifetimeMs) {
+        final var cpResourceName = "templates/mock/shinny-data-lake/1115-validate/" + resourcePath + ".json";
+        try {
+            if (simulateLifetimeMs > 0) {
+                Thread.sleep(simulateLifetimeMs);
+            }
+            ClassPathResource resource = new ClassPathResource(cpResourceName);
+            String content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            return new ResponseEntity<>(content, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<>(cpResourceName + " not found", HttpStatus.NOT_FOUND);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new ResponseEntity<>("Request interrupted", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }
