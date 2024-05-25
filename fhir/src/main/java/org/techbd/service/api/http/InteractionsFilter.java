@@ -1,7 +1,8 @@
 package org.techbd.service.api.http;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.techbd.util.ArtifactStore;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -93,30 +95,35 @@ public class InteractionsFilter extends OncePerRequestFilter {
         setActiveInteraction(mutatableReq, rre);
 
         // we want to find our persistence strategy in either properties or in header;
-        // because X-TechBD-Interaction-Persistence-Strategy is global, document it in SwaggerConfig.customGlobalHeaders
-        final var ps = new Interactions.PersistenceSuggestion(mutatableReq, defaultPersistStrategy,
-                fsPersistDefaultHome, Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY);
-        final var strategy = ps.getStrategy();
-        mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, ps.strategyJson());
-        if (strategy != null) {
-            mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_FACTORY, strategy.getClass().getName());
-            List<Interactions.Header> additionalHeaders = null;
-            switch (strategy) {
-                case Interactions.PersistenceSuggestion.StrategyResult.Persist p -> {
-                    final var instance = p.instance();
-                    mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_INSTANCE,
-                            instance.getClass().getName());
-                    additionalHeaders = instance.persist(rre);
-                }
-                case Interactions.PersistenceSuggestion.StrategyResult.Invalid invalid -> {
-                    additionalHeaders = invalid.headers();
-                }
-            }
-            if (additionalHeaders != null) {
-                for (Interactions.Header header : additionalHeaders) {
-                    mutatableResp.setHeader(header.name(), header.value());
-                }
-            }
+        // because X-TechBD-Interaction-Persistence-Strategy is global, document it in
+        // SwaggerConfig.customGlobalHeaders
+        final var sj = Optional
+                .ofNullable(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY))
+                .orElse(defaultPersistStrategy);
+        final var ps = new ArtifactStore.Builder().strategyJson(sj).defaultFsHome(fsPersistDefaultHome).build();
+        mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, sj);
+        if (ps != null) {
+            final AtomicInteger info = new AtomicInteger(0);
+            final AtomicInteger issue = new AtomicInteger(0);
+            mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_FACTORY,
+                    ps.getClass().getName());
+            ps.persist(ArtifactStore.jsonArtifact(rre, rre.interactionId().toString()),
+                    Optional.of(new ArtifactStore.PersistenceReporter() {
+                        @Override
+                        public void info(String message) {
+                            mutatableResp
+                                    .setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_INSTANCE
+                                            + "-Info-" + info.getAndIncrement(), message);
+                        }
+
+                        @Override
+                        public void issue(String message) {
+                            mutatableResp
+                                    .setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_INSTANCE
+                                            + "-Issue-" + issue.getAndIncrement(), message);
+                        }
+                    }));
+
         }
 
         // do this last, after all other mutations are completed
