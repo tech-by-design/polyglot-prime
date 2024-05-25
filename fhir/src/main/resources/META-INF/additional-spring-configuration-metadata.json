@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "org.techbd.service.api.http.fhir.app.version",
+      "type": "java.lang.String",
+      "description": "The active version, injected from pom.xml in application.properties via @project.version@"
+    },
+    {
+      "name": "org.techbd.service.api.http.fhir.app.default-sdoh-fhir-profile-url",
+      "type": "java.lang.String",
+      "description": "The default FHIR Profile used for principal validation of SDoH data"
+    }
+  ]
+}

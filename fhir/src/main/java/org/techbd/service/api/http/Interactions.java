@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,7 +21,7 @@ import java.util.stream.StreamSupport;
 
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
-import org.techbd.service.api.http.fhir.SwaggerConfig;
+import org.techbd.conf.Configuration;
 import org.techbd.util.JsonText;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
@@ -37,6 +38,23 @@ import jakarta.validation.constraints.NotNull;
 
 @Component
 public class Interactions {
+    public class Servlet {
+        public class HeaderName {
+            public static final String PREFIX = Configuration.Servlet.HeaderName.PREFIX + "Interaction-";
+
+            public class Request {
+                public static final String PERSISTENCE_STRATEGY = PREFIX + "Persistence-Strategy";
+            }
+
+            public class Response {
+                public static final String PERSISTENCE_STRATEGY_ARGS = PREFIX + "Persistence-Strategy-Args";
+                public static final String PERSISTENCE_STRATEGY_FACTORY = PREFIX + "Persistence-Strategy-Factory";
+                public static final String PERSISTENCE_STRATEGY_INSTANCE = PREFIX + "Persistence-Strategy-Instance";
+                public static final String PERSISTENCE_ERROR = PREFIX + "Persistence-Error";
+            }
+        }
+    }
+
     private static final int MAX_IN_MEMORY_HISTORY = 50;
     private static final JsonText jsonText = new JsonText();
     private static final ObjectMapper objectMapper = JsonMapper.builder()
@@ -67,14 +85,14 @@ public class Interactions {
         }
 
         public Tenant(final @NonNull HttpServletRequest request) {
-            this(request.getHeader(SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_QE_IDENTIFIER),
-                    request.getHeader(SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_QE_NAME));
+            this(request.getHeader(Configuration.Servlet.HeaderName.Request.TENANT_ID),
+                    request.getHeader(Configuration.Servlet.HeaderName.Request.TENANT_NAME));
         }
     }
 
     public record Header(String name, String value) {
         public static Header persistenceError(String message) {
-            return new Header(SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_PERSIST_ERROR, message);
+            return new Header(Servlet.HeaderName.Response.PERSISTENCE_ERROR, message);
         }
     }
 
@@ -171,8 +189,8 @@ public class Interactions {
         }
 
         public List<Header> persist(final @NotNull RequestResponseEncountered rre) {
-            return Arrays.asList(new Header("TECH_BD_INTERACTION_PERSISTENCE_RESULT",
-                    "[" + identifier + "] interactionId: " + rre.interactionId()));
+            return Arrays.asList(new Header(Servlet.HeaderName.PREFIX + "Result", MessageFormat.format(
+                    "[{0}] interactionId: {1}", identifier, rre.interactionId())));
         }
     }
 
@@ -188,7 +206,7 @@ public class Interactions {
 
         public List<Header> persist(final @NotNull RequestResponseEncountered rre) {
             // TODO: implement this to store asynchronously via jClouds API
-            return Arrays.asList(new Header("TECH_BD_INTERACTION_PERSISTENCE_RESULT", "AWS-object-id"));
+            return Arrays.asList(new Header(Servlet.HeaderName.PREFIX + "Result-AWS-S3-ID", "AWS-object-id"));
         }
     }
 
@@ -229,7 +247,7 @@ public class Interactions {
             }
 
             // return the location where the file was stored in the response header
-            return Arrays.asList(new Header("TECH_BD_INTERACTION_PERSISTENCE_FS_RESULT", formattedFilePath));
+            return Arrays.asList(new Header(Servlet.HeaderName.PREFIX + "fs-artifact", formattedFilePath));
         }
     }
 
@@ -278,7 +296,8 @@ public class Interactions {
                                         validUntypedResult.jsonObject(), validUntypedResult.originalText())));
                             }
                             // TODO case "sftp" should persist asynchronously to SFTP
-                            // see https://github.com/hierynomus/sshj and https://ssh-comparison.quendi.de/comparison/cipher.html
+                            // see https://github.com/hierynomus/sshj and
+                            // https://ssh-comparison.quendi.de/comparison/cipher.html
                             // TODO case "webhook" should use HTTP Client to post to given URL
                             // see https://chatgpt.com/c/fc6defbd-55a8-4f93-a79d-ca2495bfe54a
                             default: {

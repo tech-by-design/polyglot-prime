@@ -15,7 +15,6 @@ import javax.xml.xpath.XPathFactory;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -25,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.techbd.conf.Configuration;
 import org.techbd.service.api.http.Helpers;
 import org.w3c.dom.Document;
 
@@ -34,9 +34,7 @@ import jakarta.validation.constraints.NotNull;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 class FhirEndpointsTests {
-    // retrieve from properties file which is injected from pom.xml
-    @Value("${org.techbd.service.api.http.fhir.FhirApplication.version}")
-    private String appVersion;
+    private final FhirAppConfiguration appConfig;        
 
 	@LocalServerPort
 	private int port;
@@ -46,6 +44,11 @@ class FhirEndpointsTests {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired
+	public FhirEndpointsTests(final FhirAppConfiguration appConfig) {
+        this.appConfig = appConfig;
+    }
 
 	protected String getTestServerUrl(final @NotNull String path) {
 		return "http://localhost:" + port + path;
@@ -66,13 +69,13 @@ class FhirEndpointsTests {
 		XPathExpression expression = xPath.compile("/CapabilityStatement/software/version/@value");
 		String version = (String) expression.evaluate(document, XPathConstants.STRING);
 
-		assertThat(version).isNotEmpty().isEqualTo(appVersion);
+		assertThat(version).isNotEmpty().isEqualTo(appConfig.getVersion());
 	}
 
 	Map<?, ?> getBundleValidateResult(final @NotNull String fixtureFilename) throws Exception {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.add(SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_QE_IDENTIFIER, "unit-test");
+		headers.add(Configuration.Servlet.HeaderName.Request.TENANT_ID, "unit-test");
 
 		HttpEntity<String> requestEntity = new HttpEntity<>(fixtureContent(fixtureFilename), headers);
 

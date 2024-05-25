@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
-import org.techbd.service.api.http.fhir.SwaggerConfig;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -94,18 +93,18 @@ public class InteractionsFilter extends OncePerRequestFilter {
         setActiveInteraction(mutatableReq, rre);
 
         // we want to find our persistence strategy in either properties or in header;
-        // because TECH_BD_INTERACTION_PERSISTENCE is global, document it in SwaggerConfig.customGlobalHeaders
+        // because X-TechBD-Interaction-Persistence-Strategy is global, document it in SwaggerConfig.customGlobalHeaders
         final var ps = new Interactions.PersistenceSuggestion(mutatableReq, defaultPersistStrategy,
-                fsPersistDefaultHome, SwaggerConfig.REQ_HEADER_TECH_BD_INTERACTION_PERSISTENCE);
+                fsPersistDefaultHome, Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY);
         final var strategy = ps.getStrategy();
-        mutatableResp.setHeader(SwaggerConfig.RESP_HEADER_TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_ARGS, ps.strategyJson());
+        mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, ps.strategyJson());
         if (strategy != null) {
-            mutatableResp.setHeader(SwaggerConfig.RESP_HEADER_TECH_BD_INTERACTION_PERSISTENCE_STRATEGY, strategy.getClass().getName());
+            mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_FACTORY, strategy.getClass().getName());
             List<Interactions.Header> additionalHeaders = null;
             switch (strategy) {
                 case Interactions.PersistenceSuggestion.StrategyResult.Persist p -> {
                     final var instance = p.instance();
-                    mutatableResp.setHeader(SwaggerConfig.RESP_HEADER_TECH_BD_INTERACTION_PERSISTENCE_STRATEGY_INSTANCE,
+                    mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_INSTANCE,
                             instance.getClass().getName());
                     additionalHeaders = instance.persist(rre);
                 }

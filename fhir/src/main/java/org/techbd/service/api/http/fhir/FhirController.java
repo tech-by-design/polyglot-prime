@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,14 +21,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.service.api.http.Helpers;
 import org.techbd.service.api.http.InteractionsFilter;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,29 +35,26 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 @Tag(name = "FHIR Endpoints", description = "FHIR Bundles API")
 public class FhirController {
-    final OrchestrationEngine engine = new OrchestrationEngine();
+    private final OrchestrationEngine engine = new OrchestrationEngine();
+    private final FhirAppConfiguration appConfig;
 
-    @Value("${org.techbd.service.api.http.fhir.FhirController.defaultFhirProfileUrl:https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json}")
-    private String defaultFhirProfileUrl;
-
-    // retrieve from properties file which is injected from pom.xml
-    @Value("${org.techbd.service.api.http.fhir.FhirApplication.version}")
-    private String appVersion;
+    public FhirController(final FhirAppConfiguration appConfig) {
+        this.appConfig = appConfig;
+    }
 
     @GetMapping("/")
     public String home(final Model model) {
-        model.addAttribute("version", this.appVersion);
+        model.addAttribute("version", appConfig.getVersion());
         model.addAttribute("interactionsCount", InteractionsFilter.interactions.getHistory().size());
         return "index";
     }
 
-    @GetMapping("/metadata")
+    @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
     @Operation(summary = "FHIR server's conformance statement")
-    @ApiResponse(responseCode = "200", content = { @Content(mediaType = "application/xml") })
     public String metadata(final Model model, HttpServletRequest request) {
         final var baseUrl = Helpers.getBaseUrl(request);
 
-        model.addAttribute("version", this.appVersion);
+        model.addAttribute("version", appConfig.getVersion());
         model.addAttribute("implUrlValue", baseUrl);
         model.addAttribute("opDefnValue", baseUrl + "/OperationDefinition/Bundle--validate");
 
@@ -79,15 +74,15 @@ public class FhirController {
     @PostMapping(value = { "/Bundle/$validate" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
-            @RequestHeader(value = SwaggerConfig.REQ_HEADER_TECH_BD_FHIR_SERVICE_QE_IDENTIFIER, required = true) String tenantId,
-            @RequestParam(value = "profile", required = false) String fhirProfileUrlParam, // "profile" is the same name
-                                                                                           // that HL7 validator uses
-            @RequestHeader(value = "TECH_BD_FHIR_SERVICE_STRUCT_DEFN_PROFILE_URI", required = false) String fhirProfileUrlHeader,
+            @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
+            // "profile" is the same name that HL7 validator uses
+            @RequestParam(value = "profile", required = false) String fhirProfileUrlParam, 
+            @RequestHeader(value = FhirAppConfiguration.Servlet.HeaderName.Request.STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             HttpServletRequest request) {
 
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
-                : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : defaultFhirProfileUrl;
+                : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
         final var session = engine.session()
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
