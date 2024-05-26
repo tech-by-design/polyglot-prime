@@ -12,6 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.util.ArtifactStore;
+import org.techbd.util.ArtifactStore.Artifact;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,9 +26,6 @@ import jakarta.servlet.http.HttpServletResponse;
 public class InteractionsFilter extends OncePerRequestFilter {
     @Value("${org.techbd.service.api.http.interactions.default-persist-strategy:#{null}}")
     private String defaultPersistStrategy;
-
-    @Value("${org.techbd.service.api.http.interactions.fs-persist-home:#{null}}")
-    private String fsPersistDefaultHome = System.getProperty("user.dir");
 
     public static final Interactions interactions = new Interactions();
 
@@ -100,7 +98,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var sj = Optional
                 .ofNullable(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY))
                 .orElse(defaultPersistStrategy);
-        final var ps = new ArtifactStore.Builder().strategyJson(sj).defaultFsHome(fsPersistDefaultHome).build();
+        final var ps = new ArtifactStore.Builder().strategyJson(sj).build();
         mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, sj);
         if (ps != null) {
             final AtomicInteger info = new AtomicInteger(0);
@@ -121,6 +119,11 @@ public class InteractionsFilter extends OncePerRequestFilter {
                             mutatableResp
                                     .setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_INSTANCE
                                             + "-Issue-" + issue.getAndIncrement(), message);
+                        }
+
+                        @Override
+                        public void persisted(Artifact artifact, String... location) {
+                            // not doing anything with this yet
                         }
                     }));
 

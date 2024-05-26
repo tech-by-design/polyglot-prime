@@ -44,10 +44,14 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.github.bxforce</groupId>
+			<artifactId>commons-vfs2-spring-boot-starter</artifactId>
+			<version>1.0.1-RELEASE</version>
+		</dependency>		
+		<dependency>
 			<groupId>org.thymeleaf.extras</groupId>
 			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>

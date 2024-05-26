@@ -2,119 +2,145 @@ package org.techbd.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-class ArtifactStoreTest {
-
-    @TempDir
-    Path tempDir;
+public class ArtifactStoreTest {
 
     @Test
-    void testDiagnosticPersistence() {
-        ArtifactStore.PersistenceStrategy strategy = new ArtifactStore.DiagnosticPersistence();
+    void testDefaultStrategyWhenNoJsonProvided() {
+        final var builder = new ArtifactStore.Builder();
+        final var strategy = builder.build();
 
-        Map<String, String> report = new HashMap<>();
-        strategy.persist(ArtifactStore.jsonArtifact(Map.of("key", "value"), "testArtifactId"), Optional.of(new ArtifactStore.PersistenceReporter() {
-            @Override
-            public void info(String message) {
-                report.put("info", message);
-            }
+        assertThat(strategy).isInstanceOf(ArtifactStore.DiagnosticPersistence.class);
 
-            @Override
-            public void issue(String message) {
-                report.put("issue", message);
-            }
-        }));
+        final var artifact = createTestArtifact("testId");
+        final var reporter = createTestReporter();
+        strategy.persist(artifact, Optional.of(reporter));
 
-        assertThat(report).containsKey("info");
+        assertThat(reporter.getInfoMessages()).containsExactly("[DiagnosticPersistence] artifactId: testId");
     }
 
     @Test
-    void testFileSysPersistence() throws IOException {
-        Path ramDisk = Files.createTempDirectory(tempDir, "ramdisk");
-        ArtifactStore.PersistenceStrategy strategy = new ArtifactStore.FileSysPersistence(ramDisk.toString(), Map.of());
+    void testSingleStrategyFromJson() throws Exception {
+        final var builder = new ArtifactStore.Builder()
+                .strategyJson("{\"nature\": \"fs\", \"fsPath\": \"/tmp/${artifactId}.json\"}")
+                .defaultFsHome("/tmp");
 
-        Map<String, String> report = new HashMap<>();
-        strategy.persist(ArtifactStore.jsonArtifact(Map.of("key", "value"), "testArtifactId"), Optional.of(new ArtifactStore.PersistenceReporter() {
-            @Override
-            public void info(String message) {
-                report.put("info", message);
-            }
+        final var strategy = builder.build();
 
-            @Override
-            public void issue(String message) {
-                report.put("issue", message);
-            }
-        }));
+        assertThat(strategy).isInstanceOf(ArtifactStore.LocalFsPersistence.class);
+        final var localFsStrategy = (ArtifactStore.LocalFsPersistence) strategy;
+        assertThat(localFsStrategy.initArgs().get("nature")).isEqualTo("fs");
+        assertThat(localFsStrategy.initArgs().get("basePath")).isEqualTo("/tmp");
 
-        assertThat(report).containsKey("info");
+        final var artifact = createTestArtifact("testId");
+        final var reporter = createTestReporter();
+        strategy.persist(artifact, Optional.of(reporter));
 
-        String filePath = report.get("info").split(": ")[1];
-        assertThat(Files.exists(Path.of(filePath))).isTrue();
-
-        String content = Files.readString(Path.of(filePath));
-        assertThat(content).contains("\"key\" : \"value\"");
+        final var fsPath = Path.of("/tmp/testId.json");
+        assertThat(Files.exists(fsPath)).isTrue();
+        assertThat(reporter.getInfoMessages()).containsExactly("[persist-fs testId] /tmp/testId.json");
     }
 
     @Test
-    void testBuilderWithDiagnosticPersistence() {
-        ArtifactStore.Builder builder = new ArtifactStore.Builder();
-        ArtifactStore.PersistenceStrategy strategy = builder.build();
+    void testAggregateStrategyFromJson() {
+        final var builder = new ArtifactStore.Builder()
+                .strategyJson(
+                        "[{\"nature\": \"fs\", \"fsPath\": \"/tmp/${artifactId}.json\"}, {\"nature\": \"diagnostics\"}]")
+                .defaultFsHome("/tmp");
 
-        Map<String, String> report = new HashMap<>();
-        strategy.persist(ArtifactStore.jsonArtifact(Map.of("key", "value"), "testArtifactId"), Optional.of(new ArtifactStore.PersistenceReporter() {
-            @Override
-            public void info(String message) {
-                report.put("info", message);
-            }
+        final var strategy = builder.build();
 
-            @Override
-            public void issue(String message) {
-                report.put("issue", message);
-            }
-        }));
+        assertThat(strategy).isInstanceOf(ArtifactStore.AggregatePersistence.class);
+        final var aggregateStrategy = (ArtifactStore.AggregatePersistence) strategy;
+        assertThat(aggregateStrategy.strategies()).hasSize(2);
+        assertThat(aggregateStrategy.strategies().get(0)).isInstanceOf(ArtifactStore.LocalFsPersistence.class);
+        assertThat(aggregateStrategy.strategies().get(1)).isInstanceOf(ArtifactStore.DiagnosticPersistence.class);
 
-        assertThat(report).containsKey("info");
+        final var artifact = createTestArtifact("testId");
+        final var reporter = createTestReporter();
+        strategy.persist(artifact, Optional.of(reporter));
+
+        final var fsPath = Path.of("/tmp/testId.json");
+        assertThat(Files.exists(fsPath)).isTrue();
+        assertThat(reporter.getInfoMessages()).contains("[persist-fs testId] /tmp/testId.json",
+                "[DiagnosticPersistence] artifactId: testId");
     }
 
     @Test
-    void testBuilderWithFileSysPersistence() throws IOException {
-        String fsHome = tempDir.toString();
-        String strategyJson = "{\"nature\": \"fs\", \"home\": \"" + fsHome + "\"}";
+    void testInvalidJsonHandling() {
+        final var builder = new ArtifactStore.Builder()
+                .strategyJson("invalid json");
 
-        ArtifactStore.Builder builder = new ArtifactStore.Builder()
-                .strategyJson(strategyJson)
-                .defaultFsHome(fsHome);
+        final var strategy = builder.build();
 
-        ArtifactStore.PersistenceStrategy strategy = builder.build();
+        assertThat(strategy).isInstanceOf(ArtifactStore.InvalidPersistenceStrategy.class);
 
-        Map<String, String> report = new HashMap<>();
-        strategy.persist(ArtifactStore.jsonArtifact(Map.of("key", "value"), "testArtifactId"), Optional.of(new ArtifactStore.PersistenceReporter() {
-            @Override
-            public void info(String message) {
-                report.put("info", message);
-            }
+        final var artifact = createTestArtifact("testId");
+        final var reporter = createTestReporter();
+        strategy.persist(artifact, Optional.of(reporter));
 
-            @Override
-            public void issue(String message) {
-                report.put("issue", message);
-            }
-        }));
+        assertThat(reporter.getIssueMessages()).isNotEmpty();
+    }
 
-        assertThat(report).containsKey("info");
+    @Test
+    void testUnknownNatureInJson() {
+        final var strategyJson = "{\"nature\": \"unknown\"}";
+        final var builder = new ArtifactStore.Builder()
+                .strategyJson(strategyJson);
 
-        String filePath = report.get("info").split(": ")[1];
-        assertThat(Files.exists(Path.of(filePath))).isTrue();
+        final var strategy = builder.build();
 
-        String content = Files.readString(Path.of(filePath));
-        assertThat(content).contains("\"key\" : \"value\"");
+        assertThat(strategy).isInstanceOf(ArtifactStore.InvalidPersistenceNature.class);
+
+        final var artifact = createTestArtifact("testId");
+        final var reporter = createTestReporter();
+        strategy.persist(artifact, Optional.of(reporter));
+
+        assertThat(reporter.getIssueMessages()).containsExactly("[InvalidPersistenceNature unknown] artifactId: testId");
+    }
+
+    private ArtifactStore.Artifact createTestArtifact(String artifactId) {
+        return ArtifactStore.jsonArtifact(Map.of("key", "value"), artifactId);
+    }
+
+    private TestReporter createTestReporter() {
+        return new TestReporter();
+    }
+
+    static class TestReporter implements ArtifactStore.PersistenceReporter {
+        private final List<String> infoMessages = new ArrayList<>();
+        private final List<String> issueMessages = new ArrayList<>();
+        private final List<String> persisted = new ArrayList<>();
+
+        @Override
+        public void persisted(ArtifactStore.Artifact artifact, String... locations) {
+            persisted.addAll(List.of(locations));
+        }
+
+        @Override
+        public void info(String message) {
+            infoMessages.add(message);
+        }
+
+        @Override
+        public void issue(String message) {
+            issueMessages.add(message);
+        }
+
+        public List<String> getInfoMessages() {
+            return infoMessages;
+        }
+
+        public List<String> getIssueMessages() {
+            return issueMessages;
+        }
     }
 }
