@@ -48,9 +48,12 @@ public class SwaggerConfig {
                         Based on which strategy is chosen, the Response Headers will include `%s*` values.
 
                         - Default: `{ "nature": "diagnostics" }`
-                        - File system: `{ "nature": "fs", "home": "TECHBD_INTERACTIONS" }`
-                        - SFTP: TODO `{ "nature": "sftp", "arg1": 1, "arg2": 2 }`
+                        - File system: `{ "nature": "fs", "fsPath": "${cwd()}/TECHBD_INTERACTIONS/${formattedDateNow('yyyy/MM/dd/HH')}/${artifactId}.json" }`
+                        - VFS TempFS: `{ "nature": "vfs", "vfsUri": "tmp://techbd.org/interaction-artifacts/${formattedDateNow('yyyy/MM/dd/HH')}/${artifactId}.json" }`
+                        - VFS SFTP: `{ "nature": "vfs", "vfsUri": "sftp://*****:******@sftp.example.com:22/log/synthetic.fhir.api.techbd.org/{{TECH_BD_FHIR_SERVICE_QE_IDENTIFIER}}/interaction-artifacts/${formattedDateNow('yyyy/MM/dd/HH')}/${artifactId}.json" }`
                         - BlobStore: TODO `{ "nature": "aws-s3", "arg1": 1, "arg2": 2 }`
+
+                        ${cwd()} refers to current working directory (CWD) on the API server, ${artifactId} refers to the `interactionId`.
                         """, Interactions.Servlet.HeaderName.PREFIX))
                     .required(false);
                     

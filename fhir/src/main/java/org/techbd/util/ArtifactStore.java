@@ -95,14 +95,13 @@ public class ArtifactStore {
 
     public record LocalFsPersistence(Map<String, Object> initArgs, InterpolateEngine ie)
             implements PersistenceStrategy {
-        public static final String REQUIRED_ARG_BASEPATH = "basePath";
         public static final String ARG_FS_PATH = "fsPath";
         public static final String FS_PATH_DEFAULT = String.format(
-                "${%s}/${formattedDateNow('yyyy/MM/dd/HH')}/${%s}.json",
-                REQUIRED_ARG_BASEPATH, REQUIRED_ARG_ARTIFACT_ID);
+                "${cwd()}/ArtifactStore-LocalFsPersistence/${formattedDateNow('yyyy/MM/dd/HH')}/${%s}.json",
+                REQUIRED_ARG_ARTIFACT_ID);
 
         LocalFsPersistence(Map<String, Object> initArgs) {
-            this(initArgs, new InterpolateEngine(initArgs, REQUIRED_ARG_BASEPATH, REQUIRED_ARG_ARTIFACT_ID));
+            this(initArgs, new InterpolateEngine(initArgs, REQUIRED_ARG_ARTIFACT_ID));
         }
 
         @Override
@@ -114,7 +113,9 @@ public class ArtifactStore {
 
             Path path = Path.of(fsPath);
             try {
-                Files.createDirectories(path.getParent());
+                final var parentPath = path.getParent();
+                if (parentPath != null)
+                    Files.createDirectories(path.getParent());
                 try (Reader reader = artifact.getReader();
                         Writer writer = Files.newBufferedWriter(path)) {
                     reader.transferTo(writer);
@@ -129,7 +130,7 @@ public class ArtifactStore {
 
             reporter.ifPresent(r -> {
                 r.persisted(artifact, fsPath);
-                r.info(String.format("[persist-fs %s] %s", artifactId, fsPath));
+                r.info(String.format("[persist-fs %s] %s", artifactId, path.toAbsolutePath()));
             });
         }
     }

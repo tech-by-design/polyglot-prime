@@ -29,16 +29,15 @@ public class ArtifactStoreTest {
 
     @Test
     void testSingleStrategyFromJson() throws Exception {
+        // `fsPath` can be an expression with ${artifactId} will be replaced at runtime.
         final var builder = new ArtifactStore.Builder()
-                .strategyJson("{\"nature\": \"fs\", \"fsPath\": \"/tmp/${artifactId}.json\"}")
-                .defaultFsHome("/tmp");
+                .strategyJson("{\"nature\": \"fs\", \"fsPath\": \"/tmp/${artifactId}.json\"}");
 
         final var strategy = builder.build();
 
         assertThat(strategy).isInstanceOf(ArtifactStore.LocalFsPersistence.class);
         final var localFsStrategy = (ArtifactStore.LocalFsPersistence) strategy;
         assertThat(localFsStrategy.initArgs().get("nature")).isEqualTo("fs");
-        assertThat(localFsStrategy.initArgs().get("basePath")).isEqualTo("/tmp");
 
         final var artifact = createTestArtifact("testId");
         final var reporter = createTestReporter();
@@ -53,8 +52,7 @@ public class ArtifactStoreTest {
     void testAggregateStrategyFromJson() {
         final var builder = new ArtifactStore.Builder()
                 .strategyJson(
-                        "[{\"nature\": \"fs\", \"fsPath\": \"/tmp/${artifactId}.json\"}, {\"nature\": \"diagnostics\"}]")
-                .defaultFsHome("/tmp");
+                        "[{\"nature\": \"fs\", \"fsPath\": \"/tmp/${artifactId}.json\"}, {\"nature\": \"diagnostics\"}]");
 
         final var strategy = builder.build();
 
