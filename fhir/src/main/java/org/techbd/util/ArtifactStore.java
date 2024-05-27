@@ -10,10 +10,6 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,8 +19,6 @@ import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.sql.DataSource;
-
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.VFS;
@@ -32,6 +26,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.techbd.sql.ArtifactsDataSource;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -304,84 +299,22 @@ public class ArtifactStore {
         }
     }
 
-    public record JdbcPersistence(Map<String, Object> initArgs, InterpolateEngine ie, String sql,
-            PreparedStatement preparedStmt)
+    public record JdbcPersistence(ArtifactsDataSource artifactDataSrc)
             implements ArtifactStore.PersistenceStrategy {
-
-        public static final String ARG_SQL = "sql";
-
-        public JdbcPersistence(final Map<String, Object> initArgs, final String sql,
-                final PreparedStatement preparedStmt)
-                throws SQLException {
-            this(initArgs, new InterpolateEngine(initArgs, REQUIRED_ARG_ARTIFACT_ID), sql, preparedStmt);
-        }
 
         @Override
         public void persist(@NotNull ArtifactStore.Artifact artifact,
                 @NotNull Optional<ArtifactStore.PersistenceReporter> reporter) {
-            // Read artifact content
-            StringWriter content = new StringWriter();
-            try (Reader reader = artifact.getReader()) {
-                reader.transferTo(content);
-            } catch (IOException e) {
-                reporter.ifPresent(r -> r.issue("Failed to read artifact content: " + e.toString()));
-                return;
-            }
 
-            try {
-                final var artifactId = artifact.getArtifactId();
-                preparedStmt.setString(0, artifactId);
-                preparedStmt.setString(1, content.toString());
-                final var result = preparedStmt.executeUpdate();
+            final var result = artifactDataSrc.persistArtifact(artifact);
+            if (result.isEmpty()) {
                 reporter.ifPresent(r -> {
-                    r.persisted(artifact, Integer.toString(result));
-                    r.info(String.format("Data inserted successfully (%s) using %s", result, sql()));
+                    r.persisted(artifact, artifact.getArtifactId());
+                    r.info(String.format("Artifact %s inserted in data source", artifact.getArtifactId()));
                 });
-            } catch (SQLException e) {
-                reporter.ifPresent(r -> r.issue("Failed to execute SQL insert: " + e.toString()));
-            }
-        }
 
-        static PersistenceStrategy of(final ApplicationContext applicationContext, final String argsJson,
-                final Map<String, Object> args) {
-            if (applicationContext == null) {
-                return new InvalidPersistenceStrategy(argsJson,
-                        new Exception("Spring ApplicationContext is NULL in ArtifactStore.JdbcPersistence.of"));
-            }
-
-            final InterpolateEngine ie = new InterpolateEngine(args);
-            final var sql = ie.interpolate(Optional.ofNullable(args.get(ARG_SQL))
-                    .orElse("INSERT INTO artifact(artifact_id, artifact_json) VALUES (?, ?)")
-                    .toString());
-
-            try {
-                Connection conn = null;
-                final var dataSourceName = (String) args.get("dsName");
-                if (dataSourceName != null) {
-                    // see if there's a pre-configured Spring Boot 3 connection available
-                    final var dataSource = (DataSource) applicationContext.getBean(ie.interpolate(dataSourceName),
-                            DataSource.class);
-                    conn = dataSource.getConnection();
-                } else {
-                    // build our own from URL
-                    final var url = (String) args.get("url");
-                    if (url != null) {
-                        conn = DriverManager.getConnection(ie.interpolate(url));
-                    } else {
-                        return new InvalidPersistenceStrategy(argsJson,
-                                new Exception(
-                                        "no JDBC Connection available via `name` or `url` in ArtifactStore.JdbcPersistence.of"));
-                    }
-                }
-
-                if (conn != null) {
-                    return new JdbcPersistence(args, sql, conn.prepareStatement(sql));
-                } else {
-                    return new InvalidPersistenceStrategy(argsJson,
-                            new Exception("JDBC Connection is NULL in ArtifactStore.JdbcPersistence.of"));
-                }
-            } catch (SQLException e) {
-                return new InvalidPersistenceStrategy(argsJson, e);
+            } else {
+                reporter.ifPresent(r -> r.issue("Failed to execute SQL insert: " + result.get().toString()));
             }
         }
     }
@@ -401,6 +334,7 @@ public class ArtifactStore {
 
         private String strategyJson;
         private JavaMailSender mailSender;
+        @SuppressWarnings("unused")
         private ApplicationContext appCtx;
 
         public Builder strategyJson(String strategyJson) {
@@ -426,7 +360,9 @@ public class ArtifactStore {
                     case "diags", "diagnostics" -> DIAGNOSTIC_DEFAULT;
                     case "email" -> new EmailPersistence(args, mailSender);
                     case "fs" -> new LocalFsPersistence(args);
-                    case "jdbc" -> JdbcPersistence.of(appCtx, origJson, args);
+                    case "duckdb" -> new JdbcPersistence(
+                            new ArtifactsDataSource.DuckDbBuilder().userDirFsPath("interactions.duckdb")
+                                    .userAgentArgs(args).build());
                     case "vfs" -> new VirtualFsPersistence(args);
                     default -> new InvalidPersistenceNature(nature);
                 };
