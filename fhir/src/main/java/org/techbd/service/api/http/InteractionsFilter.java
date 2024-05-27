@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -26,6 +28,9 @@ import jakarta.servlet.http.HttpServletResponse;
 public class InteractionsFilter extends OncePerRequestFilter {
     @Value("${org.techbd.service.api.http.interactions.default-persist-strategy:#{null}}")
     private String defaultPersistStrategy;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     public static final Interactions interactions = new Interactions();
 
@@ -98,7 +103,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var sj = Optional
                 .ofNullable(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY))
                 .orElse(defaultPersistStrategy);
-        final var ps = new ArtifactStore.Builder().strategyJson(sj).build();
+        final var ps = new ArtifactStore.Builder().strategyJson(sj).mailSender(mailSender).build();
         mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, sj);
         if (ps != null) {
             final AtomicInteger info = new AtomicInteger(0);
