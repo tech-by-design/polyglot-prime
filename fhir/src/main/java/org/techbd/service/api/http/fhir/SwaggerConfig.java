@@ -50,7 +50,8 @@ public class SwaggerConfig {
                         - Default: `{ "nature": "diagnostics" }`
                         - File system: `{ "nature": "fs", "fsPath": "${cwd()}/TECHBD_INTERACTIONS/${formattedDateNow('yyyy/MM/dd/HH')}/${artifactId}.json" }`
                         - VFS TempFS: `{ "nature": "vfs", "vfsUri": "tmp://techbd.org/interaction-artifacts/${formattedDateNow('yyyy/MM/dd/HH')}/${artifactId}.json" }`
-                        - Email: `{ "nature": "email", "from": "toroj11859@qiradio.com", "to": "toroj11859@qiradio.com", "subject": "test FHIR email" }`
+                        - Email: `{ "nature": "email", "from": "support@techbd.org", "to": "toroj11859@qiradio.com", "subject": "test FHIR email" }`
+                        - JDBC: `{ "nature": "jdbc", "dsName": "Spring-Boot-3-configured-name" }` or `{ "nature": "jdbc", "url": "jdbc://${env('USER')}:${env('PASSWD')}@host..." }`
                         - VFS SFTP: `{ "nature": "vfs", "vfsUri": "sftp://*****:******@sftp.example.com:22/log/synthetic.fhir.api.techbd.org/{{TECH_BD_FHIR_SERVICE_QE_IDENTIFIER}}/interaction-artifacts/${formattedDateNow('yyyy/MM/dd/HH')}/${artifactId}.json" }`
                         - BlobStore: TODO `{ "nature": "aws-s3", "arg1": 1, "arg2": 2 }`
 

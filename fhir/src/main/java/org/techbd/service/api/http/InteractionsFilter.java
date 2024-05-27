@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -31,6 +32,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private ApplicationContext appContext;
 
     public static final Interactions interactions = new Interactions();
 
@@ -103,7 +107,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var sj = Optional
                 .ofNullable(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY))
                 .orElse(defaultPersistStrategy);
-        final var ps = new ArtifactStore.Builder().strategyJson(sj).mailSender(mailSender).build();
+        final var ps = new ArtifactStore.Builder().strategyJson(sj).mailSender(mailSender).appContext(appContext)
+                .build();
         mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, sj);
         if (ps != null) {
             final AtomicInteger info = new AtomicInteger(0);
