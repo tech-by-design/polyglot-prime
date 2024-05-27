@@ -29,3 +29,14 @@ jobs:
         cache: maven
     - name: Build the project artifacts with Maven (will test automatically)
       run: cd fhir && mvn site
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./fhir/target/site
