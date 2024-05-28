@@ -79,7 +79,7 @@ public class FhirController {
             @RequestParam(value = "profile", required = false) String fhirProfileUrlParam, 
             @RequestHeader(value = FhirAppConfiguration.Servlet.HeaderName.Request.STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
-            HttpServletRequest request) {
+            final HttpServletRequest request) {
 
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
@@ -105,7 +105,8 @@ public class FhirController {
     }
 
     @GetMapping("/admin/observe/interactions")
-    public String observeInteractions() {
+    public String observeInteractions(final Model model, final HttpServletRequest request) {
+        model.addAttribute("contextPath", request.getContextPath());
         return "interactions";
     }
 
