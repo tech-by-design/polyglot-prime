@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -23,18 +24,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.jdbc.datasource.init.ScriptException;
-import org.techbd.util.ArtifactStore.Artifact;
 import org.techbd.util.ArtifactStore;
+import org.techbd.util.ArtifactStore.Artifact;
 import org.techbd.util.InterpolateEngine;
 
 public class ArtifactsDataSource {
     private static final Logger LOG = LoggerFactory.getLogger(ArtifactsDataSource.class);
     private final DataSource dataSource;
     private final Optional<Exception> dsException;
+    private final BiFunction<Connection, ArtifactRecord, Optional<Exception>> persistDelegate;
 
-    private ArtifactsDataSource(final DataSource dataSource, final Optional<Exception> dsException) {
+    public ArtifactsDataSource(final DataSource dataSource, final Optional<Exception> dsException,
+            BiFunction<Connection, ArtifactRecord, Optional<Exception>> persistDelegate) {
         this.dataSource = dataSource;
         this.dsException = dsException;
+        this.persistDelegate = persistDelegate;
     }
 
     public Optional<Exception> dsException() {
@@ -63,29 +67,139 @@ public class ArtifactsDataSource {
                 return Optional.of(e);
             }
 
+            return persistDelegate.apply(conn, new ArtifactRecord(
+                    artifact.getArtifactId(),
+                    artifact.getNamespace(),
+                    content.toString(),
+                    "application/json",
+                    ArtifactStore.toJsonText(artifact.getProvenance())));
+        } catch (SQLException e) {
+            return Optional.of(e);
+        }
+    }
+
+    public record ArtifactRecord(String artifactId, String namespace, String content, String contentType,
+            String provenance) {
+    }
+
+    public static class PostgreSqlBuilder {
+        private static final Pattern MIGRATABLE_SCRIPT_PATTERN = Pattern.compile("^\\d+.*\\.pg\\.sql$");
+        private String url = "jdbc:postgresql://hostname/database-name?user=*****&password=*****&sslmode=require";
+        private String scriptsPath = "sql/artifact";
+        private BiFunction<Connection, ArtifactRecord, Optional<Exception>> persistFn = PostgreSqlBuilder::insertPersist;
+
+        public PostgreSqlBuilder url(final String url) {
+            this.url = url;
+            return this;
+        }
+
+        public PostgreSqlBuilder scriptsPath(final String scriptPath) {
+            this.scriptsPath = scriptPath;
+            return this;
+        }
+
+        public PostgreSqlBuilder userAgentArgs(final Map<String, Object> args) {
+            final var ie = new InterpolateEngine(args);
+
+            Optional.ofNullable(args.get("url"))
+                    .ifPresent(url -> url(ie.interpolate(url.toString())));
+
+            Optional.ofNullable(args.get("persistFn"))
+                    .ifPresent(persistFnValue -> {
+                        switch (persistFnValue.toString()) {
+                            case "insertDML" -> persistFn(PostgreSqlBuilder::insertPersist);
+                            case "callStoredProc" -> persistFn(PostgreSqlBuilder::callStoredProcPersist);
+                            default ->
+                                throw new IllegalArgumentException("Unknown persist function: " + persistFnValue);
+                        }
+                    });
+            return this;
+        }
+
+        public PostgreSqlBuilder persistFn(
+                BiFunction<Connection, ArtifactRecord, Optional<Exception>> persistFunction) {
+            this.persistFn = persistFunction;
+            return this;
+        }
+
+        public ArtifactsDataSource build() {
+            final var dataSource = new org.springframework.jdbc.datasource.DriverManagerDataSource();
+            dataSource.setDriverClassName("org.postgresql.Driver");
+            dataSource.setUrl(url);
+            try (var connection = dataSource.getConnection()) {
+                Optional<Exception> esException = Optional.empty();
+                if (scriptsPath != null) {
+                    esException = executeResourceScripts(connection, scriptsPath,
+                            path -> {
+                                final var matches = MIGRATABLE_SCRIPT_PATTERN.matcher(path.getFileName().toString())
+                                        .matches();
+                                LOG.info(String.format("PostgreSQL test match: %s (%s)",
+                                        path.getFileName().toString(), matches));
+                                return matches;
+                            });
+                }
+                return new ArtifactsDataSource(dataSource, esException, persistFn);
+            } catch (final SQLException e) {
+                return new ArtifactsDataSource(dataSource, Optional.of(e), persistFn);
+            }
+        }
+
+        public static Optional<Exception> insertPersist(final Connection connection, final ArtifactRecord record) {
             final var sql = """
                         INSERT INTO "artifact" ("artifact_id", "namespace", "content_type", "content", "provenance")
                         VALUES (?, ?, ?, ?, ?)
                     """;
-            var stmt = conn.prepareStatement(sql);
-            stmt.setString(1, artifact.getArtifactId());
-            stmt.setString(2, Optional.ofNullable(artifact.getNamespace()).orElse(ArtifactsDataSource.class.getName()));
-            stmt.setString(3, "application/json");
-            stmt.setString(4, content.toString());
+            try (var stmt = connection.prepareStatement(sql)) {
+                stmt.setString(1, record.artifactId());
+                stmt.setString(2, record.namespace());
+                stmt.setString(3, record.contentType());
+                stmt.setString(4, record.content());
 
-            final var provenance = artifact.getProvenance();
-            if(provenance != null) {
-                stmt.setString(5, ArtifactStore.toJsonText(artifact.getProvenance()));
-            } else {
-                stmt.setNull(5, java.sql.Types.VARCHAR);
+                final var provenance = record.provenance();
+                if (provenance != null) {
+                    stmt.setObject(5, provenance, java.sql.Types.OTHER);
+                } else {
+                    stmt.setNull(5, java.sql.Types.OTHER);
+                }
+
+                final var result = stmt.executeUpdate();
+                LOG.info(String.format("PostgreSqlBuilder::defaultPersist %s execute result %d", record.artifactId(),
+                        result));
+                return Optional.empty();
+            } catch (SQLException e) {
+                return Optional.of(e);
             }
-
-            final var result = stmt.executeUpdate();
-            LOG.info(String.format("persistArtifact %s execute result %d", artifact.getArtifactId(), result));
-            return Optional.empty();
-        } catch (SQLException e) {
-            return Optional.of(e);
         }
+
+        // TODO: rewrite this to call a stored procedure that will do the insert and other tasks
+        public static Optional<Exception> callStoredProcPersist(final Connection connection,
+                final ArtifactRecord record) {
+            final var sql = """
+                        INSERT INTO "artifact" ("artifact_id", "namespace", "content_type", "content", "provenance")
+                        VALUES (?, ?, ?, ?, ?)
+                    """;
+            try (var stmt = connection.prepareStatement(sql)) {
+                stmt.setString(1, record.artifactId());
+                stmt.setString(2, record.namespace());
+                stmt.setString(3, record.contentType());
+                stmt.setString(4, record.content());
+
+                final var provenance = record.provenance();
+                if (provenance != null) {
+                    stmt.setObject(5, provenance, java.sql.Types.OTHER);
+                } else {
+                    stmt.setNull(5, java.sql.Types.OTHER);
+                }
+
+                final var result = stmt.executeUpdate();
+                LOG.info(String.format("PostgreSqlBuilder::defaultPersist %s execute result %d", record.artifactId(),
+                        result));
+                return Optional.empty();
+            } catch (SQLException e) {
+                return Optional.of(e);
+            }
+        }
+
     }
 
     public static class DuckDbBuilder {
@@ -93,15 +207,14 @@ public class ArtifactsDataSource {
         private String url = "jdbc:duckdb:" + System.getProperty("user.dir") + "/artifacts.duckdb";
         private String motherDuckToken;
         private String scriptsPath = "sql/artifact";
+        private BiFunction<Connection, ArtifactRecord, Optional<Exception>> persistFn = DuckDbBuilder::defaultPersist;
 
         public DuckDbBuilder userAgentArgs(final Map<String, Object> args) {
             final var ie = new InterpolateEngine(args);
 
-            // if there's a `{ "url": X }` available
             Optional.ofNullable(args.get("url"))
                     .ifPresent(url -> url(ie.interpolate(url.toString())));
 
-            // if there's a structure like `{ motherDuck: { token: X, db: Y } }`
             Optional.ofNullable(args.get("motherDuck"))
                     .filter(Map.class::isInstance)
                     .map(Map.class::cast)
@@ -140,6 +253,12 @@ public class ArtifactsDataSource {
             return this.url("jdbc:duckdb:md:" + mdbName);
         }
 
+        public DuckDbBuilder persistFunction(
+                BiFunction<Connection, ArtifactRecord, Optional<Exception>> persistFunction) {
+            this.persistFn = persistFunction;
+            return this;
+        }
+
         public ArtifactsDataSource build() {
             final var dataSource = new org.springframework.jdbc.datasource.DriverManagerDataSource();
             dataSource.setDriverClassName("org.duckdb.DuckDBDriver");
@@ -162,9 +281,36 @@ public class ArtifactsDataSource {
                                 return matches;
                             });
                 }
-                return new ArtifactsDataSource(dataSource, esException);
+                return new ArtifactsDataSource(dataSource, esException, persistFn);
             } catch (final SQLException e) {
-                return new ArtifactsDataSource(dataSource, Optional.of(e));
+                return new ArtifactsDataSource(dataSource, Optional.of(e), persistFn);
+            }
+        }
+
+        public static Optional<Exception> defaultPersist(final Connection connection, final ArtifactRecord record) {
+            final var sql = """
+                        INSERT INTO "artifact" ("artifact_id", "namespace", "content_type", "content", "provenance")
+                        VALUES (?, ?, ?, ?, ?)
+                    """;
+            try (var stmt = connection.prepareStatement(sql)) {
+                stmt.setString(1, record.artifactId());
+                stmt.setString(2, record.namespace());
+                stmt.setString(3, record.contentType());
+                stmt.setString(4, record.content());
+
+                final var provenance = record.provenance();
+                if (provenance != null) {
+                    stmt.setString(5, provenance);
+                } else {
+                    stmt.setNull(5, java.sql.Types.VARCHAR);
+                }
+
+                final var result = stmt.executeUpdate();
+                LOG.info(String.format("DuckDbBuilder::defaultPersist %s execute result %d", record.artifactId(),
+                        result));
+                return Optional.empty();
+            } catch (SQLException e) {
+                return Optional.of(e);
             }
         }
     }

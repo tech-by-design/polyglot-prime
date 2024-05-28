@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd.service.api.http</groupId>
 	<artifactId>fhir</artifactId>
-	<version>0.50.3</version>
+  <version>0.50.5</version>
 	<packaging>war</packaging>
 	<name>fhir</name>
 	<description>TechBD FHIR Server</description>
@@ -111,6 +111,11 @@
 			<groupId>ca.uhn.hapi.fhir</groupId>
 			<artifactId>hapi-fhir-validation-resources-r4</artifactId>
 			<version>7.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.7.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.duckdb</groupId>
