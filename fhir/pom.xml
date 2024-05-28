@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd.service.api.http</groupId>
 	<artifactId>fhir</artifactId>
-	<version>0.50.3</version>
+	<version>0.50.4</version>
 	<packaging>war</packaging>
 	<name>fhir</name>
 	<description>TechBD FHIR Server</description>
