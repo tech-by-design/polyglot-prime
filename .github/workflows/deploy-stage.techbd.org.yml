@@ -31,7 +31,7 @@ jobs:
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
-            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/synthetic.fhir.api.stage.techbd.org/.env
+            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/synthetic.fhir.api.techbd.org/.env
   
         - name: Commit and push changes
           run: |
