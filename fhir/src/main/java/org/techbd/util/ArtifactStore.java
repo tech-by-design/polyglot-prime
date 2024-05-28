@@ -411,6 +411,8 @@ public class ArtifactStore {
                     case "duckdb" -> new JdbcPersistence(
                             new ArtifactsDataSource.DuckDbBuilder().userDirFsPath("interactions.duckdb")
                                     .userAgentArgs(args).build());
+                    case "postgres" -> new JdbcPersistence(
+                            new ArtifactsDataSource.PostgreSqlBuilder().userAgentArgs(args).build());
                     case "vfs" -> new VirtualFsPersistence(args);
                     default -> new InvalidPersistenceNature(nature);
                 };
