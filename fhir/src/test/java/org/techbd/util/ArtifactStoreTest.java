@@ -102,11 +102,12 @@ public class ArtifactStoreTest {
         final var reporter = createTestReporter();
         strategy.persist(artifact, Optional.of(reporter));
 
-        assertThat(reporter.getIssueMessages()).containsExactly("[InvalidPersistenceNature unknown] artifactId: testId");
+        assertThat(reporter.getIssueMessages())
+                .containsExactly("[InvalidPersistenceNature unknown] artifactId: testId");
     }
 
     private ArtifactStore.Artifact createTestArtifact(String artifactId) {
-        return ArtifactStore.jsonArtifact(Map.of("key", "value"), artifactId);
+        return ArtifactStore.jsonArtifact(Map.of("key", "value"), artifactId, "unit-test", null);
     }
 
     private TestReporter createTestReporter() {

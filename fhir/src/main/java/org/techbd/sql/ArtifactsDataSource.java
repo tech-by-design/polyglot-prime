@@ -7,13 +7,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -26,11 +24,11 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.jdbc.datasource.init.ScriptException;
 import org.techbd.util.ArtifactStore.Artifact;
+import org.techbd.util.ArtifactStore;
 import org.techbd.util.InterpolateEngine;
 
 public class ArtifactsDataSource {
     private static final Logger LOG = LoggerFactory.getLogger(ArtifactsDataSource.class);
-    private final Map<String, PreparedStatement> statementCache = new ConcurrentHashMap<>();
     private final DataSource dataSource;
     private final Optional<Exception> dsException;
 
@@ -52,8 +50,9 @@ public class ArtifactsDataSource {
     }
 
     public Optional<Exception> persistArtifact(Artifact artifact) {
-        if (!isValid())
+        if (!isValid()) {
             return dsException;
+        }
 
         try (var conn = dataSource.getConnection()) {
             conn.setAutoCommit(true);
@@ -64,26 +63,24 @@ public class ArtifactsDataSource {
                 return Optional.of(e);
             }
 
-            // we insert as little as possible because all the other columns
-            // are computed in the database automatically
             final var sql = """
-                        INSERT INTO "artifact" ("artifact_id", "namespace", "content_type", "content")
-                        VALUES (?, ?, ?, ?)
+                        INSERT INTO "artifact" ("artifact_id", "namespace", "content_type", "content", "provenance")
+                        VALUES (?, ?, ?, ?, ?)
                     """;
-            var statement = statementCache.computeIfAbsent(sql, k -> {
-                try {
-                    return conn.prepareStatement(k);
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            var stmt = conn.prepareStatement(sql);
+            stmt.setString(1, artifact.getArtifactId());
+            stmt.setString(2, Optional.ofNullable(artifact.getNamespace()).orElse(ArtifactsDataSource.class.getName()));
+            stmt.setString(3, "application/json");
+            stmt.setString(4, content.toString());
 
-            statement.setString(1, artifact.getArtifactId());
-            statement.setString(2, ArtifactsDataSource.class.getName());
-            statement.setString(3, "application/json");
-            statement.setString(4, content.toString());
+            final var provenance = artifact.getProvenance();
+            if(provenance != null) {
+                stmt.setString(5, ArtifactStore.toJsonText(artifact.getProvenance()));
+            } else {
+                stmt.setNull(5, java.sql.Types.VARCHAR);
+            }
 
-            final var result = statement.executeUpdate();
+            final var result = stmt.executeUpdate();
             LOG.info(String.format("persistArtifact %s execute result %d", artifact.getArtifactId(), result));
             return Optional.empty();
         } catch (SQLException e) {

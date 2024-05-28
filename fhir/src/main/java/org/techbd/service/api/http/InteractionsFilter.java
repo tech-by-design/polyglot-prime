@@ -104,18 +104,24 @@ public class InteractionsFilter extends OncePerRequestFilter {
         // we want to find our persistence strategy in either properties or in header;
         // because X-TechBD-Interaction-Persistence-Strategy is global, document it in
         // SwaggerConfig.customGlobalHeaders
-        final var sj = Optional
+        final var strategyJson = Optional
                 .ofNullable(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY))
                 .orElse(defaultPersistStrategy);
-        final var ps = new ArtifactStore.Builder().strategyJson(sj).mailSender(mailSender).appContext(appContext)
-                .build();
-        mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, sj);
+        final var asb = new ArtifactStore.Builder()
+                .strategyJson(strategyJson)
+                .provenanceJson(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PROVENANCE))
+                .mailSender(mailSender)
+                .appContext(appContext);
+        final var ps = asb.build();
+        mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, strategyJson);
         if (ps != null) {
             final AtomicInteger info = new AtomicInteger(0);
             final AtomicInteger issue = new AtomicInteger(0);
             mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_FACTORY,
                     ps.getClass().getName());
-            ps.persist(ArtifactStore.jsonArtifact(rre, rre.interactionId().toString()),
+            ps.persist(
+                    ArtifactStore.jsonArtifact(rre, rre.interactionId().toString(),
+                            InteractionsFilter.class.getName() + ".interaction", asb.getProvenance()),
                     Optional.of(new ArtifactStore.PersistenceReporter() {
                         @Override
                         public void info(String message) {

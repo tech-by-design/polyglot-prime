@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.constraints.NotNull;
 
 @Component
@@ -31,6 +32,7 @@ public class Interactions {
 
             public class Request {
                 public static final String PERSISTENCE_STRATEGY = PREFIX + "Persistence-Strategy";
+                public static final String PROVENANCE = PREFIX + "Provenance";
             }
 
             public class Response {
@@ -78,7 +80,9 @@ public class Interactions {
             UUID requestId,
             Tenant tenant,
             String method,
-            String uri,
+            String requestUrl,
+            String absoluteUrl,
+            String requestUri,
             String clientIpAddress,
             String userAgent,
             Instant encounteredAt,
@@ -87,7 +91,7 @@ public class Interactions {
             String contentType,
             String queryString,
             String protocol,
-            String servletSessionId,
+            HttpSession session,
             List<Cookie> cookies,
             @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class) byte[] requestBody) {
 
@@ -96,6 +100,8 @@ public class Interactions {
                     UUID.randomUUID(),
                     new Tenant(request),
                     request.getMethod(),
+                    request.getRequestURL().toString(),
+                    request.getRequestURL().append(request.getQueryString() != null ? "?" + request.getQueryString() : "").toString(),
                     request.getRequestURI(),
                     request.getRemoteAddr(),
                     request.getHeader("User-Agent"),
@@ -109,7 +115,7 @@ public class Interactions {
                     request.getContentType(), // Content type
                     request.getQueryString(), // Query string
                     request.getProtocol(), // Protocol
-                    request.getSession(false) != null ? request.getSession(false).getId() : null,
+                    request.getSession(false),
                     Arrays.asList(request.getCookies() != null ? request.getCookies() : new Cookie[0]),
                     body // Request body
             );

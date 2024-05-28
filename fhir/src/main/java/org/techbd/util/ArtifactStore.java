@@ -22,6 +22,8 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.VFS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -33,18 +35,35 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
+import jakarta.annotation.Nonnull;
 import jakarta.validation.constraints.NotNull;
 
 public class ArtifactStore {
+    private static final Logger LOG = LoggerFactory.getLogger(ArtifactStore.class);
     private static final ObjectMapper objectMapper = JsonMapper.builder()
             .findAndAddModules()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .build();
 
     public interface Artifact {
+        @Nonnull
         String getArtifactId();
 
+        @Nonnull
+        String getNamespace();
+
+        @Nonnull
         Reader getReader();
+
+        Map<String, Object> getProvenance();
+    }
+
+    public static String toJsonText(final Map<String, Object> object) {
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (Exception e) {
+            return e.toString();
+        }
     }
 
     public interface PersistenceReporter {
@@ -333,6 +352,8 @@ public class ArtifactStore {
         private static final PersistenceStrategy DIAGNOSTIC_DEFAULT = new DiagnosticPersistence();
 
         private String strategyJson;
+        private String provenanceJson;
+        private Map<String, Object> provenance;
         private JavaMailSender mailSender;
         @SuppressWarnings("unused")
         private ApplicationContext appCtx;
@@ -340,6 +361,28 @@ public class ArtifactStore {
         public Builder strategyJson(String strategyJson) {
             this.strategyJson = strategyJson;
             return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        public Builder provenanceJson(String provenanceJson) {
+            if (provenanceJson != null && provenanceJson.trim().length() > 0) {
+                this.provenanceJson = provenanceJson;
+                try {
+                    final var parsedJson = objectMapper.readValue(provenanceJson, Object.class);
+                    if (parsedJson instanceof Map) {
+                        this.provenance = (Map<String, Object>) parsedJson;
+                    }
+                } catch (Exception e) {
+                    LOG.error("Unable to parse provenanceJson: " + provenanceJson, e);
+                }
+            } else {
+                provenance = null;
+            }
+            return this;
+        }
+
+        public Map<String, Object> getProvenance() {
+            return provenance;
         }
 
         public Builder mailSender(JavaMailSender mailSender) {
@@ -353,6 +396,11 @@ public class ArtifactStore {
         }
 
         private PersistenceStrategy createStrategy(Map<String, Object> args, String origJson) {
+            if (provenanceJson != null) {
+                args.put("provenance", provenance != null
+                        ? provenance
+                        : Map.of("invalid-json", provenanceJson));
+            }
             final var natureO = args.get("nature");
             if (natureO instanceof String nature) {
                 return switch (nature) {
@@ -409,7 +457,8 @@ public class ArtifactStore {
         }
     }
 
-    public static Artifact jsonArtifact(Object object, String artifactId) {
+    public static Artifact jsonArtifact(final Object object, final String artifactId, final String namespace,
+            final Map<String, Object> provenance) {
         return new Artifact() {
             private final String jsonString;
 
@@ -424,6 +473,16 @@ public class ArtifactStore {
             @Override
             public String getArtifactId() {
                 return artifactId;
+            }
+
+            @Override
+            public String getNamespace() {
+                return namespace;
+            }
+
+            @Override
+            public Map<String, Object> getProvenance() {
+                return provenance;
             }
 
             @Override
