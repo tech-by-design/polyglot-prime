@@ -61,46 +61,8 @@
         <main id="bodyColumn" class="span10">
 <section>
 <h1>CPD Results</h1><a id="CPD_Results"></a>
-<p>The following document contains the results of PMD's  <a class="externalLink" href="https://pmd.github.io/latest/pmd_userdocs_cpd.html">CPD</a> 7.0.0.</p><section>
-<h2>Duplications</h2><a id="Duplications"></a>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
-<td style="text-align: left;">org/techbd/sql/ArtifactsDataSource.java</td>
-<td>147</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/sql/ArtifactsDataSource.java</td>
-<td>175</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>public static Optional&lt;Exception&gt; insertPersist(final Connection connection, final ArtifactRecord record) {
-            final var sql = &quot;&quot;&quot;
-                        INSERT INTO &quot;artifact&quot; (&quot;artifact_id&quot;, &quot;namespace&quot;, &quot;content_type&quot;, &quot;content&quot;, &quot;provenance&quot;)
-                        VALUES (?, ?, ?, ?, ?)
-                    &quot;&quot;&quot;;
-            try (var stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, record.artifactId());
-                stmt.setString(2, record.namespace());
-                stmt.setString(3, record.contentType());
-                stmt.setString(4, record.content());
-
-                final var provenance = record.provenance();
-                if (provenance != null) {
-                    stmt.setObject(5, provenance, java.sql.Types.OTHER);
-                } else {
-                    stmt.setNull(5, java.sql.Types.OTHER);
-                }
-
-                final var result = stmt.executeUpdate();
-                LOG.info(String.format(&quot;PostgreSqlBuilder::defaultPersist %s execute result %d&quot;, record.artifactId(),
-                        result));
-                return Optional.empty();
-            } catch (SQLException e) {
-                return Optional.of(e);
-            }
-        }</pre></td></tr></table></section></section>
+<p>The following document contains the results of PMD's  <a class="externalLink" href="https://pmd.github.io/latest/pmd_userdocs_cpd.html">CPD</a> 7.0.0.</p>
+<p>CPD found no problems in your source code.</p></section>
         </main>
       </div>
     </div>
