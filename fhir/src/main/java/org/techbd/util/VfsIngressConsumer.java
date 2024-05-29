@@ -138,6 +138,10 @@ public class VfsIngressConsumer {
     }
 
     public record Audit(List<AuditEvent> events) {
+        public Audit addEvent(final AuditEvent event) {
+            events().add(event);
+            return this;
+        }
     }
 
     public Audit getAudit() {
@@ -177,14 +181,14 @@ public class VfsIngressConsumer {
                         // move the file from its original location to the new location
                         final var dest = snapshotHome.resolveFile(activeEntry.entry().getName().getBaseName());
                         activeEntry.entry().moveTo(dest);
-                        audit.events().add(new AuditEvent("remove", originalEntry.entry().getPublicURIString(),
+                        audit.addEvent(new AuditEvent("remove", originalEntry.entry().getPublicURIString(),
                                 Optional.of(originalEntry.entry())));
 
                         // now see if we need to populate anything else other than the primary entry
                         final var populate = populateSnapshot.apply(activeEntry, sessionHome, snapshotHome, audit);
                         for (final var keep : populate) {
                             snapshotEntries.add(keep);
-                            audit.events().add(new AuditEvent("snapshot", keep.entry().getPublicURIString(),
+                            audit.addEvent(new AuditEvent("snapshot", keep.entry().getPublicURIString(),
                                     Optional.of(keep.entry())));
                         }
                     }
@@ -197,8 +201,7 @@ public class VfsIngressConsumer {
                         sessionHome, snapshotHome, audit);
                 for (final var c : consume) {
                     consumeEntries.add(c);
-                    audit.events()
-                            .add(new AuditEvent("consume", c.entry().getPublicURIString(), Optional.of(c.entry())));
+                    audit.addEvent(new AuditEvent("consume", c.entry().getPublicURIString(), Optional.of(c.entry())));
                 }
             }
 
@@ -211,7 +214,7 @@ public class VfsIngressConsumer {
                     groupedEntriesMap
                             .computeIfAbsent(groupId, k -> new ArrayList<>())
                             .add(entry);
-                    audit.events().add(new AuditEvent("grouped",
+                    audit.addEvent(new AuditEvent("grouped",
                             "[%s] %s".formatted(groupId, entry.entry().getPublicURIString(),
                                     Optional.of(entry.entry()))));
                 } else {
@@ -231,7 +234,7 @@ public class VfsIngressConsumer {
                     completeGroups.add(group);
                 } else {
                     incompleteGroups.add(group);
-                    audit.events().add(new AuditEvent("incomplete-group", group.groupId));
+                    audit.addEvent(new AuditEvent("incomplete-group", group.groupId));
                 }
             }
 
@@ -321,6 +324,11 @@ public class VfsIngressConsumer {
                 }
 
                 final var unzippedFile = snapshotHome.resolveFile(flattenedName);
+                if (unzippedFile.exists()) {
+                    audit.addEvent(new AuditEvent("unzipped-will-overwrite",
+                            "%s in %s overwrites %s".formatted(unzippedFile.getName().getBaseName(),
+                                    zipFile.getPublicURIString(), unzippedFile.getPublicURIString())));
+                }
 
                 // Write file content using VFS
                 try (var outputStream = unzippedFile.getContent().getOutputStream()) {
@@ -332,12 +340,12 @@ public class VfsIngressConsumer {
                 }
 
                 unzippedFiles.add(new IngressIndividual(unzippedFile));
-                audit.events().add(new AuditEvent("unzipped",
+                audit.addEvent(new AuditEvent("unzipped",
                         "%s from %s".formatted(unzippedFile.getName().getBaseName(), zipFile.getPublicURIString())));
                 zipInputStream.closeEntry();
             }
         } catch (Exception e) {
-            audit.events.add(new AuditEvent("exception", zipFile.getPublicURIString(), Optional.of(individual.entry()),
+            audit.addEvent(new AuditEvent("exception", zipFile.getPublicURIString(), Optional.of(individual.entry()),
                     Optional.of(e)));
         }
 
