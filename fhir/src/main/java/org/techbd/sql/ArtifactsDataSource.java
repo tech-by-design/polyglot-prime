@@ -6,8 +6,10 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -86,7 +88,7 @@ public class ArtifactsDataSource {
         private static final Pattern MIGRATABLE_SCRIPT_PATTERN = Pattern.compile("^\\d+.*\\.pg\\.sql$");
         private String url = "jdbc:postgresql://hostname/database-name?user=*****&password=*****&sslmode=require";
         private String scriptsPath = "sql/artifact";
-        private BiFunction<Connection, ArtifactRecord, Optional<Exception>> persistFn = PostgreSqlBuilder::insertPersist;
+        private BiFunction<Connection, ArtifactRecord, Optional<Exception>> persistFn = PostgreSqlBuilder::callStoredProcPersist;
 
         public PostgreSqlBuilder url(final String url) {
             this.url = url;
@@ -163,7 +165,7 @@ public class ArtifactsDataSource {
                 }
 
                 final var result = stmt.executeUpdate();
-                LOG.info(String.format("PostgreSqlBuilder::defaultPersist %s execute result %d", record.artifactId(),
+                LOG.info(String.format("PostgreSqlBuilder::insertPersist %s execute result %d", record.artifactId(),
                         result));
                 return Optional.empty();
             } catch (SQLException e) {
@@ -171,35 +173,32 @@ public class ArtifactsDataSource {
             }
         }
 
-        // TODO: rewrite this to call a stored procedure that will do the insert and other tasks
         public static Optional<Exception> callStoredProcPersist(final Connection connection,
                 final ArtifactRecord record) {
             final var sql = """
-                        INSERT INTO "artifact" ("artifact_id", "namespace", "content_type", "content", "provenance")
-                        VALUES (?, ?, ?, ?, ?)
+                    {? = call public.fn_insert_artifact(?, ?, ?, cast(? as jsonb), cast(? as jsonb), cast(? as jsonb))}
                     """;
-            try (var stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, record.artifactId());
-                stmt.setString(2, record.namespace());
-                stmt.setString(3, record.contentType());
-                stmt.setString(4, record.content());
-
+            try (CallableStatement stmt = connection.prepareCall(sql)) {
+                stmt.registerOutParameter(1, Types.VARCHAR);
+                stmt.setString(2, record.namespace);
+                stmt.setString(3, record.content);
+                stmt.setString(4, record.contentType);
                 final var provenance = record.provenance();
                 if (provenance != null) {
                     stmt.setObject(5, provenance, java.sql.Types.OTHER);
                 } else {
                     stmt.setNull(5, java.sql.Types.OTHER);
                 }
-
-                final var result = stmt.executeUpdate();
-                LOG.info(String.format("PostgreSqlBuilder::defaultPersist %s execute result %d", record.artifactId(),
-                        result));
+                stmt.setNull(6, java.sql.Types.VARCHAR);
+                stmt.setNull(7, java.sql.Types.VARCHAR);
+                stmt.execute();
+                final String newId = stmt.getString(1);
+                LOG.info(String.format("PostgreSqlBuilder::callStoredProcPersist new Artifact Id: %s", newId));
                 return Optional.empty();
             } catch (SQLException e) {
                 return Optional.of(e);
             }
         }
-
     }
 
     public static class DuckDbBuilder {
