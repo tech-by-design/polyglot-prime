@@ -60,7 +60,7 @@ public class VfsIngressConsumer {
         private QuadFunction<IngressIndividual, FileObject, FileObject, Audit, List<IngressIndividual>> populateSnapshot = (
                 ie, file, dir, audit) -> List.of(ie);
         private QuadFunction<IngressIndividual, FileObject, FileObject, Audit, List<IngressIndividual>> consumables = (
-                ie, file, dir, audit) -> List.of(ie); // use VfsIngressConsumer::unarchive to unzip
+                ie, file, dir, audit) -> List.of(ie); // use VfsIngressConsumer::consumeUnzipped to unzip
 
         public Builder addIngressPath(final FileObject path)
                 throws FileSystemException {
@@ -177,13 +177,15 @@ public class VfsIngressConsumer {
                         // move the file from its original location to the new location
                         final var dest = snapshotHome.resolveFile(activeEntry.entry().getName().getBaseName());
                         activeEntry.entry().moveTo(dest);
-                        audit.events().add(new AuditEvent("remove", originalEntry.entry().getName().getBaseName()));
+                        audit.events().add(new AuditEvent("remove", originalEntry.entry().getPublicURIString(),
+                                Optional.of(originalEntry.entry())));
 
                         // now see if we need to populate anything else other than the primary entry
                         final var populate = populateSnapshot.apply(activeEntry, sessionHome, snapshotHome, audit);
                         for (final var keep : populate) {
                             snapshotEntries.add(keep);
-                            audit.events().add(new AuditEvent("snapshot", keep.entry().getName().getBaseName()));
+                            audit.events().add(new AuditEvent("snapshot", keep.entry().getPublicURIString(),
+                                    Optional.of(keep.entry())));
                         }
                     }
                 }
@@ -195,7 +197,8 @@ public class VfsIngressConsumer {
                         sessionHome, snapshotHome, audit);
                 for (final var c : consume) {
                     consumeEntries.add(c);
-                    audit.events().add(new AuditEvent("consume", c.entry().getName().getBaseName()));
+                    audit.events()
+                            .add(new AuditEvent("consume", c.entry().getPublicURIString(), Optional.of(c.entry())));
                 }
             }
 
@@ -209,7 +212,8 @@ public class VfsIngressConsumer {
                             .computeIfAbsent(groupId, k -> new ArrayList<>())
                             .add(entry);
                     audit.events().add(new AuditEvent("grouped",
-                            "[%s] %s".formatted(groupId, entry.entry().getName().getBaseName())));
+                            "[%s] %s".formatted(groupId, entry.entry().getPublicURIString(),
+                                    Optional.of(entry.entry()))));
                 } else {
                     individualEntries.add(entry);
                 }
@@ -282,10 +286,10 @@ public class VfsIngressConsumer {
     }
 
     /**
-     * unarchive is meant to be passed into
-     * Builder.consumables(VfsIngressConsumer::unarchive) and is designed to unzip
-     * items in a zip file and put them into the snapshotHome for consumption. It
-     * will return the entries in the ZIP file as consumable but not the ZIP file
+     * consumeUnzipped is meant to be passed into
+     * Builder.consumables(VfsIngressConsumer::consumeUnzipped) and is designed to
+     * unzip items in a zip file and put them into the snapshotHome for consumption.
+     * It will return the entries in the ZIP file as consumable but not the ZIP file
      * itself.
      * 
      * @param individual   the ZIP file
@@ -295,14 +299,14 @@ public class VfsIngressConsumer {
      * @return either entries of the ZIP or the original individual file if it's not
      *         a ZIP
      */
-    public static List<IngressIndividual> unarchive(IngressIndividual individual, FileObject sessionHome,
+    public static List<IngressIndividual> consumeUnzipped(IngressIndividual individual, FileObject sessionHome,
             FileObject snapshotHome, Audit audit) {
         final var zipFile = individual.entry();
         if (!zipFile.getName().getBaseName().toLowerCase().endsWith(".zip")) {
             return List.of(individual);
         }
 
-        final List<IngressIndividual> unarchivedFiles = new ArrayList<>();
+        final List<IngressIndividual> unzippedFiles = new ArrayList<>();
         FileObject fileObject = individual.entry();
 
         try (InputStream inputStream = fileObject.getContent().getInputStream();
@@ -327,8 +331,9 @@ public class VfsIngressConsumer {
                     }
                 }
 
-                unarchivedFiles.add(new IngressIndividual(unzippedFile));
-                audit.events().add(new AuditEvent("unzipped", unzippedFile.getName().getBaseName()));
+                unzippedFiles.add(new IngressIndividual(unzippedFile));
+                audit.events().add(new AuditEvent("unzipped",
+                        "%s from %s".formatted(unzippedFile.getName().getBaseName(), zipFile.getPublicURIString())));
                 zipInputStream.closeEntry();
             }
         } catch (Exception e) {
@@ -336,7 +341,6 @@ public class VfsIngressConsumer {
                     Optional.of(e)));
         }
 
-        return unarchivedFiles;
+        return unzippedFiles;
     }
-
 }

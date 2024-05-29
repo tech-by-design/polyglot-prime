@@ -57,8 +57,8 @@ public class VfsIngressConsumerTest {
                 .addIngressPath(sourceDir)
                 .isGroup(isGroup)
                 .isGroupComplete(isGroupComplete)
-                // TODO: figure out how to test .zip unarchive
-                // .consumables(VfsIngressConsumer::unarchive)
+                // TODO: figure out how to test .zip consumeUnzipped
+                // .consumables(VfsIngressConsumer::consumeUnzipped)
                 .build();
 
         // do the actual work
