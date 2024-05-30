@@ -6,5 +6,6 @@
             "command": "site:run",
             "debug": false
         }
-    ]
+    ],
+    "git.autofetch": "all"
 }
