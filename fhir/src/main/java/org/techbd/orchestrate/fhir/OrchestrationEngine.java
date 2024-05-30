@@ -9,10 +9,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import org.apache.commons.text.StringEscapeUtils;
+import java.util.stream.StreamSupport;
 
 import org.techbd.util.JsonText.JsonTextSerializer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.StrictErrorHandler;
@@ -40,7 +53,7 @@ import jakarta.validation.constraints.NotNull;
  *         .withPayloads(List.of("payload1", "payload2"))
  *         .withFhirProfileUrl("http://example.com/fhirProfile")
  *         .addHapiValidationEngine()
- *         .addHl7ValidationEngine()
+ *         .addHl7ValidationApiEngine()
  *         .addInfernoValidationEngine()
  *         .build();
  *
@@ -119,8 +132,10 @@ public class OrchestrationEngine {
             switch (type) {
                 case HAPI:
                     return new HapiValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl).build();
-                case HL7:
-                    return new Hl7ValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl).build();
+                case HL7_EMBEDDED:
+                    return new Hl7ValidationEngineEmbedded.Builder().withFhirProfileUrl(fhirProfileUrl).build();
+                case HL7_API:
+                    return new Hl7ValidationEngineApi.Builder().withFhirProfileUrl(fhirProfileUrl).build();
                 case INFERNO:
                     return new InfernoValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl).build();
                 default:
@@ -134,7 +149,7 @@ public class OrchestrationEngine {
     }
 
     public enum ValidationEngineIdentifier {
-        HAPI, HL7, INFERNO
+        HAPI, HL7_EMBEDDED, HL7_API, INFERNO
     }
 
     private static class ValidationEngineKey {
@@ -212,7 +227,7 @@ public class OrchestrationEngine {
         @Override
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             try {
-                final var strictParser = fhirContext.newJsonParser(); 
+                final var strictParser = fhirContext.newJsonParser();
                 strictParser.setParserErrorHandler(new StrictErrorHandler());
                 final var parsedResource = strictParser.parseResource(payload);
                 final var hapiVR = validator.validateWithResult(parsedResource, this.options);
@@ -325,10 +340,10 @@ public class OrchestrationEngine {
         }
     }
 
-    public static class Hl7ValidationEngine implements ValidationEngine {
+    public static class Hl7ValidationEngineEmbedded implements ValidationEngine {
         private final String fhirProfileUrl;
 
-        private Hl7ValidationEngine(final Builder builder) {
+        private Hl7ValidationEngineEmbedded(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
         }
 
@@ -352,12 +367,12 @@ public class OrchestrationEngine {
 
                 @Override
                 public String getProfileUrl() {
-                    return Hl7ValidationEngine.this.fhirProfileUrl;
+                    return Hl7ValidationEngineEmbedded.this.fhirProfileUrl;
                 }
 
                 @Override
                 public String getEngine() {
-                    return ValidationEngineIdentifier.HL7.toString();
+                    return ValidationEngineIdentifier.HL7_EMBEDDED.toString();
                 }
             };
         }
@@ -370,8 +385,156 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Hl7ValidationEngine build() {
-                return new Hl7ValidationEngine(this);
+            public Hl7ValidationEngineEmbedded build() {
+                return new Hl7ValidationEngineEmbedded(this);
+            }
+        }
+    }
+
+    public static class Hl7ValidationEngineApi implements ValidationEngine {
+        private final String fhirProfileUrl;
+        private final String fhirContext;
+        private final String locale;
+        private final String fileType;
+        private final String fileName;
+        private String fileContent;
+
+        private Hl7ValidationEngineApi(final Builder builder) {
+            this.fhirProfileUrl = builder.fhirProfileUrl;
+            this.fhirContext = "4.0.1";
+            this.locale = "en";
+            this.fileType = "json";
+            this.fileName = "input.json";
+        }
+
+        @Override
+        public ValidationResult validate(@NotNull final String payload) {
+
+            String escapedPayload = StringEscapeUtils.escapeJson(payload);
+            String result = escapedPayload.replace("\\n", "\\r\\n");
+            
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_2)
+                    .connectTimeout(Duration.ofSeconds(120))
+                    .build();
+
+            fileContent = """
+                    {
+                      "cliContext": {
+                        "sv": "%s",
+                        "ig": [
+                          "%s"
+                        ],
+                        "locale": "%s"
+                      },
+                      "filesToValidate": [
+                        {
+                          "fileName": "%s",
+                          "fileContent": "%s",
+                          "fileType": "%s"
+                        }
+                      ]
+                    }
+                    """.formatted(fhirContext, fhirProfileUrl, locale, fileName, result, fileType);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://validator.fhir.org/validate"))
+                    .POST(BodyPublishers.ofString(fileContent))
+                    .timeout(Duration.ofSeconds(120))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .build();
+
+            CompletableFuture<HttpResponse<String>> response = client.sendAsync(request, BodyHandlers.ofString());
+
+            return response.thenApply(HttpResponse::body)
+                    .thenApply(responseBody -> {
+                        return new ValidationResult() {
+                            @Override
+                            public String getOperationOutcome() {
+                                return null;
+                            }
+
+                            @Override
+                            public boolean isValid() {
+                                return responseBody.contains("OperationOutcome");
+                            }
+
+                            public List<OrchestrationEngine.ValidationIssue> getIssues() {
+                                List<OrchestrationEngine.ValidationIssue> issuesList = new ArrayList<>();
+
+                                try {
+                                    final var mapper = new ObjectMapper();
+                                    final var root = mapper.readTree(responseBody);
+                                    final var outcomes = root.path("outcomes");
+
+                                    if (outcomes.isArray()) {
+                                        for (final var outcome : outcomes) {
+                                            final var issues = outcome.path("issues");
+                                            if (issues.isArray()) {
+                                                issuesList.addAll(extractIssues(issues));
+                                            }
+                                        }
+                                    }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                                return issuesList;
+                            }
+
+                            private List<OrchestrationEngine.ValidationIssue> extractIssues(JsonNode issues) {
+                                return StreamSupport.stream(issues.spliterator(), false)
+                                        .map(issue -> new OrchestrationEngine.ValidationIssue() {
+                                            @Override
+                                            public String getMessage() {
+                                                return issue.path("message").asText();
+                                            }
+
+                                            @Override
+                                            public OrchestrationEngine.SourceLocation getLocation() {
+                                                Integer line = issue.path("line").isInt()
+                                                        ? issue.path("line").intValue()
+                                                        : null;
+                                                Integer column = issue.path("col").isInt()
+                                                        ? issue.path("col").intValue()
+                                                        : null;
+                                                String diagnostics = "ca.uhn.fhir.parser.DataFormatException";
+                                                return new OrchestrationEngine.SourceLocation(line, column,
+                                                        diagnostics);
+                                            }
+
+                                            @Override
+                                            public String getSeverity() {
+                                                return issue.path("level").asText();
+                                            }
+                                        })
+                                        .collect(Collectors.toList());
+                            }
+
+                            @Override
+                            public String getProfileUrl() {
+                                return Hl7ValidationEngineApi.this.fhirProfileUrl;
+                            }
+
+                            @Override
+                            public String getEngine() {
+                                return ValidationEngineIdentifier.HL7_API.toString();
+                            }
+                        };
+                    }).join(); // Wait for the request to complete
+        }
+
+        public static class Builder {
+            private String fhirProfileUrl;
+
+            public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
+                this.fhirProfileUrl = fhirProfileUrl;
+                return this;
+            }
+
+            public Hl7ValidationEngineApi build() {
+                return new Hl7ValidationEngineApi(this);
             }
         }
     }
@@ -523,9 +686,15 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Builder addHl7ValidationEngine() {
+            public Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
-                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7, this.fhirProfileUrl));
+                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl));
+                return this;
+            }
+
+            public Builder addHl7ValidationApiEngine() {
+                this.validationEngines
+                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl));
                 return this;
             }
 

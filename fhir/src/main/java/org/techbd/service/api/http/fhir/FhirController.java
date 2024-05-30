@@ -76,7 +76,7 @@ public class FhirController {
     public Object validateBundle(final @RequestBody @Nonnull String payload,
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
             // "profile" is the same name that HL7 validator uses
-            @RequestParam(value = "profile", required = false) String fhirProfileUrlParam, 
+            @RequestParam(value = "profile", required = false) String fhirProfileUrlParam,
             @RequestHeader(value = FhirAppConfiguration.Servlet.HeaderName.Request.STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             final HttpServletRequest request) {
@@ -88,7 +88,7 @@ public class FhirController {
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
                 .addHapiValidationEngine()
-                .addHl7ValidationEngine()
+                .addHl7ValidationApiEngine()
                 .addInfernoValidationEngine()
                 .build();
         engine.orchestrate(session);
