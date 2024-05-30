@@ -47,7 +47,7 @@ class OrchestrationEngineTest {
         OrchestrationEngine.OrchestrationSession session2 = engine.session()
             .withPayloads(List.of("payload2"))
             .withFhirProfileUrl("http://example.com/fhirProfile")
-            .addHl7ValidationEngine()
+            .addHl7ValidationApiEngine()
             .build();
 
         engine.orchestrate(session1, session2);
@@ -66,7 +66,7 @@ class OrchestrationEngineTest {
         assertThat(retrievedSession2.getPayloads()).containsExactly("payload2");
         assertThat(retrievedSession2.getFhirProfileUrl()).isEqualTo("http://example.com/fhirProfile");
         assertThat(retrievedSession2.getValidationResults()).hasSize(1);
-        assertThat(retrievedSession2.getValidationResults().get(0).isValid()).isTrue();
+        assertThat(retrievedSession2.getValidationResults().get(0).isValid()).isFalse();
     }
 
     @Test

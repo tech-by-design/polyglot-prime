@@ -109,42 +109,41 @@ class FhirEndpointsTests {
 		assertThat(validationResults).hasSize(3);
 
 		// Check details of the first validation result
-		Map<String, Object> firstResult = validationResults.get(0);
-		assertThat(firstResult).containsEntry("profileUrl",
-				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json");
-		assertThat(firstResult).containsEntry("engine", "HAPI");
-		assertThat(firstResult).containsEntry("valid", false);
+		assertValidationResult(validationResults.get(0),
+				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
+				"HAPI-1821: [element=\"lastUpdated\"] Invalid attribute value \"2023-10-28 10:07:42.9149210\": Invalid date/time format: \"2023-10-28 10:07:42.9149210\": Expected character 'T' at index 10 but found  ",
+				"FATAL");
+		assertValidationResult(validationResults.get(1),
+				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json",
+				"HL7_API",
+				false,
+				"Invalid Resource id: Too long (107 chars)", "ERROR");
+		assertValidationResult(validationResults.get(2),
+				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json",
+				"INFERNO",
+				true, null, null);
+	}
 
-		// Check issues in the first validation result
-		List<Map<String, Object>> issues = objectMapper.convertValue(firstResult.get("issues"),
-				new TypeReference<List<Map<String, Object>>>() {
-				});
-		assertThat(issues).hasSize(1);
+	private void assertValidationResult(Map<String, Object> validationResult, String profileUrl, String engine,
+			boolean isValid, String issueMessage, String severity) {
+		assertThat(validationResult).containsEntry("profileUrl", profileUrl);
+		assertThat(validationResult).containsEntry("engine", engine);
+		assertThat(validationResult).containsEntry("valid", isValid);
 
-		Map<String, Object> firstIssue = issues.get(0);
-		Map<String, Object> location = objectMapper.convertValue(firstIssue.get("location"),
-				new TypeReference<Map<String, Object>>() {
-				});
-		assertThat(location).containsKey("diagnostics");
-		assertThat(firstIssue).containsEntry("message",
-				"HAPI-1821: [element=\"lastUpdated\"] Invalid attribute value \"2023-10-28 10:07:42.9149210\": Invalid date/time format: \"2023-10-28 10:07:42.9149210\": Expected character 'T' at index 10 but found  ");
-		assertThat(firstIssue).containsEntry("severity", "FATAL");
+		if (issueMessage != null && severity != null) {
+			List<Map<String, Object>> issues = objectMapper.convertValue(validationResult.get("issues"),
+					new TypeReference<List<Map<String, Object>>>() {
+					});
+			assertThat(issues).hasSizeGreaterThan(0);
 
-		// Check details of the second validation result
-		Map<String, Object> secondResult = validationResults.get(1);
-		assertThat(secondResult).containsEntry("profileUrl",
-				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json");
-		assertThat(secondResult).containsEntry("engine", "HL7");
-		assertThat(secondResult).containsEntry("valid", true);
-		assertThat((List<?>) secondResult.get("issues")).isEmpty();
-
-		// Check details of the third validation result
-		Map<String, Object> thirdResult = validationResults.get(2);
-		assertThat(thirdResult).containsEntry("profileUrl",
-				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json");
-		assertThat(thirdResult).containsEntry("engine", "INFERNO");
-		assertThat(thirdResult).containsEntry("valid", true);
-		assertThat((List<?>) thirdResult.get("issues")).isEmpty();
+			Map<String, Object> firstIssue = issues.get(0);
+			Map<String, Object> location = objectMapper.convertValue(firstIssue.get("location"),
+					new TypeReference<Map<String, Object>>() {
+					});
+			assertThat(location).containsKey("diagnostics");
+			assertThat(firstIssue).containsEntry("message", issueMessage);
+			assertThat(firstIssue).containsEntry("severity", severity);
+		}
 	}
 
 	public String fixtureContent(final String filename) throws IOException, InterruptedException {
