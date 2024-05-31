@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd.service.api.http</groupId>
 	<artifactId>fhir</artifactId>
-	<version>0.50.6</version>
+	<version>0.50.7</version>
 	<packaging>war</packaging>
 	<name>fhir</name>
 	<description>TechBD FHIR Server</description>
@@ -127,6 +127,21 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.5.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.persistence</groupId>
+			<artifactId>jakarta.persistence-api</artifactId>
+			<version>3.2.0-M2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>6.0.0.Final</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -134,6 +149,14 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -152,7 +175,7 @@
 					<printFailingErrors>true</printFailingErrors>
 					<linkXRef>false</linkXRef>
 					<includes>
-						<include>**/*.java</include>
+						**/*.java
 					</includes>
 				</configuration>
 				<executions>
@@ -176,7 +199,7 @@
 					<violationSeverity>warning</violationSeverity>
 					<linkXRef>false</linkXRef>
 					<includes>
-						<include>**/*.java</include>
+						**/*.java
 					</includes>
 				</configuration>
 				<executions>
