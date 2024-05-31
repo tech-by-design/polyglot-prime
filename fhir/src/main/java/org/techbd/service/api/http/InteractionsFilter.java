@@ -107,6 +107,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var strategyJson = Optional
                 .ofNullable(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY))
                 .orElse(defaultPersistStrategy);
+                //TODO Even if strategy json is supplied, via the header, we still need to store in the postgres
         final var asb = new ArtifactStore.Builder()
                 .strategyJson(strategyJson)
                 .provenanceJson(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PROVENANCE))

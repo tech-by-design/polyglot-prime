@@ -1,14 +1,37 @@
-{
-  "properties": [
-    {
-      "name": "org.techbd.service.api.http.fhir.app.version",
-      "type": "java.lang.String",
-      "description": "The active version, injected from pom.xml in application.properties via @project.version@"
-    },
-    {
-      "name": "org.techbd.service.api.http.fhir.app.default-sdoh-fhir-profile-url",
-      "type": "java.lang.String",
-      "description": "The default FHIR Profile used for principal validation of SDoH data"
-    }
-  ]
-}
+{"properties": [
+  {
+    "name": "org.techbd.service.api.http.fhir.app.version",
+    "type": "java.lang.String",
+    "description": "The active version, injected from pom.xml in application.properties via @project.version@"
+  },
+  {
+    "name": "org.techbd.service.api.http.fhir.app.default-sdoh-fhir-profile-url",
+    "type": "java.lang.String",
+    "description": "The default FHIR Profile used for principal validation of SDoH data"
+  },
+  {
+    "name": "org.techbd.service.api.http.interactions.default-persist-strategy",
+    "type": "java.lang.String",
+    "description": "Default persistence strategy for all HTTP request/response JSON content."
+  },
+  {
+    "name": "admin.observe.neon.datasource.url",
+    "type": "java.lang.String",
+    "description": "The data source URL. The value will be taken from the environment variable TECH_BD_PERSIST_JDBC_URL_WITHOUT_CREDENTIALS"
+  },
+  {
+    "name": "admin.observe.neon.datasource.username",
+    "type": "java.lang.String",
+    "description": "The data source username. The value will be taken from the environment variable TECH_BD_PERSIST_JDBC_USERNAME"
+  },
+  {
+    "name": "admin.observe.neon.datasource.password",
+    "type": "java.lang.String",
+    "description": "The data source username. The value will be taken from the environment variable TECH_BD_PERSIST_JDBC_PASSWORD"
+  },
+  {
+    "name": "admin.observe.neon.datasource.driver-class-name",
+    "type": "java.lang.String",
+    "description": "The JDBC driver class"
+  }
+]}
