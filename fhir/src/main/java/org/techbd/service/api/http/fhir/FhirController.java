@@ -6,7 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,6 +31,8 @@ import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.service.api.http.Helpers;
 import org.techbd.service.api.http.InteractionsFilter;
+import org.techbd.service.api.http.fhir.entity.FhirValidationResultIssue;
+import org.techbd.service.api.http.fhir.repository.FhirValidationResultIssueRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,9 +44,12 @@ import jakarta.servlet.http.HttpServletRequest;
 public class FhirController {
     private final OrchestrationEngine engine = new OrchestrationEngine();
     private final FhirAppConfiguration appConfig;
+    private final FhirValidationResultIssueRepository fhirValidationResultIssueRepository;
 
-    public FhirController(final FhirAppConfiguration appConfig) {
+    @Autowired
+    public FhirController(final FhirAppConfiguration appConfig, FhirValidationResultIssueRepository fhirValidationResultIssueRepository) {
         this.appConfig = appConfig;
+        this.fhirValidationResultIssueRepository = fhirValidationResultIssueRepository;
     }
 
     @GetMapping("/")
@@ -140,4 +150,19 @@ public class FhirController {
         }
     }
 
+    @Operation(summary = "Recent HTTP Request/Response Diagnostics")
+    @GetMapping("/admin/observe/sessions/data")
+    @ResponseBody
+    public Page<FhirValidationResultIssue> adminDiagnosticsJson(@RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "10") int size) {
+        long count = fhirValidationResultIssueRepository.count();
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(fhirValidationResultIssueRepository.findAll(), pageable, count);
+    }
+
+    @GetMapping("/admin/observe/sessions")
+    public String adminDiagnostics(final Model model, final HttpServletRequest request) {
+        model.addAttribute("contextPath", request.getContextPath());
+        return "diagnostics";
+    }
 }
