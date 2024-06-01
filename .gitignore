@@ -1,5 +1,2 @@
 .env
 .envrc
-
-# project-specific
-fhir/target

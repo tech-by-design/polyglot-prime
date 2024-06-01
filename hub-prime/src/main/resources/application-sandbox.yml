@@ -1,0 +1,6 @@
+org:
+  techbd:
+    service:
+        http:
+          interactions:
+            defaultPersistStrategy: "{ \"nature\": \"fs\" }"

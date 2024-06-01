@@ -2,13 +2,13 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Spring Boot-FhirApplication<fhir>",
+            "name": "Spring Boot-Application<hub-prime>",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "mainClass": "org.techbd.service.api.http.fhir.FhirApplication",
-            "projectName": "fhir",
+            "mainClass": "org.techbd.service.http.hub.prime.Application",
+            "projectName": "hub-prime",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
-        }
+        },
     ]
 }

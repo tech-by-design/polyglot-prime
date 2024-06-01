@@ -25,7 +25,7 @@ jobs:
 
     - name: Build the project artifacts with Maven (will test automatically)
       run: |
-        cd fhir
+        cd hub-prime
         mvn site
 
   deploy:
@@ -47,17 +47,17 @@ jobs:
 
     - name: Build the site
       run: |
-        cd fhir
+        cd hub-prime
         mvn clean site site:stage
 
     - name: List staged site files for debugging
       run: |
         echo "Listing staged site files:"
-        ls -R fhir/target/staging
+        ls -R hub-prime/target/staging
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
-        publish_dir: fhir/target/site
+        publish_dir: hub-prime/target/site
         publish_branch: gh-pages

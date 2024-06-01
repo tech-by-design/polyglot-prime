@@ -1,0 +1,42 @@
+{"properties": [
+  {
+    "name": "org.techbd.service.http.hub.prime.version",
+    "type": "java.lang.String",
+    "description": "The active version, injected from pom.xml in application.properties via @project.version@"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.default-sdoh-fhir-profile-url",
+    "type": "java.lang.String",
+    "description": "The default FHIR Profile used for principal validation of SDoH data"
+  },
+  {
+    "name": "org.techbd.service.http.interactions.default-persist-strategy",
+    "type": "java.lang.String",
+    "description": "Default persistence strategy for all HTTP request/response JSON content."
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.driver-class-name",
+    "type": "java.lang.String",
+    "description": "The UDI primary JDBC Driver Class Name"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.url",
+    "type": "java.lang.String",
+    "description": "The UDI primary JDBC URL used by most poolers (except Hikari, see below)"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.jdbcUrl",
+    "type": "java.lang.String",
+    "description": "The UDI primary JDBC URL for Hikari pooler (same as usual jdbc.url)"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.username",
+    "type": "java.lang.String",
+    "description": "The UDI primary JDBC URL's username"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.password",
+    "type": "java.lang.String",
+    "description": "The UDI primary JDBC URL's password"
+  }
+]}

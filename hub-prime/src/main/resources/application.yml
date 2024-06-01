@@ -1,0 +1,102 @@
+# when using environment variables, use this pattern:
+# `${${SPRING_PROFILES_ACTIVE}_TECHBD_xyz_abc_def:}`
+# - sandbox_TECHBD_xyz_abc_def
+# - devl_TECHBD_xyz_abc_def
+# - stage_TECHBD_xyz_abc_def
+# - prod_TECHBD_xyz_abc_def
+
+logging:
+  level:
+    org:
+      springframework: INFO
+      hibernate: ERROR
+
+spring:
+  profiles:
+    active: devl
+  main:
+    allow-bean-definition-overriding: true
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  application:
+    name: techbd-hub-prime
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: 81bdb4df5dbf13
+    password: 8d8fbb25e43ffc
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+springdoc:
+  api-docs:
+    path: /docs/api/openapi
+  swagger-ui.path: /docs/api/interactive/index.html
+  show-actuator: true 
+
+server:
+  servlet:
+    context-path: /
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: actuator,beans,openapi,swagger-ui,health,info,metrics
+  health:
+    db:
+      enabled: true
+  endpoint:
+    beans:
+      enabled: true
+    health:
+      enabled: true
+      show-details: always
+    info:
+      enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  info:
+    git:
+      mode: full
+    build:
+      enabled: true
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+org:
+  techbd:
+    service:
+        http:
+          hub:
+            prime:
+              version: @project.version@
+              defaultSdohFhirProfileUrl: https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json
+    udi:
+      prime:
+        jdbc: 
+          # the reason `url` and `jdbcUrl` are both supplied is that some poolers
+          # like `url` while others (e.g. Hikari, the default) like `jdbcUrl`
+          url: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}
+          jdbcUrl: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}
+          username: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_USERNAME:}
+          password: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD:}
+          driverClassName: org.postgresql.Driver

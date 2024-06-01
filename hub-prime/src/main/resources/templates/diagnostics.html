@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/themes/light.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.1/cdn/shoelace-autoloader.js"></script>
+
+    <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
+
+    <title>Admin Diagnostics</title>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-screen" th:attr="data-contextPath=${contextPath}">
+<div class="flex flex-col w-11/12 mx-auto bg-white p-8 rounded-lg shadow-lg h-full" style="max-width: 90%;">
+    <sl-breadcrumb>
+        <sl-breadcrumb-item href="/">Home</sl-breadcrumb-item>
+        <sl-breadcrumb-item>Diagnostics</sl-breadcrumb-item>
+    </sl-breadcrumb>
+
+    <article class="w-full">
+        <h3 class="text-lg font-semibold">TechBD Admin Diagnostics</h3>
+        <p>Database status: <span th:text="${udiPrimaryDataSrcHealth.isAlive}"></span> (<span th:text="${udiPrimaryDataSrcHealth.expectedConf}"></span>)</p>
+    </article>
+    <div id="myGrid" class="flex-grow ag-theme-alpine" style="width: 100%;"></div>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <json-viewer id="json"></json-viewer>
+    </div>
+</div>
+
+<script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let servletContextPath = document.body.dataset.contextPath || "/";
+        let originalData = [];
+        const pageSize = 10;
+        let currentPage = 0;
+        let totalRecords = 0;
+        var lastPage;
+
+        var columnDefs = [
+            { headerName: "Artifact", field: "artifactId", sortable: true, filter: true, sort: "desc",
+                    cellRenderer: function (params) {
+                        var link = document.createElement('a');
+                        link.href = '#';
+                        link.innerText = params.value;
+                        link.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            showDetails(params.data.artifactId);
+                        });
+                        return link;
+                    },
+            },
+            { headerName: "Engine", field: "engine", sortable: true, filter: true },
+            { headerName: "Valid", field: "valid", sortable: true, filter: true },
+            { headerName: "Issue Message", field: "issueMessage", sortable: true, filter: true },
+            { headerName: "Issue Severity", field: "issueSeverity", sortable: true, filter: true },
+            { headerName: "Issue Location Line", field: "issueLocationLine", sortable: true, filter: true },
+            { headerName: "Issue Location Column", field: "issueLocationColumn", sortable: true, filter: true },
+            { headerName: "Issue Diagnostics", field: "issueDiagnostics", sortable: true, filter: true },
+            { headerName: "Profile URL", field: "profileUrl", sortable: true, filter: true },
+        ];
+
+        const gridOptions = {
+            columnDefs: columnDefs,
+            defaultColDef: {
+                flex: 1,
+                minWidth: 100,
+                resizable: true,
+                sortable: true,
+                filter: true
+            },
+            pagination: true,
+            paginationPageSize: pageSize,
+            onPaginationChanged: onPaginationChanged,
+        };
+
+        const eGridDiv = document.querySelector('#myGrid');
+        new agGrid.Grid(eGridDiv, gridOptions);
+
+        function fetchPageData(page, size) {
+            fetch(`${servletContextPath}admin/observe/sessions/data?page=${page}&size=${size}`)
+                .then(response => response.json())
+                .then(data => {
+                    originalData = data;
+                    totalRecords = data.totalElements;
+                    const rowData = data.content.map(validation => ({
+                        artifactId: validation.artifactId,
+                        profileUrl: validation.profileUrl,
+                        engine: validation.engine,
+                        valid: validation.valid,
+                        issueMessage: validation.issueMessage,
+                        issueSeverity: validation.issueSeverity,
+                        issueLocationLine: validation.issueLocationLine,
+                        issueLocationColumn: validation.issueLocationColumn,
+                        issueDiagnostics: validation.issueDiagnostics,
+                    }));
+                    gridOptions.api.setRowData(rowData);
+                })
+                .catch(error => {
+                    console.error('Error fetching interaction data:', error);
+                });
+        }
+
+        function onPaginationChanged() {
+            if (gridOptions.api) {
+                currentPage = gridOptions.api.paginationGetCurrentPage();
+                if (currentPage !== lastPage) {
+                    lastPage = currentPage;
+                    fetchPageData(currentPage, pageSize);
+                }
+            }
+        }
+
+        fetchPageData(currentPage, pageSize);
+
+        document.querySelector('.close').onclick = function () {
+            document.getElementById('modal').style.display = 'none';
+        };
+
+        window.onclick = function (event) {
+            if (event.target == document.getElementById('modal')) {
+                document.getElementById('modal').style.display = 'none';
+            }
+        };
+        function showDetails(artifactId) {
+                // Ensure originalData.content is an array
+                if (originalData && Array.isArray(originalData.content)) {
+                    // Find the artifact in the content array
+                    const artifact = originalData.content.find(item => item.artifactId === artifactId);
+                    if (artifact) {
+                        const processedArtifact = JSON.parse(JSON.stringify(artifact, (key, value) => {
+                            return value === null ? '' : value;
+                        }));
+                        document.querySelector('#json').data = processedArtifact;
+                        document.getElementById('modal').style.display = 'block';
+                    }
+                } else {
+                    console.error('originalData.content is not an array:', originalData.content);
+                }
+        }
+    });
+</script>
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+# Rename this file `.envrc` and use it during development.
+# Secrets should be kept in a vault or passed through environments
+# and never stored in Git.
+
+# If you want use these, remember to start VSCode or your IDE after `direnv allow`
+
+# use `sandbox` (localhost), `devl`, `stage`, `prod`
+export SPRING_PROFILES_ACTIVE=sandbox
+export sandbox_TECHBD_UDI_DS_PRIME_JDBC_URL=jdbc:postgresql://aws.neon.tech/persistence-prime
+export sandbox_TECHBD_UDI_DS_PRIME_JDBC_USERNAME=persistence-prime
+export sandbox_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD=**********

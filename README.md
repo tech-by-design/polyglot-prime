@@ -15,6 +15,25 @@ enterprise and utility projects:
 - **Deno and TypeScript** for utilities and scripting where Java may be too
   heavy.
 
+## Refactor `fhir` to `hub-prime`
+
+Migrating from `fhir` monorepo project (specific) to `hub-prime` (universal).
+
+- Find all references to `fhir` directory and change to `hub-prime`.
+- moved everything from `application.properties` to `application.yml`
+  - expect all env vars to be `${SPRING_PROFILE_ACTIVE}_TECHBD_*`
+- `export SPRING_PROFILES_ACTIVE=sandbox` is now required for sandbox / prod
+- add `www.hub.techbd.org` as primary web site with `www.hub.devl.techbd.org`
+  and `www.hub.stage.techbd.org` environments.
+  - `synthetic.fhir.api.techbd.org` will be for FHIR APIs only
+  - `synthetic.api.techbd.org` will be for APIs only
+- removed jOOQ dependency for now
+
+### TODO:
+
+- get FHIR engines from user agent
+- `.github/workflows/deploy-techbd-org.yml` change `fhir` to `hub-prime`
+
 ## Monorepo Strategy
 
 Inspired by the practices at Microsoft, Google, and other large software
@@ -39,7 +58,7 @@ maintainability, and scalability. Here are the key aspects of our strategy:
 ```
 polyglot-prime/
 │
-├── fhir/
+├── hub-prime/
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/
@@ -61,9 +80,9 @@ polyglot-prime/
     └── README.md
 ```
 
-### Project: FHIR
+### Project: TechBD Primary Hub
 
-The `fhir` project is a Java Spring Boot application which serves FHIR API
+The `hub-prime` project is a Java Spring Boot application which serves FHIR API
 endpoints.
 
 #### Directory Structure
@@ -82,7 +101,11 @@ To set up the 1115 Waiver project, follow these steps:
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/tech-by-design/polyglot-prime.git
-   cd polyglot-prime/fhir
+   cd polyglot-prime
+   cp .envrc-example .envrc   # assume the use of direnv
+   vi .envrc                  # make sure to store secrets in ENV or Vault, not in Git
+   direnv allow
+   cd hub-prime
    ```
 
 2. **Build the Project**:

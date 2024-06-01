@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    <title>TechBD FHIR Server</title>
+</head>
+
+<body class="bg-gray-100">
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+
+        <article class="prose prose-table:table-fixed">
+            <h1>Technology by Design (TechBD) Hub v<span th:text=" ${version}">X.Y.Z</span></h1>
+            <p th:each="profile : ${environment.activeProfiles}" th:text="'Evironment: ' + ${profile}"></p>
+            <p th:each="env : ${ownEnvVars.keySet}" th:text="${env}"></p>
+
+            <ul>
+                <li><a th:href="@{/metadata}"><code>/metadata</code> Capabilities Endpoint</a></li>
+                <li><a th:href="@{/admin/observe/sessions}">Recent FHIR Bundle Sessions</a></li>
+                <li><a th:href="@{/admin/observe/interactions}">Recent HTTP Request/Response Interactions (<span th:text="${interactionsCount}"></span>)</a></li>
+                <li><a th:href="@{/docs/api/interactive/index.html}">Interactive OpenAPI Documentation and Playground</a></li>
+                <li><a href="https://tech-by-design.github.io/docs.techbd.org/">TechBD Technical Documentation Microsite</a></li>
+                <li><a href="https://tech-by-design.github.io/docs.techbd.org/1115-hub/fhir-services/regression-test-results/">Regression Test Results</a></li>
+                <li><a th:href="@{/actuator}"href="/actuator">Management Endpoints Catalog</a></li>
+            </ul>
+
+            <h3>Synthetic Testing</h3>
+            <pre class="mermaid bg-white">
+                sequenceDiagram
+                    participant CrossroadsSCN as Crossroads SCN
+                    participant QE as QE
+                    participant TechBD as TechBD
+                    participant ScoringEngine as Scoring Engine
+                                
+                    CrossroadsSCN ->> QE: Send Test JSON
+                    QE ->> TechBD: Proxy FHIR JSON
+                    TechBD ->> TechBD: Validate and Store FHIR JSON
+                    TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
+            </pre>
+    
+            <h3>Production</h3>
+            <pre class="mermaid bg-white">
+                sequenceDiagram
+                participant SCN as SCN
+                participant QE
+                participant TechBD
+                participant DataLake as Data Lake
+                   
+                SCN ->> QE: Submit JSON
+                QE ->> TechBD: Proxy FHIR
+                TechBD ->> TechBD: Validate and Store FHIR JSON
+                TechBD ->> DataLake: Proxy Validated FHIR JSON
+            </pre>
+        </article>
+    </div>
+</body>
+
+</html>
