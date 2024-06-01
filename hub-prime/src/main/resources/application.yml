@@ -54,7 +54,7 @@ management:
     enabled-by-default: false
     web:
       exposure:
-        include: actuator,beans,openapi,swagger-ui,health,info,metrics
+        include: actuator,beans,env,openapi,swagger-ui,health,info,metrics
   health:
     db:
       enabled: true
