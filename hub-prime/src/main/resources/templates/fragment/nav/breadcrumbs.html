@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <title>Breadcrumbs</title>
+</head>
+<body>
+    <div layout:fragment="breadcrumbs">
+        <div class="bg-gray-100 p-2">
+            <nav>
+                <a th:href="@{/}">Home</a> /
+                <span th:each="breadcrumb : ${breadcrumbs}">
+                    <a th:href="${breadcrumb.url}" th:text="${breadcrumb.title}"></a> /
+                </span>
+            </nav>
+        </div>
+    </div>
+</body>
+</html>

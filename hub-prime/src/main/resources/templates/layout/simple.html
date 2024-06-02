@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    <title layout:title-pattern="${title}">Page Title</title>
+</head>
+<body>
+    <div class="min-h-screen flex flex-col">
+        <header layout:include="~{fragment/nav/prime :: prime}"></header>
+        <div class="flex flex-1">
+            <aside class="w-64" layout:include="~{fragment/nav/sidebar :: sidebar}"></aside>
+            <main class="flex-1 p-6">
+                <div layout:include="~{fragment/nav/breadcrumbs :: breadcrumbs}"></div>
+                <div layout:fragment="content"></div>
+            </main>
+        </div>
+        <footer class="bg-gray-800 text-white p-4 text-center">Super Footer</footer>
+    </div>
+</body>
+</html>

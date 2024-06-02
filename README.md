@@ -31,8 +31,9 @@ Migrating from `fhir` monorepo project (specific) to `hub-prime` (universal).
 
 ### TODO:
 
-- get FHIR engines from user agent
+- test different profiles in Containers (for promotion to ECS)
 - `.github/workflows/deploy-techbd-org.yml` change `fhir` to `hub-prime`
+- get FHIR engines from user agent
 
 ## Monorepo Strategy
 
@@ -56,28 +57,46 @@ maintainability, and scalability. Here are the key aspects of our strategy:
 ## Repository Structure
 
 ```
-polyglot-prime/
-│
-├── hub-prime/
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── org/
-│   │   │   │       └── techbd/
-│   │   │   │           └── service/
-│   │   │   │               └── api/
-│   │   │   │                   └── http/
-│   │   │   │                       └── fhir/
-│   │   │   └── resources/
-│   │   └── test/
-│   ├── pom.xml
-│   └── README.md
-│
-├── lib/
-│   └── README.md
-│
-└── support/
-    └── README.md
+.
+└── hub-prime
+    ├── src
+    │   ├── main
+    │   │   ├── java
+    │   │   │   └── org
+    │   │   │       └── techbd
+    │   │   │           ├── conf
+    │   │   │           ├── orchestrate
+    │   │   │           │   └── fhir
+    │   │   │           ├── service
+    │   │   │           │   └── http
+    │   │   │           │       └── hub
+    │   │   │           │           └── prime
+    │   │   │           ├── sql
+    │   │   │           ├── udi
+    │   │   │           │   └── entity
+    │   │   │           └── util
+    │   │   └── resources
+    │   │       ├── META-INF
+    │   │       ├── sql
+    │   │       │   └── artifact
+    │   │       └── templates
+    │   │           └── mock
+    │   │               └── shinny-data-lake
+    │   │                   └── 1115-validate
+    │   └── test
+    │       └── java
+    │           └── org
+    │               └── techbd
+    │                   ├── orchestrate
+    │                   │   └── fhir
+    │                   ├── service
+    │                   │   └── http
+    │                   │       └── hub
+    │                   │           └── prime
+    │                   └── util
+    └── target
+        ├── site
+        └── surefire-reports
 ```
 
 ### Project: TechBD Primary Hub
@@ -85,18 +104,9 @@ polyglot-prime/
 The `hub-prime` project is a Java Spring Boot application which serves FHIR API
 endpoints.
 
-#### Directory Structure
-
-- **src/main/java/org/techbd/service/**: Contains the Java source code for the
-  FHIR services.
-- **src/main/resources/**: Contains configuration files and static resources.
-- **src/test/java/org/techbd//**: Contains unit and integration tests.
-- **pom.xml**: Maven configuration file for building the project.
-- **README.md**: Documentation specific to the 1115 Waiver project.
-
 #### Project Setup
 
-To set up the 1115 Waiver project, follow these steps:
+To set up the `TechBD Hub` project, follow these steps:
 
 1. **Clone the Repository**:
    ```bash
@@ -104,7 +114,7 @@ To set up the 1115 Waiver project, follow these steps:
    cd polyglot-prime
    cp .envrc-example .envrc   # assume the use of direnv
    vi .envrc                  # make sure to store secrets in ENV or Vault, not in Git
-   direnv allow
+   direnv allow               # apply the env vars
    cd hub-prime
    ```
 

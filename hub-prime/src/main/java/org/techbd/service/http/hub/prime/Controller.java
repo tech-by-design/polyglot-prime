@@ -41,7 +41,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 
 @org.springframework.stereotype.Controller
-@Tag(name = "FHIR Endpoints", description = "FHIR Bundles API")
+@Tag(name = "TechBD Hub", description = "FHIR Bundles API")
 public class Controller {
     private final OrchestrationEngine engine = new OrchestrationEngine();
     private final AppConfig appConfig;
@@ -58,13 +58,19 @@ public class Controller {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
-    @GetMapping("/")
-    public String home(final Model model) {
+    protected void populateModel(final Model model, final HttpServletRequest request) {
         model.addAttribute("version", appConfig.getVersion());
         model.addAttribute("interactionsCount", InteractionsFilter.interactions.getHistory().size());
         model.addAttribute("environment", environment);
         model.addAttribute("ownEnvVars", Configuration.ownEnvVars);
-        return "index";
+        model.addAttribute("contextPath", request.getContextPath());
+    }
+
+    @GetMapping("/")
+    public String home(final Model model, final HttpServletRequest request) {
+        model.addAttribute("title", "Welcome");
+        populateModel(model, request);
+        return "page/home";
     }
 
     @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -125,8 +131,9 @@ public class Controller {
 
     @GetMapping("/admin/observe/interactions")
     public String observeInteractions(final Model model, final HttpServletRequest request) {
-        model.addAttribute("contextPath", request.getContextPath());
-        return "interactions";
+        model.addAttribute("title", "HTTP Interactions");
+        populateModel(model, request);
+        return "page/interactions";
     }
 
     @Operation(summary = "Recent HTTP Request/Response Interactions")

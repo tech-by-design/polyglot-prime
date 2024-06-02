@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
+
+    <title>Recent HTTP Request/Response Interactions</title>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-screen">
+    <div layout:fragment="content">
+        <div id="myGrid" class="ag-theme-alpine"></div>
+
+        <!-- Modal -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <json-viewer id="json"></json-viewer>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+        <script id="driver" th:attr="data-contextPath=${contextPath}">
+            document.addEventListener('DOMContentLoaded', function () {
+                // thymeleaf stores "contextPath" in data-* using value from model
+                let servletContextPath = document.querySelector('#driver').dataset.contextPath || "/";
+                let originalData = [];
+
+                var columnDefs = [
+                    {
+                        headerName: "Request Time", field: "requestEncounteredAt", sortable: true, filter: true, sort: "desc",
+                        cellRenderer: function (params) {
+                            var link = document.createElement('a');
+                            link.href = '#';
+                            link.innerText = params.value;
+                            link.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                showDetails(params.data.interactionId);
+                            });
+                            return link;
+                        }
+                    },
+                    { headerName: "Tenant ID", field: "tenantId", sortable: true, filter: true },
+                    { headerName: "Method", field: "method", sortable: true, filter: true },
+                    { headerName: "URI", field: "uri", sortable: true, filter: true },
+                    { headerName: "Response Status", field: "status", sortable: true, filter: true },
+                    { headerName: "Response Time", field: "responseEncounteredAt", sortable: true, filter: true },
+                    { headerName: "IP Address", field: "clientIpAddress", sortable: true, filter: true },
+                    { headerName: "User Agent", field: "userAgent", sortable: true, filter: true },
+                ];
+
+                const gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: [],
+                    defaultColDef: {
+                        flex: 1,
+                        minWidth: 100,
+                        resizable: true
+                    },
+                    autoSizeStrategy: { type: "fitCellContents" },
+                };
+
+                const eGridDiv = document.querySelector('#myGrid');
+                const gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+                eGridDiv.style.height = "750px"
+
+                fetch(`${servletContextPath}admin/observe/interaction/recent.json`)
+                    .then(response => response.json())
+                    .then(data => {
+                        originalData = data;
+                        const rowData = data.map(interaction => ({
+                            requestEncounteredAt: interaction.request.encounteredAt,
+                            interactionId: interaction.interactionId,
+                            tenantId: interaction.tenant.tenantId,
+                            method: interaction.request.method,
+                            uri: interaction.request.requestUri,
+                            status: interaction.response.status,
+                            responseEncounteredAt: interaction.response.encounteredAt,
+                            clientIpAddress: interaction.request.clientIpAddress,
+                            userAgent: interaction.request.userAgent,
+                        }));
+                        gridApi.setGridOption('rowData', rowData);
+                        gridApi.sizeColumnsToFit();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching interaction data:', error);
+                    });
+
+                function showDetails(interactionId) {
+                    const interaction = originalData.find(item => item.interactionId === interactionId);
+                    if (interaction) {
+                        document.querySelector('#json').data = interaction;
+                        document.getElementById('modal').style.display = 'block';
+                    }
+                }
+
+                document.querySelector('.close').onclick = function () {
+                    document.getElementById('modal').style.display = 'none';
+                };
+
+                window.onclick = function (event) {
+                    if (event.target == document.getElementById('modal')) {
+                        document.getElementById('modal').style.display = 'none';
+                    }
+                };
+            });
+        </script>
+    </div>
+</body>
+
+</html>

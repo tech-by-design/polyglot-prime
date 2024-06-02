@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <title>Navigation</title>
+</head>
+<body>
+    <div layout:fragment="prime">
+        <nav class="bg-gray-800 p-4 text-white">
+            <a th:href="@{/}" class="mr-4">Home</a>
+            <a th:href="@{/gpm}" class="mr-4">GPM</a>
+            <a th:href="@{/interactions}" class="mr-4">Interactions</a>
+            <a th:href="@{/api}" class="mr-4">API</a>
+            <a th:href="@{/observability}" class="mr-4">Observability</a>
+            <a th:href="@{/docs}" class="mr-4">Docs</a>
+            <a th:href="@{/profile}">Profile</a>
+        </nav>
+    </div>
+</body>
+</html>
+

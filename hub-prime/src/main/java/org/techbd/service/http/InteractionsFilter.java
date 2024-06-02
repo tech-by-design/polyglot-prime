@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.sql.ArtifactsDataSource;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.ArtifactStore;
@@ -82,8 +83,16 @@ public class InteractionsFilter extends OncePerRequestFilter {
             return;
         }
 
+        // for the /Bundle/$validate (at least, and maybe even /Bundle) we want
+        // to store the entire request/response cycle including the response payload;
+        // for everything else we only want to keep the request and response without
+        // payloads
+        final var requestURI = origRequest.getRequestURI();
+        final var persistPayloads = requestURI.contains("/Bundle/$validate");
+
         final var mutatableReq = new ContentCachingRequestWrapper(origRequest);
-        final var requestBody = mutatableReq.getContentAsByteArray();
+        final var requestBody = persistPayloads ? mutatableReq.getContentAsByteArray()
+                : "persistPayloads = false".getBytes();
 
         // Prepare a serializable RequestEncountered as early as possible in
         // request cycle and store it as an attribute so that other filters
@@ -95,16 +104,22 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
         chain.doFilter(mutatableReq, mutatableResp);
 
-        // TODO: for large response bodies this may be quite expensive in terms
-        // of memory so we might want to store in S3, disk, etc. instead.
-        // TODO: perhaps we should allow persistence args to specify what parts to store
-        // (with/without body?)
-        final var responseBody = mutatableResp.getContentAsByteArray();
+        // for the /Bundle/$validate (at least, and maybe even /Bundle) we want
+        // to store the entire request/response cycle including the response payload;
+        // for everything else we only want to keep the request and response without
+        // payloads
+        RequestResponseEncountered rre = null;
+        if (!persistPayloads) {
+            rre = new Interactions.RequestResponseEncountered(requestEncountered,
+                    new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
+                            "persistPayloads = false".getBytes()));
+        } else {
+            rre = new Interactions.RequestResponseEncountered(requestEncountered,
+                    new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
+                            mutatableResp.getContentAsByteArray()));
+        }
 
-        final var rre = new Interactions.RequestResponseEncountered(requestEncountered,
-                new Interactions.ResponseEncountered(mutatableResp, requestEncountered, responseBody));
         interactions.addHistory(rre);
-
         setActiveInteraction(mutatableReq, rre);
 
         // TODO: cache this in the constructor
@@ -157,7 +172,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
         }
 
-        // do this last, after all other mutations are completed
         mutatableResp.copyBodyToResponse();
     }
 }
