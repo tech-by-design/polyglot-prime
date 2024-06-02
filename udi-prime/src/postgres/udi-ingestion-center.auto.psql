@@ -219,5 +219,5 @@ CREATE TABLE IF NOT EXISTS "sat_exception_http_client" (
     FOREIGN KEY("hub_exception_id") REFERENCES "hub_exception"("hub_exception_id")
 );
 
-\ir udi-stored-fn.psql
+\ir udi-ingestion-center-stored-routines.psql
 

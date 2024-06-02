@@ -307,7 +307,7 @@ function sqlDDL(
 
     ${hubExceptionHttpClientSat}
 
-    \\ir udi-stored-routines.psql
+    \\ir udi-ingestion-center-stored-routines.psql
 `;
 }
 

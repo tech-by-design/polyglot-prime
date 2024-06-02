@@ -31,6 +31,7 @@ Clone the repository and navigate to the directory containing the UDI tool:
 
 ```bash
 git clone https://github.com/tech-by-design/polyglot-prime.git
+cd polyglot-prime
 ```
 
 ## Usage
@@ -38,27 +39,16 @@ git clone https://github.com/tech-by-design/polyglot-prime.git
 The tool provides three main functionalities: generating SQL scripts, generating
 PlantUML diagrams, and executing SQL scripts against a PostgreSQL database.
 
-### Generating SQL Script
+### Generating SQL and ERD
 
-To generate SQL for the UDI model, run the following command:
+To generate SQL and ERD for the UDI model, run the following command:
 
 ```bash
-deno run -A udi-prime/src/postgres/udi-ingestion-center.ts sql > udi-prime/src/postgres/udi-ingestion-center.auto.psql
+deno task gen-all
 ```
 
 This command will produce a psql file that includes all necessary DDL statements
-for setting up the database schema.
-
-### Generating PlantUML Diagram
-
-To generate a PlantUML diagram of the UDI model, use the following command:
-
-```bash
-deno run -A udi-prime/src/postgres/udi-ingestion-center.ts diagram > udi-prime/src/postgres/udi-ingestion-center.auto.puml
-```
-
-This will create a `.puml` file which can be viewed or edited in any UML diagram
-tool that supports PlantUML.
+for setting up the database schema and will create a `.puml` file which can be viewed or edited in any UML diagram tool that supports PlantUML.
 
 ### Deploying SQL to PostgreSQL
 

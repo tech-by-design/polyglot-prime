@@ -1,0 +1,9 @@
+{
+    "tasks": {
+      "gen-psql": "deno run -A src/postgres/udi-ingestion-center.ts sql > src/postgres/udi-ingestion-center.auto.psql",
+      "gen-puml": "deno run -A src/postgres/udi-ingestion-center.ts diagram > src/postgres/udi-ingestion-center.auto.puml",
+      "gen-all": "deno task gen-psql && deno task gen-puml",
+      "migrate-pg": "psql -f src/postgres/udi-ingestion-center.auto.psql $(pgpass psql-fmt --conn-id='UDI_NEON_DEVL')"
+    }
+  }
+  
