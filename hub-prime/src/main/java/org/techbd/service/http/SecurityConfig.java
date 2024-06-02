@@ -19,6 +19,8 @@ public class SecurityConfig {
         // and turn off CSRF to allow POST methods
         http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
                 .csrf(AbstractHttpConfigurer::disable);
+        // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
+        http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
         return http.build();
     }
 

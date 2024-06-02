@@ -108,6 +108,13 @@ public class Controller {
         return "page/home";
     }
 
+    @GetMapping("/docs")
+    public String docs(final Model model, final HttpServletRequest request) {
+        model.addAttribute("title", "Documentation");
+        populateModel(model, request);
+        return "page/documentation";
+    }
+
     @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
     @Operation(summary = "FHIR server's conformance statement")
     public String metadata(final Model model, HttpServletRequest request) {
