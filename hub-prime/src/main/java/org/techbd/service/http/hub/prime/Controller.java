@@ -136,26 +136,34 @@ public class Controller {
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
             // "profile" is the same name that HL7 validator uses
             @RequestParam(value = "profile", required = false) String fhirProfileUrlParam,
-            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             final HttpServletRequest request) {
 
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
-        final var session = engine.session()
+        final var sessionBuilder = engine.session()
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
-                .addHapiValidationEngine()
-                .addHl7ValidationApiEngine()
-                .addInfernoValidationEngine()
-                .build();
+                .addHapiValidationEngine() // by default
+                // clearExisting is set to true so engines can be fully supplied through header
+                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+        final var session = sessionBuilder.build();
         engine.orchestrate(session);
 
-        final var opOutcome = Map.of("resourceType", "OperationOutcome", "validationResults",
+        final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
                 session.getValidationResults(), "device",
-                session.getDevice());
+                session.getDevice()));
         final var result = Map.of("OperationOutcome", opOutcome);
+        if (uaValidationStrategyJson != null) {
+            opOutcome.put("uaValidationStrategy",
+                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
+                            "issues",
+                            sessionBuilder.getUaStrategyJsonIssues()));
+
+        }
         if (includeRequestInOutcome) {
             opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
         }

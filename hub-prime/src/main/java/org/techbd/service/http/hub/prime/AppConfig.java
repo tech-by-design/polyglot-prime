@@ -11,8 +11,10 @@ public class AppConfig {
     public class Servlet {
         public class HeaderName {
             public class Request {
-                public static final String STRUCT_DEFN_PROFILE_URI = Configuration.Servlet.HeaderName.PREFIX
+                public static final String FHIR_STRUCT_DEFN_PROFILE_URI = Configuration.Servlet.HeaderName.PREFIX
                         + "FHIR-Profile-URI";
+                public static final String FHIR_VALIDATION_STRATEGY = Configuration.Servlet.HeaderName.PREFIX
+                        + "FHIR-Validation-Strategy";
             }
 
             public class Response {

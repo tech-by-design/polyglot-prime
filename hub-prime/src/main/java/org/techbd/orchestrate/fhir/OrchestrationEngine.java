@@ -1,32 +1,33 @@
 package org.techbd.orchestrate.fhir;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpResponse.BodyHandlers;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
-import org.apache.commons.text.StringEscapeUtils;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.IOException;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.StrictErrorHandler;
@@ -772,9 +773,14 @@ public class OrchestrationEngine {
             private final List<ValidationEngine> validationEngines = new ArrayList<>();
             private Device device = Device.INSTANCE;
             private String fhirProfileUrl;
+            private List<String> uaStrategyJsonIssues = new ArrayList<>();
 
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
+            }
+            
+            public List<String> getUaStrategyJsonIssues() {
+                return uaStrategyJsonIssues;
             }
 
             public Builder onDevice(@NotNull final Device device) {
@@ -789,6 +795,56 @@ public class OrchestrationEngine {
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
+                return this;
+            }
+
+            public Builder withUserAgentValidationStrategy(final String uaStrategyJson, final boolean clearExisting) {
+                if (uaStrategyJson != null) {
+                    try {
+                        if (new ObjectMapper().readValue(uaStrategyJson, Object.class) instanceof Map uaStrategy) {
+                            if (uaStrategy.get("engines") instanceof List engines) {
+                                if (clearExisting) {
+                                    validationEngines.clear();
+                                }
+                                for (var engineItem : engines) {
+                                    if (engineItem instanceof String engine) {
+                                        switch (engine) {
+                                            case "HAPI":
+                                                addHapiValidationEngine();
+                                                break;
+                                            case "HL7-Official-API":
+                                                addHl7ValidationApiEngine();
+                                                break;
+                                            case "HL7-Official-Embedded":
+                                                addHl7ValidationEmbeddedEngine();
+                                                break;
+                                            case "Inferno":
+                                                addInfernoValidationEngine();
+                                                break;
+                                            default:
+                                                uaStrategyJsonIssues.add(
+                                                        "uaStrategyJson engine `%s` in withUserAgentValidationStrategy was not recognized"
+                                                                .formatted(engine));
+                                        }
+                                    }
+                                }
+                            } else {
+                                uaStrategyJsonIssues.add(
+                                        "uaStrategyJson `engines` key not found in `%s` withUserAgentValidationStrategy"
+                                                .formatted(uaStrategyJson));
+                            }
+                        } else {
+                            uaStrategyJsonIssues
+                                    .add("uaStrategyJson `%s` in withUserAgentValidationStrategy is not a Map"
+                                            .formatted(uaStrategyJson));
+                        }
+                    } catch (JsonProcessingException e) {
+                        uaStrategyJsonIssues
+                                .add("Error parsing uaStrategyJson `%s` in withUserAgentValidationStrategy: %s"
+                                        .formatted(uaStrategyJson, e));
+                    }
+                }
+
                 return this;
             }
 
