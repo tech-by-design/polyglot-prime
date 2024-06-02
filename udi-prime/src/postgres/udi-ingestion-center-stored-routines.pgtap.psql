@@ -1,0 +1,138 @@
+-- Load pgTAP
+SET search_path TO techbd_udi;
+CREATE EXTENSION IF NOT EXISTS pgtap;
+
+BEGIN;
+
+-- Test for fn_hub_device_upserted
+SELECT plan(5);
+
+-- Test if the function inserts a new row
+SELECT has_function(
+    'techbd_udi',
+    'fn_hub_device_upserted(p_key text, p_created_by text, p_provenance text)',
+    'hub_device',
+    'Function fn_hub_device_upserted exists'
+);
+
+-- Test for successful insert
+SELECT is (
+    (SELECT (fn_hub_device_upserted('test_key', 'test_user', 'test_provenance')).hub_device_id IS NOT NULL),
+    true,
+    'Successfully inserted new hub_device'
+);
+
+-- Test if the function updates an existing row
+SELECT is (
+    (SELECT (fn_hub_device_upserted('test_key', 'test_user', 'test_provenance')).hub_device_id),
+    (SELECT hub_device_id FROM hub_device WHERE key = 'test_key' AND provenance = 'test_provenance'),
+    'Successfully updated existing hub_device'
+);
+
+-- Test if the function handles exceptions
+SELECT isnt (
+    (SELECT (fn_hub_device_upserted('invalid_key', 'test_user', 'test_provenance')).hub_device_id),
+    NULL,
+    'Handled exception and returned null'
+);
+
+SELECT * FROM finish();
+
+-- Test for fn_hub_exception_upserted
+SELECT plan(3);
+
+-- Test if the function inserts a new exception
+SELECT has_function(
+    'techbd_udi',
+    'fn_hub_exception_upserted(p_key text, p_created_by text, p_provenance text)',
+    'hub_exception',
+    'Function fn_hub_exception_upserted exists'
+);
+
+-- Test for successful insert
+SELECT is (
+    (SELECT (fn_hub_exception_upserted('exception_key', 'test_user', 'test_provenance')).hub_exception_id IS NOT NULL),
+    true,
+    'Successfully inserted new hub_exception'
+);
+
+-- Test if the function updates an existing exception
+SELECT is (
+    (SELECT (fn_hub_exception_upserted('exception_key', 'test_user', 'test_provenance')).hub_exception_id),
+    (SELECT hub_exception_id FROM hub_exception WHERE key = 'exception_key' AND provenance = 'test_provenance'),
+    'Successfully updated existing hub_exception'
+);
+
+SELECT * FROM finish();
+
+-- Test for fn_hub_ingest_session_entry_upserted
+SELECT plan(5);
+
+-- Test if the function inserts a new row
+SELECT has_function(
+    'techbd_udi',
+    'fn_hub_ingest_session_entry_upserted(p_key text, p_created_by text, p_provenance text)',
+    'hub_ingest_session_entry',
+    'Function fn_hub_ingest_session_entry_upserted exists'
+);
+
+-- Test for successful insert
+SELECT is (
+    (SELECT (fn_hub_ingest_session_entry_upserted('session_entry_key', 'test_user', 'test_provenance')).hub_ingest_session_entry_id IS NOT NULL),
+    true,
+    'Successfully inserted new hub_ingest_session_entry'
+);
+
+-- Test if the function updates an existing row
+SELECT is (
+    (SELECT (fn_hub_ingest_session_entry_upserted('session_entry_key', 'test_user', 'test_provenance')).hub_ingest_session_entry_id),
+    (SELECT hub_ingest_session_entry_id FROM hub_ingest_session_entry WHERE key = 'session_entry_key' AND provenance = 'test_provenance'),
+    'Successfully updated existing hub_ingest_session_entry'
+);
+
+-- Test if the function handles exceptions
+SELECT isnt (
+    (SELECT (fn_hub_ingest_session_entry_upserted('invalid_key', 'test_user', 'test_provenance')).hub_ingest_session_entry_id),
+    NULL,
+    'Handled exception and returned null'
+);
+
+SELECT * FROM finish();
+
+-- Test for fn_hub_ingest_session_upserted
+SELECT plan(5);
+
+-- Test if the function inserts a new row
+SELECT has_function(
+    'techbd_udi',
+    'fn_hub_ingest_session_upserted(p_key text, p_created_by text, p_provenance text)',
+    'hub_ingest_session',
+    'Function fn_hub_ingest_session_upserted exists'
+);
+
+-- Test for successful insert
+SELECT is (
+    (SELECT (fn_hub_ingest_session_upserted('session_key', 'test_user', 'test_provenance')).hub_ingest_session_id IS NOT NULL),
+    true,
+    'Successfully inserted new hub_ingest_session'
+);
+
+-- Test if the function updates an existing row
+SELECT is (
+    (SELECT (fn_hub_ingest_session_upserted('session_key', 'test_user', 'test_provenance')).hub_ingest_session_id),
+    (SELECT hub_ingest_session_id FROM hub_ingest_session WHERE key = 'session_key' AND provenance = 'test_provenance'),
+    'Successfully updated existing hub_ingest_session'
+);
+
+-- Test if the function handles exceptions
+SELECT isnt (
+    (SELECT (fn_hub_ingest_session_upserted('invalid_key', 'test_user', 'test_provenance')).hub_ingest_session_id),
+    NULL,
+    'Handled exception and returned null'
+);
+
+SELECT * FROM finish();
+
+-- Add similar tests for other functions as needed
+
+COMMIT;

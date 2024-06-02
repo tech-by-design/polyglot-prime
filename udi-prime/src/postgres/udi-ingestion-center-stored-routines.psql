@@ -1,0 +1,800 @@
+
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_hub_device_upserted(p_key text, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.hub_device
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 				techbd_udi.hub_device%ROWTYPE;
+	var_inserted_exception 			techbd_udi.hub_exception;
+	var_err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 			text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 	text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 		text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 	text; 	-- Variable to store the context of the error
+begin
+        -- Attempt to select the row
+        SELECT * INTO var_inserted_row
+        FROM hub_device hub
+        WHERE hub.key = p_key
+        AND hub.provenance = p_provenance;
+
+        -- If the row is not found, insert it
+        IF NOT FOUND THEN
+            INSERT INTO techbd_udi.hub_device (hub_device_id, key, created_by, provenance)
+            VALUES (uuid_generate_v4(), p_key, p_created_by, p_provenance)
+            RETURNING * INTO var_inserted_row;
+        END IF;
+       
+      RETURN var_inserted_row;  
+    EXCEPTION
+		WHEN others THEN 
+        
+		GET STACKED DIAGNOSTICS 
+		var_err_returned_sqlstate = RETURNED_SQLSTATE,
+		var_err_message_text = MESSAGE_TEXT,
+		var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+		var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+		var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+	
+        --RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/	
+		-- Log the error 
+		var_inserted_exception := techbd_udi.fn_hub_exception_upserted(p_key, p_created_by, p_provenance);
+		PERFORM fn_sat_exception_diagnostics_upserted(
+		        var_inserted_exception.hub_exception_id,
+		        var_err_message_text,
+		        var_err_returned_sqlstate,
+		        var_err_pg_exception_detail,
+		        var_err_pg_exception_hint,
+		        var_err_pg_exception_context,
+		        p_created_by,
+		        p_provenance);
+    	RETURN NULL;   
+END;
+$function$
+;
+
+/*================================================================================================================*/
+
+CREATE OR REPLACE FUNCTION techbd_udi.fn_hub_exception_upserted(p_key text, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.hub_exception
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row techbd_udi.hub_exception%ROWTYPE;
+begin		
+	-- Attempt to select the row
+	SELECT * INTO var_inserted_row
+	FROM hub_exception hub
+	WHERE hub.key = p_key
+	AND hub.provenance = p_provenance;	
+	-- If the row is not found, insert it
+	IF NOT FOUND THEN
+	   insert into techbd_udi.hub_exception (hub_exception_id,
+		key,
+		created_by,
+		provenance)
+		values (uuid_generate_v4(),
+		p_key,
+		p_created_by,
+		p_provenance)
+	    returning * into var_inserted_row;
+	END IF;
+	return var_inserted_row;
+END;
+$function$
+;
+
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_hub_ingest_session_entry_upserted(p_key text, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.hub_device
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 				techbd_udi.hub_ingest_session_entry%ROWTYPE;
+	var_inserted_exception 			techbd_udi.hub_exception;
+	var_err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 			text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 	text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 		text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 	text; 	-- Variable to store the context of the error  
+begin
+        -- Attempt to select the row
+        SELECT * INTO var_inserted_row
+        FROM techbd_udi.hub_ingest_session_entry hub
+        WHERE hub.key = p_key
+        AND hub.provenance = p_provenance;
+
+        -- If the row is not found, insert it
+        IF NOT FOUND THEN
+            INSERT INTO techbd_udi.hub_ingest_session_entry (hub_ingest_session_entry_id, key, created_by, provenance)
+            VALUES (uuid_generate_v4(), p_key, p_created_by, p_provenance)
+            RETURNING * INTO var_inserted_row;
+        END IF;
+
+      RETURN var_inserted_row;  
+    EXCEPTION
+		WHEN others THEN 
+        
+		GET STACKED DIAGNOSTICS 
+		var_err_returned_sqlstate = RETURNED_SQLSTATE,
+		var_err_message_text = MESSAGE_TEXT,
+		var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+		var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+		var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+	
+        --RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/	
+		-- Log the error 
+		var_inserted_exception := techbd_udi.fn_hub_exception_upserted(p_key, p_created_by, p_provenance);
+		PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+		        var_inserted_exception.hub_exception_id,
+		        var_err_message_text,
+		        var_err_returned_sqlstate,
+		        var_err_pg_exception_detail,
+		        var_err_pg_exception_hint,
+		        var_err_pg_exception_context,
+		        p_created_by,
+		        p_provenance);
+    	RETURN NULL;   
+END;
+$function$
+;
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_hub_ingest_session_upserted(p_key text, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.hub_ingest_session
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 				techbd_udi.hub_ingest_session%ROWTYPE;
+	var_inserted_exception 			techbd_udi.hub_exception;
+	var_err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 			text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 	text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 		text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 	text; 	-- Variable to store the context of the error
+begin
+        -- Attempt to select the row
+        SELECT * INTO var_inserted_row
+        FROM hub_ingest_session hub
+        WHERE hub.key = p_key
+        AND hub.provenance = p_provenance;
+
+        -- If the row is not found, insert it
+        IF NOT FOUND THEN
+            INSERT INTO techbd_udi.hub_ingest_session(hub_ingest_session_id, key, created_by, provenance)
+            VALUES (uuid_generate_v4(), p_key, p_created_by, p_provenance)
+            RETURNING * INTO var_inserted_row;
+        END IF;
+      RETURN var_inserted_row;  
+    EXCEPTION
+		WHEN others THEN 
+        
+		GET STACKED DIAGNOSTICS 
+		var_err_returned_sqlstate = RETURNED_SQLSTATE,
+		var_err_message_text = MESSAGE_TEXT,
+		var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+		var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+		var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+	
+        --RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/	
+		-- Log the error 
+		var_inserted_exception := techbd_udi.fn_hub_exception_upserted(p_key, p_created_by, p_provenance);
+		PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+		        var_inserted_exception.hub_exception_id,
+		        var_err_message_text,
+		        var_err_returned_sqlstate,
+		        var_err_pg_exception_detail,
+		        var_err_pg_exception_hint,
+		        var_err_pg_exception_context,
+		        p_created_by,
+		        p_provenance);
+    	RETURN NULL;   
+END;
+$function$
+;
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_hub_request_http_client_upserted(p_key text, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.hub_device
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 				techbd_udi.hub_request_http_client%ROWTYPE;
+	var_inserted_exception 			techbd_udi.hub_exception;
+	var_err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 			text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 	text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 		text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 	text; 	-- Variable to store the context of the error
+BEGIN
+    -- Start transaction
+    -- Attempt to select the row
+    SELECT * INTO var_inserted_row
+    FROM hub_request_http_client hub
+    WHERE hub.key = p_key
+  	AND hub.provenance = p_provenance;
+
+    -- If the row is not found, insert it
+    IF NOT FOUND THEN
+        INSERT INTO techbd_udi.hub_request_http_client (hub_request_http_client_id, key, created_by, provenance)
+        VALUES (uuid_generate_v4(), p_key, p_created_by, p_provenance)
+        RETURNING * INTO var_inserted_row;
+    END IF;
+   	RETURN var_inserted_row; 
+EXCEPTION
+    WHEN others then
+    
+    GET STACKED DIAGNOSTICS 
+	var_err_returned_sqlstate = RETURNED_SQLSTATE,
+	var_err_message_text = MESSAGE_TEXT,
+	var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+	var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+	var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+
+	--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/	
+	var_inserted_exception := techbd_udi.fn_hub_exception_upserted(p_key, p_created_by, p_provenance);
+	PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+	        var_inserted_exception.hub_exception_id,
+	        var_err_message_text,
+	        var_err_returned_sqlstate,
+	        var_err_pg_exception_detail,
+	        var_err_pg_exception_hint,
+	        var_err_pg_exception_context,
+	        p_created_by,
+	        p_provenance);
+	RETURN NULL;     
+END;
+$function$
+;
+
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_sat_device_upserted(p_hub_device_id text, p_name text, p_state text, p_boundary text, p_segmentation text, p_state_sysinfo text, p_elaboration jsonb, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.sat_device_device
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 				techbd_udi.sat_device_device%ROWTYPE;
+	var_inserted_exception 			techbd_udi.hub_exception;
+	var_err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 			text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 	text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 		text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 	text; 	-- Variable to store the context of the error
+  	var_hub_device_key				text;
+BEGIN
+	-- Start transaction
+    select key into var_hub_device_key
+  	FROM techbd_udi.hub_device
+  	where hub_device_id = p_hub_device_id;
+  
+  	if(var_hub_device_key is NULL) then
+  		return null;	
+  	end if;
+  	
+    -- Attempt to select the row
+    SELECT * INTO var_inserted_row
+    FROM techbd_udi.sat_device_device sat
+    WHERE sat."name" = p_name        
+    AND sat.provenance = p_provenance
+    and sat.hub_device_id = p_hub_device_id
+   ;
+    -- If the row is not found, insert it
+    IF var_inserted_row is NULL THEN
+       insert into techbd_udi.sat_device_device 
+		(sat_device_device_id,
+		hub_device_id,
+		"name",
+		state,
+		boundary,
+		segmentation,
+		state_sysinfo,
+		elaboration,
+		created_by,
+		provenance)
+		values (uuid_generate_v4(),
+		            p_hub_device_id,
+		            p_name,
+		            p_state,
+		            p_boundary,
+		            p_segmentation,
+		            p_state_sysinfo,
+		            p_elaboration,            
+		            p_created_by, 
+		            p_provenance)
+		            returning * into var_inserted_row;
+    END IF;
+   	return var_inserted_row;
+	EXCEPTION
+	    WHEN others THEN 
+	   
+	   	GET STACKED DIAGNOSTICS 
+		var_err_returned_sqlstate = RETURNED_SQLSTATE,
+		var_err_message_text = MESSAGE_TEXT,
+		var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+		var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+		var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+	
+		--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
+		-- Log the error
+	   	var_inserted_exception := techbd_udi.fn_hub_exception_upserted(var_hub_device_key, p_created_by, p_provenance);
+		PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+		        var_inserted_exception.hub_exception_id,
+		        var_err_message_text,
+		        var_err_returned_sqlstate,
+		        var_err_pg_exception_detail,
+		        var_err_pg_exception_hint,
+		        var_err_pg_exception_context,
+		        p_created_by,
+		        p_provenance);
+	
+	RETURN NULL;   
+END;
+$function$
+;
+
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_sat_exception_diagnostics_upserted(p_hub_exception_id text, p_message text, p_err_returned_sqlstate text, p_err_pg_exception_detail text, p_err_pg_exception_hint text, p_err_pg_exception_context text, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.sat_exception_diagnostics
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    var_inserted_row sat_exception_diagnostics%ROWTYPE;
+BEGIN
+    -- Insert into the table, on conflict do nothing, return the inserted row
+    INSERT INTO techbd_udi.sat_exception_diagnostics (
+        sat_exception_diagnostics_id,
+        hub_exception_id,
+        message,
+        err_returned_sqlstate,
+        err_pg_exception_detail,
+        err_pg_exception_hint,
+        err_pg_exception_context,
+        created_by,
+        provenance
+    )
+    VALUES (
+        uuid_generate_v4(),
+        p_hub_exception_id,
+        p_message,
+        p_err_returned_sqlstate,
+        p_err_pg_exception_detail,
+        p_err_pg_exception_hint,
+        p_err_pg_exception_context,
+        p_created_by,
+        p_provenance
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING * INTO var_inserted_row;
+
+    RETURN var_inserted_row;
+END;
+$function$
+;
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_sat_exception_http_client_upserted(p_hub_exception_id text, p_http_request jsonb, p_http_response jsonb, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.sat_exception_http_client
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 				techbd_udi.sat_exception_http_client%ROWTYPE;
+	var_inserted_exception 			techbd_udi.hub_exception;
+	var_err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 			text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 	text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 		text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context	text; 	-- Variable to store the context of the error
+  	var_hub_exception_key			text;
+BEGIN
+	-- Start transaction
+    select "key" into var_hub_exception_key
+  	from techbd_udi.hub_exception
+  	where hub_exception_id = p_hub_exception_id;
+  
+	if(var_hub_exception_key is NULL) then
+		return null;	
+	end if;
+    -- Attempt to select the row
+    SELECT * INTO var_inserted_row
+    FROM techbd_udi.sat_exception_http_client sat
+    WHERE sat.http_req = p_http_request        
+    AND sat.http_resp = p_http_response
+    and sat.provenance = p_provenance
+   	;
+    -- If the row is not found, insert it
+    IF var_inserted_row is NULL THEN
+       insert into techbd_udi.sat_exception_http_client 
+		(sat_exception_http_client_id,
+		hub_exception_id,
+		http_req,
+		http_resp,			
+		created_by,
+		provenance)
+		values (uuid_generate_v4(),
+		            p_hub_exception_id,
+		            p_http_request, 
+		            p_http_response,
+		            p_created_by, 
+		            p_provenance)
+		            returning * into var_inserted_row;
+    END IF;
+   	return var_inserted_row;
+EXCEPTION
+    -- Rollback the transaction if an error occurs
+    WHEN others then
+    
+    GET STACKED DIAGNOSTICS 
+	var_err_returned_sqlstate = RETURNED_SQLSTATE,
+	var_err_message_text = MESSAGE_TEXT,
+	var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+	var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+	var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+
+	--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/
+    -- Log the error
+   	var_inserted_exception := techbd_udi.fn_hub_exception_upserted(var_hub_exception_key, p_created_by, p_provenance);
+	PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+	        var_inserted_exception.hub_exception_id,
+	        var_err_message_text,
+	        var_err_returned_sqlstate,
+	        var_err_pg_exception_detail,
+	        var_err_pg_exception_hint,
+	        var_err_pg_exception_context,
+	        p_created_by,
+	        p_provenance);
+	       
+RETURN NULL;   
+END;
+$function$
+;
+
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_sat_ingest_session_entry_payload_upserted(p_hub_ingest_session_entry_id text, p_ingest_src text, p_ingest_payload jsonb, p_elaboration jsonb, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.sat_ingest_session_entry_payload
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 					techbd_udi.sat_ingest_session_entry_payload%ROWTYPE;
+	var_inserted_exception 				techbd_udi.hub_exception;
+	var_err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 				text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 		text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 			text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 		text; 	-- Variable to store the context of the error
+  	var_hub_ingest_session_entry_key	text;
+BEGIN
+	-- Start transaction
+    select key into var_hub_ingest_session_entry_key
+  	FROM techbd_udi.hub_ingest_session_entry
+  	where hub_ingest_session_entry_id = p_hub_ingest_session_entry_id;
+  
+  	if(var_hub_ingest_session_entry_key is NULL) then
+  		return null;	
+  	end if;
+  	
+    -- Attempt to select the row
+    SELECT * INTO var_inserted_row
+    FROM techbd_udi.sat_ingest_session_entry_payload sat
+    WHERE sat.ingest_payload = p_ingest_payload        
+    AND sat.provenance = p_provenance
+   ;
+    -- If the row is not found, insert it
+    IF var_inserted_row is NULL THEN
+       insert into techbd_udi.sat_ingest_session_entry_payload 
+		(sat_ingest_session_entry_payload_id,
+		hub_ingest_session_entry_id,
+		ingest_src,
+		ingest_payload,
+		elaboration,
+		created_by,
+		provenance)
+		values (uuid_generate_v4(),
+				p_hub_ingest_session_entry_id,        
+				p_ingest_src,
+				p_ingest_payload,				
+	            p_elaboration,            
+	            p_created_by, 
+	            p_provenance)
+	            returning * into var_inserted_row;
+    END IF;
+   
+   	return var_inserted_row;
+	EXCEPTION
+	    WHEN others THEN 
+	   
+	   	GET STACKED DIAGNOSTICS 
+		var_err_returned_sqlstate = RETURNED_SQLSTATE,
+		var_err_message_text = MESSAGE_TEXT,
+		var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+		var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+		var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+	
+		--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
+		-- Log the error
+	   	var_inserted_exception := techbd_udi.fn_hub_exception_upserted(var_hub_ingest_session_entry_key, p_created_by, p_provenance);
+		PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+		        var_inserted_exception.hub_exception_id,
+		        var_err_message_text,
+		        var_err_returned_sqlstate,
+		        var_err_pg_exception_detail,
+		        var_err_pg_exception_hint,
+		        var_err_pg_exception_context,
+		        p_created_by,
+		        p_provenance);
+	
+	RETURN NULL;   
+END;
+$function$
+;
+
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_sat_ingest_session_entry_session_exec_upserted(p_hub_ingest_session_entry_id text, p_exec_nature text, p_parent_exec_id text, p_namespace text, p_exec_identity text, p_exec_code text, p_exec_status text, p_input_text text, p_exec_error_text text, p_output_text text, p_output_nature text, p_narrative_md text, p_elaboration jsonb, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.sat_ingest_session_entry_session_exec
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 					techbd_udi.sat_ingest_session_entry_session_exec%ROWTYPE;
+	var_inserted_exception 				techbd_udi.hub_exception;
+	var_err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 				text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 		text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 			text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 		text; 	-- Variable to store the context of the error
+  	var_hub_ingest_session_entry_key	text;
+BEGIN
+	-- Start transaction
+    select key into var_hub_ingest_session_entry_key
+  	FROM techbd_udi.hub_ingest_session_entry
+  	where hub_ingest_session_entry_id = p_hub_ingest_session_entry_id;
+  
+  	if(var_hub_ingest_session_entry_key is NULL) then
+  		return null;	
+  	end if;
+  	
+    -- Attempt to select the row
+    SELECT * INTO var_inserted_row
+    FROM techbd_udi.sat_ingest_session_entry_session_exec sat
+    WHERE sat.exec_nature 	= p_exec_nature
+    and sat."namespace" 	= p_namespace
+    and sat.exec_identity 	= p_exec_identity
+    and sat.exec_code 		= p_exec_code    
+    AND sat.provenance 		= p_provenance;
+   
+    -- If the row is not found, insert it
+    IF var_inserted_row is NULL THEN
+		insert into techbd_udi.sat_ingest_session_entry_session_exec 
+		(sat_ingest_session_entry_session_exec_id,
+		hub_ingest_session_entry_id,
+		exec_nature,
+		parent_exec_id,
+		"namespace",
+		exec_identity,
+		exec_code,
+		exec_status,
+		input_text,
+		exec_error_text,
+		output_text,
+		output_nature,
+		narrative_md,
+		elaboration,
+		created_by,
+		provenance)
+		values (uuid_generate_v4(),
+				p_hub_ingest_session_entry_id,        
+				p_exec_nature,
+				p_parent_exec_id,
+				p_namespace,
+				p_exec_identity,
+				p_exec_code,
+				p_exec_status::integer,
+				p_input_text,
+				p_exec_error_text,
+				p_output_text,
+				p_output_nature,
+				p_narrative_md,				
+	            p_elaboration,            
+	            p_created_by, 
+	            p_provenance)
+	            returning * into var_inserted_row;
+    END IF;
+   
+   	return var_inserted_row;
+	EXCEPTION
+	    WHEN others THEN 
+	   
+	   	GET STACKED DIAGNOSTICS 
+		var_err_returned_sqlstate 		= RETURNED_SQLSTATE,
+		var_err_message_text 			= MESSAGE_TEXT,
+		var_err_pg_exception_detail 	= PG_EXCEPTION_DETAIL,
+		var_err_pg_exception_hint 		= PG_EXCEPTION_HINT,
+		var_err_pg_exception_context	= PG_EXCEPTION_CONTEXT;
+	
+		--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
+		-- Log the error
+	   	var_inserted_exception := techbd_udi.fn_hub_exception_upserted(var_hub_ingest_session_entry_key, p_created_by, p_provenance);
+		PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+		        var_inserted_exception.hub_exception_id,
+		        var_err_message_text,
+		        var_err_returned_sqlstate,
+		        var_err_pg_exception_detail,
+		        var_err_pg_exception_hint,
+		        var_err_pg_exception_context,
+		        p_created_by,
+		        p_provenance);
+	
+	RETURN NULL;   
+END;
+$function$
+;
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_sat_ingest_session_upserted(p_hub_ingest_session_id text, p_device_id text, p_version text, p_orch_started_at timestamp without time zone, p_orch_finished_at timestamp without time zone, p_qe_identifier text, p_content_hash text, p_args_json jsonb, p_diagnostics_json jsonb, p_diagnostics_md text, p_elaboration jsonb, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.sat_ingest_session_meta_data
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 				techbd_udi.sat_ingest_session_meta_data%ROWTYPE;
+	var_inserted_exception 			techbd_udi.hub_exception;
+	var_err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 			text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 	text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 		text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 	text; 	-- Variable to store the context of the error
+  	var_hub_ingest_session_key		text;
+  	var_content_hash 				text;
+BEGIN
+	-- Start transaction
+    select key into var_hub_ingest_session_key
+  	FROM techbd_udi.hub_ingest_session
+  	where hub_ingest_session_id = p_hub_ingest_session_id;
+  
+  	if(var_hub_ingest_session_key is NULL) then
+  		return null;	
+  	end if;    	
+  	
+    -- Attempt to select the row
+    SELECT * INTO var_inserted_row
+    FROM techbd_udi.sat_ingest_session_meta_data sat
+    WHERE sat.device_id			= p_device_id
+    AND sat.args_json			= p_args_json	
+    AND sat.diagnostics_json	= p_diagnostics_json
+    AND sat.provenance 			= p_provenance
+   	;
+    -- If the row is not found, insert it
+    IF var_inserted_row is NULL then    
+   		var_content_hash := md5('' || now()::text || random()::text);
+   	
+   		insert into techbd_udi.sat_ingest_session_meta_data
+		(sat_ingest_session_meta_data_id,
+		hub_ingest_session_id,
+		device_id,
+		"version",
+		orch_started_at,
+		orch_finished_at,
+		qe_identifier,
+		content_hash,
+		elaboration,
+		args_json,
+		diagnostics_json,
+		diagnostics_md,
+		created_by,
+		provenance)
+		values (uuid_generate_v4(),
+	            p_hub_ingest_session_id,
+	            p_device_id,
+	            p_version,
+	           	p_orch_started_at,
+	           	p_orch_finished_at,
+	           	p_qe_identifier,
+	           	var_content_hash,
+	            p_elaboration,
+	            p_args_json,
+	            p_diagnostics_json,
+	            p_diagnostics_md,          
+	            p_created_by, 
+	            p_provenance)
+	            returning * into var_inserted_row;
+    END IF;
+  	return var_inserted_row;
+	EXCEPTION
+	    WHEN others THEN 
+	   
+	   	GET STACKED DIAGNOSTICS 
+		var_err_returned_sqlstate = RETURNED_SQLSTATE,
+		var_err_message_text = MESSAGE_TEXT,
+		var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+		var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+		var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+	
+		--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
+		-- Log the error
+	   	var_inserted_exception := techbd_udi.fn_hub_exception_upserted(var_hub_ingest_session_key, p_created_by, p_provenance);
+		PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+		        var_inserted_exception.hub_exception_id,
+		        var_err_message_text,
+		        var_err_returned_sqlstate,
+		        var_err_pg_exception_detail,
+		        var_err_pg_exception_hint,
+		        var_err_pg_exception_context,
+		        p_created_by,
+		        p_provenance);
+	
+	RETURN NULL;   
+END;
+$function$
+;
+/*================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi.fn_sat_request_http_client_meta_data_upserted(p_hub_request_http_client_id text, p_request_payload jsonb, p_elaboration jsonb, p_created_by text, p_provenance text)
+ RETURNS techbd_udi.sat_request_http_client_meta_data
+ LANGUAGE plpgsql
+AS $function$
+declare
+	var_inserted_row 				sat_request_http_client_meta_data%ROWTYPE;
+	var_inserted_exception 			hub_exception;
+	var_err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
+  	var_err_message_text 			text;	-- Variable to store the message text of the error
+  	var_err_pg_exception_detail 	text;	-- Variable to store the detail of the error
+  	var_err_pg_exception_hint 		text;	-- Variable to store the hint of the error
+  	var_err_pg_exception_context 	text; 	-- Variable to store the context of the error
+  	var_hub_request_http_client_key	text;
+BEGIN
+
+	select "key" into var_hub_request_http_client_key
+  	FROM techbd_udi.hub_request_http_client
+  	where hub_request_http_client_id = p_hub_request_http_client_id;
+  
+  	if(var_hub_request_http_client_key is NULL) then
+  		return null;	
+  	end if;
+  
+    -- Attempt to select the row
+    SELECT * INTO var_inserted_row
+    FROM techbd_udi.sat_request_http_client_meta_data sat
+    WHERE sat.hub_request_http_client_id = p_hub_request_http_client_id        
+    AND sat.request_payload = p_request_payload
+    and sat.provenance = p_provenance
+   ;
+    -- If the row is not found, insert it
+    IF var_inserted_row is NULL THEN
+       insert into techbd_udi.sat_request_http_client_meta_data 
+		(sat_request_http_client_meta_data_id,
+		hub_request_http_client_id,
+		request_payload,
+		elaboration,			
+		created_by,
+		provenance)
+		values (uuid_generate_v4(),
+		            p_hub_request_http_client_id,
+		           	p_request_payload,
+		            p_elaboration,            
+		            p_created_by, 
+		            p_provenance)
+		            returning * into var_inserted_row;
+    END IF;
+   	return var_inserted_row;
+EXCEPTION
+    WHEN others THEN 
+        
+	GET STACKED DIAGNOSTICS 
+	var_err_returned_sqlstate = RETURNED_SQLSTATE,
+	var_err_message_text = MESSAGE_TEXT,
+	var_err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+	var_err_pg_exception_hint = PG_EXCEPTION_HINT,
+	var_err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+  	
+	-- Log the error
+	RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
+	
+	-- Log the error
+   	var_inserted_exception := techbd_udi.fn_hub_exception_upserted(var_hub_request_http_client_key, p_created_by, p_provenance);
+	PERFORM techbd_udi.fn_sat_exception_diagnostics_upserted(
+	        var_inserted_exception.hub_exception_id,
+	        var_err_message_text,
+	        var_err_returned_sqlstate,
+	        var_err_pg_exception_detail,
+	        var_err_pg_exception_hint,
+	        var_err_pg_exception_context,
+	        p_created_by,
+	        p_provenance);                
+RETURN NULL;   
+END;
+$function$
+;
+/*================================================================================================================*/
