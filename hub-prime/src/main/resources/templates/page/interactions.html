@@ -6,7 +6,8 @@
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
 
-    <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <title>Recent HTTP Request/Response Interactions</title>
     <style>
@@ -46,7 +47,7 @@
     </style>
 </head>
 
-<body class="bg-gray-100 h-screen">
+<body>
     <div layout:fragment="content">
         <div id="myGrid" class="ag-theme-alpine"></div>
 
@@ -59,10 +60,10 @@
         </div>
 
         <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
-        <script id="driver" th:attr="data-contextPath=${contextPath}">
+        <script id="driver">
             document.addEventListener('DOMContentLoaded', function () {
-                // thymeleaf stores "contextPath" in data-* using value from model
-                let servletContextPath = document.querySelector('#driver').dataset.contextPath || "/";
+                // thymeleaf stores "contextPath" in data-controller-baggage using value from model
+                let servletContextPath = document.body.dataset.controllerBaggage?.public?.contextPath ?? "/";
                 let originalData = [];
 
                 var columnDefs = [
@@ -101,6 +102,7 @@
 
                 const eGridDiv = document.querySelector('#myGrid');
                 const gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+                // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
                 eGridDiv.style.height = "750px"
 
                 fetch(`${servletContextPath}admin/observe/interaction/recent.json`)

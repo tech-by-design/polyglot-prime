@@ -6,9 +6,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+    <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ startOnLoad: true });
+        mermaid.initialize({ startOnLoad: true });        
+    </script>
+    <script>
+        // In `<body>` tag, add `th:attr="data-controller-baggage=${controllerBaggageJsonText}"` 
+        // and fill out `controllerBaggageJsonText` in Controller Model with any JSON value that 
+        // needs to be accessible in HTML and JavaScript after the page is rendered. 
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.body.dataset.controllerBaggageJsonText) {
+                let controllerBaggage = JSON.parse(document.body.dataset.controllerBaggageJsonText);
+                document.body.dataset.controllerBaggage = controllerBaggage;
+                if (controllerBaggage.userAgentBaggageExposureEnabled) {
+                    document.querySelector('#devl_controllerBaggage_userAgentBaggageExposureEnabledJsonViewer').data = controllerBaggage;
+                    document.querySelector('#devl_exposure_container').style.display = '';
+                }
+            }
+        });
     </script>
     <style>
         .full-width-children>* {
@@ -18,7 +34,9 @@
     <title layout:title-pattern="$CONTENT_TITLE">Page Title</title>
 </head>
 
-<body class="h-full">
+<!-- anything we need at in client side scripting from the controller can be passed in controllerBaggageJsonText -->
+
+<body class="h-full" th:attr="data-controller-baggage-json-text=${controllerBaggageJsonText}">
     <div class="min-h-full">
         <nav class="bg-gray-800">
             <div class="mx-auto max-w-9xl px-4 sm:px-6 lg:px-8">
@@ -31,13 +49,14 @@
                         <div class="hidden md:block">
                             <div class="ml-10 flex items-baseline space-x-4">
                                 <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-                                <a th:href="@{/}" class="bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium"
+                                <a th:href="@{/}"
+                                    class="bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium"
                                     aria-current="page">Welcome</a>
                                 <a th:href="@{/admin/observe/interactions}"
                                     class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Interactions</a>
                                 <a th:href="@{/admin/observe/sessions}"
                                     class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Diagnostics</a>
-                                <a href="#"
+                                <a th:href="@{/docs/api/interactive/index.html}"
                                     class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Documentation</a>
                                 <a th:href="@{/actuator}"
                                     class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Support</a>
@@ -221,10 +240,12 @@
                 </div>
 
                 <div class="w-full mt-8 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-                    <p>v<span th:text=" ${version}">X.Y.Z</span></p>
-                    <p>Spring Profile(s): <span th:each="profile : ${environment.activeProfiles}"
-                            th:text="${profile} + ' '"></span></p>
-                    <ul class="list-disc list-inside">Env Vars Set: <li th:each="env : ${ownEnvVars.keySet}" th:text="${env}"></li></ul>
+                    <p>v<span th:text=" ${baggage.public.appVersion}">X.Y.Z</span></p>
+                    <div id="devl_exposure_container" style="display: none">
+                        <code>document.body.dataset.controllerBaggageJsonText</code>:
+                        <json-viewer id="devl_controllerBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
+                        <p>The above is visible because <code>document.body.dataset.controllerBaggageJsonText</code> was sent via <code>&ltbody th:attr="data-controller-baggage-json-text=${controllerBaggageJsonText}"&gt;</code> from the server.</p>
+                    </div>
                 </div>
             </div>
         </main>

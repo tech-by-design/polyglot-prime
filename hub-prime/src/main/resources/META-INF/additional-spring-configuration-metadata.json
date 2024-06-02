@@ -38,5 +38,15 @@
     "name": "org.techbd.udi.prime.jdbc.password",
     "type": "java.lang.String",
     "description": "The UDI primary JDBC URL's password"
+  },
+  {
+    "name": "org.techbd.service.baggage.user-agent.enable-sensitive",
+    "type": "java.lang.Boolean",
+    "description": "Whether to send sensitive (potentially secret) content or 'baggage' from the server to the user agent (usually for development observability convenience)"
+  },
+  {
+    "name": "org.techbd.service.baggage.user-agent.exposure",
+    "type": "java.lang.Boolean",
+    "description": "Whether to display content or 'baggage' from the server to the user agent (usually for development observability convenience)"
   }
 ]}

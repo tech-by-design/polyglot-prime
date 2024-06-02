@@ -3,10 +3,14 @@ package org.techbd.service.http.hub.prime;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
@@ -35,6 +39,10 @@ import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.UdiPrimeRepository;
 import org.techbd.udi.entity.FhirValidationResultIssue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.swagger.v3.core.util.ObjectMapperFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
@@ -43,27 +51,54 @@ import jakarta.servlet.http.HttpServletRequest;
 @org.springframework.stereotype.Controller
 @Tag(name = "TechBD Hub", description = "FHIR Bundles API")
 public class Controller {
+    static private final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());
     private final OrchestrationEngine engine = new OrchestrationEngine();
     private final AppConfig appConfig;
     private final UdiPrimeRepository udiPrimeRepository;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+    private final Map<String, Object> publicBaggage = new HashMap<>();
+    private final Map<String, Object> devlNonSensitiveBaggage = new HashMap<>();
+    private final Map<String, Object> devlSensitiveBaggage = new HashMap<>();
+    private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
+
+    @Value(value = "${org.techbd.service.baggage.user-agent.enable-sensitive:false}")
+    private boolean userAgentSensitiveBaggageEnabled = false;
+
+    @Value(value = "${org.techbd.service.baggage.user-agent.exposure:false}")
+    private boolean userAgentBaggageExposureEnabled = false;
 
     @Autowired
     private Environment environment;
 
-    public Controller(final AppConfig appConfig, UdiPrimeJpaConfig udiPrimeJpaConfig,
+    public Controller(final Environment environment, final AppConfig appConfig, UdiPrimeJpaConfig udiPrimeJpaConfig,
             UdiPrimeRepository udiPrimeRepository) {
+        this.environment = environment;
         this.appConfig = appConfig;
         this.udiPrimeRepository = udiPrimeRepository;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        publicBaggage.put("appVersion", appConfig.getVersion());
+        devlNonSensitiveBaggage.put("ownEnvVarNames", Configuration.ownEnvVars.keySet());
+        devlSensitiveBaggage.put("activeProfiles", List.of(this.environment.getActiveProfiles()));
+        devlSensitiveBaggage.put("ownEnvVarsSensitive", Configuration.ownEnvVars);
     }
 
     protected void populateModel(final Model model, final HttpServletRequest request) {
-        model.addAttribute("version", appConfig.getVersion());
-        model.addAttribute("interactionsCount", InteractionsFilter.interactions.getHistory().size());
-        model.addAttribute("environment", environment);
-        model.addAttribute("ownEnvVars", Configuration.ownEnvVars);
-        model.addAttribute("contextPath", request.getContextPath());
+        try {
+            final var baggage = Map.of("activePage", Map.of("contextPath", request.getContextPath()),
+                    "userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled,
+                    "public", publicBaggage,
+                    "devlNonSensitive", devlNonSensitiveBaggage,
+                    devlSensitiveBaggage, userAgentSensitiveBaggageEnabled ? devlSensitiveBaggage : "disabled",
+                    "health",
+                    Map.of("udiPrimaryDataSourceAlive", udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));
+
+            // "baggage" is for typed server-side usage by templates
+            // "controllerBaggageJsonText" is for JavaScript client use
+            model.addAttribute("baggage", baggage);
+            model.addAttribute("controllerBaggageJsonText", baggageMapper.writeValueAsString(baggage));
+        } catch (JsonProcessingException e) {
+            LOG.error("error setting controllerBaggageJsonText in populateModel", e);
+        }
     }
 
     @GetMapping("/")
@@ -112,9 +147,8 @@ public class Controller {
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
                 .addHapiValidationEngine()
-                // TODO: renable, disabled because HL7 API takes a while to run
-                // .addHl7ValidationApiEngine()
-                // .addInfernoValidationEngine()
+                .addHl7ValidationApiEngine()
+                .addInfernoValidationEngine()
                 .build();
         engine.orchestrate(session);
 
@@ -178,8 +212,8 @@ public class Controller {
 
     @GetMapping("/admin/observe/sessions")
     public String adminDiagnostics(final Model model, final HttpServletRequest request) {
-        model.addAttribute("contextPath", request.getContextPath());
+        populateModel(model, request);
         model.addAttribute("udiPrimaryDataSrcHealth", udiPrimeJpaConfig.udiPrimaryDataSrcHealth());
-        return "diagnostics";
+        return "page/diagnostics";
     }
 }

@@ -10,8 +10,12 @@ management:
       show-values: ALWAYS
 
 org:
-  techbd:
+  techbd:    
     service:
+        baggage:
+          user-agent:
+            enable-sensitive: true
+            exposure: true
         http:
           interactions:
             defaultPersistStrategy: "{ \"nature\": \"fs\" }"
