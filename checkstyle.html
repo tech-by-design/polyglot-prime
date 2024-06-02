@@ -72,7 +72,7 @@
 <tr class="b">
 <td style="text-align: left;">19</td>
 <td>0</td>
-<td>2</td>
+<td>5</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -85,6 +85,11 @@
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fconf.2FConfiguration.java">org/techbd/conf/Configuration.java</a></td>
 <td>0</td>
 <td>2</td>
+<td>0</td></tr>
+<tr class="a">
+<td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2FController.java">org/techbd/service/http/hub/prime/Controller.java</a></td>
+<td>0</td>
+<td>3</td>
 <td>0</td></tr></table></section><section>
 <h2>Rules</h2><a id="Rules"></a>
 <table class="table table-striped">
@@ -94,9 +99,14 @@
 <th>Violations</th>
 <th>Severity</th></tr>
 <tr class="b">
+<td style="text-align: left;">coding</td>
+<td><a class="externalLink" href="https://checkstyle.org/config_coding.html#ExplicitInitialization">ExplicitInitialization</a></td>
+<td>2</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
 <td style="text-align: left;">modifier</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_modifier.html#ModifierOrder">ModifierOrder</a></td>
-<td>2</td>
+<td>3</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr></table></section><section>
 <h2>Details</h2><a id="Details"></a><section>
 <h3>org/techbd/conf/Configuration.java</h3><a id="org.2Ftechbd.2Fconf.2FConfiguration.java"></a>
@@ -118,7 +128,33 @@
 <td>modifier</td>
 <td>ModifierOrder</td>
 <td>'public' modifier out of order with the JLS suggestions.</td>
-<td>64</td></tr></table></section></section></section>
+<td>64</td></tr></table></section><section>
+<h3>org/techbd/service/http/hub/prime/Controller.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2FController.java"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>Severity</th>
+<th>Category</th>
+<th>Rule</th>
+<th>Message</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>modifier</td>
+<td>ModifierOrder</td>
+<td>'private' modifier out of order with the JLS suggestions.</td>
+<td>54</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>coding</td>
+<td>ExplicitInitialization</td>
+<td>Variable 'userAgentSensitiveBaggageEnabled' explicitly initialized to 'false' (default value for its type).</td>
+<td>65</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>coding</td>
+<td>ExplicitInitialization</td>
+<td>Variable 'userAgentBaggageExposureEnabled' explicitly initialized to 'false' (default value for its type).</td>
+<td>68</td></tr></table></section></section></section>
         </main>
       </div>
     </div>
