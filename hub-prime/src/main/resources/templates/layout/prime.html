@@ -24,6 +24,16 @@
                     document.querySelector('#devl_exposure_container').style.display = '';
                 }
             }
+
+            // Get the parent element containing all the menu items and distinguish
+            // the active page based on what our current location is
+            const currentPath = window.location.pathname;
+            document.querySelectorAll("#nav-prime a").forEach(item => {
+                if (item.getAttribute("href") === currentPath) {
+                    item.classList.add("bg-gray-900", "text-white");
+                    item.classList.remove("text-gray-300", "hover:bg-gray-700", "hover:text-white");
+                }
+            });
         });
     </script>
     <style>
@@ -46,12 +56,10 @@
                             <img class="h-8 w-8" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
                                 alt="Technology by Design">
                         </div>
-                        <div class="hidden md:block">
+                        <div id="nav-prime" class="hidden md:block">
                             <div class="ml-10 flex items-baseline space-x-4">
-                                <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
                                 <a th:href="@{/}"
-                                    class="bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium"
-                                    aria-current="page">Welcome</a>
+                                    class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Welcome</a>
                                 <a th:href="@{/admin/observe/interactions}"
                                     class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Interactions</a>
                                 <a th:href="@{/admin/observe/sessions}"
@@ -136,7 +144,7 @@
                         </button>
                     </div>
                 </div>
-            </div>            
+            </div>
         </nav>
 
         <!-- TODO: turn on and implement detailed breadcrumbs -->
@@ -195,8 +203,13 @@
                     <p>v<span th:text=" ${baggage.public.appVersion}">X.Y.Z</span></p>
                     <div id="devl_exposure_container" style="display: none">
                         <code>document.body.dataset.controllerBaggageJsonText</code>:
-                        <json-viewer id="devl_controllerBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
-                        <p>The above is visible because <code>document.body.dataset.controllerBaggageJsonText</code> was sent via <code>&ltbody th:attr="data-controller-baggage-json-text=${controllerBaggageJsonText}"&gt;</code> from the server.</p>
+                        <json-viewer
+                            id="devl_controllerBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
+                        <p>The above is visible because <code>document.body.dataset.controllerBaggageJsonText</code> was
+                            sent via
+                            <code>&ltbody th:attr="data-controller-baggage-json-text=${controllerBaggageJsonText}"&gt;</code>
+                            from the server.
+                        </p>
                     </div>
                 </div>
             </div>
