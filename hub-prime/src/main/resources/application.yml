@@ -13,7 +13,7 @@ logging:
 
 spring:
   profiles:
-    active: devl
+    active: ${SPRING_PROFILES_ACTIVE}
   main:
     allow-bean-definition-overriding: true
   autoconfigure:

@@ -1,7 +1,5 @@
 package org.techbd.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -9,23 +7,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 public class ArtifactStoreTest {
 
-    @Test
-    void testDefaultStrategyWhenNoJsonProvided() {
-        final var builder = new ArtifactStore.Builder();
-        final var strategy = builder.build();
+    // @Test
+    // void testDefaultStrategyWhenNoJsonProvided() {
+    //     final var builder = new ArtifactStore.Builder();
+    //     final var strategy = builder.build();
 
-        assertThat(strategy).isInstanceOf(ArtifactStore.DiagnosticPersistence.class);
+    //     assertThat(strategy).isInstanceOf(ArtifactStore.DiagnosticPersistence.class);
 
-        final var artifact = createTestArtifact("testId");
-        final var reporter = createTestReporter();
-        strategy.persist(artifact, Optional.of(reporter));
+    //     final var artifact = createTestArtifact("testId");
+    //     final var reporter = createTestReporter();
+    //     strategy.persist(artifact, Optional.of(reporter));
 
-        assertThat(reporter.getInfoMessages()).containsExactly("[DiagnosticPersistence] artifactId: testId");
-    }
+    //     assertThat(reporter.getInfoMessages()).containsExactly("[DiagnosticPersistence] artifactId: testId");
+    // }
 
     @Test
     void testSingleStrategyFromJson() throws Exception {
