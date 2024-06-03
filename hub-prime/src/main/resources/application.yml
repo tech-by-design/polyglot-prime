@@ -49,39 +49,6 @@ server:
   servlet:
     context-path: /
 
-management:
-  endpoints:
-    enabled-by-default: false
-    web:
-      exposure:
-        include: actuator,beans,env,openapi,swagger-ui,health,info,metrics
-  health:
-    db:
-      enabled: true
-  endpoint:
-    beans:
-      enabled: true
-    health:
-      enabled: true
-      show-details: always
-    info:
-      enabled: true
-    metrics:
-      enabled: true
-    prometheus:
-      enabled: true
-  info:
-    git:
-      mode: full
-    build:
-      enabled: true
-    env:
-      enabled: true
-    java:
-      enabled: true
-    os:
-      enabled: true
-
 org:
   techbd:
     service:
@@ -90,6 +57,15 @@ org:
             prime:
               version: @project.version@
               defaultSdohFhirProfileUrl: https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json
+          interactions:
+            defaultPersistStrategy: "{ \"nature\": \"fs\" }"
+        baggage:
+          user-agent:
+            # `enable-sensitive` true should only be used in sandbox (local)
+            enable-sensitive: false
+            # `exposure` should be used only be used in sandbox (local) or devl (shared)
+            exposure: false
+
     udi:
       prime:
         jdbc: 

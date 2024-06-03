@@ -1,21 +1,35 @@
 management:
   endpoints:
-    enabled-by-default: true
+    enabled-by-default: false
     web:
       exposure:
         include: actuator,beans,env,openapi,swagger-ui,health,info,metrics
+  health:
+    db:
+      enabled: true
   endpoint:
+    beans:
+      enabled: true
     env:
       enabled: true
-      show-values: ALWAYS
-
-org:
-  techbd:    
-    service:
-        baggage:
-          user-agent:
-            enable-sensitive: false
-            exposure: false
-        http:
-          interactions:
-            defaultPersistStrategy: "{ \"nature\": \"fs\" }"
+      show-values: when-authorized
+    health:
+      enabled: true
+      show-details: always
+    info:
+      enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  info:
+    git:
+      mode: full
+    build:
+      enabled: true
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
