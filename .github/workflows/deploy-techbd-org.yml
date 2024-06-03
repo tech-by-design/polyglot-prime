@@ -27,7 +27,7 @@ jobs:
         - name: Clone infrastructure repository
           run: |
             git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
-  
+            
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
@@ -53,7 +53,12 @@ jobs:
         - name: Clone infrastructure repository
           run: |
             git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
-  
+            
+        - name: Create and switch to a new branch
+          run: |
+            cd infrastructure-prime
+            git checkout -b synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment
+            
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
