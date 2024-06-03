@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
 ## Controller Baggage
 
 In the `<body>` tag, add the attribute
-`th:attr="data-controller-baggage=\${controllerBaggageJsonText}"`. This
+`th:attr="data-controller-baggage=${controllerBaggageJsonText}"`. This
 attribute allows you to pass JSON data from the controller to the HTML and
 JavaScript after the page is rendered. Populate the `controllerBaggageJsonText`
 in the Controller Model with any JSON value that needs to be accessible on the
@@ -168,13 +168,13 @@ baggage information.
         </div>
 
         <div class="w-full mt-8 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-            <p>v<span th:text="\${baggage.public.appVersion}">X.Y.Z</span></p>
+            <p>v<span th:text="${baggage.public.appVersion}">X.Y.Z</span></p>
             <div id="devl_exposure_container" style="display: none">
                 <code>document.body.dataset.controllerBaggageJsonText</code>:
                 <json-viewer id="devl_controllerBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
                 <p>The above is visible because <code>document.body.dataset.controllerBaggageJsonText</code> was
                     sent via
-                    <code>&lt;body th:attr="data-controller-baggage-json-text=\${controllerBaggageJsonText}"&gt;</code>
+                    <code>&lt;body th:attr="data-controller-baggage-json-text=${controllerBaggageJsonText}"&gt;</code>
                     from the server.
                 </p>
             </div>
