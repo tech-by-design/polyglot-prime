@@ -103,14 +103,12 @@ public class Controller {
 
     @GetMapping("/")
     public String home(final Model model, final HttpServletRequest request) {
-        model.addAttribute("title", "Welcome");
         populateModel(model, request);
         return "page/home";
     }
 
     @GetMapping("/docs")
     public String docs(final Model model, final HttpServletRequest request) {
-        model.addAttribute("title", "Documentation");
         populateModel(model, request);
         return "page/documentation";
     }
@@ -180,7 +178,6 @@ public class Controller {
 
     @GetMapping("/admin/observe/interactions")
     public String observeInteractions(final Model model, final HttpServletRequest request) {
-        model.addAttribute("title", "HTTP Interactions");
         populateModel(model, request);
         return "page/interactions";
     }
