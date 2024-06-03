@@ -28,12 +28,38 @@
             // Get the parent element containing all the menu items and distinguish
             // the active page based on what our current location is
             const currentPath = window.location.pathname;
+            const isHome = currentPath == "/"; // TODO: fix for contextPath from baggage
             document.querySelectorAll("#nav-prime a").forEach(item => {
                 if (item.getAttribute("href") === currentPath) {
                     item.classList.add("bg-gray-900", "text-white");
                     item.classList.remove("text-gray-300", "hover:bg-gray-700", "hover:text-white");
                 }
             });
+
+            const breadcrumbNav = document.getElementById("nav-breadcrumb");
+            const breadcrumbInnerTemplate = document.getElementById("breadcrumb-inner");
+            const breadcrumbTerminal = document.getElementById("breadcrumb-terminal");
+            const linkBreadcrumbs = document.querySelectorAll("link[rel='breadcrumb']");
+            if (linkBreadcrumbs.length) {
+                const breadcrumbList = breadcrumbNav.querySelector("ol");
+                breadcrumbInnerTemplate.remove();
+                linkBreadcrumbs.forEach(link => {
+                    const listItem = breadcrumbInnerTemplate.cloneNode(true);
+                    listItem.querySelector("a").href = link.getAttribute("href");
+                    listItem.querySelector("a").textContent = link.getAttribute("title");
+                    listItem.classList.remove("hidden");
+                    breadcrumbList.insertBefore(listItem, breadcrumbTerminal);
+                });
+                breadcrumbTerminal.querySelector("span").textContent = document.title;
+                breadcrumbNav.classList.remove("hidden");
+            } else if (!isHome) {
+                breadcrumbTerminal.querySelector("span").textContent = document.title;
+                breadcrumbInnerTemplate.remove();
+                breadcrumbNav.classList.remove("hidden");
+            } else {
+                // the home page needs a little distance from the header since there are no breadcrumbs
+                document.querySelector("main > div:first-child").classList.replace("py-2", "py-6");
+            }
         });
     </script>
     <style>
@@ -147,44 +173,6 @@
             </div>
         </nav>
 
-        <!-- TODO: turn on and implement detailed breadcrumbs -->
-        <nav class="hidden flex border-b border-gray-200 bg-white" aria-label="Breadcrumb">
-            <ol role="list" class="mx-auto flex w-full max-w-9xl space-x-4 px-4 sm:px-6 lg:px-8">
-                <li class="flex">
-                    <div class="flex items-center">
-                        <a href="#" class="text-gray-400 hover:text-gray-500">
-                            <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"
-                                aria-hidden="true">
-                                <path fill-rule="evenodd"
-                                    d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <span class="sr-only">Home</span>
-                        </a>
-                    </div>
-                </li>
-                <li class="flex">
-                    <div class="flex items-center">
-                        <svg class="h-full w-6 flex-shrink-0 text-gray-200" viewBox="0 0 24 44"
-                            preserveAspectRatio="none" fill="currentColor" aria-hidden="true">
-                            <path d="M.293 0l22 22-22 22h1.414l22-22-22-22H.293z" />
-                        </svg>
-                        <a href="#" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">Projects</a>
-                    </div>
-                </li>
-                <li class="flex">
-                    <div class="flex items-center">
-                        <svg class="h-full w-6 flex-shrink-0 text-gray-200" viewBox="0 0 24 44"
-                            preserveAspectRatio="none" fill="currentColor" aria-hidden="true">
-                            <path d="M.293 0l22 22-22 22h1.414l22-22-22-22H.293z" />
-                        </svg>
-                        <a href="#" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700"
-                            aria-current="page">Project Nero</a>
-                    </div>
-                </li>
-            </ol>
-        </nav>
-
         <header class="bg-white shadow-sm">
             <div class="mx-auto max-w-9xl px-4 py-4 sm:px-6 lg:px-8">
                 <h1 class="text-lg font-semibold leading-6 text-gray-900">
@@ -193,8 +181,61 @@
             </div>
         </header>
 
+        <!-- 
+        This <nav id="nav-breadcrumb"> element contains breadcrumb navigation 
+        that is hidden by default but can be edited as a natural template.
+        Upon document load, JavaScript will:
+        1. If <link rel="breadcrumb"> elements are present in the <head>:
+            - Remove the inner breadcrumb template.
+            - Create breadcrumb items from the templates for each link.
+            - Update the terminal breadcrumb with the last link's title.
+            - Display the breadcrumb navigation.
+        2. If no <link rel="breadcrumb"> elements are present:
+            - If the current page is not the root:
+            - Update the terminal breadcrumb with the document title.
+            - Remove the inner breadcrumb template.
+            - Display the breadcrumb navigation.
+            - If the current page is the root, leave the breadcrumb navigation hidden.
+        -->
+        <nav id="nav-breadcrumb" class="hidden flex mx-auto max-w-9xl py-2 sm:px-6 lg:px-8" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
+                <li id="breadcrumb-home" class="inline-flex items-center">
+                    <a href="/"
+                        class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                        <svg class="w-3 h-3 me-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                            fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z" />
+                        </svg>
+                        Home
+                    </a>
+                </li>
+                <li id="breadcrumb-inner" class="hidden">
+                    <div class="flex items-center">
+                        <svg class="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1" aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="m1 9 4-4-4-4" />
+                        </svg>
+                        <a href="#"
+                            class="ms-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ms-2 dark:text-gray-400 dark:hover:text-white">Inner</a>
+                    </div>
+                </li>
+                <li id="breadcrumb-terminal" aria-current="page">
+                    <div class="flex items-center">
+                        <svg class="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1" aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="m1 9 4-4-4-4" />
+                        </svg>
+                        <span class="ms-1 text-sm font-medium text-gray-500 md:ms-2 dark:text-gray-400">Terminal</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
         <main>
-            <div class="mx-auto max-w-9xl py-6 sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-9xl py-2 sm:px-6 lg:px-8">
                 <div class="w-full mx-auto bg-white p-8 rounded-lg shadow-lg">
                     <div layout:fragment="content"></div>
                 </div>
