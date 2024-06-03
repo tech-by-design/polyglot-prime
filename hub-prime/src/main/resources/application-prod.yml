@@ -1,0 +1,21 @@
+management:
+  endpoints:
+    enabled-by-default: true
+    web:
+      exposure:
+        include: actuator,beans,env,openapi,swagger-ui,health,info,metrics
+  endpoint:
+    env:
+      enabled: true
+      show-values: ALWAYS
+
+org:
+  techbd:    
+    service:
+        baggage:
+          user-agent:
+            enable-sensitive: true
+            exposure: false
+        http:
+          interactions:
+            defaultPersistStrategy: "{ \"nature\": \"fs\" }"
