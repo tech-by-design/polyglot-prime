@@ -14,7 +14,7 @@ org:
     service:
         baggage:
           user-agent:
-            enable-sensitive: true
+            enable-sensitive: false
             exposure: true
         http:
           interactions:
