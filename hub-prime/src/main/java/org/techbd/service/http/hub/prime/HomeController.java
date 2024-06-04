@@ -76,9 +76,16 @@ public class HomeController {
     }
 
     @CacheEvict(value = "tenant-sftp-egress-content", allEntries = true)
-    @Scheduled(fixedRateString = "${org.techbd.cache.tenant-sftp-egress-content.ttl:PT5M}")
-    public void emptyTenantEgressCache() {
-        LOG.info("emptying tenant-sftp-egress-content");
+    @Scheduled(fixedRateString = "${org.techbd.cache.tenant-sftp-egress-content.ttl:PT4H}")
+    public void emptyTenantEgressCacheScheduled() {
+        LOG.info("emptying tenant-sftp-egress-content (scheduled)");
+    }
+
+    @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
+    @CacheEvict(value = "tenant-sftp-egress-content", allEntries = true)
+    public ResponseEntity<?> emptyTenantEgressCacheOnDemand() {
+        LOG.info("emptying tenant-sftp-egress-content (on demand)");
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
     }
 
     @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
@@ -102,5 +109,4 @@ public class HomeController {
             return ResponseEntity.badRequest().build();
         }
     }
-
 }
