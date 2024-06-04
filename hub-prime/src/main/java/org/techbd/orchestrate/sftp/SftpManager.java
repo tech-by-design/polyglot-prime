@@ -1,34 +1,36 @@
-package org.techbd.service.http.hub.prime;
+package org.techbd.orchestrate.sftp;
 
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.VFS;
-import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
+@Component
+public class SftpManager {
+    static private final Logger LOG = LoggerFactory.getLogger(SftpManager.class);
+    static public final String TENANT_EGRESS_CONTENT_CACHE_KEY = "tenant-sftp-egress-content";
+    static public final String TENANT_EGRESS_SESSIONS_CACHE_KEY = "tenant-sftp-egress-sessions";
 
-@RestController
-@Tag(name = "TechBD Hub")
-public class HomeController {
-    static private final Logger LOG = LoggerFactory.getLogger(HomeController.class);
+    public record TenantSftpEgressSession(String tenantId, String sessionId, Date cachedAt,
+            String sessionJsonPath, String sessionJson, Date sessionFinalizedAt,
+            Exception error) {
+    }
 
     public record TenantSftpEgressContent(String tenantId, String sftpUri, Date cachedAt, FileObject home,
             FileObject[] directories,
@@ -70,43 +72,46 @@ public class HomeController {
         }
     }
 
-    @Cacheable("tenant-sftp-egress-content")
+    @Cacheable(TENANT_EGRESS_CONTENT_CACHE_KEY)
     public TenantSftpEgressContent tenantEgressContent(final @NonNull String tenantId) {
         return TenantSftpEgressContent.forTenant(tenantId);
     }
 
-    @CacheEvict(value = "tenant-sftp-egress-content", allEntries = true)
+    @Cacheable(TENANT_EGRESS_SESSIONS_CACHE_KEY)
+    public List<TenantSftpEgressSession> tenantEgressSessions() {
+        final var result = new ArrayList<TenantSftpEgressSession>();
+        final var tecs = List.of(tenantEgressContent("healthelink"));
+        for (var tec : tecs) {
+            try {
+                for (var egressSessionDir : tec.directories()) {
+                    FileObject sessionJsonFile;
+                    try {
+                        sessionJsonFile = egressSessionDir.resolveFile("session.json");
+                    } catch (Exception e) {
+                        // this usually means that the SFTP directory is not a session path
+                        // so this is not an error
+                        continue;
+                    }
+                    final var sessionJson = sessionJsonFile.getContent();
+                    result.add(new TenantSftpEgressSession(tec.tenantId(), egressSessionDir.getName().getBaseName(),
+                            tec.cachedAt(),
+                            sessionJsonFile.getPublicURIString(),
+                            sessionJson.getString(Charset.defaultCharset()),
+                            Date.from(Instant.ofEpochMilli(sessionJson.getLastModifiedTime())), null));
+                }
+            } catch (Exception e) {
+                result.add(new TenantSftpEgressSession(tec.tenantId(), null, tec.cachedAt(),
+                        tec.home().getPublicURIString(),
+                        null, null, e));
+            }
+
+        }
+        return result;
+    }
+
+    @CacheEvict(value = { TENANT_EGRESS_CONTENT_CACHE_KEY, TENANT_EGRESS_SESSIONS_CACHE_KEY }, allEntries = true)
     @Scheduled(fixedRateString = "${org.techbd.cache.tenant-sftp-egress-content.ttl:PT4H}")
     public void emptyTenantEgressCacheScheduled() {
-        LOG.info("emptying tenant-sftp-egress-content (scheduled)");
-    }
-
-    @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
-    @CacheEvict(value = "tenant-sftp-egress-content", allEntries = true)
-    public ResponseEntity<?> emptyTenantEgressCacheOnDemand() {
-        LOG.info("emptying tenant-sftp-egress-content (on demand)");
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
-    }
-
-    @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
-            "application/json", "text/html" })
-    public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
-        final var content = tenantEgressContent(tenantId);
-        final var mre = content.mostRecentEgress();
-
-        if ("html".equalsIgnoreCase(extension)) {
-            String timeAgo = mre.map(zonedDateTime -> new PrettyTime().format(zonedDateTime)).orElse("None");
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                    .body(content.error == null
-                            ? "<span title=\"%d sessions found, most recent %s\">%s</span>".formatted(
-                                    content.directories.length,
-                                    mre,
-                                    timeAgo)
-                            : "<span title=\"No directories found in %s\">⚠️</span>".formatted(content.sftpUri));
-        } else if ("json".equalsIgnoreCase(extension)) {
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-        } else {
-            return ResponseEntity.badRequest().build();
-        }
+        LOG.info("emptying " + TENANT_EGRESS_CONTENT_CACHE_KEY + " (scheduled)");
     }
 }

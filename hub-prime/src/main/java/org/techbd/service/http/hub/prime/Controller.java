@@ -7,10 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
+import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -52,12 +55,13 @@ import jakarta.servlet.http.HttpServletRequest;
 @Tag(name = "TechBD Hub", description = "Business Operations API")
 public class Controller {
     static private final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());
+    private final Map<String, Object> ssrBaggage = new HashMap<>();
+    private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
     private final OrchestrationEngine engine = new OrchestrationEngine();
     private final AppConfig appConfig;
     private final UdiPrimeRepository udiPrimeRepository;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
-    private final Map<String, Object> ssrBaggage = new HashMap<>();
-    private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
+    private final SftpManager sftpManager;
 
     @Value(value = "${org.techbd.service.baggage.user-agent.enable-sensitive:false}")
     private boolean userAgentSensitiveBaggageEnabled = false;
@@ -68,12 +72,14 @@ public class Controller {
     @Autowired
     private Environment environment;
 
-    public Controller(final Environment environment, final AppConfig appConfig, UdiPrimeJpaConfig udiPrimeJpaConfig,
-            UdiPrimeRepository udiPrimeRepository) {
+    public Controller(final Environment environment, final AppConfig appConfig,
+            final UdiPrimeJpaConfig udiPrimeJpaConfig,
+            final UdiPrimeRepository udiPrimeRepository, final SftpManager sftpManager) {
         this.environment = environment;
         this.appConfig = appConfig;
         this.udiPrimeRepository = udiPrimeRepository;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.sftpManager = sftpManager;
         ssrBaggage.put("appVersion", appConfig.getVersion());
         ssrBaggage.put("activeSpringProfiles", List.of(this.environment.getActiveProfiles()));
     }
@@ -82,7 +88,8 @@ public class Controller {
         try {
             final var baggage = new HashMap<>(ssrBaggage);
             baggage.put("userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled);
-            baggage.put("health", Map.of("udiPrimaryDataSourceAlive", udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));
+            baggage.put("health",
+                    Map.of("udiPrimaryDataSourceAlive", udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));
 
             // "baggage" is for typed server-side usage by templates
             // "ssrBaggageJSON" is for JavaScript client use
@@ -97,6 +104,36 @@ public class Controller {
     public String home(final Model model, final HttpServletRequest request) {
         populateModel(model, request);
         return "page/home";
+    }
+
+    @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
+    @CacheEvict(value = { SftpManager.TENANT_EGRESS_CONTENT_CACHE_KEY,
+            SftpManager.TENANT_EGRESS_SESSIONS_CACHE_KEY }, allEntries = true)
+    public ResponseEntity<?> emptyTenantEgressCacheOnDemand() {
+        LOG.info("emptying tenant-sftp-egress-content (on demand)");
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
+    }
+
+    @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
+            "application/json", "text/html" })
+    public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
+        final var content = sftpManager.tenantEgressContent(tenantId);
+        final var mre = content.mostRecentEgress();
+
+        if ("html".equalsIgnoreCase(extension)) {
+            String timeAgo = mre.map(zonedDateTime -> new PrettyTime().format(zonedDateTime)).orElse("None");
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                    .body(content.error() == null
+                            ? "<span title=\"%d sessions found, most recent %s\">%s</span>".formatted(
+                                    content.directories().length,
+                                    mre,
+                                    timeAgo)
+                            : "<span title=\"No directories found in %s\">⚠️</span>".formatted(content.sftpUri()));
+        } else if ("json".equalsIgnoreCase(extension)) {
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/docs")
@@ -169,15 +206,28 @@ public class Controller {
     }
 
     @GetMapping("/admin/observe/interactions")
-    public String observeInteractions(final Model model, final HttpServletRequest request) {
+    public String observeInteractions() {
+        return "redirect:/admin/observe/interactions/sftp";
+    }
+
+    @GetMapping("/admin/observe/interactions/{nature}")
+    public String observeInteractionsNature(@PathVariable String nature, final Model model,
+            final HttpServletRequest request) {
         populateModel(model, request);
-        return "page/interactions";
+        return "page/interactions/" + nature;
+    }
+
+    @Operation(summary = "Recent SFTP Interactions")
+    @GetMapping("/admin/observe/interaction/sftp/recent.json")
+    @ResponseBody
+    public List<?> observeRecentSftpInteractions() {
+        return sftpManager.tenantEgressSessions();
     }
 
     @Operation(summary = "Recent HTTP Request/Response Interactions")
-    @GetMapping("/admin/observe/interaction/recent.json")
+    @GetMapping("/admin/observe/interaction/https/recent.json")
     @ResponseBody
-    public List<?> observeRecentInteractions() {
+    public List<?> observeRecentHttpsInteractions() {
         return new ArrayList<>(InteractionsFilter.interactions.getHistory().values());
     }
 

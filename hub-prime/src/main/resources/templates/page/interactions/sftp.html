@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <title>CSV Interactions via SFTP (egress)</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- only include inner breadcrumbs, `Home` and active page are fixed -->
+    <link rel="breadcrumb" th:href="@{/interactions/https}" title="Interactions" />
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <style>
+        .ag-theme-alpine .ag-root-wrapper {
+            border: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <ul class="flex flex-wrap border-b border-gray-200">
+            <li class="mr-2">
+                <a href="#" aria-current="page"
+                    class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">CSV via SFTP (<code>egress</code>)</a>
+            </li>
+            <li class="mr-2">
+                <a href="https"
+                    class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">FHIR via HTTPs</a>
+            </li>
+        </ul>
+        <div id="myGrid" class="ag-theme-alpine"></div>
+
+        <!-- Modal -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <json-viewer id="json"></json-viewer>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+        <script id="driver">
+            document.addEventListener('DOMContentLoaded', function () {
+                let originalData = [];
+
+                var columnDefs = [
+                    { headerName: "QE", field: "tenantId", sortable: true, filter: true, sort: "desc" },
+                    { headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc" },
+                    {
+                        headerName: "Session ID", field: "sessionId", sortable: true, filter: true,
+                        cellRenderer: function (params) {
+                            var link = document.createElement('a');
+                            link.href = '#';
+                            link.innerText = params.value;
+                            link.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                document.querySelector('#json').data = params.data.session;
+                                document.getElementById('modal').style.display = 'block';
+                            });
+                            return link;
+                        }
+                    },
+                    { headerName: "Version", field: "version", sortable: true, filter: true },
+                    { headerName: "Ingress Count", field: "ingressCount", sortable: true, filter: true },
+                    { headerName: "Consumed CSV", field: "consumedCount", sortable: true, filter: true },
+                    { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true },   
+                ];
+
+                const gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: [],
+                    defaultColDef: {
+                        flex: 1,
+                        minWidth: 100,
+                        resizable: true
+                    },
+                    autoSizeStrategy: { type: "fitCellContents" },
+                };
+
+                const eGridDiv = document.querySelector('#myGrid');
+                const gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+                gridApi.showLoadingOverlay();
+                // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
+                eGridDiv.style.height = "750px"
+
+                fetch(ssrServletUrl(`/admin/observe/interaction/sftp/recent.json`))
+                    .then(response => response.json())
+                    .then(data => {
+                        originalData = data;
+                        const rowData = data.map(row => {
+                            const session = JSON.parse(row.sessionJson);
+                            return {
+                                tenantId: row.tenantId,
+                                sessionFinalizedAt: row.sessionFinalizedAt,
+                                sessionId: row.sessionId,
+                                version: session.version,
+                                ingressCount: session.src?.length,
+                                consumedCount: session.consumed?.length,
+                                publishedFhirCount: session.publishFhirResult?.length,
+                                session,
+                            }
+                        });
+                        gridApi.setGridOption('rowData', rowData);
+                        gridApi.sizeColumnsToFit();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching interaction data:', error);
+                    });
+
+                function showDetails(interactionId) {
+                    const interaction = originalData.find(item => item.interactionId === interactionId);
+                    if (interaction) {
+                        document.querySelector('#json').data = interaction;
+                        document.getElementById('modal').style.display = 'block';
+                    }
+                }
+
+                document.querySelector('.close').onclick = function () {
+                    document.getElementById('modal').style.display = 'none';
+                };
+
+                window.onclick = function (event) {
+                    if (event.target == document.getElementById('modal')) {
+                        document.getElementById('modal').style.display = 'none';
+                    }
+                };
+            });
+        </script>
+    </div>
+</body>
+
+</html>

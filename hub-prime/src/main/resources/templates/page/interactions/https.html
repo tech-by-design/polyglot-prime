@@ -3,15 +3,22 @@
     layout:decorate="~{layout/prime}">
 
 <head>
-    <title>Recent SFTP and HTTP Interactions</title>
+    <title>FHIR Interactions via HTTPs</title>
 
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
 
+    <!-- only include inner breadcrumbs, `Home` and active page are fixed -->
+    <link rel="breadcrumb" th:href="@{/interactions/https}" title="Interactions" />
+    
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <style>
+        .ag-theme-alpine .ag-root-wrapper {
+            border: none;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -50,6 +57,16 @@
 
 <body>
     <div layout:fragment="content">
+        <ul class="flex flex-wrap border-b border-gray-200">
+            <li class="mr-2">
+                <a href="sftp"
+                    class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">CSV via SFTP (<code>egress</code>)</a>
+            </li>
+            <li class="mr-2">
+                <a href="#"  aria-current="page"
+                    class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">FHIR via HTTPs</a>
+            </li>
+        </ul>
         <div id="myGrid" class="ag-theme-alpine"></div>
 
         <!-- Modal -->
@@ -104,7 +121,7 @@
                 // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
                 eGridDiv.style.height = "750px"
 
-                fetch(ssrServletUrl(`/admin/observe/interaction/recent.json`))
+                fetch(ssrServletUrl(`/admin/observe/interaction/https/recent.json`))
                     .then(response => response.json())
                     .then(data => {
                         originalData = data;
