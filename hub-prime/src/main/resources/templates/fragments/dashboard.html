@@ -1,0 +1,19 @@
+<!-- src/main/resources/templates/fragments.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="textStat(title, data)">
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-gray-500" th:text="${title}">Widget Title</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900" th:text="${data}">0%</dd>
+        </div>
+    </div>
+
+    <div th:fragment="serverTextStat(title, hxGet)">
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-gray-500" th:text="${title}">Widget Title</dt>
+            <dd th:attr="hx-get=${hxGet}" hx-trigger="load" hx-swap="innerHTML" class="mt-1 text-3xl font-semibold tracking-tight text-gray-900"><img src="/fidget-spinner-64x64-ani.gif"></img></dd>
+        </div>
+    </div>    
+</body>
+</html>

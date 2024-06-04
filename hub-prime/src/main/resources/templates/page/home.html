@@ -3,12 +3,35 @@
     layout:decorate="~{layout/prime}">
 
 <head>
+    <script src='https://unpkg.com/htmx.org/dist/htmx.min.js'></script>
     <title>Welcome</title>
 </head>
 
 <body>
     <div layout:fragment="content">
+        <div>
+            <div>Most Recent SFTP <code>egress</code> Interactions (hover to see details)</div>
+            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                <div
+                    th:replace="fragments/dashboard :: serverTextStat('HEALTHeLINK', '/hateos/dashboard/stat/sftp/most-recent-egress/healthelink')">
+                </div>
+                <div
+                    th:replace="fragments/dashboard :: serverTextStat('healtheconnections', '/hateos/dashboard/stat/sftp/most-recent-egress/healtheconn')">
+                </div>
+                <div
+                    th:replace="fragments/dashboard :: serverTextStat('Healthix', '/hateos/dashboard/stat/sftp/most-recent-egress/healthix')">
+                </div>
+                <div
+                    th:replace="fragments/dashboard :: serverTextStat('Rochester', '/hateos/dashboard/stat/sftp/most-recent-egress/grrhio')">
+                </div>
+                <div
+                    th:replace="fragments/dashboard :: serverTextStat('HixNY', '/hateos/dashboard/stat/sftp/most-recent-egress/hixny')">
+                </div>
+            </dl>
+        </div>
+
         <article class="w-full prose prose-table:table-fixed full-width-children">
+            <h3 class="mt-5">Quick Links</h3>
             <ul>
                 <li><a th:href="@{/metadata}"><code>/metadata</code> Capabilities Endpoint</a></li>
                 <li><a th:href="@{/admin/observe/sessions}">Recent FHIR Bundle Sessions</a></li>
@@ -23,9 +46,12 @@
                         Test Results</a></li>
                 <li><a th:href="@{/actuator}" href="/actuator">Management Endpoints Catalog</a></li>
             </ul>
+        </article>
 
-            <h3>Synthetic Testing</h3>
-            <pre class="mermaid bg-white">
+        <div class="mt-5 w-full grid grid-cols-2">
+            <div>
+                <h3>Synthetic Testing</h3>
+                <pre class="mermaid bg-white">
                     sequenceDiagram
                         participant CrossroadsSCN as Crossroads SCN
                         participant QE as QE
@@ -37,21 +63,23 @@
                         TechBD ->> TechBD: Validate and Store FHIR JSON
                         TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
                 </pre>
-
-            <h3>Production</h3>
-            <pre class="mermaid bg-white">
+            </div>
+            <div>
+                <h3>Production</h3>
+                <pre class="mermaid bg-white">
                     sequenceDiagram
-                    participant SCN as SCN
-                    participant QE
-                    participant TechBD
-                    participant DataLake as Data Lake
-                       
-                    SCN ->> QE: Submit JSON
-                    QE ->> TechBD: Proxy FHIR
-                    TechBD ->> TechBD: Validate and Store FHIR JSON
-                    TechBD ->> DataLake: Proxy Validated FHIR JSON
+                        participant SCN as SCN
+                        participant QE
+                        participant TechBD
+                        participant DataLake as Data Lake
+                           
+                        SCN ->> QE: Submit JSON
+                        QE ->> TechBD: Proxy FHIR
+                        TechBD ->> TechBD: Validate and Store FHIR JSON
+                        TechBD ->> DataLake: Proxy Validated FHIR JSON
                 </pre>
-        </article>
+            </div>
+        </div>
     </div>
 </body>
 
