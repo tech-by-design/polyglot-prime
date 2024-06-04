@@ -102,7 +102,8 @@
                     { headerName: "Version", field: "version", sortable: true, filter: true },
                     { headerName: "Ingress Count", field: "ingressCount", sortable: true, filter: true },
                     { headerName: "Consumed CSV", field: "consumedCount", sortable: true, filter: true },
-                    { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true },   
+                    { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true },
+                    { headerName: "Exception", field: "exception", sortable: true, filter: true },
                 ];
 
                 const gridOptions = {
@@ -127,15 +128,18 @@
                     .then(data => {
                         originalData = data;
                         const rowData = data.map(row => {
-                            const session = JSON.parse(row.sessionJson);
+                            // session might be null if the SFTP account is invalid;
+                            // in that case only `tenantId` and `error` will be available
+                            const session = row.sessionJson ? JSON.parse(row.sessionJson) : null;
                             return {
                                 tenantId: row.tenantId,
                                 sessionFinalizedAt: row.sessionFinalizedAt,
                                 sessionId: row.sessionId,
-                                version: session.version,
-                                ingressCount: session.src?.length,
-                                consumedCount: session.consumed?.length,
-                                publishedFhirCount: session.publishFhirResult?.length,
+                                version: session?.version,
+                                ingressCount: session?.src?.length,
+                                consumedCount: session?.consumed?.length,
+                                publishedFhirCount: session?.publishFhirResult?.length,
+                                exception: row.error?.message,
                                 session,
                             }
                         });
@@ -145,14 +149,6 @@
                     .catch(error => {
                         console.error('Error fetching interaction data:', error);
                     });
-
-                function showDetails(interactionId) {
-                    const interaction = originalData.find(item => item.interactionId === interactionId);
-                    if (interaction) {
-                        document.querySelector('#json').data = interaction;
-                        document.getElementById('modal').style.display = 'block';
-                    }
-                }
 
                 document.querySelector('.close').onclick = function () {
                     document.getElementById('modal').style.display = 'none';
