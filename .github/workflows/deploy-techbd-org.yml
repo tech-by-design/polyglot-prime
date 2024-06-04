@@ -72,6 +72,8 @@ jobs:
             git push --set-upstream origin synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment
   
         - name: Create Pull Request
+          env:
+            GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           run: |
-           cd infrastructure-prime
-           gh pr create --base main --head synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment --title "FHIR prod techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir deployment for version ${{ github.ref_name }}"  
+            cd infrastructure-prime
+            gh pr create --base main --head synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment --title "FHIR prod techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir deployment for version ${{ github.ref_name }}"  
