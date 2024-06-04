@@ -1,0 +1,15 @@
+services:
+  fhir:
+    build:
+      context: ./hub-prime/
+      dockerfile: Dockerfile
+      args:
+        REPO_URL: ${REPO_URL}
+        TAG: ${TAG}
+        DATE: ${DATE}
+        SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+        TECHBD_UDI_DS_PRIME_JDBC_URL: ${sandbox_TECHBD_UDI_DS_PRIME_JDBC_URL}
+        TECHBD_UDI_DS_PRIME_JDBC_USERNAME: ${sandbox_TECHBD_UDI_DS_PRIME_JDBC_USERNAME}
+        TECHBD_UDI_DS_PRIME_JDBC_PASSWORD: ${sandbox_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD}
+    ports:
+      - "8080:8080"
