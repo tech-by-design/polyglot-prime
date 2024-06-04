@@ -8,6 +8,50 @@ components into a single cohesive file. This layout streamlines the process of
 building web pages by providing a consistent structure and style across the
 entire application.
 
+### Adding Servlet Context Path and other SSR information as a `<meta>` Tags
+
+To allow server-side rendered (SSR) content to be available in JavaScript user
+agents, pass it from the server to the client via `<meta>` tags.
+
+For example, here's how the HTTP Servlet's `getContextPath()` value can be made
+available on the user agent.
+
+```html
+<head>
+    <meta th:content="@{/}" name="ssr-servlet-context-path">
+    <!-- Other meta tags and head content -->
+    <script>
+        const contextPath = document.querySelector('meta[name="ssr-servlet-context-path"]').content;
+        function ssrServletUrl(relativePath) {
+            return contextPath == "/" ? relativePath : (contextPath + relativePath);
+        }
+    </script>
+</head>
+</html>
+```
+
+- The `<meta>` tag with the `name` attribute set to `ssr-servlet-context-path`
+  uses Thymeleaf's `th:content` attribute to set its content to the servlet
+  context path.
+- The `@{/}` expression in Thymeleaf retrieves the context path of the
+  application.
+- A JavaScript function named `ssrServletUrl` is defined within a `<script>`
+  tag. This function:
+  - Retrieves the content of the `<meta>` tag named `ssr-servlet-context-path`.
+  - Concatenates the context path with the provided relative path to form a
+    complete URL.
+
+You can use the `ssrServletUrl` JavaScript function to create URLs that include
+the servlet context path. For example:
+
+```javascript
+const fullUrl = ssrServletUrl("/api/example");
+console.log(fullUrl); // Outputs: [context-path]/api/example
+```
+
+This ensures that your URLs correctly include the context path, making them
+suitable for use in your Spring Boot web application.
+
 ## Navigation Menu
 
 ### Creating Main Navigation Menus
@@ -139,17 +183,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 ## Controller Baggage
 
-In the `<body>` tag, add the attribute
-`th:attr="data-controller-baggage=${controllerBaggageJsonText}"`. This
-attribute allows you to pass JSON data from the controller to the HTML and
-JavaScript after the page is rendered. Populate the `controllerBaggageJsonText`
-in the Controller Model with any JSON value that needs to be accessible on the
-client side.
+In the `<head>` tag, add the attribute
+`<meta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}">`. This attribute
+allows you to pass JSON data from server to the HTML and JavaScript after the
+page is rendered. Populate the `ssrBaggageJSON` in the Controller Model with any
+JSON value that needs to be accessible on the client side.
 
 ```html
-<body th:attr="data-controller-baggage=${controllerBaggageJsonText}">
-    <!-- Page content -->
-</body>
+<head>
+  <meta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}">
+</head>
 ```
 
 #### Baggage in Footer for Sandbox/Devl Profiles
@@ -168,14 +211,13 @@ baggage information.
         </div>
 
         <div class="w-full mt-8 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-            <p>v<span th:text="${baggage.public.appVersion}">X.Y.Z</span></p>
+            <p>v<span th:text=" ${baggage.appVersion}">X.Y.Z</span></p>
             <div id="devl_exposure_container" style="display: none">
-                <code>document.body.dataset.controllerBaggageJsonText</code>:
-                <json-viewer id="devl_controllerBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
-                <p>The above is visible because <code>document.body.dataset.controllerBaggageJsonText</code> was
-                    sent via
-                    <code>&lt;body th:attr="data-controller-baggage-json-text=${controllerBaggageJsonText}"&gt;</code>
-                    from the server.
+                <code>document.ssrBaggageJSON</code>:
+                <json-viewer id="devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
+                <p>The above is visible because <code>document.ssrBaggageJSON</code> was
+                    sent via <code>&ltmeta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}"&gt;</code>
+                    from the server. You should never share sensitive contents or secrets through SSR Baggage.
                 </p>
             </div>
         </div>
@@ -189,10 +231,9 @@ baggage information.
   default (`style="display: none"`). It can be made visible based on certain
   conditions, such as being in a development profile.
 - **Displaying Baggage Information**: When visible, the
-  `devl_exposure_container` shows the `controllerBaggageJsonText` passed from
-  the server. The content is displayed using a `<json-viewer>` element for
-  better readability.
+  `devl_exposure_container` shows the `ssrBaggageJSON` passed from the server.
+  The content is displayed using a `<json-viewer>` element for better
+  readability.
 
 This structure allows you to easily make debugging information available during
 development while keeping it hidden in production environments.
-

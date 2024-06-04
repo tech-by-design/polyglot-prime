@@ -49,16 +49,14 @@ import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 
 @org.springframework.stereotype.Controller
-@Tag(name = "TechBD Hub", description = "FHIR Bundles API")
+@Tag(name = "TechBD Hub", description = "Business Operations API")
 public class Controller {
     static private final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());
     private final OrchestrationEngine engine = new OrchestrationEngine();
     private final AppConfig appConfig;
     private final UdiPrimeRepository udiPrimeRepository;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
-    private final Map<String, Object> publicBaggage = new HashMap<>();
-    private final Map<String, Object> devlNonSensitiveBaggage = new HashMap<>();
-    private final Map<String, Object> devlSensitiveBaggage = new HashMap<>();
+    private final Map<String, Object> ssrBaggage = new HashMap<>();
     private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
 
     @Value(value = "${org.techbd.service.baggage.user-agent.enable-sensitive:false}")
@@ -76,28 +74,22 @@ public class Controller {
         this.appConfig = appConfig;
         this.udiPrimeRepository = udiPrimeRepository;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        publicBaggage.put("appVersion", appConfig.getVersion());
-        devlNonSensitiveBaggage.put("ownEnvVarNames", Configuration.ownEnvVars.keySet());
-        devlSensitiveBaggage.put("activeProfiles", List.of(this.environment.getActiveProfiles()));
-        devlSensitiveBaggage.put("ownEnvVarsSensitive", Configuration.ownEnvVars);
+        ssrBaggage.put("appVersion", appConfig.getVersion());
+        ssrBaggage.put("activeSpringProfiles", List.of(this.environment.getActiveProfiles()));
     }
 
     protected void populateModel(final Model model, final HttpServletRequest request) {
         try {
-            final var baggage = Map.of("activePage", Map.of("contextPath", request.getContextPath()),
-                    "userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled,
-                    "public", publicBaggage,
-                    "devlNonSensitive", devlNonSensitiveBaggage,
-                    devlSensitiveBaggage, userAgentSensitiveBaggageEnabled ? devlSensitiveBaggage : "disabled",
-                    "health",
-                    Map.of("udiPrimaryDataSourceAlive", udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));
+            final var baggage = new HashMap<>(ssrBaggage);
+            baggage.put("userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled);
+            baggage.put("health", Map.of("udiPrimaryDataSourceAlive", udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));
 
             // "baggage" is for typed server-side usage by templates
-            // "controllerBaggageJsonText" is for JavaScript client use
+            // "ssrBaggageJSON" is for JavaScript client use
             model.addAttribute("baggage", baggage);
-            model.addAttribute("controllerBaggageJsonText", baggageMapper.writeValueAsString(baggage));
+            model.addAttribute("ssrBaggageJSON", baggageMapper.writeValueAsString(baggage));
         } catch (JsonProcessingException e) {
-            LOG.error("error setting controllerBaggageJsonText in populateModel", e);
+            LOG.error("error setting ssrBaggageJSON in populateModel", e);
         }
     }
 

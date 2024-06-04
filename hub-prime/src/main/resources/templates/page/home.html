@@ -13,19 +13,19 @@
             <div>Most Recent SFTP <code>egress</code> Interactions (hover to see details)</div>
             <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                 <div
-                    th:replace="fragments/dashboard :: serverTextStat('HEALTHeLINK', '/dashboard/stat/sftp/most-recent-egress/healthelink.html')">
+                    th:replace="fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/sftp/most-recent-egress/healthelink.html})">
                 </div>
                 <div
-                    th:replace="fragments/dashboard :: serverTextStat('healtheconnections', '/dashboard/stat/sftp/most-recent-egress/healtheconn.html')">
+                    th:replace="fragments/dashboard :: serverTextStat('healtheconnections', @{/dashboard/stat/sftp/most-recent-egress/healtheconn.html})">
                 </div>
                 <div
-                    th:replace="fragments/dashboard :: serverTextStat('Healthix', '/dashboard/stat/sftp/most-recent-egress/healthix.html')">
+                    th:replace="fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/sftp/most-recent-egress/healthix.html})">
                 </div>
                 <div
-                    th:replace="fragments/dashboard :: serverTextStat('Rochester', '/dashboard/stat/sftp/most-recent-egress/grrhio.html')">
+                    th:replace="fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/sftp/most-recent-egress/grrhio.html})">
                 </div>
                 <div
-                    th:replace="fragments/dashboard :: serverTextStat('HixNY', '/dashboard/stat/sftp/most-recent-egress/hixny.html')">
+                    th:replace="fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/sftp/most-recent-egress/hixny.html})">
                 </div>
             </dl>
         </div>
