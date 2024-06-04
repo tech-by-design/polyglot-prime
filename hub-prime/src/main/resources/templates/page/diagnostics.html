@@ -5,7 +5,8 @@
 <head>
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
-
+    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.noStyle.js"></script>
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.noStyle.js"></script>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
@@ -50,7 +51,7 @@
 <body class="bg-gray-100 h-screen">
     <div layout:fragment="content">
         <div id="myGrid" class="ag-theme-alpine"></div>
-        
+
         <!-- Modal -->
         <div id="modal" class="modal">
             <div class="modal-content">
@@ -59,19 +60,19 @@
             </div>
         </div>
 
-        <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+        <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 let servletContextPath = document.body.dataset.contextPath || "/";
                 let originalData = [];
-                const pageSize = 10;
+                let pageSize = 15;
                 let currentPage = 0;
                 let totalRecords = 0;
                 var lastPage;
 
                 var columnDefs = [
                     {
-                        headerName: "Artifact", field: "artifactId", sortable: true, filter: true, sort: "desc",
+                        headerName: "Artifact", field: "artifactId", sortable: true, filter: true, sort: "desc", enablePivot: true,
                         cellRenderer: function (params) {
                             var link = document.createElement('a');
                             link.href = '#';
@@ -83,14 +84,16 @@
                             return link;
                         },
                     },
-                    { headerName: "Engine", field: "engine", sortable: true, filter: true },
-                    { headerName: "Valid", field: "valid", sortable: true, filter: true },
-                    { headerName: "Issue Message", field: "issueMessage", sortable: true, filter: true },
-                    { headerName: "Issue Severity", field: "issueSeverity", sortable: true, filter: true },
-                    { headerName: "Issue Location Line", field: "issueLocationLine", sortable: true, filter: true },
-                    { headerName: "Issue Location Column", field: "issueLocationColumn", sortable: true, filter: true },
-                    { headerName: "Issue Diagnostics", field: "issueDiagnostics", sortable: true, filter: true },
-                    { headerName: "Profile URL", field: "profileUrl", sortable: true, filter: true },
+                    { headerName: "Engine", field: "engine", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Valid", field: "valid", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "QE", field: "qe", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Validated At", field: "initiatedAt", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Issue Message", field: "issueMessage", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Issue Severity", field: "issueSeverity", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Issue Location Line", field: "issueLocationLine", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Issue Location Column", field: "issueLocationColumn", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Issue Diagnostics", field: "issueDiagnostics", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Profile URL", field: "profileUrl", sortable: true, filter: true, enablePivot: true },
                 ];
 
                 const gridOptions = {
@@ -100,11 +103,14 @@
                         minWidth: 100,
                         resizable: true,
                         sortable: true,
-                        filter: true
+                        filter: true,
+                        enablePivot: true
                     },
                     pagination: true,
                     paginationPageSize: pageSize,
                     onPaginationChanged: onPaginationChanged,
+                    autoSizeStrategy: { type: "fitCellContents" },
+                    sideBar: true,
                 };
 
                 const eGridDiv = document.querySelector('#myGrid');
@@ -123,11 +129,14 @@
                                 profileUrl: validation.profileUrl,
                                 engine: validation.engine,
                                 valid: validation.valid,
+                                qe: validation.qe,
+                                initiatedAt: validation.initiatedAt,
                                 issueMessage: validation.issueMessage,
                                 issueSeverity: validation.issueSeverity,
                                 issueLocationLine: validation.issueLocationLine,
                                 issueLocationColumn: validation.issueLocationColumn,
                                 issueDiagnostics: validation.issueDiagnostics,
+
                             }));
                             gridOptions.api.setRowData(rowData);
                         })
