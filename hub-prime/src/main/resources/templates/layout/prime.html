@@ -5,6 +5,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ssrServletContextPath" th:content="@{/}">
+    <meta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}">
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
     <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
     <script type="module">
@@ -12,17 +14,21 @@
         mermaid.initialize({ startOnLoad: true });        
     </script>
     <script>
-        // In `<body>` tag, add `th:attr="data-controller-baggage=${controllerBaggageJsonText}"` 
-        // and fill out `controllerBaggageJsonText` in Controller Model with any JSON value that 
-        // needs to be accessible in HTML and JavaScript after the page is rendered. 
+        const contextPath = document.querySelector('meta[name="ssrServletContextPath"]').content;
+        function ssrServletUrl(relativePath) {
+            return contextPath == "/" ? relativePath : (contextPath + relativePath);
+        }
+
+        const ssrBaggageJSON = document.querySelector('meta[name="ssrBaggageJSON"]')?.content?.trim();
+        if (ssrBaggageJSON.length) {
+            document.ssrBaggageJSON = ssrBaggageJSON;
+            document.ssrBaggage = JSON.parse(ssrBaggageJSON);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
-            if (document.body.dataset.controllerBaggageJsonText) {
-                let controllerBaggage = JSON.parse(document.body.dataset.controllerBaggageJsonText);
-                document.body.dataset.controllerBaggage = controllerBaggage;
-                if (controllerBaggage.userAgentBaggageExposureEnabled) {
-                    document.querySelector('#devl_controllerBaggage_userAgentBaggageExposureEnabledJsonViewer').data = controllerBaggage;
-                    document.querySelector('#devl_exposure_container').style.display = '';
-                }
+            if (document.ssrBaggage?.userAgentBaggageExposureEnabled) {
+                document.querySelector('#devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer').data = document.ssrBaggage;
+                document.querySelector('#devl_exposure_container').style.display = '';
             }
 
             // Get the parent element containing all the menu items and distinguish
@@ -70,9 +76,7 @@
     <title layout:title-pattern="$CONTENT_TITLE">Page Title</title>
 </head>
 
-<!-- anything we need at in client side scripting from the controller can be passed in controllerBaggageJsonText -->
-
-<body class="h-full" th:attr="data-controller-baggage-json-text=${controllerBaggageJsonText}">
+<body class="h-full">
     <div class="min-h-full">
         <nav class="bg-gray-800">
             <div class="mx-auto max-w-9xl px-4 sm:px-6 lg:px-8">
@@ -241,15 +245,13 @@
                 </div>
 
                 <div class="w-full mt-8 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-                    <p>v<span th:text=" ${baggage.public.appVersion}">X.Y.Z</span></p>
+                    <p>v<span th:text=" ${baggage.appVersion}">X.Y.Z</span></p>
                     <div id="devl_exposure_container" style="display: none">
-                        <code>document.body.dataset.controllerBaggageJsonText</code>:
-                        <json-viewer
-                            id="devl_controllerBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
-                        <p>The above is visible because <code>document.body.dataset.controllerBaggageJsonText</code> was
-                            sent via
-                            <code>&ltbody th:attr="data-controller-baggage-json-text=${controllerBaggageJsonText}"&gt;</code>
-                            from the server.
+                        <code>document.ssrBaggageJSON</code>:
+                        <json-viewer id="devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
+                        <p>The above is visible because <code>document.ssrBaggageJSON</code> was
+                            sent via <code>&ltmeta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}"&gt;</code>
+                            from the server. You should never share sensitive contents or secrets through SSR Baggage.
                         </p>
                     </div>
                 </div>

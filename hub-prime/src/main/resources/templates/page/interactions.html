@@ -63,8 +63,6 @@
         <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
         <script id="driver">
             document.addEventListener('DOMContentLoaded', function () {
-                // thymeleaf stores "contextPath" in data-controller-baggage using value from model
-                let servletContextPath = document.body.dataset.controllerBaggage?.public?.contextPath ?? "/";
                 let originalData = [];
 
                 var columnDefs = [
@@ -106,7 +104,7 @@
                 // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
                 eGridDiv.style.height = "750px"
 
-                fetch(`${servletContextPath}admin/observe/interaction/recent.json`)
+                fetch(ssrServletUrl(`/admin/observe/interaction/recent.json`))
                     .then(response => response.json())
                     .then(data => {
                         originalData = data;

@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@Tag(name = "Home Controller", description = "Dashboard APIs")
+@Tag(name = "TechBD Hub")
 public class HomeController {
     static private final Logger LOG = LoggerFactory.getLogger(HomeController.class);
 
