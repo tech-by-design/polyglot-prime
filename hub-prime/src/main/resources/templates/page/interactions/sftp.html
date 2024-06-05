@@ -3,15 +3,22 @@
     layout:decorate="~{layout/prime}">
 
 <head>
-    <title>Recent SFTP and HTTP Interactions</title>
+    <title>CSV Interactions via SFTP (egress)</title>
 
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- only include inner breadcrumbs, `Home` and active page are fixed -->
+    <link rel="breadcrumb" th:href="@{/interactions/https}" title="Interactions" />
 
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <style>
+        .ag-theme-alpine .ag-root-wrapper {
+            border: none;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -50,6 +57,16 @@
 
 <body>
     <div layout:fragment="content">
+        <ul class="flex flex-wrap border-b border-gray-200">
+            <li class="mr-2">
+                <a href="#" aria-current="page"
+                    class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">CSV via SFTP (<code>egress</code>)</a>
+            </li>
+            <li class="mr-2">
+                <a href="https"
+                    class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">FHIR via HTTPs</a>
+            </li>
+        </ul>
         <div id="myGrid" class="ag-theme-alpine"></div>
 
         <!-- Modal -->
@@ -66,26 +83,27 @@
                 let originalData = [];
 
                 var columnDefs = [
+                    { headerName: "QE", field: "tenantId", sortable: true, filter: true, sort: "desc" },
+                    { headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc" },
                     {
-                        headerName: "Request Time", field: "requestEncounteredAt", sortable: true, filter: true, sort: "desc",
+                        headerName: "Session ID", field: "sessionId", sortable: true, filter: true,
                         cellRenderer: function (params) {
                             var link = document.createElement('a');
                             link.href = '#';
                             link.innerText = params.value;
                             link.addEventListener('click', function (e) {
                                 e.preventDefault();
-                                showDetails(params.data.interactionId);
+                                document.querySelector('#json').data = params.data.session;
+                                document.getElementById('modal').style.display = 'block';
                             });
                             return link;
                         }
                     },
-                    { headerName: "Tenant ID", field: "tenantId", sortable: true, filter: true },
-                    { headerName: "Method", field: "method", sortable: true, filter: true },
-                    { headerName: "URI", field: "uri", sortable: true, filter: true },
-                    { headerName: "Response Status", field: "status", sortable: true, filter: true },
-                    { headerName: "Response Time", field: "responseEncounteredAt", sortable: true, filter: true },
-                    { headerName: "IP Address", field: "clientIpAddress", sortable: true, filter: true },
-                    { headerName: "User Agent", field: "userAgent", sortable: true, filter: true },
+                    { headerName: "Version", field: "version", sortable: true, filter: true },
+                    { headerName: "Ingress Count", field: "ingressCount", sortable: true, filter: true },
+                    { headerName: "Consumed CSV", field: "consumedCount", sortable: true, filter: true },
+                    { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true },
+                    { headerName: "Exception", field: "exception", sortable: true, filter: true },
                 ];
 
                 const gridOptions = {
@@ -101,38 +119,36 @@
 
                 const eGridDiv = document.querySelector('#myGrid');
                 const gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+                gridApi.showLoadingOverlay();
                 // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
                 eGridDiv.style.height = "750px"
 
-                fetch(ssrServletUrl(`/admin/observe/interaction/recent.json`))
+                fetch(ssrServletUrl(`/admin/observe/interaction/sftp/recent.json`))
                     .then(response => response.json())
                     .then(data => {
                         originalData = data;
-                        const rowData = data.map(interaction => ({
-                            requestEncounteredAt: interaction.request.encounteredAt,
-                            interactionId: interaction.interactionId,
-                            tenantId: interaction.tenant.tenantId,
-                            method: interaction.request.method,
-                            uri: interaction.request.requestUri,
-                            status: interaction.response.status,
-                            responseEncounteredAt: interaction.response.encounteredAt,
-                            clientIpAddress: interaction.request.clientIpAddress,
-                            userAgent: interaction.request.userAgent,
-                        }));
+                        const rowData = data.map(row => {
+                            // session might be null if the SFTP account is invalid;
+                            // in that case only `tenantId` and `error` will be available
+                            const session = row.sessionJson ? JSON.parse(row.sessionJson) : null;
+                            return {
+                                tenantId: row.tenantId,
+                                sessionFinalizedAt: row.sessionFinalizedAt,
+                                sessionId: row.sessionId,
+                                version: session?.version,
+                                ingressCount: session?.src?.length,
+                                consumedCount: session?.consumed?.length,
+                                publishedFhirCount: session?.publishFhirResult?.length,
+                                exception: row.error?.message,
+                                session,
+                            }
+                        });
                         gridApi.setGridOption('rowData', rowData);
                         gridApi.sizeColumnsToFit();
                     })
                     .catch(error => {
                         console.error('Error fetching interaction data:', error);
                     });
-
-                function showDetails(interactionId) {
-                    const interaction = originalData.find(item => item.interactionId === interactionId);
-                    if (interaction) {
-                        document.querySelector('#json').data = interaction;
-                        document.getElementById('modal').style.display = 'block';
-                    }
-                }
 
                 document.querySelector('.close').onclick = function () {
                     document.getElementById('modal').style.display = 'none';

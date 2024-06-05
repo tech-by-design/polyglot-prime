@@ -51,20 +51,35 @@ server:
 
 org:
   techbd:
+    # these should be setup in ENV vars, not here
+    # orchestrate:
+    #   sftp:
+    #     account:
+    #       orchctlts:
+    #         - tenantId: name1
+    #           server: sftp.techbd.org
+    #           port: 22
+    #           username: name1
+    #           password: password
+    #         - tenantId: name2
+    #           server: sftp.techbd.org
+    #           port: 22
+    #           username: name2
+    #           password: password
     service:
-        http:
-          hub:
-            prime:
-              version: @project.version@
-              defaultSdohFhirProfileUrl: https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json
-          interactions:
-            defaultPersistStrategy: "{ \"nature\": \"fs\" }"
-        baggage:
-          user-agent:
-            # `enable-sensitive` true should only be used in sandbox (local)
-            enable-sensitive: false
-            # `exposure` should be used only be used in sandbox (local) or devl (shared)
-            exposure: false
+      http:
+        hub:
+          prime:
+            version: @project.version@
+            defaultSdohFhirProfileUrl: https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json
+        interactions:
+          defaultPersistStrategy: "{ \"nature\": \"fs\" }"
+      baggage:
+        user-agent:
+          # `enable-sensitive` true should only be used in sandbox (local)
+          enable-sensitive: false
+          # `exposure` should be used only be used in sandbox (local) or devl (shared)
+          exposure: false
 
     udi:
       prime:

@@ -36,12 +36,15 @@
             const currentPath = window.location.pathname;
             const isHome = currentPath == "/"; // TODO: fix for contextPath from baggage
             document.querySelectorAll("#nav-prime a").forEach(item => {
-                if (item.getAttribute("href") === currentPath) {
+                const href = item.getAttribute("href");
+                if (href === currentPath || (currentPath.startsWith(href) && href !== "/")) {
                     item.classList.add("bg-gray-900", "text-white");
                     item.classList.remove("text-gray-300", "hover:bg-gray-700", "hover:text-white");
                 }
             });
 
+            // automatically fill out the breadcrumbs based on <head>/<link> tags;
+            // see #nav-breadcrumb comments and README.md for algorithm
             const breadcrumbNav = document.getElementById("nav-breadcrumb");
             const breadcrumbInnerTemplate = document.getElementById("breadcrumb-inner");
             const breadcrumbTerminal = document.getElementById("breadcrumb-terminal");
