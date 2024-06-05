@@ -77,16 +77,16 @@
             </div>
         </div>
 
-        <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+        <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
         <script id="driver">
             document.addEventListener('DOMContentLoaded', function () {
                 let originalData = [];
 
                 var columnDefs = [
-                    { headerName: "QE", field: "tenantId", sortable: true, filter: true, sort: "desc" },
-                    { headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc" },
+                    { headerName: "QE", field: "tenantId", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true },
+                    { headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true },
                     {
-                        headerName: "Session ID", field: "sessionId", sortable: true, filter: true,
+                        headerName: "Session ID", field: "sessionId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true,
                         cellRenderer: function (params) {
                             var link = document.createElement('a');
                             link.href = '#';
@@ -99,11 +99,11 @@
                             return link;
                         }
                     },
-                    { headerName: "Version", field: "version", sortable: true, filter: true },
-                    { headerName: "Ingress Count", field: "ingressCount", sortable: true, filter: true },
-                    { headerName: "Consumed CSV", field: "consumedCount", sortable: true, filter: true },
-                    { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true },
-                    { headerName: "Exception", field: "exception", sortable: true, filter: true },
+                    { headerName: "Version", field: "version", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Ingress Count", field: "ingressCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Consumed CSV", field: "consumedCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Exception", field: "exception", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                 ];
 
                 const gridOptions = {
@@ -112,9 +112,13 @@
                     defaultColDef: {
                         flex: 1,
                         minWidth: 100,
-                        resizable: true
+                        resizable: true,
+                        sortable: true,
+                        filter: true,
+                        enablePivot: true
                     },
                     autoSizeStrategy: { type: "fitCellContents" },
+                    sideBar: true,
                 };
 
                 const eGridDiv = document.querySelector('#myGrid');
