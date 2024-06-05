@@ -84,16 +84,16 @@
                             return link;
                         },
                     },
-                    { headerName: "Engine", field: "engine", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "Valid", field: "valid", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "QE", field: "qe", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "Validated At", field: "initiatedAt", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "Issue Message", field: "issueMessage", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "Issue Severity", field: "issueSeverity", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "Issue Location Line", field: "issueLocationLine", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "Issue Location Column", field: "issueLocationColumn", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "Issue Diagnostics", field: "issueDiagnostics", sortable: true, filter: true, enablePivot: true },
-                    { headerName: "Profile URL", field: "profileUrl", sortable: true, filter: true, enablePivot: true },
+                    { headerName: "Engine", field: "engine", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Valid", field: "valid", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "QE", field: "qe", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Validated At", field: "initiatedAt", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Issue Message", field: "issueMessage", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Issue Severity", field: "issueSeverity", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Issue Location Line", field: "issueLocationLine", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Issue Location Column", field: "issueLocationColumn", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Issue Diagnostics", field: "issueDiagnostics", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Profile URL", field: "profileUrl", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                 ];
 
                 const gridOptions = {
@@ -119,7 +119,7 @@
                 eGridDiv.style.height = "750px"
 
                 function fetchPageData(page, size) {
-                    fetch(`${servletContextPath}admin/observe/sessions/data?page=${page}&size=${size}`)
+                    fetch(ssrServletUrl(`/admin/observe/sessions/data?page=${page}&size=${size}`))
                         .then(response => response.json())
                         .then(data => {
                             originalData = data;
