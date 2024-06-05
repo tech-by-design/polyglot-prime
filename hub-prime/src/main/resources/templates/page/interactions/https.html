@@ -77,7 +77,7 @@
             </div>
         </div>
 
-        <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+        <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
         <script id="driver">
             document.addEventListener('DOMContentLoaded', function () {
                 let originalData = [];
@@ -96,13 +96,13 @@
                             return link;
                         }
                     },
-                    { headerName: "Tenant ID", field: "tenantId", sortable: true, filter: true },
-                    { headerName: "Method", field: "method", sortable: true, filter: true },
-                    { headerName: "URI", field: "uri", sortable: true, filter: true },
-                    { headerName: "Response Status", field: "status", sortable: true, filter: true },
-                    { headerName: "Response Time", field: "responseEncounteredAt", sortable: true, filter: true },
-                    { headerName: "IP Address", field: "clientIpAddress", sortable: true, filter: true },
-                    { headerName: "User Agent", field: "userAgent", sortable: true, filter: true },
+                    { headerName: "Tenant ID", field: "tenantId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Method", field: "method", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "URI", field: "uri", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Response Status", field: "status", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Response Time", field: "responseEncounteredAt", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "IP Address", field: "clientIpAddress", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "User Agent", field: "userAgent", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                 ];
 
                 const gridOptions = {
@@ -111,9 +111,13 @@
                     defaultColDef: {
                         flex: 1,
                         minWidth: 100,
-                        resizable: true
+                        resizable: true,
+                        sortable: true,
+                        filter: true,
+                        enablePivot: true
                     },
                     autoSizeStrategy: { type: "fitCellContents" },
+                    sideBar: true,
                 };
 
                 const eGridDiv = document.querySelector('#myGrid');
