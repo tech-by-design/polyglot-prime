@@ -1,14 +1,15 @@
 package org.techbd.udi.entity;
 
+import org.hibernate.annotations.Immutable;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.Immutable;
 
 @Entity
 @Immutable
-@Table(name = "fhir_validation_result_issue")
+@Table(name = "fhir_validation_result_issue_with_qe")
 public class FhirValidationResultIssue {
   @Id
   @Column(name = "artifact_id")
@@ -31,6 +32,10 @@ public class FhirValidationResultIssue {
   private String issueLocationColumn;
   @Column(name = "issue_diagnostics")
   private String issueDiagnostics;
+  @Column(name = "qe")
+  private String qe;
+  @Column(name = "initiated_at")
+  private String initiatedAt;
 
   public String getArtifactId() {
     return artifactId;
@@ -110,5 +115,21 @@ public class FhirValidationResultIssue {
 
   public void setIssueDiagnostics(String issueDiagnostics) {
     this.issueDiagnostics = issueDiagnostics;
+  }
+  
+  public String getQe() {
+    return qe;
+  }
+
+  public void setQe(String qe) {
+    this.qe = qe;
+  }
+
+  public String getInitiatedAt() {
+    return initiatedAt;
+  }
+
+  public void setInitiatedAt(String initiatedAt) {
+    this.initiatedAt = initiatedAt;
   }
 }
