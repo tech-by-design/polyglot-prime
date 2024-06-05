@@ -9,7 +9,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Immutable
-@Table(name = "fhir_validation_result_issue_new")
+@Table(name = "fhir_validation_result_issue_with_qe")
 public class FhirValidationResultIssue {
   @Id
   @Column(name = "artifact_id")
