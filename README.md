@@ -112,9 +112,9 @@ To set up the `TechBD Hub` project, follow these steps:
    ```bash
    git clone https://github.com/tech-by-design/polyglot-prime.git
    cd polyglot-prime
-   cp .envrc-example .envrc   # assume the use of direnv
-   vi .envrc                  # make sure to store secrets in ENV or Vault, not in Git
    direnv allow               # apply the env vars
+   cp .envrc.example .envrc   # assume the use of direnv
+   vi .envrc                  # make sure to store secrets in ENV or Vault, not in Git
    cd hub-prime
    ```
 
