@@ -43,6 +43,7 @@ public class ArtifactStore {
     private static final ObjectMapper objectMapper = JsonMapper.builder()
             .findAndAddModules()
             .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
             .build();
 
     public interface Artifact {

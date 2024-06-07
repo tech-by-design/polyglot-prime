@@ -50,11 +50,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @org.springframework.stereotype.Controller
 @Tag(name = "TechBD Hub", description = "Business Operations API")
 public class Controller {
-    static private final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());
     private final Map<String, Object> ssrBaggage = new HashMap<>();
     private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
     private final OrchestrationEngine engine = new OrchestrationEngine();
@@ -95,15 +96,22 @@ public class Controller {
             // "ssrBaggageJSON" is for JavaScript client use
             model.addAttribute("baggage", baggage);
             model.addAttribute("ssrBaggageJSON", baggageMapper.writeValueAsString(baggage));
+            LOG.info("Logged in user Information"
+                    + SecurityContextHolder.getContext().getAuthentication().getPrincipal());
         } catch (JsonProcessingException e) {
             LOG.error("error setting ssrBaggageJSON in populateModel", e);
         }
     }
 
-    @GetMapping("/")
+    @GetMapping("/home")
     public String home(final Model model, final HttpServletRequest request) {
         populateModel(model, request);
         return "page/home";
+    }
+
+    @GetMapping("/")
+    public String index() {
+        return "login/login";
     }
 
     @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
@@ -138,7 +146,8 @@ public class Controller {
             }
         } else {
             if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body("Unknown tenantId '%s'".formatted(tenantId));
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                        .body("Unknown tenantId '%s'".formatted(tenantId));
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.noContent().build();
             } else {
