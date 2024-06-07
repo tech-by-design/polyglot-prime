@@ -1,7 +1,7 @@
 services:
   fhir:
     build:
-      context: ./hub-prime/
+      context: ./hub_prime/
       dockerfile: Dockerfile
       args:
         REPO_URL: ${REPO_URL}
