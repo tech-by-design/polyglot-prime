@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.64.0</version>
+	<version>0.65.0</version>
 	<packaging>war</packaging>
 	<name>TechBD Hub (Prime)</name>
 	<description>TechBD Hub (Primary)</description>
@@ -156,6 +156,11 @@
  			<groupId>org.springframework.boot</groupId>
  			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.vladsch.flexmark</groupId>
+			<artifactId>flexmark-all</artifactId>
+			<version>0.62.2</version>
+		</dependency>		
 	</dependencies>
 
 	<build>
