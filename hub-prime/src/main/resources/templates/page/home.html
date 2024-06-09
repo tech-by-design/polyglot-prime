@@ -9,6 +9,7 @@
 
 <body>
     <div layout:fragment="content">
+        <div th:text="'Welcome GitHub User ' + ${req.userPrincipal.name} + ' (TODO: replace name)'">Welcome ${req.userPrincipal.name}</div>
         <div>
             <div>Most Recent SFTP <code>egress</code> Interactions (hover to see details)</div>
             <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
