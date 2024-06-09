@@ -87,6 +87,8 @@ public class Controller {
 
     protected void populateModel(final Model model, final HttpServletRequest request) {
         try {
+            model.addAttribute("req", request);
+
             final var baggage = new HashMap<>(ssrBaggage);
             baggage.put("userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled);
             baggage.put("health",
