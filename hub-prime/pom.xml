@@ -177,7 +177,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-
 			<!-- Maven Site Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -282,6 +281,70 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- fmt Maven Plugin -->
+			<plugin>
+				<groupId>com.spotify.fmt</groupId>
+				<artifactId>fmt-maven-plugin</artifactId>
+				<version>2.22.1</version>
+				<configuration>
+					<configLocation>formater.xml</configLocation>
+					<encoding>UTF-8</encoding>
+					<consoleOutput>true</consoleOutput>
+					<failOnViolation>true</failOnViolation>
+					<displayFiles>true</displayFiles>
+					<violationSeverity>error</violationSeverity>
+					<failOnError>false</failOnError>
+					<linkXRef>false</linkXRef>
+					<includes>
+						**/*.java
+					</includes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Spotbugs Maven Plugin -->
+			<plugin>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-maven-plugin</artifactId>
+			<version>4.8.5.0</version>
+			<dependencies>
+				<!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
+				<dependency>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs</artifactId>
+				<version>4.8.5</version>
+				</dependency>
+			</dependencies>
+			</plugin>
+			<!-- git-commit-id Maven Plugin -->
+			<plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+                <version>5.0.0</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                    <includeOnlyProperties>
+                        <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
+                        <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
+                    </includeOnlyProperties>
+                    <commitIdGenerationMode>full</commitIdGenerationMode>
+                </configuration>
+            </plugin>
 		</plugins>
 
 		<resources>
@@ -324,6 +387,42 @@
 				<version>3.22.0</version>
 				<configuration>
 					<targetJdk>21</targetJdk>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<!-- Formatter Report Plugin -->
+			<plugin>
+				<groupId>com.spotify.fmt</groupId>
+				<artifactId>fmt-maven-plugin</artifactId>
+				<version>2.22.1</version>
+				<configuration>
+					<configLocation>formater.xml</configLocation>
+					<outputFile>${project.build.directory}/output-results/formater.xml</outputFile>
+					<outputFileFormat>xml</outputFileFormat>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<!-- Spotbugs Maven Plugin -->		
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.8.5.0</version>
+				<configuration>
+					<configLocation>spotbugs.xml</configLocation>
+					<outputFile>${project.build.directory}/output-results/spotbugs.xml</outputFile>
+					<outputFileFormat>xml</outputFileFormat>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<!-- git-commit-id Maven Plugin -->
+			<plugin>
+				<groupId>io.github.git-commit-id</groupId>
+				<artifactId>git-commit-id-maven-plugin</artifactId>
+				<version>5.0.0</version>
+				<configuration>
+					<configLocation>git-commit-id.xml</configLocation>
+					<outputFile>${project.build.directory}/output-results/git-commit-id..xml</outputFile>
+					<outputFileFormat>xml</outputFileFormat>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
