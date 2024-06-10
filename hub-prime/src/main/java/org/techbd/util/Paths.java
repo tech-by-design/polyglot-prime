@@ -149,22 +149,30 @@ public class Paths<C, P> {
          *         Optional
          */
         public Optional<Node> resolve(List<C> relativeComponents) {
-            var current = this;
+            // everything should be relative to the current node's parent which
+            // is the "container" of this child
+            var current = this.parent();
+
+            System.out.println("looking for %s in %s".formatted(pcSupplier.assemble(relativeComponents), absolutePath()));
             for (C component : relativeComponents) {
+                System.out.println("  at [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
                 if (component.equals("..")) {
-                    current = current.parent();
-                    if (current == null) {
+                    if (current != null) {
+                        current = current.parent();
+                    } else {
                         return Optional.empty();
                     }
-                } else if (!component.equals(".")) {
+                } else if (current != null && !component.equals(".")) {
                     var child = current.findChild(component);
                     if (child.isEmpty()) {
                         return Optional.empty();
                     }
                     current = child.get();
                 }
+                System.out.println("  now [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
             }
-            return Optional.of(current);
+            System.out.println("  found %s".formatted(current != null ? current.absolutePath() : "NULL"));
+            return current != null ? Optional.of(current) : Optional.empty();
         }
 
         /**
@@ -181,7 +189,7 @@ public class Paths<C, P> {
         @Override
         public String toString() {
             return "Node [absolutePath()=" + absolutePath() + "]";
-        }        
+        }
     }
 
     private final List<Node> roots = new ArrayList<>();
