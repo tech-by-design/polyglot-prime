@@ -1,12 +1,13 @@
 package org.techbd.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class PathsTest {
 
@@ -182,6 +183,31 @@ public class PathsTest {
         }
     }
 
+    @Test
+    public void testPathsJson() throws Exception {
+        // Populate the tree
+        populateTree();
+
+        // Define a payload renderer
+        PathsJson.PayloadJsonSupplier<String, SyntheticPayload> payloadRenderer = (node, paths) -> {
+            final var payloadMap = new HashMap<>();
+            payloadMap.put("absolutePath", node.payload().absolutePath());
+            payloadMap.put("content", node.payload().content());
+            payloadMap.put("baseName", node.payload().baseName());
+            return Optional.of(payloadMap);
+        };
+
+        // Create PathsJson instance
+        PathsJson<String, SyntheticPayload> pathsJson = new PathsJson<>();
+
+        // Convert Paths instance to JSON
+        // TODO: assign this to a variable and then test it
+        pathsJson.toJson(paths, Optional.of(payloadRenderer));
+
+        // Compare generated JSON with expected JSON
+        // assertThat(json).contentOf("PathsTestJson.fixture.json").isEqualToIgnoringWhitespace(expectedJson);
+    }
+
     public record SyntheticPayload(String absolutePath, String content, String baseName) {
         public SyntheticPayload(String absolutePath) {
             this(absolutePath, "this is content for " + absolutePath,
@@ -195,6 +221,7 @@ public class PathsTest {
     }
 
     public void visualize(Paths<String, SyntheticPayload> paths) {
+        populateTree();
         for (Paths<String, SyntheticPayload>.Node root : paths.roots()) {
             printTree(root, 0);
         }
@@ -208,12 +235,5 @@ public class PathsTest {
         for (Paths<String, SyntheticPayload>.Node child : node.children()) {
             printTree(child, level + 1);
         }
-    }
-
-    @Disabled("Useful for debugging")
-    @Test
-    public void testVisualize() {
-        populateTree();
-        visualize(paths);
     }
 }
