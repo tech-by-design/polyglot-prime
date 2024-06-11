@@ -10,10 +10,7 @@ import java.util.Map;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -42,72 +39,32 @@ import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.UdiPrimeRepository;
 import org.techbd.udi.entity.FhirValidationResultIssue;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.swagger.v3.core.util.ObjectMapperFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 @org.springframework.stereotype.Controller
 @Tag(name = "TechBD Hub", description = "Business Operations API")
 public class Controller {
     private static final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());
-    private final Map<String, Object> ssrBaggage = new HashMap<>();
-    private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
     private final OrchestrationEngine engine = new OrchestrationEngine();
     private final AppConfig appConfig;
     private final UdiPrimeRepository udiPrimeRepository;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private final SftpManager sftpManager;
 
-    @Value(value = "${org.techbd.service.baggage.user-agent.enable-sensitive:false}")
-    private boolean userAgentSensitiveBaggageEnabled = false;
-
-    @Value(value = "${org.techbd.service.baggage.user-agent.exposure:false}")
-    private boolean userAgentBaggageExposureEnabled = false;
-
-    @Autowired
-    private Environment environment;
-
-    public Controller(final Environment environment, final AppConfig appConfig,
+    public Controller(final AppConfig appConfig,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final UdiPrimeRepository udiPrimeRepository, final SftpManager sftpManager) {
-        this.environment = environment;
         this.appConfig = appConfig;
         this.udiPrimeRepository = udiPrimeRepository;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         this.sftpManager = sftpManager;
-        ssrBaggage.put("appVersion", appConfig.getVersion());
-        ssrBaggage.put("activeSpringProfiles", List.of(this.environment.getActiveProfiles()));
-    }
-
-    protected void populateModel(final Model model, final HttpServletRequest request) {
-        try {
-            model.addAttribute("req", request);
-
-            final var baggage = new HashMap<>(ssrBaggage);
-            baggage.put("userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled);
-            baggage.put("health",
-                    Map.of("udiPrimaryDataSourceAlive", udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));
-
-            // "baggage" is for typed server-side usage by templates
-            // "ssrBaggageJSON" is for JavaScript client use
-            model.addAttribute("baggage", baggage);
-            model.addAttribute("ssrBaggageJSON", baggageMapper.writeValueAsString(baggage));
-            LOG.info("Logged in user Information"
-                    + SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-        } catch (JsonProcessingException e) {
-            LOG.error("error setting ssrBaggageJSON in populateModel", e);
-        }
     }
 
     @GetMapping("/home")
-    public String home(final Model model, final HttpServletRequest request) {
-        populateModel(model, request);
+    public String home() {
         return "page/home";
     }
 
@@ -160,8 +117,7 @@ public class Controller {
     }
 
     @GetMapping("/docs")
-    public String docs(final Model model, final HttpServletRequest request) {
-        populateModel(model, request);
+    public String docs() {
         return "page/documentation";
     }
 
@@ -234,9 +190,7 @@ public class Controller {
     }
 
     @GetMapping("/admin/observe/interactions/{nature}")
-    public String observeInteractionsNature(@PathVariable String nature, final Model model,
-            final HttpServletRequest request) {
-        populateModel(model, request);
+    public String observeInteractionsNature(@PathVariable String nature) {
         return "page/interactions/" + nature;
     }
 
@@ -288,8 +242,7 @@ public class Controller {
     }
 
     @GetMapping("/admin/observe/sessions")
-    public String adminDiagnostics(final Model model, final HttpServletRequest request) {
-        populateModel(model, request);
+    public String adminDiagnostics(final Model model) {
         model.addAttribute("udiPrimaryDataSrcHealth", udiPrimeJpaConfig.udiPrimaryDataSrcHealth());
         return "page/diagnostics";
     }

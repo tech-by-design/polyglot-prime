@@ -211,7 +211,7 @@ baggage information.
         </div>
 
         <div class="w-full mt-8 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-            <p>v<span th:text=" ${baggage.appVersion}">X.Y.Z</span></p>
+            <p>v<span th:text=" ${baggage.controller.appVersion}">X.Y.Z</span></p>
             <div id="devl_exposure_container" style="display: none">
                 <code>document.ssrBaggageJSON</code>:
                 <json-viewer id="devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
@@ -226,7 +226,7 @@ baggage information.
 ```
 
 - **Version Information**: The version information of the application is
-  displayed using the `baggage.public.appVersion` attribute.
+  displayed using the `baggage.controller.appVersion` attribute.
 - **Conditional Baggage Visibility**: The `devl_exposure_container` is hidden by
   default (`style="display: none"`). It can be made visible based on certain
   conditions, such as being in a development profile.
