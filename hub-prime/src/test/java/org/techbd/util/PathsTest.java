@@ -116,7 +116,44 @@ public class PathsTest {
                 "root/dir5/subdir4/subsubdir1", "root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md");
     }
 
+    @Test
+    public void testRelativePathResolution() {
+        populateTree();
+
+        // Verify resolving relative paths
+        verifyRelativePath("root/dir1/dir1_file1.md", "../dir2/dir2_file1.md", "root/dir2/dir2_file1.md");
+        verifyRelativePath("root/dir2/subdir1/dir2_subdir1_file1.md", "../../dir3/dir3_file1.md",
+                "root/dir3/dir3_file1.md");
+        verifyRelativePath("root/dir3/subdir2/dir3_subdir2_file1.md", "../../dir4/dir4_file1.md",
+                "root/dir4/dir4_file1.md");
+        verifyRelativePath("root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md",
+                "../../../dir2/dir2_file1.md", "root/dir2/dir2_file1.md");
+    }
+
     private void populateTree() {
+        // root [root]
+        // ├── dir1 [root/dir1]
+        // │ └── dir1_file1.md [root/dir1/dir1_file1.md]
+        // ├── dir2 [root/dir2]
+        // │ ├── dir2_file1.md [root/dir2/dir2_file1.md]
+        // │ └── subdir1 [root/dir2/subdir1]
+        // │ └── dir2_subdir1_file1.md [root/dir2/subdir1/dir2_subdir1_file1.md]
+        // ├── dir3 [root/dir3]
+        // │ ├── dir3_file1.md [root/dir3/dir3_file1.md]
+        // │ └── subdir2 [root/dir3/subdir2]
+        // │ └── dir3_subdir2_file1.md [root/dir3/subdir2/dir3_subdir2_file1.md]
+        // ├── dir4 [root/dir4]
+        // │ ├── dir4_file1.md [root/dir4/dir4_file1.md]
+        // │ └── subdir3 [root/dir4/subdir3]
+        // │ └── dir4_subdir3_file1.md [root/dir4/subdir3/dir4_subdir3_file1.md]
+        // └── dir5 [root/dir5]
+        // ├── dir5_file1.md [root/dir5/dir5_file1.md]
+        // └── subdir4 [root/dir5/subdir4]
+        // ├── dir5_subdir4_file1.md [root/dir5/subdir4/dir5_subdir4_file1.md]
+        // └── subsubdir1 [root/dir5/subdir4/subsubdir1]
+        // └── dir5_subdir4_subsubdir1_file1.md
+        // [root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md]
+
         paths.populate(new SyntheticPayload("root/dir1"));
         paths.populate(new SyntheticPayload("root/dir1/dir1_file1.md"));
         paths.populate(new SyntheticPayload("root/dir2"));
@@ -183,6 +220,15 @@ public class PathsTest {
         }
     }
 
+    private void verifyRelativePath(String basePath, String relativePath, String expectedResolvedPath) {
+        final var baseNode = paths.findNode(basePath);
+        assertThat(baseNode).isPresent();
+
+        final var resolvedPath = baseNode.get().resolve(relativePath);
+        assertThat(resolvedPath).isPresent();
+        assertThat(resolvedPath.get().absolutePath()).isEqualTo(expectedResolvedPath);
+    }
+
     @Test
     public void testPathsJson() throws Exception {
         // Populate the tree
@@ -208,6 +254,22 @@ public class PathsTest {
         // assertThat(json).contentOf("PathsTestJson.fixture.json").isEqualToIgnoringWhitespace(expectedJson);
     }
 
+    @Test
+    public void testPathsHtml() throws Exception {
+        // Populate the tree
+        populateTree();
+
+        final var ph = new PathsHtml.Builder<String, SyntheticPayload>()
+                .withIds(node -> "id=\"" + node.absolutePath().replaceAll("[^a-zA-Z0-9]", "-") + "\"")
+                .build(); // Use defaults for all other settings
+
+        final var pathsHtml = ph.toHtmlUL(paths, Optional.empty());
+        System.out.println(pathsHtml);
+
+        // Compare generated JSON with expected JSON
+        // assertThat(json).contentOf("PathsTestJson.fixture.json").isEqualToIgnoringWhitespace(expectedJson);
+    }
+
     public record SyntheticPayload(String absolutePath, String content, String baseName) {
         public SyntheticPayload(String absolutePath) {
             this(absolutePath, "this is content for " + absolutePath,
@@ -220,20 +282,10 @@ public class PathsTest {
         }
     }
 
-    public void visualize(Paths<String, SyntheticPayload> paths) {
+    @Test
+    public void testAsciiTree() {
         populateTree();
-        for (Paths<String, SyntheticPayload>.Node root : paths.roots()) {
-            printTree(root, 0);
-        }
-    }
-
-    private void printTree(Paths<String, SyntheticPayload>.Node node, int level) {
-        System.out.println(
-                "%s %s [u:%d a:%d d:%d s:%d, c:%d]".formatted("  ".repeat(level), node.payload().baseName(),
-                        node.components().size(), node.ancestors().size(), node.descendants().size(),
-                        node.siblings().size(), node.children().size()));
-        for (Paths<String, SyntheticPayload>.Node child : node.children()) {
-            printTree(child, level + 1);
-        }
+        // TODO: assign this to a variable and then test it
+        // System.out.println(new PathsVisuals().asciiTree(paths));
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import jakarta.servlet.http.Cookie;
@@ -91,7 +92,7 @@ public class Interactions {
             String contentType,
             String queryString,
             String protocol,
-            HttpSession session,
+            @JsonIgnore HttpSession session,
             List<Cookie> cookies,
             @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class) byte[] requestBody) {
 
