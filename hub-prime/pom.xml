@@ -160,7 +160,7 @@
 			<groupId>com.vladsch.flexmark</groupId>
 			<artifactId>flexmark-all</artifactId>
 			<version>0.62.2</version>
-		</dependency>		
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -177,6 +177,7 @@
 					</excludes>
 				</configuration>
 			</plugin>
+
 			<!-- Maven Site Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -345,6 +346,79 @@
                     <commitIdGenerationMode>full</commitIdGenerationMode>
                 </configuration>
             </plugin>
+			<!-- Modernizer Plugin -->
+			<plugin>
+				<groupId>org.gaul</groupId>
+				<artifactId>modernizer-maven-plugin</artifactId>
+				<version>2.9.0</version>
+				<configuration>
+					<configLocation>modernizer.xml</configLocation>
+					<encoding>UTF-8</encoding>
+					<javaVersion>8</javaVersion>
+					<consoleOutput>true</consoleOutput>
+					<displayFiles>true</displayFiles>
+					<violationLogLevel>info</violationLogLevel>
+					<failOnError>false</failOnError>
+					<linkXRef>false</linkXRef>
+					<includes>
+						**/*.java
+					</includes>
+				</configuration>
+				<executions>
+					<execution>
+					<id>modernizer</id>
+					<phase>verify</phase>
+						<goals>
+							<goal>modernizer</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Enforcer Plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.5.0</version>
+				<executions>
+				<execution>
+					<id>enforce-versions</id>
+					<goals>
+					<goal>enforce</goal>
+					</goals>
+					<configuration>
+					<rules>
+						<bannedPlugins>
+						<!-- will only display a warning but does not fail the build. -->
+						<level>WARN</level>
+						<excludes>
+							<exclude>org.apache.maven.plugins:maven-verifier-plugin</exclude>
+						</excludes>
+						<message>Please consider using the maven-invoker-plugin (http://maven.apache.org/plugins/maven-invoker-plugin/)!</message>
+						</bannedPlugins>
+						<requireMavenVersion>
+						<version>2.0.6</version>
+						</requireMavenVersion>
+						<requireJavaVersion>
+						<version>1.5</version>
+						</requireJavaVersion>
+						<requireOS>
+						<family>unix</family>
+						</requireOS>
+					</rules>
+					</configuration>
+				</execution>
+				</executions>
+			</plugin>
+			<!-- javadoc Plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.7.0</version>
+				<configuration>
+				<show>private</show>
+				<nohelp>true</nohelp>
+				</configuration>
+			</plugin>
 		</plugins>
 
 		<resources>
@@ -421,9 +495,32 @@
 				<version>5.0.0</version>
 				<configuration>
 					<configLocation>git-commit-id.xml</configLocation>
-					<outputFile>${project.build.directory}/output-results/git-commit-id..xml</outputFile>
+					<outputFile>${project.build.directory}/output-results/git-commit-id.xml</outputFile>
 					<outputFileFormat>xml</outputFileFormat>
 					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<!-- Modernizer Report Plugin -->
+			<plugin>
+				<groupId>org.gaul</groupId>
+				<artifactId>modernizer-maven-plugin</artifactId>
+				<version>2.9.0</version>
+				<configuration>
+					<configLocation>modernizer.xml</configLocation>
+					<outputFile>${project.build.directory}/output-results/modernizer.xml</outputFile>
+					<outputFileFormat>xml</outputFileFormat>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<!-- Javadoc Report Plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.7.0</version>
+				<configuration>
+				<failOnError>false</failOnError>
+				<stylesheetfile>/home/arun/workspace/arun/polyglot-prime/hub-prime/target/site/apidocs/stylesheet.css</stylesheetfile>
+				<show>public</show>
 				</configuration>
 			</plugin>
 		</plugins>
