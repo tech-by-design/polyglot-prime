@@ -9,31 +9,41 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+
 import org.apache.commons.text.StringEscapeUtils;
+import org.hl7.fhir.r5.model.OperationOutcome;
+//import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.StrictErrorHandler;
 import ca.uhn.fhir.validation.FhirValidator;
 import ca.uhn.fhir.validation.ValidationOptions;
 import jakarta.validation.constraints.NotNull;
+
+import org.inferno.validator.Validator;
 
 /**
  * The {@code OrchestrationEngine} class is responsible for managing and
@@ -638,55 +648,225 @@ public class OrchestrationEngine {
         private final Instant engineInitAt = Instant.now();
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
-
+        private final Validator validator;
+        private List<String> fhirBundleProfile;
+        
         private InfernoValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
+            Validator tempValidator;
+            try {
+                tempValidator = new Validator("hub-prime/igs", false);
+            } catch (Exception e) {
+                e.printStackTrace();
+                tempValidator = null; // or provide a default initialization
+            }
+            fhirBundleProfile = new ArrayList<>();
+            this.validator = tempValidator;
             this.engineConstructedAt = Instant.now();
             observability = new Observability(InfernoValidationEngine.class.getName(),
-                    "HL7 Official API (TODO: version)", engineInitAt,
+                    "Inferno version (TODO: version)", engineInitAt,
                     engineConstructedAt);
         }
 
         @Override
         public ValidationResult validate(@NotNull final String payload) {
-            final var initiatedAt = Instant.now();
-            final var completedAt = Instant.now();
-            return new ValidationResult() {
-                @Override
-                public String getOperationOutcome() {
-                    return null;
+            final Instant initiatedAt = Instant.now();
+
+            try {
+                byte[] payloadContent = payload.getBytes(StandardCharsets.UTF_8); // loadFile(payload);
+                byte[] bundleProfile = loadFileFromURL(fhirProfileUrl);
+
+                validator.loadProfile(bundleProfile);
+                if (validator.getAssignedUrlFrom() != null) {
+                    fhirBundleProfile = Arrays.asList(validator.getAssignedUrlFrom());
+                } else {
+                    fhirBundleProfile = null;
                 }
 
-                @Override
-                public boolean isValid() {
-                    return true;
-                }
+                OperationOutcome oo = validator.validate(payloadContent, fhirBundleProfile);
+                ArrayNode issueArray = displayValidationErrors(oo, false);
+                ObjectMapper mapper = new ObjectMapper();
+                String responseBody = mapper.writeValueAsString(issueArray);
 
-                @Override
-                public List<ValidationIssue> getIssues() {
-                    return List.of();
-                }
+                final Instant completedAt = Instant.now();
 
-                @Override
-                public String getProfileUrl() {
-                    return InfernoValidationEngine.this.fhirProfileUrl;
-                }
+                return new ValidationResult() {
+                    @Override
+                    public String getOperationOutcome() {
+                        return null;
+                    }
 
-                @Override
-                public ValidationEngine.Observability getObservability() {
-                    return observability;
-                }
+                    @Override
+                    public boolean isValid() {
+                        return responseBody.contains("OperationOutcome");
+                    }
 
-                @Override
-                public Instant getInitiatedAt() {
-                    return initiatedAt;
-                }
+                    public List<OrchestrationEngine.ValidationIssue> getIssues() {
+                        List<OrchestrationEngine.ValidationIssue> issuesList = new ArrayList<>();
 
-                @Override
-                public Instant getCompletedAt() {
-                    return completedAt;
-                }
-            };
+                        try {
+                            final var mapper = new ObjectMapper();
+                            final var issuesArray = mapper.readTree(responseBody);
+
+                            if (issuesArray.isArray()) {
+                                issuesList.addAll(extractIssues(issuesArray));
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        return issuesList;
+                    }
+
+                    private List<OrchestrationEngine.ValidationIssue> extractIssues(JsonNode issues) {
+                        return StreamSupport.stream(issues.spliterator(), false)
+                                .map(issue -> new OrchestrationEngine.ValidationIssue() {
+                                    @Override
+                                    public String getMessage() {
+                                        return issue.path("message").asText();
+                                    }
+
+                                    @Override
+                                    public OrchestrationEngine.SourceLocation getLocation() {
+                                        Integer line = issue.path("line").isInt()
+                                                ? issue.path("line").intValue()
+                                                : null;
+                                        Integer column = issue.path("col").isInt()
+                                                ? issue.path("col").intValue()
+                                                : null;
+                                        String diagnostics = "ca.uhn.fhir.parser.DataFormatException";
+                                        return new OrchestrationEngine.SourceLocation(line, column,
+                                                diagnostics);
+                                    }
+
+                                    @Override
+                                    public String getSeverity() {
+                                        return issue.path("level").asText();
+                                    }
+                                })
+                                .collect(Collectors.toList());
+                    }
+
+                    @Override
+                    public String getProfileUrl() {
+                        return InfernoValidationEngine.this.fhirProfileUrl;
+                    }
+
+                    @Override
+                    public ValidationEngine.Observability getObservability() {
+                        return observability;
+                    }
+
+                    @Override
+                    public Instant getInitiatedAt() {
+                        return initiatedAt;
+                    }
+
+                    @Override
+                    public Instant getCompletedAt() {
+                        return completedAt;
+                    }
+                };
+            } catch (Exception e) {
+                final var completedAt = Instant.now();
+                return new OrchestrationEngine.ValidationResult() {
+                    @Override
+                    public String getOperationOutcome() {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean isValid() {
+                        return false;
+                    }
+
+                    @Override
+                    public List<OrchestrationEngine.ValidationIssue> getIssues() {
+                        return List.of(new OrchestrationEngine.ValidationIssue() {
+                            @Override
+                            public String getMessage() {
+                                return e.getMessage();
+                            }
+
+                            @Override
+                            public SourceLocation getLocation() {
+                                return new SourceLocation(null, null, e.getClass().getName());
+                            }
+
+                            @Override
+                            public String getSeverity() {
+                                return "FATAL";
+                            }
+                        });
+                    }
+
+                    @Override
+                    public String getProfileUrl() {
+                        return InfernoValidationEngine.this.fhirProfileUrl;
+                    }
+
+                    @Override
+                    public ValidationEngine.Observability getObservability() {
+                        return observability;
+                    }
+
+                    @Override
+                    public Instant getInitiatedAt() {
+                        return initiatedAt;
+                    }
+
+                    @Override
+                    public Instant getCompletedAt() {
+                        return completedAt;
+                    }
+                };
+            }
+
+        }
+
+        public static byte[] loadFileFromURL(String urlString)
+                throws IOException, InterruptedException, ExecutionException {
+            URI uri = URI.create(urlString);
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .GET()
+                    .build();
+
+            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+            if (response.statusCode() != 200) {
+                throw new IOException("Failed to get file: HTTP " + response.statusCode());
+            }
+
+            return response.body();
+        }
+
+        public static ArrayNode displayValidationErrors(OperationOutcome oo, boolean areErrorsExpected) {
+            List<OperationOutcome.OperationOutcomeIssueComponent> issues = oo.getIssue();
+            final var objectMapper = new ObjectMapper();
+            ArrayNode issueArray = objectMapper.createArrayNode();
+
+            for (OperationOutcome.OperationOutcomeIssueComponent issue : issues) {
+                ObjectNode issueJson = objectMapper.createObjectNode();
+                issueJson.put("source", "InstanceValidator");
+                issueJson.put("server", (String) null);
+                issueJson.put("line", (String) null);
+                issueJson.put("col", (String) null);
+                issueJson.put("location", issue.hasLocation() ? issue.getLocation().get(0).getValue() : null);
+                issueJson.put("message", issue.getDetails().getText());
+                issueJson.put("messageId", (String) null);
+                issueJson.put("type", issue.getCode().toCode());
+                issueJson.put("level", issue.getSeverity().toCode());
+                issueJson.put("display",
+                        issue.getSeverity().toCode() + ": "
+                                + (issue.hasLocation() ? issue.getLocation().get(0).getValue() : null) + ": "
+                                + issue.getDetails().getText());
+                issueJson.put("error", true);
+                issueArray.add(issueJson);
+
+            }
+            return issueArray;
         }
 
         public static class Builder {
@@ -778,7 +958,7 @@ public class OrchestrationEngine {
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
             }
-            
+
             public List<String> getUaStrategyJsonIssues() {
                 return uaStrategyJsonIssues;
             }

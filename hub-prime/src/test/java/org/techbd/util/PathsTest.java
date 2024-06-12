@@ -264,7 +264,7 @@ public class PathsTest {
                 .build(); // Use defaults for all other settings
 
         final var pathsHtml = ph.toHtmlUL(paths, Optional.empty());
-        System.out.println(pathsHtml);
+        //System.out.println(pathsHtml);
 
         // Compare generated JSON with expected JSON
         // assertThat(json).contentOf("PathsTestJson.fixture.json").isEqualToIgnoringWhitespace(expectedJson);
