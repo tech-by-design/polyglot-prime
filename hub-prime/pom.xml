@@ -519,7 +519,7 @@
 				<version>3.7.0</version>
 				<configuration>
 				<failOnError>false</failOnError>
-				<stylesheetfile>/home/arun/workspace/arun/polyglot-prime/hub-prime/target/site/apidocs/stylesheet.css</stylesheetfile>
+				<stylesheetfile>${project.build.directory}/site/apidocs/stylesheet.css</stylesheetfile>
 				<show>public</show>
 				</configuration>
 			</plugin>
