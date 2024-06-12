@@ -250,7 +250,7 @@ public class PathsTest {
         // TODO: assign this to a variable and then test it
         pathsJson.toJson(paths, Optional.of(payloadRenderer));
 
-        // Compare generated JSON with expected JSON
+        // TODO: Compare generated JSON with expected JSON
         // assertThat(json).contentOf("PathsTestJson.fixture.json").isEqualToIgnoringWhitespace(expectedJson);
     }
 
@@ -264,9 +264,8 @@ public class PathsTest {
                 .build(); // Use defaults for all other settings
 
         final var pathsHtml = ph.toHtmlUL(paths, Optional.empty());
-        //System.out.println(pathsHtml);
-
-        // Compare generated JSON with expected JSON
+       
+        // TODO: Compare generated JSON with expected JSON
         // assertThat(json).contentOf("PathsTestJson.fixture.json").isEqualToIgnoringWhitespace(expectedJson);
     }
 
