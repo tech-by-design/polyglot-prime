@@ -92,7 +92,7 @@ class ApplicationTests {
 
 	@Test
 	void bundleValidateHealtheconnectionsUnhappyPath() throws Exception {
-		final var bvr = getBundleValidateResult("fhir-fixture-shinny-healtheconnections-unhappy-path.json");
+		final var bvr = getBundleValidateResult("TestCase301.json");
 		assertThat(bvr.containsKey("OperationOutcome"));
 		Map<String, Object> operationOutcome = objectMapper.convertValue(bvr.get("OperationOutcome"),
 				new TypeReference<Map<String, Object>>() {
@@ -111,7 +111,7 @@ class ApplicationTests {
 		// Check details of the first validation result
 		assertValidationResult(validationResults.get(0),
 				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
-				"HAPI-1821: [element=\"lastUpdated\"] Invalid attribute value \"2023-10-28 10:07:42.9149210\": Invalid date/time format: \"2023-10-28 10:07:42.9149210\": Expected character 'T' at index 10 but found  ",
+				"HAPI-1821: [element=\"gender\"] Invalid attribute value \"UN\": Unknown AdministrativeGender code 'UN'",
 				"FATAL");
 		// assertValidationResult(validationResults.get(1),
 		// 		"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json",
@@ -148,7 +148,7 @@ class ApplicationTests {
 
 	public String fixtureContent(final String filename) throws IOException, InterruptedException {
 		return Helpers.textFromURL(
-				"https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-05-16/"
+				"https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-06-10/"
 						+ filename);
 	}
 
