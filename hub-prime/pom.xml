@@ -464,6 +464,39 @@
 				<nohelp>true</nohelp>
 				</configuration>
 			</plugin>
+			<!-- Owasp Plugin -->			
+			<plugin>
+              <groupId>org.owasp</groupId>
+              <artifactId>dependency-check-maven</artifactId>
+              <version>9.2.0</version>
+              <executions>
+                  <execution>
+                      <goals>
+                          <goal>check</goal>
+                      </goals>
+                  </execution>
+              </executions>
+            </plugin>
+			<!-- Jacoco  plugin-->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.12</version>
+				<executions>
+					<execution>
+					<goals>
+						<goal>prepare-agent</goal>
+					</goals>
+					</execution>
+					<execution>
+					<id>report</id>
+					<phase>prepare-package</phase>
+					<goals>
+						<goal>report</goal>
+					</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 
 		<resources>
@@ -567,6 +600,31 @@
 				<stylesheetfile>${project.build.directory}/site/apidocs/stylesheet.css</stylesheetfile>
 				<show>public</show>
 				</configuration>
+			</plugin>
+			<!-- Owasp Report Plugin -->
+			<plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.2.0</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+			<!-- Jacoco Report Plugin-->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<reportSets>
+				<reportSet>
+					<reports>
+					<report>report</report>
+					</reports>
+				</reportSet>
+				</reportSets>
 			</plugin>
 		</plugins>
 	</reporting>
