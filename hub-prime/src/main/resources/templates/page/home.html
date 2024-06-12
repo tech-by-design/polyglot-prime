@@ -13,7 +13,7 @@
             <div>Welcome GitHub User <span sec:authentication="principal.attributes['name']"></span></div>
         </div>
         <div sec:authorize="isAnonymous()">
-            <div>Welcome GitHub User Guest</div>
+            <div>Welcome Guest</div>
         </div>
 
         <div>
