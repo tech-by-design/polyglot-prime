@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PathsJson.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.techbd.util</a> &gt; <span class="el_source">PathsJson.java</span></div><h1>PathsJson.java</h1><pre class="source lang-java linenums">package org.techbd.util;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
+<span class="fc" id="L14">public class PathsJson&lt;C, P&gt; {</span>
+<span class="fc" id="L15">    private static final ObjectMapper objectMapper = JsonMapper.builder()</span>
+<span class="fc" id="L16">            .findAndAddModules()</span>
+<span class="fc" id="L17">            .enable(SerializationFeature.INDENT_OUTPUT)</span>
+<span class="fc" id="L18">            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)</span>
+<span class="fc" id="L19">            .build();</span>
+
+    @FunctionalInterface
+    public interface PayloadJsonSupplier&lt;C, P&gt; {
+        Optional&lt;Object&gt; toJson(Paths&lt;C, P&gt;.Node node, Paths&lt;C, P&gt; paths);
+    }
+
+    /**
+     * Converts the Paths instance to a JSON string representation.
+     *
+     * @param paths           the Paths instance to convert
+     * @param payloadRenderer an optional payload renderer
+     * @return the JSON string representation of the Paths instance
+     * @throws Exception if an error occurs during JSON conversion
+     */
+    public String toJson(final Paths&lt;C, P&gt; paths, final Optional&lt;PayloadJsonSupplier&lt;C, P&gt;&gt; payloadRenderer)
+            throws Exception {
+<span class="fc" id="L36">        final var result = new ArrayList&lt;Object&gt;();</span>
+<span class="fc" id="L37">        final var visitedNodes = new HashSet&lt;Paths&lt;C, P&gt;.Node&gt;();</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (var root : paths.roots()) {</span>
+<span class="fc" id="L40">            final var nodeMap = new HashMap&lt;String, Object&gt;();</span>
+<span class="fc" id="L41">            renderNode(root, nodeMap, paths, payloadRenderer, visitedNodes);</span>
+<span class="fc" id="L42">            result.add(nodeMap);</span>
+<span class="fc" id="L43">        }</span>
+
+<span class="fc" id="L45">        return objectMapper.writeValueAsString(result);</span>
+    }
+
+    /**
+     * Recursively renders a node and its children into a map.
+     *
+     * @param node            the current node to render
+     * @param nodeMap         the map to populate with the node's data
+     * @param paths           the Paths instance
+     * @param payloadRenderer an optional payload renderer
+     * @param visitedNodes    a set of visited nodes to prevent cycles
+     */
+    protected void renderNode(final Paths&lt;C, P&gt;.Node node, final Map&lt;String, Object&gt; nodeMap,
+            final Paths&lt;C, P&gt; paths, final Optional&lt;PayloadJsonSupplier&lt;C, P&gt;&gt; payloadRenderer,
+            final Set&lt;Paths&lt;C, P&gt;.Node&gt; visitedNodes) {
+
+        // Check for cycles
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (!visitedNodes.add(node)) {</span>
+<span class="nc" id="L63">            return; // Node has already been visited, so skip it to avoid a cycle</span>
+        }
+
+<span class="fc" id="L66">        payloadRenderer.flatMap(renderer -&gt; renderer.toJson(node, paths))</span>
+<span class="fc" id="L67">                .ifPresent(payload -&gt; nodeMap.put(&quot;payload&quot;, payload));</span>
+
+<span class="fc" id="L69">        nodeMap.put(&quot;isRoot&quot;, node.isRoot());</span>
+<span class="fc" id="L70">        nodeMap.put(&quot;isLeaf&quot;, node.isLeaf());</span>
+<span class="fc" id="L71">        nodeMap.put(&quot;components&quot;, node.components());</span>
+
+<span class="fc" id="L73">        nodeMap.put(&quot;descendants&quot;, node.descendants().stream()</span>
+<span class="fc" id="L74">                .map(n -&gt; n.absolutePath())</span>
+<span class="fc" id="L75">                .toArray(String[]::new));</span>
+
+<span class="fc" id="L77">        nodeMap.put(&quot;siblings&quot;, node.siblings().stream()</span>
+<span class="fc" id="L78">                .map(n -&gt; n.absolutePath())</span>
+<span class="fc" id="L79">                .toArray(String[]::new));</span>
+
+<span class="fc" id="L81">        nodeMap.put(&quot;ancestors&quot;, node.ancestors().stream()</span>
+<span class="fc" id="L82">                .map(n -&gt; n.absolutePath())</span>
+<span class="fc" id="L83">                .toArray(String[]::new));</span>
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (!node.isLeaf()) {</span>
+<span class="fc" id="L86">            final var children = new ArrayList&lt;Object&gt;();</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            for (var child : node.children()) {</span>
+<span class="fc" id="L88">                final var childMap = new HashMap&lt;String, Object&gt;();</span>
+<span class="fc" id="L89">                renderNode(child, childMap, paths, payloadRenderer, visitedNodes);</span>
+<span class="fc" id="L90">                children.add(childMap);</span>
+<span class="fc" id="L91">            }</span>
+<span class="fc" id="L92">            nodeMap.put(&quot;children&quot;, children);</span>
+        }
+<span class="fc" id="L94">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

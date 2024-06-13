@@ -49,6 +49,8 @@
       <li><a href="spotbugs.html">SpotBugs</a></li>
       <li><a href="apidocs/index.html">Javadoc</a></li>
       <li><a href="testapidocs/index.html">Test Javadoc</a></li>
+      <li><a href="dependency-check-report.html">dependency-check:aggregate</a></li>
+      <li><a href="jacoco/index.html">JaCoCo</a></li>
      </ul></li>
   </ul>
           </nav>
@@ -96,7 +98,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>90.6%</td>
-<td>14.70 s</td></tr></table><br />
+<td>15.27 s</td></tr></table><br />
 <p>Note: failures are anticipated and checked for with assertions while errors are unanticipated.</p><br /></section><section><a id="Package_List"></a>
 <h1>Package List</h1>
 <p>[<a href="#Summary">Summary</a>] [<a href="#Package_List">Package List</a>] [<a href="#Test_Cases">Test Cases</a>]</p><br />
@@ -116,7 +118,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>100%</td>
-<td>0.372 s</td></tr>
+<td>0.734 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a href="#org.techbd.orchestrate.fhir">org.techbd.orchestrate.fhir</a></td>
 <td>3</td>
@@ -124,7 +126,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>100%</td>
-<td>12.90 s</td></tr>
+<td>12.09 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a href="#org.techbd.service.http.hub.prime">org.techbd.service.http.hub.prime</a></td>
 <td>3</td>
@@ -132,7 +134,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>0%</td>
-<td>1.433 s</td></tr></table><br />
+<td>2.446 s</td></tr></table><br />
 <p>Note: package statistics are not computed recursively, they only sum up all of its testsuites numbers.</p><section><a id="org.techbd.util"></a>
 <h2>org.techbd.util</h2>
 <table class="table table-striped">
@@ -153,7 +155,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>100%</td>
-<td>0.093 s</td></tr>
+<td>0.187 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a href="#org.techbd.util.VfsIngressConsumerTest"><img src="images/icon_success_sml.gif" /></a></td>
 <td><a href="#org.techbd.util.VfsIngressConsumerTest">VfsIngressConsumerTest</a></td>
@@ -162,7 +164,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>100%</td>
-<td>0.080 s</td></tr>
+<td>0.134 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a href="#org.techbd.util.InterpolateEngineTest"><img src="images/icon_success_sml.gif" /></a></td>
 <td><a href="#org.techbd.util.InterpolateEngineTest">InterpolateEngineTest</a></td>
@@ -171,7 +173,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>100%</td>
-<td>0.090 s</td></tr>
+<td>0.221 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a href="#org.techbd.util.PathsTest"><img src="images/icon_success_sml.gif" /></a></td>
 <td><a href="#org.techbd.util.PathsTest">PathsTest</a></td>
@@ -180,7 +182,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>100%</td>
-<td>0.039 s</td></tr>
+<td>0.080 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a href="#org.techbd.util.JsonTextTest"><img src="images/icon_success_sml.gif" /></a></td>
 <td><a href="#org.techbd.util.JsonTextTest">JsonTextTest</a></td>
@@ -189,7 +191,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>100%</td>
-<td>0.070 s</td></tr></table></section><section><a id="org.techbd.orchestrate.fhir"></a>
+<td>0.112 s</td></tr></table></section><section><a id="org.techbd.orchestrate.fhir"></a>
 <h2>org.techbd.orchestrate.fhir</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -209,7 +211,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>100%</td>
-<td>12.90 s</td></tr></table></section><section><a id="org.techbd.service.http.hub.prime"></a>
+<td>12.09 s</td></tr></table></section><section><a id="org.techbd.service.http.hub.prime"></a>
 <h2>org.techbd.service.http.hub.prime</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -229,7 +231,7 @@ function toggleDisplay(elementId) {
 <td>0</td>
 <td>0</td>
 <td>0%</td>
-<td>1.433 s</td></tr></table></section><br /></section><section><a id="Test_Cases"></a>
+<td>2.446 s</td></tr></table></section><br /></section><section><a id="Test_Cases"></a>
 <h1>Test Cases</h1>
 <p>[<a href="#Summary">Summary</a>] [<a href="#Package_List">Package List</a>] [<a href="#Test_Cases">Test Cases</a>]</p><section><a id="org.techbd.util.ArtifactStoreTest"></a>
 <h2>ArtifactStoreTest</h2>
@@ -237,31 +239,31 @@ function toggleDisplay(elementId) {
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.ArtifactStoreTest.testInvalidJsonHandling"></a>testInvalidJsonHandling</td>
-<td>0.068 s</td></tr>
+<td>0.115 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.ArtifactStoreTest.testSingleStrategyFromJson"></a>testSingleStrategyFromJson</td>
-<td>0.017 s</td></tr>
+<td>0.052 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.ArtifactStoreTest.testUnknownNatureInJson"></a>testUnknownNatureInJson</td>
-<td>0.001 s</td></tr>
+<td>0.003 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.ArtifactStoreTest.testAggregateStrategyFromJson"></a>testAggregateStrategyFromJson</td>
-<td>0.002 s</td></tr></table></section><section><a id="org.techbd.util.VfsIngressConsumerTest"></a>
+<td>0.004 s</td></tr></table></section><section><a id="org.techbd.util.VfsIngressConsumerTest"></a>
 <h2>VfsIngressConsumerTest</h2>
 <table class="table table-striped">
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.VfsIngressConsumerTest.testVfsIngressConsumer"></a>testVfsIngressConsumer</td>
-<td>0.078 s</td></tr></table></section><section><a id="org.techbd.util.InterpolateEngineTest"></a>
+<td>0.132 s</td></tr></table></section><section><a id="org.techbd.util.InterpolateEngineTest"></a>
 <h2>InterpolateEngineTest</h2>
 <table class="table table-striped">
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.InterpolateEngineTest.testInterpolateFormattedFilePath"></a>testInterpolateFormattedFilePath</td>
-<td>0.084 s</td></tr>
+<td>0.216 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.InterpolateEngineTest.testInterpolateCustomFunction"></a>testInterpolateCustomFunction</td>
@@ -275,15 +277,15 @@ function toggleDisplay(elementId) {
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.PathsTest.testDescendants"></a>testDescendants</td>
-<td>0.003 s</td></tr>
+<td>0.007 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.PathsTest.testPathsHtml"></a>testPathsHtml</td>
-<td>0.007 s</td></tr>
+<td>0.014 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.PathsTest.testPathsJson"></a>testPathsJson</td>
-<td>0.013 s</td></tr>
+<td>0.036 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.PathsTest.testRelativePathResolution"></a>testRelativePathResolution</td>
@@ -295,47 +297,47 @@ function toggleDisplay(elementId) {
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.PathsTest.testAsciiTree"></a>testAsciiTree</td>
-<td>0.001 s</td></tr>
+<td>0.002 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.PathsTest.testSiblings"></a>testSiblings</td>
-<td>0.001 s</td></tr></table></section><section><a id="org.techbd.orchestrate.fhir.OrchestrationEngineTest"></a>
+<td>0.002 s</td></tr></table></section><section><a id="org.techbd.orchestrate.fhir.OrchestrationEngineTest"></a>
 <h2>OrchestrationEngineTest</h2>
 <table class="table table-striped">
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.orchestrate.fhir.OrchestrationEngineTest.testOrchestrateSingleSession"></a>testOrchestrateSingleSession</td>
-<td>0.277 s</td></tr>
+<td>0.772 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.orchestrate.fhir.OrchestrationEngineTest.testOrchestrateMultipleSessions"></a>testOrchestrateMultipleSessions</td>
-<td>12.60 s</td></tr>
+<td>11.29 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.orchestrate.fhir.OrchestrationEngineTest.testValidationEngineCaching"></a>testValidationEngineCaching</td>
-<td>0.003 s</td></tr></table></section><section><a id="org.techbd.util.JsonTextTest"></a>
+<td>0.004 s</td></tr></table></section><section><a id="org.techbd.util.JsonTextTest"></a>
 <h2>JsonTextTest</h2>
 <table class="table table-striped">
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testValidTypedJson"></a>testValidTypedJson</td>
-<td>0.010 s</td></tr>
+<td>0.017 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testInvalidJson"></a>testInvalidJson</td>
-<td>0.003 s</td></tr>
+<td>0.001 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testSerializeNestedJson"></a>testSerializeNestedJson</td>
-<td>0.024 s</td></tr>
+<td>0.049 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testSerializeArrayJson"></a>testSerializeArrayJson</td>
-<td>0.002 s</td></tr>
+<td>0.003 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testSerializeEmptyJson"></a>testSerializeEmptyJson</td>
-<td>0.001 s</td></tr>
+<td>0.002 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testSerializeValidJson"></a>testSerializeValidJson</td>
@@ -347,15 +349,15 @@ function toggleDisplay(elementId) {
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testClassNotFound"></a>testClassNotFound</td>
-<td>0.002 s</td></tr>
+<td>0.003 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testSerializeInvalidJson"></a>testSerializeInvalidJson</td>
-<td>0.001 s</td></tr>
+<td>0.002 s</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testClassNotInstantiated"></a>testClassNotInstantiated</td>
-<td>0.002 s</td></tr>
+<td>0.004 s</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_success_sml.gif" /></td>
 <td><a id="TC_org.techbd.util.JsonTextTest.testValidUntypedJson"></a>testValidUntypedJson</td>
@@ -366,19 +368,19 @@ function toggleDisplay(elementId) {
 <td style="text-align: left;"><a href="#org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateTestCase301WithMultiplEngines"><img src="images/icon_error_sml.gif" /></a></td>
 <td><a id="TC_org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateTestCase301WithMultiplEngines"></a><a href="#org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateTestCase301WithMultiplEngines">bundleValidateTestCase301WithMultiplEngines</a>
 <div class="detailToggle" style="display:inline"><a href="javascript:toggleDisplay('org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateTestCase301WithMultiplEngines');"><span style="display:inline;" id="org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateTestCase301WithMultiplEngines-off"> + </span><span style="display:none;" id="org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateTestCase301WithMultiplEngines-on"> - </span>[ Detail ]</a></div></td>
-<td>0.002 s</td></tr>
+<td>0.003 s</td></tr>
 <tr class="b">
 <td style="text-align: left;">-</td>
-<td>Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: Failed to load ApplicationContext for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td>
+<td>Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: Failed to load ApplicationContext for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td>
 <td>-</td></tr>
 <tr id="org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateTestCase301WithMultiplEngines-error" style="display:none;" class="a">
 <td style="text-align: left;">-</td>
 <td>
-<pre>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: Failed to load ApplicationContext for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
+<pre>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: Failed to load ApplicationContext for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-Caused by: java.lang.IllegalStateException: Failed to load ApplicationContext for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
+Caused by: java.lang.IllegalStateException: Failed to load ApplicationContext for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
 	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:180)
 	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:130)
 	at org.springframework.test.context.junit.jupiter.SpringExtension.getApplicationContext(SpringExtension.java:355)
@@ -431,19 +433,19 @@ Caused by: java.lang.IllegalArgumentException: Could not resolve placeholder 'SP
 <td style="text-align: left;"><a href="#org.techbd.service.http.hub.prime.ApplicationTests.metaDataShouldReturnCapabilities"><img src="images/icon_error_sml.gif" /></a></td>
 <td><a id="TC_org.techbd.service.http.hub.prime.ApplicationTests.metaDataShouldReturnCapabilities"></a><a href="#org.techbd.service.http.hub.prime.ApplicationTests.metaDataShouldReturnCapabilities">metaDataShouldReturnCapabilities</a>
 <div class="detailToggle" style="display:inline"><a href="javascript:toggleDisplay('org.techbd.service.http.hub.prime.ApplicationTests.metaDataShouldReturnCapabilities');"><span style="display:inline;" id="org.techbd.service.http.hub.prime.ApplicationTests.metaDataShouldReturnCapabilities-off"> + </span><span style="display:none;" id="org.techbd.service.http.hub.prime.ApplicationTests.metaDataShouldReturnCapabilities-on"> - </span>[ Detail ]</a></div></td>
-<td>0.001 s</td></tr>
+<td>0.002 s</td></tr>
 <tr class="a">
 <td style="text-align: left;">-</td>
-<td>Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td>
+<td>Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td>
 <td>-</td></tr>
 <tr id="org.techbd.service.http.hub.prime.ApplicationTests.metaDataShouldReturnCapabilities-error" style="display:none;" class="b">
 <td style="text-align: left;">-</td>
 <td>
-<pre>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
+<pre>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-Caused by: java.lang.IllegalStateException: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
+Caused by: java.lang.IllegalStateException: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
 	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:145)
 	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:130)
 	at org.springframework.test.context.junit.jupiter.SpringExtension.getApplicationContext(SpringExtension.java:355)
@@ -458,16 +460,16 @@ Caused by: java.lang.IllegalStateException: ApplicationContext failure threshold
 <td>0.001 s</td></tr>
 <tr class="b">
 <td style="text-align: left;">-</td>
-<td>Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td>
+<td>Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td>
 <td>-</td></tr>
 <tr id="org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateHealtheconnectionsUnhappyPath-error" style="display:none;" class="a">
 <td style="text-align: left;">-</td>
 <td>
-<pre>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
+<pre>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-Caused by: java.lang.IllegalStateException: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
+Caused by: java.lang.IllegalStateException: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
 	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:145)
 	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:130)
 	at org.springframework.test.context.junit.jupiter.SpringExtension.getApplicationContext(SpringExtension.java:355)
@@ -483,7 +485,7 @@ Caused by: java.lang.IllegalStateException: ApplicationContext failure threshold
 <td><a id="org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateTestCase301WithMultiplEngines"></a>bundleValidateTestCase301WithMultiplEngines</td></tr>
 <tr class="b">
 <td style="text-align: left;">-</td>
-<td>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: Failed to load ApplicationContext for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td></tr>
+<td>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: Failed to load ApplicationContext for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td></tr>
 <tr class="a">
 <td style="text-align: left;">-</td>
 <td>
@@ -493,7 +495,7 @@ Caused by: java.lang.IllegalStateException: ApplicationContext failure threshold
 <td><a id="org.techbd.service.http.hub.prime.ApplicationTests.metaDataShouldReturnCapabilities"></a>metaDataShouldReturnCapabilities</td></tr>
 <tr class="a">
 <td style="text-align: left;">-</td>
-<td>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td></tr>
+<td>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td></tr>
 <tr class="b">
 <td style="text-align: left;">-</td>
 <td>
@@ -503,7 +505,7 @@ Caused by: java.lang.IllegalStateException: ApplicationContext failure threshold
 <td><a id="org.techbd.service.http.hub.prime.ApplicationTests.bundleValidateHealtheconnectionsUnhappyPath"></a>bundleValidateHealtheconnectionsUnhappyPath</td></tr>
 <tr class="b">
 <td style="text-align: left;">-</td>
-<td>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@7bf65e0f testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@47ec7422, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@79d743e6, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@7a231dfd, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@67440de6, org.springframework.boot.test.context.SpringBootTestAnnotation@732ccd3f], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td></tr>
+<td>org.junit.jupiter.api.extension.ParameterResolutionException: Failed to resolve parameter [final org.techbd.service.http.hub.prime.AppConfig appConfig] in constructor [public org.techbd.service.http.hub.prime.ApplicationTests(org.techbd.service.http.hub.prime.AppConfig)]: ApplicationContext failure threshold (1) exceeded: skipping repeated attempt to load context for [WebMergedContextConfiguration@475534d1 testClass = org.techbd.service.http.hub.prime.ApplicationTests, locations = [], classes = [org.techbd.service.http.hub.prime.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = [&quot;org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true&quot;, &quot;server.port=0&quot;], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@749ee0e3, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d47b021, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@102ecb61, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@3cfab340, org.springframework.boot.test.context.SpringBootTestAnnotation@4e08b1d6], resourceBasePath = &quot;src/main/webapp&quot;, contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]</td></tr>
 <tr class="a">
 <td style="text-align: left;">-</td>
 <td>

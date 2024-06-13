@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArtifactStore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.techbd.util</a> &gt; <span class="el_source">ArtifactStore.java</span></div><h1>ArtifactStore.java</h1><pre class="source lang-java linenums">package org.techbd.util;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.VFS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.techbd.sql.ArtifactsDataSource;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
+import jakarta.annotation.Nonnull;
+import jakarta.validation.constraints.NotNull;
+
+<span class="nc" id="L41">public class ArtifactStore {</span>
+<span class="fc" id="L42">    private static final Logger LOG = LoggerFactory.getLogger(ArtifactStore.class);</span>
+<span class="fc" id="L43">    private static final ObjectMapper objectMapper = JsonMapper.builder()</span>
+<span class="fc" id="L44">            .findAndAddModules()</span>
+<span class="fc" id="L45">            .enable(SerializationFeature.INDENT_OUTPUT)</span>
+<span class="fc" id="L46">            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)</span>
+<span class="fc" id="L47">            .build();</span>
+
+    public interface Artifact {
+        @Nonnull
+        String getArtifactId();
+
+        @Nonnull
+        String getNamespace();
+
+        @Nonnull
+        Reader getReader();
+
+        Map&lt;String, Object&gt; getProvenance();
+    }
+
+    public static String toJsonText(final Map&lt;String, Object&gt; object) {
+        try {
+<span class="nc" id="L64">            return objectMapper.writeValueAsString(object);</span>
+<span class="nc" id="L65">        } catch (Exception e) {</span>
+<span class="nc" id="L66">            return e.toString();</span>
+        }
+    }
+
+    public interface PersistenceReporter {
+        void persisted(Artifact artifact, String... location);
+
+        void info(String message);
+
+        void issue(String message);
+    }
+
+    public sealed interface PersistenceStrategy
+            permits DiagnosticPersistence, InvalidPersistenceStrategy, InvalidPersistenceNature, BlobStorePersistence,
+            LocalFsPersistence, VirtualFsPersistence, EmailPersistence, JdbcPersistence,
+            AggregatePersistence {
+        String REQUIRED_ARG_ARTIFACT_ID = &quot;artifactId&quot;;
+
+        void persist(@NotNull Artifact artifact, @NotNull Optional&lt;PersistenceReporter&gt; reporter);
+    }
+
+<span class="fc" id="L87">    public record DiagnosticPersistence(String identifier) implements PersistenceStrategy {</span>
+        public DiagnosticPersistence() {
+<span class="fc" id="L89">            this(&quot;DiagnosticPersistence&quot;);</span>
+<span class="fc" id="L90">        }</span>
+
+        @Override
+        public void persist(@NotNull Artifact artifact, @NotNull Optional&lt;PersistenceReporter&gt; reporter) {
+<span class="fc" id="L94">            String message = MessageFormat.format(&quot;[{0}] artifactId: {1}&quot;, identifier, artifact.getArtifactId());</span>
+<span class="fc" id="L95">            reporter.ifPresent(r -&gt; r.info(message));</span>
+<span class="fc" id="L96">        }</span>
+    }
+
+<span class="fc" id="L99">    public record InvalidPersistenceStrategy(String strategyJson, Exception error) implements PersistenceStrategy {</span>
+        @Override
+        public void persist(@NotNull Artifact artifact, @NotNull Optional&lt;PersistenceReporter&gt; reporter) {
+<span class="fc" id="L102">            String message = String.format(&quot;[InvalidPersistenceStrategy %s] artifactId: %s&quot;, strategyJson,</span>
+<span class="fc" id="L103">                    artifact.getArtifactId());</span>
+<span class="fc" id="L104">            reporter.ifPresent(r -&gt; r.issue(message));</span>
+<span class="fc" id="L105">        }</span>
+    }
+
+<span class="fc" id="L108">    public record InvalidPersistenceNature(String nature) implements PersistenceStrategy {</span>
+        @Override
+        public void persist(@NotNull Artifact artifact, @NotNull Optional&lt;PersistenceReporter&gt; reporter) {
+<span class="fc" id="L111">            String message = String.format(&quot;[InvalidPersistenceNature %s] artifactId: %s&quot;, nature,</span>
+<span class="fc" id="L112">                    artifact.getArtifactId());</span>
+<span class="fc" id="L113">            reporter.ifPresent(r -&gt; r.issue(message));</span>
+<span class="fc" id="L114">        }</span>
+    }
+
+<span class="nc" id="L117">    public record BlobStorePersistence(Map&lt;String, Object&gt; args, String origJson) implements PersistenceStrategy {</span>
+        @Override
+        public void persist(@NotNull Artifact artifact, @NotNull Optional&lt;PersistenceReporter&gt; reporter) {
+            // TODO: implement this to store asynchronously via jClouds API
+<span class="nc" id="L121">            reporter.ifPresent(r -&gt; r.info(&quot;Result-AWS-S3-ID: AWS-object-id&quot;));</span>
+<span class="nc" id="L122">        }</span>
+    }
+
+<span class="fc" id="L125">    public record LocalFsPersistence(Map&lt;String, Object&gt; initArgs, InterpolateEngine ie)</span>
+            implements PersistenceStrategy {
+        public static final String ARG_FS_PATH = &quot;fsPath&quot;;
+<span class="fc" id="L128">        public static final String FS_PATH_DEFAULT = String.format(</span>
+                &quot;${cwd()}/ArtifactStore-LocalFsPersistence/${formattedDateNow('yyyy/MM/dd/HH')}/${%s}.json&quot;,
+                REQUIRED_ARG_ARTIFACT_ID);
+
+        LocalFsPersistence(Map&lt;String, Object&gt; initArgs) {
+<span class="fc" id="L133">            this(initArgs, new InterpolateEngine(initArgs, REQUIRED_ARG_ARTIFACT_ID));</span>
+<span class="fc" id="L134">        }</span>
+
+        @Override
+        public void persist(@NotNull Artifact artifact, @NotNull Optional&lt;PersistenceReporter&gt; reporter) {
+<span class="fc" id="L138">            final var artifactId = artifact.getArtifactId();</span>
+<span class="fc" id="L139">            final var fsPath = ie.withValues(REQUIRED_ARG_ARTIFACT_ID, artifactId).interpolate(initArgs</span>
+<span class="fc" id="L140">                    .getOrDefault(ARG_FS_PATH, FS_PATH_DEFAULT)</span>
+<span class="fc" id="L141">                    .toString());</span>
+
+<span class="fc" id="L143">            Path path = Path.of(fsPath);</span>
+            try {
+<span class="fc" id="L145">                final var parentPath = path.getParent();</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">                if (parentPath != null) {</span>
+<span class="fc" id="L147">                    Files.createDirectories(path.getParent());</span>
+                }
+<span class="fc" id="L149">                try (Reader reader = artifact.getReader();</span>
+<span class="fc" id="L150">                        Writer writer = Files.newBufferedWriter(path)) {</span>
+<span class="fc" id="L151">                    reader.transferTo(writer);</span>
+<span class="nc" id="L152">                } catch (IOException e) {</span>
+<span class="nc" id="L153">                    reporter.ifPresent(r -&gt; r.issue(&quot;Failed to read artifact content: &quot; + e.toString()));</span>
+<span class="nc" id="L154">                    return;</span>
+<span class="fc" id="L155">                }</span>
+<span class="nc" id="L156">            } catch (IOException e) {</span>
+<span class="nc" id="L157">                reporter.ifPresent(r -&gt; r.issue(&quot;Unable to write JSON to &quot; + fsPath + &quot;: &quot; + e.toString()));</span>
+<span class="nc" id="L158">                return;</span>
+<span class="fc" id="L159">            }</span>
+
+<span class="fc" id="L161">            reporter.ifPresent(r -&gt; {</span>
+<span class="fc" id="L162">                r.persisted(artifact, fsPath);</span>
+<span class="fc" id="L163">                r.info(String.format(&quot;[persist-fs %s] %s&quot;, artifactId, path.toAbsolutePath()));</span>
+<span class="fc" id="L164">            });</span>
+<span class="fc" id="L165">        }</span>
+    }
+
+<span class="nc" id="L168">    public record VirtualFsPersistence(Map&lt;String, Object&gt; initArgs, InterpolateEngine ie)</span>
+            implements PersistenceStrategy {
+        static final String REQUIRED_ARG_VFS_URI = &quot;vfsUri&quot;;
+<span class="nc" id="L171">        public static final String VFS_URI_DEFAULT = String.format(</span>
+                &quot;tmp://ArtifactStore-VirtualFsPersistence-${%s}.json&quot;,
+                REQUIRED_ARG_ARTIFACT_ID);
+
+        VirtualFsPersistence(Map&lt;String, Object&gt; initArgs) {
+<span class="nc" id="L176">            this(initArgs, new InterpolateEngine(initArgs, REQUIRED_ARG_VFS_URI, REQUIRED_ARG_ARTIFACT_ID));</span>
+<span class="nc" id="L177">        }</span>
+
+        @Override
+        public void persist(@NotNull Artifact artifact, @NotNull Optional&lt;PersistenceReporter&gt; reporter) {
+<span class="nc" id="L181">            final var artifactId = artifact.getArtifactId();</span>
+<span class="nc" id="L182">            final var vfsUri = ie.withValues(REQUIRED_ARG_ARTIFACT_ID, artifactId).interpolate(initArgs</span>
+<span class="nc" id="L183">                    .getOrDefault(REQUIRED_ARG_VFS_URI, VFS_URI_DEFAULT)</span>
+<span class="nc" id="L184">                    .toString());</span>
+
+            try {
+<span class="nc" id="L187">                final FileObject file = VFS.getManager().resolveFile(vfsUri);</span>
+<span class="nc" id="L188">                file.getParent().createFolder();</span>
+<span class="nc" id="L189">                try (var reader = artifact.getReader();</span>
+<span class="nc" id="L190">                        var writer = new OutputStreamWriter(file.getContent().getOutputStream(),</span>
+                                StandardCharsets.UTF_8)) {
+<span class="nc" id="L192">                    reader.transferTo(writer);</span>
+<span class="nc" id="L193">                } catch (IOException e) {</span>
+<span class="nc" id="L194">                    reporter.ifPresent(r -&gt; r.issue(&quot;Failed to read artifact content: &quot; + e.toString()));</span>
+<span class="nc" id="L195">                    return;</span>
+<span class="nc" id="L196">                }</span>
+<span class="nc" id="L197">            } catch (FileSystemException e) {</span>
+<span class="nc" id="L198">                reporter.ifPresent(r -&gt; r.issue(&quot;Unable to write JSON to &quot; + vfsUri + &quot;: &quot; + e.toString()));</span>
+<span class="nc" id="L199">                return;</span>
+<span class="nc" id="L200">            }</span>
+
+<span class="nc" id="L202">            reporter.ifPresent(r -&gt; {</span>
+<span class="nc" id="L203">                r.persisted(artifact, vfsUri);</span>
+<span class="nc" id="L204">                r.info(String.format(&quot;[persist-vfs %s] %s&quot;, artifactId, vfsUri));</span>
+<span class="nc" id="L205">            });</span>
+<span class="nc" id="L206">        }</span>
+    }
+
+<span class="nc" id="L209">    public record EmailPersistence(Map&lt;String, Object&gt; initArgs, InterpolateEngine ie, JavaMailSender mailSender)</span>
+            implements ArtifactStore.PersistenceStrategy {
+
+        public static final String ARG_FROM = &quot;from&quot;;
+        public static final String ARG_TO = &quot;to&quot;;
+        public static final String ARG_CC = &quot;cc&quot;;
+        public static final String ARG_BCC = &quot;bcc&quot;;
+        public static final String ARG_SUBJECT = &quot;subject&quot;;
+        public static final String ARG_BODY = &quot;body&quot;;
+        public static final String ARG_ATTACHMENT_NAME = &quot;attachmentName&quot;;
+
+        public EmailPersistence(Map&lt;String, Object&gt; initArgs, JavaMailSender mailSender) {
+<span class="nc" id="L221">            this(initArgs, new InterpolateEngine(initArgs, REQUIRED_ARG_ARTIFACT_ID), mailSender);</span>
+<span class="nc" id="L222">        }</span>
+
+        @Override
+        public void persist(@NotNull ArtifactStore.Artifact artifact,
+                @NotNull Optional&lt;ArtifactStore.PersistenceReporter&gt; reporter) {
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            if (mailSender == null) {</span>
+<span class="nc" id="L228">                reporter.ifPresent(r -&gt; r.issue(&quot;'mailSender' not available in ArtifactStore.EmailPersistence&quot;));</span>
+<span class="nc" id="L229">                return;</span>
+            }
+
+            try {
+<span class="nc" id="L233">                final var artifactId = artifact.getArtifactId();</span>
+<span class="nc" id="L234">                final var ie = this.ie().withValues(REQUIRED_ARG_ARTIFACT_ID, artifactId);</span>
+<span class="nc" id="L235">                final var message = mailSender.createMimeMessage();</span>
+<span class="nc" id="L236">                final var helper = new MimeMessageHelper(message, true);</span>
+
+<span class="nc" id="L238">                final var from = (String) initArgs.get(ARG_FROM);</span>
+<span class="nc" id="L239">                final var to = (String) initArgs.get(ARG_TO);</span>
+<span class="nc" id="L240">                final var subject = (String) initArgs.get(ARG_SUBJECT);</span>
+<span class="nc bnc" id="L241" title="All 6 branches missed.">                if (to == null || subject == null || from == null) {</span>
+<span class="nc" id="L242">                    reporter.ifPresent(r -&gt; r.issue(</span>
+                            &quot;'from', 'to' and 'subject' arguments required to send emails in ArtifactStore.EmailPersistence&quot;));
+<span class="nc" id="L244">                    return;</span>
+                }
+
+<span class="nc" id="L247">                final var cc = (String) initArgs.get(ARG_CC);</span>
+<span class="nc" id="L248">                final var bcc = (String) initArgs.get(ARG_BCC);</span>
+<span class="nc" id="L249">                final var body = (String) initArgs.get(ARG_BODY);</span>
+<span class="nc" id="L250">                final var attachmentName = (String) initArgs.get(ARG_ATTACHMENT_NAME);</span>
+
+<span class="nc" id="L252">                helper.setFrom(ie.interpolate(from));</span>
+<span class="nc" id="L253">                helper.setTo(ie.interpolate(to));</span>
+<span class="nc" id="L254">                helper.setSubject(ie.interpolate(subject));</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">                if (cc != null) {</span>
+<span class="nc" id="L256">                    helper.setCc(ie.interpolate(cc));</span>
+                }
+<span class="nc bnc" id="L258" title="All 2 branches missed.">                if (bcc != null) {</span>
+<span class="nc" id="L259">                    helper.setBcc(ie.interpolate(bcc));</span>
+                }
+
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                if (attachmentName != null) {</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                    if (body != null) {</span>
+<span class="nc" id="L264">                        helper.setText(ie.interpolate(body));</span>
+                    }
+<span class="nc" id="L266">                    try (var reader = artifact.getReader();</span>
+<span class="nc" id="L267">                            var byteArrayOutputStream = new ByteArrayOutputStream();</span>
+<span class="nc" id="L268">                            var zipOutputStream = new ZipOutputStream(byteArrayOutputStream);</span>
+<span class="nc" id="L269">                            var zipOutputWriter = new OutputStreamWriter(zipOutputStream)) {</span>
+
+<span class="nc" id="L271">                        zipOutputStream.putNextEntry(new ZipEntry(artifactId + &quot;.json&quot;));</span>
+<span class="nc" id="L272">                        reader.transferTo(zipOutputWriter);</span>
+<span class="nc" id="L273">                        zipOutputStream.closeEntry();</span>
+
+<span class="nc" id="L275">                        ByteArrayResource byteArrayResource = new ByteArrayResource(</span>
+<span class="nc" id="L276">                                byteArrayOutputStream.toByteArray());</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">                        var attachment = attachmentName == null ? &quot;artifact.zip&quot; : ie.interpolate(attachmentName);</span>
+<span class="nc" id="L278">                        helper.addAttachment(attachment, byteArrayResource);</span>
+
+<span class="nc" id="L280">                        mailSender.send(message);</span>
+
+<span class="nc" id="L282">                        var report = String.format(</span>
+                                &quot;Email with attachment %s sent successfully from %s to %s in ArtifactStore.EmailPersistence&quot;,
+                                attachment, from, to);
+<span class="nc" id="L285">                        reporter.ifPresent(r -&gt; {</span>
+<span class="nc" id="L286">                            r.persisted(artifact, report);</span>
+<span class="nc" id="L287">                            r.info(report);</span>
+<span class="nc" id="L288">                        });</span>
+<span class="nc" id="L289">                    } catch (IOException e) {</span>
+<span class="nc" id="L290">                        reporter.ifPresent(r -&gt; r.issue(</span>
+                                &quot;Failed to read artifact as Zip entry in ArtifactStore.EmailPersistence attachment: &quot;
+<span class="nc" id="L292">                                        + e.toString()));</span>
+<span class="nc" id="L293">                    }</span>
+                } else {
+<span class="nc" id="L295">                    try (var reader = artifact.getReader();</span>
+<span class="nc" id="L296">                            var bodyWriter = new StringWriter()) {</span>
+
+<span class="nc" id="L298">                        reader.transferTo(bodyWriter);</span>
+<span class="nc" id="L299">                        helper.setText(bodyWriter.toString());</span>
+<span class="nc" id="L300">                        mailSender.send(message);</span>
+
+<span class="nc" id="L302">                        var report = String.format(</span>
+                                &quot;Email sent successfully from %s to %s in ArtifactStore.EmailPersistence&quot;,
+                                from, to);
+<span class="nc" id="L305">                        reporter.ifPresent(r -&gt; {</span>
+<span class="nc" id="L306">                            r.persisted(artifact, report);</span>
+<span class="nc" id="L307">                            r.info(report);</span>
+<span class="nc" id="L308">                        });</span>
+<span class="nc" id="L309">                    } catch (IOException e) {</span>
+<span class="nc" id="L310">                        reporter.ifPresent(r -&gt; r.issue(</span>
+                                &quot;Failed to read artifact content in ArtifactStore.EmailPersistence: &quot;
+<span class="nc" id="L312">                                        + e.toString()));</span>
+<span class="nc" id="L313">                    }</span>
+                }
+<span class="nc" id="L315">            } catch (Exception e) {</span>
+<span class="nc" id="L316">                reporter.ifPresent(</span>
+<span class="nc" id="L317">                        r -&gt; r.issue(&quot;Failed to send email in ArtifactStore.EmailPersistence: &quot; + e.toString()));</span>
+<span class="nc" id="L318">            }</span>
+<span class="nc" id="L319">        }</span>
+    }
+
+<span class="nc" id="L322">    public record JdbcPersistence(ArtifactsDataSource artifactDataSrc)</span>
+            implements ArtifactStore.PersistenceStrategy {
+
+        @Override
+        public void persist(@NotNull ArtifactStore.Artifact artifact,
+                @NotNull Optional&lt;ArtifactStore.PersistenceReporter&gt; reporter) {
+
+<span class="nc" id="L329">            final var result = artifactDataSrc.persistArtifact(artifact);</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">            if (result.isEmpty()) {</span>
+<span class="nc" id="L331">                reporter.ifPresent(r -&gt; {</span>
+<span class="nc" id="L332">                    r.persisted(artifact, artifact.getArtifactId());</span>
+<span class="nc" id="L333">                    r.info(String.format(&quot;Artifact %s inserted in data source&quot;, artifact.getArtifactId()));</span>
+<span class="nc" id="L334">                });</span>
+
+            } else {
+<span class="nc" id="L337">                reporter.ifPresent(r -&gt; r.issue(&quot;Failed to execute SQL insert: &quot; + result.get().toString()));</span>
+            }
+<span class="nc" id="L339">        }</span>
+    }
+
+<span class="fc" id="L342">    public record AggregatePersistence(List&lt;PersistenceStrategy&gt; strategies) implements PersistenceStrategy {</span>
+        @Override
+        public void persist(@NotNull Artifact artifact, @NotNull Optional&lt;PersistenceReporter&gt; reporter) {
+<span class="fc bfc" id="L345" title="All 2 branches covered.">            for (PersistenceStrategy strategy : strategies) {</span>
+<span class="fc" id="L346">                strategy.persist(artifact, reporter);</span>
+<span class="fc" id="L347">            }</span>
+<span class="fc" id="L348">        }</span>
+    }
+
+<span class="fc" id="L351">    public static class Builder {</span>
+<span class="fc" id="L352">        private static final Map&lt;String, PersistenceStrategy&gt; CACHED = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L353">        private static final PersistenceStrategy DIAGNOSTIC_DEFAULT = new DiagnosticPersistence();</span>
+
+        private String strategyJson;
+        private String provenanceJson;
+        private Map&lt;String, Object&gt; provenance;
+        private PersistenceStrategy always;
+        private JavaMailSender mailSender;
+        @SuppressWarnings(&quot;unused&quot;)
+        private ApplicationContext appCtx;
+
+        public Builder strategyJson(String strategyJson) {
+<span class="fc" id="L364">            this.strategyJson = strategyJson;</span>
+<span class="fc" id="L365">            return this;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder provenanceJson(String provenanceJson) {
+<span class="nc bnc" id="L370" title="All 4 branches missed.">            if (provenanceJson != null &amp;&amp; provenanceJson.trim().length() &gt; 0) {</span>
+<span class="nc" id="L371">                this.provenanceJson = provenanceJson;</span>
+                try {
+<span class="nc" id="L373">                    final var parsedJson = objectMapper.readValue(provenanceJson, Object.class);</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">                    if (parsedJson instanceof Map) {</span>
+<span class="nc" id="L375">                        this.provenance = (Map&lt;String, Object&gt;) parsedJson;</span>
+                    }
+<span class="nc" id="L377">                } catch (Exception e) {</span>
+<span class="nc" id="L378">                    LOG.error(&quot;Unable to parse provenanceJson: &quot; + provenanceJson, e);</span>
+<span class="nc" id="L379">                }</span>
+            } else {
+<span class="nc" id="L381">                provenance = null;</span>
+            }
+<span class="nc" id="L383">            return this;</span>
+        }
+
+        public Map&lt;String, Object&gt; getProvenance() {
+<span class="nc" id="L387">            return provenance;</span>
+        }
+
+        public Builder always(final PersistenceStrategy always) {
+<span class="nc" id="L391">            this.always = always;</span>
+<span class="nc" id="L392">            return this;</span>
+        }
+
+        public Builder mailSender(final JavaMailSender mailSender) {
+<span class="nc" id="L396">            this.mailSender = mailSender;</span>
+<span class="nc" id="L397">            return this;</span>
+        }
+
+        public Builder appContext(final ApplicationContext appCtx) {
+<span class="nc" id="L401">            this.appCtx = appCtx;</span>
+<span class="nc" id="L402">            return this;</span>
+        }
+
+        private PersistenceStrategy createStrategy(final Map&lt;String, Object&gt; args, final String origJson) {
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">            if (provenanceJson != null) {</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">                args.put(&quot;provenance&quot;, provenance != null</span>
+<span class="nc" id="L408">                        ? provenance</span>
+<span class="nc" id="L409">                        : Map.of(&quot;invalid-json&quot;, provenanceJson));</span>
+            }
+<span class="fc" id="L411">            final var natureO = args.get(&quot;nature&quot;);</span>
+<span class="pc bpc" id="L412" title="1 of 2 branches missed.">            if (natureO instanceof String nature) {</span>
+<span class="pc bpc" id="L413" title="5 of 8 branches missed.">                return switch (nature) {</span>
+<span class="nc" id="L414">                    case &quot;aws-s3&quot; -&gt; new BlobStorePersistence(args, origJson);</span>
+<span class="fc" id="L415">                    case &quot;diags&quot;, &quot;diagnostics&quot; -&gt; DIAGNOSTIC_DEFAULT;</span>
+<span class="nc" id="L416">                    case &quot;email&quot; -&gt; new EmailPersistence(args, mailSender);</span>
+<span class="fc" id="L417">                    case &quot;fs&quot; -&gt; new LocalFsPersistence(args);</span>
+<span class="nc" id="L418">                    case &quot;duckdb&quot; -&gt; new JdbcPersistence(</span>
+<span class="nc" id="L419">                            new ArtifactsDataSource.DuckDbBuilder().userDirFsPath(&quot;interactions.duckdb&quot;)</span>
+<span class="nc" id="L420">                                    .userAgentArgs(args).build());</span>
+<span class="nc" id="L421">                    case &quot;postgres&quot; -&gt; new JdbcPersistence(</span>
+<span class="nc" id="L422">                            new ArtifactsDataSource.PostgreSqlBuilder().userAgentArgs(args).build());</span>
+<span class="nc" id="L423">                    case &quot;vfs&quot; -&gt; new VirtualFsPersistence(args);</span>
+<span class="fc" id="L424">                    default -&gt; new InvalidPersistenceNature(nature);</span>
+                };
+            } else {
+<span class="nc" id="L427">                return new DiagnosticPersistence(</span>
+<span class="nc bnc" id="L428" title="All 2 branches missed.">                        &quot;nature is not a string: &quot; + (natureO != null ? natureO.getClass().getName() : &quot;null&quot;));</span>
+            }
+        }
+
+        private PersistenceStrategy createAggregateStrategy(List&lt;Map&lt;String, Object&gt;&gt; strategyList) {
+<span class="fc" id="L433">            final var strategies = new ArrayList&lt;PersistenceStrategy&gt;();</span>
+<span class="fc bfc" id="L434" title="All 2 branches covered.">            for (var strategy : strategyList) {</span>
+<span class="fc" id="L435">                strategies.add(createStrategy(strategy, &quot;&quot;));</span>
+<span class="fc" id="L436">            }</span>
+<span class="pc bpc" id="L437" title="1 of 2 branches missed.">            if (always != null) {</span>
+<span class="nc" id="L438">                strategies.add(always);</span>
+            }
+<span class="fc" id="L440">            return new AggregatePersistence(strategies);</span>
+        }
+
+        public PersistenceStrategy instance() {
+<span class="pc bpc" id="L444" title="1 of 2 branches missed.">            if (strategyJson == null) {</span>
+<span class="nc" id="L445">                return Optional.of(always).orElse(DIAGNOSTIC_DEFAULT);</span>
+            }
+
+            try {
+<span class="fc" id="L449">                Object parsedJson = objectMapper.readValue(strategyJson, Object.class);</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">                if (parsedJson instanceof Map) {</span>
+                    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L452">                    Map&lt;String, Object&gt; args = (Map&lt;String, Object&gt;) parsedJson;</span>
+<span class="pc bpc" id="L453" title="1 of 2 branches missed.">                    return always != null</span>
+<span class="nc" id="L454">                            ? new AggregatePersistence((List.of(createStrategy(args, strategyJson), always)))</span>
+<span class="fc" id="L455">                            : createStrategy(args, strategyJson);</span>
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">                } else if (parsedJson instanceof List) {</span>
+                    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L458">                    final var strategyList = (List&lt;Map&lt;String, Object&gt;&gt;) parsedJson;</span>
+<span class="fc" id="L459">                    return createAggregateStrategy(strategyList);</span>
+                } else {
+<span class="nc" id="L461">                    return new DiagnosticPersistence(</span>
+<span class="nc" id="L462">                            &quot;strategyJson is neither a Map nor a List: &quot; + parsedJson.getClass().getName());</span>
+                }
+<span class="fc" id="L464">            } catch (IOException e) {</span>
+<span class="fc" id="L465">                return new InvalidPersistenceStrategy(strategyJson, e);</span>
+            }
+        }
+
+        public PersistenceStrategy build() {
+<span class="fc" id="L470">            return CACHED.computeIfAbsent(strategyJson, key -&gt; instance());</span>
+        }
+    }
+
+    public static Artifact jsonArtifact(final Object object, final String artifactId, final String namespace,
+            final Map&lt;String, Object&gt; provenance) {
+<span class="fc" id="L476">        return new Artifact() {</span>
+            private final String jsonString;
+
+            {
+                try {
+<span class="fc" id="L481">                    jsonString = objectMapper.writeValueAsString(object);</span>
+<span class="nc" id="L482">                } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L483">                    throw new RuntimeException(&quot;Failed to convert object to JSON&quot;, e);</span>
+<span class="fc" id="L484">                }</span>
+<span class="fc" id="L485">            }</span>
+
+            @Override
+            public String getArtifactId() {
+<span class="fc" id="L489">                return artifactId;</span>
+            }
+
+            @Override
+            public String getNamespace() {
+<span class="nc" id="L494">                return namespace;</span>
+            }
+
+            @Override
+            public Map&lt;String, Object&gt; getProvenance() {
+<span class="nc" id="L499">                return provenance;</span>
+            }
+
+            @Override
+            public Reader getReader() {
+<span class="fc" id="L504">                return new StringReader(jsonString);</span>
+            }
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

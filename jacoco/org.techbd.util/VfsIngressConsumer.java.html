@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VfsIngressConsumer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.techbd.util</a> &gt; <span class="el_source">VfsIngressConsumer.java</span></div><h1>VfsIngressConsumer.java</h1><pre class="source lang-java linenums">package org.techbd.util;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileType;
+
+import jakarta.annotation.Nonnull;
+
+public class VfsIngressConsumer {
+
+    private final List&lt;IngressPath&gt; ingressPaths;
+    private final Function&lt;FileObject, String&gt; isGroup;
+    private final Predicate&lt;IngressGroup&gt; isGroupComplete;
+    private final QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, Boolean&gt; isSnapshotable;
+    private final QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, List&lt;IngressIndividual&gt;&gt; populateSnapshot;
+    private final QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, List&lt;IngressIndividual&gt;&gt; consumables;
+<span class="fc" id="L31">    private final Audit audit = new Audit(new ArrayList&lt;&gt;());</span>
+
+    private UUID sessionId;
+    private FileObject sessionHome;
+    private FileObject snapshotHome;
+    private List&lt;IngressIndividual&gt; originalEntries; // before snapshots
+    private List&lt;IngressIndividual&gt; snapshotEntries; // after snapshots
+    private List&lt;IngressIndividual&gt; consumeEntries; // after snapshot transforms
+    private Map&lt;String, List&lt;IngressIndividual&gt;&gt; groupedEntriesMap;
+    private List&lt;IngressIndividual&gt; individualEntries;
+    private List&lt;IngressGroup&gt; groupedEntries;
+    private List&lt;IngressGroup&gt; completeGroups;
+    private List&lt;IngressGroup&gt; incompleteGroups;
+
+<span class="fc" id="L45">    private VfsIngressConsumer(final Builder builder) throws FileSystemException {</span>
+<span class="fc" id="L46">        this.ingressPaths = builder.ingressPaths;</span>
+<span class="fc" id="L47">        this.isGroup = builder.isGroup;</span>
+<span class="fc" id="L48">        this.isGroupComplete = builder.isGroupComplete;</span>
+<span class="fc" id="L49">        this.isSnapshotable = builder.isSnapshotable;</span>
+<span class="fc" id="L50">        this.populateSnapshot = builder.populateSnapshot;</span>
+<span class="fc" id="L51">        this.consumables = builder.consumables;</span>
+<span class="fc" id="L52">    }</span>
+
+<span class="fc" id="L54">    public static class Builder {</span>
+<span class="fc" id="L55">        private final List&lt;IngressPath&gt; ingressPaths = new ArrayList&lt;&gt;();</span>
+        private Function&lt;FileObject, String&gt; isGroup;
+        private Predicate&lt;IngressGroup&gt; isGroupComplete;
+<span class="fc" id="L58">        private QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, Boolean&gt; isSnapshotable = (ie,</span>
+<span class="fc" id="L59">                file, dir, audit) -&gt; true;</span>
+<span class="fc" id="L60">        private QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, List&lt;IngressIndividual&gt;&gt; populateSnapshot = (</span>
+<span class="fc" id="L61">                ie, file, dir, audit) -&gt; List.of(ie);</span>
+<span class="fc" id="L62">        private QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, List&lt;IngressIndividual&gt;&gt; consumables = (</span>
+<span class="fc" id="L63">                ie, file, dir, audit) -&gt; List.of(ie); // use VfsIngressConsumer::consumeUnzipped to unzip</span>
+
+        public Builder addIngressPath(final FileObject path)
+                throws FileSystemException {
+<span class="pc bpc" id="L67" title="2 of 4 branches missed.">            if (path.exists() &amp;&amp; path.getType() == FileType.FOLDER) {</span>
+<span class="fc" id="L68">                ingressPaths.add(new IngressPath(path, Arrays.stream(path.getChildren())</span>
+<span class="fc" id="L69">                        .filter(file -&gt; {</span>
+                            try {
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">                                return file.isFile() &amp;&amp; file.isReadable();</span>
+<span class="nc" id="L72">                            } catch (FileSystemException e) {</span>
+<span class="nc" id="L73">                                throw new RuntimeException(e);</span>
+                            }
+                        })
+<span class="fc" id="L76">                        .map(file -&gt; new IngressIndividual(file))</span>
+<span class="fc" id="L77">                        .map(IngressEntry.class::cast)</span>
+<span class="fc" id="L78">                        .collect(Collectors.toList())));</span>
+            }
+<span class="fc" id="L80">            return this;</span>
+        }
+
+        public Builder isGroup(final Function&lt;FileObject, String&gt; isGroup) {
+<span class="fc" id="L84">            this.isGroup = isGroup;</span>
+<span class="fc" id="L85">            return this;</span>
+        }
+
+        public Builder isGroupComplete(final Predicate&lt;IngressGroup&gt; isGroupComplete) {
+<span class="fc" id="L89">            this.isGroupComplete = isGroupComplete;</span>
+<span class="fc" id="L90">            return this;</span>
+        }
+
+        public Builder isSnapshotable(
+                final QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, Boolean&gt; transformBeforeSnapshot) {
+<span class="nc" id="L95">            this.isSnapshotable = transformBeforeSnapshot;</span>
+<span class="nc" id="L96">            return this;</span>
+        }
+
+        public Builder populateSnapshot(
+                final QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, List&lt;IngressIndividual&gt;&gt; transformAfterSnapshot) {
+<span class="nc" id="L101">            this.populateSnapshot = transformAfterSnapshot;</span>
+<span class="nc" id="L102">            return this;</span>
+        }
+
+        public Builder consumables(
+                final QuadFunction&lt;IngressIndividual, FileObject, FileObject, Audit, List&lt;IngressIndividual&gt;&gt; consumables) {
+<span class="nc" id="L107">            this.consumables = consumables;</span>
+<span class="nc" id="L108">            return this;</span>
+        }
+
+        public VfsIngressConsumer build() throws FileSystemException {
+<span class="fc" id="L112">            return new VfsIngressConsumer(this);</span>
+        }
+    }
+
+<span class="fc" id="L116">    public record IngressPath(FileObject path, List&lt;IngressEntry&gt; entries) {</span>
+    }
+
+    public sealed interface IngressEntry permits IngressIndividual, IngressGroup {
+    }
+
+<span class="fc" id="L122">    public record IngressIndividual(@Nonnull FileObject entry) implements IngressEntry {</span>
+    }
+
+<span class="fc" id="L125">    public record IngressGroup(@Nonnull String groupId, @Nonnull List&lt;IngressIndividual&gt; groupedEntries)</span>
+            implements IngressEntry {
+    }
+
+<span class="fc" id="L129">    public record AuditEvent(@Nonnull String nature, @Nonnull String message, Optional&lt;FileObject&gt; path,</span>
+            Optional&lt;Exception&gt; error) {
+        AuditEvent(@Nonnull String nature, @Nonnull String message) {
+<span class="fc" id="L132">            this(nature, message, Optional.empty(), Optional.empty());</span>
+<span class="fc" id="L133">        }</span>
+
+        AuditEvent(@Nonnull String nature, @Nonnull String message, Optional&lt;FileObject&gt; path) {
+<span class="fc" id="L136">            this(nature, message, path, Optional.empty());</span>
+<span class="fc" id="L137">        }</span>
+    }
+
+<span class="fc" id="L140">    public record Audit(List&lt;AuditEvent&gt; events) {</span>
+        public Audit addEvent(final AuditEvent event) {
+<span class="fc" id="L142">            events().add(event);</span>
+<span class="fc" id="L143">            return this;</span>
+        }
+    }
+
+    public Audit getAudit() {
+<span class="fc" id="L148">        return audit;</span>
+    }
+
+    public void drain(final FileObject egressRoot, final Optional&lt;UUID&gt; sessionIdOpt) {
+<span class="fc" id="L152">        sessionId = sessionIdOpt.orElse(UUID.randomUUID());</span>
+        try {
+<span class="fc" id="L154">            sessionHome = egressRoot.resolveFile(sessionId.toString());</span>
+<span class="fc" id="L155">            snapshotHome = sessionHome.resolveFile(&quot;ingress&quot;);</span>
+<span class="fc" id="L156">            snapshotHome.createFolder();</span>
+
+            // workflow:
+            // 1. find all files in all ingressable paths
+            // 2. check if a file needs to be snapshotted (default is true)
+            // 3. if a file is snapshotable, move it from the original location to snapshot
+            // home
+            // 4. find all the files in the snapshot and call these consumable
+            // 5. for each consumable file, classify them into grouped or individual
+
+<span class="fc" id="L166">            originalEntries = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L167">            snapshotEntries = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            for (final var ingressPath : ingressPaths) {</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">                for (final var entry : ingressPath.entries()) {</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">                    if (entry instanceof IngressIndividual activeEntry) {</span>
+                        // check to see if we should ignore this entry or snapshot it
+<span class="fc" id="L172">                        final var snapshot = isSnapshotable.apply(activeEntry, sessionHome, snapshotHome, audit);</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">                        if (!snapshot) {</span>
+<span class="nc" id="L174">                            continue;</span>
+                        }
+
+                        // we're going to move the entry so hang on to the original for auditing
+<span class="fc" id="L178">                        final var originalEntry = new IngressIndividual(activeEntry.entry());</span>
+<span class="fc" id="L179">                        originalEntries.add(originalEntry);</span>
+
+                        // move the file from its original location to the new location
+<span class="fc" id="L182">                        final var dest = snapshotHome.resolveFile(activeEntry.entry().getName().getBaseName());</span>
+<span class="fc" id="L183">                        activeEntry.entry().moveTo(dest);</span>
+<span class="fc" id="L184">                        audit.addEvent(new AuditEvent(&quot;remove&quot;, originalEntry.entry().getPublicURIString(),</span>
+<span class="fc" id="L185">                                Optional.of(originalEntry.entry())));</span>
+
+                        // now see if we need to populate anything else other than the primary entry
+<span class="fc" id="L188">                        final var populate = populateSnapshot.apply(activeEntry, sessionHome, snapshotHome, audit);</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                        for (final var keep : populate) {</span>
+<span class="fc" id="L190">                            snapshotEntries.add(keep);</span>
+<span class="fc" id="L191">                            audit.addEvent(new AuditEvent(&quot;snapshot&quot;, keep.entry().getPublicURIString(),</span>
+<span class="fc" id="L192">                                    Optional.of(keep.entry())));</span>
+<span class="fc" id="L193">                        }</span>
+                    }
+<span class="fc" id="L195">                }</span>
+<span class="fc" id="L196">            }</span>
+
+<span class="fc" id="L198">            consumeEntries = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">            for (final var entry : snapshotHome.getChildren()) {</span>
+<span class="fc" id="L200">                final var consume = consumables.apply(new IngressIndividual(entry),</span>
+                        sessionHome, snapshotHome, audit);
+<span class="fc bfc" id="L202" title="All 2 branches covered.">                for (final var c : consume) {</span>
+<span class="fc" id="L203">                    consumeEntries.add(c);</span>
+<span class="fc" id="L204">                    audit.addEvent(new AuditEvent(&quot;consume&quot;, c.entry().getPublicURIString(), Optional.of(c.entry())));</span>
+<span class="fc" id="L205">                }</span>
+            }
+
+<span class="fc" id="L208">            groupedEntriesMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L209">            individualEntries = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            for (final var entry : consumeEntries) {</span>
+<span class="fc" id="L212">                final var groupId = isGroup.apply(entry.entry());</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                if (groupId != null) {</span>
+<span class="fc" id="L214">                    groupedEntriesMap</span>
+<span class="fc" id="L215">                            .computeIfAbsent(groupId, k -&gt; new ArrayList&lt;&gt;())</span>
+<span class="fc" id="L216">                            .add(entry);</span>
+<span class="fc" id="L217">                    audit.addEvent(new AuditEvent(&quot;grouped&quot;,</span>
+<span class="fc" id="L218">                            &quot;[%s] %s&quot;.formatted(groupId, entry.entry().getPublicURIString(),</span>
+<span class="fc" id="L219">                                    Optional.of(entry.entry()))));</span>
+                } else {
+<span class="fc" id="L221">                    individualEntries.add(entry);</span>
+                }
+<span class="fc" id="L223">            }</span>
+
+<span class="fc" id="L225">            groupedEntries = groupedEntriesMap.entrySet().stream()</span>
+<span class="fc" id="L226">                    .map(e -&gt; new IngressGroup(e.getKey(), e.getValue()))</span>
+<span class="fc" id="L227">                    .collect(Collectors.toList());</span>
+
+<span class="fc" id="L229">            completeGroups = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L230">            incompleteGroups = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L232" title="All 2 branches covered.">            for (final var group : groupedEntries) {</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">                if (isGroupComplete.test(group)) {</span>
+<span class="fc" id="L234">                    completeGroups.add(group);</span>
+                } else {
+<span class="fc" id="L236">                    incompleteGroups.add(group);</span>
+<span class="fc" id="L237">                    audit.addEvent(new AuditEvent(&quot;incomplete-group&quot;, group.groupId));</span>
+                }
+<span class="fc" id="L239">            }</span>
+
+<span class="nc" id="L241">        } catch (final Exception e) {</span>
+<span class="nc" id="L242">            e.printStackTrace();</span>
+<span class="fc" id="L243">        }</span>
+<span class="fc" id="L244">    }</span>
+
+    public UUID getSessionId() {
+<span class="fc" id="L247">        return sessionId;</span>
+    }
+
+    public FileObject getSessionHome() {
+<span class="fc" id="L251">        return sessionHome;</span>
+    }
+
+    public FileObject getSnapshotHome() {
+<span class="fc" id="L255">        return snapshotHome;</span>
+    }
+
+    public List&lt;IngressIndividual&gt; getOriginalEntries() {
+<span class="fc" id="L259">        return originalEntries;</span>
+    }
+
+    public List&lt;IngressIndividual&gt; getSnapshotEntries() {
+<span class="fc" id="L263">        return snapshotEntries;</span>
+    }
+
+    public Map&lt;String, List&lt;IngressIndividual&gt;&gt; getGroupedEntriesMap() {
+<span class="nc" id="L267">        return groupedEntriesMap;</span>
+    }
+
+    public List&lt;IngressIndividual&gt; getIndividualEntries() {
+<span class="fc" id="L271">        return individualEntries;</span>
+    }
+
+    public List&lt;IngressGroup&gt; getGroupedEntries() {
+<span class="fc" id="L275">        return groupedEntries;</span>
+    }
+
+    public List&lt;IngressGroup&gt; getCompleteGroups() {
+<span class="fc" id="L279">        return completeGroups;</span>
+    }
+
+    public List&lt;IngressGroup&gt; getIncompleteGroups() {
+<span class="fc" id="L283">        return incompleteGroups;</span>
+    }
+
+    @FunctionalInterface
+    public interface QuadFunction&lt;T, U, V, W, R&gt; {
+        R apply(T t, U u, V v, W w);
+    }
+
+    /**
+     * consumeUnzipped is meant to be passed into
+     * Builder.consumables(VfsIngressConsumer::consumeUnzipped) and is designed to
+     * unzip items in a zip file and put them into the snapshotHome for consumption.
+     * It will return the entries in the ZIP file as consumable but not the ZIP file
+     * itself.
+     * 
+     * @param individual   the ZIP file
+     * @param sessionHome  where the session is being extracted
+     * @param snapshotHome where the snapshots were created
+     * @param audit        the audit trail
+     * @return either entries of the ZIP or the original individual file if it's not
+     *         a ZIP
+     */
+    public static List&lt;IngressIndividual&gt; consumeUnzipped(IngressIndividual individual, FileObject sessionHome,
+            FileObject snapshotHome, Audit audit) {
+<span class="nc" id="L307">        final var zipFile = individual.entry();</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (!zipFile.getName().getBaseName().toLowerCase().endsWith(&quot;.zip&quot;)) {</span>
+<span class="nc" id="L309">            return List.of(individual);</span>
+        }
+
+<span class="nc" id="L312">        final List&lt;IngressIndividual&gt; unzippedFiles = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L313">        FileObject fileObject = individual.entry();</span>
+
+<span class="nc" id="L315">        try (InputStream inputStream = fileObject.getContent().getInputStream();</span>
+<span class="nc" id="L316">                ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {</span>
+
+            ZipEntry entry;
+<span class="nc bnc" id="L319" title="All 2 branches missed.">            while ((entry = zipInputStream.getNextEntry()) != null) {</span>
+                // Flattening directory structure
+<span class="nc" id="L321">                final var flattenedName = entry.getName().replaceAll(&quot;.*/&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">                if (flattenedName.isEmpty()) {</span>
+<span class="nc" id="L323">                    continue; // Skip directories</span>
+                }
+
+<span class="nc" id="L326">                final var unzippedFile = snapshotHome.resolveFile(flattenedName);</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">                if (unzippedFile.exists()) {</span>
+<span class="nc" id="L328">                    audit.addEvent(new AuditEvent(&quot;unzipped-will-overwrite&quot;,</span>
+<span class="nc" id="L329">                            &quot;%s in %s overwrites %s&quot;.formatted(unzippedFile.getName().getBaseName(),</span>
+<span class="nc" id="L330">                                    zipFile.getPublicURIString(), unzippedFile.getPublicURIString())));</span>
+                }
+
+                // Write file content using VFS
+<span class="nc" id="L334">                try (var outputStream = unzippedFile.getContent().getOutputStream()) {</span>
+<span class="nc" id="L335">                    byte[] buffer = new byte[1024];</span>
+                    int len;
+<span class="nc bnc" id="L337" title="All 2 branches missed.">                    while ((len = zipInputStream.read(buffer)) &gt; 0) {</span>
+<span class="nc" id="L338">                        outputStream.write(buffer, 0, len);</span>
+                    }
+                }
+
+<span class="nc" id="L342">                unzippedFiles.add(new IngressIndividual(unzippedFile));</span>
+<span class="nc" id="L343">                audit.addEvent(new AuditEvent(&quot;unzipped&quot;,</span>
+<span class="nc" id="L344">                        &quot;%s from %s&quot;.formatted(unzippedFile.getName().getBaseName(), zipFile.getPublicURIString())));</span>
+<span class="nc" id="L345">                zipInputStream.closeEntry();</span>
+<span class="nc" id="L346">            }</span>
+<span class="nc" id="L347">        } catch (Exception e) {</span>
+<span class="nc" id="L348">            audit.addEvent(new AuditEvent(&quot;exception&quot;, zipFile.getPublicURIString(), Optional.of(individual.entry()),</span>
+<span class="nc" id="L349">                    Optional.of(e)));</span>
+<span class="nc" id="L350">        }</span>
+
+<span class="nc" id="L352">        return unzippedFiles;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

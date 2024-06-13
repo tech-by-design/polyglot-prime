@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Helpers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.techbd.service.http</a> &gt; <span class="el_source">Helpers.java</span></div><h1>Helpers.java</h1><pre class="source lang-java linenums">package org.techbd.service.http;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+<span class="nc" id="L12">public class Helpers {</span>
+
+    public static String getBaseUrl(HttpServletRequest request) {
+<span class="nc" id="L15">        String scheme = request.getScheme(); // http</span>
+<span class="nc" id="L16">        String serverName = request.getServerName(); // hostname.com</span>
+<span class="nc" id="L17">        int serverPort = request.getServerPort(); // 80</span>
+<span class="nc" id="L18">        String contextPath = request.getContextPath(); // /myapp</span>
+
+        // Construct the full URL
+<span class="nc" id="L21">        StringBuilder url = new StringBuilder();</span>
+<span class="nc" id="L22">        url.append(scheme).append(&quot;://&quot;).append(serverName);</span>
+
+<span class="nc bnc" id="L24" title="All 8 branches missed.">        if ((&quot;http&quot;.equals(scheme) &amp;&amp; serverPort != 80) || (&quot;https&quot;.equals(scheme) &amp;&amp; serverPort != 443)) {</span>
+<span class="nc" id="L25">            url.append(&quot;:&quot;).append(serverPort);</span>
+        }
+
+<span class="nc" id="L28">        url.append(contextPath);</span>
+<span class="nc" id="L29">        return url.toString();</span>
+    }
+
+    /**
+     * Finds the first non-null and non-empty header value from the given header
+     * names.
+     *
+     * @param request     the HttpServletRequest object
+     * @param headerNames the array of header names to check
+     * @return the first non-null and non-empty header value, or null if none found
+     */
+    public static String findFirstHeaderValue(HttpServletRequest request, String... headerNames) {
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        for (String headerName : headerNames) {</span>
+<span class="nc" id="L42">            String headerValue = request.getHeader(headerName);</span>
+<span class="nc bnc" id="L43" title="All 4 branches missed.">            if (headerValue != null &amp;&amp; !headerValue.isEmpty()) {</span>
+<span class="nc" id="L44">                return headerValue;</span>
+            }
+        }
+<span class="nc" id="L47">        return null;</span>
+    }
+
+    /**
+     * Retrieves the content of the specified URL as a String.
+     * 
+     * &lt;p&gt;
+     * This method sends an HTTP GET request to the provided URL and returns the
+     * response body as a String.
+     * The content is read using UTF-8 encoding.
+     * &lt;/p&gt;
+     * 
+     * &lt;p&gt;
+     * Usage example:
+     * &lt;/p&gt;
+     * 
+     * &lt;pre&gt;
+     * {@code
+     * String content = textFromURL(&quot;http://example.com&quot;);
+     * System.out.println(content);
+     * }
+     * &lt;/pre&gt;
+     * 
+     * @param requestURL the URL from which to retrieve the content
+     * @return the content of the URL as a String
+     * @throws IOException          if an I/O error occurs while sending or
+     *                              receiving the HTTP request
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public static String textFromURL(final String requestURL) throws IOException, InterruptedException {
+<span class="nc" id="L77">        HttpClient client = HttpClient.newHttpClient();</span>
+<span class="nc" id="L78">        HttpRequest request = HttpRequest.newBuilder()</span>
+<span class="nc" id="L79">                .uri(URI.create(requestURL))</span>
+<span class="nc" id="L80">                .build();</span>
+
+<span class="nc" id="L82">        HttpResponse&lt;String&gt; response = client.send(request,</span>
+<span class="nc" id="L83">                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));</span>
+
+<span class="nc" id="L85">        return response.body();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

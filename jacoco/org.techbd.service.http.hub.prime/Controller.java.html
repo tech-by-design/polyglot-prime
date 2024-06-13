@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Controller.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.techbd.service.http.hub.prime</a> &gt; <span class="el_source">Controller.java</span></div><h1>Controller.java</h1><pre class="source lang-java linenums">package org.techbd.service.http.hub.prime;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.ocpsoft.prettytime.PrettyTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.util.StreamUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.techbd.conf.Configuration;
+import org.techbd.orchestrate.fhir.OrchestrationEngine;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
+import org.techbd.orchestrate.sftp.SftpManager;
+import org.techbd.service.http.Helpers;
+import org.techbd.service.http.InteractionsFilter;
+import org.techbd.udi.UdiPrimeJpaConfig;
+import org.techbd.udi.UdiPrimeRepository;
+import org.techbd.udi.entity.FhirValidationResultIssue;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.swagger.v3.core.util.ObjectMapperFactory;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Nonnull;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+@org.springframework.stereotype.Controller
+@Tag(name = &quot;TechBD Hub&quot;, description = &quot;Business Operations API&quot;)
+public class Controller {
+<span class="nc" id="L58">    private static final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());</span>
+<span class="nc" id="L59">    private final Map&lt;String, Object&gt; ssrBaggage = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L60">    private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();</span>
+<span class="nc" id="L61">    private final OrchestrationEngine engine = new OrchestrationEngine();</span>
+    private final AppConfig appConfig;
+    private final UdiPrimeRepository udiPrimeRepository;
+    private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+    private final SftpManager sftpManager;
+
+<span class="nc" id="L67">    @Value(value = &quot;${org.techbd.service.baggage.user-agent.enable-sensitive:false}&quot;)</span>
+    private boolean userAgentSensitiveBaggageEnabled = false;
+
+<span class="nc" id="L70">    @Value(value = &quot;${org.techbd.service.baggage.user-agent.exposure:false}&quot;)</span>
+    private boolean userAgentBaggageExposureEnabled = false;
+
+    @Autowired
+    private Environment environment;
+
+    public Controller(final Environment environment, final AppConfig appConfig,
+            final UdiPrimeJpaConfig udiPrimeJpaConfig,
+<span class="nc" id="L78">            final UdiPrimeRepository udiPrimeRepository, final SftpManager sftpManager) {</span>
+<span class="nc" id="L79">        this.environment = environment;</span>
+<span class="nc" id="L80">        this.appConfig = appConfig;</span>
+<span class="nc" id="L81">        this.udiPrimeRepository = udiPrimeRepository;</span>
+<span class="nc" id="L82">        this.udiPrimeJpaConfig = udiPrimeJpaConfig;</span>
+<span class="nc" id="L83">        this.sftpManager = sftpManager;</span>
+<span class="nc" id="L84">        ssrBaggage.put(&quot;appVersion&quot;, appConfig.getVersion());</span>
+<span class="nc" id="L85">        ssrBaggage.put(&quot;activeSpringProfiles&quot;, List.of(this.environment.getActiveProfiles()));</span>
+<span class="nc" id="L86">    }</span>
+
+    protected void populateModel(final Model model, final HttpServletRequest request) {
+        try {
+<span class="nc" id="L90">            model.addAttribute(&quot;req&quot;, request);</span>
+
+<span class="nc" id="L92">            final var baggage = new HashMap&lt;&gt;(ssrBaggage);</span>
+<span class="nc" id="L93">            baggage.put(&quot;userAgentBaggageExposureEnabled&quot;, userAgentBaggageExposureEnabled);</span>
+<span class="nc" id="L94">            baggage.put(&quot;health&quot;,</span>
+<span class="nc" id="L95">                    Map.of(&quot;udiPrimaryDataSourceAlive&quot;, udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));</span>
+
+            // &quot;baggage&quot; is for typed server-side usage by templates
+            // &quot;ssrBaggageJSON&quot; is for JavaScript client use
+<span class="nc" id="L99">            model.addAttribute(&quot;baggage&quot;, baggage);</span>
+<span class="nc" id="L100">            model.addAttribute(&quot;ssrBaggageJSON&quot;, baggageMapper.writeValueAsString(baggage));</span>
+<span class="nc" id="L101">            LOG.info(&quot;Logged in user Information&quot;</span>
+<span class="nc" id="L102">                    + SecurityContextHolder.getContext().getAuthentication().getPrincipal());</span>
+<span class="nc" id="L103">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L104">            LOG.error(&quot;error setting ssrBaggageJSON in populateModel&quot;, e);</span>
+<span class="nc" id="L105">        }</span>
+<span class="nc" id="L106">    }</span>
+
+    @GetMapping(&quot;/home&quot;)
+    public String home(final Model model, final HttpServletRequest request) {
+<span class="nc" id="L110">        populateModel(model, request);</span>
+<span class="nc" id="L111">        return &quot;page/home&quot;;</span>
+    }
+
+    @GetMapping(&quot;/&quot;)
+    public String index() {
+<span class="nc" id="L116">        return &quot;login/login&quot;;</span>
+    }
+
+    @GetMapping(value = &quot;/admin/cache/tenant-sftp-egress-content/clear&quot;)
+    @CacheEvict(value = { SftpManager.TENANT_EGRESS_CONTENT_CACHE_KEY,
+            SftpManager.TENANT_EGRESS_SESSIONS_CACHE_KEY }, allEntries = true)
+    public ResponseEntity&lt;?&gt; emptyTenantEgressCacheOnDemand() {
+<span class="nc" id="L123">        LOG.info(&quot;emptying tenant-sftp-egress-content (on demand)&quot;);</span>
+<span class="nc" id="L124">        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(&quot;emptying tenant-sftp-egress-content&quot;);</span>
+    }
+
+    @GetMapping(value = &quot;/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}&quot;, produces = {
+            &quot;application/json&quot;, &quot;text/html&quot; })
+    public ResponseEntity&lt;?&gt; handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
+<span class="nc" id="L130">        final var account = sftpManager.configuredTenant(tenantId);</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (account.isPresent()) {</span>
+<span class="nc" id="L132">            final var content = sftpManager.tenantEgressContent(account.get());</span>
+<span class="nc" id="L133">            final var mre = content.mostRecentEgress();</span>
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">            if (&quot;html&quot;.equalsIgnoreCase(extension)) {</span>
+<span class="nc" id="L136">                String timeAgo = mre.map(zonedDateTime -&gt; new PrettyTime().format(zonedDateTime)).orElse(&quot;None&quot;);</span>
+<span class="nc" id="L137">                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                        .body(content.error() == null</span>
+<span class="nc" id="L139">                                ? &quot;&lt;span title=\&quot;%d sessions found, most recent %s\&quot;&gt;%s&lt;/span&gt;&quot;.formatted(</span>
+<span class="nc" id="L140">                                        content.directories().length,</span>
+                                        mre,
+                                        timeAgo)
+<span class="nc" id="L143">                                : &quot;&lt;span title=\&quot;No directories found in %s\&quot;&gt;⚠️&lt;/span&gt;&quot;.formatted(content.sftpUri()));</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {</span>
+<span class="nc" id="L145">                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);</span>
+            } else {
+<span class="nc" id="L147">                return ResponseEntity.badRequest().build();</span>
+            }
+        } else {
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (&quot;html&quot;.equalsIgnoreCase(extension)) {</span>
+<span class="nc" id="L151">                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)</span>
+<span class="nc" id="L152">                        .body(&quot;Unknown tenantId '%s'&quot;.formatted(tenantId));</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {</span>
+<span class="nc" id="L154">                return ResponseEntity.noContent().build();</span>
+            } else {
+<span class="nc" id="L156">                return ResponseEntity.badRequest().build();</span>
+            }
+
+        }
+    }
+
+    @GetMapping(&quot;/docs&quot;)
+    public String docs(final Model model, final HttpServletRequest request) {
+<span class="nc" id="L164">        populateModel(model, request);</span>
+<span class="nc" id="L165">        return &quot;page/documentation&quot;;</span>
+    }
+
+    @GetMapping(value = &quot;/metadata&quot;, produces = { MediaType.APPLICATION_XML_VALUE })
+    @Operation(summary = &quot;FHIR server's conformance statement&quot;)
+    public String metadata(final Model model, HttpServletRequest request) {
+<span class="nc" id="L171">        final var baseUrl = Helpers.getBaseUrl(request);</span>
+
+<span class="nc" id="L173">        model.addAttribute(&quot;version&quot;, appConfig.getVersion());</span>
+<span class="nc" id="L174">        model.addAttribute(&quot;implUrlValue&quot;, baseUrl);</span>
+<span class="nc" id="L175">        model.addAttribute(&quot;opDefnValue&quot;, baseUrl + &quot;/OperationDefinition/Bundle--validate&quot;);</span>
+
+<span class="nc" id="L177">        return &quot;metadata.xml&quot;;</span>
+    }
+
+    @Operation(summary = &quot;TODO&quot;)
+    @PostMapping(value = { &quot;/Bundle&quot; }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Object handleBundle(final @RequestBody @Nonnull Map&lt;String, Object&gt; payload,
+            final HttpServletRequest request) {
+<span class="nc" id="L185">        var activeReqEnc = InteractionsFilter.getActiveRequestEnc(request);</span>
+        // Process the bundle using activeReqEnc.requestId() as the orch session ID
+<span class="nc" id="L187">        return activeReqEnc;</span>
+    }
+
+    @PostMapping(value = { &quot;/Bundle/$validate&quot; }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Object validateBundle(final @RequestBody @Nonnull String payload,
+            @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
+            // &quot;profile&quot; is the same name that HL7 validator uses
+            @RequestParam(value = &quot;profile&quot;, required = false) String fhirProfileUrlParam,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
+            @RequestParam(value = &quot;include-request-in-outcome&quot;, required = false) boolean includeRequestInOutcome,
+            final HttpServletRequest request) {
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">                : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();</span>
+<span class="nc" id="L203">        final var sessionBuilder = engine.session()</span>
+<span class="nc" id="L204">                .onDevice(Device.createDefault())</span>
+<span class="nc" id="L205">                .withPayloads(List.of(payload))</span>
+<span class="nc" id="L206">                .withFhirProfileUrl(fhirProfileUrl)</span>
+<span class="nc" id="L207">                .addHapiValidationEngine() // by default</span>
+                // clearExisting is set to true so engines can be fully supplied through header
+<span class="nc" id="L209">                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);</span>
+<span class="nc" id="L210">        final var session = sessionBuilder.build();</span>
+<span class="nc" id="L211">        engine.orchestrate(session);</span>
+
+<span class="nc" id="L213">        final var opOutcome = new HashMap&lt;&gt;(Map.of(&quot;resourceType&quot;, &quot;OperationOutcome&quot;, &quot;validationResults&quot;,</span>
+<span class="nc" id="L214">                session.getValidationResults(), &quot;device&quot;,</span>
+<span class="nc" id="L215">                session.getDevice()));</span>
+<span class="nc" id="L216">        final var result = Map.of(&quot;OperationOutcome&quot;, opOutcome);</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        if (uaValidationStrategyJson != null) {</span>
+<span class="nc" id="L218">            opOutcome.put(&quot;uaValidationStrategy&quot;,</span>
+<span class="nc" id="L219">                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,</span>
+                            &quot;issues&quot;,
+<span class="nc" id="L221">                            sessionBuilder.getUaStrategyJsonIssues()));</span>
+
+        }
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (includeRequestInOutcome) {</span>
+<span class="nc" id="L225">            opOutcome.put(&quot;request&quot;, InteractionsFilter.getActiveRequestEnc(request));</span>
+        }
+
+<span class="nc" id="L228">        return result;</span>
+    }
+
+    @GetMapping(&quot;/admin/observe/interactions&quot;)
+    public String observeInteractions() {
+<span class="nc" id="L233">        return &quot;redirect:/admin/observe/interactions/sftp&quot;;</span>
+    }
+
+    @GetMapping(&quot;/admin/observe/interactions/{nature}&quot;)
+    public String observeInteractionsNature(@PathVariable String nature, final Model model,
+            final HttpServletRequest request) {
+<span class="nc" id="L239">        populateModel(model, request);</span>
+<span class="nc" id="L240">        return &quot;page/interactions/&quot; + nature;</span>
+    }
+
+    @Operation(summary = &quot;Recent SFTP Interactions&quot;)
+    @GetMapping(&quot;/admin/observe/interaction/sftp/recent.json&quot;)
+    @ResponseBody
+    public List&lt;?&gt; observeRecentSftpInteractions() {
+<span class="nc" id="L247">        return sftpManager.tenantEgressSessions();</span>
+    }
+
+    @Operation(summary = &quot;Recent HTTP Request/Response Interactions&quot;)
+    @GetMapping(&quot;/admin/observe/interaction/https/recent.json&quot;)
+    @ResponseBody
+    public List&lt;?&gt; observeRecentHttpsInteractions() {
+<span class="nc" id="L254">        return new ArrayList&lt;&gt;(InteractionsFilter.interactions.getHistory().values());</span>
+    }
+
+    @Operation(summary = &quot;Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.&quot;)
+    @GetMapping(&quot;/mock/shinny-data-lake/1115-validate/{resourcePath}.json&quot;)
+    public ResponseEntity&lt;String&gt; getJsonFile(
+            @PathVariable String resourcePath,
+            @RequestParam(required = false, defaultValue = &quot;0&quot;) long simulateLifetimeMs) {
+<span class="nc" id="L262">        final var cpResourceName = &quot;templates/mock/shinny-data-lake/1115-validate/&quot; + resourcePath + &quot;.json&quot;;</span>
+        try {
+<span class="nc bnc" id="L264" title="All 2 branches missed.">            if (simulateLifetimeMs &gt; 0) {</span>
+<span class="nc" id="L265">                Thread.sleep(simulateLifetimeMs);</span>
+            }
+<span class="nc" id="L267">            ClassPathResource resource = new ClassPathResource(cpResourceName);</span>
+<span class="nc" id="L268">            String content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);</span>
+<span class="nc" id="L269">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L270">            headers.setContentType(MediaType.APPLICATION_JSON);</span>
+<span class="nc" id="L271">            return new ResponseEntity&lt;&gt;(content, headers, HttpStatus.OK);</span>
+<span class="nc" id="L272">        } catch (IOException e) {</span>
+<span class="nc" id="L273">            return new ResponseEntity&lt;&gt;(cpResourceName + &quot; not found&quot;, HttpStatus.NOT_FOUND);</span>
+<span class="nc" id="L274">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L275">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L276">            return new ResponseEntity&lt;&gt;(&quot;Request interrupted&quot;, HttpStatus.INTERNAL_SERVER_ERROR);</span>
+        }
+    }
+
+    @Operation(summary = &quot;Recent HTTP Request/Response Diagnostics&quot;)
+    @GetMapping(&quot;/admin/observe/sessions/data&quot;)
+    @ResponseBody
+    public Page&lt;FhirValidationResultIssue&gt; adminDiagnosticsJson(@RequestParam(defaultValue = &quot;0&quot;) int page,
+            @RequestParam(defaultValue = &quot;10&quot;) int size) {
+<span class="nc" id="L285">        long count = udiPrimeRepository.count();</span>
+<span class="nc" id="L286">        Pageable pageable = PageRequest.of(page, size);</span>
+<span class="nc" id="L287">        return new PageImpl&lt;&gt;(udiPrimeRepository.findAll(), pageable, count);</span>
+    }
+
+    @GetMapping(&quot;/admin/observe/sessions&quot;)
+    public String adminDiagnostics(final Model model, final HttpServletRequest request) {
+<span class="nc" id="L292">        populateModel(model, request);</span>
+<span class="nc" id="L293">        model.addAttribute(&quot;udiPrimaryDataSrcHealth&quot;, udiPrimeJpaConfig.udiPrimaryDataSrcHealth());</span>
+<span class="nc" id="L294">        return &quot;page/diagnostics&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

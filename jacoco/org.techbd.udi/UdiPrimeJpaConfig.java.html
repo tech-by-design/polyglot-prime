@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UdiPrimeJpaConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.techbd.udi</a> &gt; <span class="el_source">UdiPrimeJpaConfig.java</span></div><h1>UdiPrimeJpaConfig.java</h1><pre class="source lang-java linenums">package org.techbd.udi;
+
+import java.sql.Connection;
+import java.util.List;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import jakarta.persistence.EntityManagerFactory;
+
+@Configuration
+@EnableJpaRepositories(basePackages = &quot;org.techbd.udi&quot;)
+@EnableTransactionManagement
+<span class="nc" id="L30">public class UdiPrimeJpaConfig {</span>
+
+    @Autowired
+    private JpaProperties jpaProperties;
+
+    @Autowired
+    private Environment environment;
+
+    @Bean
+    @Primary
+    @Lazy
+    @ConditionalOnProperty(name = &quot;org.techbd.udi.prime.jdbc.url&quot;)
+    @ConfigurationProperties(prefix = &quot;org.techbd.udi.prime.jdbc&quot;)
+    public DataSource udiPrimaryDataSource() {
+<span class="nc" id="L44">        return DataSourceBuilder.create().build();</span>
+    }
+
+<span class="nc" id="L47">    public record DataSourceHealthCheckResult(DataSource dataSrc, Exception error, Environment environment,</span>
+            String... expected) {
+        public boolean isAlive() {
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            return error == null;</span>
+        }
+
+        public List&lt;String&gt; expectedConf() {
+<span class="nc" id="L54">            return org.techbd.conf.Configuration.checkProperties(environment, expected);</span>
+        }
+    }
+
+    public DataSourceHealthCheckResult udiPrimaryDataSrcHealth() {
+<span class="nc" id="L59">        final var ds = udiPrimaryDataSource();</span>
+<span class="nc" id="L60">        try (Connection connection = ds.getConnection()) {</span>
+<span class="nc" id="L61">            return new DataSourceHealthCheckResult(ds, null, environment,</span>
+                    &quot;${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}&quot;);
+<span class="nc" id="L63">        } catch (Exception e) {</span>
+<span class="nc" id="L64">            return new DataSourceHealthCheckResult(null, e, environment,</span>
+                    &quot;${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}&quot;);
+        }
+    }
+
+    @Bean
+    @Primary
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(EntityManagerFactoryBuilder builder,
+            DataSource udiPrimaryDataSource) {
+<span class="nc" id="L73">        return builder</span>
+<span class="nc" id="L74">                .dataSource(udiPrimaryDataSource)</span>
+<span class="nc" id="L75">                .properties(jpaProperties.getProperties())</span>
+<span class="nc" id="L76">                .packages(&quot;org.techbd.udi.entity&quot;)</span>
+<span class="nc" id="L77">                .persistenceUnit(&quot;default&quot;)</span>
+<span class="nc" id="L78">                .build();</span>
+    }
+
+    @Bean
+    @Primary
+    public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+<span class="nc" id="L84">        return new JpaTransactionManager(entityManagerFactory);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

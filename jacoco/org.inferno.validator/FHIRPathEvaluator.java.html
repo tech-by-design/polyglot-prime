@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FHIRPathEvaluator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.inferno.validator</a> &gt; <span class="el_source">FHIRPathEvaluator.java</span></div><h1>FHIRPathEvaluator.java</h1><pre class="source lang-java linenums">package org.inferno.validator;
+
+import org.hl7.fhir.exceptions.FHIRException;
+import org.hl7.fhir.r4.context.SimpleWorkerContext;
+import org.hl7.fhir.r4.fhirpath.FHIRPathEngine;
+import org.hl7.fhir.r4.model.Base;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class FHIRPathEvaluator extends FHIRPathEngine {
+
+  public FHIRPathEvaluator() throws IOException {
+<span class="nc" id="L15">    super(new SimpleWorkerContext());</span>
+<span class="nc" id="L16">  }</span>
+
+  @Override
+  public String evaluateToString(Base base, String path) {
+<span class="nc" id="L20">    List&lt;Base&gt; result = this.evaluate(base, path);</span>
+<span class="nc" id="L21">    return '['</span>
+<span class="nc" id="L22">        + result.stream().map(this::baseToJson).collect(Collectors.joining(&quot;,&quot;))</span>
+        + ']';
+  }
+
+  private String baseToJson(Base item) {
+    try {
+<span class="nc" id="L28">      String repr = new JsonParser().composeBase(item);</span>
+<span class="nc" id="L29">      return String.format(&quot;{\&quot;type\&quot;:\&quot;%s\&quot;,\&quot;element\&quot;:%s}&quot;, item.fhirType(), repr);</span>
+<span class="nc" id="L30">    } catch (IOException e) {</span>
+<span class="nc" id="L31">      throw new FHIRException(&quot;Failed to convert base to JSON&quot;, e);</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

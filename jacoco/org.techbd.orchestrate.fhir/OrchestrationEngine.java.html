@@ -1,0 +1,1066 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrchestrationEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.techbd.orchestrate.fhir</a> &gt; <span class="el_source">OrchestrationEngine.java</span></div><h1>OrchestrationEngine.java</h1><pre class="source lang-java linenums">package org.techbd.orchestrate.fhir;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+
+import org.apache.commons.text.StringEscapeUtils;
+import org.hl7.fhir.r5.model.OperationOutcome;
+//import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
+import org.techbd.util.JsonText.JsonTextSerializer;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.StrictErrorHandler;
+import ca.uhn.fhir.validation.FhirValidator;
+import ca.uhn.fhir.validation.ValidationOptions;
+import jakarta.validation.constraints.NotNull;
+
+import org.inferno.validator.Validator;
+
+/**
+ * The {@code OrchestrationEngine} class is responsible for managing and
+ * orchestrating FHIR validation sessions.
+ * It contains inner classes and interfaces that define the structure and
+ * behavior of the validation engines
+ * and the orchestration sessions.
+ * &lt;p&gt;
+ * This class also includes a cache for {@link ValidationEngine} instances to
+ * ensure that only one instance of
+ * each type is used for a given FHIR profile URL.
+ * &lt;p&gt;
+ * Usage example:
+ * 
+ * &lt;pre&gt;{@code
+ * OrchestrationEngine engine = new OrchestrationEngine();
+ *
+ * OrchestrationEngine.OrchestrationSession session1 = engine.session()
+ *         .withPayloads(List.of(&quot;payload1&quot;, &quot;payload2&quot;))
+ *         .withFhirProfileUrl(&quot;http://example.com/fhirProfile&quot;)
+ *         .addHapiValidationEngine()
+ *         .addHl7ValidationApiEngine()
+ *         .addInfernoValidationEngine()
+ *         .build();
+ *
+ * OrchestrationEngine.OrchestrationSession session2 = engine.session()
+ *         .withPayloads(List.of(&quot;payload3&quot;, &quot;payload4&quot;))
+ *         .withFhirProfileUrl(&quot;http://example.com/fhirProfile&quot;)
+ *         .addHapiValidationEngine()
+ *         .build();
+ *
+ * engine.orchestrate(session1, session2);
+ *
+ * for (OrchestrationEngine.OrchestrationSession session : engine.getSessions()) {
+ *     for (OrchestrationEngine.ValidationResult result : session.getValidationResults()) {
+ *         System.out.println(&quot;Is valid: &quot; + result.isValid());
+ *         for (OrchestrationEngine.ValidationIssue issue : result.getIssues()) {
+ *             System.out.println(&quot;Issue: &quot; + issue.getMessage());
+ *         }
+ *     }
+ * }
+ * }&lt;/pre&gt;
+ * &lt;p&gt;
+ * Key components:
+ * &lt;ul&gt;
+ * &lt;li&gt;{@code ValidationEngineIdentifier}: Enumeration to identify different
+ * validation engine types.&lt;/li&gt;
+ * &lt;li&gt;{@code ValidationEngineKey}: A composite key class used to uniquely
+ * identify each {@link ValidationEngine}
+ * instance by its type and FHIR profile URL.&lt;/li&gt;
+ * &lt;li&gt;{@code session()}: This method returns a new
+ * {@link OrchestrationSession.Builder} instance that is aware of
+ * the {@code OrchestrationEngine} instance.&lt;/li&gt;
+ * &lt;li&gt;{@code ValidationResult} Interface: Defines the methods {@code isValid}
+ * and {@code getIssues} for the validation result.&lt;/li&gt;
+ * &lt;li&gt;{@code ValidationIssue} Interface: Defines the {@code getMessage} method
+ * for validation issues.&lt;/li&gt;
+ * &lt;li&gt;{@code ValidationEngine} Interface: Defines the {@code validate} method
+ * which each validation engine must implement.&lt;/li&gt;
+ * &lt;li&gt;{@code HapiValidationEngine}, {@code Hl7ValidationEngine},
+ * {@code InfernoValidationEngine}: Implement the {@code ValidationEngine}
+ * interface, each providing its own validation logic and holding the
+ * {@code fhirProfileUrl} as a member field. These classes return
+ * anonymous classes for {@code ValidationResult} and
+ * {@code ValidationIssue}.&lt;/li&gt;
+ * &lt;li&gt;{@code OrchestrationSession}: Holds a list of {@link ValidationEngine}
+ * instances, payloads, and validation results. The {@code validate}
+ * method performs validation and stores the results. The {@code Builder} class
+ * within {@code OrchestrationSession} allows setting the
+ * {@code fhirProfileUrl} and adding specific validation engine implementations
+ * that use this URL.&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public class OrchestrationEngine {
+    private final List&lt;OrchestrationSession&gt; sessions;
+    private final Map&lt;ValidationEngineKey, ValidationEngine&gt; validationEngineCache;
+
+<span class="fc" id="L124">    public OrchestrationEngine() {</span>
+<span class="fc" id="L125">        this.sessions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L126">        this.validationEngineCache = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L127">    }</span>
+
+    public List&lt;OrchestrationSession&gt; getSessions() {
+<span class="fc" id="L130">        return Collections.unmodifiableList(sessions);</span>
+    }
+
+    public void orchestrate(@NotNull final OrchestrationSession... sessions) {
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        for (OrchestrationSession session : sessions) {</span>
+<span class="fc" id="L135">            session.validate();</span>
+<span class="fc" id="L136">            this.sessions.add(session);</span>
+        }
+<span class="fc" id="L138">    }</span>
+
+    public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
+            @NotNull final String fhirProfileUrl) {
+<span class="fc" id="L142">        ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);</span>
+<span class="fc" id="L143">        return validationEngineCache.computeIfAbsent(key, k -&gt; {</span>
+<span class="pc bpc" id="L144" title="3 of 5 branches missed.">            switch (type) {</span>
+                case HAPI:
+<span class="fc" id="L146">                    return new HapiValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl).build();</span>
+                case HL7_EMBEDDED:
+<span class="nc" id="L148">                    return new Hl7ValidationEngineEmbedded.Builder().withFhirProfileUrl(fhirProfileUrl).build();</span>
+                case HL7_API:
+<span class="fc" id="L150">                    return new Hl7ValidationEngineApi.Builder().withFhirProfileUrl(fhirProfileUrl).build();</span>
+                case INFERNO:
+<span class="nc" id="L152">                    return new InfernoValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl).build();</span>
+                default:
+<span class="nc" id="L154">                    throw new IllegalArgumentException(&quot;Unknown validation engine type: &quot; + type);</span>
+            }
+        });
+    }
+
+    public OrchestrationSession.Builder session() {
+<span class="fc" id="L160">        return new OrchestrationSession.Builder(this);</span>
+    }
+
+<span class="fc" id="L163">    public enum ValidationEngineIdentifier {</span>
+<span class="fc" id="L164">        HAPI, HL7_EMBEDDED, HL7_API, INFERNO</span>
+    }
+
+    private static class ValidationEngineKey {
+        private final ValidationEngineIdentifier type;
+        private final String fhirProfileUrl;
+
+<span class="fc" id="L171">        public ValidationEngineKey(@NotNull ValidationEngineIdentifier type, @NotNull String fhirProfileUrl) {</span>
+<span class="fc" id="L172">            this.type = type;</span>
+<span class="fc" id="L173">            this.fhirProfileUrl = fhirProfileUrl;</span>
+<span class="fc" id="L174">        }</span>
+
+        @Override
+        public boolean equals(Object o) {
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L179">                return true;</span>
+            }
+<span class="pc bpc" id="L181" title="2 of 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L182">                return false;</span>
+            }
+<span class="fc" id="L184">            ValidationEngineKey that = (ValidationEngineKey) o;</span>
+<span class="pc bpc" id="L185" title="2 of 4 branches missed.">            return type == that.type &amp;&amp; Objects.equals(fhirProfileUrl, that.fhirProfileUrl);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L190">            return Objects.hash(type, fhirProfileUrl);</span>
+        }
+    }
+
+    // Inner classes and interfaces
+
+    public interface ValidationResult {
+        Instant getInitiatedAt();
+
+        String getProfileUrl();
+
+        ValidationEngine.Observability getObservability();
+
+        boolean isValid();
+
+        List&lt;ValidationIssue&gt; getIssues();
+
+        String getOperationOutcome();
+
+        Instant getCompletedAt();
+    }
+
+<span class="nc" id="L212">    public record SourceLocation(Integer line, Integer column, String diagnostics) {</span>
+    }
+
+    public interface ValidationIssue {
+        String getMessage();
+
+        SourceLocation getLocation();
+
+        String getSeverity();
+    }
+
+    public interface ValidationEngine {
+<span class="fc" id="L224">        record Observability(String identity, String name, Instant initAt, Instant constructedAt) {</span>
+        }
+
+        Observability observability();
+
+        ValidationResult validate(@NotNull final String payload);
+    }
+
+    public static class HapiValidationEngine implements OrchestrationEngine.ValidationEngine {
+        private final Observability observability;
+<span class="fc" id="L234">        private final Instant engineInitAt = Instant.now();</span>
+        private final Instant engineConstructedAt;
+        private final String fhirProfileUrl;
+        private final FhirContext fhirContext;
+        private final FhirValidator validator;
+        private final ValidationOptions options;
+
+<span class="fc" id="L241">        private HapiValidationEngine(final Builder builder) {</span>
+<span class="fc" id="L242">            this.fhirProfileUrl = builder.fhirProfileUrl;</span>
+<span class="fc" id="L243">            this.fhirContext = FhirContext.forR4();</span>
+<span class="fc" id="L244">            this.options = new ValidationOptions();</span>
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">            if (this.fhirProfileUrl != null) {</span>
+<span class="fc" id="L246">                this.options.addProfile(this.fhirProfileUrl);</span>
+            }
+<span class="fc" id="L248">            this.validator = fhirContext.newValidator();</span>
+<span class="fc" id="L249">            engineConstructedAt = Instant.now();</span>
+<span class="fc" id="L250">            observability = new Observability(HapiValidationEngine.class.getName(),</span>
+                    &quot;HAPI version TODO (FHIR version %s)&quot;
+<span class="fc" id="L252">                            .formatted(fhirContext.getVersion().getVersion().getFhirVersionString()),</span>
+                    engineInitAt,
+                    engineConstructedAt);
+<span class="fc" id="L255">        }</span>
+
+        @Override
+        public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
+<span class="fc" id="L259">            final var initiatedAt = Instant.now();</span>
+            try {
+<span class="fc" id="L261">                final var strictParser = fhirContext.newJsonParser();</span>
+<span class="fc" id="L262">                strictParser.setParserErrorHandler(new StrictErrorHandler());</span>
+<span class="nc" id="L263">                final var parsedResource = strictParser.parseResource(payload);</span>
+<span class="nc" id="L264">                final var hapiVR = validator.validateWithResult(parsedResource, this.options);</span>
+<span class="nc" id="L265">                final var completedAt = Instant.now();</span>
+<span class="nc" id="L266">                return new OrchestrationEngine.ValidationResult() {</span>
+                    @Override
+                    @JsonSerialize(using = JsonTextSerializer.class)
+                    public String getOperationOutcome() {
+<span class="nc" id="L270">                        final var jp = FhirContext.forR4Cached().newJsonParser();</span>
+<span class="nc" id="L271">                        return jp.encodeResourceToString(hapiVR.toOperationOutcome());</span>
+                    }
+
+                    @Override
+                    public boolean isValid() {
+<span class="nc" id="L276">                        return hapiVR.isSuccessful();</span>
+                    }
+
+                    @Override
+                    public List&lt;OrchestrationEngine.ValidationIssue&gt; getIssues() {
+<span class="nc" id="L281">                        return hapiVR.getMessages().stream()</span>
+<span class="nc" id="L282">                                .map(issue -&gt; new OrchestrationEngine.ValidationIssue() {</span>
+                                    @Override
+                                    public String getMessage() {
+<span class="nc" id="L285">                                        return issue.getMessage();</span>
+                                    }
+
+                                    @Override
+                                    public SourceLocation getLocation() {
+<span class="nc" id="L290">                                        return new SourceLocation(issue.getLocationLine(), issue.getLocationCol(),</span>
+<span class="nc" id="L291">                                                issue.getLocationString());</span>
+                                    }
+
+                                    @Override
+                                    public String getSeverity() {
+<span class="nc" id="L296">                                        return issue.getSeverity().toString();</span>
+                                    }
+
+                                })
+<span class="nc" id="L300">                                .collect(Collectors.toList());</span>
+                    }
+
+                    @Override
+                    public String getProfileUrl() {
+<span class="nc" id="L305">                        return HapiValidationEngine.this.fhirProfileUrl;</span>
+                    }
+
+                    @Override
+                    public ValidationEngine.Observability getObservability() {
+<span class="nc" id="L310">                        return observability;</span>
+                    }
+
+                    @Override
+                    public Instant getInitiatedAt() {
+<span class="nc" id="L315">                        return initiatedAt;</span>
+                    }
+
+                    @Override
+                    public Instant getCompletedAt() {
+<span class="nc" id="L320">                        return completedAt;</span>
+                    }
+                };
+
+<span class="fc" id="L324">            } catch (Exception e) {</span>
+<span class="fc" id="L325">                final var completedAt = Instant.now();</span>
+<span class="fc" id="L326">                return new OrchestrationEngine.ValidationResult() {</span>
+                    @Override
+                    public String getOperationOutcome() {
+<span class="nc" id="L329">                        return null;</span>
+                    }
+
+                    @Override
+                    public boolean isValid() {
+<span class="fc" id="L334">                        return false;</span>
+                    }
+
+                    @Override
+                    public List&lt;OrchestrationEngine.ValidationIssue&gt; getIssues() {
+<span class="fc" id="L339">                        return List.of(new OrchestrationEngine.ValidationIssue() {</span>
+                            @Override
+                            public String getMessage() {
+<span class="fc" id="L342">                                return e.getMessage();</span>
+                            }
+
+                            @Override
+                            public SourceLocation getLocation() {
+<span class="nc" id="L347">                                return new SourceLocation(null, null, e.getClass().getName());</span>
+                            }
+
+                            @Override
+                            public String getSeverity() {
+<span class="nc" id="L352">                                return &quot;FATAL&quot;;</span>
+                            }
+                        });
+                    }
+
+                    @Override
+                    public String getProfileUrl() {
+<span class="nc" id="L359">                        return HapiValidationEngine.this.fhirProfileUrl;</span>
+                    }
+
+                    @Override
+                    public ValidationEngine.Observability getObservability() {
+<span class="nc" id="L364">                        return observability;</span>
+                    }
+
+                    @Override
+                    public Instant getInitiatedAt() {
+<span class="nc" id="L369">                        return initiatedAt;</span>
+                    }
+
+                    @Override
+                    public Instant getCompletedAt() {
+<span class="nc" id="L374">                        return completedAt;</span>
+                    }
+                };
+            }
+
+        }
+
+<span class="fc" id="L381">        public static class Builder {</span>
+            private String fhirProfileUrl;
+
+            public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
+<span class="fc" id="L385">                this.fhirProfileUrl = fhirProfileUrl;</span>
+<span class="fc" id="L386">                return this;</span>
+            }
+
+            public HapiValidationEngine build() {
+<span class="fc" id="L390">                return new HapiValidationEngine(this);</span>
+            }
+        }
+
+        @Override
+        public Observability observability() {
+<span class="nc" id="L396">            return observability;</span>
+        }
+    }
+
+    public static class Hl7ValidationEngineEmbedded implements ValidationEngine {
+        private final Observability observability;
+<span class="nc" id="L402">        private final Instant engineInitAt = Instant.now();</span>
+        private final Instant engineConstructedAt;
+        private final String fhirProfileUrl;
+
+<span class="nc" id="L406">        private Hl7ValidationEngineEmbedded(final Builder builder) {</span>
+<span class="nc" id="L407">            this.fhirProfileUrl = builder.fhirProfileUrl;</span>
+<span class="nc" id="L408">            engineConstructedAt = Instant.now();</span>
+<span class="nc" id="L409">            observability = new Observability(Hl7ValidationEngineEmbedded.class.getName(),</span>
+                    &quot;HL7 Official Embedded (TODO: version)&quot;, engineInitAt,
+                    engineConstructedAt);
+<span class="nc" id="L412">        }</span>
+
+        @Override
+        public ValidationResult validate(@NotNull final String payload) {
+<span class="nc" id="L416">            final var initiatedAt = Instant.now();</span>
+<span class="nc" id="L417">            final var completedAt = Instant.now();</span>
+<span class="nc" id="L418">            return new ValidationResult() {</span>
+                @Override
+                public String getOperationOutcome() {
+<span class="nc" id="L421">                    return null;</span>
+                }
+
+                @Override
+                public boolean isValid() {
+<span class="nc" id="L426">                    return true;</span>
+                }
+
+                @Override
+                public List&lt;ValidationIssue&gt; getIssues() {
+<span class="nc" id="L431">                    return List.of();</span>
+                }
+
+                @Override
+                public String getProfileUrl() {
+<span class="nc" id="L436">                    return Hl7ValidationEngineEmbedded.this.fhirProfileUrl;</span>
+                }
+
+                @Override
+                public ValidationEngine.Observability getObservability() {
+<span class="nc" id="L441">                    return observability;</span>
+                }
+
+                @Override
+                public Instant getInitiatedAt() {
+<span class="nc" id="L446">                    return initiatedAt;</span>
+                }
+
+                @Override
+                public Instant getCompletedAt() {
+<span class="nc" id="L451">                    return completedAt;</span>
+                }
+            };
+        }
+
+<span class="nc" id="L456">        public static class Builder {</span>
+            private String fhirProfileUrl;
+
+            public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
+<span class="nc" id="L460">                this.fhirProfileUrl = fhirProfileUrl;</span>
+<span class="nc" id="L461">                return this;</span>
+            }
+
+            public Hl7ValidationEngineEmbedded build() {
+<span class="nc" id="L465">                return new Hl7ValidationEngineEmbedded(this);</span>
+            }
+        }
+
+        @Override
+        public Observability observability() {
+<span class="nc" id="L471">            return observability;</span>
+        }
+    }
+
+    public static class Hl7ValidationEngineApi implements ValidationEngine {
+        private final Observability observability;
+<span class="fc" id="L477">        private final Instant engineInitAt = Instant.now();</span>
+        private final Instant engineConstructedAt;
+        private final String fhirProfileUrl;
+        private final String fhirContext;
+        private final String locale;
+        private final String fileType;
+        private final String fileName;
+
+<span class="fc" id="L485">        private Hl7ValidationEngineApi(final Builder builder) {</span>
+<span class="fc" id="L486">            this.fhirProfileUrl = builder.fhirProfileUrl;</span>
+<span class="fc" id="L487">            this.fhirContext = &quot;4.0.1&quot;;</span>
+<span class="fc" id="L488">            this.locale = &quot;en&quot;;</span>
+<span class="fc" id="L489">            this.fileType = &quot;json&quot;;</span>
+<span class="fc" id="L490">            this.fileName = &quot;input.json&quot;;</span>
+<span class="fc" id="L491">            this.engineConstructedAt = Instant.now();</span>
+<span class="fc" id="L492">            observability = new Observability(Hl7ValidationEngineApi.class.getName(),</span>
+                    &quot;HL7 Official API (TODO: version)&quot;, engineInitAt,
+                    engineConstructedAt);
+<span class="fc" id="L495">        }</span>
+
+        @Override
+        public ValidationResult validate(@NotNull final String payload) {
+<span class="fc" id="L499">            final var initiatedAt = Instant.now();</span>
+
+<span class="fc" id="L501">            String escapedPayload = StringEscapeUtils.escapeJson(payload);</span>
+<span class="fc" id="L502">            String result = escapedPayload.replace(&quot;\\n&quot;, &quot;\\r\\n&quot;);</span>
+
+<span class="fc" id="L504">            HttpClient client = HttpClient.newBuilder()</span>
+<span class="fc" id="L505">                    .version(HttpClient.Version.HTTP_2)</span>
+<span class="fc" id="L506">                    .connectTimeout(Duration.ofSeconds(120))</span>
+<span class="fc" id="L507">                    .build();</span>
+
+<span class="fc" id="L509">            final var fileContent = &quot;&quot;&quot;</span>
+                    {
+                      &quot;cliContext&quot;: {
+                        &quot;sv&quot;: &quot;%s&quot;,
+                        &quot;ig&quot;: [
+                          &quot;%s&quot;
+                        ],
+                        &quot;locale&quot;: &quot;%s&quot;
+                      },
+                      &quot;filesToValidate&quot;: [
+                        {
+                          &quot;fileName&quot;: &quot;%s&quot;,
+                          &quot;fileContent&quot;: &quot;%s&quot;,
+                          &quot;fileType&quot;: &quot;%s&quot;
+                        }
+                      ]
+                    }
+<span class="fc" id="L526">                    &quot;&quot;&quot;.formatted(fhirContext, fhirProfileUrl, locale, fileName, result, fileType);</span>
+
+<span class="fc" id="L528">            HttpRequest request = HttpRequest.newBuilder()</span>
+<span class="fc" id="L529">                    .uri(URI.create(&quot;https://validator.fhir.org/validate&quot;))</span>
+<span class="fc" id="L530">                    .POST(BodyPublishers.ofString(fileContent))</span>
+<span class="fc" id="L531">                    .timeout(Duration.ofSeconds(120))</span>
+<span class="fc" id="L532">                    .header(&quot;Content-Type&quot;, &quot;application/json&quot;)</span>
+<span class="fc" id="L533">                    .header(&quot;Accept&quot;, &quot;application/json&quot;)</span>
+<span class="fc" id="L534">                    .build();</span>
+
+<span class="fc" id="L536">            CompletableFuture&lt;HttpResponse&lt;String&gt;&gt; response = client.sendAsync(request, BodyHandlers.ofString());</span>
+
+<span class="fc" id="L538">            return response.thenApply(HttpResponse::body)</span>
+<span class="fc" id="L539">                    .thenApply(responseBody -&gt; {</span>
+<span class="fc" id="L540">                        final var completedAt = Instant.now();</span>
+<span class="fc" id="L541">                        return new ValidationResult() {</span>
+                            @Override
+                            public String getOperationOutcome() {
+<span class="nc" id="L544">                                return null;</span>
+                            }
+
+                            @Override
+                            public boolean isValid() {
+<span class="fc" id="L549">                                return responseBody.contains(&quot;OperationOutcome&quot;);</span>
+                            }
+
+                            public List&lt;OrchestrationEngine.ValidationIssue&gt; getIssues() {
+<span class="nc" id="L553">                                List&lt;OrchestrationEngine.ValidationIssue&gt; issuesList = new ArrayList&lt;&gt;();</span>
+
+                                try {
+<span class="nc" id="L556">                                    final var mapper = new ObjectMapper();</span>
+<span class="nc" id="L557">                                    final var root = mapper.readTree(responseBody);</span>
+<span class="nc" id="L558">                                    final var outcomes = root.path(&quot;outcomes&quot;);</span>
+
+<span class="nc bnc" id="L560" title="All 2 branches missed.">                                    if (outcomes.isArray()) {</span>
+<span class="nc bnc" id="L561" title="All 2 branches missed.">                                        for (final var outcome : outcomes) {</span>
+<span class="nc" id="L562">                                            final var issues = outcome.path(&quot;issues&quot;);</span>
+<span class="nc bnc" id="L563" title="All 2 branches missed.">                                            if (issues.isArray()) {</span>
+<span class="nc" id="L564">                                                issuesList.addAll(extractIssues(issues));</span>
+                                            }
+<span class="nc" id="L566">                                        }</span>
+                                    }
+<span class="nc" id="L568">                                } catch (IOException e) {</span>
+<span class="nc" id="L569">                                    e.printStackTrace();</span>
+<span class="nc" id="L570">                                }</span>
+
+<span class="nc" id="L572">                                return issuesList;</span>
+                            }
+
+                            private List&lt;OrchestrationEngine.ValidationIssue&gt; extractIssues(JsonNode issues) {
+<span class="nc" id="L576">                                return StreamSupport.stream(issues.spliterator(), false)</span>
+<span class="nc" id="L577">                                        .map(issue -&gt; new OrchestrationEngine.ValidationIssue() {</span>
+                                            @Override
+                                            public String getMessage() {
+<span class="nc" id="L580">                                                return issue.path(&quot;message&quot;).asText();</span>
+                                            }
+
+                                            @Override
+                                            public OrchestrationEngine.SourceLocation getLocation() {
+<span class="nc bnc" id="L585" title="All 2 branches missed.">                                                Integer line = issue.path(&quot;line&quot;).isInt()</span>
+<span class="nc" id="L586">                                                        ? issue.path(&quot;line&quot;).intValue()</span>
+<span class="nc" id="L587">                                                        : null;</span>
+<span class="nc bnc" id="L588" title="All 2 branches missed.">                                                Integer column = issue.path(&quot;col&quot;).isInt()</span>
+<span class="nc" id="L589">                                                        ? issue.path(&quot;col&quot;).intValue()</span>
+<span class="nc" id="L590">                                                        : null;</span>
+<span class="nc" id="L591">                                                String diagnostics = &quot;ca.uhn.fhir.parser.DataFormatException&quot;;</span>
+<span class="nc" id="L592">                                                return new OrchestrationEngine.SourceLocation(line, column,</span>
+                                                        diagnostics);
+                                            }
+
+                                            @Override
+                                            public String getSeverity() {
+<span class="nc" id="L598">                                                return issue.path(&quot;level&quot;).asText();</span>
+                                            }
+                                        })
+<span class="nc" id="L601">                                        .collect(Collectors.toList());</span>
+                            }
+
+                            @Override
+                            public String getProfileUrl() {
+<span class="nc" id="L606">                                return Hl7ValidationEngineApi.this.fhirProfileUrl;</span>
+                            }
+
+                            @Override
+                            public ValidationEngine.Observability getObservability() {
+<span class="nc" id="L611">                                return observability;</span>
+                            }
+
+                            @Override
+                            public Instant getInitiatedAt() {
+<span class="nc" id="L616">                                return initiatedAt;</span>
+                            }
+
+                            @Override
+                            public Instant getCompletedAt() {
+<span class="nc" id="L621">                                return completedAt;</span>
+                            }
+                        };
+<span class="fc" id="L624">                    }).join(); // Wait for the request to complete</span>
+        }
+
+<span class="fc" id="L627">        public static class Builder {</span>
+            private String fhirProfileUrl;
+
+            public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
+<span class="fc" id="L631">                this.fhirProfileUrl = fhirProfileUrl;</span>
+<span class="fc" id="L632">                return this;</span>
+            }
+
+            public Hl7ValidationEngineApi build() {
+<span class="fc" id="L636">                return new Hl7ValidationEngineApi(this);</span>
+            }
+        }
+
+        @Override
+        public Observability observability() {
+<span class="nc" id="L642">            return observability;</span>
+        }
+    }
+
+    public static class InfernoValidationEngine implements ValidationEngine {
+        private final Observability observability;
+<span class="nc" id="L648">        private final Instant engineInitAt = Instant.now();</span>
+        private final Instant engineConstructedAt;
+        private final String fhirProfileUrl;
+        private final Validator validator;
+        private List&lt;String&gt; fhirBundleProfile;
+        
+<span class="nc" id="L654">        private InfernoValidationEngine(final Builder builder) {</span>
+<span class="nc" id="L655">            this.fhirProfileUrl = builder.fhirProfileUrl;</span>
+            Validator tempValidator;
+            try {
+<span class="nc" id="L658">                tempValidator = new Validator(&quot;hub-prime/igs&quot;, false);</span>
+<span class="nc" id="L659">            } catch (Exception e) {</span>
+<span class="nc" id="L660">                e.printStackTrace();</span>
+<span class="nc" id="L661">                tempValidator = null; // or provide a default initialization</span>
+<span class="nc" id="L662">            }</span>
+<span class="nc" id="L663">            fhirBundleProfile = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L664">            this.validator = tempValidator;</span>
+<span class="nc" id="L665">            this.engineConstructedAt = Instant.now();</span>
+<span class="nc" id="L666">            observability = new Observability(InfernoValidationEngine.class.getName(),</span>
+                    &quot;Inferno version (TODO: version)&quot;, engineInitAt,
+                    engineConstructedAt);
+<span class="nc" id="L669">        }</span>
+
+        @Override
+        public ValidationResult validate(@NotNull final String payload) {
+<span class="nc" id="L673">            final Instant initiatedAt = Instant.now();</span>
+
+            try {
+<span class="nc" id="L676">                byte[] payloadContent = payload.getBytes(StandardCharsets.UTF_8); // loadFile(payload);</span>
+<span class="nc" id="L677">                byte[] bundleProfile = loadFileFromURL(fhirProfileUrl);</span>
+
+<span class="nc" id="L679">                validator.loadProfile(bundleProfile);</span>
+<span class="nc bnc" id="L680" title="All 2 branches missed.">                if (validator.getAssignedUrlFrom() != null) {</span>
+<span class="nc" id="L681">                    fhirBundleProfile = Arrays.asList(validator.getAssignedUrlFrom());</span>
+                } else {
+<span class="nc" id="L683">                    fhirBundleProfile = null;</span>
+                }
+
+<span class="nc" id="L686">                OperationOutcome oo = validator.validate(payloadContent, fhirBundleProfile);</span>
+<span class="nc" id="L687">                ArrayNode issueArray = displayValidationErrors(oo, false);</span>
+<span class="nc" id="L688">                ObjectMapper mapper = new ObjectMapper();</span>
+<span class="nc" id="L689">                String responseBody = mapper.writeValueAsString(issueArray);</span>
+
+<span class="nc" id="L691">                final Instant completedAt = Instant.now();</span>
+
+<span class="nc" id="L693">                return new ValidationResult() {</span>
+                    @Override
+                    public String getOperationOutcome() {
+<span class="nc" id="L696">                        return null;</span>
+                    }
+
+                    @Override
+                    public boolean isValid() {
+<span class="nc" id="L701">                        return responseBody.contains(&quot;OperationOutcome&quot;);</span>
+                    }
+
+                    public List&lt;OrchestrationEngine.ValidationIssue&gt; getIssues() {
+<span class="nc" id="L705">                        List&lt;OrchestrationEngine.ValidationIssue&gt; issuesList = new ArrayList&lt;&gt;();</span>
+
+                        try {
+<span class="nc" id="L708">                            final var mapper = new ObjectMapper();</span>
+<span class="nc" id="L709">                            final var issuesArray = mapper.readTree(responseBody);</span>
+
+<span class="nc bnc" id="L711" title="All 2 branches missed.">                            if (issuesArray.isArray()) {</span>
+<span class="nc" id="L712">                                issuesList.addAll(extractIssues(issuesArray));</span>
+                            }
+<span class="nc" id="L714">                        } catch (IOException e) {</span>
+<span class="nc" id="L715">                            e.printStackTrace();</span>
+<span class="nc" id="L716">                        }</span>
+
+<span class="nc" id="L718">                        return issuesList;</span>
+                    }
+
+                    private List&lt;OrchestrationEngine.ValidationIssue&gt; extractIssues(JsonNode issues) {
+<span class="nc" id="L722">                        return StreamSupport.stream(issues.spliterator(), false)</span>
+<span class="nc" id="L723">                                .map(issue -&gt; new OrchestrationEngine.ValidationIssue() {</span>
+                                    @Override
+                                    public String getMessage() {
+<span class="nc" id="L726">                                        return issue.path(&quot;message&quot;).asText();</span>
+                                    }
+
+                                    @Override
+                                    public OrchestrationEngine.SourceLocation getLocation() {
+<span class="nc bnc" id="L731" title="All 2 branches missed.">                                        Integer line = issue.path(&quot;line&quot;).isInt()</span>
+<span class="nc" id="L732">                                                ? issue.path(&quot;line&quot;).intValue()</span>
+<span class="nc" id="L733">                                                : null;</span>
+<span class="nc bnc" id="L734" title="All 2 branches missed.">                                        Integer column = issue.path(&quot;col&quot;).isInt()</span>
+<span class="nc" id="L735">                                                ? issue.path(&quot;col&quot;).intValue()</span>
+<span class="nc" id="L736">                                                : null;</span>
+<span class="nc" id="L737">                                        String diagnostics = &quot;ca.uhn.fhir.parser.DataFormatException&quot;;</span>
+<span class="nc" id="L738">                                        return new OrchestrationEngine.SourceLocation(line, column,</span>
+                                                diagnostics);
+                                    }
+
+                                    @Override
+                                    public String getSeverity() {
+<span class="nc" id="L744">                                        return issue.path(&quot;level&quot;).asText();</span>
+                                    }
+                                })
+<span class="nc" id="L747">                                .collect(Collectors.toList());</span>
+                    }
+
+                    @Override
+                    public String getProfileUrl() {
+<span class="nc" id="L752">                        return InfernoValidationEngine.this.fhirProfileUrl;</span>
+                    }
+
+                    @Override
+                    public ValidationEngine.Observability getObservability() {
+<span class="nc" id="L757">                        return observability;</span>
+                    }
+
+                    @Override
+                    public Instant getInitiatedAt() {
+<span class="nc" id="L762">                        return initiatedAt;</span>
+                    }
+
+                    @Override
+                    public Instant getCompletedAt() {
+<span class="nc" id="L767">                        return completedAt;</span>
+                    }
+                };
+<span class="nc" id="L770">            } catch (Exception e) {</span>
+<span class="nc" id="L771">                final var completedAt = Instant.now();</span>
+<span class="nc" id="L772">                return new OrchestrationEngine.ValidationResult() {</span>
+                    @Override
+                    public String getOperationOutcome() {
+<span class="nc" id="L775">                        return null;</span>
+                    }
+
+                    @Override
+                    public boolean isValid() {
+<span class="nc" id="L780">                        return false;</span>
+                    }
+
+                    @Override
+                    public List&lt;OrchestrationEngine.ValidationIssue&gt; getIssues() {
+<span class="nc" id="L785">                        return List.of(new OrchestrationEngine.ValidationIssue() {</span>
+                            @Override
+                            public String getMessage() {
+<span class="nc" id="L788">                                return e.getMessage();</span>
+                            }
+
+                            @Override
+                            public SourceLocation getLocation() {
+<span class="nc" id="L793">                                return new SourceLocation(null, null, e.getClass().getName());</span>
+                            }
+
+                            @Override
+                            public String getSeverity() {
+<span class="nc" id="L798">                                return &quot;FATAL&quot;;</span>
+                            }
+                        });
+                    }
+
+                    @Override
+                    public String getProfileUrl() {
+<span class="nc" id="L805">                        return InfernoValidationEngine.this.fhirProfileUrl;</span>
+                    }
+
+                    @Override
+                    public ValidationEngine.Observability getObservability() {
+<span class="nc" id="L810">                        return observability;</span>
+                    }
+
+                    @Override
+                    public Instant getInitiatedAt() {
+<span class="nc" id="L815">                        return initiatedAt;</span>
+                    }
+
+                    @Override
+                    public Instant getCompletedAt() {
+<span class="nc" id="L820">                        return completedAt;</span>
+                    }
+                };
+            }
+
+        }
+
+        public static byte[] loadFileFromURL(String urlString)
+                throws IOException, InterruptedException, ExecutionException {
+<span class="nc" id="L829">            URI uri = URI.create(urlString);</span>
+<span class="nc" id="L830">            HttpClient client = HttpClient.newHttpClient();</span>
+<span class="nc" id="L831">            HttpRequest request = HttpRequest.newBuilder()</span>
+<span class="nc" id="L832">                    .uri(uri)</span>
+<span class="nc" id="L833">                    .GET()</span>
+<span class="nc" id="L834">                    .build();</span>
+
+<span class="nc" id="L836">            HttpResponse&lt;byte[]&gt; response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());</span>
+
+<span class="nc bnc" id="L838" title="All 2 branches missed.">            if (response.statusCode() != 200) {</span>
+<span class="nc" id="L839">                throw new IOException(&quot;Failed to get file: HTTP &quot; + response.statusCode());</span>
+            }
+
+<span class="nc" id="L842">            return response.body();</span>
+        }
+
+        public static ArrayNode displayValidationErrors(OperationOutcome oo, boolean areErrorsExpected) {
+<span class="nc" id="L846">            List&lt;OperationOutcome.OperationOutcomeIssueComponent&gt; issues = oo.getIssue();</span>
+<span class="nc" id="L847">            final var objectMapper = new ObjectMapper();</span>
+<span class="nc" id="L848">            ArrayNode issueArray = objectMapper.createArrayNode();</span>
+
+<span class="nc bnc" id="L850" title="All 2 branches missed.">            for (OperationOutcome.OperationOutcomeIssueComponent issue : issues) {</span>
+<span class="nc" id="L851">                ObjectNode issueJson = objectMapper.createObjectNode();</span>
+<span class="nc" id="L852">                issueJson.put(&quot;source&quot;, &quot;InstanceValidator&quot;);</span>
+<span class="nc" id="L853">                issueJson.put(&quot;server&quot;, (String) null);</span>
+<span class="nc" id="L854">                issueJson.put(&quot;line&quot;, (String) null);</span>
+<span class="nc" id="L855">                issueJson.put(&quot;col&quot;, (String) null);</span>
+<span class="nc bnc" id="L856" title="All 2 branches missed.">                issueJson.put(&quot;location&quot;, issue.hasLocation() ? issue.getLocation().get(0).getValue() : null);</span>
+<span class="nc" id="L857">                issueJson.put(&quot;message&quot;, issue.getDetails().getText());</span>
+<span class="nc" id="L858">                issueJson.put(&quot;messageId&quot;, (String) null);</span>
+<span class="nc" id="L859">                issueJson.put(&quot;type&quot;, issue.getCode().toCode());</span>
+<span class="nc" id="L860">                issueJson.put(&quot;level&quot;, issue.getSeverity().toCode());</span>
+<span class="nc" id="L861">                issueJson.put(&quot;display&quot;,</span>
+<span class="nc" id="L862">                        issue.getSeverity().toCode() + &quot;: &quot;</span>
+<span class="nc bnc" id="L863" title="All 2 branches missed.">                                + (issue.hasLocation() ? issue.getLocation().get(0).getValue() : null) + &quot;: &quot;</span>
+<span class="nc" id="L864">                                + issue.getDetails().getText());</span>
+<span class="nc" id="L865">                issueJson.put(&quot;error&quot;, true);</span>
+<span class="nc" id="L866">                issueArray.add(issueJson);</span>
+
+<span class="nc" id="L868">            }</span>
+<span class="nc" id="L869">            return issueArray;</span>
+        }
+
+<span class="nc" id="L872">        public static class Builder {</span>
+            private String fhirProfileUrl;
+
+            public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
+<span class="nc" id="L876">                this.fhirProfileUrl = fhirProfileUrl;</span>
+<span class="nc" id="L877">                return this;</span>
+            }
+
+            public InfernoValidationEngine build() {
+<span class="nc" id="L881">                return new InfernoValidationEngine(this);</span>
+            }
+        }
+
+        @Override
+        public Observability observability() {
+<span class="nc" id="L887">            return observability;</span>
+        }
+    }
+
+<span class="fc" id="L891">    public record Device(String deviceId, String deviceName) {</span>
+<span class="fc" id="L892">        public static Device INSTANCE = createDefault();</span>
+
+        public static Device createDefault() {
+            try {
+<span class="fc" id="L896">                InetAddress localHost = InetAddress.getLocalHost();</span>
+<span class="fc" id="L897">                String ipAddress = localHost.getHostAddress();</span>
+<span class="fc" id="L898">                String hostName = localHost.getHostName();</span>
+<span class="fc" id="L899">                return new Device(ipAddress, hostName);</span>
+<span class="nc" id="L900">            } catch (UnknownHostException e) {</span>
+<span class="nc" id="L901">                return new Device(&quot;Unable to retrieve the localhost information&quot;, e.toString());</span>
+            }
+        }
+    }
+
+    public static class OrchestrationSession {
+        private final Device device;
+        private final List&lt;String&gt; payloads;
+        private final List&lt;ValidationEngine&gt; validationEngines;
+        private final List&lt;ValidationResult&gt; validationResults;
+        private final String fhirProfileUrl;
+
+<span class="fc" id="L913">        private OrchestrationSession(final Builder builder) {</span>
+<span class="fc" id="L914">            this.payloads = Collections.unmodifiableList(builder.payloads);</span>
+<span class="fc" id="L915">            this.validationEngines = Collections.unmodifiableList(builder.validationEngines);</span>
+<span class="fc" id="L916">            this.validationResults = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L917">            this.fhirProfileUrl = builder.fhirProfileUrl;</span>
+<span class="fc" id="L918">            this.device = builder.device;</span>
+<span class="fc" id="L919">        }</span>
+
+        public List&lt;String&gt; getPayloads() {
+<span class="fc" id="L922">            return payloads;</span>
+        }
+
+        public List&lt;ValidationEngine&gt; getValidationEngines() {
+<span class="nc" id="L926">            return validationEngines;</span>
+        }
+
+        public List&lt;ValidationResult&gt; getValidationResults() {
+<span class="fc" id="L930">            return validationResults;</span>
+        }
+
+        public Device getDevice() {
+<span class="nc" id="L934">            return device;</span>
+        }
+
+        public String getFhirProfileUrl() {
+<span class="fc" id="L938">            return fhirProfileUrl;</span>
+        }
+
+        public void validate() {
+<span class="fc bfc" id="L942" title="All 2 branches covered.">            for (String payload : payloads) {</span>
+<span class="fc bfc" id="L943" title="All 2 branches covered.">                for (ValidationEngine engine : validationEngines) {</span>
+<span class="fc" id="L944">                    ValidationResult result = engine.validate(payload);</span>
+<span class="fc" id="L945">                    validationResults.add(result);</span>
+<span class="fc" id="L946">                }</span>
+<span class="fc" id="L947">            }</span>
+<span class="fc" id="L948">        }</span>
+
+        public static class Builder {
+            private final OrchestrationEngine engine;
+<span class="fc" id="L952">            private final List&lt;String&gt; payloads = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L953">            private final List&lt;ValidationEngine&gt; validationEngines = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L954">            private Device device = Device.INSTANCE;</span>
+            private String fhirProfileUrl;
+<span class="fc" id="L956">            private List&lt;String&gt; uaStrategyJsonIssues = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L958">            public Builder(@NotNull final OrchestrationEngine engine) {</span>
+<span class="fc" id="L959">                this.engine = engine;</span>
+<span class="fc" id="L960">            }</span>
+
+            public List&lt;String&gt; getUaStrategyJsonIssues() {
+<span class="nc" id="L963">                return uaStrategyJsonIssues;</span>
+            }
+
+            public Builder onDevice(@NotNull final Device device) {
+<span class="nc" id="L967">                this.device = device;</span>
+<span class="nc" id="L968">                return this;</span>
+            }
+
+            public Builder withPayloads(@NotNull final List&lt;String&gt; payloads) {
+<span class="fc" id="L972">                this.payloads.addAll(payloads);</span>
+<span class="fc" id="L973">                return this;</span>
+            }
+
+            public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
+<span class="fc" id="L977">                this.fhirProfileUrl = fhirProfileUrl;</span>
+<span class="fc" id="L978">                return this;</span>
+            }
+
+            public Builder withUserAgentValidationStrategy(final String uaStrategyJson, final boolean clearExisting) {
+<span class="nc bnc" id="L982" title="All 2 branches missed.">                if (uaStrategyJson != null) {</span>
+                    try {
+<span class="nc bnc" id="L984" title="All 2 branches missed.">                        if (new ObjectMapper().readValue(uaStrategyJson, Object.class) instanceof Map uaStrategy) {</span>
+<span class="nc bnc" id="L985" title="All 2 branches missed.">                            if (uaStrategy.get(&quot;engines&quot;) instanceof List engines) {</span>
+<span class="nc bnc" id="L986" title="All 2 branches missed.">                                if (clearExisting) {</span>
+<span class="nc" id="L987">                                    validationEngines.clear();</span>
+                                }
+<span class="nc bnc" id="L989" title="All 2 branches missed.">                                for (var engineItem : engines) {</span>
+<span class="nc bnc" id="L990" title="All 2 branches missed.">                                    if (engineItem instanceof String engine) {</span>
+<span class="nc bnc" id="L991" title="All 5 branches missed.">                                        switch (engine) {</span>
+                                            case &quot;HAPI&quot;:
+<span class="nc" id="L993">                                                addHapiValidationEngine();</span>
+<span class="nc" id="L994">                                                break;</span>
+                                            case &quot;HL7-Official-API&quot;:
+<span class="nc" id="L996">                                                addHl7ValidationApiEngine();</span>
+<span class="nc" id="L997">                                                break;</span>
+                                            case &quot;HL7-Official-Embedded&quot;:
+<span class="nc" id="L999">                                                addHl7ValidationEmbeddedEngine();</span>
+<span class="nc" id="L1000">                                                break;</span>
+                                            case &quot;Inferno&quot;:
+<span class="nc" id="L1002">                                                addInfernoValidationEngine();</span>
+<span class="nc" id="L1003">                                                break;</span>
+                                            default:
+<span class="nc" id="L1005">                                                uaStrategyJsonIssues.add(</span>
+                                                        &quot;uaStrategyJson engine `%s` in withUserAgentValidationStrategy was not recognized&quot;
+<span class="nc" id="L1007">                                                                .formatted(engine));</span>
+                                        }
+                                    }
+<span class="nc" id="L1010">                                }</span>
+                            } else {
+<span class="nc" id="L1012">                                uaStrategyJsonIssues.add(</span>
+                                        &quot;uaStrategyJson `engines` key not found in `%s` withUserAgentValidationStrategy&quot;
+<span class="nc" id="L1014">                                                .formatted(uaStrategyJson));</span>
+                            }
+                        } else {
+<span class="nc" id="L1017">                            uaStrategyJsonIssues</span>
+<span class="nc" id="L1018">                                    .add(&quot;uaStrategyJson `%s` in withUserAgentValidationStrategy is not a Map&quot;</span>
+<span class="nc" id="L1019">                                            .formatted(uaStrategyJson));</span>
+                        }
+<span class="nc" id="L1021">                    } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L1022">                        uaStrategyJsonIssues</span>
+<span class="nc" id="L1023">                                .add(&quot;Error parsing uaStrategyJson `%s` in withUserAgentValidationStrategy: %s&quot;</span>
+<span class="nc" id="L1024">                                        .formatted(uaStrategyJson, e));</span>
+<span class="nc" id="L1025">                    }</span>
+                }
+
+<span class="nc" id="L1028">                return this;</span>
+            }
+
+            public Builder addValidationEngine(@NotNull final ValidationEngine validationEngine) {
+<span class="nc" id="L1032">                this.validationEngines.add(validationEngine);</span>
+<span class="nc" id="L1033">                return this;</span>
+            }
+
+            public Builder addHapiValidationEngine() {
+<span class="fc" id="L1037">                this.validationEngines</span>
+<span class="fc" id="L1038">                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl));</span>
+<span class="fc" id="L1039">                return this;</span>
+            }
+
+            public Builder addHl7ValidationEmbeddedEngine() {
+<span class="nc" id="L1043">                this.validationEngines</span>
+<span class="nc" id="L1044">                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl));</span>
+<span class="nc" id="L1045">                return this;</span>
+            }
+
+            public Builder addHl7ValidationApiEngine() {
+<span class="fc" id="L1049">                this.validationEngines</span>
+<span class="fc" id="L1050">                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl));</span>
+<span class="fc" id="L1051">                return this;</span>
+            }
+
+            public Builder addInfernoValidationEngine() {
+<span class="nc" id="L1055">                this.validationEngines</span>
+<span class="nc" id="L1056">                        .add(engine.getValidationEngine(ValidationEngineIdentifier.INFERNO, this.fhirProfileUrl));</span>
+<span class="nc" id="L1057">                return this;</span>
+            }
+
+            public OrchestrationSession build() {
+<span class="fc" id="L1061">                return new OrchestrationSession(this);</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

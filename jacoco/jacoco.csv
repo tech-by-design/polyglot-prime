@@ -1,0 +1,117 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.InfernoValidationEngine.1.new OrchestrationEngine.ValidationIssue() {...},57,0,4,0,11,0,6,0,4,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.ValidationEngine.Observability,0,15,0,0,0,1,0,1,0,1
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.SourceLocation,12,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.HapiValidationEngine,24,81,1,1,5,18,2,2,1,2
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.HapiValidationEngine.Builder,0,13,0,0,0,4,0,3,0,3
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.Hl7ValidationEngineApi,3,132,0,0,1,32,1,3,1,3
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.OrchestrationSession.Builder,167,65,17,0,41,18,16,6,6,6
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.InfernoValidationEngine.Builder,13,0,0,0,4,0,3,0,3,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.HapiValidationEngine.1.new OrchestrationEngine.ValidationIssue() {...},28,0,0,0,5,0,4,0,4,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.InfernoValidationEngine,276,0,10,0,62,0,10,0,5,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.Hl7ValidationEngineEmbedded.Builder,13,0,0,0,4,0,3,0,3,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.Hl7ValidationEngineApi.new OrchestrationEngine.ValidationResult() {...},83,20,6,0,22,2,11,2,8,2
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.ValidationEngineKey,5,50,5,5,2,9,5,3,0,3
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.Hl7ValidationEngineEmbedded,39,0,0,0,10,0,3,0,3,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.Hl7ValidationEngineApi.Builder,0,13,0,0,0,4,0,3,0,3
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine,21,78,3,4,3,15,3,8,0,6
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.HapiValidationEngine.2.new OrchestrationEngine.ValidationIssue() {...},13,11,0,0,2,2,2,2,2,2
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.InfernoValidationEngine.new OrchestrationEngine.ValidationResult() {...},81,0,2,0,19,0,11,0,10,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.InfernoValidationEngine.2.new OrchestrationEngine.ValidationIssue() {...},24,0,0,0,4,0,4,0,4,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.Device,8,26,0,0,2,6,0,3,0,3
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.ValidationEngineIdentifier,0,27,0,0,0,2,0,1,0,1
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.HapiValidationEngine.new OrchestrationEngine.ValidationResult() {...},16,23,0,0,5,3,5,3,5,3
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.HapiValidationEngine.new OrchestrationEngine.ValidationResult() {...},59,0,0,0,11,0,9,0,9,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.Hl7ValidationEngineEmbedded.new OrchestrationEngine.ValidationResult() {...},32,0,0,0,8,0,8,0,8,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.InfernoValidationEngine.new OrchestrationEngine.ValidationResult() {...},39,0,0,0,8,0,8,0,8,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.Hl7ValidationEngineApi.1.new OrchestrationEngine.ValidationIssue() {...},57,0,4,0,11,0,6,0,4,0
+TechBD Hub (Prime),org.techbd.orchestrate.fhir,OrchestrationEngine.OrchestrationSession,6,69,0,4,2,17,2,7,2,5
+TechBD Hub (Prime),org.techbd.util,PathsVisuals,122,0,16,0,17,0,11,0,3,0
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.JdbcPersistence,54,0,2,0,9,0,5,0,4,0
+TechBD Hub (Prime),org.techbd.util,InterpolateEngine,67,166,8,12,9,31,10,9,2,7
+TechBD Hub (Prime),org.techbd.util,VfsIngressConsumer.Audit,0,13,0,0,0,3,0,2,0,2
+TechBD Hub (Prime),org.techbd.util,PathsHtml.HtmlContent,10,28,5,5,5,7,5,1,0,1
+TechBD Hub (Prime),org.techbd.util,VfsIngressConsumer.AuditEvent,0,29,0,0,0,5,0,3,0,3
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.BlobStorePersistence,17,0,0,0,3,0,3,0,3,0
+TechBD Hub (Prime),org.techbd.util,PathsHtml.Builder,28,29,0,0,8,10,4,3,4,3
+TechBD Hub (Prime),org.techbd.util,JsonText.JsonObjectResult.ValidResultClassNotInstantiated,0,17,0,0,0,2,0,2,0,2
+TechBD Hub (Prime),org.techbd.util,VfsIngressConsumer.Builder,22,88,4,4,8,21,7,10,3,10
+TechBD Hub (Prime),org.techbd.util,JsonText.JsonObjectResult.ValidResultClassNotFound,0,14,0,0,0,2,0,2,0,2
+TechBD Hub (Prime),org.techbd.util,PathsHtml,14,332,1,13,0,58,3,15,2,9
+TechBD Hub (Prime),org.techbd.util,JsonText.JsonTextSerializer,25,0,0,0,11,0,3,0,3,0
+TechBD Hub (Prime),org.techbd.util,Paths.Node,12,314,8,22,3,60,9,28,1,21
+TechBD Hub (Prime),org.techbd.util,VfsIngressConsumer.IngressIndividual,0,6,0,0,0,1,0,1,0,1
+TechBD Hub (Prime),org.techbd.util,JsonText.JsonObjectResult.ValidResult,0,14,0,0,0,2,0,2,0,2
+TechBD Hub (Prime),org.techbd.util,JsonText,13,104,1,5,2,21,1,4,0,2
+TechBD Hub (Prime),org.techbd.util,JsonText.JsonObjectResult.ValidUntypedResult,0,11,0,0,0,2,0,2,0,2
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.EmailPersistence,334,0,18,0,70,0,19,0,10,0
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.Builder,150,133,21,13,35,30,21,12,5,8
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.InvalidPersistenceNature,0,30,0,0,0,5,0,3,0,3
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.VirtualFsPersistence,142,0,0,0,26,0,7,0,7,0
+TechBD Hub (Prime),org.techbd.util,JsonText.JsonObjectResult.InvalidResult,0,11,0,0,0,2,0,2,0,2
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.DiagnosticPersistence,0,34,0,0,0,6,0,4,0,4
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.new ArtifactStore.Artifact() {...},13,31,0,0,4,6,2,3,2,3
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.AggregatePersistence,0,23,0,2,0,5,0,3,0,2
+TechBD Hub (Prime),org.techbd.util,VfsIngressConsumer.IngressGroup,0,9,0,0,0,1,0,1,0,1
+TechBD Hub (Prime),org.techbd.util,Paths,40,113,8,8,11,22,9,5,2,4
+TechBD Hub (Prime),org.techbd.util,VfsIngressConsumer.IngressPath,0,9,0,0,0,1,0,1,0,1
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.InvalidPersistenceStrategy,0,33,0,0,0,5,0,3,0,3
+TechBD Hub (Prime),org.techbd.util,JsonText.ByteArrayToStringOrJsonSerializer,0,30,0,0,0,12,0,3,0,3
+TechBD Hub (Prime),org.techbd.util,VfsIngressConsumer,154,438,12,20,34,77,9,23,2,14
+TechBD Hub (Prime),org.techbd.util,ArtifactStore,11,33,0,0,4,7,2,2,2,2
+TechBD Hub (Prime),org.techbd.util,PathsJson,1,198,1,7,1,38,1,15,0,12
+TechBD Hub (Prime),org.techbd.util,ArtifactStore.LocalFsPersistence,26,120,1,1,6,22,3,5,2,5
+TechBD Hub (Prime),org.techbd.sql,ArtifactsDataSource.PostgreSqlBuilder,322,0,9,0,75,0,19,0,14,0
+TechBD Hub (Prime),org.techbd.sql,ArtifactsDataSource.ArtifactRecord,18,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.sql,ArtifactsDataSource,203,0,6,0,45,0,12,0,9,0
+TechBD Hub (Prime),org.techbd.sql,ArtifactsDataSource.DuckDbBuilder,324,0,8,0,65,0,20,0,16,0
+TechBD Hub (Prime),org.techbd.service.http.hub.prime,Controller,455,0,22,0,107,0,30,0,19,0
+TechBD Hub (Prime),org.techbd.service.http.hub.prime,AppConfig.Servlet.HeaderName.Request,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http.hub.prime,Application,8,0,0,0,3,0,2,0,2,0
+TechBD Hub (Prime),org.techbd.service.http.hub.prime,AppConfig.Servlet,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http.hub.prime,AppConfig.Servlet.HeaderName.Response,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http.hub.prime,AppConfig.Servlet.HeaderName,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http.hub.prime,AppConfig,17,0,0,0,7,0,5,0,5,0
+TechBD Hub (Prime),org.techbd.service.http.hub.prime,ServletInitializer,12,0,0,0,2,0,2,0,2,0
+TechBD Hub (Prime),org.techbd.orchestrate.sftp,SftpManager.TenantSftpEgressContent,136,0,2,0,22,0,6,0,5,0
+TechBD Hub (Prime),org.techbd.orchestrate.sftp,SftpAccountsOrchctlConfig.SftpAccount,38,0,0,0,16,0,11,0,11,0
+TechBD Hub (Prime),org.techbd.orchestrate.sftp,SftpManager.TenantSftpEgressSession,24,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.orchestrate.sftp,SftpManager,198,0,8,0,43,0,12,0,8,0
+TechBD Hub (Prime),org.techbd.orchestrate.sftp,SftpAccountsOrchctlConfig,10,0,0,0,4,0,3,0,3,0
+TechBD Hub (Prime),org.techbd.conf,Configuration.Servlet,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.conf,Configuration.Servlet.HeaderName.Request,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.conf,Configuration.Servlet.HeaderName,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.conf,Configuration.Servlet.HeaderName.Response,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.conf,Configuration,115,0,12,0,25,0,10,0,4,0
+TechBD Hub (Prime),org.techbd.udi.entity,FhirValidationResultIssue,87,0,0,0,37,0,25,0,25,0
+TechBD Hub (Prime),org.inferno.validator.utils,EmbeddedJettyFactoryConstructor,16,0,0,0,5,0,2,0,2,0
+TechBD Hub (Prime),org.inferno.validator.utils,SparkUtils,22,0,0,0,6,0,3,0,3,0
+TechBD Hub (Prime),org.inferno.validator.utils,RequestLogFactory,22,0,0,0,6,0,3,0,3,0
+TechBD Hub (Prime),org.inferno.validator.utils,EmbeddedJettyServerFactory,53,0,8,0,13,0,7,0,3,0
+TechBD Hub (Prime),org.inferno.validator.utils,RequestLogFactory.new Slf4jRequestLogWriter() {...},14,0,0,0,4,0,3,0,3,0
+TechBD Hub (Prime),org.inferno.validator.rest,Endpoints,210,0,6,0,62,0,18,0,15,0
+TechBD Hub (Prime),org.inferno.validator.rest,ValidatorEndpoint,133,0,4,0,27,0,15,0,13,0
+TechBD Hub (Prime),org.inferno.validator.rest,FHIRPathEndpoint,52,0,2,0,14,0,7,0,6,0
+TechBD Hub (Prime),org.inferno.validator.rest,IgResponse,79,0,4,0,21,0,7,0,5,0
+TechBD Hub (Prime),org.inferno.validator,Version,32,0,0,0,11,0,3,0,3,0
+TechBD Hub (Prime),org.inferno.validator,JsonParser,323,0,25,0,63,0,24,0,11,0
+TechBD Hub (Prime),org.inferno.validator,FHIRPathEvaluator,49,0,0,0,9,0,3,0,3,0
+TechBD Hub (Prime),org.inferno.validator,Validator,629,0,34,0,169,0,41,0,24,0
+TechBD Hub (Prime),org.techbd.udi,UdiPrimeJpaConfig.DataSourceHealthCheckResult,28,0,2,0,3,0,4,0,3,0
+TechBD Hub (Prime),org.techbd.udi,UdiPrimeJpaConfig,66,0,0,0,14,0,5,0,5,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.ResponseEncountered,48,0,0,0,10,0,3,0,3,0
+TechBD Hub (Prime),org.techbd.service.http,SwaggerConfig,100,0,0,0,26,0,4,0,4,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.new LinkedHashMap() {...},14,0,2,0,2,0,3,0,2,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.RequestEncountered,131,0,4,0,20,0,6,0,4,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.Servlet.HeaderName,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http,InteractionsFilter,212,0,8,0,57,0,13,0,9,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.RequestResponseEncountered,24,0,0,0,3,0,2,0,2,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.Tenant,23,0,0,0,6,0,3,0,3,0
+TechBD Hub (Prime),org.techbd.service.http,InteractionsFilter.new ArtifactStore.PersistenceReporter() {...},31,0,0,0,10,0,4,0,4,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.Header,9,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http,SecurityConfig,103,0,0,0,18,0,8,0,8,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.Servlet.HeaderName.Response,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.Servlet,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions.Servlet.HeaderName.Request,3,0,0,0,1,0,1,0,1,0
+TechBD Hub (Prime),org.techbd.service.http,Helpers,101,0,14,0,23,0,11,0,4,0
+TechBD Hub (Prime),org.techbd.service.http,Interactions,23,0,0,0,6,0,3,0,3,0

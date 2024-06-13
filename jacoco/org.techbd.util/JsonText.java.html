@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JsonText.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.techbd.util</a> &gt; <span class="el_source">JsonText.java</span></div><h1>JsonText.java</h1><pre class="source lang-java linenums">package org.techbd.util;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+<span class="fc" id="L15">public class JsonText {</span>
+
+<span class="fc" id="L17">    private final ObjectMapper objectMapper = new ObjectMapper();</span>
+
+    /**
+     * Parses a JSON string and returns a {@link JsonObjectResult} indicating the
+     * outcome.
+     *
+     * &lt;p&gt;
+     * This method attempts to parse the provided JSON string into a {@link Map}. If
+     * the JSON string contains a key named {@code $class}, it tries to instantiate
+     * an object of that class using the parsed JSON map and the original JSON
+     * string. The result of the parsing and potential instantiation is encapsulated
+     * in a {@link JsonObjectResult} object.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * Possible results include:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@link JsonObjectResult.ValidResult} - The JSON was parsed successfully
+     * and an instance of the specified class was created.&lt;/li&gt;
+     * &lt;li&gt;{@link JsonObjectResult.ValidResultClassNotFound} - The JSON was parsed
+     * successfully, but the specified class was not found.&lt;/li&gt;
+     * &lt;li&gt;{@link JsonObjectResult.ValidResultClassNotInstantiated} - The JSON was
+     * parsed successfully, but the specified class could not be instantiated.&lt;/li&gt;
+     * &lt;li&gt;{@link JsonObjectResult.ValidUntypedResult} - The JSON was parsed
+     * successfully but does not specify a class.&lt;/li&gt;
+     * &lt;li&gt;{@link JsonObjectResult.InvalidResult} - The JSON could not be parsed or
+     * other errors occurred.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * &lt;p&gt;
+     * Usage example:
+     * &lt;/p&gt;
+     * 
+     * &lt;pre&gt;
+     * {@code
+     * String jsonString = &quot;{\&quot;$class\&quot;:\&quot;com.example.MyClass\&quot;, \&quot;key\&quot;:\&quot;value\&quot;}&quot;;
+     * JsonObjectResult result = myObject.getJsonObject(jsonString);
+     * 
+     * if (result instanceof JsonObjectResult.ValidResult) {
+     *     // handle valid result
+     * } else if (result instanceof JsonObjectResult.InvalidResult) {
+     *     // handle invalid result
+     * }
+     * }
+     * &lt;/pre&gt;
+     *
+     * @param jsonString the JSON string to parse
+     * @return a {@link JsonObjectResult} object representing the outcome of the
+     *         parsing and potential instantiation
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public JsonObjectResult getJsonObject(String jsonString) {
+<span class="fc" id="L70">        List&lt;Exception&gt; exceptions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L71">        Map&lt;String, Object&gt; jsonMap = null;</span>
+
+        try {
+<span class="fc" id="L74">            jsonMap = objectMapper.readValue(jsonString, Map.class);</span>
+<span class="fc" id="L75">        } catch (Exception e) {</span>
+<span class="fc" id="L76">            exceptions.add(e);</span>
+<span class="fc" id="L77">        }</span>
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (!exceptions.isEmpty()) {</span>
+<span class="fc" id="L80">            return new JsonObjectResult.InvalidResult(jsonString, exceptions);</span>
+        }
+
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (jsonMap == null) {</span>
+<span class="nc" id="L84">            exceptions.add(new RuntimeException(&quot;jsonMap should not be null&quot;));</span>
+<span class="nc" id="L85">            return new JsonObjectResult.InvalidResult(jsonString, exceptions);</span>
+        }
+
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (jsonMap.containsKey(&quot;$class&quot;)) {</span>
+<span class="fc" id="L89">            String className = (String) jsonMap.get(&quot;$class&quot;);</span>
+            try {
+<span class="fc" id="L91">                Class&lt;?&gt; clazz = Class.forName(className);</span>
+<span class="fc" id="L92">                Object instance = clazz.getDeclaredConstructor(Map.class, String.class).newInstance(jsonMap,</span>
+                        jsonString);
+<span class="fc" id="L94">                return new JsonObjectResult.ValidResult&lt;&gt;(jsonString, jsonMap, instance);</span>
+<span class="fc" id="L95">            } catch (ClassNotFoundException e) {</span>
+<span class="fc" id="L96">                return new JsonObjectResult.ValidResultClassNotFound(jsonString, jsonMap, className);</span>
+<span class="fc" id="L97">            } catch (Exception e) {</span>
+<span class="fc" id="L98">                return new JsonObjectResult.ValidResultClassNotInstantiated(jsonString, jsonMap, className, e);</span>
+            }
+        }
+
+<span class="fc" id="L102">        return new JsonObjectResult.ValidUntypedResult(jsonString, jsonMap);</span>
+    }
+
+    public sealed interface JsonObjectResult permits JsonObjectResult.ValidUntypedResult, JsonObjectResult.ValidResult,
+            JsonObjectResult.ValidResultClassNotFound, JsonObjectResult.ValidResultClassNotInstantiated,
+            JsonObjectResult.InvalidResult {
+        String originalText();
+
+        boolean isValid();
+
+<span class="fc" id="L112">        record ValidUntypedResult(String originalText, Map&lt;String, Object&gt; jsonObject) implements JsonObjectResult {</span>
+            @Override
+            public boolean isValid() {
+<span class="fc" id="L115">                return true;</span>
+            }
+        }
+
+<span class="fc" id="L119">        record ValidResult&lt;T&gt;(String originalText, Map&lt;String, Object&gt; jsonObject, T instance)</span>
+                implements JsonObjectResult {
+            @Override
+            public boolean isValid() {
+<span class="fc" id="L123">                return true;</span>
+            }
+        }
+
+<span class="fc" id="L127">        record ValidResultClassNotFound(String originalText, Map&lt;String, Object&gt; jsonObject, String className)</span>
+                implements JsonObjectResult {
+            @Override
+            public boolean isValid() {
+<span class="fc" id="L131">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L135">        record ValidResultClassNotInstantiated(String originalText, Map&lt;String, Object&gt; jsonObject, String className,</span>
+                Exception exception) implements JsonObjectResult {
+            @Override
+            public boolean isValid() {
+<span class="fc" id="L139">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L143">        record InvalidResult(String originalText, List&lt;Exception&gt; exceptions) implements JsonObjectResult {</span>
+            @Override
+            public boolean isValid() {
+<span class="fc" id="L146">                return false;</span>
+            }
+        }
+    }
+
+    /**
+     * Custom serializer for byte arrays.
+     * 
+     * &lt;p&gt;
+     * This serializer attempts to convert a byte array to a string and parse it as
+     * JSON. If the string is valid JSON, it serializes the byte array as JSON. If
+     * the string is not valid JSON, it serializes the byte array as a plain string.
+     * &lt;/p&gt;
+     * 
+     * &lt;p&gt;
+     * To use this serializer, annotate the relevant field or class with
+     * {@code @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class)}.
+     * &lt;/p&gt;
+     * 
+     * &lt;p&gt;
+     * Example usage:
+     * &lt;/p&gt;
+     * 
+     * &lt;pre&gt;
+     * {@code
+     * public class Example {
+     * 
+     *     @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class)
+     *     private byte[] byteArray;
+     * 
+     *     // getters and setters
+     * }
+     * }
+     * &lt;/pre&gt;
+     * 
+     * &lt;p&gt;
+     * In this example, the {@code byteArray} field will be serialized using the
+     * {@code ByteArrayToStringOrJsonSerializer},
+     * which will serialize the value as JSON if it's valid JSON, or as a plain
+     * string otherwise.
+     * &lt;/p&gt;
+     * 
+     * @see com.fasterxml.jackson.databind.JsonSerializer
+     * @see com.fasterxml.jackson.databind.annotation.JsonSerialize
+     */
+    public static class ByteArrayToStringOrJsonSerializer extends StdSerializer&lt;byte[]&gt; {
+
+        public ByteArrayToStringOrJsonSerializer() {
+<span class="fc" id="L194">            this(null);</span>
+<span class="fc" id="L195">        }</span>
+
+        public ByteArrayToStringOrJsonSerializer(Class&lt;byte[]&gt; t) {
+<span class="fc" id="L198">            super(t);</span>
+<span class="fc" id="L199">        }</span>
+
+        @Override
+        public void serialize(byte[] value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+<span class="fc" id="L203">            String stringValue = new String(value);</span>
+
+            try {
+<span class="fc" id="L206">                ObjectMapper objectMapper = new ObjectMapper();</span>
+<span class="fc" id="L207">                JsonNode jsonNode = objectMapper.readTree(stringValue);</span>
+
+                // If we reach here, stringValue is valid JSON
+<span class="fc" id="L210">                gen.writeTree(jsonNode);</span>
+<span class="fc" id="L211">            } catch (JsonParseException e) {</span>
+                // stringValue is not valid JSON, write it as a string
+<span class="fc" id="L213">                gen.writeString(stringValue);</span>
+<span class="fc" id="L214">            }</span>
+<span class="fc" id="L215">        }</span>
+    }
+
+    /**
+     * Custom serializer for JSON text.
+     * 
+     * &lt;p&gt;
+     * This serializer attempts to parse a string as JSON. If the string is valid
+     * JSON, it serializes the string as JSON. If the string is not valid JSON, it
+     * serializes the string as a plain string.
+     * &lt;/p&gt;
+     * 
+     * &lt;p&gt;
+     * To use this serializer, annotate the relevant field or class with
+     * {@code @JsonSerialize(using = JsonTextSerializer.class)}.
+     * &lt;/p&gt;
+     * 
+     * &lt;p&gt;
+     * Example usage:
+     * &lt;/p&gt;
+     * 
+     * &lt;pre&gt;
+     * {@code
+     * public class Example {
+     * 
+     *     @JsonSerialize(using = JsonTextSerializer.class)
+     *     private String jsonText;
+     * 
+     *     // getters and setters
+     * }
+     * }
+     * &lt;/pre&gt;
+     * 
+     * &lt;p&gt;
+     * In this example, the {@code jsonText} field will be serialized using the
+     * {@code JsonTextSerializer}, which will serialize the value as JSON if it's
+     * valid JSON, or as a plain string
+     * otherwise.
+     * &lt;/p&gt;
+     * 
+     * @see com.fasterxml.jackson.databind.JsonSerializer
+     * @see com.fasterxml.jackson.databind.annotation.JsonSerialize
+     */
+    public static class JsonTextSerializer extends StdSerializer&lt;String&gt; {
+
+        public JsonTextSerializer() {
+<span class="nc" id="L261">            this(null);</span>
+<span class="nc" id="L262">        }</span>
+
+        public JsonTextSerializer(Class&lt;String&gt; t) {
+<span class="nc" id="L265">            super(t);</span>
+<span class="nc" id="L266">        }</span>
+
+        @Override
+        public void serialize(String value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            try {
+<span class="nc" id="L271">                ObjectMapper objectMapper = new ObjectMapper();</span>
+<span class="nc" id="L272">                JsonNode jsonNode = objectMapper.readTree(value);</span>
+
+                // If we reach here, stringValue is valid JSON
+<span class="nc" id="L275">                gen.writeTree(jsonNode);</span>
+<span class="nc" id="L276">            } catch (JsonParseException e) {</span>
+                // stringValue is not valid JSON, write it as a string
+<span class="nc" id="L278">                gen.writeString(value);</span>
+<span class="nc" id="L279">            }</span>
+<span class="nc" id="L280">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

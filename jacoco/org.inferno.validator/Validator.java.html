@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Validator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TechBD Hub (Prime)</a> &gt; <a href="index.source.html" class="el_package">org.inferno.validator</a> &gt; <span class="el_source">Validator.java</span></div><h1>Validator.java</h1><pre class="source lang-java linenums">package org.inferno.validator;
+
+import com.google.gson.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.hl7.fhir.r5.elementmodel.Manager;
+import org.hl7.fhir.r5.formats.FormatUtilities;
+import org.hl7.fhir.r5.model.*;
+import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
+import org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent;
+import org.hl7.fhir.utilities.FhirPublication;
+import org.hl7.fhir.utilities.VersionUtilities;
+import org.hl7.fhir.utilities.npm.FilesystemPackageCacheManager;
+import org.hl7.fhir.utilities.npm.NpmPackage;
+import org.hl7.fhir.utilities.validation.ValidationMessage.IssueSeverity;
+import org.hl7.fhir.validation.BaseValidator;
+import org.hl7.fhir.validation.BaseValidator.ValidationControl;
+import org.hl7.fhir.validation.ValidationEngine;
+import org.hl7.fhir.validation.ValidationEngine.ValidationEngineBuilder;
+import org.inferno.validator.rest.IgResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class Validator {
+  private final ValidationEngine hl7Validator;
+  private final FilesystemPackageCacheManager packageManager;
+  private final Map&lt;String, NpmPackage&gt; loadedPackages;
+
+<span class="nc" id="L37">  private static String assignedUrlFrom = null;</span>
+<span class="nc" id="L38">  private static String vesrionFrom = null;</span>
+  
+<span class="nc" id="L40">  private static final Logger LOGGER = LoggerFactory.getLogger(Validator.class);</span>
+
+  /**
+   * Creates the HL7 Validator to which can then be used for validation.
+   *
+   * @param igDir A directory containing tarred/gzipped IG packages
+   * @throws Exception If the validator cannot be created
+   */
+  public Validator(String igDir) throws Exception {
+<span class="nc" id="L49">    this(igDir, false);</span>
+<span class="nc" id="L50">  }</span>
+
+  /**
+   * Creates the HL7 Validator to which can then be used for validation.
+   *
+   * @param igDir A directory containing tarred/gzipped IG packages
+   * @param displayIssuesAreWarnings
+   *    Toggles whether code display mismatches should be
+   *      reported as warnings (true) or errors (false).
+   * @throws Exception If the validator cannot be created
+   */
+<span class="nc" id="L61">  public Validator(String igDir, boolean displayIssuesAreWarnings) throws Exception {</span>
+<span class="nc" id="L62">    final String fhirSpecVersion = &quot;4.0&quot;;</span>
+<span class="nc" id="L63">    final String definitions = VersionUtilities.packageForVersion(fhirSpecVersion)</span>
+<span class="nc" id="L64">        + &quot;#&quot; + VersionUtilities.getCurrentVersion(fhirSpecVersion);</span>
+<span class="nc" id="L65">    final String txServer = getTxServerUrl();</span>
+<span class="nc" id="L66">    final String txLog = null;</span>
+<span class="nc" id="L67">    final String fhirVersion = &quot;4.0.1&quot;;</span>
+
+<span class="nc" id="L69">    ValidationEngineBuilder engineBuilder =</span>
+<span class="nc" id="L70">        new ValidationEngineBuilder().withTxServer(</span>
+                                                   txServer,
+                                                   txLog,
+<span class="nc" id="L73">                                                   FhirPublication.fromCode(fhirVersion),true</span>
+                                                   );
+<span class="nc" id="L75">    hl7Validator = engineBuilder.fromSource(definitions);</span>
+
+    // The two lines below turn off URL resolution checking in the validator.
+    // This eliminates the need to silence these errors elsewhere in Inferno
+    // And also keeps contained resources from failing validation based solely on URL errors
+<span class="nc" id="L80">    ValidationControl vc = new BaseValidator(hl7Validator.getContext(), null, false)</span>
+                             .new ValidationControl(false, IssueSeverity.INFORMATION);
+<span class="nc" id="L82">    hl7Validator.getValidationControl().put(&quot;Type_Specific_Checks_DT_URL_Resolve&quot;, vc);</span>
+
+    // Get all the package gzips in the &quot;igs/package&quot; directory
+<span class="nc" id="L85">    File dir = new File(igDir);</span>
+<span class="nc" id="L86">    File[] igFiles = dir.listFiles((d, name) -&gt; name.endsWith(&quot;.tgz&quot;));</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">    if (igFiles != null) {</span>
+      // sort the files by name to ensure a consistent order -- see File.compareTo(File)
+      // https://docs.oracle.com/javase/8/docs/api/java/io/File.html#compareTo-java.io.File-
+<span class="nc" id="L90">      Arrays.sort(igFiles);</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">      for (File igFile : igFiles) {</span>
+<span class="nc" id="L92">        hl7Validator</span>
+<span class="nc" id="L93">            .getIgLoader()</span>
+<span class="nc" id="L94">            .loadIg(</span>
+<span class="nc" id="L95">                    hl7Validator.getIgs(),</span>
+<span class="nc" id="L96">                    hl7Validator.getBinaries(),</span>
+<span class="nc" id="L97">                    igFile.getAbsolutePath(),</span>
+                    true
+                    );
+      }
+    }
+
+<span class="nc" id="L103">    hl7Validator.connectToTSServer(txServer, txLog, FhirPublication.fromCode(fhirVersion),true);</span>
+<span class="nc" id="L104">    hl7Validator.setDoNative(false);</span>
+<span class="nc" id="L105">    hl7Validator.setAnyExtensionsAllowed(true);</span>
+<span class="nc" id="L106">    hl7Validator.setDisplayWarnings(displayIssuesAreWarnings);</span>
+<span class="nc" id="L107">    hl7Validator.prepare();</span>
+
+<span class="nc" id="L109">    packageManager = new FilesystemPackageCacheManager.Builder().build();</span>
+<span class="nc" id="L110">    loadedPackages = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L111">  }</span>
+
+  public   String getAssignedUrlFrom() {
+<span class="nc" id="L114">    return assignedUrlFrom;</span>
+  }
+
+  public static void setAssignedUrlFrom(String assignedUrlFrom) {
+<span class="nc" id="L118">    Validator.assignedUrlFrom = assignedUrlFrom;</span>
+<span class="nc" id="L119">  }</span>
+
+  public   String getVersionFrom() {
+<span class="nc" id="L122">    return vesrionFrom;</span>
+  }
+
+  public static void setVersionFrom(String vesrionFrom) {
+<span class="nc" id="L126">    Validator.vesrionFrom = vesrionFrom;</span>
+<span class="nc" id="L127">  }</span>
+
+  /**
+   * Lists the names of resources defined for this version of the validator.
+   *
+   * @return a sorted list of distinct resource names
+   */
+  public List&lt;String&gt; getResources() {
+<span class="nc" id="L135">    return hl7Validator.getContext().getResourceNames()</span>
+<span class="nc" id="L136">        .stream()</span>
+<span class="nc" id="L137">        .sorted()</span>
+<span class="nc" id="L138">        .distinct()</span>
+<span class="nc" id="L139">        .collect(Collectors.toList());</span>
+  }
+
+  /**
+   * Lists the StructureDefinitions loaded in the validator.
+   *
+   * @return a sorted list of distinct structure canonicals
+   */
+  public List&lt;String&gt; getStructures() {
+<span class="nc" id="L148">    List&lt;StructureDefinition&gt; structures =</span>
+        hl7Validator
+<span class="nc" id="L150">            .getContext()</span>
+<span class="nc" id="L151">            .fetchResourcesByType(StructureDefinition.class);</span>
+<span class="nc" id="L152">    return structures</span>
+<span class="nc" id="L153">        .stream()</span>
+<span class="nc" id="L154">        .map(StructureDefinition::getUrl)</span>
+<span class="nc" id="L155">        .sorted()</span>
+<span class="nc" id="L156">        .distinct()</span>
+<span class="nc" id="L157">        .collect(Collectors.toList());</span>
+  }
+
+  /**
+   * Validates the given resource against the given list of profiles.
+   *
+   * @param resource a byte array representation of a FHIR resource
+   * @param profiles a list of profile URLs to validate against
+   * @return an OperationOutcome resource representing the result of the validation operation
+   */
+  public OperationOutcome validate(byte[] resource, List&lt;String&gt; profiles) {
+<span class="nc" id="L168">    Manager.FhirFormat fmt = FormatUtilities.determineFormat(resource);</span>
+<span class="nc" id="L169">    ByteArrayInputStream resourceStream = new ByteArrayInputStream(resource);</span>
+    OperationOutcome oo;
+<span class="nc" id="L171">    Gson gson = new Gson();</span>
+    try {
+      // Convert byte[] to String
+<span class="nc" id="L174">      String resourceJson = new String(resource, StandardCharsets.UTF_8);</span>
+<span class="nc" id="L175">      JsonElement jsonElement = com.google.gson.JsonParser.parseString(resourceJson);</span>
+<span class="nc" id="L176">      JsonObject jsonObject = jsonElement.getAsJsonObject();</span>
+
+<span class="nc bnc" id="L178" title="All 4 branches missed.">      if (jsonObject.has(&quot;property&quot;) &amp;&amp; jsonObject.get(&quot;property&quot;).isJsonObject()) {</span>
+<span class="nc" id="L179">        JsonObject propertyObject = jsonObject.getAsJsonObject(&quot;property&quot;);</span>
+
+        // Convert the object to an array
+<span class="nc" id="L182">        JsonArray jsonArray = new JsonArray();</span>
+<span class="nc" id="L183">        jsonArray.add(propertyObject);</span>
+<span class="nc" id="L184">        jsonObject.add(&quot;property&quot;, jsonArray);</span>
+
+        // Convert the modified JsonObject back to a string
+<span class="nc" id="L187">        resource = gson.toJson(jsonObject).getBytes(StandardCharsets.UTF_8);</span>
+
+        // Proceed with the parsing operation
+<span class="nc" id="L190">        Resource resourceObj = FormatUtilities.makeParser(fmt).parse(resource);</span>
+<span class="nc" id="L191">        System.out.println(&quot;Parsing successful: &quot; + resourceObj);</span>
+<span class="nc" id="L192">      } else {</span>
+<span class="nc" id="L193">        System.out.println(&quot;The JSON structure is not as expected. Skipping parsing.&quot;);</span>
+      }
+<span class="nc" id="L195">    } catch (JsonSyntaxException | IOException e) {</span>
+<span class="nc" id="L196">      System.err.println(&quot;Error occurred in parsing resource: &quot; + e.getMessage());</span>
+<span class="nc" id="L197">      e.printStackTrace();</span>
+<span class="nc" id="L198">    }</span>
+
+    try {
+      // Validate the resource
+<span class="nc" id="L202">      oo = hl7Validator.validate(fmt, resourceStream, profiles);</span>
+<span class="nc" id="L203">    } catch (Exception e) {</span>
+      // Handle validation exceptions and create an OperationOutcome for errors
+<span class="nc" id="L205">      OperationOutcome.IssueSeverity sev = OperationOutcome.IssueSeverity.FATAL;</span>
+<span class="nc" id="L206">      OperationOutcomeIssueComponent issue = new OperationOutcomeIssueComponent(sev, IssueType.STRUCTURE);</span>
+<span class="nc" id="L207">      issue.setDiagnostics(e.getMessage());</span>
+<span class="nc" id="L208">      issue.setDetails(new CodeableConcept().setText(e.getMessage()));</span>
+<span class="nc" id="L209">      issue.addExtension(&quot;http://hl7.org/fhir/StructureDefinition/operationoutcome-issue-line&quot;, new IntegerType(1));</span>
+<span class="nc" id="L210">      issue.addExtension(&quot;http://hl7.org/fhir/StructureDefinition/operationoutcome-issue-col&quot;, new IntegerType(1));</span>
+<span class="nc" id="L211">      issue.addExtension(&quot;http://hl7.org/fhir/StructureDefinition/operationoutcome-issue-source&quot;, new CodeType(&quot;ValidationService&quot;));</span>
+<span class="nc" id="L212">      oo = new OperationOutcome();</span>
+<span class="nc" id="L213">      oo.addIssue(issue);</span>
+    } finally {
+      try {
+<span class="nc" id="L216">        resourceStream.close();</span>
+<span class="nc" id="L217">      } catch (IOException e) {</span>
+<span class="nc" id="L218">        LOGGER.warn(&quot;Failed to close resource stream&quot;, e);</span>
+<span class="nc" id="L219">      }</span>
+    }
+
+<span class="nc" id="L222">    return oo;</span>
+  }
+
+  /**
+   * Provides a map of known IGs that can be retrieved and loaded.
+   *
+   * @return a map containing each known IG ID and its corresponding canonical URL.
+   */
+  public Map&lt;String, String&gt; getKnownIGs() throws IOException {
+<span class="nc" id="L231">    Map&lt;String, String&gt; igs = new HashMap&lt;&gt;();</span>
+    // Add known custom IGs
+<span class="nc bnc" id="L233" title="All 2 branches missed.">    for (Map.Entry&lt;String, NpmPackage&gt; e : loadedPackages.entrySet()) {</span>
+<span class="nc" id="L234">      String id = e.getKey().split(&quot;#&quot;)[0];</span>
+<span class="nc" id="L235">      String canonical = e.getValue().canonical();</span>
+<span class="nc" id="L236">      igs.put(id, canonical);</span>
+<span class="nc" id="L237">    }</span>
+    // Add IGs known to the package manager, replacing any conflicting package IDs
+<span class="nc" id="L239">    packageManager.listAllIds(igs);</span>
+<span class="nc" id="L240">    return igs;</span>
+  }
+
+  /**
+   * Load a profile into the validator.
+   *
+   * @param profile the profile to be loaded
+   */
+  public void loadProfile(byte[] profile) throws IOException {
+<span class="nc" id="L249">    Manager.FhirFormat fmt = FormatUtilities.determineFormat(profile);</span>
+<span class="nc" id="L250">    Resource resource = FormatUtilities.makeParser(fmt).parse(profile);</span>
+<span class="nc" id="L251">    hl7Validator.getContext().cacheResource(resource);</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">    if (resource instanceof StructureDefinition) {</span>
+<span class="nc" id="L253">      StructureDefinition sd = (StructureDefinition)resource;</span>
+<span class="nc" id="L254">      LOGGER.info(&quot;Loaded profile from file, url: &quot; + sd.getUrl() + &quot; version: &quot; + sd.getVersion());</span>
+<span class="nc" id="L255">      setAssignedUrlFrom(sd.getUrl());</span>
+<span class="nc" id="L256">      setVersionFrom(sd.getVersion());</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">    } else if (resource != null) {</span>
+<span class="nc" id="L258">      LOGGER.info(&quot;Loaded resource from file but it wasn't a StructureDefinition, it was a &quot;</span>
+<span class="nc" id="L259">        + resource.fhirType());</span>
+    }
+<span class="nc" id="L261">  }</span>
+
+  /**
+   * Finds any custom package that fits the given id and (possibly null) version.
+   *
+   * @param id the ID of the custom package
+   * @param version the version of the custom package, or null to return the first match
+   * @return a matching custom IG package, or null if no matching package was found
+   */
+  private NpmPackage findCustomPackage(String id, String version) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">    String idRegex = &quot;^&quot; + id + &quot;#&quot; + (version != null ? version : &quot;.*&quot;) + &quot;$&quot;;</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">    for (Map.Entry&lt;String, NpmPackage&gt; entry : loadedPackages.entrySet()) {</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">      if (entry.getKey().matches(idRegex)) {</span>
+<span class="nc" id="L274">        return entry.getValue();</span>
+      }
+<span class="nc" id="L276">    }</span>
+<span class="nc" id="L277">    return null;</span>
+  }
+
+  private IgResponse getIg(String id, String version) throws IOException {
+<span class="nc" id="L281">    NpmPackage npm = findCustomPackage(id, version);</span>
+    // Fallback to packages from packages.fhir.org if no custom packages match
+<span class="nc bnc" id="L283" title="All 2 branches missed.">    if (npm == null) {</span>
+<span class="nc" id="L284">      npm = packageManager.loadPackage(id, version);</span>
+    }
+<span class="nc" id="L286">    return IgResponse.fromPackage(npm);</span>
+  }
+
+  /**
+   * Load an IG into the validator.
+   *
+   * @param id the package ID of the FHIR IG to be loaded
+   * @param version the package version of the FHIR IG to be loaded
+   * @return an IgResponse representing the package that was loaded
+   */
+  public IgResponse loadIg(String id, String version) throws Exception {
+<span class="nc" id="L297">    NpmPackage npm = findCustomPackage(id, version);</span>
+    // Fallback to packages from packages.fhir.org if no custom packages match
+<span class="nc bnc" id="L299" title="All 2 branches missed.">    if (npm == null) {</span>
+<span class="nc" id="L300">      hl7Validator</span>
+<span class="nc" id="L301">          .getIgLoader()</span>
+<span class="nc" id="L302">          .loadIg(</span>
+<span class="nc" id="L303">                  hl7Validator.getIgs(),</span>
+<span class="nc" id="L304">                  hl7Validator.getBinaries(),</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                  id + (version != null ? &quot;#&quot; + version : &quot;&quot;),</span>
+                  true
+                  );
+<span class="nc" id="L308">      npm = packageManager.loadPackage(id, version);</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">      if (npm != null) {</span>
+<span class="nc" id="L310">        LOGGER.info(&quot;Loaded IG by identifier: &quot; + npm.id() + &quot;#&quot; + npm.version());</span>
+      }
+    }
+<span class="nc" id="L313">    return IgResponse.fromPackage(npm);</span>
+  }
+
+  /**
+   * Load a Gzipped IG into the validator.
+   *
+   * @param content the Gzip-encoded contents of the IG package to be loaded
+   * @return an IgResponse representing the package that was loaded
+   */
+  public IgResponse loadPackage(byte[] content) throws Exception {
+<span class="nc" id="L323">    File temp = File.createTempFile(&quot;package&quot;, &quot;.tgz&quot;);</span>
+<span class="nc" id="L324">    temp.deleteOnExit();</span>
+    try {
+<span class="nc" id="L326">      FileUtils.writeByteArrayToFile(temp, content);</span>
+<span class="nc" id="L327">      hl7Validator</span>
+<span class="nc" id="L328">          .getIgLoader()</span>
+<span class="nc" id="L329">          .loadIg(</span>
+<span class="nc" id="L330">                  hl7Validator.getIgs(),</span>
+<span class="nc" id="L331">                  hl7Validator.getBinaries(),</span>
+<span class="nc" id="L332">                  temp.getCanonicalPath(),</span>
+                  true
+                  );
+    } finally {
+<span class="nc" id="L336">      temp.delete();</span>
+    }
+<span class="nc" id="L338">    NpmPackage npm = NpmPackage.fromPackage(new ByteArrayInputStream(content));</span>
+<span class="nc" id="L339">    loadedPackages.put(npm.id() + &quot;#&quot; + npm.version(), npm);</span>
+<span class="nc" id="L340">    LOGGER.info(&quot;Loaded IG from tgz upload: &quot; + npm.id() + &quot;#&quot; + npm.version());</span>
+<span class="nc" id="L341">    return IgResponse.fromPackage(npm);</span>
+  }
+
+  /**
+   * Get a mapping from IG URL to a list of profile URLs supported by the IG.
+   *
+   * @return a mapping from IG URL to a list of profile URLs supported by the IG.
+   */
+  public Map&lt;String, List&lt;String&gt;&gt; getProfilesByIg() {
+<span class="nc" id="L350">    List&lt;ImplementationGuide&gt; igs = hl7Validator.getContext().allImplementationGuides();</span>
+<span class="nc" id="L351">    return igs</span>
+<span class="nc" id="L352">        .stream()</span>
+<span class="nc" id="L353">        .collect(Collectors.toMap(</span>
+            ImplementationGuide::getPackageId,
+            ig -&gt; {
+              try {
+<span class="nc" id="L357">                return getIg(ig.getPackageId(), ig.getVersion()).getProfiles();</span>
+<span class="nc" id="L358">              } catch (IOException e) {</span>
+<span class="nc" id="L359">                return new ArrayList&lt;&gt;();</span>
+              }
+            },
+<span class="nc" id="L362">            (existing, replacement) -&gt; existing</span>
+        ));
+  }
+
+  /**
+   * Load a profile from a file.
+   *
+   * @param src the file path
+   * @throws IOException if the file fails to load
+   */
+  public void loadProfileFromFile(String src) throws IOException {
+<span class="nc" id="L373">    byte[] profile = loadResourceFromFile(src);</span>
+<span class="nc" id="L374">    loadProfile(profile);</span>
+<span class="nc" id="L375">  }</span>
+
+  private byte[] loadResourceFromFile(String src) throws IOException {
+<span class="nc" id="L378">    ClassLoader classLoader = getClass().getClassLoader();</span>
+<span class="nc" id="L379">    URL file = classLoader.getResource(src);</span>
+<span class="nc" id="L380">    return IOUtils.toByteArray(file);</span>
+  }
+
+  private String getTxServerUrl() {
+<span class="nc bnc" id="L384" title="All 2 branches missed.">    if (disableTxValidation()) {</span>
+<span class="nc" id="L385">      return null;</span>
+    }
+
+<span class="nc bnc" id="L388" title="All 2 branches missed.">    if (System.getenv(&quot;TX_SERVER_URL&quot;) != null) {</span>
+<span class="nc" id="L389">      return System.getenv(&quot;TX_SERVER_URL&quot;);</span>
+    } else {
+<span class="nc" id="L391">      return &quot;http://tx.fhir.org&quot;;</span>
+    }
+  }
+
+  private boolean disableTxValidation() {
+<span class="nc bnc" id="L396" title="All 2 branches missed.">    return System.getenv(&quot;DISABLE_TX&quot;) != null;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
