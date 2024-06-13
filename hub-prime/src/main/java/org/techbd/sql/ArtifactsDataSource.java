@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Comparator;
@@ -21,6 +22,7 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
+import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -29,6 +31,7 @@ import org.springframework.jdbc.datasource.init.ScriptException;
 import org.techbd.util.ArtifactStore;
 import org.techbd.util.ArtifactStore.Artifact;
 import org.techbd.util.InterpolateEngine;
+import org.techbd.util.SessionWithState;
 
 public class ArtifactsDataSource {
     private static final Logger LOG = LoggerFactory.getLogger(ArtifactsDataSource.class);
@@ -184,31 +187,52 @@ public class ArtifactsDataSource {
         }
 
         public static Optional<Exception> callStoredProcPersist(final Connection connection,
-                final ArtifactRecord record) {
-            final var sql = """
-                    {? = call public.fn_insert_artifact(?, ?, ?, cast(? as jsonb), cast(? as jsonb), cast(? as jsonb))}
-                    """;
-            try (CallableStatement stmt = connection.prepareCall(sql)) {
-                stmt.registerOutParameter(1, Types.VARCHAR);
-                stmt.setString(2, record.namespace);
-                stmt.setString(3, record.content);
-                stmt.setString(4, record.contentType);
-                final var provenance = record.provenance();
-                if (provenance != null) {
-                    stmt.setObject(5, provenance, java.sql.Types.OTHER);
-                } else {
-                    stmt.setNull(5, java.sql.Types.OTHER);
-                }
-                stmt.setNull(6, java.sql.Types.VARCHAR);
-                stmt.setNull(7, java.sql.Types.VARCHAR);
-                stmt.execute();
-                final String newId = stmt.getString(1);
-                LOG.info(String.format("PostgreSqlBuilder::callStoredProcPersist new Artifact Id: %s", newId));
-                return Optional.empty();
-            } catch (SQLException e) {
-                return Optional.of(e);
+        final ArtifactRecord record) {
+
+        SessionWithState sessionWithState = new SessionWithState();
+        try {
+            String sql = "{ call techbd_udi_ingress.udi_insert_session_with_state(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }";
+
+            CallableStatement stmt = connection.prepareCall(sql);
+
+            stmt.setString(1, ""); //TODO:
+            stmt.setString(2, record.namespace);
+            stmt.setString(3, record.content);
+            stmt.setString(4, record.contentType);
+
+            PGobject jsonObject1 = new PGobject();
+            jsonObject1.setType("jsonb");
+            jsonObject1.setValue(""); //TODO:
+            stmt.setObject(5, jsonObject1);
+
+            PGobject jsonObject2 = new PGobject();
+            jsonObject2.setType("jsonb");
+            jsonObject2.setValue(""); //TODO:
+            stmt.setObject(6, jsonObject2);
+
+            stmt.setString(7, "");
+
+            if (record.provenance() != null) {
+                stmt.setString(8, record.provenance());
+            } else {
+                stmt.setNull(8, java.sql.Types.VARCHAR);
             }
+
+            //TODO: Setting from state and to state as null here.
+            stmt.setNull(9, java.sql.Types.VARCHAR);
+            stmt.setNull(10, java.sql.Types.VARCHAR);
+
+            stmt.execute();
+            ResultSet rs = stmt.getResultSet();
+            if (rs.next()) {
+                sessionWithState.setHubSessionId(rs.getString(1));
+                sessionWithState.setHubSessionEntryId(rs.getString(2));
+            }
+            LOG.info(String.format("PostgreSqlBuilder::callStoredProcPersist new Artifact Id: %s", sessionWithState.getHubSessionId()));
+        } catch (SQLException e) {
+            return Optional.of(e);
         }
+        return Optional.empty();}
     }
 
     public static class DuckDbBuilder {
