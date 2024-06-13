@@ -53,5 +53,10 @@
     "name": "org.techbd.orchestrate.sftp.account.orchctlts",
     "type": "java.util.List<org.techbd.orchestrate.sftp.SftpConfigMeta.SftpAccount>",
     "description": "TechBD SFTP orchestration egress configuration for one or more tenants"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiUrl",
+    "type": "java.lang.String",
+    "description": "The default datalake API URL"
   }
 ]}

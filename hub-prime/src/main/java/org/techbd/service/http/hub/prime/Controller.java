@@ -1,13 +1,22 @@
 package org.techbd.service.http.hub.prime;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.ocpsoft.prettytime.PrettyTime;
+import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +32,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,29 +43,35 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.Helpers;
+import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.UdiPrimeRepository;
 import org.techbd.udi.entity.FhirValidationResultIssue;
+import org.techbd.util.SessionWithState;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.v3.core.util.ObjectMapperFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 @org.springframework.stereotype.Controller
 @Tag(name = "TechBD Hub", description = "Business Operations API")
 public class Controller {
+
     private static final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());
     private final Map<String, Object> ssrBaggage = new HashMap<>();
     private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
@@ -72,15 +89,19 @@ public class Controller {
 
     @Autowired
     private Environment environment;
+    private WebClient webClient;
 
     public Controller(final Environment environment, final AppConfig appConfig,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
-            final UdiPrimeRepository udiPrimeRepository, final SftpManager sftpManager) {
+            final UdiPrimeRepository udiPrimeRepository, final SftpManager sftpManager,
+            WebClient.Builder webClientBuilder) {
         this.environment = environment;
         this.appConfig = appConfig;
         this.udiPrimeRepository = udiPrimeRepository;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         this.sftpManager = sftpManager;
+        this.webClient = webClientBuilder.baseUrl("https://40lafnwsw7.execute-api.us-east-1.amazonaws.com/dev")
+                .build();
         ssrBaggage.put("appVersion", appConfig.getVersion());
         ssrBaggage.put("activeSpringProfiles", List.of(this.environment.getActiveProfiles()));
     }
@@ -117,15 +138,15 @@ public class Controller {
     }
 
     @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
-    @CacheEvict(value = { SftpManager.TENANT_EGRESS_CONTENT_CACHE_KEY,
-            SftpManager.TENANT_EGRESS_SESSIONS_CACHE_KEY }, allEntries = true)
+    @CacheEvict(value = {SftpManager.TENANT_EGRESS_CONTENT_CACHE_KEY,
+        SftpManager.TENANT_EGRESS_SESSIONS_CACHE_KEY}, allEntries = true)
     public ResponseEntity<?> emptyTenantEgressCacheOnDemand() {
         LOG.info("emptying tenant-sftp-egress-content (on demand)");
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
     }
 
     @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
-            "application/json", "text/html" })
+        "application/json", "text/html"})
     public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
         final var account = sftpManager.configuredTenant(tenantId);
         if (account.isPresent()) {
@@ -165,7 +186,7 @@ public class Controller {
         return "page/documentation";
     }
 
-    @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
+    @GetMapping(value = "/metadata", produces = {MediaType.APPLICATION_XML_VALUE})
     @Operation(summary = "FHIR server's conformance statement")
     public String metadata(final Model model, HttpServletRequest request) {
         final var baseUrl = Helpers.getBaseUrl(request);
@@ -177,17 +198,217 @@ public class Controller {
         return "metadata.xml";
     }
 
-    @Operation(summary = "TODO")
-    @PostMapping(value = { "/Bundle" }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = {"/Bundle/"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Object handleBundle(final @RequestBody @Nonnull Map<String, Object> payload,
-            final HttpServletRequest request) {
-        var activeReqEnc = InteractionsFilter.getActiveRequestEnc(request);
-        // Process the bundle using activeReqEnc.requestId() as the orch session ID
-        return activeReqEnc;
+    @Async
+    public Object validateBundleAndCreate(final @RequestBody @Nonnull String payload,
+            @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
+            // "profile" is the same name that HL7 validator uses
+            @RequestParam(value = "profile", required = false) String fhirProfileUrlParam,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String datalakeApi,
+            @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
+            final HttpServletRequest request) throws SQLException {
+
+        Connection conn = udiPrimeJpaConfig.udiPrimaryDataSource().getConnection();
+
+        final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
+                : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
+        final var sessionBuilder = engine.session()
+                .onDevice(Device.createDefault())
+                .withPayloads(List.of(payload))
+                .withFhirProfileUrl(fhirProfileUrl)
+                .addHapiValidationEngine() // by default
+                // clearExisting is set to true so engines can be fully supplied through header
+                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+        final var session = sessionBuilder.build();
+        engine.orchestrate(session);
+        System.out.println("datalakeApi   :" + datalakeApi);
+
+        final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
+                session.getValidationResults(), "device",
+                session.getDevice()));
+        final var result = Map.of("OperationOutcome", opOutcome);
+        System.out.println("ressssult   :" + result);
+        if (uaValidationStrategyJson != null) {
+            opOutcome.put("uaValidationStrategy",
+                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
+                            "issues",
+                            sessionBuilder.getUaStrategyJsonIssues()));
+
+        }
+        if (includeRequestInOutcome) {
+            opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
+        }
+
+        // Async call to Datalake API
+        // POST
+        // https://40lafnwsw7.execute-api.us-east-1.amazonaws.com/dev?processingAgent=QE
+        // Make the POST request asynchronously
+        // Prepare Target API URI
+        String targetApiUrl = null;
+        if (datalakeApi != null && !datalakeApi.isEmpty()) {
+            targetApiUrl = datalakeApi;
+            this.webClient = WebClient.builder()
+                    .baseUrl(datalakeApi) // Set the base URL
+                    .build();
+        } else {
+            targetApiUrl = appConfig.getDefaultSdohFhirProfileUrl();
+        }
+        String host = null, path = null;
+        try {
+            URL url = URI.create(targetApiUrl).toURL();
+            host = url.getHost();
+            path = url.getPath();
+        } catch (MalformedURLException e) {
+            //log.error("Exception in parsing shinnyDataLakeApiUri: ", e);
+        }
+
+        String sessionId = UUID.randomUUID().toString();
+        LOG.info("The Session id passed: " + sessionId);
+        SessionWithState firstProcedureCall = callUdiInsertSessionWithState(
+                conn, sessionId,
+                "org.techbd.service.http.hub.prime",
+                payload,
+                "application/json",
+                "{}",
+                "{}",
+                "",
+                "",
+                "",
+                "STARTED"
+        );
+        
+        webClient.post()
+                .uri("?processingAgent=" + tenantId)
+                .body(BodyInserters.fromValue(payload))
+                .retrieve()
+                .bodyToMono(String.class)
+                .subscribe(response -> {
+                    LOG.info("Response from Datalake API call");
+                    SessionWithState secondProcedureCall = callUdiInsertSessionWithState(
+                            conn,
+                            firstProcedureCall.getHubSessionId(),
+                            "org.techbd.service.http.hub.prime",
+                            response,
+                            "application/json",
+                            "{}",
+                            "{}",
+                            "",
+                            "",
+                            "",
+                            "FINISHED"
+                    );
+                }, (Throwable error) -> { // Explicitly specify the type Throwable
+
+                    String content;
+                    ObjectMapper mapper = new ObjectMapper();
+                    try {
+                        content = mapper.writeValueAsString(error);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                    SessionWithState secondProcedureCall = callUdiInsertSessionWithState(
+                            conn,
+                            firstProcedureCall.getHubSessionId(),
+                            "org.techbd.service.http.hub.prime",
+                            content,
+                            "application/json",
+                            "{}",
+                            "{}",
+                            "",
+                            "",
+                            "",
+                            "ASYNC_FAILED"
+                    );
+                    if (error instanceof WebClientResponseException responseException) {
+                        // TODO: Process the response here, and save to db.
+                        if (responseException.getStatusCode() == HttpStatus.FORBIDDEN) {
+                            // Handle 403 Forbidden err
+                        } else if (responseException.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                            // Handle 403 Forbidden error
+                        } else {
+                            // Handle other types of WebClientResponseException
+                        }
+                    } else {
+                        // Handle other types of exceptions
+                    }
+                });
+        SessionWithState thirdProcedureCall = callUdiInsertSessionWithState(
+                conn,
+                firstProcedureCall.getHubSessionId(),
+                "org.techbd.service.http.hub.prime",
+                "{}",
+                "application/json",
+                "{}",
+                "{}",
+                "",
+                "",
+                "",
+                "ASYNC_IN_PROGRESS"
+        );
+        LOG.info("Datalake API called, ASYNC_IN_PROGRESS");
+        return result;
     }
 
-    @PostMapping(value = { "/Bundle/$validate" }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public SessionWithState callUdiInsertSessionWithState(Connection conn, String session_id, String namespace, String content, String content_type, String boundary, String elaboration, String created_by, String provenance, String from_state, String to_state) {
+
+        SessionWithState sessionWithState = new SessionWithState();
+        try {
+            String sql = "{ call techbd_udi_ingress.udi_insert_session_with_state(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }";
+
+            CallableStatement stmt = conn.prepareCall(sql);
+
+            stmt.setString(1, session_id);
+            stmt.setString(2, namespace);
+            stmt.setString(3, content);
+            stmt.setString(4, content_type);
+
+            PGobject jsonObject1 = new PGobject();
+            jsonObject1.setType("jsonb");
+            jsonObject1.setValue(boundary);
+            stmt.setObject(5, jsonObject1);
+
+            PGobject jsonObject2 = new PGobject();
+            jsonObject2.setType("jsonb");
+            jsonObject2.setValue(elaboration);
+            stmt.setObject(6, jsonObject2);
+
+            stmt.setString(7, created_by);
+
+            if (provenance != null) {
+                stmt.setString(8, provenance);
+            } else {
+                stmt.setNull(8, java.sql.Types.VARCHAR);
+            }
+
+            if (provenance != null) {
+                stmt.setString(9, from_state);
+            } else {
+                stmt.setNull(9, java.sql.Types.VARCHAR);
+            }
+            if (to_state != null) {
+                stmt.setString(10, to_state);
+            } else {
+                stmt.setNull(10, java.sql.Types.VARCHAR);
+            }
+
+            stmt.execute();
+            ResultSet rs = stmt.getResultSet();
+            if (rs.next()) {
+                sessionWithState.setHubSessionId(rs.getString(1));
+                sessionWithState.setHubSessionEntryId(rs.getString(2));
+                LOG.info("New Session Id: " + sessionWithState.getHubSessionId());
+                LOG.info("New Session Entry Id: " + sessionWithState.getHubSessionEntryId());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return sessionWithState;
+    }
+
+    @PostMapping(value = {"/Bundle/$validate"}, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
@@ -252,6 +473,19 @@ public class Controller {
     @ResponseBody
     public List<?> observeRecentHttpsInteractions() {
         return new ArrayList<>(InteractionsFilter.interactions.getHistory().values());
+    }
+
+    @GetMapping("/admin/observe/interaction/https/recent.json/{interactionId}")
+    public String observeRecentHttpsInteractionDetails(final Model model, HttpServletRequest request,
+            @PathVariable String interactionId) throws JsonProcessingException {
+        Map<UUID, RequestResponseEncountered> history = InteractionsFilter.interactions.getHistory();
+        RequestResponseEncountered reqResp = history.get(UUID.fromString(interactionId));
+        ObjectMapper objectMapper = new ObjectMapper();
+        var jsonRequestResponseEncountered = objectMapper.registerModule(new JavaTimeModule())
+                .writerWithDefaultPrettyPrinter()
+                .writeValueAsString(reqResp);
+        model.addAttribute("sessionDetails", jsonRequestResponseEncountered);
+        return "page/interactions/session-details.html";
     }
 
     @Operation(summary = "Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.")

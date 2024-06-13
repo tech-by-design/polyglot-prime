@@ -8,6 +8,7 @@ import org.techbd.conf.Configuration;
 @ConfigurationProperties(prefix = "org.techbd.service.http.hub.prime")
 @ConfigurationPropertiesScan
 public class AppConfig {
+
     public class Servlet {
         public class HeaderName {
             public class Request {
@@ -15,6 +16,8 @@ public class AppConfig {
                         + "FHIR-Profile-URI";
                 public static final String FHIR_VALIDATION_STRATEGY = Configuration.Servlet.HeaderName.PREFIX
                         + "FHIR-Validation-Strategy";
+                public static final String DATALAKE_API_URL = Configuration.Servlet.HeaderName.PREFIX
+                        + "DataLake-API-URL";
             }
 
             public class Response {
@@ -25,6 +28,7 @@ public class AppConfig {
 
     private String version;
     private String defaultSdohFhirProfileUrl;
+    private String defaultDatalakeApiUrl;
 
     public String getVersion() {
         return version;
@@ -46,5 +50,13 @@ public class AppConfig {
 
     public void setDefaultSdohFhirProfileUrl(String defaultFhirProfileUrl) {
         this.defaultSdohFhirProfileUrl = defaultFhirProfileUrl;
+    }
+
+    public String getDefaultDatalakeApiUrl() {
+        return defaultDatalakeApiUrl;
+    }
+
+    public void setDefaultDatalakeApiUrl(String defaultDatalakeApiUrl) {
+        this.defaultDatalakeApiUrl = defaultDatalakeApiUrl;
     }
 }
