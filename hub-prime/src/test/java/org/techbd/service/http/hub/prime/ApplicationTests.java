@@ -25,6 +25,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
 import org.techbd.conf.Configuration;
 import org.techbd.service.http.Helpers;
 import org.w3c.dom.Document;
@@ -78,7 +80,7 @@ class ApplicationTests {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		headers.add(Configuration.Servlet.HeaderName.Request.TENANT_ID, "unit-test");
-
+		
 		HttpEntity<String> requestEntity = new HttpEntity<>(fixtureContent(fixtureFilename), headers);
 
 		ResponseEntity<String> response = restTemplate.postForEntity(getTestServerUrl("/Bundle/$validate"),
@@ -113,15 +115,59 @@ class ApplicationTests {
 				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
 				"HAPI-1821: [element=\"gender\"] Invalid attribute value \"UN\": Unknown AdministrativeGender code 'UN'",
 				"FATAL");
-		// assertValidationResult(validationResults.get(1),
-		// 		"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json",
-		// 		"HL7_API",
-		// 		false,
-		// 		"Invalid Resource id: Too long (107 chars)", "ERROR");
-		// assertValidationResult(validationResults.get(2),
-		// 		"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json",
-		// 		"INFERNO",
-		// 		true, null, null);
+	}
+
+	Map<?, ?> getBundleValidateResultWithMultipleEngines(final @NotNull String fixtureFilename) throws Exception {
+		
+		RestTemplate restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(60000); 
+        factory.setReadTimeout(60000);    
+        restTemplate.setRequestFactory(factory);
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.add(Configuration.Servlet.HeaderName.Request.TENANT_ID, "unit-test");
+		headers.add("X-TechBD-FHIR-Validation-Strategy", "{\"engines\": [\"HAPI\", \"Inferno\"]}");
+
+		HttpEntity<String> requestEntity = new HttpEntity<>(fixtureContent(fixtureFilename), headers);
+
+		ResponseEntity<String> response = restTemplate.postForEntity(getTestServerUrl("/Bundle/$validate"),
+				requestEntity, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isNotNull();
+
+		return objectMapper.readValue(response.getBody(), Map.class);
+	}
+
+	@Test
+	void bundleValidateTestCase301WithMultiplEngines() throws Exception {
+		final var bvr = getBundleValidateResultWithMultipleEngines("TestCase301.json");
+		assertThat(bvr.containsKey("OperationOutcome"));
+		Map<String, Object> operationOutcome = objectMapper.convertValue(bvr.get("OperationOutcome"),
+				new TypeReference<Map<String, Object>>() {
+				});
+
+		// Check the presence of "device"
+		assertThat(operationOutcome).containsKey("device");
+
+		// Check the presence of "validationResults"
+		assertThat(operationOutcome).containsKey("validationResults");
+		List<Map<String, Object>> validationResults = objectMapper.convertValue(
+				operationOutcome.get("validationResults"), new TypeReference<List<Map<String, Object>>>() {
+				});
+		assertThat(validationResults).hasSize(2);
+
+		// Check details of the first validation result
+		assertValidationResult(validationResults.get(0),
+				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
+				"HAPI-1821: [element=\"gender\"] Invalid attribute value \"UN\": Unknown AdministrativeGender code 'UN'",
+				"FATAL");
+		assertValidationResult(validationResults.get(1),
+				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
+				"Identifier.system must be an absolute reference, not a local reference",
+				"error");
 	}
 
 	private void assertValidationResult(Map<String, Object> validationResult, String profileUrl, String engine,
