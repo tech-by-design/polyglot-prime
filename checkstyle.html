@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-06-13<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.65.0</li>
+          <li id="projectVersion">Version: 0.65.1</li>
         <li class="pull-right"><a href="./">TechBD Hub (Prime)</a></li>
           </ul>
         </div>
@@ -73,9 +73,9 @@
 <th><img src="images/icon_warning_sml.gif" />&#160;Warnings</th>
 <th><img src="images/icon_error_sml.gif" />&#160;Errors</th></tr>
 <tr class="b">
-<td style="text-align: left;">12</td>
+<td style="text-align: left;">13</td>
 <td>0</td>
-<td>34</td>
+<td>42</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -137,9 +137,14 @@
 <tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2FController.java">org/techbd/service/http/hub/prime/Controller.java</a></td>
 <td>0</td>
-<td>2</td>
+<td>8</td>
 <td>0</td></tr>
 <tr class="a">
+<td style="text-align: left;"><a href="#org.2Ftechbd.2Fsql.2FArtifactsDataSource.java">org/techbd/sql/ArtifactsDataSource.java</a></td>
+<td>0</td>
+<td>2</td>
+<td>0</td></tr>
+<tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Futil.2FPathsHtml.java">org/techbd/util/PathsHtml.java</a></td>
 <td>0</td>
 <td>7</td>
@@ -157,6 +162,23 @@
 <td>5</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_blocks.html#RightCurly">RightCurly</a>
+<ul>
+<li>tokens: <code>&quot;CLASS_DEF, METHOD_DEF, CTOR_DEF, LITERAL_FOR, LITERAL_WHILE, STATIC_INIT,                     INSTANCE_INIT&quot;</code></li>
+<li>id: <code>&quot;RightCurlyAlone&quot;</code></li>
+<li>option: <code>&quot;alone&quot;</code></li></ul></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="b">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_blocks.html#RightCurly">RightCurly</a>
+<ul>
+<li>tokens: <code>&quot;LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE,                     LITERAL_DO&quot;</code></li>
+<li>id: <code>&quot;RightCurlySame&quot;</code></li></ul></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
 <td style="text-align: left;">coding</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_coding.html#EqualsAvoidNull">EqualsAvoidNull</a></td>
 <td>1</td>
@@ -167,22 +189,34 @@
 <td>9</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_coding.html#MultipleVariableDeclarations">MultipleVariableDeclarations</a></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="b">
 <td style="text-align: left;">imports</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_imports.html#AvoidStarImport">AvoidStarImport</a></td>
 <td>5</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;">modifier</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_modifier.html#ModifierOrder">ModifierOrder</a></td>
 <td>7</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;">naming</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_naming.html#AbbreviationAsWordInName">AbbreviationAsWordInName</a>
 <ul>
 <li>ignoreFinal: <code>&quot;false&quot;</code></li>
 <li>allowedAbbreviationLength: <code>&quot;3&quot;</code></li></ul></td>
 <td>2</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_naming.html#ParameterName">ParameterName</a>
+<ul>
+<li>format: <code>&quot;^[a-z]([a-z0-9][a-zA-Z0-9]*)?$&quot;</code></li></ul></td>
+<td>5</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="b">
 <td style="text-align: left;">whitespace</td>
@@ -192,6 +226,17 @@
 <li>allowMultipleEmptyLines: <code>&quot;false&quot;</code></li>
 <li>allowMultipleEmptyLinesInsideClassMembers: <code>&quot;false&quot;</code></li></ul></td>
 <td>5</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#WhitespaceAround">WhitespaceAround</a>
+<ul>
+<li>allowEmptyConstructors: <code>&quot;true&quot;</code></li>
+<li>allowEmptyLambdas: <code>&quot;true&quot;</code></li>
+<li>allowEmptyMethods: <code>&quot;true&quot;</code></li>
+<li>allowEmptyLoops: <code>&quot;true&quot;</code></li>
+<li>allowEmptyTypes: <code>&quot;true&quot;</code></li></ul></td>
+<td>1</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr></table></section><section>
 <h2>Details</h2><a id="Details"></a><section>
 <h3>org/inferno/validator/FHIRPathEvaluator.java</h3><a id="org.2Finferno.2Fvalidator.2FFHIRPathEvaluator.java"></a>
@@ -437,13 +482,69 @@
 <td>coding</td>
 <td>ExplicitInitialization</td>
 <td>Variable 'userAgentSensitiveBaggageEnabled' explicitly initialized to 'false' (default value for its type).</td>
-<td>68</td></tr>
+<td>85</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>coding</td>
 <td>ExplicitInitialization</td>
 <td>Variable 'userAgentBaggageExposureEnabled' explicitly initialized to 'false' (default value for its type).</td>
-<td>71</td></tr></table></section><section>
+<td>88</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>coding</td>
+<td>MultipleVariableDeclarations</td>
+<td>Each variable declaration must be in its own statement.</td>
+<td>259</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'session_id' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>355</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'content_type' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>355</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'created_by' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>355</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'from_state' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>355</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'to_state' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>355</td></tr></table></section><section>
+<h3>org/techbd/sql/ArtifactsDataSource.java</h3><a id="org.2Ftechbd.2Fsql.2FArtifactsDataSource.java"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>Severity</th>
+<th>Category</th>
+<th>Rule</th>
+<th>Message</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>WhitespaceAround</td>
+<td>WhitespaceAround: '}' is not preceded with whitespace.</td>
+<td>235</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>blocks</td>
+<td>RightCurly</td>
+<td>'}' at column 33 should be alone on a line.</td>
+<td>235</td></tr></table></section><section>
 <h3>org/techbd/util/PathsHtml.java</h3><a id="org.2Ftechbd.2Futil.2FPathsHtml.java"></a>
 <table class="table table-striped">
 <tr class="a">

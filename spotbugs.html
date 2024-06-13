@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-06-13<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.65.0</li>
+          <li id="projectVersion">Version: 0.65.1</li>
         <li class="pull-right"><a href="./">TechBD Hub (Prime)</a></li>
           </ul>
         </div>
@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>128</td>
-<td>121</td>
+<td>129</td>
+<td>124</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -150,7 +150,7 @@
 <td>3</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.service.http.hub.prime.Controller">org.techbd.service.http.hub.prime.Controller</a></td>
-<td>1</td></tr>
+<td>4</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.sql.ArtifactsDataSource">org.techbd.sql.ArtifactsDataSource</a></td>
 <td>2</td></tr>
@@ -718,10 +718,28 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>new org.techbd.service.http.hub.prime.Controller(Environment, AppConfig, UdiPrimeJpaConfig, UdiPrimeRepository, SftpManager) may expose internal representation by storing an externally mutable object into Controller.appConfig</td>
+<td>Dead store to host in org.techbd.service.http.hub.prime.Controller.validateBundleAndCreate(String, String, String, String, String, String, boolean, HttpServletRequest)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>262</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>Dead store to path in org.techbd.service.http.hub.prime.Controller.validateBundleAndCreate(String, String, String, String, String, String, boolean, HttpServletRequest)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>263</td>
+<td>Medium</td></tr>
+<tr class="b">
+<td>Dead store to thirdProcedureCall in org.techbd.service.http.hub.prime.Controller.validateBundleAndCreate(String, String, String, String, String, String, boolean, HttpServletRequest)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>338</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>new org.techbd.service.http.hub.prime.Controller(Environment, AppConfig, UdiPrimeJpaConfig, UdiPrimeRepository, SftpManager, WebClient$Builder) may expose internal representation by storing an externally mutable object into Controller.appConfig</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>80</td>
+<td>99</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.sql.ArtifactsDataSource"></a><section>
 <h2>org.techbd.sql.ArtifactsDataSource</h2>
 <table class="table table-striped">
@@ -735,13 +753,13 @@
 <td>org.techbd.sql.ArtifactsDataSource.dataSource() may expose internal representation by returning ArtifactsDataSource.dataSource</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>55</td>
+<td>58</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>new org.techbd.sql.ArtifactsDataSource(DataSource, Optional, BiFunction) may expose internal representation by storing an externally mutable object into ArtifactsDataSource.dataSource</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>41</td>
+<td>44</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.sql.ArtifactsDataSource$PostgreSqlBuilder"></a><section>
 <h2>org.techbd.sql.ArtifactsDataSource$PostgreSqlBuilder</h2>
 <table class="table table-striped">
@@ -755,7 +773,7 @@
 <td>org.techbd.sql.ArtifactsDataSource$PostgreSqlBuilder.dataSource(DataSource) may expose internal representation by storing an externally mutable object into ArtifactsDataSource$PostgreSqlBuilder.dataSource</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>105</td>
+<td>108</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.udi.UdiPrimeJpaConfig$DataSourceHealthCheckResult"></a><section>
 <h2>org.techbd.udi.UdiPrimeJpaConfig$DataSourceHealthCheckResult</h2>
 <table class="table table-striped">
