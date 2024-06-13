@@ -14,7 +14,7 @@ concurrency:
   group: "pages"
   cancel-in-progress: false
 jobs:
-    synthetic-techbd-stage-deployment:
+    synthetic-techbd-devl-deployment:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
@@ -31,6 +31,37 @@ jobs:
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
+            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/synthetic.fhir.api.qualifiedentity.org/.env
+  
+        - name: Commit and push changes
+          run: |
+            cd infrastructure-prime
+            git add .
+            git commit -m "ci: fhir development ${{ github.ref_name }} deployment"
+            git push
+
+    synthetic-techbd-stage-deployment:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+
+        - name: Configure Git
+          run: |
+            git config --global user.email "action@github.com"
+            git config --global user.name "GitHub Action"
+  
+        - name: Clone infrastructure repository
+          run: |
+            git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+
+        - name: Create and switch to a new branch
+          run: |
+            cd infrastructure-prime
+            git checkout -b synthetic-techbd-fhir-stage-${{ github.ref_name}}-deployment
+
+        - name: Update fhir environment file
+          run: |
+            cd infrastructure-prime
             sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/synthetic.fhir.api.stage.techbd.org/.env
   
         - name: Commit and push changes
@@ -38,7 +69,15 @@ jobs:
             cd infrastructure-prime
             git add .
             git commit -m "ci: fhir staging ${{ github.ref_name }} deployment"
-            git push
+            git push --set-upstream origin synthetic-techbd-fhir-stage-${{ github.ref_name}}-deployment
+
+        - name: Create Pull Request
+          env:
+            GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          run: |
+            cd infrastructure-prime
+            gh pr create --base main --head synthetic-techbd-fhir-stage-${{ github.ref_name}}-deployment --title "FHIR stage techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir stage deployment for version ${{ github.ref_name }}"  
+
 
     synthetic-techbd-prod-deployment:
       runs-on: ubuntu-latest
@@ -76,4 +115,4 @@ jobs:
             GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           run: |
             cd infrastructure-prime
-            gh pr create --base main --head synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment --title "FHIR prod techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir deployment for version ${{ github.ref_name }}"  
+            gh pr create --base main --head synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment --title "FHIR prod techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir prod deployment for version ${{ github.ref_name }}"  
