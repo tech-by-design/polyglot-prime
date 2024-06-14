@@ -28,3 +28,7 @@ export ORG_TECHBD_ORCHESTRATE_SFTP_ACCOUNT_ORCHCTLTS_1_PASSWORD=pw2
 
 export SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID=github-auth-app-client-id
 export SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET=github-auth-app-client-secret
+
+export ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_REPO_URL=https://api.github.com/repos/tech-by-design/infrastructure-prime/contents/sensitive/oauth2-github-authz.yml
+#export ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_REPO_URL=https://api.github.com/repos/razakpm/auth-works/contents/oauth2-github-authz.yml
+export ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_TOKEN=*********
