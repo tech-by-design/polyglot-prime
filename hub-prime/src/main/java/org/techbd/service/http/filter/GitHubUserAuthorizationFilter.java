@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
-
+  private static final String supportEmail = "NYeC QCS Support <qcs-help@qualifiedentity.org>";
   private static final Logger LOGGER = LoggerFactory.getLogger(GitHubUserAuthorizationFilter.class);
 
   static List<Controller.AuthenticatedUser> newListUsers;
@@ -30,7 +30,8 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
     try {
       newListUsers = new GitHubUserService().getUserList().users();
       for (Controller.AuthenticatedUser user : newListUsers) {
-        LOGGER.info("List of Users available in sensitive repo: \ngithub-id: {}\nname: {}\ntenantId: {}\nroles: {}",
+        LOGGER.info(
+            "[GITHUB-AUTH] List of Users available in sensitive repo: \tgithub-id: {}\tname: {}\ttenantId: {}\troles: {}",
             user.gitHubId(), user.name(), user.tenantId(), user.roles());
       }
     } catch (IOException e) {
@@ -40,12 +41,15 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
     if (authentication != null && authentication.isAuthenticated()) {
       DefaultOAuth2User authUser = (DefaultOAuth2User) authentication.getPrincipal();
       String githubId = authUser.getAttribute("login");
+      LOGGER.info("[GITHUB-AUTH] Attempted User: \t github-id: {}\t name: {}",
+          githubId, authUser.getAttribute("name"));
       Optional<Controller.AuthenticatedUser> user = newListUsers.stream()
           .filter(u -> u.gitHubId().equals(githubId) && u.roles().contains("USER"))
           .findFirst();
       if (!user.isPresent()) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.getWriter().write("Access Denied");
+        response.getWriter().write("You do not have permission to access this resource. Please send an email to "
+            + supportEmail + " with your GitHub ID to request access.");
         return;
       }
 
