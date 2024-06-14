@@ -147,11 +147,11 @@ public class OrchestrationEngine {
         String fhirProfileVersion = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
                 .thenApply(responseBody -> {
-                    ObjectMapper objectMapper = new ObjectMapper();
+                    final var objectMapper = new ObjectMapper();
 
                     try {
                         // Read JSON response and parse it into a JsonNode
-                        JsonNode rootNode = objectMapper.readTree(responseBody);
+                        final var rootNode = objectMapper.readTree(responseBody);
 
                         // Get the value of the "version" key from FHIR IG profile JSON
                         JsonNode versionNode = rootNode.path("version");
@@ -746,7 +746,7 @@ public class OrchestrationEngine {
 
                 OperationOutcome oo = validator.validate(payloadContent, fhirBundleProfile);
                 ArrayNode issueArray = displayValidationErrors(oo, false);
-                ObjectMapper mapper = new ObjectMapper();
+                final var mapper = new ObjectMapper();
                 String responseBody = mapper.writeValueAsString(issueArray);
 
                 final Instant completedAt = Instant.now();
