@@ -35,7 +35,6 @@ public class Validator {
   private final Map<String, NpmPackage> loadedPackages;
 
   private static String assignedUrlFrom = null;
-  private static String vesrionFrom = null;
   
   private static final Logger LOGGER = LoggerFactory.getLogger(Validator.class);
 
@@ -116,14 +115,6 @@ public class Validator {
 
   public static void setAssignedUrlFrom(String assignedUrlFrom) {
     Validator.assignedUrlFrom = assignedUrlFrom;
-  }
-
-  public   String getVersionFrom() {
-    return vesrionFrom;
-  }
-
-  public static void setVersionFrom(String vesrionFrom) {
-    Validator.vesrionFrom = vesrionFrom;
   }
 
   /**
@@ -253,7 +244,6 @@ public class Validator {
       StructureDefinition sd = (StructureDefinition)resource;
       LOGGER.info("Loaded profile from file, url: " + sd.getUrl() + " version: " + sd.getVersion());
       setAssignedUrlFrom(sd.getUrl());
-      setVersionFrom(sd.getVersion());
     } else if (resource != null) {
       LOGGER.info("Loaded resource from file but it wasn't a StructureDefinition, it was a "
         + resource.fhirType());
