@@ -10,7 +10,15 @@ const { typical: typ, typical: { SQLa, ws } } = dvp;
 const ctx = SQLa.typicalSqlEmitContext({
   sqlDialect: SQLa.postgreSqlDialect(),
 });
-const techbdUdiSchema = SQLa.sqlSchemaDefn("techbd_udi", {
+const techbdUdiSchema = SQLa.sqlSchemaDefn("techbd_udi_ingress", {
+  isIdempotent: true,
+});
+
+const techbdUdiAssuranceSchema = SQLa.sqlSchemaDefn(" techbd_udi_assurance", {
+  isIdempotent: true,
+});
+
+const techbdOrchctlSchema = SQLa.sqlSchemaDefn(" techbd_orch_ctl", {
   isIdempotent: true,
 });
 
@@ -21,6 +29,20 @@ const searchPath = pgSQLa.pgSearchPath<
   EmitContext
 >(
   techbdUdiSchema,
+);
+
+const searchPathAssurance = pgSQLa.pgSearchPath<
+  typeof techbdUdiAssuranceSchema.sqlNamespace,
+  EmitContext
+>(
+  techbdUdiAssuranceSchema,
+);
+
+const searchPathOrchctl = pgSQLa.pgSearchPath<
+  typeof techbdOrchctlSchema.sqlNamespace,
+  EmitContext
+>(
+  techbdOrchctlSchema,
 );
 
 const dvts = dvp.dataVaultTemplateState<EmitContext>();
@@ -36,6 +58,11 @@ const {
   textNullable,
 } = dvts.domains;
 const { ulidPrimaryKey: primaryKey } = dvts.keys;
+
+const sessionIdentifierType = SQLa.sqlTypeDefinition("session_identifier", {
+  hub_session_id: text(),
+  hub_session_entry_id: text(),
+});
 
 const deviceHub = dvts.hubTable("device", {
   hub_device_id: primaryKey(),
@@ -125,6 +152,7 @@ const entryMetadataSat = ingestSessionEntryHub.satelliteTable("payload", {
   ingest_src: text(),
   ingest_table_name: textNullable(),
   ingest_payload: jsonB,
+  content_type: text(),
   elaboration: jsonbNullable(),
   ...dvts.housekeeping.columns,
 });
@@ -172,9 +200,9 @@ const entrySessionIssueSat = ingestSessionEntryHub.satelliteTable(
     sat_ingest_session_entry_session_issue_id: primaryKey(),
     hub_ingest_session_entry_id: ingestSessionEntryHub.references
       .hub_ingest_session_entry_id(),
-    issue_type: text(),
-    issue_message: text(),
-    level: text(),
+    issue_type: textNullable(),
+    issue_message: textNullable(),
+    level: textNullable(),
     issue_column: integerNullable(),
     issue_row: integerNullable(),
     message_id: textNullable(),
@@ -184,6 +212,18 @@ const entrySessionIssueSat = ingestSessionEntryHub.satelliteTable(
     display: textNullable(),
     disposition: textNullable(),
     remediation: textNullable(),
+    validation_engine_payload: jsonbNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const entrySessionIssuePayloadSat = ingestSessionEntryHub.satelliteTable(
+  "session_issue_payload",
+  {
+    sat_ingest_session_entry_session_issue_payload_id: primaryKey(),
+    hub_ingest_session_entry_id: ingestSessionEntryHub.references
+      .hub_ingest_session_entry_id(),
     validation_engine_payload: jsonbNullable(),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
@@ -249,6 +289,20 @@ const hubExceptionHttpClientSat = hubException.satelliteTable(
   },
 );
 
+const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
+  name: textNullable(),
+  jsonb: jsonbNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: techbdUdiAssuranceSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("name"),
+    ];
+  },
+});
+
 function sqlDDL(
   options: {
     destroyFirst?: boolean;
@@ -270,8 +324,19 @@ function sqlDDL(
         : "-- no schemaName provided"
     }
 
+    drop schema if exists ${techbdUdiAssuranceSchema.sqlNamespace} cascade;
+    create schema if not exists ${techbdUdiAssuranceSchema.sqlNamespace};
+
+    drop schema if exists ${techbdOrchctlSchema.sqlNamespace} cascade;
+    create schema if not exists ${techbdOrchctlSchema.sqlNamespace};
+
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
+
+    CREATE EXTENSION pgTAP SCHEMA public;
 
     ${searchPath}
+
+    ${sessionIdentifierType}
 
     ${deviceHub}
 
@@ -295,6 +360,8 @@ function sqlDDL(
 
     ${entrySessionIssueSat}
 
+    ${entrySessionIssuePayloadSat}
+
     ${sessionRequestLink}
 
     ${sessionEntryLink}
@@ -305,9 +372,17 @@ function sqlDDL(
 
     ${hubExceptionDiagnosticSat}
 
-    ${hubExceptionHttpClientSat}
+    ${hubExceptionHttpClientSat}    
 
-    \\ir udi-ingestion-center-stored-routines.psql
+     ${pgTapFixturesJSON}
+        
+    \\ir udi-ingestion-center-views.psql
+
+    \\ir udi-ingestion-center-stored-routines.psql    
+
+    ${searchPathAssurance}    
+
+    \\ir udi-ingestion-center-stored-routines.pgtap.psql    
 `;
 }
 
