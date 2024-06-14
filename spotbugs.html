@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-06-14<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.65.1</li>
+          <li id="projectVersion">Version: 0.65.2</li>
         <li class="pull-right"><a href="./">TechBD Hub (Prime)</a></li>
           </ul>
         </div>
@@ -267,25 +267,25 @@
 <td>Exception thrown in class org.inferno.validator.Validator at new org.inferno.validator.Validator(String) will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks.</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#CT_CONSTRUCTOR_THROW">CT_CONSTRUCTOR_THROW</a></td>
-<td>49</td>
+<td>48</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exception thrown in class org.inferno.validator.Validator at new org.inferno.validator.Validator(String, boolean) will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks.</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#CT_CONSTRUCTOR_THROW">CT_CONSTRUCTOR_THROW</a></td>
-<td>75</td>
+<td>74</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Null passed for non-null parameter of org.inferno.validator.rest.IgResponse.fromPackage(NpmPackage) in org.inferno.validator.Validator.loadIg(String, String)</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_PARAM_DEREF">NP_NULL_PARAM_DEREF</a></td>
-<td>313</td>
+<td>303</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exceptional return value of java.io.File.delete() ignored in org.inferno.validator.Validator.loadPackage(byte[])</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#RV_RETURN_VALUE_IGNORED_BAD_PRACTICE">RV_RETURN_VALUE_IGNORED_BAD_PRACTICE</a></td>
-<td>336</td>
+<td>326</td>
 <td>Medium</td></tr></table></section><a name="org.inferno.validator.rest.Endpoints"></a><section>
 <h2>org.inferno.validator.rest.Endpoints</h2>
 <table class="table table-striped">
@@ -397,7 +397,7 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$Device.INSTANCE isn't final but should be</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_SHOULD_BE_FINAL">MS_SHOULD_BE_FINAL</a></td>
-<td>892</td>
+<td>963</td>
 <td>High</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$Hl7ValidationEngineApi"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$Hl7ValidationEngineApi</h2>
 <table class="table table-striped">
@@ -411,7 +411,7 @@
 <td>Format string should use %n rather than \n in org.techbd.orchestrate.fhir.OrchestrationEngine$Hl7ValidationEngineApi.validate(String)</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#VA_FORMAT_STRING_USES_NEWLINE">VA_FORMAT_STRING_USES_NEWLINE</a></td>
-<td>526</td>
+<td>579</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
@@ -425,7 +425,7 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession.getValidationResults() may expose internal representation by returning OrchestrationEngine$OrchestrationSession.validationResults</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>930</td>
+<td>1001</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder</h2>
 <table class="table table-striped">
@@ -439,7 +439,7 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.getUaStrategyJsonIssues() may expose internal representation by returning OrchestrationEngine$OrchestrationSession$Builder.uaStrategyJsonIssues</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>963</td>
+<td>1034</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.sftp.SftpAccountsOrchctlConfig"></a><section>
 <h2>org.techbd.orchestrate.sftp.SftpAccountsOrchctlConfig</h2>
 <table class="table table-striped">
