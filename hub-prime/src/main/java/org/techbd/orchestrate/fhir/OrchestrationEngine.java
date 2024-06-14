@@ -27,7 +27,6 @@ import java.util.stream.StreamSupport;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.hl7.fhir.r5.model.OperationOutcome;
-//import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,6 +43,7 @@ import ca.uhn.fhir.validation.ValidationOptions;
 import jakarta.validation.constraints.NotNull;
 
 import org.inferno.validator.Validator;
+import org.springframework.cache.annotation.Cacheable;
 
 /**
  * The {@code OrchestrationEngine} class is responsible for managing and
@@ -137,6 +137,36 @@ public class OrchestrationEngine {
         }
     }
 
+    @Cacheable("fhirProfile")
+    public static String fetchFhirProfileVersion(String fhirProfileUrl) {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(fhirProfileUrl))
+                .build();
+
+        String fhirProfileVersion = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(HttpResponse::body)
+                .thenApply(responseBody -> {
+                    ObjectMapper objectMapper = new ObjectMapper();
+
+                    try {
+                        // Read JSON response and parse it into a JsonNode
+                        JsonNode rootNode = objectMapper.readTree(responseBody);
+
+                        // Get the value of the "version" key from FHIR IG profile JSON
+                        JsonNode versionNode = rootNode.path("version");
+                        return versionNode.asText();
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                })
+                .join(); // Wait for the async operation to complete
+
+        return fhirProfileVersion;
+    }
+
     public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl) {
         ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
@@ -198,6 +228,8 @@ public class OrchestrationEngine {
 
         String getProfileUrl();
 
+        String getFhirProfileVersion();
+
         ValidationEngine.Observability getObservability();
 
         boolean isValid();
@@ -237,9 +269,11 @@ public class OrchestrationEngine {
         private final FhirContext fhirContext;
         private final FhirValidator validator;
         private final ValidationOptions options;
+        private final String fhirProfileVersion;
 
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
+            fhirProfileVersion = OrchestrationEngine.fetchFhirProfileVersion(fhirProfileUrl);
             this.fhirContext = FhirContext.forR4();
             this.options = new ValidationOptions();
             if (this.fhirProfileUrl != null) {
@@ -306,6 +340,11 @@ public class OrchestrationEngine {
                     }
 
                     @Override
+                    public String getFhirProfileVersion() {
+                        return HapiValidationEngine.this.fhirProfileVersion;
+                    }
+
+                    @Override
                     public ValidationEngine.Observability getObservability() {
                         return observability;
                     }
@@ -360,6 +399,11 @@ public class OrchestrationEngine {
                     }
 
                     @Override
+                    public String getFhirProfileVersion() {
+                        return HapiValidationEngine.this.fhirProfileVersion;
+                    }
+
+                    @Override
                     public ValidationEngine.Observability getObservability() {
                         return observability;
                     }
@@ -402,9 +446,11 @@ public class OrchestrationEngine {
         private final Instant engineInitAt = Instant.now();
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
+        private final String fhirProfileVersion;
 
         private Hl7ValidationEngineEmbedded(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
+            fhirProfileVersion = OrchestrationEngine.fetchFhirProfileVersion(fhirProfileUrl);
             engineConstructedAt = Instant.now();
             observability = new Observability(Hl7ValidationEngineEmbedded.class.getName(),
                     "HL7 Official Embedded (TODO: version)", engineInitAt,
@@ -434,6 +480,11 @@ public class OrchestrationEngine {
                 @Override
                 public String getProfileUrl() {
                     return Hl7ValidationEngineEmbedded.this.fhirProfileUrl;
+                }
+
+                @Override
+                public String getFhirProfileVersion() {
+                    return Hl7ValidationEngineEmbedded.this.fhirProfileVersion;
                 }
 
                 @Override
@@ -481,9 +532,11 @@ public class OrchestrationEngine {
         private final String locale;
         private final String fileType;
         private final String fileName;
+        private final String fhirProfileVersion;
 
         private Hl7ValidationEngineApi(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
+            fhirProfileVersion = OrchestrationEngine.fetchFhirProfileVersion(fhirProfileUrl);
             this.fhirContext = "4.0.1";
             this.locale = "en";
             this.fileType = "json";
@@ -607,6 +660,11 @@ public class OrchestrationEngine {
                             }
 
                             @Override
+                            public String getFhirProfileVersion() {
+                                return Hl7ValidationEngineApi.this.fhirProfileVersion;
+                            }
+
+                            @Override
                             public ValidationEngine.Observability getObservability() {
                                 return observability;
                             }
@@ -650,9 +708,12 @@ public class OrchestrationEngine {
         private final String fhirProfileUrl;
         private final Validator validator;
         private List<String> fhirBundleProfile;
-        
+        private final String fhirProfileVersion;
+
         private InfernoValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
+            fhirProfileVersion = OrchestrationEngine.fetchFhirProfileVersion(fhirProfileUrl);
+            //fhirProfileVersion = OrchestrationEngine.fetchFhirProfileVersion(fhirProfileUrl);
             Validator tempValidator;
             try {
                 tempValidator = new Validator("hub-prime/igs", false);
@@ -753,6 +814,11 @@ public class OrchestrationEngine {
                     }
 
                     @Override
+                    public String getFhirProfileVersion() {
+                        return InfernoValidationEngine.this.fhirProfileVersion;
+                    }
+
+                    @Override
                     public ValidationEngine.Observability getObservability() {
                         return observability;
                     }
@@ -803,6 +869,11 @@ public class OrchestrationEngine {
                     @Override
                     public String getProfileUrl() {
                         return InfernoValidationEngine.this.fhirProfileUrl;
+                    }
+
+                    @Override
+                    public String getFhirProfileVersion() {
+                        return InfernoValidationEngine.this.fhirProfileVersion;
                     }
 
                     @Override
