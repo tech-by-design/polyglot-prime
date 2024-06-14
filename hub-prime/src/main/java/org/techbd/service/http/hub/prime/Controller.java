@@ -57,16 +57,17 @@ import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.UdiPrimeRepository;
 import org.techbd.udi.entity.FhirValidationResultIssue;
 import org.techbd.util.SessionWithState;
-
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import io.swagger.v3.core.util.ObjectMapperFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @org.springframework.stereotype.Controller
 @Tag(name = "TechBD Hub", description = "Business Operations API")
@@ -108,7 +109,15 @@ public class Controller {
 
     protected void populateModel(final Model model, final HttpServletRequest request) {
         try {
+            OAuth2User principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            AuthenticatedUser authUser = null;
+            if (principal != null) {
+                authUser = new AuthenticatedUser(principal, "", new ArrayList<String>());
+            }
+
+            // make the request, authUser available to templates
             model.addAttribute("req", request);
+            model.addAttribute("authUser", authUser);
 
             final var baggage = new HashMap<>(ssrBaggage);
             baggage.put("userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled);
@@ -138,15 +147,15 @@ public class Controller {
     }
 
     @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
-    @CacheEvict(value = {SftpManager.TENANT_EGRESS_CONTENT_CACHE_KEY,
-        SftpManager.TENANT_EGRESS_SESSIONS_CACHE_KEY}, allEntries = true)
+    @CacheEvict(value = { SftpManager.TENANT_EGRESS_CONTENT_CACHE_KEY,
+            SftpManager.TENANT_EGRESS_SESSIONS_CACHE_KEY }, allEntries = true)
     public ResponseEntity<?> emptyTenantEgressCacheOnDemand() {
         LOG.info("emptying tenant-sftp-egress-content (on demand)");
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
     }
 
     @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
-        "application/json", "text/html"})
+            "application/json", "text/html" })
     public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
         final var account = sftpManager.configuredTenant(tenantId);
         if (account.isPresent()) {
@@ -186,7 +195,7 @@ public class Controller {
         return "page/documentation";
     }
 
-    @GetMapping(value = "/metadata", produces = {MediaType.APPLICATION_XML_VALUE})
+    @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
     @Operation(summary = "FHIR server's conformance statement")
     public String metadata(final Model model, HttpServletRequest request) {
         final var baseUrl = Helpers.getBaseUrl(request);
@@ -198,7 +207,7 @@ public class Controller {
         return "metadata.xml";
     }
 
-    @PostMapping(value = {"/Bundle/"}, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/Bundle/" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     @Async
     public Object validateBundleAndCreate(final @RequestBody @Nonnull String payload,
@@ -262,7 +271,7 @@ public class Controller {
             host = url.getHost();
             path = url.getPath();
         } catch (MalformedURLException e) {
-            //log.error("Exception in parsing shinnyDataLakeApiUri: ", e);
+            // log.error("Exception in parsing shinnyDataLakeApiUri: ", e);
         }
 
         String sessionId = UUID.randomUUID().toString();
@@ -277,9 +286,8 @@ public class Controller {
                 "",
                 "",
                 "",
-                "STARTED"
-        );
-        
+                "STARTED");
+
         webClient.post()
                 .uri("?processingAgent=" + tenantId)
                 .body(BodyInserters.fromValue(payload))
@@ -298,8 +306,7 @@ public class Controller {
                             "",
                             "",
                             "",
-                            "FINISHED"
-                    );
+                            "FINISHED");
                 }, (Throwable error) -> { // Explicitly specify the type Throwable
 
                     String content;
@@ -320,8 +327,7 @@ public class Controller {
                             "",
                             "",
                             "",
-                            "ASYNC_FAILED"
-                    );
+                            "ASYNC_FAILED");
                     if (error instanceof WebClientResponseException responseException) {
                         // TODO: Process the response here, and save to db.
                         if (responseException.getStatusCode() == HttpStatus.FORBIDDEN) {
@@ -346,13 +352,14 @@ public class Controller {
                 "",
                 "",
                 "",
-                "ASYNC_IN_PROGRESS"
-        );
+                "ASYNC_IN_PROGRESS");
         LOG.info("Datalake API called, ASYNC_IN_PROGRESS");
         return result;
     }
 
-    public SessionWithState callUdiInsertSessionWithState(Connection conn, String session_id, String namespace, String content, String content_type, String boundary, String elaboration, String created_by, String provenance, String from_state, String to_state) {
+    public SessionWithState callUdiInsertSessionWithState(Connection conn, String session_id, String namespace,
+            String content, String content_type, String boundary, String elaboration, String created_by,
+            String provenance, String from_state, String to_state) {
 
         SessionWithState sessionWithState = new SessionWithState();
         try {
@@ -408,7 +415,7 @@ public class Controller {
         return sessionWithState;
     }
 
-    @PostMapping(value = {"/Bundle/$validate"}, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/Bundle/$validate" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
@@ -526,5 +533,15 @@ public class Controller {
         populateModel(model, request);
         model.addAttribute("udiPrimaryDataSrcHealth", udiPrimeJpaConfig.udiPrimaryDataSrcHealth());
         return "page/diagnostics";
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record AuthenticatedUser(String name, String emailPrimary, String profilePicUrl, String gitHubId,
+            String tenantId, List<String> roles) {
+        public AuthenticatedUser(final OAuth2User principal, String tenantId, List<String> roles) {
+            this((String) principal.getAttribute("name"), (String) principal.getAttribute("email"),
+                    (String) principal.getAttribute("avatar_url"), (String) principal.getAttribute("login"), tenantId,
+                    roles);
+        }
     }
 }
