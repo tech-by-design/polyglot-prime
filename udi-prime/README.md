@@ -50,7 +50,8 @@ To generate SQL and ERD for the UDI model, run the following command:
 
 ```bash
 cd udi-prime
-deno task gen-all
+./udictl.ts ic generate --help   # review SQL generation options
+./udictl.ts ic generate          # generate all content (*.sql)
 ```
 
 This command will produce SQL files in `target/migrations/postgres` that
@@ -61,29 +62,34 @@ UML diagram tool that supports PlantUML.
 ### Deploying SQL to PostgreSQL
 
 In addition to generating the SQL script, you can deploy it to your PostgreSQL
-database using on of the following `psql-*` tasks:
+database using one of the following `udictl.ts ic migrate` commands:
 
 ```bash
 cd udi-prime
-deno task psql-devl-destroy-ic              # generate all SQL then run `target/.../destroy.auto.sql` to just destroy all existing objects, don't migrate
-deno task psql-devl-migrate-ic              # generate all SQL then run `target/.../driver.auto.psql` to just migrate, don't destroy any existing objects
-deno task psql-devl-destroy-and-migrate-ic  # first destroy all objects then migrate "clean" (calls the tasks above, in order)
+./udictl.ts ic migrate --help           # review SQL migration options
+./udictl.ts ic migrate --destroy-first  # use generated SQL to first destroy all SQL objects in and then perform migrations
+./udictl.ts ic migrate                  # use generated SQL to perform migrations without destroying existing objects
+
+./udictl.ts ic test --help              # review test options
+./udictl.ts ic test                     # perform pgTAP tests
 ```
 
-The `psql-*` tasks execute the SQL scripts using credentials stored in your
-`.pgpass` file and uses
+`./udictl.ts ic migrate` executes the SQL scripts using credentials stored in
+your `.pgpass` file and uses
 [pgpass](https://github.com/netspective-labs/sql-aide/tree/main/lib/postgres/pgpass)
 for password-less authentication.
 
-Add the following `UDI_PRIME_DESTROYABLE_DEVL` connection ID to your `~/.pgpass`:
+Add the following `UDI_PRIME_DESTROYABLE_DEVL` connection ID to your
+`~/.pgpass`:
 
 ```
 # { id: "UDI_PRIME_DESTROYABLE_DEVL", description: "UDI Prime database that can be destroyed", boundary: "Development" } 
 DB_HOST:5432:DB_NAME:USER_NAME:PASSWORD
 ```
 
-The `gen-*` tasks only use Deno but `psql-*` tasks use `psql` PostgreSQL client.
-If you do not have installed, you can use any package manager to install it:
+The `udictl.ts ic migrate` and `udictl.ts ic test` commands use `psql`
+PostgreSQL client. If you do not have installed, you can use any package manager
+to install it:
 
 ```bash
 $ sudo upt install -y postgresql-client

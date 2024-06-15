@@ -6,10 +6,7 @@ import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aid
 // deconstructed modules provide convenient access to internal imports
 const { typical: typ, typical: { SQLa, ws } } = dvp;
 
-const ctx = SQLa.typicalSqlEmitContext({
-  sqlDialect: SQLa.postgreSqlDialect(),
-});
-type EmitContext = typeof ctx;
+type EmitContext = dvp.typical.SQLa.SqlEmitContext;
 
 const ingressSchema = SQLa.sqlSchemaDefn("techbd_udi_ingress", {
   isIdempotent: true,
@@ -287,103 +284,127 @@ const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   },
 });
 
-function destroyDDL() {
-  // deno-fmt-ignore
-  return SQLa.SQL<EmitContext>(dvts.ddlOptions)`
-    -- UDI does not allow \`public\`. Reasons:
-    -- * Security: By removing the public schema, we reduce the risk of accidental
-    --   data exposure. The public schema is accessible to all users by default, 
-    --   so removing it can help enforce stricter access controls.
-    -- * Organization: Using custom schemas helps organize database objects more
-    --   logically, making it easier to manage and maintain.
-    -- * Namespace Management: Dropping the public schema prevents accidental
-    --   creation of objects in the default schema, ensuring that all objects are
-    --   properly created in the intended custom schemas.
-
-    DROP SCHEMA IF EXISTS public CASCADE;
-
-    DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
-    DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
-    DROP SCHEMA IF EXISTS ${orchCtlSchema.sqlNamespace} cascade;`;
-}
-
 // TODO: need to put all construction DDL into stored procedures using ISLM;
 //       see https://github.com/netspective-labs/sql-aide/tree/main/pattern/postgres
+//       see https://github.com/netspective-labs/sql-aide/tree/main/pattern/pgdcp
 // TODO: need to add partitioning
+// TODO: need to add row level security (RLS) tied to user roles
 // TODO: need to add SQL comments so that ERDs can use them
+// TODO: make `CREATE EXTENSION` type-safe by using SQLa instances not strings
+// TODO: should dependencies be `import`ed by Deno (instead of text files)?
 
-function constructDDL() {
-  // deno-fmt-ignore
-  return SQLa.SQL<EmitContext>(dvts.ddlOptions)`
-    SET client_min_messages TO warning;
+function constructables() {
+  const dependencies = [
+    "./views-simple.sql",
+    "./stored-routines.psql",
+  ] as const;
+  const testDependencies = [
+    "../../../test/postgres/ingestion-center/suite.pgtap.psql",
+  ] as const;
+  return {
+    // deno-fmt-ignore
+    driverSQL: () => SQLa.SQL<EmitContext>(dvts.ddlOptions)`
+      ${ingressSchema}
 
-    CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
-    CREATE EXTENSION IF NOT EXISTS pgTAP SCHEMA public;
+      CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA ${ingressSchema.sqlNamespace};
 
-    ${ingressSchema}
-    ${assuranceSchema}
-    ${orchCtlSchema}
+      ${assuranceSchema}
+      ${orchCtlSchema}
 
-    ${sessionIdentifierType}
+      ${sessionIdentifierType}
 
-    ${deviceHub}
+      ${deviceHub}
 
-    ${deviceSat}
+      ${deviceSat}
 
-    ${requestHttpClientHub}
+      ${requestHttpClientHub}
 
-    ${requestHttpClientSat}
+      ${requestHttpClientSat}
 
-    ${ingestSessionHub}
+      ${ingestSessionHub}
 
-    ${ingestSessionEntryHub}
+      ${ingestSessionEntryHub}
 
-    ${sessionMetadataSat}
+      ${sessionMetadataSat}
 
-    ${entryMetadataSat}
+      ${entryMetadataSat}
 
-    ${entrySessionStateSat}
+      ${entrySessionStateSat}
 
-    ${entrySessionExecSat}
+      ${entrySessionExecSat}
 
-    ${entrySessionIssueSat}
+      ${entrySessionIssueSat}
 
-    ${entrySessionIssuePayloadSat}
+      ${entrySessionIssuePayloadSat}
 
-    ${sessionRequestLink}
+      ${sessionRequestLink}
 
-    ${sessionEntryLink}
+      ${sessionEntryLink}
 
-    ${sessionDeviceLink}
+      ${sessionDeviceLink}
 
-    ${hubException}
+      ${hubException}
 
-    ${hubExceptionDiagnosticSat}
+      ${hubExceptionDiagnosticSat}
 
-    ${hubExceptionHttpClientSat}
+      ${hubExceptionHttpClientSat}
 
-    ${pgTapFixturesJSON}
-        
-    \\ir views-simple.sql
-
-    \\ir stored-routines.psql
-
-    \\ir suite.pgtap.psql`;
+      ${pgTapFixturesJSON}
+      
+      ${dependencies.map((dep) => `\\ir ${dep}`).join("\n")}`,
+    dependencies: () => dependencies.map((dep) => import.meta.resolve(dep)),
+    testDependencies: () =>
+      testDependencies.map((dep) => import.meta.resolve(dep)),
+  };
 }
 
-typ.typicalCLI({
-  resolve: (specifier) =>
-    specifier ? import.meta.resolve(specifier) : import.meta.url,
-  prepareSQL: () => ws.unindentWhitespace(constructDDL().SQL(ctx)),
-  prepareDiagram: () => {
-    constructDDL().SQL(ctx);
-    return dvts.pumlERD(ctx).content;
-  },
-}).commands.command(
-  "destroy",
-  new typ.cli.Command()
-    .description(
-      "Generate `destroy.sql` content useful during development to prepare clean DDL",
-    )
-    .action(() => console.log(ws.unindentWhitespace(destroyDDL().SQL(ctx)))),
-).parse(Deno.args);
+export function generated() {
+  const constructed = constructables();
+  const ctx = SQLa.typicalSqlEmitContext({
+    sqlDialect: SQLa.postgreSqlDialect(),
+  });
+
+  // after this execution `ctx` will contain list of all tables which will be
+  // passed into `dvts.pumlERD` below (ctx should only be used once)
+  const driverSQL = ws.unindentWhitespace(constructed.driverSQL().SQL(ctx));
+  return {
+    driverSQL,
+    pumlERD: dvts.pumlERD(ctx).content,
+    dependencies: constructed.dependencies(),
+    testDependencies: constructed.testDependencies(),
+    tablesDeclared: dvts.tablesDeclared,
+    viewsDeclared: dvts.viewsDeclared,
+    destroySQL: ws.unindentWhitespace(`
+      -- UDI does not allow \`public\`. Reasons:
+      -- * Security: By removing the public schema, we reduce the risk of accidental
+      --   data exposure. The public schema is accessible to all users by default, 
+      --   so removing it can help enforce stricter access controls.
+      -- * Organization: Using custom schemas helps organize database objects more
+      --   logically, making it easier to manage and maintain.
+      -- * Namespace Management: Dropping the public schema prevents accidental
+      --   creation of objects in the default schema, ensuring that all objects are
+      --   properly created in the intended custom schemas.
+
+      DROP SCHEMA IF EXISTS public CASCADE;
+
+      DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${orchCtlSchema.sqlNamespace} cascade;`),
+  };
+}
+
+if (import.meta.main) {
+  typ.typicalCLI({
+    resolve: (specifier) =>
+      specifier ? import.meta.resolve(specifier) : import.meta.url,
+    prepareSQL: () => generated().driverSQL,
+    prepareDiagram: () => generated().pumlERD,
+  }).commands.command(
+    "destroy",
+    new typ.cli.Command()
+      .description(
+        "Generate `destroy.sql` content useful during development to prepare clean DDL",
+      )
+      .action(() => console.log(generated().destroySQL)),
+  ).parse(Deno.args);
+}

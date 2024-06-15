@@ -13,6 +13,6 @@
     },
     "java.debug.settings.onBuildFailureProceed": true,
     "deno.enablePaths": [
-        "./udi-prime/src"
+        "./udi-prime"
     ]
 }
