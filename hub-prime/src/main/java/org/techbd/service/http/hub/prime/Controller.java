@@ -34,6 +34,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.ui.Model;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,21 +54,25 @@ import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.InteractionsFilter;
+import org.techbd.udi.InteractionRepository;
+import org.techbd.udi.SessionIssueRepository;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.UdiPrimeRepository;
 import org.techbd.udi.entity.FhirValidationResultIssue;
+import org.techbd.udi.entity.Interaction;
+import org.techbd.udi.entity.SessionIssue;
 import org.techbd.util.SessionWithState;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 import io.swagger.v3.core.util.ObjectMapperFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @org.springframework.stereotype.Controller
 @Tag(name = "TechBD Hub", description = "Business Operations API")
@@ -81,6 +86,8 @@ public class Controller {
     private final UdiPrimeRepository udiPrimeRepository;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private final SftpManager sftpManager;
+    private final InteractionRepository interactionRepository;
+    private final SessionIssueRepository sessionIssueRepository;
 
     @Value(value = "${org.techbd.service.baggage.user-agent.enable-sensitive:false}")
     private boolean userAgentSensitiveBaggageEnabled = false;
@@ -95,12 +102,15 @@ public class Controller {
     public Controller(final Environment environment, final AppConfig appConfig,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final UdiPrimeRepository udiPrimeRepository, final SftpManager sftpManager,
+            InteractionRepository interactionRepository, SessionIssueRepository sessionIssueRepository,
             WebClient.Builder webClientBuilder) {
         this.environment = environment;
         this.appConfig = appConfig;
         this.udiPrimeRepository = udiPrimeRepository;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         this.sftpManager = sftpManager;
+        this.interactionRepository = interactionRepository;
+        this.sessionIssueRepository = sessionIssueRepository;
         this.webClient = webClientBuilder.baseUrl("https://40lafnwsw7.execute-api.us-east-1.amazonaws.com/dev")
                 .build();
         ssrBaggage.put("appVersion", appConfig.getVersion());
@@ -233,13 +243,11 @@ public class Controller {
                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
         final var session = sessionBuilder.build();
         engine.orchestrate(session);
-        System.out.println("datalakeApi   :" + datalakeApi);
 
         final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
                 session.getValidationResults(), "device",
                 session.getDevice()));
         final var result = Map.of("OperationOutcome", opOutcome);
-        System.out.println("ressssult   :" + result);
         if (uaValidationStrategyJson != null) {
             opOutcome.put("uaValidationStrategy",
                     Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
@@ -478,8 +486,14 @@ public class Controller {
     @Operation(summary = "Recent HTTP Request/Response Interactions")
     @GetMapping("/admin/observe/interaction/https/recent.json")
     @ResponseBody
-    public List<?> observeRecentHttpsInteractions() {
-        return new ArrayList<>(InteractionsFilter.interactions.getHistory().values());
+    public Page<Interaction>  observeRecentHttpsInteractions(final Model model,
+            final HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        populateModel(model, request);
+        long count = interactionRepository.count();
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(interactionRepository.findAllInteractions(), pageable, count);
     }
 
     @GetMapping("/admin/observe/interaction/https/recent.json/{interactionId}")
