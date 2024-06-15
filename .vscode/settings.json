@@ -8,5 +8,11 @@
         }
     ],
     "git.autofetch": "all",
-    "java.debug.settings.onBuildFailureProceed": true
+    "files.associations": {
+        "*.psql": "PostgreSQL"
+    },
+    "java.debug.settings.onBuildFailureProceed": true,
+    "deno.enablePaths": [
+        "./udi-prime/src"
+    ]
 }

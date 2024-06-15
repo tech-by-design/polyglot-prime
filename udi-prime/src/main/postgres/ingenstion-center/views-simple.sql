@@ -1,0 +1,138 @@
+-- only include simple (non-materialized) views here
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction AS 
+    WITH cte_session_interaction AS (
+        SELECT 
+            sessionpayload.sat_ingest_session_entry_payload_id,
+            sessionpayload.hub_ingest_session_entry_id,
+            sessionpayload.provenance,
+            sessionpayload.ingest_src::jsonb ->> 'namespace'::text AS namespace,
+            sessionpayload.ingest_src::jsonb ->> 'interactionId'::text AS interaction_id,
+            (sessionpayload.ingest_src::jsonb -> 'tenant'::text) ->> 'tenantId'::text AS tenant_id,
+            (sessionpayload.ingest_src::jsonb -> 'tenant'::text) ->> 'name'::text AS tenant_name,
+            (sessionpayload.ingest_src::jsonb -> 'request'::text) ->> 'requestId'::text AS request_id,
+            (sessionpayload.ingest_src::jsonb -> 'request'::text) ->> 'method'::text AS request_method,
+            (sessionpayload.ingest_src::jsonb -> 'request'::text) ->> 'requestUri'::text AS request_uri,
+            (sessionpayload.ingest_src::jsonb -> 'request'::text) ->> 'queryString'::text AS request_params,
+            (sessionpayload.ingest_src::jsonb -> 'request'::text) ->> 'clientIpAddress'::text AS client_ip_address,
+            (sessionpayload.ingest_src::jsonb -> 'request'::text) ->> 'userAgent'::text AS user_agent,
+            ((sessionpayload.ingest_src::jsonb -> 'request'::text) ->> 'encounteredAt'::text)::double precision AS request_encountered_at_raw,
+            (sessionpayload.ingest_src::jsonb -> 'response'::text) ->> 'responseId'::text AS response_id,
+            ((sessionpayload.ingest_src::jsonb -> 'response'::text) ->> 'status'::text)::integer AS response_status,
+            ((sessionpayload.ingest_src::jsonb -> 'response'::text) ->> 'encounteredAt'::text)::double precision AS response_encountered_at_raw,
+            jsonb_array_length((sessionpayload.ingest_src::jsonb -> 'request'::text) -> 'headers'::text) AS num_request_headers
+        FROM 
+            techbd_udi_ingress.sat_ingest_session_entry_payload sessionpayload
+    )
+    SELECT 
+        hubingestsession.key AS session_id,
+        interaction.namespace,
+        interaction.tenant_id,
+        interaction.tenant_name,
+        interaction.request_method,
+        interaction.response_status,
+        interaction.response_encountered_at_raw - interaction.request_encountered_at_raw AS response_time_seconds,
+        interaction.client_ip_address,
+        interaction.user_agent,
+        interaction.num_request_headers,
+        to_timestamp(interaction.request_encountered_at_raw) AS request_encountered_at,
+        to_timestamp(interaction.response_encountered_at_raw) AS response_encountered_at,
+        (interaction.response_encountered_at_raw - interaction.request_encountered_at_raw) * '1000000'::numeric::double precision AS response_time_microseconds,
+        interaction.request_uri,
+        interaction.request_params,
+        interaction.request_id,
+        hubingestsession.hub_ingest_session_id,
+        interaction.hub_ingest_session_entry_id,    
+        interaction.interaction_id,
+        interaction.provenance
+    FROM 
+        cte_session_interaction interaction
+        LEFT JOIN techbd_udi_ingress.hub_ingest_session_entry hubingestsessionentry ON hubingestsessionentry.hub_ingest_session_entry_id = interaction.hub_ingest_session_entry_id
+        LEFT JOIN techbd_udi_ingress.link_session_entry linksessionentry ON linksessionentry.hub_ingest_session_entry_id = hubingestsessionentry.hub_ingest_session_entry_id
+        LEFT JOIN techbd_udi_ingress.hub_ingest_session hubingestsession ON hubingestsession.hub_ingest_session_id = linksessionentry.hub_ingest_session_id;
+
+/*=============================================================================================================*/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.sat_ingest_session_entry_session_issue_fhir CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.sat_ingest_session_entry_session_issue_fhir AS 
+    WITH validation_results_object AS (
+         SELECT tbl.hub_ingest_session_entry_id,
+            tbl.elaboration,
+            tbl.created_at,
+            tbl.created_by,
+            tbl.provenance,
+            jsonb_array_elements((tbl.validation_engine_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) AS validation_result
+           FROM techbd_udi_ingress.sat_ingest_session_entry_session_issue tbl
+          WHERE 1 = 1
+        ), validation_results_issues_object AS (
+         SELECT validation_results_object.hub_ingest_session_entry_id,
+            validation_results_object.elaboration,
+            validation_results_object.created_at,
+            validation_results_object.provenance,
+            validation_results_object.validation_result ->> 'profileUrl'::text AS profile_url,
+            validation_results_object.validation_result ->> 'initiatedAt'::text AS initiated_at,
+            validation_results_object.validation_result ->> 'completedAt'::text AS completed_at,
+            validation_results_object.validation_result ->> 'engine'::text AS engine,
+            validation_results_object.validation_result ->> 'namespace'::text AS namespace,
+            (validation_results_object.validation_result ->> 'valid'::text)::boolean AS valid,
+            jsonb_array_elements(validation_results_object.validation_result -> 'issues'::text) AS issue
+           FROM validation_results_object
+        ), validation_results_flattened_issue AS (
+         SELECT validation_results_issues_object.hub_ingest_session_entry_id,
+            validation_results_issues_object.elaboration,
+            validation_results_issues_object.created_at,
+            validation_results_issues_object.provenance,
+            validation_results_issues_object.engine,
+            validation_results_issues_object.profile_url,
+            validation_results_issues_object.initiated_at,
+            validation_results_issues_object.completed_at,
+            validation_results_issues_object.namespace,
+            validation_results_issues_object.valid,
+            validation_results_issues_object.issue ->> 'level'::text AS level,
+            validation_results_issues_object.issue ->> 'message_id'::text AS message_id,
+            validation_results_issues_object.issue ->> 'ignorableError'::text AS ignorableerror,
+            validation_results_issues_object.issue ->> 'invalid_value'::text AS invalid_value,
+            validation_results_issues_object.issue ->> 'comment'::text AS comment,
+            validation_results_issues_object.issue ->> 'display'::text AS display,
+            validation_results_issues_object.issue ->> 'disposition'::text AS disposition,
+            validation_results_issues_object.issue ->> 'remediation'::text AS remediation,
+            validation_results_issues_object.issue ->> 'message'::text AS issue_message,
+            validation_results_issues_object.issue ->> 'severity'::text AS issue_severity,
+            (validation_results_issues_object.issue -> 'location'::text) ->> 'line'::text AS issue_location_line,
+            (validation_results_issues_object.issue -> 'location'::text) ->> 'column'::text AS issue_location_column,
+            (validation_results_issues_object.issue -> 'location'::text) ->> 'diagnostics'::text AS issue_diagnostics
+           FROM validation_results_issues_object
+        )
+    SELECT hubingestsession.key AS session_id,
+        valresult.namespace,
+        valresult.profile_url,
+        valresult.engine,
+        valresult.valid,
+        valresult.issue_message,
+        valresult.issue_severity,
+        valresult.issue_location_line,
+        valresult.issue_location_column,
+        valresult.issue_diagnostics,
+        interaction.tenant_id,
+        interaction.tenant_name,
+        valresult.initiated_at,
+        valresult.completed_at,
+        hubingestsession.hub_ingest_session_id,
+        valresult.hub_ingest_session_entry_id,
+        valresult.level,
+        valresult.message_id,
+        valresult.ignorableerror,
+        valresult.invalid_value,
+        valresult.comment,
+        valresult.display,
+        valresult.disposition,
+        valresult.remediation,
+        valresult.elaboration,
+        valresult.created_at,
+        valresult.provenance
+   FROM validation_results_flattened_issue valresult
+     LEFT JOIN techbd_udi_ingress.hub_ingest_session_entry hubingestsessionentry ON hubingestsessionentry.hub_ingest_session_entry_id = valresult.hub_ingest_session_entry_id
+     LEFT JOIN techbd_udi_ingress.link_session_entry linksessionentry ON linksessionentry.hub_ingest_session_entry_id = hubingestsessionentry.hub_ingest_session_entry_id
+     LEFT JOIN techbd_udi_ingress.hub_ingest_session hubingestsession ON hubingestsession.hub_ingest_session_id = linksessionentry.hub_ingest_session_id
+     LEFT JOIN techbd_udi_ingress.interaction interaction ON interaction.hub_ingest_session_entry_id = valresult.hub_ingest_session_entry_id;

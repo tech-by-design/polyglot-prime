@@ -1,6 +1,5 @@
--- Load pgTAP
-SET search_path TO techbd_udi_assurance;
---CREATE EXTENSION IF NOT EXISTS pgtap;
+-- use explicit schema, not search_path (see README.md)
+CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA techbd_udi_assurance;
 
 --BEGIN;
 

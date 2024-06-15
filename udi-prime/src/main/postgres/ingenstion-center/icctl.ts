@@ -1,51 +1,31 @@
 #!/usr/bin/env -S deno run --allow-all
-import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.20/pattern/data-vault/mod.ts";
-import {
-  pgSQLa,
-} from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.20/pattern/pgdcp/deps.ts";
 
-// high-modules provide convenient access to internal imports
+import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.26/pattern/data-vault/mod.ts";
+// import * as dvp from "../../../../../../../netspective-labs/sql-aide/pattern/data-vault/mod.ts";
+
+// deconstructed modules provide convenient access to internal imports
 const { typical: typ, typical: { SQLa, ws } } = dvp;
 
 const ctx = SQLa.typicalSqlEmitContext({
   sqlDialect: SQLa.postgreSqlDialect(),
 });
-const techbdUdiSchema = SQLa.sqlSchemaDefn("techbd_udi_ingress", {
-  isIdempotent: true,
-});
-
-const techbdUdiAssuranceSchema = SQLa.sqlSchemaDefn(" techbd_udi_assurance", {
-  isIdempotent: true,
-});
-
-const techbdOrchctlSchema = SQLa.sqlSchemaDefn(" techbd_orch_ctl", {
-  isIdempotent: true,
-});
-
 type EmitContext = typeof ctx;
 
-const searchPath = pgSQLa.pgSearchPath<
-  typeof techbdUdiSchema.sqlNamespace,
-  EmitContext
->(
-  techbdUdiSchema,
-);
+const ingressSchema = SQLa.sqlSchemaDefn("techbd_udi_ingress", {
+  isIdempotent: true,
+});
 
-const searchPathAssurance = pgSQLa.pgSearchPath<
-  typeof techbdUdiAssuranceSchema.sqlNamespace,
-  EmitContext
->(
-  techbdUdiAssuranceSchema,
-);
+const assuranceSchema = SQLa.sqlSchemaDefn("techbd_udi_assurance", {
+  isIdempotent: true,
+});
 
-const searchPathOrchctl = pgSQLa.pgSearchPath<
-  typeof techbdOrchctlSchema.sqlNamespace,
-  EmitContext
->(
-  techbdOrchctlSchema,
-);
+const orchCtlSchema = SQLa.sqlSchemaDefn("techbd_orch_ctl", {
+  isIdempotent: true,
+});
 
-const dvts = dvp.dataVaultTemplateState<EmitContext>();
+const dvts = dvp.dataVaultTemplateState<EmitContext>({
+  defaultNS: ingressSchema,
+});
 const {
   text,
   date,
@@ -62,16 +42,19 @@ const { ulidPrimaryKey: primaryKey } = dvts.keys;
 const sessionIdentifierType = SQLa.sqlTypeDefinition("session_identifier", {
   hub_session_id: text(),
   hub_session_entry_id: text(),
+}, {
+  embeddedStsOptions: dvts.ddlOptions,
+  sqlNS: ingressSchema,
 });
 
+// TODO: rename `device` hub to `provenance`
 const deviceHub = dvts.hubTable("device", {
   hub_device_id: primaryKey(),
   key: text(),
   ...dvts.housekeeping.columns,
-}, {
-  sqlNS: techbdUdiSchema,
 });
 
+// TODO: rename `sat_device_device` to `sat_provenance_device`
 const deviceSat = deviceHub.satelliteTable(
   "device",
   {
@@ -81,21 +64,21 @@ const deviceSat = deviceHub.satelliteTable(
     name: text(),
     state: text(),
     boundary: text(),
-    segmentation: textNullable(),
-    state_sysinfo: textNullable(),
+    segmentation: jsonbNullable(),
+    state_sysinfo: jsonbNullable(),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },
 );
 
+// TODO: rename `hub_request_http_client` to `hub_interaction`
 const requestHttpClientHub = dvts.hubTable("request_http_client", {
   hub_request_http_client_id: primaryKey(),
   key: text(),
   ...dvts.housekeeping.columns,
-}, {
-  sqlNS: techbdUdiSchema,
 });
 
+// TODO: rename `sat_request_http_client_meta_data` to `sat_interaction_http_request`
 const requestHttpClientSat = requestHttpClientHub.satelliteTable(
   "meta_data",
   {
@@ -108,12 +91,13 @@ const requestHttpClientSat = requestHttpClientHub.satelliteTable(
   },
 );
 
+// TODO: add `sat_interaction_file_exchange` (for SFTP, etc.)
+//       add `protocol` as a column and create enum for SFTP, S3, etc.
+
 const ingestSessionHub = dvts.hubTable("ingest_session", {
   hub_ingest_session_id: primaryKey(),
   key: text(),
   ...dvts.housekeeping.columns,
-}, {
-  sqlNS: techbdUdiSchema,
 });
 
 const sessionMetadataSat = ingestSessionHub.satelliteTable("meta_data", {
@@ -294,7 +278,7 @@ const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   jsonb: jsonbNullable(),
 }, {
   isIdempotent: true,
-  sqlNS: techbdUdiAssuranceSchema,
+  sqlNS: assuranceSchema,
   constraints: (props, tableName) => {
     const c = SQLa.tableConstraints(tableName, props);
     return [
@@ -303,38 +287,42 @@ const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   },
 });
 
-function sqlDDL(
-  options: {
-    destroyFirst?: boolean;
-    schemaName?: string;
-  } = {},
-) {
-  const { destroyFirst, schemaName } = options;
-
+function destroyDDL() {
   // deno-fmt-ignore
   return SQLa.SQL<EmitContext>(dvts.ddlOptions)`
-    ${
-      destroyFirst && schemaName
-        ? `drop schema if exists ${schemaName} cascade;`
-        : "-- not destroying first (for development)"
-    }
-    ${
-      schemaName
-        ? `create schema if not exists ${schemaName};`
-        : "-- no schemaName provided"
-    }
+    -- UDI does not allow \`public\`. Reasons:
+    -- * Security: By removing the public schema, we reduce the risk of accidental
+    --   data exposure. The public schema is accessible to all users by default, 
+    --   so removing it can help enforce stricter access controls.
+    -- * Organization: Using custom schemas helps organize database objects more
+    --   logically, making it easier to manage and maintain.
+    -- * Namespace Management: Dropping the public schema prevents accidental
+    --   creation of objects in the default schema, ensuring that all objects are
+    --   properly created in the intended custom schemas.
 
-    drop schema if exists ${techbdUdiAssuranceSchema.sqlNamespace} cascade;
-    create schema if not exists ${techbdUdiAssuranceSchema.sqlNamespace};
+    DROP SCHEMA IF EXISTS public CASCADE;
 
-    drop schema if exists ${techbdOrchctlSchema.sqlNamespace} cascade;
-    create schema if not exists ${techbdOrchctlSchema.sqlNamespace};
+    DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
+    DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
+    DROP SCHEMA IF EXISTS ${orchCtlSchema.sqlNamespace} cascade;`;
+}
+
+// TODO: need to put all construction DDL into stored procedures using ISLM;
+//       see https://github.com/netspective-labs/sql-aide/tree/main/pattern/postgres
+// TODO: need to add partitioning
+// TODO: need to add SQL comments so that ERDs can use them
+
+function constructDDL() {
+  // deno-fmt-ignore
+  return SQLa.SQL<EmitContext>(dvts.ddlOptions)`
+    SET client_min_messages TO warning;
 
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
+    CREATE EXTENSION IF NOT EXISTS pgTAP SCHEMA public;
 
-    CREATE EXTENSION pgTAP SCHEMA public;
-
-    ${searchPath}
+    ${ingressSchema}
+    ${assuranceSchema}
+    ${orchCtlSchema}
 
     ${sessionIdentifierType}
 
@@ -372,35 +360,30 @@ function sqlDDL(
 
     ${hubExceptionDiagnosticSat}
 
-    ${hubExceptionHttpClientSat}    
+    ${hubExceptionHttpClientSat}
 
-     ${pgTapFixturesJSON}
+    ${pgTapFixturesJSON}
         
-    \\ir udi-ingestion-center-views.psql
+    \\ir views-simple.sql
 
-    \\ir udi-ingestion-center-stored-routines.psql    
+    \\ir stored-routines.psql
 
-    ${searchPathAssurance}    
-
-    \\ir udi-ingestion-center-stored-routines.pgtap.psql    
-`;
+    \\ir suite.pgtap.psql`;
 }
 
 typ.typicalCLI({
   resolve: (specifier) =>
     specifier ? import.meta.resolve(specifier) : import.meta.url,
-  prepareSQL: () =>
-    ws.unindentWhitespace(
-      sqlDDL({ destroyFirst: true, schemaName: techbdUdiSchema.sqlNamespace })
-        .SQL(
-          ctx,
-        ),
-    ),
+  prepareSQL: () => ws.unindentWhitespace(constructDDL().SQL(ctx)),
   prepareDiagram: () => {
-    sqlDDL({ destroyFirst: true, schemaName: techbdUdiSchema.sqlNamespace })
-      .SQL(
-        ctx,
-      );
+    constructDDL().SQL(ctx);
     return dvts.pumlERD(ctx).content;
   },
-}).commands.parse(Deno.args);
+}).commands.command(
+  "destroy",
+  new typ.cli.Command()
+    .description(
+      "Generate `destroy.sql` content useful during development to prepare clean DDL",
+    )
+    .action(() => console.log(ws.unindentWhitespace(destroyDDL().SQL(ctx)))),
+).parse(Deno.args);

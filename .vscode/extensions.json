@@ -3,6 +3,7 @@
         "denoland.vscode-deno",
         "yzhang.markdown-all-in-one",
         "vscjava.vscode-java-pack",
-        "vmware.vscode-boot-dev-pack"
+        "vmware.vscode-boot-dev-pack",
+        "felixfbecker.postgresql-syntax"
     ]
 }

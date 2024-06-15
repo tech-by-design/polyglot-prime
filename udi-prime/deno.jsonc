@@ -1,9 +1,17 @@
 {
     "tasks": {
-      "gen-psql": "deno run -A src/postgres/udi-ingestion-center.ts sql > src/postgres/udi-ingestion-center.auto.psql",
-      "gen-puml": "deno run -A src/postgres/udi-ingestion-center.ts diagram > src/postgres/udi-ingestion-center.auto.puml",
-      "gen-all": "deno task gen-psql && deno task gen-puml",
-      "migrate-pg": "psql -f src/postgres/udi-ingestion-center.auto.psql $(pgpass psql-fmt --conn-id='UDI_NEON_DEVL')"
+      "gen-clean-migrations-ic": "rm -rf ./target/migrations/postgres/ic",
+      "gen-prepare-migrations-ic": "deno task gen-clean-migrations-ic && mkdir -p ./target/migrations/postgres/ic",
+      "gen-migrations-ic": "deno task gen-prepare-migrations-ic && deno run -A ./src/main/postgres/ingenstion-center/icctl.ts sql > ./target/migrations/postgres/ic/driver.auto.psql && cp ./src/main/postgres/ingenstion-center/*sql ./target/migrations/postgres/ic && cp ./src/test/postgres/ingestion-center/*sql ./target/migrations/postgres/ic && deno run -A ./src/main/postgres/ingenstion-center/icctl.ts destroy > ./target/migrations/postgres/ic/destroy.auto.psql",
+      "gen-migrations": "deno task gen-migrations-ic",
+      "gen-clean-docs-ic": "rm -rf ./target/docs/ic",
+      "gen-prepare-docs-ic": "deno task gen-clean-docs-ic && mkdir -p ./target/docs/ic",
+      "gen-puml-ic": "deno task gen-prepare-docs-ic && deno run -A ./src/main/postgres/ingenstion-center/icctl.ts diagram > ./target/docs/ic/udi-ingestion-center.auto.puml",
+      "gen-docs": "deno task gen-puml-ic",
+      "gen-all": "deno task gen-migrations && deno task gen-docs",
+      "psql-devl-destroy-ic": "deno task gen-migrations-ic && cd ./target/migrations/postgres/ic && psql -f destroy.auto.psql $(pgpass psql-fmt --conn-id='UDI_PRIME_DESTROYABLE_DEVL')",
+      "psql-devl-migrate-ic": "deno task gen-migrations-ic && cd ./target/migrations/postgres/ic && psql -f driver.auto.psql $(pgpass psql-fmt --conn-id='UDI_PRIME_DESTROYABLE_DEVL')",
+      "psql-devl-destroy-and-migrate-ic": "deno task psql-devl-destroy-ic && deno task psql-devl-migrate-ic"
     }
   }
   

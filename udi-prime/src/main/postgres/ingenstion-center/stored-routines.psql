@@ -197,7 +197,6 @@ END;
 $function$
 ;
 
-
 /*==============================================================================================================================*/
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.convert_csv_to_json(p_csv_data text, p_delimiter text DEFAULT ','::text)
  RETURNS jsonb
