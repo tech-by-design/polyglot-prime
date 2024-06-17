@@ -6,6 +6,30 @@ import {
   EnumType,
 } from "https://deno.land/x/cliffy@v1.0.0-rc.4/command/mod.ts";
 import * as ic from "./src/main/postgres/ingestion-center/mod.ts";
+import {
+  ConsoleHandler,
+  FileHandler,
+  getLogger,
+  setup,
+} from "https://deno.land/std@0.224.0/log/mod.ts";
+import { serveDir } from "https://deno.land/std@0.224.0/http/file_server.ts";
+
+const setupLogger = (options: { readonly logResults?: string }) => {
+  if (options.logResults) {
+    setup({
+      handlers: {
+        file: new FileHandler("DEBUG", { filename: options.logResults }),
+      },
+      loggers: { default: { level: "DEBUG", handlers: ["file"] } },
+    });
+  } else {
+    setup({
+      handlers: { console: new ConsoleHandler("DEBUG", {}) },
+      loggers: { default: { level: "DEBUG", handlers: ["console"] } },
+    });
+  }
+  return getLogger();
+};
 
 const postreSqlClientMinMessagesLevels = [
   "panic",
@@ -36,6 +60,10 @@ const toLocalPath = (input: string | URL) =>
     ? Deno.realPathSync(new URL(input).pathname)
     : input;
 
+// TODO: add a `doctor` command to check for dependencies like `psql`, PostgreSQL JDBC driver, SchemaSpy JAR, Schema Crawler JAR, etc.
+// TODO: in `doctor`, if you get this error: `java.lang.RuntimeException: Fontconfig head is null, check your fonts or fonts configuration` this is required:
+//       sudo apt update && sudo apt install fontconfig fonts-dejavu
+
 // deno-fmt-ignore
 await new Command()
   .name("UDI Control Plane")
@@ -43,28 +71,58 @@ await new Command()
   .description("Universal Data Infrastructure (UDI) Orchestration")
   .command("ic", new Command()
     .description("UDI Ingestion Center (IC) subject area commands handler")
-    .globalOption("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: "./target/main/postgres/ingestion-center" })
-    .globalOption("--destroy-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "destroy.auto.psql" })
-    .globalOption("--driver-fname <file-name:string>", "Filename of the generated construct script in target", { default: "driver.auto.psql" })
-    .command("generate", "Generate SQL and related artifacts")
-      .option("--overwrite", "Don't remove existing target directory first, overwrite instead")
-      .action((options) => {
-        if(!options.overwrite) {
-            try {
-                Deno.removeSync(options.target, { recursive: true });
-            } catch (_notFound) {
-                // directory doesn't exist, it's OK
+    .command("generate", new Command()
+      .description("Generate SQL and related artifacts")
+      .command("sql", "Generate SQL artifacts")
+        .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: "./target/main/postgres/ingestion-center" })
+        .option("--destroy-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "destroy.auto.psql" })
+        .option("--driver-fname <file-name:string>", "Filename of the generated construct script in target", { default: "driver.auto.psql" })
+        .option("--overwrite", "Don't remove existing target directory first, overwrite instead")
+        .option("--docs-schemaspy <path:string>", "Generate SchemaSpy documentation", { default: "./target/docs/schema-spy" })
+        .option("--log-results <path:string>", "Store generator results in this log file")
+        .action((options) => {
+          const logger = setupLogger(options);
+          if(!options.overwrite) {
+              try {
+                  Deno.removeSync(options.target, { recursive: true });
+              } catch (_notFound) {
+                  // directory doesn't exist, it's OK
+              }
+          }
+          Deno.mkdirSync(options.target, { recursive: true });
+          const generated = ic.generated();
+          Deno.writeTextFileSync(`${options.target}/${options.driverFname}`, generated.driverSQL);
+          Deno.writeTextFileSync(`${options.target}/${options.destroyFname}`, generated.destroySQL);
+          logger.debug(`${options.target}/${options.driverFname}`);
+          logger.debug(`${options.target}/${options.destroyFname}`);
+          [...generated.dependencies, ...generated.testDependencies].forEach((dep) => {
+            const depLocal = toLocalPath(dep);
+            Deno.copyFileSync(depLocal, `${options.target}/${path.basename(dep)}`);
+            logger.debug(depLocal);
+          });
+        })
+      .command("docs", "Generate documentation artifacts")
+        .option("--schemaspy-dest <path:string>", "Generate SchemaSpy documentation", { default: "./target/docs/schema-spy" })
+        .option("--log-results <path:string>", "Store generator results in this log file")
+        .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
+        .option("-c, --conn-id", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+        .option("--serve <port:number>", "Serve generated documentation at port")
+        .action(async (options) => {
+          const schemaSpyCreds = await $`${options.pgpass} prepare '\`-host \${conn.host} -port \${String(conn.port)} -db \${conn.database} -u \${conn.username} -p \${conn.password}\`' --conn-id=${options.connId}`.text();
+          await $.raw`java -jar ./lib/schemaspy-6.2.4.jar -t pgsql11 -dp ./lib/postgresql-42.7.3.jar -schemas techbd_udi_ingress ${schemaSpyCreds} -debug -o ${options.schemaspyDest} -vizjs`;
+          if(options.serve) {
+              Deno.serve({ port: options.serve }, (req) => {
+                return serveDir(req, {
+                  fsRoot: options.schemaspyDest,
+                });
+              });
             }
-        }
-        Deno.mkdirSync(options.target, { recursive: true });
-        const generated = ic.generated();
-        Deno.writeTextFile(`${options.target}/${options.driverFname}`, generated.driverSQL);
-        Deno.writeTextFile(`${options.target}/${options.destroyFname}`, generated.destroySQL);
-        [...generated.dependencies, ...generated.testDependencies].forEach((dep) => {
-          Deno.copyFileSync(toLocalPath(dep), `${options.target}/${path.basename(dep)}`);
-        });
-      })
+        })
+    )
     .command("migrate", "Use psql to execute generated migration scripts")
+      .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: "./target/main/postgres/ingestion-center" })
+      .option("--destroy-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "destroy.auto.psql" })
+      .option("--driver-fname <file-name:string>", "Filename of the generated construct script in target", { default: "driver.auto.psql" })
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
       .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
       .option("--destroy-first", "Destroy objects before migration")
@@ -75,20 +133,22 @@ await new Command()
         default: "warning",
       })
       .action(async (options) => {
+        const logger = setupLogger(options);
         const psqlCreds = await $`${options.pgpass} psql-fmt --conn-id=${options.connId}`.text();
         if(options.destroyFirst) {
             const psqlResults = await $.raw`${options.psql} ${psqlCreds} -c "${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}" -f ${options.target}/${options.destroyFname}`.captureCombined();
-            Deno.writeTextFile(options.logResults, `-- DESTROYING FIRST WITH ${options.destroyFname} at ${new Date()}\n${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}\n`, { append: true });
-            Deno.writeTextFile(options.logResults, psqlResults.combined, { append: true });
-            Deno.writeTextFile(options.logResults, `-- END ${options.destroyFname} at ${new Date()}\n\n`, { append: true });
+            logger.debug(`-- DESTROYING FIRST WITH ${options.destroyFname} at ${new Date()}\n${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}\n`);
+            logger.debug(psqlResults.combined);
+            logger.debug(`-- END ${options.destroyFname} at ${new Date()}\n\n`);
         }
         const psqlResults = await $.raw`${options.psql} ${psqlCreds} -c "${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}" -f ${options.target}/${options.driverFname}`.captureCombined();
-        Deno.writeTextFile(options.logResults, `-- BEGIN ${options.driverFname} at ${new Date()}\n${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}\n`, { append: true });
-        Deno.writeTextFile(options.logResults, psqlResults.combined, { append: true });
-        Deno.writeTextFile(options.logResults, `-- END ${options.driverFname} at ${new Date()}\n\n`, { append: true });
+        logger.debug(`-- BEGIN ${options.driverFname} at ${new Date()}\n${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}\n`);
+        logger.debug(psqlResults.combined);
+        logger.debug(`-- END ${options.driverFname} at ${new Date()}\n\n`);
         console.log("Migration complete, results logged in", options.logResults);
       })
     .command("test", "Use psql to execute pgTAP scripts")
+      .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: "./target/main/postgres/ingestion-center" })
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
       .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
       .option("--suite-fname <file-name:string>", "Filename of the generated test suite script in target", { default: "suite.pgtap.psql" })
@@ -99,11 +159,12 @@ await new Command()
         default: "warning",
       })
       .action(async (options) => {
+        const logger = setupLogger(options);
         const psqlCreds = await $`${options.pgpass} psql-fmt --conn-id=${options.connId}`.text();
         const psqlResults = await $.raw`${options.psql} ${psqlCreds} -c "${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}" -f ${options.target}/${options.suiteFname}`.captureCombined();
-        Deno.writeTextFile(options.logResults, `-- BEGIN ${options.suiteFname} at ${new Date()}\n${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}\n`, { append: true });
-        Deno.writeTextFile(options.logResults, psqlResults.combined, { append: true });
-        Deno.writeTextFile(options.logResults, `-- END ${options.suiteFname} at ${new Date()}\n\n`, { append: true });
+        logger.debug(`-- BEGIN ${options.suiteFname} at ${new Date()}\n${postgreSqlClientMinMessagesSql(options.psqlLogLevel)}\n`);
+        logger.debug(psqlResults.combined);
+        logger.debug(`-- END ${options.suiteFname} at ${new Date()}\n\n`);
         console.log("Test complete, results logged in", options.logResults);
       })
     )

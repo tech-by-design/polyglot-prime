@@ -50,14 +50,20 @@ To generate SQL and ERD for the UDI model, run the following command:
 
 ```bash
 cd udi-prime
-./udictl.ts ic generate --help   # review SQL generation options
-./udictl.ts ic generate          # generate all content (*.sql)
+./udictl.ts ic generate --help  # review code generation options
+./udictl.ts ic generate sql     # generate all *.sql artifacts
+
+./udictl.ts ic generate docs               # generate all documentation (e.g. SchemaSpye) artifacts
+./udictl.ts ic generate docs --serve 4343  # generate and serve the documents at localhost:4343
 ```
 
-This command will produce SQL files in `target/migrations/postgres` that
-includes all necessary DDL statements for setting up the database schema and
-will create a `.puml` file in `target/docs` which can be viewed or edited in any
-UML diagram tool that supports PlantUML.
+`./udictl.ts ic generate sql` command will produce SQL files in
+`./target/main/postgres/ingestion-center` that includes all necessary DDL
+statements for setting up the database schema.
+
+`./udictl.ts ic generate docs` command will produce HTML files in
+`./target/docs/schema-spy` that includes HTML, diagrams, and documentation to
+explain the database schema.
 
 ### Deploying SQL to PostgreSQL
 

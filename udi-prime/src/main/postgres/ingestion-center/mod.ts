@@ -284,6 +284,8 @@ const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   },
 });
 
+// TODO: rename `*_ingest_*` (e.g. `hub_ingest_session`) to `*_operation_*`  (e.g. `hub_operation_session`)
+// TODO: add `nature` for different types of _operations_ (e.g. _ingest_)
 // TODO: need to put all construction DDL into stored procedures using ISLM;
 //       see https://github.com/netspective-labs/sql-aide/tree/main/pattern/postgres
 //       see https://github.com/netspective-labs/sql-aide/tree/main/pattern/pgdcp
