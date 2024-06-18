@@ -109,7 +109,7 @@ await new Command()
           .option("--schema <name:string>", "Schema to inspect", { default: "techbd_udi_ingress" })
           .option("--jar <path:string>", "The JAR file to create", { default: "../hub-prime/lib/techbd-udi-auto-jooq-ingress.jar" })
           .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
-          .option("-c, --conn-id", "pgpass connection ID to use for JDBC URL", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+          .option("-c, --conn-id <id:string>", "pgpass connection ID to use for JDBC URL", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
           .action(async (options) => {
             try {
                 Deno.removeSync(options.buildDir, { recursive: true });
@@ -125,7 +125,7 @@ await new Command()
       .command("docs", "Generate documentation artifacts")
         .option("--schemaspy-dest <path:string>", "Generate SchemaSpy documentation", { default: "./target/docs/schema-spy" })
         .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
-        .option("-c, --conn-id", "pgpass connection ID to use for SchemaSpy database credentials", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+        .option("-c, --conn-id <id:string>", "pgpass connection ID to use for SchemaSpy database credentials", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
         .option("--serve <port:number>", "Serve generated documentation at port")
         .action(async (options) => {
           const schemaSpyCreds = await $`${options.pgpass} prepare '\`-host \${conn.host} -port \${String(conn.port)} -db \${conn.database} -u \${conn.username} -p \${conn.password}\`' --conn-id=${options.connId}`.text();
@@ -147,7 +147,7 @@ await new Command()
       .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
       .option("--destroy-first", "Destroy objects before migration")
       .option("--log-results <path:string>", "Store `psql` results in this log file", { default: `./udictl-migrate-${new Date().toISOString()}.log` })
-      .option("-c, --conn-id", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
       .type("pg-client-min-messages-level", postreSqlClientMinMessagesLevelCliffyEnum)
       .option("-l, --psql-log-level <level:pg-client-min-messages-level>", "psql `client_min_messages` level.", {
         default: "warning",
@@ -173,7 +173,7 @@ await new Command()
       .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
       .option("--suite-fname <file-name:string>", "Filename of the generated test suite script in target", { default: "suite.pgtap.psql" })
       .option("--log-results <path:string>", "Store `psql` results in this log file", { default: `./udictl-test-${new Date().toISOString()}.log` })
-      .option("-c, --conn-id", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
       .type("pg-client-min-messages-level", postreSqlClientMinMessagesLevelCliffyEnum)
       .option("-l, --psql-log-level <level:pg-client-min-messages-level>", "psql `client_min_messages` level.", {
         default: "warning",
