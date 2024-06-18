@@ -217,7 +217,7 @@ public class Controller {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle/" }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/Bundle" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     @Async
     public Object validateBundleAndCreate(final @RequestBody @Nonnull String payload,
@@ -486,7 +486,7 @@ public class Controller {
     @Operation(summary = "Recent HTTP Request/Response Interactions")
     @GetMapping("/admin/observe/interaction/https/recent.json")
     @ResponseBody
-    public Page<Interaction>  observeRecentHttpsInteractions(final Model model,
+    public Page<Interaction> observeRecentHttpsInteractions(final Model model,
             final HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
