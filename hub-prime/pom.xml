@@ -38,6 +38,14 @@
 	</dependencyManagement> 
 
 	<dependencies>
+		<!-- auto-generate jOOQ and other artifacts created by /udi-prime/udictl.ts generate java jooq -->
+		<dependency>
+			<groupId>org.techbd.udi.auto</groupId>
+			<artifactId>udi-jooq-ingress</artifactId>
+			<scope>system</scope>
+			<version>1.0</version> 
+			<systemPath>${basedir}/lib/techbd-udi-auto-jooq-ingress.jar</systemPath>
+		 </dependency>  
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
