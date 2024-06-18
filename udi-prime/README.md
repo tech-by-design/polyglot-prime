@@ -44,7 +44,7 @@ cd polyglot-prime
 The tool provides three main functionalities: generating SQL scripts, generating
 PlantUML diagrams, and executing SQL scripts against a PostgreSQL database.
 
-### Generating SQL and ERD
+### Generating SQL, Java, HTML and ERD
 
 To generate SQL and ERD for the UDI model, run the following command:
 
@@ -52,6 +52,11 @@ To generate SQL and ERD for the UDI model, run the following command:
 cd udi-prime
 ./udictl.ts ic generate --help  # review code generation options
 ./udictl.ts ic generate sql     # generate all *.sql artifacts
+
+# generate all *.java artifacts using jOOQ library and store in a JAR file
+# and then `cat` the details of what was generated (the MANIFEST.MF)
+./udictl.ts ic generate java jooq 
+unzip -p ../hub-prime/lib/techbd-udi-auto-jooq-ingress.jar 'META-INF/MANIFEST.MF'
 
 ./udictl.ts ic generate docs               # generate all documentation (e.g. SchemaSpye) artifacts
 ./udictl.ts ic generate docs --serve 4343  # generate and serve the documents at localhost:4343

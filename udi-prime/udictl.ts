@@ -101,11 +101,31 @@ await new Command()
             logger.debug(depLocal);
           });
         })
+      .command("java", new Command()
+        .description("Generate Java code artifacts")
+        .command("jooq", "Generate jOOQ code packages")
+          .option("--build-dir <path:string>", "Destination for package", { default: "./target/java/auto/jooq/ingress" })
+          .option("--package <name:string>", "Java package name", { default: "org.techbd.udi.auto.jooq.ingress" })
+          .option("--schema <name:string>", "Schema to inspect", { default: "techbd_udi_ingress" })
+          .option("--jar <path:string>", "The JAR file to create", { default: "../hub-prime/lib/techbd-udi-auto-jooq-ingress.jar" })
+          .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
+          .option("-c, --conn-id", "pgpass connection ID to use for JDBC URL", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+          .action(async (options) => {
+            try {
+                Deno.removeSync(options.buildDir, { recursive: true });
+                Deno.removeSync(options.jar);
+            } catch (_notFound) {
+                // directory doesn't exist, it's OK
+            }
+            const jdbcURL = await $`${options.pgpass} prepare '\`jdbc:postgresql://\${conn.host}:\${String(conn.port)}/\${conn.database}?user=\${conn.username}&password=\${conn.password}\`' --conn-id=${options.connId}`.text();
+            await $`java -cp "./lib/*:./support/jooq/lib/*" support/jooq/JooqCodegen.java ${jdbcURL} ${options.schema} ${options.package} ${options.buildDir} ${options.jar}`;
+            console.log("Java jOOQ generation complete, JAR file", options.jar);
+          })
+       )
       .command("docs", "Generate documentation artifacts")
         .option("--schemaspy-dest <path:string>", "Generate SchemaSpy documentation", { default: "./target/docs/schema-spy" })
-        .option("--log-results <path:string>", "Store generator results in this log file")
         .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
-        .option("-c, --conn-id", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+        .option("-c, --conn-id", "pgpass connection ID to use for SchemaSpy database credentials", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
         .option("--serve <port:number>", "Serve generated documentation at port")
         .action(async (options) => {
           const schemaSpyCreds = await $`${options.pgpass} prepare '\`-host \${conn.host} -port \${String(conn.port)} -db \${conn.database} -u \${conn.username} -p \${conn.password}\`' --conn-id=${options.connId}`.text();
