@@ -4,7 +4,11 @@
 
 # If you want use these, remember to start VSCode or your IDE after `direnv allow`
 
-# use `sandbox` (localhost), `devl`, `stage`, `prod`
+
+# use Spring profiles as 'localopen' for testing locally with no authentication, `sandbox` for testing with auth in localhost , `devl`, `stage`, `prod`
+export SPRING_PROFILES_ACTIVE=sandbox
+
+# use `localopen', `sandbox` (localhost), `devl`, `stage`, `prod`
 export SPRING_PROFILES_ACTIVE=sandbox
 export sandbox_TECHBD_UDI_DS_PRIME_JDBC_URL=jdbc:postgresql://aws.neon.tech/persistence-prime
 export sandbox_TECHBD_UDI_DS_PRIME_JDBC_USERNAME=persistence-prime
