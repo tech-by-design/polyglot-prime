@@ -1,5 +1,9 @@
 CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA techbd_udi_assurance;
 
+-- TODO: figure out why this is required; when search_path is not set then seeing:
+--       `ERROR:  42883: function findfuncs(name, unknown) does not exist`
+SET search_path TO techbd_udi_assurance;
+
 \ir ./fixtures.sql
 
 SELECT * FROM techbd_udi_assurance.runtests('techbd_udi_assurance'::name, 'test_udi_insert_session_with_state');
