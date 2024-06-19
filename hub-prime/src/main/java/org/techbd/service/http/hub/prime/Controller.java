@@ -58,9 +58,9 @@ import org.techbd.udi.InteractionRepository;
 import org.techbd.udi.SessionIssueRepository;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.UdiPrimeRepository;
+import org.techbd.udi.auto.jooq.ingress.routines.UdiInsertSessionWithState;
 import org.techbd.udi.entity.FhirValidationResultIssue;
 import org.techbd.udi.entity.Interaction;
-import org.techbd.udi.entity.SessionIssue;
 import org.techbd.util.SessionWithState;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -296,6 +296,22 @@ public class Controller {
                 "",
                 "STARTED");
 
+        final var dsl = udiPrimeJpaConfig.dsl();
+        try {
+            final var sp = new UdiInsertSessionWithState();
+            sp.setSessionId(UUID.randomUUID().toString());
+            sp.setFromState("ASYNC_FAILED");
+            sp.setToState("ASYNC_FAILED");
+            sp.setCreatedBy("user");
+            sp.setProvenance("pro time 23:00 ");
+
+            final var spResult = sp.execute(dsl.configuration());
+
+            LOG.info("result of Joog SP " + spResult);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         webClient.post()
                 .uri("?processingAgent=" + tenantId)
                 .body(BodyInserters.fromValue(payload))
@@ -324,6 +340,7 @@ public class Controller {
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }
+
                     SessionWithState secondProcedureCall = callUdiInsertSessionWithState(
                             conn,
                             firstProcedureCall.getHubSessionId(),

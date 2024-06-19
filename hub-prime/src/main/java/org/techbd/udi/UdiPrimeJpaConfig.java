@@ -5,6 +5,11 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.jooq.SQLDialect;
+import org.jooq.impl.DataSourceConnectionProvider;
+import org.jooq.impl.DefaultConfiguration;
+import org.jooq.impl.DefaultDSLContext;
+import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
@@ -17,6 +22,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -82,5 +88,26 @@ public class UdiPrimeJpaConfig {
     @Primary
     public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
+    }
+
+    @Bean
+    public DefaultDSLContext dsl() {
+        return new DefaultDSLContext(configuration());
+    }
+
+    public DefaultConfiguration configuration() {
+        final var jooqConfiguration = new DefaultConfiguration();
+        jooqConfiguration.set(connectionProvider());
+        jooqConfiguration.setSQLDialect(SQLDialect.POSTGRES);
+        
+        //jooqConfiguration
+              //  .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
+
+        return jooqConfiguration;
+    }
+
+    @Bean
+    public DataSourceConnectionProvider connectionProvider() {
+        return new DataSourceConnectionProvider(new TransactionAwareDataSourceProxy(udiPrimaryDataSource()));
     }
 }
