@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.67.1</version>
+	<version>0.67.2</version>
 	<packaging>war</packaging>
 	<name>TechBD Hub (Prime)</name>
 	<description>TechBD Hub (Primary)</description>
