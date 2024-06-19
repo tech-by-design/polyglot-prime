@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run --allow-all
 
-import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.26/pattern/data-vault/mod.ts";
-// import * as dvp from "../../../../../../../netspective-labs/sql-aide/pattern/data-vault/mod.ts";
+import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.27/pattern/data-vault/mod.ts";
+//import * as dvp from "../../../../../../../netspective-labs/sql-aide/pattern/data-vault/mod.ts";
 
 // deconstructed modules provide convenient access to internal imports
 const { typical: typ, typical: { SQLa, ws } } = dvp;
