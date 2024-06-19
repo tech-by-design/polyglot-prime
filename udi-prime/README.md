@@ -57,6 +57,7 @@ cd udi-prime
 # and then `cat` the details of what was generated (the MANIFEST.MF)
 ./udictl.ts ic generate java jooq 
 unzip -p ../hub-prime/lib/techbd-udi-auto-jooq-ingress.jar 'META-INF/MANIFEST.MF'
+# run `mvn clean` to clear your cache of the older JAR file.
 
 ./udictl.ts ic generate docs               # generate all documentation (e.g. SchemaSpye) artifacts
 ./udictl.ts ic generate docs --serve 4343  # generate and serve the documents at localhost:4343

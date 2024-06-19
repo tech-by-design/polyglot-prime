@@ -45,19 +45,19 @@ const sessionIdentifierType = SQLa.sqlTypeDefinition("session_identifier", {
 });
 
 // TODO: rename `device` hub to `provenance`
-const deviceHub = dvts.hubTable("device", {
-  hub_device_id: primaryKey(),
+const provenanceHub = dvts.hubTable("provenance", {
+  hub_provenance_id: primaryKey(),
   key: text(),
   ...dvts.housekeeping.columns,
 });
 
 // TODO: rename `sat_device_device` to `sat_provenance_device`
-const deviceSat = deviceHub.satelliteTable(
+const deviceSat = provenanceHub.satelliteTable(
   "device",
   {
-    sat_device_device_id: primaryKey(),
-    hub_device_id: deviceHub.references
-      .hub_device_id(),
+    sat_provenance_device_id: primaryKey(),
+    hub_provenance_id: provenanceHub.references
+      .hub_provenance_id(),
     name: text(),
     state: text(),
     boundary: text(),
@@ -69,19 +69,19 @@ const deviceSat = deviceHub.satelliteTable(
 );
 
 // TODO: rename `hub_request_http_client` to `hub_interaction`
-const requestHttpClientHub = dvts.hubTable("request_http_client", {
-  hub_request_http_client_id: primaryKey(),
+const interactionHub = dvts.hubTable("interaction", {
+  hub_interaction_id: primaryKey(),
   key: text(),
   ...dvts.housekeeping.columns,
 });
 
 // TODO: rename `sat_request_http_client_meta_data` to `sat_interaction_http_request`
-const requestHttpClientSat = requestHttpClientHub.satelliteTable(
-  "meta_data",
+const interactionHttpRequestSat = interactionHub.satelliteTable(
+  "http_request",
   {
-    sat_request_http_client_meta_data_id: primaryKey(),
-    hub_request_http_client_id: requestHttpClientHub.references
-      .hub_request_http_client_id(),
+    sat_interaction_http_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
     request_payload: jsonB,
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
@@ -89,17 +89,41 @@ const requestHttpClientSat = requestHttpClientHub.satelliteTable(
 );
 
 // TODO: add `sat_interaction_file_exchange` (for SFTP, etc.)
-//       add `protocol` as a column and create enum for SFTP, S3, etc.
+//       add `protocol` as a column and create enum for SFTP, S3, etc
+enum EnumFileExchangeProtocol {
+  SFTP = "SFTP",
+  S3 = "S3",
+}
 
-const ingestSessionHub = dvts.hubTable("ingest_session", {
-  hub_ingest_session_id: primaryKey(),
+const fileExchangeProtocol = typ.textEnumTable(
+  "file_exchange_protocol",
+  EnumFileExchangeProtocol,
+  { isIdempotent: true, sqlNS: ingressSchema },
+);
+
+const interactionfileExchangeSat = interactionHub.satelliteTable(
+  "file_exchange",
+  {
+    sat_interaction_file_exchange_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    protocol: fileExchangeProtocol.references.code(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const ingestSessionHub = dvts.hubTable("operation_session", {
+  hub_operation_session_id: primaryKey(),
   key: text(),
+  nature: text().default("ingest"),
   ...dvts.housekeeping.columns,
 });
 
 const sessionMetadataSat = ingestSessionHub.satelliteTable("meta_data", {
-  sat_ingest_session_meta_data_id: primaryKey(),
-  hub_ingest_session_id: ingestSessionHub.references.hub_ingest_session_id(),
+  sat_operation_session_meta_data_id: primaryKey(),
+  hub_operation_session_id: ingestSessionHub.references
+    .hub_operation_session_id(),
   device_id: text(),
   version: text(),
   orch_started_at: date(),
@@ -115,21 +139,21 @@ const sessionMetadataSat = ingestSessionHub.satelliteTable("meta_data", {
   constraints: (props, tableName) => {
     const c = SQLa.tableConstraints(tableName, props);
     return [
-      c.unique("hub_ingest_session_id", "content_hash"),
+      c.unique("hub_operation_session_id", "content_hash"),
     ];
   },
 });
 
-const ingestSessionEntryHub = dvts.hubTable("ingest_session_entry", {
-  hub_ingest_session_entry_id: primaryKey(),
+const ingestSessionEntryHub = dvts.hubTable("operation_session_entry", {
+  hub_operation_session_entry_id: primaryKey(),
   key: text(),
   ...dvts.housekeeping.columns,
 });
 
 const entryMetadataSat = ingestSessionEntryHub.satelliteTable("payload", {
-  sat_ingest_session_entry_payload_id: primaryKey(),
-  hub_ingest_session_entry_id: ingestSessionEntryHub.references
-    .hub_ingest_session_entry_id(),
+  sat_operation_session_entry_payload_id: primaryKey(),
+  hub_operation_session_entry_id: ingestSessionEntryHub.references
+    .hub_operation_session_entry_id(),
   ingest_src: text(),
   ingest_table_name: textNullable(),
   ingest_payload: jsonB,
@@ -141,9 +165,9 @@ const entryMetadataSat = ingestSessionEntryHub.satelliteTable("payload", {
 const entrySessionStateSat = ingestSessionEntryHub.satelliteTable(
   "session_state",
   {
-    sat_ingest_session_entry_session_state_id: primaryKey(),
-    hub_ingest_session_entry_id: ingestSessionEntryHub.references
-      .hub_ingest_session_entry_id(),
+    sat_operation_session_entry_session_state_id: primaryKey(),
+    hub_operation_session_entry_id: ingestSessionEntryHub.references
+      .hub_operation_session_entry_id(),
     from_state: text(),
     to_state: text(),
     transition_result: textNullable(),
@@ -156,9 +180,9 @@ const entrySessionStateSat = ingestSessionEntryHub.satelliteTable(
 const entrySessionExecSat = ingestSessionEntryHub.satelliteTable(
   "session_exec",
   {
-    sat_ingest_session_entry_session_exec_id: primaryKey(),
-    hub_ingest_session_entry_id: ingestSessionEntryHub.references
-      .hub_ingest_session_entry_id(),
+    sat_operation_session_entry_session_exec_id: primaryKey(),
+    hub_operation_session_entry_id: ingestSessionEntryHub.references
+      .hub_operation_session_entry_id(),
     exec_nature: text(),
     parent_exec_id: textNullable(),
     namespace: textNullable(),
@@ -178,9 +202,9 @@ const entrySessionExecSat = ingestSessionEntryHub.satelliteTable(
 const entrySessionIssueSat = ingestSessionEntryHub.satelliteTable(
   "session_issue",
   {
-    sat_ingest_session_entry_session_issue_id: primaryKey(),
-    hub_ingest_session_entry_id: ingestSessionEntryHub.references
-      .hub_ingest_session_entry_id(),
+    sat_operation_session_entry_session_issue_id: primaryKey(),
+    hub_operation_session_entry_id: ingestSessionEntryHub.references
+      .hub_operation_session_entry_id(),
     issue_type: textNullable(),
     issue_message: textNullable(),
     level: textNullable(),
@@ -202,9 +226,9 @@ const entrySessionIssueSat = ingestSessionEntryHub.satelliteTable(
 const entrySessionIssuePayloadSat = ingestSessionEntryHub.satelliteTable(
   "session_issue_payload",
   {
-    sat_ingest_session_entry_session_issue_payload_id: primaryKey(),
-    hub_ingest_session_entry_id: ingestSessionEntryHub.references
-      .hub_ingest_session_entry_id(),
+    sat_operation_session_entry_session_issue_payload_id: primaryKey(),
+    hub_operation_session_entry_id: ingestSessionEntryHub.references
+      .hub_operation_session_entry_id(),
     validation_engine_payload: jsonbNullable(),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
@@ -213,28 +237,28 @@ const entrySessionIssuePayloadSat = ingestSessionEntryHub.satelliteTable(
 
 const sessionEntryLink = dvts.linkTable("session_entry", {
   link_session_entry_id: primaryKey(),
-  hub_ingest_session_id: ingestSessionHub.references
-    .hub_ingest_session_id(),
-  hub_ingest_session_entry_id: ingestSessionEntryHub.references
-    .hub_ingest_session_entry_id(),
+  hub_operation_session_id: ingestSessionHub.references
+    .hub_operation_session_id(),
+  hub_operation_session_entry_id: ingestSessionEntryHub.references
+    .hub_operation_session_entry_id(),
   ...dvts.housekeeping.columns,
 });
 
-const sessionRequestLink = dvts.linkTable("session_request", {
-  link_session_request_id: primaryKey(),
-  hub_ingest_session_id: ingestSessionHub.references
-    .hub_ingest_session_id(),
-  hub_request_http_client_id: requestHttpClientHub.references
-    .hub_request_http_client_id(),
+const sessionRequestLink = dvts.linkTable("session_interaction", {
+  link_session_interaction_id: primaryKey(),
+  hub_operation_session_id: ingestSessionHub.references
+    .hub_operation_session_id(),
+  hub_interaction_id: interactionHub.references
+    .hub_interaction_id(),
   ...dvts.housekeeping.columns,
 });
 
-const sessionDeviceLink = dvts.linkTable("session_device", {
-  link_session_device_id: primaryKey(),
-  hub_ingest_session_id: ingestSessionHub.references
-    .hub_ingest_session_id(),
-  hub_device_id: deviceHub.references
-    .hub_device_id(),
+const sessionDeviceLink = dvts.linkTable("session_provenance", {
+  link_session_provenance_id: primaryKey(),
+  hub_operation_session_id: ingestSessionHub.references
+    .hub_operation_session_id(),
+  hub_provenance_id: provenanceHub.references
+    .hub_provenance_id(),
   ...dvts.housekeeping.columns,
 });
 
@@ -301,6 +325,7 @@ function constructables() {
     "./stored-routines.psql",
   ] as const;
   const testDependencies = [
+    "../../../test/postgres/ingestion-center/fixtures.sql",
     "../../../test/postgres/ingestion-center/suite.pgtap.psql",
   ] as const;
   return {
@@ -315,13 +340,19 @@ function constructables() {
 
       ${sessionIdentifierType}
 
-      ${deviceHub}
+      ${provenanceHub}
 
       ${deviceSat}
 
-      ${requestHttpClientHub}
+      ${interactionHub}
 
-      ${requestHttpClientSat}
+      ${interactionHttpRequestSat}
+
+      ${fileExchangeProtocol}
+
+      ${fileExchangeProtocol.seedDML}
+
+      ${interactionfileExchangeSat}
 
       ${ingestSessionHub}
 
