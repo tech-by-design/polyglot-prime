@@ -54,9 +54,11 @@ cd udi-prime
 ./udictl.ts ic generate sql     # generate all *.sql artifacts
 
 # generate all *.java artifacts using jOOQ library and store in a JAR file
-# and then `cat` the details of what was generated (the MANIFEST.MF)
+# and then `cat` the details of what was generated (the MANIFEST.MF);
+# IMPORTANT: `generate java jooq` uses JDBC meta data retrieved from the DB
+#            so be sure to only run `generate java` after migration succeeds.
 ./udictl.ts ic generate java jooq 
-unzip -p ../hub-prime/lib/techbd-udi-auto-jooq-ingress.jar 'META-INF/MANIFEST.MF'
+unzip -p ../hub-prime/lib/techbd-udi-jooq-ingress.auto.jar 'META-INF/MANIFEST.MF'
 # run `mvn clean` to clear your cache of the older JAR file.
 
 ./udictl.ts ic generate docs               # generate all documentation (e.g. SchemaSpye) artifacts
@@ -64,7 +66,7 @@ unzip -p ../hub-prime/lib/techbd-udi-auto-jooq-ingress.jar 'META-INF/MANIFEST.MF
 ```
 
 `./udictl.ts ic generate sql` command will produce SQL files in
-`./target/main/postgres/ingestion-center` that includes all necessary DDL
+`./target/postgres/ingestion-center` that includes all necessary DDL
 statements for setting up the database schema.
 
 `./udictl.ts ic generate docs` command will produce HTML files in
