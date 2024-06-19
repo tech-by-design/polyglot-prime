@@ -217,7 +217,7 @@ public class Controller {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle" }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     @Async
     public Object validateBundleAndCreate(final @RequestBody @Nonnull String payload,
@@ -423,7 +423,7 @@ public class Controller {
         return sessionWithState;
     }
 
-    @PostMapping(value = { "/Bundle/$validate" }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
