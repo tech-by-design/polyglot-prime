@@ -1,82 +1,5 @@
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.udi_insert_diagnostics(
-hub_ingest_session_entry_id text, 
-validation_engine_payload jsonb, 
-elaboration jsonb, 
-created_by text, 
-provenance text)
- RETURNS text
- LANGUAGE plpgsql
-AS $function$
-declare
-	sat_ingest_session_entry_session_issue_row	techbd_udi_ingress.sat_ingest_session_entry_session_issue%ROWTYPE;
-	hub_exception_row 				techbd_udi_ingress.hub_exception;
-	err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
-  	err_message_text 				text;	-- Variable to store the message text of the error
-  	err_pg_exception_detail 		text;	-- Variable to store the detail of the error
-  	err_pg_exception_hint 			text;	-- Variable to store the hint of the error
-  	err_pg_exception_context 		text; 	-- Variable to store the context of the error
-  	hub_ingest_session_entry_key	text;
-  	new_session_entry_issue_id		text;
-BEGIN
-	-- Start transaction
-    select t.key into hub_ingest_session_entry_key
-  	FROM techbd_udi_ingress.hub_ingest_session_entry t
-  	where t.hub_ingest_session_entry_id = udi_insert_diagnostics.hub_ingest_session_entry_id;  
-  	
-  	if(hub_ingest_session_entry_key is NULL) then
-  		return null;	
-  	end if;
- 
-  	sat_ingest_session_entry_session_issue_row := techbd_udi_ingress.sat_ingest_session_entry_session_issue_upserted(
-    hub_ingest_session_entry_id => hub_ingest_session_entry_id,
-    issue_type => NULL, 
-    issue_message => NULL, 
-    "level" => NULL, 
-    issue_column => NULL, 
-    issue_row => NULL, 
-    message_id => NULL, 
-    ignorableerror => 'false', 
-    invalid_value=> NULL, 
-    "comment" => NULL, 
-    display => NULL, 
-    disposition => NULL, 
-    remediation => NULL,
-    validation_engine_payload => validation_engine_payload,
-    elaboration => elaboration,
-    created_by => created_by,
-    provenance => provenance
-	);	
-
-   	RETURN sat_ingest_session_entry_session_issue_row.sat_ingest_session_entry_session_issue_id;
-	EXCEPTION
-	    WHEN others THEN 
-	   
-	   	GET STACKED DIAGNOSTICS 
-		err_returned_sqlstate 		= RETURNED_SQLSTATE,
-		err_message_text 			= MESSAGE_TEXT,
-		err_pg_exception_detail 	= PG_EXCEPTION_DETAIL,
-		err_pg_exception_hint 		= PG_EXCEPTION_HINT,
-		err_pg_exception_context	= PG_EXCEPTION_CONTEXT;
-	
-		--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
-		-- Log the error
-	   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_ingest_session_entry_key, created_by, provenance);
-		PERFORM techbd_udi_ingress.sat_exception_diagnostics_upserted(
-		        hub_exception_row.hub_exception_id,
-		        err_message_text,
-		        err_returned_sqlstate,
-		        err_pg_exception_detail,
-		        err_pg_exception_hint,
-		        err_pg_exception_context,
-		        created_by,
-		        provenance);
-	
-	RETURN NULL;   
-END;
-$function$
-;
-
 /*==============================================================================================================================*/
+
 CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_udi_insert_session_with_state(schema_name text DEFAULT 'techbd_udi_ingress'::text)
  RETURNS SETOF text
  LANGUAGE plpgsql
@@ -146,57 +69,135 @@ BEGIN
 
     -- Verify inserts into various tables
     RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_ingest_session hub
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_operation_session hub
                WHERE hub.key = '800f47ce-7a95-4c7f-833f-37399fc86a57'
                AND hub.provenance = 'provenance1'
                AND hub.created_by = 'creator1'
-               AND hub.hub_ingest_session_id = session_info.hub_session_id),
-        'Successfully inserted into hub_ingest_session'
+               AND hub.hub_operation_session_id = session_info.hub_session_id),
+        'Successfully inserted into hub_operation_session'
     );
 
     RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_ingest_session_entry hub
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_operation_session_entry hub
                WHERE hub.key = '800f47ce-7a95-4c7f-833f-37399fc86a57'
                AND hub.provenance = 'provenance1'
                AND hub.created_by = 'creator1'
-               AND hub.hub_ingest_session_entry_id = session_info.hub_session_entry_id),
-        'Successfully inserted into hub_ingest_session_entry'
+               AND hub.hub_operation_session_entry_id = session_info.hub_session_entry_id),
+        'Successfully inserted into hub_operation_session_entry'
     );
 
     RETURN NEXT ok(
         EXISTS(SELECT 1 FROM techbd_udi_ingress.link_session_entry lnk
-               WHERE lnk.hub_ingest_session_id = session_info.hub_session_id 
-               AND lnk.hub_ingest_session_entry_id = session_info.hub_session_entry_id
+               WHERE lnk.hub_operation_session_id = session_info.hub_session_id 
+               AND lnk.hub_operation_session_entry_id = session_info.hub_session_entry_id
                AND lnk.created_by = 'creator1'
                AND lnk.provenance = 'provenance1'),
         'Successfully inserted into link_session_entry'
     );
 
     RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_ingest_session_entry_payload sat
-               WHERE sat.hub_ingest_session_entry_id = session_info.hub_session_entry_id
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_payload sat
+               WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
                AND sat.ingest_src = source_content
                AND sat.content_type = 'application/json'
                AND sat.elaboration = '{"key2": "value2"}'
                AND sat.created_by = 'creator1'
                AND sat.provenance = 'provenance1'),
-        'Successfully inserted  payload information into sat_ingest_session_entry_payload'
+        'Successfully inserted payload information into sat_operation_session_entry_payload'
     );
 
     RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_ingest_session_entry_session_state sat
-               WHERE sat.hub_ingest_session_entry_id = session_info.hub_session_entry_id
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_session_state sat
+               WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
                --AND sat.from_state = 'state1'
                --AND sat.to_state = 'state2'
                AND sat.created_by = 'creator1'
                AND sat.provenance = 'provenance1'),
-        'Successfully inserted state information into sat_ingest_session_entry_session_state'
+        'Successfully inserted state information into sat_operation_session_entry_session_state'
     );
    
 END;
 $function$
 ;
+/*=========================================================END OF UNIT TEST CASE=====================================================================*/
 
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.udi_insert_diagnostics(
+hub_operation_session_entry_id text, 
+validation_engine_payload jsonb, 
+elaboration jsonb, 
+created_by text, 
+provenance text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+declare
+	sat_operation_session_entry_session_issue_row	techbd_udi_ingress.sat_operation_session_entry_session_issue%ROWTYPE;
+	hub_exception_row 				techbd_udi_ingress.hub_exception;
+	err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
+  	err_message_text 				text;	-- Variable to store the message text of the error
+  	err_pg_exception_detail 		text;	-- Variable to store the detail of the error
+  	err_pg_exception_hint 			text;	-- Variable to store the hint of the error
+  	err_pg_exception_context 		text; 	-- Variable to store the context of the error
+  	hub_operation_session_entry_key	text;
+  	new_session_entry_issue_id		text;
+BEGIN
+	-- Start transaction
+    select t.key into hub_operation_session_entry_key
+  	FROM techbd_udi_ingress.hub_operation_session_entry t
+  	where t.hub_operation_session_entry_id = udi_insert_diagnostics.hub_operation_session_entry_id;  
+  	
+  	if(hub_operation_session_entry_key is NULL) then
+  		return null;	
+  	end if;
+ 
+  	sat_operation_session_entry_session_issue_row := techbd_udi_ingress.sat_operation_session_entry_session_issue_upserted(
+    hub_operation_session_entry_id => hub_operation_session_entry_id,
+    issue_type => NULL, 
+    issue_message => NULL, 
+    "level" => NULL, 
+    issue_column => NULL, 
+    issue_row => NULL, 
+    message_id => NULL, 
+    ignorableerror => 'false', 
+    invalid_value=> NULL, 
+    "comment" => NULL, 
+    display => NULL, 
+    disposition => NULL, 
+    remediation => NULL,
+    validation_engine_payload => validation_engine_payload,
+    elaboration => elaboration,
+    created_by => created_by,
+    provenance => provenance
+	);	
+
+   	RETURN sat_operation_session_entry_session_issue_row.sat_operation_session_entry_session_issue_id;
+	EXCEPTION
+	    WHEN others THEN 
+	   
+	   	GET STACKED DIAGNOSTICS 
+		err_returned_sqlstate 		= RETURNED_SQLSTATE,
+		err_message_text 			= MESSAGE_TEXT,
+		err_pg_exception_detail 	= PG_EXCEPTION_DETAIL,
+		err_pg_exception_hint 		= PG_EXCEPTION_HINT,
+		err_pg_exception_context	= PG_EXCEPTION_CONTEXT;
+	
+		--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
+		-- Log the error
+	   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_operation_session_entry_key, created_by, provenance);
+		PERFORM techbd_udi_ingress.sat_exception_diagnostics_upserted(
+		        hub_exception_row.hub_exception_id,
+		        err_message_text,
+		        err_returned_sqlstate,
+		        err_pg_exception_detail,
+		        err_pg_exception_hint,
+		        err_pg_exception_context,
+		        created_by,
+		        provenance);
+	
+	RETURN NULL;   
+END;
+$function$
+;
 /*==============================================================================================================================*/
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.convert_csv_to_json(p_csv_data text, p_delimiter text DEFAULT ','::text)
  RETURNS jsonb
@@ -291,6 +292,7 @@ $function$
 ;
 
 /*==============================================================================================================================*/
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.udi_insert_session_with_state(session_id text, namespace text, content text, content_type text, boundary jsonb, elaboration jsonb, created_by text, provenance text, from_state text, to_state text)
  RETURNS techbd_udi_ingress.session_identifier
  LANGUAGE plpgsql
@@ -360,12 +362,13 @@ $function$
 ;
 
 /*==============================================================================================================================*/
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.udi_insert_session_state(session_entry_id text, from_state text, to_state text, created_by text, provenance text)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
 declare
-	sat_ingest_session_entry_state_row	techbd_udi_ingress.sat_ingest_session_entry_session_state%ROWTYPE;
+	sat_operation_session_entry_state_row	techbd_udi_ingress.sat_operation_session_entry_session_state%ROWTYPE;
 	hub_exception_row 					techbd_udi_ingress.hub_exception%ROWTYPE;
 	err_returned_sqlstate 				TEXT;	-- Variable to store SQLSTATE of the error
   	err_message_text 					TEXT;	-- Variable to store the message text of the error
@@ -373,7 +376,7 @@ declare
   	err_pg_exception_hint 				TEXT;	-- Variable to store the hint of the error
   	err_pg_exception_context 			TEXT; 	-- Variable to store the context of the error
 BEGIN
-	sat_ingest_session_entry_state_row := techbd_udi_ingress.sat_ingest_session_entry_session_state_upserted(
+	sat_operation_session_entry_state_row := techbd_udi_ingress.sat_operation_session_entry_session_state_upserted(
 	session_entry_id,
 	from_state,
 	to_state,
@@ -383,8 +386,8 @@ BEGIN
 	created_by,
 	provenance
 	);
-	RAISE NOTICE 'Function return : %', sat_ingest_session_entry_state_row.sat_ingest_session_entry_session_state_id;
-	RETURN sat_ingest_session_entry_state_row.sat_ingest_session_entry_session_state_id;       
+	RAISE NOTICE 'Function return : %', sat_operation_session_entry_state_row.sat_operation_session_entry_session_state_id;
+	RETURN sat_operation_session_entry_state_row.sat_operation_session_entry_session_state_id;       
     EXCEPTION
 		WHEN others THEN 
         
@@ -412,8 +415,8 @@ BEGIN
 END;
 $function$
 ;
-
 /*==============================================================================================================================*/
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.udi_insert_session(session_id text, namespace text, content text, content_type text, boundary jsonb, elaboration jsonb, created_by text, provenance text)
  RETURNS techbd_udi_ingress.session_identifier
  LANGUAGE plpgsql
@@ -429,9 +432,9 @@ DECLARE
   	
   	--ROWTYPE variables
   	hub_exception_row 						techbd_udi_ingress.hub_exception%ROWTYPE;
-  	hub_ingest_session_row					techbd_udi_ingress.hub_ingest_session%ROWTYPE;
-  	hub_ingest_session_entry_row			techbd_udi_ingress.hub_ingest_session_entry%ROWTYPE;
-  	sat_ingest_session_entry_payload_row	techbd_udi_ingress.sat_ingest_session_entry_payload%ROWTYPE;
+  	hub_operation_session_row				techbd_udi_ingress.hub_operation_session%ROWTYPE;
+  	hub_operation_session_entry_row			techbd_udi_ingress.hub_operation_session_entry%ROWTYPE;
+  	sat_operation_session_entry_payload_row	techbd_udi_ingress.sat_operation_session_entry_payload%ROWTYPE;
   	ingest_payload							JSONB;
 	new_session_id							TEXT;
   	type_of_content							TEXT;
@@ -439,22 +442,22 @@ DECLARE
 BEGIN
 	  
    	IF(session_id is null) THEN 
-		new_session_id := public.uuid_generate_v4();
+		new_session_id := techbd_udi_ingress.uuid_generate_v4();
 		session_id := new_session_id;
 	END IF;
 
-	-- Call the function hub_ingest_session_upserted 
-	hub_ingest_session_row := techbd_udi_ingress.hub_ingest_session_upserted(session_id, created_by, provenance);
+	-- Call the function hub_operation_session_upserted 
+	hub_operation_session_row := techbd_udi_ingress.hub_operation_session_upserted(session_id, created_by, provenance);
 
-	IF(hub_ingest_session_row IS NULL) THEN
+	IF(hub_operation_session_row IS NULL) THEN
 		-- Raise an exception indicating that session for hub is not done.
 		RAISE EXCEPTION 'Session ingestion is not done' USING ERRCODE = '23502';  
 	END IF;
 
-	-- Call the function hub_ingest_session_entry_upserted 
-	hub_ingest_session_entry_row := techbd_udi_ingress.hub_ingest_session_entry_upserted(session_id, created_by, provenance); 
+	-- Call the function hub_operation_session_entry_upserted 
+	hub_operation_session_entry_row := techbd_udi_ingress.hub_operation_session_entry_upserted(session_id, created_by, provenance); 
 	
-	IF(hub_ingest_session_entry_row IS NULL) THEN
+	IF(hub_operation_session_entry_row IS NULL) THEN
 		-- Raise an exception indicating that session entry for hub is not done
 		RAISE EXCEPTION 'Session entry is not inserted' USING ERRCODE = '23502';  
 	END IF;
@@ -470,9 +473,9 @@ BEGIN
 
 	ingest_payload := CASE WHEN type_of_content = 'JSON' THEN content::jsonb ELSE NULL END;
 
-	-- Call the function hub_ingest_session_entry_upserted 
-	PERFORM techbd_udi_ingress.sat_ingest_session_entry_payload_upserted(
-	hub_ingest_session_entry_row.hub_ingest_session_entry_id,
+	-- Call the function hub_operation_session_entry_upserted 
+	PERFORM techbd_udi_ingress.sat_operation_session_entry_payload_upserted(
+	hub_operation_session_entry_row.hub_operation_session_entry_id,
 	content,
 	ingest_payload,
 	content_type,
@@ -481,19 +484,19 @@ BEGIN
 	provenance
 	);
 
-	-- Check if the  hub_ingest_session_id and hub_ingest_session_entry_id are not null.
-	IF(hub_ingest_session_row.hub_ingest_session_id IS NOT NULL AND hub_ingest_session_entry_row.hub_ingest_session_entry_id IS NOT NULL) THEN
+	-- Check if the  hub_operation_session_id and hub_operation_session_entry_id are not null.
+	IF(hub_operation_session_row.hub_operation_session_id IS NOT NULL AND hub_operation_session_entry_row.hub_operation_session_entry_id IS NOT NULL) THEN
 		-- Link the session with the entry.
 		PERFORM techbd_udi_ingress.link_session_entry_upserted(
-		hub_ingest_session_row.hub_ingest_session_id,
-		hub_ingest_session_entry_row.hub_ingest_session_entry_id,
+		hub_operation_session_row.hub_operation_session_id,
+		hub_operation_session_entry_row.hub_operation_session_entry_id,
 		created_by, 
 		provenance
 		);
 	END IF;
 	
-	session_info.hub_session_id 		:= hub_ingest_session_row.hub_ingest_session_id;
-	session_info.hub_session_entry_id 	:= hub_ingest_session_entry_row.hub_ingest_session_entry_id;
+	session_info.hub_session_id 		:= hub_operation_session_row.hub_operation_session_id;
+	session_info.hub_session_entry_id 	:= hub_operation_session_entry_row.hub_operation_session_entry_id;
 	
 	-- Return the compiste type session_info.
     RETURN session_info;  
@@ -530,47 +533,48 @@ $function$
 ;
 
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_request_http_client_meta_data_upserted(hub_request_http_client_id text, request_payload jsonb, elaboration jsonb, created_by text, provenance text)
- RETURNS techbd_udi_ingress.sat_request_http_client_meta_data
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_http_request_upserted(hub_interaction_id text, request_payload jsonb, elaboration jsonb, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.sat_interaction_http_request
  LANGUAGE plpgsql
 AS $function$
 DECLARE
-	sat_request_http_client_meta_data_row 				techbd_udi_ingress.sat_request_http_client_meta_data%ROWTYPE;
+	sat_request_http_client_meta_data_row 				techbd_udi_ingress.sat_interaction_http_request%ROWTYPE;
 	hub_exception_row 			techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
   	err_message_text 			text;	-- Variable to store the message text of the error
   	err_pg_exception_detail 	text;	-- Variable to store the detail of the error
   	err_pg_exception_hint 		text;	-- Variable to store the hint of the error
   	err_pg_exception_context 	text; 	-- Variable to store the context of the error
-  	var_hub_request_http_client_key	text;
+  	hub_interaction_key	text;
 BEGIN
 
-	select t."key" into var_hub_request_http_client_key
-  	FROM techbd_udi_ingress.hub_request_http_client t
-  	where t.hub_request_http_client_id = sat_request_http_client_meta_data_upserted.hub_request_http_client_id;
+	select t."key" into hub_interaction_key
+  	FROM techbd_udi_ingress.hub_interaction t
+  	where t.hub_interaction_id = sat_interaction_http_request_upserted.hub_interaction_id;
   
-  	if(var_hub_request_http_client_key is NULL) then
+  	if(hub_interaction_key is NULL) then
   		return null;	
   	end if;
   
     -- Attempt to select the row
     SELECT * INTO sat_request_http_client_meta_data_row
-    FROM techbd_udi_ingress.sat_request_http_client_meta_data sat
-    WHERE sat.hub_request_http_client_id = sat_request_http_client_meta_data_upserted.hub_request_http_client_id        
-    AND sat.request_payload = sat_request_http_client_meta_data_upserted.request_payload
-    and sat.provenance = sat_request_http_client_meta_data_upserted.provenance
+    FROM techbd_udi_ingress.sat_interaction_http_request sat
+    WHERE sat.hub_interaction_id = sat_interaction_http_request_upserted.hub_interaction_id        
+    AND sat.request_payload = sat_interaction_http_request_upserted.request_payload
+    and sat.provenance = sat_interaction_http_request_upserted.provenance
    ;
     -- If the row is not found, insert it
     IF sat_request_http_client_meta_data_row is NULL THEN
-       insert into techbd_udi_ingress.sat_request_http_client_meta_data 
-		(sat_request_http_client_meta_data_id,
-		hub_request_http_client_id,
+       insert into techbd_udi_ingress.sat_interaction_http_request 
+		(sat_interaction_http_request_id,
+		hub_interaction_id,
 		request_payload,
 		elaboration,			
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),
-		            hub_request_http_client_id,
+		values (techbd_udi_ingress.uuid_generate_v4(),
+		            hub_interaction_id,
 		           	request_payload,
 		            elaboration,            
 		            created_by, 
@@ -592,7 +596,7 @@ EXCEPTION
 	RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
 	
 	-- Log the error
-   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(var_hub_request_http_client_key, created_by, provenance);
+   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_interaction_key, created_by, provenance);
 	PERFORM techbd_udi_ingress.sat_exception_diagnostics_upserted(
 	        hub_exception_row.hub_exception_id,
 	        err_message_text,
@@ -608,45 +612,47 @@ $function$
 ;
 
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_ingest_session_upserted(hub_ingest_session_id text, device_id text, version text, orch_started_at timestamp without time zone, orch_finished_at timestamp without time zone, qe_identifier text, p_content_hash text, args_json jsonb, diagnostics_json jsonb, diagnostics_md text, elaboration jsonb, created_by text, provenance text)
- RETURNS techbd_udi_ingress.sat_ingest_session_meta_data
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_operation_session_upserted(
+hub_operation_session_id text, device_id text, version text, orch_started_at timestamp without time zone, orch_finished_at timestamp without time zone, qe_identifier text, p_content_hash text, args_json jsonb, diagnostics_json jsonb, diagnostics_md text, elaboration jsonb, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.sat_operation_session_meta_data
  LANGUAGE plpgsql
 AS $function$
 declare
-	sat_ingest_session_meta_data_row 				techbd_udi_ingress.sat_ingest_session_meta_data%ROWTYPE;
+	sat_operation_session_meta_data_row 				techbd_udi_ingress.sat_operation_session_meta_data%ROWTYPE;
 	hub_exception_row 			techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
   	err_message_text 			text;	-- Variable to store the message text of the error
   	err_pg_exception_detail 	text;	-- Variable to store the detail of the error
   	err_pg_exception_hint 		text;	-- Variable to store the hint of the error
   	err_pg_exception_context 	text; 	-- Variable to store the context of the error
-  	hub_ingest_session_key		text;
+  	hub_operation_session_key	text;
   	content_hash 				text;
 BEGIN
 	-- Start transaction
-    select key into hub_ingest_session_key t
-  	FROM techbd_udi_ingress.hub_ingest_session t
-  	where t.hub_ingest_session_id = sat_ingest_session_upserted.hub_ingest_session_id;
+    select key into hub_operation_session_key t
+  	FROM techbd_udi_ingress.hub_operation_session t
+  	where t.hub_operation_session_id = sat_operation_session_upserted.hub_operation_session_id;
   
-  	if(hub_ingest_session_key is NULL) then
+  	if(hub_operation_session_key is NULL) then
   		return null;	
   	end if;    	
   	
     -- Attempt to select the row
-    SELECT * INTO sat_ingest_session_meta_data_row
-    FROM techbd_udi_ingress.sat_ingest_session_meta_data sat
-    WHERE sat.device_id			= sat_ingest_session_upserted.device_id
-    AND sat.args_json			= sat_ingest_session_upserted.args_json	
-    AND sat.diagnostics_json	= sat_ingest_session_upserted.diagnostics_json
-    AND sat.provenance 			= sat_ingest_session_upserted.provenance
+    SELECT * INTO sat_operation_session_meta_data_row
+    FROM techbd_udi_ingress.sat_operation_session_meta_data sat
+    WHERE sat.device_id			= sat_operation_session_upserted.device_id
+    AND sat.args_json			= sat_operation_session_upserted.args_json	
+    AND sat.diagnostics_json	= sat_operation_session_upserted.diagnostics_json
+    AND sat.provenance 			= sat_operation_session_upserted.provenance
    	;
     -- If the row is not found, insert it
-    IF sat_ingest_session_meta_data_row is NULL then    
+    IF sat_operation_session_meta_data_row is NULL then    
    		content_hash := md5('' || now()::text || random()::text);
    	
-   		insert into techbd_udi_ingress.sat_ingest_session_meta_data
+   		insert into techbd_udi_ingress.sat_operation_session_meta_data
 		(sat_ingest_session_meta_data_id,
-		hub_ingest_session_id,
+		hub_operation_session_id,
 		device_id,
 		"version",
 		orch_started_at,
@@ -659,8 +665,8 @@ BEGIN
 		diagnostics_md,
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),
-	            hub_ingest_session_id,
+		values (techbd_udi_ingress.uuid_generate_v4(),
+	            hub_operation_session_id,
 	            device_id,
 	            version,
 	           	orch_started_at,
@@ -673,9 +679,9 @@ BEGIN
 	            diagnostics_md,          
 	            created_by, 
 	            provenance)
-	            returning * into sat_ingest_session_meta_data_row;
+	            returning * into sat_operation_session_meta_data_row;
     END IF;
-  	return sat_ingest_session_meta_data_row;
+  	return sat_operation_session_meta_data_row;
 	EXCEPTION
 	    WHEN others THEN 
 	   
@@ -688,7 +694,7 @@ BEGIN
 	
 		--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
 		-- Log the error
-	   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_ingest_session_key, created_by, provenance);
+	   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_operation_session_key, created_by, provenance);
 		PERFORM techbd_udi_ingress.sat_exception_diagnostics_upserted(
 		        hub_exception_row.hub_exception_id,
 		        err_message_text,
@@ -705,12 +711,13 @@ $function$
 ;
 
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_ingest_session_entry_session_state_upserted(session_entry_id text, from_state text, to_state text, transition_result text, transition_reason text, elaboration jsonb, created_by text, provenance text)
- RETURNS techbd_udi_ingress.sat_ingest_session_entry_session_state
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_operation_session_entry_session_state_upserted(session_entry_id text, from_state text, to_state text, transition_result text, transition_reason text, elaboration jsonb, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.sat_operation_session_entry_session_state
  LANGUAGE plpgsql
 AS $function$
 declare
-	sat_ingest_session_entry_session_state_row 	techbd_udi_ingress.sat_ingest_session_entry_session_state%ROWTYPE;
+	sat_ingest_session_entry_session_state_row 	techbd_udi_ingress.sat_operation_session_entry_session_state%ROWTYPE;
 	hub_exception_row 							techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 					TEXT;	-- Variable to store SQLSTATE of the error
   	err_message_text 						TEXT;	-- Variable to store the message TEXT of the error
@@ -718,12 +725,12 @@ declare
   	err_pg_exception_hint 					TEXT;	-- Variable to store the hint of the error
   	err_pg_exception_context 				TEXT; 	-- Variable to store the context of the error
   	session_entry_key						TEXT;
-  	hub_ingest_session_entry_id				TEXT;
+  	hub_operation_session_entry_id				TEXT;
 begin	
 	-- Start transaction
     select t.key into session_entry_key
-  	FROM techbd_udi_ingress.hub_ingest_session_entry t
-  	where t.hub_ingest_session_entry_id = session_entry_id;
+  	FROM techbd_udi_ingress.hub_operation_session_entry t
+  	where t.hub_operation_session_entry_id = session_entry_id;
   	
   	if(session_entry_key is NULL) then
   		return null;	
@@ -731,19 +738,19 @@ begin
   
     -- Attempt to select the row
    	SELECT * INTO sat_ingest_session_entry_session_state_row
-    FROM techbd_udi_ingress.sat_ingest_session_entry_session_state sat
-    WHERE sat.from_state 		= sat_ingest_session_entry_session_state_upserted.from_state
-    and sat.to_state 			= sat_ingest_session_entry_session_state_upserted.to_state
-    and sat.transition_result	= sat_ingest_session_entry_session_state_upserted.transition_result 
-    and sat.transition_reason	= sat_ingest_session_entry_session_state_upserted.transition_reason
-    AND sat.provenance 			= sat_ingest_session_entry_session_state_upserted.provenance;
+    FROM techbd_udi_ingress.sat_operation_session_entry_session_state sat
+    WHERE sat.from_state 		= sat_operation_session_entry_session_state_upserted.from_state
+    and sat.to_state 			= sat_operation_session_entry_session_state_upserted.to_state
+    and sat.transition_result	= sat_operation_session_entry_session_state_upserted.transition_result 
+    and sat.transition_reason	= sat_operation_session_entry_session_state_upserted.transition_reason
+    AND sat.provenance 			= sat_operation_session_entry_session_state_upserted.provenance;
    
     -- If the row is not found, insert it
     IF sat_ingest_session_entry_session_state_row is NULL then
     
-		insert into techbd_udi_ingress.sat_ingest_session_entry_session_state 
-		(sat_ingest_session_entry_session_state_id,
-		hub_ingest_session_entry_id,
+		insert into techbd_udi_ingress.sat_operation_session_entry_session_state 
+		(sat_operation_session_entry_session_state_id,
+		hub_operation_session_entry_id,
 		from_state,
 		to_state,
 		transition_result,
@@ -751,15 +758,15 @@ begin
 		elaboration,
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),
+		values (techbd_udi_ingress.uuid_generate_v4(),
 				session_entry_id,        
-				sat_ingest_session_entry_session_state_upserted.from_state,
-				sat_ingest_session_entry_session_state_upserted.to_state,
-				sat_ingest_session_entry_session_state_upserted.transition_result,
-				sat_ingest_session_entry_session_state_upserted.transition_reason,				
-	            sat_ingest_session_entry_session_state_upserted.elaboration,            
-	            sat_ingest_session_entry_session_state_upserted.created_by, 
-	            sat_ingest_session_entry_session_state_upserted.provenance)
+				sat_operation_session_entry_session_state_upserted.from_state,
+				sat_operation_session_entry_session_state_upserted.to_state,
+				sat_operation_session_entry_session_state_upserted.transition_result,
+				sat_operation_session_entry_session_state_upserted.transition_reason,				
+	            sat_operation_session_entry_session_state_upserted.elaboration,            
+	            sat_operation_session_entry_session_state_upserted.created_by, 
+	            sat_operation_session_entry_session_state_upserted.provenance)
 	            returning * into sat_ingest_session_entry_session_state_row;
     END IF;
    
@@ -791,13 +798,16 @@ begin
 END;
 $function$
 ;
+
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_ingest_session_entry_session_issue_upserted(hub_ingest_session_entry_id text, issue_type text, issue_message text, level text, issue_column text, issue_row text, message_id text, ignorableerror text, invalid_value text, comment text, display text, disposition text, remediation text, validation_engine_payload jsonb, elaboration jsonb, created_by text, provenance text)
- RETURNS techbd_udi_ingress.sat_ingest_session_entry_session_issue
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_operation_session_entry_session_issue_upserted(
+hub_operation_session_entry_id text, issue_type text, issue_message text, level text, issue_column text, issue_row text, message_id text, ignorableerror text, invalid_value text, comment text, display text, disposition text, remediation text, validation_engine_payload jsonb, elaboration jsonb, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.sat_operation_session_entry_session_issue
  LANGUAGE plpgsql
 AS $function$
 declare
-	sat_ingest_session_entry_session_issue_row 					techbd_udi_ingress.sat_ingest_session_entry_session_issue%ROWTYPE;
+	sat_operation_session_entry_session_issue_row 					techbd_udi_ingress.sat_operation_session_entry_session_issue%ROWTYPE;
 	hub_exception_row 				techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
   	err_message_text 				text;	-- Variable to store the message text of the error
@@ -808,26 +818,26 @@ declare
 BEGIN
 	-- Start transaction
     select t.key into hub_ingest_session_entry_key
-  	FROM techbd_udi_ingress.hub_ingest_session_entry t
-  	where t.hub_ingest_session_entry_id = sat_ingest_session_entry_session_issue_upserted.hub_ingest_session_entry_id;
+  	FROM techbd_udi_ingress.hub_operation_session_entry t
+  	where t.hub_operation_session_entry_id = sat_operation_session_entry_session_issue_upserted.hub_operation_session_entry_id;
   
   	if(hub_ingest_session_entry_key is NULL) then
   		return null;	
   	end if;
   	
     -- Attempt to select the row
-    SELECT * INTO sat_ingest_session_entry_session_issue_row
-    FROM techbd_udi_ingress.sat_ingest_session_entry_session_issue sat
-    WHERE sat.issue_type 	= sat_ingest_session_entry_session_issue_upserted.issue_type
-    and sat.issue_message 	= sat_ingest_session_entry_session_issue_upserted.issue_message
-    and sat."level" 		= sat_ingest_session_entry_session_issue_upserted.level  
-    AND sat.provenance 		= sat_ingest_session_entry_session_issue_upserted.provenance;
+    SELECT * INTO sat_operation_session_entry_session_issue_row
+    FROM techbd_udi_ingress.sat_operation_session_entry_session_issue sat
+    WHERE sat.issue_type 	= sat_operation_session_entry_session_issue_upserted.issue_type
+    and sat.issue_message 	= sat_operation_session_entry_session_issue_upserted.issue_message
+    and sat."level" 		= sat_operation_session_entry_session_issue_upserted.level  
+    AND sat.provenance 		= sat_operation_session_entry_session_issue_upserted.provenance;
    
     -- If the row is not found, insert it
-    IF sat_ingest_session_entry_session_issue_row is NULL THEN
-		insert into techbd_udi_ingress.sat_ingest_session_entry_session_issue 
+    IF sat_operation_session_entry_session_issue_row is NULL THEN
+		insert into techbd_udi_ingress.sat_operation_session_entry_session_issue 
 		(sat_ingest_session_entry_session_issue_id,
-		hub_ingest_session_entry_id,
+		hub_operation_session_entry_id,
 		issue_type,
 		issue_message,
 		"level",
@@ -844,8 +854,8 @@ BEGIN
 		elaboration,
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),
-				hub_ingest_session_entry_id,        
+		values (techbd_udi_ingress.uuid_generate_v4(),
+				hub_operation_session_entry_id,        
 				issue_type,
 				issue_message,
 				level::integer,
@@ -862,10 +872,10 @@ BEGIN
 	            elaboration,            
 	            created_by, 
 	            provenance)
-	            returning * into sat_ingest_session_entry_session_issue_row;
+	            returning * into sat_operation_session_entry_session_issue_row;
     END IF;
    
-   	return sat_ingest_session_entry_session_issue_row;
+   	return sat_operation_session_entry_session_issue_row;
 	EXCEPTION
 	    WHEN others THEN 
 	   
@@ -894,43 +904,44 @@ END;
 $function$
 ;
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_ingest_session_entry_session_exec_upserted(hub_ingest_session_entry_id text, exec_nature text, parent_exec_id text, namespace text, exec_identity text, exec_code text, exec_status text, input_text text, exec_error_text text, output_text text, output_nature text, narrative_md text, elaboration jsonb, created_by text, provenance text)
- RETURNS techbd_udi_ingress.sat_ingest_session_entry_session_exec
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_operation_session_entry_session_exec_upserted(hub_operation_session_entry_id text, exec_nature text, parent_exec_id text, namespace text, exec_identity text, exec_code text, exec_status text, input_text text, exec_error_text text, output_text text, output_nature text, narrative_md text, elaboration jsonb, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.sat_operation_session_entry_session_exec
  LANGUAGE plpgsql
 AS $function$
 declare
-	sat_ingest_session_entry_session_exec_row 	techbd_udi_ingress.sat_ingest_session_entry_session_exec%ROWTYPE;
+	sat_operation_session_entry_session_exec_row 	techbd_udi_ingress.sat_operation_session_entry_session_exec%ROWTYPE;
 	hub_exception_row 				techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
   	err_message_text 				text;	-- Variable to store the message text of the error
   	err_pg_exception_detail 		text;	-- Variable to store the detail of the error
   	err_pg_exception_hint 			text;	-- Variable to store the hint of the error
   	err_pg_exception_context 		text; 	-- Variable to store the context of the error
-  	hub_ingest_session_entry_key	text;
+  	hub_operation_session_entry_key	text;
 BEGIN
 	-- Start transaction
-    select t.key into hub_ingest_session_entry_key
-  	FROM techbd_udi_ingress.hub_ingest_session_entry t
-  	where t.hub_ingest_session_entry_id = sat_ingest_session_entry_session_exec_upserted.hub_ingest_session_entry_id;
+    select t.key into hub_operation_session_entry_key
+  	FROM techbd_udi_ingress.hub_operation_session_entry t
+  	where t.hub_operation_session_entry_id = sat_operation_session_entry_session_exec_upserted.hub_operation_session_entry_id;
   
-  	if(hub_ingest_session_entry_key is NULL) then
+  	if(hub_operation_session_entry_key is NULL) then
   		return null;	
   	end if;
   	
     -- Attempt to select the row
-    SELECT * INTO sat_ingest_session_entry_session_exec_row
-    FROM techbd_udi_ingress.sat_ingest_session_entry_session_exec sat
-    WHERE sat.exec_nature 	= sat_ingest_session_entry_session_exec_upserted.exec_nature
-    and sat."namespace" 	= sat_ingest_session_entry_session_exec_upserted.namespace
-    and sat.exec_identity 	= sat_ingest_session_entry_session_exec_upserted.exec_identity
-    and sat.exec_code 		= sat_ingest_session_entry_session_exec_upserted.exec_code    
-    AND sat.provenance 		= sat_ingest_session_entry_session_exec_upserted.provenance;
+    SELECT * INTO sat_operation_session_entry_session_exec_row
+    FROM techbd_udi_ingress.sat_operation_session_entry_session_exec sat
+    WHERE sat.exec_nature 	= sat_operation_session_entry_session_exec_upserted.exec_nature
+    and sat."namespace" 	= sat_operation_session_entry_session_exec_upserted.namespace
+    and sat.exec_identity 	= sat_operation_session_entry_session_exec_upserted.exec_identity
+    and sat.exec_code 		= sat_operation_session_entry_session_exec_upserted.exec_code    
+    AND sat.provenance 		= sat_operation_session_entry_session_exec_upserted.provenance;
    
     -- If the row is not found, insert it
-    IF sat_ingest_session_entry_session_exec_row is NULL THEN
-		insert into techbd_udi_ingress.sat_ingest_session_entry_session_exec 
+    IF sat_operation_session_entry_session_exec_row is NULL THEN
+		insert into techbd_udi_ingress.sat_operation_session_entry_session_exec 
 		(sat_ingest_session_entry_session_exec_id,
-		hub_ingest_session_entry_id,
+		hub_operation_session_entry_id,
 		exec_nature,
 		parent_exec_id,
 		"namespace",
@@ -945,8 +956,8 @@ BEGIN
 		elaboration,
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),
-				hub_ingest_session_entry_id,        
+		values (techbd_udi_ingress.uuid_generate_v4(),
+				hub_operation_session_entry_id,        
 				exec_nature,
 				parent_exec_id,
 				namespace,
@@ -961,10 +972,10 @@ BEGIN
 	            elaboration,            
 	            created_by, 
 	            provenance)
-	            returning * into sat_ingest_session_entry_session_exec_row;
+	            returning * into sat_operation_session_entry_session_exec_row;
     END IF;
    
-   	return sat_ingest_session_entry_session_exec_row;
+   	return sat_operation_session_entry_session_exec_row;
 	EXCEPTION
 	    WHEN others THEN 
 	   
@@ -977,7 +988,7 @@ BEGIN
 	
 		--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
 		-- Log the error
-	   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_ingest_session_entry_key, created_by, provenance);
+	   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_operation_session_entry_key, created_by, provenance);
 		PERFORM techbd_udi_ingress.sat_exception_diagnostics_upserted(
 		        hub_exception_row.hub_exception_id,
 		        err_message_text,
@@ -993,12 +1004,13 @@ END;
 $function$
 ;
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_ingest_session_entry_payload_upserted(session_entry_id text, ingest_src text, payload jsonb, content_type text, elaboration jsonb, created_by text, provenance text)
- RETURNS techbd_udi_ingress.sat_ingest_session_entry_payload
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_operation_session_entry_payload_upserted(session_entry_id text, ingest_src text, payload jsonb, content_type text, elaboration jsonb, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.sat_operation_session_entry_payload
  LANGUAGE plpgsql
 AS $function$
 declare
-	sat_ingest_session_entry_payload_row 	techbd_udi_ingress.sat_ingest_session_entry_payload%ROWTYPE;
+	sat_ingest_session_entry_payload_row 	techbd_udi_ingress.sat_operation_session_entry_payload%ROWTYPE;
 	hub_exception_row 						techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 					text;	-- Variable to store SQLSTATE of the error
   	err_message_text 						text;	-- Variable to store the message text of the error
@@ -1010,8 +1022,8 @@ declare
 BEGIN
 	-- Start transaction
     select t.key into session_entry_key
-  	FROM techbd_udi_ingress.hub_ingest_session_entry t
-  	where t.hub_ingest_session_entry_id = session_entry_id;
+  	FROM techbd_udi_ingress.hub_operation_session_entry t
+  	where t.hub_operation_session_entry_id = session_entry_id;
 
   	if(session_entry_key is NULL) then
   		return null;	
@@ -1019,24 +1031,24 @@ BEGIN
   
     -- Attempt to select the row
     SELECT * INTO sat_ingest_session_entry_payload_row
-    FROM techbd_udi_ingress.sat_ingest_session_entry_payload sat
-    WHERE sat.ingest_payload = sat_ingest_session_entry_payload_upserted.payload        
-    AND sat.provenance = sat_ingest_session_entry_payload_upserted.provenance
+    FROM techbd_udi_ingress.sat_operation_session_entry_payload sat
+    WHERE sat.ingest_payload = sat_operation_session_entry_payload_upserted.payload        
+    AND sat.provenance = sat_operation_session_entry_payload_upserted.provenance
    ;
   
     -- If the row is not found, insert it
     IF sat_ingest_session_entry_payload_row is NULL THEN
     
-       insert into techbd_udi_ingress.sat_ingest_session_entry_payload 
-		(sat_ingest_session_entry_payload_id,
-		hub_ingest_session_entry_id,
+       insert into techbd_udi_ingress.sat_operation_session_entry_payload 
+		(sat_operation_session_entry_payload_id,
+		hub_operation_session_entry_id,
 		ingest_src,
 		ingest_payload,
 		content_type,
 		elaboration,
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),
+		values (techbd_udi_ingress.uuid_generate_v4(),
 				session_entry_id,        
 				ingest_src,
 				payload,
@@ -1076,7 +1088,9 @@ END;
 $function$
 ;
 
+
 /*==============================================================================================================================*/
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_exception_http_client_upserted(hub_exception_id text, http_request jsonb, http_response jsonb, created_by text, provenance text)
  RETURNS techbd_udi_ingress.sat_exception_http_client
  LANGUAGE plpgsql
@@ -1115,7 +1129,7 @@ BEGIN
 		http_resp,			
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),
+		values (techbd_udi_ingress.uuid_generate_v4(),
 		            hub_exception_id,
 		            http_request, 
 		            http_response,
@@ -1173,7 +1187,7 @@ BEGIN
         provenance
     )
     VALUES (
-        public.uuid_generate_v4(),
+        techbd_udi_ingress.uuid_generate_v4(),
         hub_exception_id,
         message,
         err_returned_sqlstate,
@@ -1192,12 +1206,13 @@ $function$
 ;
 
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_device_upserted(hub_device_id text, name text, state text, boundary text, segmentation text, state_sysinfo text, elaboration jsonb, created_by text, provenance text)
- RETURNS techbd_udi_ingress.sat_device_device
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_provenance_device_upserted(hub_provenance_id text, name text, state text, boundary text, segmentation text, state_sysinfo text, elaboration jsonb, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.sat_provenance_device
  LANGUAGE plpgsql
 AS $function$
 declare
-    sat_device_device_row         techbd_udi_ingress.sat_device_device%ROWTYPE;
+    sat_provenance_device_row         techbd_udi_ingress.sat_provenance_device%ROWTYPE;
     hub_exception_row             techbd_udi_ingress.hub_exception;
     err_returned_sqlstate         text;    -- Variable to store SQLSTATE of the error
     err_message_text              text;    -- Variable to store the message text of the error
@@ -1209,25 +1224,25 @@ BEGIN
     -- Start transaction
     
     SELECT t."key" into hub_device_key
-    FROM techbd_udi_ingress.hub_device t
-    WHERE t.hub_device_id = sat_device_upserted.hub_device_id;--'2367a34f-ae7b-4046-8a6a-797f337bc201';
+    FROM techbd_udi_ingress.hub_provenance t
+    WHERE t.hub_provenance_id = sat_provenance_device_upserted.hub_provenance_id;--'2367a34f-ae7b-4046-8a6a-797f337bc201';
     
     IF hub_device_key IS NULL THEN
         RETURN NULL;    
     END IF;
 
     -- Attempt to select the row
-    SELECT * INTO sat_device_device_row
-    FROM techbd_udi_ingress.sat_device_device sat
-    WHERE sat."name" = sat_device_upserted.name        
-    AND sat.provenance = sat_device_upserted.provenance
-    AND sat.hub_device_id = sat_device_upserted.hub_device_id;
+    SELECT * INTO sat_provenance_device_row
+    FROM techbd_udi_ingress.sat_provenance_device sat
+    WHERE sat."name" = sat_provenance_device_upserted.name        
+    AND sat.provenance = sat_provenance_device_upserted.provenance
+    AND sat.hub_provenance_id = sat_provenance_device_upserted.hub_provenance_id;
     
     -- If the row is not found, insert it
-    IF sat_device_device_row IS NULL THEN
-       INSERT INTO techbd_udi_ingress.sat_device_device 
+    IF sat_provenance_device_row IS NULL THEN
+       INSERT INTO techbd_udi_ingress.sat_provenance_device 
         (sat_device_device_id,
-        hub_device_id,
+        hub_provenance_id,
         "name",
         state,
         boundary,
@@ -1236,8 +1251,8 @@ BEGIN
         elaboration,
         created_by,
         provenance)
-        VALUES (public.uuid_generate_v4(),
-                hub_device_id,
+        VALUES (techbd_udi_ingress.uuid_generate_v4(),
+                hub_provenance_id,
                 "name",
                 state,
                 boundary,
@@ -1246,9 +1261,9 @@ BEGIN
                 elaboration,            
                 created_by, 
                 provenance)
-        RETURNING * INTO sat_device_device_row;
+        RETURNING * INTO sat_provenance_device_row;
     END IF;
-    RETURN sat_device_device_row;
+    RETURN sat_provenance_device_row;
     EXCEPTION
         WHEN others THEN 
        
@@ -1277,12 +1292,13 @@ END;
 $function$
 ;
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.link_session_request_upserted(hub_ingest_session_id text, hub_request_http_client_id text, created_by text, provenance text)
- RETURNS techbd_udi_ingress.link_session_request
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.link_session_interaction_upserted(hub_operation_session_id text, hub_interaction_id text, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.link_session_interaction
  LANGUAGE plpgsql
 AS $function$
 declare
-	link_session_request_row 		techbd_udi_ingress.link_session_request%ROWTYPE;
+	link_session_request_row 		techbd_udi_ingress.link_session_interaction%ROWTYPE;
 	hub_exception_row 				techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
   	err_message_text 				text;	-- Variable to store the message text of the error
@@ -1294,10 +1310,10 @@ declare
 BEGIN
 	-- Start transaction
 	SELECT 	his.key, htcl.key INTO hub_ingest_session_key, hub_request_http_client_key
-	FROM techbd_udi_ingress.hub_ingest_session his
-	JOIN techbd_udi_ingress.hub_request_http_client htcl 
-	ON his.hub_ingest_session_id = link_session_request_upserted.hub_ingest_session_id
-	AND htcl.hub_request_http_client_id = link_session_request_upserted.hub_request_http_client_id;
+	FROM techbd_udi_ingress.hub_operation_session his
+	JOIN techbd_udi_ingress.hub_interaction htcl 
+	ON his.hub_operation_session_id = link_session_interaction_upserted.hub_operation_session_id
+	AND htcl.hub_interaction_id = link_session_interaction_upserted.hub_interaction_id;
 		
   	if(hub_ingest_session_key is null and hub_request_http_client_key is null) then
   		return null;	
@@ -1305,22 +1321,22 @@ BEGIN
   	
     -- Attempt to select the row
     SELECT * INTO link_session_request_row
-    FROM techbd_udi_ingress.link_session_request lnk
-    WHERE lnk.hub_ingest_session_id 	= link_session_request_upserted.hub_ingest_session_id
-    and lnk.hub_request_http_client_id	= link_session_request_upserted.hub_request_http_client_id
-    AND lnk.provenance 					= link_session_request_upserted.provenance;
+    FROM techbd_udi_ingress.link_session_interaction lnk
+    WHERE lnk.hub_operation_session_id 	= link_session_interaction_upserted.hub_operation_session_id
+    and lnk.hub_interaction_id	= link_session_interaction_upserted.hub_interaction_id
+    AND lnk.provenance 					= link_session_interaction_upserted.provenance;
    
     -- If the row is not found, insert it
     IF link_session_request_row is NULL THEN
-		insert into techbd_udi_ingress.link_session_request
+		insert into techbd_udi_ingress.link_session_interaction
 		(link_session_request_id,
-		hub_ingest_session_id,
-		hub_request_http_client_id,
+		hub_operation_session_id,
+		hub_interaction_id,
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),     
-				hub_ingest_session_id,
-				hub_request_http_client_id,
+		values (techbd_udi_ingress.uuid_generate_v4(),     
+				hub_operation_session_id,
+				hub_interaction_id,
 	            created_by, 
 	            provenance)
 	            returning * into link_session_request_row;
@@ -1356,7 +1372,8 @@ $function$
 ;
 
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.link_session_entry_upserted(hub_ingest_session_id text, hub_ingest_session_entry_id text, created_by text, provenance text)
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.link_session_entry_upserted(hub_operation_session_id text, hub_operation_session_entry_id text, created_by text, provenance text)
  RETURNS techbd_udi_ingress.link_session_entry
  LANGUAGE plpgsql
 AS $function$
@@ -1369,40 +1386,37 @@ declare
   	err_pg_exception_hint 			text;	-- Variable to store the hint of the error
   	err_pg_exception_context 		text; 	-- Variable to store the context of the error
   	hub_ingest_session_key			text;
-  	hub_ingest_session_entry_key	text;
+  	hub_operation_session_entry_key	text;
 BEGIN
 	-- Start transaction
-	SELECT  his.key, hise.key INTO hub_ingest_session_key, hub_ingest_session_entry_key
-    FROM techbd_udi_ingress.hub_ingest_session his
-    JOIN techbd_udi_ingress.hub_ingest_session_entry hise 
-    ON his.hub_ingest_session_id = link_session_entry_upserted.hub_ingest_session_id
-    AND hise.hub_ingest_session_entry_id = link_session_entry_upserted.hub_ingest_session_entry_id;
-	
-	--RAISE 'hub_ingest_session_key: %', hub_ingest_session_key;
-	--RAISE 'hub_ingest_session_entry_key: %', hub_ingest_session_entry_key;
+	SELECT  his.key, hise.key INTO hub_ingest_session_key, hub_operation_session_entry_key
+    FROM techbd_udi_ingress.hub_operation_session his
+    JOIN techbd_udi_ingress.hub_operation_session_entry hise 
+    ON his.hub_operation_session_id = link_session_entry_upserted.hub_operation_session_id
+    AND hise.hub_operation_session_entry_id = link_session_entry_upserted.hub_operation_session_entry_id;	
 
-  	if(hub_ingest_session_key is null and hub_ingest_session_entry_key is null) then
+  	if(hub_ingest_session_key is null and hub_operation_session_entry_key is null) then
   		return null;	
   	end if;
 
     -- Attempt to select the row
     SELECT * INTO link_session_entry_row
     FROM techbd_udi_ingress.link_session_entry lnk
-    WHERE lnk.hub_ingest_session_id 	= link_session_entry_upserted.hub_ingest_session_id
-    and lnk.hub_ingest_session_entry_id	= link_session_entry_upserted.hub_ingest_session_entry_id
-    AND lnk.provenance 					= link_session_entry_upserted.provenance;
+    WHERE lnk.hub_operation_session_id 		= link_session_entry_upserted.hub_operation_session_id
+    and lnk.hub_operation_session_entry_id	= link_session_entry_upserted.hub_operation_session_entry_id
+    AND lnk.provenance 						= link_session_entry_upserted.provenance;
    
     -- If the row is not found, insert it
     IF link_session_entry_row is NULL THEN
 		insert into techbd_udi_ingress.link_session_entry 
 		(link_session_entry_id,
-		hub_ingest_session_id,
-		hub_ingest_session_entry_id,		
+		hub_operation_session_id,
+		hub_operation_session_entry_id,		
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),     
-				hub_ingest_session_id,
-				hub_ingest_session_entry_id,
+		values (techbd_udi_ingress.uuid_generate_v4(),     
+				hub_operation_session_id,
+				hub_operation_session_entry_id,
 	            created_by, 
 	            provenance)
 	            returning * into link_session_entry_row;
@@ -1421,7 +1435,7 @@ BEGIN
 	
 		RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/           
 		-- Log the error
-	   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_ingest_session_entry_key, created_by, provenance);
+	   	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(hub_operation_session_entry_key, created_by, provenance);
 		PERFORM techbd_udi_ingress.sat_exception_diagnostics_upserted(
 		        hub_exception_row.hub_exception_id,
 		        err_message_text,
@@ -1437,12 +1451,13 @@ END;
 $function$
 ;
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.link_session_device_upserted(hub_ingest_session_id text, hub_device_id text, created_by text, provenance text)
- RETURNS techbd_udi_ingress.link_session_device
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.link_session_provenance_upserted(hub_operation_session_id text, hub_provenance_id text, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.link_session_provenance
  LANGUAGE plpgsql
-AS $function$
+AS $function$ 
 declare
-	link_session_device_row 		techbd_udi_ingress.link_session_device%ROWTYPE;
+	link_session_provenance_row 		techbd_udi_ingress.link_session_provenance%ROWTYPE;
 	hub_exception_row 				techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
   	err_message_text 				text;	-- Variable to store the message text of the error
@@ -1454,39 +1469,39 @@ declare
 BEGIN
 	-- Start transaction
 	SELECT 	his.key, hdvc.key INTO hub_ingest_session_key, hub_device_key
-	FROM techbd_udi_ingress.hub_ingest_session his
-	JOIN techbd_udi_ingress.hub_device hdvc 
-	ON his.hub_ingest_session_id = link_session_device_upserted.hub_ingest_session_id
-	AND hdvc.hub_device_id = link_session_device_upserted.hub_device_id;
+	FROM techbd_udi_ingress.hub_operation_session his
+	JOIN techbd_udi_ingress.hub_provenance hdvc 
+	ON his.hub_operation_session_id = link_session_provenance_upserted.hub_operation_session_id
+	AND hdvc.hub_provenance_id = link_session_provenance_upserted.hub_provenance_id;
 		
   	if(hub_ingest_session_key is null and hub_device_key is null) then
   		return null;	
   	end if;
   	
     -- Attempt to select the row
-    SELECT * INTO link_session_device_row
-    FROM techbd_udi_ingress.link_session_device lnk
-    WHERE lnk.hub_ingest_session_id = link_session_device_upserted.hub_ingest_session_id
-    and lnk.hub_device_id			= link_session_device_upserted.hub_device_id
-    AND lnk.provenance 				= link_session_device_upserted.provenance;
+    SELECT * INTO link_session_provenance_row
+    FROM techbd_udi_ingress.link_session_provenance lnk
+    WHERE lnk.hub_operation_session_id 	= link_session_provenance_upserted.hub_operation_session_id
+    and lnk.hub_provenance_id			= link_session_provenance_upserted.hub_provenance_id
+    AND lnk.provenance 					= link_session_provenance_upserted.provenance;
    
     -- If the row is not found, insert it
-    IF link_session_device_row is NULL THEN
-		insert into techbd_udi_ingress.link_session_device
+    IF link_session_provenance_row is NULL THEN
+		insert into techbd_udi_ingress.link_session_provenance
 		(link_session_device_id,
-		hub_ingest_session_id,
-		hub_device_id,
+		hub_operation_session_id,
+		hub_provenance_id,
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),     
-				hub_ingest_session_id,
-				hub_device_id,
+		values (techbd_udi_ingress.uuid_generate_v4(),     
+				hub_operation_session_id,
+				hub_provenance_id,
 	            created_by, 
 	            provenance)
-	            returning * into link_session_device_row;
+	            returning * into link_session_provenance_row;
     END IF;
    
-   	return link_session_device_row;
+   	return link_session_provenance_row;
 	EXCEPTION
 	    WHEN others THEN 
 	   
@@ -1514,14 +1529,14 @@ BEGIN
 END;
 $function$
 ;
-
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_request_http_client_upserted(key text, created_by text, provenance text)
- RETURNS techbd_udi_ingress.hub_request_http_client
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_interaction_upserted(key text, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.hub_interaction
  LANGUAGE plpgsql
 AS $function$
 declare
-	hub_request_http_client_row techbd_udi_ingress.hub_request_http_client%ROWTYPE;
+	hub_request_http_client_row techbd_udi_ingress.hub_interaction%ROWTYPE;
 	hub_exception_row 			techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
   	err_message_text 			text;	-- Variable to store the message text of the error
@@ -1532,14 +1547,14 @@ BEGIN
     -- Start transaction
     -- Attempt to select the row
     SELECT * INTO hub_request_http_client_row
-    FROM techbd_udi_ingress.hub_request_http_client hub
-    WHERE hub.key = hub_request_http_client_upserted.key
-  	AND hub.provenance = hub_request_http_client_upserted.provenance;
+    FROM techbd_udi_ingress.hub_interaction hub
+    WHERE hub.key = hub_interaction_upserted.key
+  	AND hub.provenance = hub_interaction_upserted.provenance;
 
     -- If the row is not found, insert it
     IF NOT FOUND THEN
-        INSERT INTO techbd_udi_ingress.hub_request_http_client (hub_request_http_client_id, key, created_by, provenance)
-        VALUES (public.uuid_generate_v4(), key, created_by, provenance)
+        INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_by, provenance)
+        VALUES (techbd_udi_ingress.uuid_generate_v4(), key, created_by, provenance)
         RETURNING * INTO hub_request_http_client_row;
     END IF;
    	RETURN hub_request_http_client_row; 
@@ -1569,12 +1584,13 @@ END;
 $function$
 ;
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_ingest_session_upserted(key text, created_by text, provenance text)
- RETURNS techbd_udi_ingress.hub_ingest_session
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_operation_session_upserted(key text, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.hub_operation_session
  LANGUAGE plpgsql
 AS $function$
 declare
-	hub_ingest_session_row 		techbd_udi_ingress.hub_ingest_session%ROWTYPE;
+	hub_ingest_session_row 		techbd_udi_ingress.hub_operation_session%ROWTYPE;
 	hub_exception_row 			techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
   	err_message_text 			text;	-- Variable to store the message text of the error
@@ -1584,14 +1600,14 @@ declare
 begin
         -- Attempt to select the row
         SELECT * INTO hub_ingest_session_row
-        FROM techbd_udi_ingress.hub_ingest_session hub
-        WHERE hub.key = hub_ingest_session_upserted.key
-        AND hub.provenance = hub_ingest_session_upserted.provenance;
+        FROM techbd_udi_ingress.hub_operation_session hub
+        WHERE hub.key = hub_operation_session_upserted.key
+        AND hub.provenance = hub_operation_session_upserted.provenance;
 
         -- If the row is not found, insert it
         IF NOT FOUND THEN
-            INSERT INTO techbd_udi_ingress.hub_ingest_session(hub_ingest_session_id, key, created_by, provenance)
-            VALUES (public.uuid_generate_v4(), 
+            INSERT INTO techbd_udi_ingress.hub_operation_session(hub_operation_session_id, key, created_by, provenance)
+            VALUES (techbd_udi_ingress.uuid_generate_v4(), 
             		key, 
             		created_by, 
             		provenance)
@@ -1625,12 +1641,13 @@ END;
 $function$
 ;
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_ingest_session_entry_upserted(key text, created_by text, provenance text)
- RETURNS techbd_udi_ingress.hub_ingest_session_entry
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_operation_session_entry_upserted(key text, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.hub_operation_session_entry
  LANGUAGE plpgsql
 AS $function$
 declare
-	hub_ingest_session_entry_row 	techbd_udi_ingress.hub_ingest_session_entry%ROWTYPE;
+	hub_ingest_session_entry_row 	techbd_udi_ingress.hub_operation_session_entry%ROWTYPE;
 	hub_exception_row 				techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 			text;	-- Variable to store SQLSTATE of the error
   	err_message_text 				text;	-- Variable to store the message text of the error
@@ -1640,14 +1657,14 @@ declare
 begin
         -- Attempt to select the row
         SELECT * INTO hub_ingest_session_entry_row
-        FROM techbd_udi_ingress.hub_ingest_session_entry hub
-        WHERE hub.key = hub_ingest_session_entry_upserted.key
-        AND hub.provenance = hub_ingest_session_entry_upserted.provenance;
+        FROM techbd_udi_ingress.hub_operation_session_entry hub
+        WHERE hub.key = hub_operation_session_entry_upserted.key
+        AND hub.provenance = hub_operation_session_entry_upserted.provenance;
 
         -- If the row is not found, insert it
         IF NOT FOUND THEN
-            INSERT INTO techbd_udi_ingress.hub_ingest_session_entry (hub_ingest_session_entry_id, key, created_by, provenance)
-            VALUES (public.uuid_generate_v4(), key, created_by, provenance)
+            INSERT INTO techbd_udi_ingress.hub_operation_session_entry (hub_operation_session_entry_id, key, created_by, provenance)
+            VALUES (techbd_udi_ingress.uuid_generate_v4(), key, created_by, provenance)
             RETURNING * INTO hub_ingest_session_entry_row;
         END IF;
 
@@ -1678,8 +1695,8 @@ begin
 END;
 $function$
 ;
-
 /*==============================================================================================================================*/
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_exception_upserted(key text, created_by text, provenance text)
  RETURNS techbd_udi_ingress.hub_exception
  LANGUAGE plpgsql
@@ -1699,7 +1716,7 @@ begin
 		key,
 		created_by,
 		provenance)
-		values (public.uuid_generate_v4(),
+		values (techbd_udi_ingress.uuid_generate_v4(),
 		key,
 		created_by,
 		provenance)
@@ -1710,12 +1727,13 @@ END;
 $function$
 ;
 /*==============================================================================================================================*/
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_device_upserted(key text, created_by text, provenance text)
- RETURNS techbd_udi_ingress.hub_device
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_provenance_upserted(key text, created_by text, provenance text)
+ RETURNS techbd_udi_ingress.hub_provenance
  LANGUAGE plpgsql
 AS $function$
 declare
-	hub_device_row 				techbd_udi_ingress.hub_device%ROWTYPE;
+	hub_device_row 				techbd_udi_ingress.hub_provenance%ROWTYPE;
 	hub_exception_row 			techbd_udi_ingress.hub_exception;
 	err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
   	err_message_text 			text;	-- Variable to store the message text of the error
@@ -1725,14 +1743,14 @@ declare
 begin
         -- Attempt to select the row
         SELECT * INTO hub_device_row
-        FROM techbd_udi_ingress.hub_device hub
-        WHERE hub.key = hub_device_upserted.key
-        AND hub.provenance = hub_device_upserted.provenance;
+        FROM techbd_udi_ingress.hub_provenance hub
+        WHERE hub.key = hub_provenance_upserted.key
+        AND hub.provenance = hub_provenance_upserted.provenance;
 
         -- If the row is not found, insert it
         IF NOT FOUND then
-            INSERT INTO techbd_udi_ingress.hub_device (hub_device_id, key, created_by, provenance)
-            VALUES (public.uuid_generate_v4(), key, created_by, provenance)
+            INSERT INTO techbd_udi_ingress.hub_provenance (hub_provenance_id, key, created_by, provenance)
+            VALUES (techbd_udi_ingress.uuid_generate_v4(), key, created_by, provenance)
             RETURNING * INTO hub_device_row;
         END IF;
 

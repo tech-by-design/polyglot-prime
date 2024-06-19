@@ -4,8 +4,8 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction AS 
     WITH cte_session_interaction AS (
         SELECT 
-            sessionpayload.sat_ingest_session_entry_payload_id,
-            sessionpayload.hub_ingest_session_entry_id,
+            sessionpayload.sat_operation_session_entry_payload_id,
+            sessionpayload.hub_operation_session_entry_id,
             sessionpayload.provenance,
             sessionpayload.ingest_src::jsonb ->> 'namespace'::text AS namespace,
             sessionpayload.ingest_src::jsonb ->> 'interactionId'::text AS interaction_id,
@@ -23,7 +23,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction AS
             ((sessionpayload.ingest_src::jsonb -> 'response'::text) ->> 'encounteredAt'::text)::double precision AS response_encountered_at_raw,
             jsonb_array_length((sessionpayload.ingest_src::jsonb -> 'request'::text) -> 'headers'::text) AS num_request_headers
         FROM 
-            techbd_udi_ingress.sat_ingest_session_entry_payload sessionpayload
+            techbd_udi_ingress.sat_operation_session_entry_payload sessionpayload
     )
     SELECT 
         hubingestsession.key AS session_id,
@@ -42,31 +42,31 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction AS
         interaction.request_uri,
         interaction.request_params,
         interaction.request_id,
-        hubingestsession.hub_ingest_session_id,
-        interaction.hub_ingest_session_entry_id,    
+        hubingestsession.hub_operation_session_id,
+        interaction.hub_operation_session_entry_id,    
         interaction.interaction_id,
         interaction.provenance
     FROM 
         cte_session_interaction interaction
-        LEFT JOIN techbd_udi_ingress.hub_ingest_session_entry hubingestsessionentry ON hubingestsessionentry.hub_ingest_session_entry_id = interaction.hub_ingest_session_entry_id
-        LEFT JOIN techbd_udi_ingress.link_session_entry linksessionentry ON linksessionentry.hub_ingest_session_entry_id = hubingestsessionentry.hub_ingest_session_entry_id
-        LEFT JOIN techbd_udi_ingress.hub_ingest_session hubingestsession ON hubingestsession.hub_ingest_session_id = linksessionentry.hub_ingest_session_id;
+        LEFT JOIN techbd_udi_ingress.hub_operation_session_entry hubingestsessionentry ON hubingestsessionentry.hub_operation_session_entry_id = interaction.hub_operation_session_entry_id
+        LEFT JOIN techbd_udi_ingress.link_session_entry linksessionentry ON linksessionentry.hub_operation_session_entry_id = hubingestsessionentry.hub_operation_session_entry_id
+        LEFT JOIN techbd_udi_ingress.hub_operation_session hubingestsession ON hubingestsession.hub_operation_session_id = linksessionentry.hub_operation_session_id;
 
 /*=============================================================================================================*/
 
-DROP VIEW IF EXISTS techbd_udi_ingress.sat_ingest_session_entry_session_issue_fhir CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.sat_ingest_session_entry_session_issue_fhir AS 
+DROP VIEW IF EXISTS techbd_udi_ingress.sat_operation_session_entry_session_issue_fhir CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.sat_operation_session_entry_session_issue_fhir AS 
     WITH validation_results_object AS (
-         SELECT tbl.hub_ingest_session_entry_id,
+         SELECT tbl.hub_operation_session_entry_id,
             tbl.elaboration,
             tbl.created_at,
             tbl.created_by,
             tbl.provenance,
             jsonb_array_elements((tbl.validation_engine_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) AS validation_result
-           FROM techbd_udi_ingress.sat_ingest_session_entry_session_issue tbl
-          WHERE 1 = 1
+           FROM techbd_udi_ingress.sat_operation_session_entry_session_issue tbl
+          WHERE 1 = 1  
         ), validation_results_issues_object AS (
-         SELECT validation_results_object.hub_ingest_session_entry_id,
+         SELECT validation_results_object.hub_operation_session_entry_id,
             validation_results_object.elaboration,
             validation_results_object.created_at,
             validation_results_object.provenance,
@@ -79,7 +79,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.sat_ingest_session_entry_session_issue
             jsonb_array_elements(validation_results_object.validation_result -> 'issues'::text) AS issue
            FROM validation_results_object
         ), validation_results_flattened_issue AS (
-         SELECT validation_results_issues_object.hub_ingest_session_entry_id,
+         SELECT validation_results_issues_object.hub_operation_session_entry_id,
             validation_results_issues_object.elaboration,
             validation_results_issues_object.created_at,
             validation_results_issues_object.provenance,
@@ -118,8 +118,8 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.sat_ingest_session_entry_session_issue
         interaction.tenant_name,
         valresult.initiated_at,
         valresult.completed_at,
-        hubingestsession.hub_ingest_session_id,
-        valresult.hub_ingest_session_entry_id,
+        hubingestsession.hub_operation_session_id,
+        valresult.hub_operation_session_entry_id,
         valresult.level,
         valresult.message_id,
         valresult.ignorableerror,
@@ -132,7 +132,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.sat_ingest_session_entry_session_issue
         valresult.created_at,
         valresult.provenance
    FROM validation_results_flattened_issue valresult
-     LEFT JOIN techbd_udi_ingress.hub_ingest_session_entry hubingestsessionentry ON hubingestsessionentry.hub_ingest_session_entry_id = valresult.hub_ingest_session_entry_id
-     LEFT JOIN techbd_udi_ingress.link_session_entry linksessionentry ON linksessionentry.hub_ingest_session_entry_id = hubingestsessionentry.hub_ingest_session_entry_id
-     LEFT JOIN techbd_udi_ingress.hub_ingest_session hubingestsession ON hubingestsession.hub_ingest_session_id = linksessionentry.hub_ingest_session_id
-     LEFT JOIN techbd_udi_ingress.interaction interaction ON interaction.hub_ingest_session_entry_id = valresult.hub_ingest_session_entry_id;
+     LEFT JOIN techbd_udi_ingress.hub_operation_session_entry hubingestsessionentry ON hubingestsessionentry.hub_operation_session_entry_id = valresult.hub_operation_session_entry_id
+     LEFT JOIN techbd_udi_ingress.link_session_entry linksessionentry ON linksessionentry.hub_operation_session_entry_id = hubingestsessionentry.hub_operation_session_entry_id
+     LEFT JOIN techbd_udi_ingress.hub_operation_session hubingestsession ON hubingestsession.hub_operation_session_id = linksessionentry.hub_operation_session_id
+     LEFT JOIN techbd_udi_ingress.interaction interaction ON interaction.hub_operation_session_entry_id = valresult.hub_operation_session_entry_id;
