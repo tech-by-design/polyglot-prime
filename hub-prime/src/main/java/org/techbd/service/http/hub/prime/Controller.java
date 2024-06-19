@@ -300,8 +300,8 @@ public class Controller {
         try {
             final var sp = new UdiInsertSessionWithState();
             sp.setSessionId(UUID.randomUUID().toString());
-            sp.setFromState("ASYNC_FAILED");
-            sp.setToState("ASYNC_FAILED");
+            sp.setFromState("ASYNC_STARTED");
+            sp.setToState("ASYNC_STARTED");
             sp.setCreatedBy("user");
             sp.setProvenance("pro time 23:00 ");
 
