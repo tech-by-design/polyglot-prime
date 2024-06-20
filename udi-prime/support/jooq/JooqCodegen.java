@@ -125,6 +125,22 @@ public class JooqCodegen {
                         }
                     });
         }
+
+        System.out.println("%s:META-INF/MANIFEST.MF".formatted(cliArgs.jarName()));
+        try (final var jar = new java.util.zip.ZipFile(cliArgs.jarName())) {
+            jar.stream()
+                    .filter(e -> e.getName().equals("META-INF/MANIFEST.MF"))
+                    .findFirst()
+                    .ifPresent(e -> {
+                        try (final var is = jar.getInputStream(e)) {
+                            is.transferTo(System.out);
+                        } catch (java.io.IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    });
+        } catch (java.io.IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
     private static String getHostName() {

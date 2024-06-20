@@ -5,11 +5,11 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DataSourceConnectionProvider;
 import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.DefaultDSLContext;
-import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
@@ -91,18 +91,16 @@ public class UdiPrimeJpaConfig {
     }
 
     @Bean
-    public DefaultDSLContext dsl() {
+    public DSLContext dsl() {
         return new DefaultDSLContext(configuration());
     }
 
-    public DefaultConfiguration configuration() {
+    public org.jooq.Configuration configuration() {
         final var jooqConfiguration = new DefaultConfiguration();
         jooqConfiguration.set(connectionProvider());
-        jooqConfiguration.setSQLDialect(SQLDialect.POSTGRES);
-        
+        jooqConfiguration.setSQLDialect(SQLDialect.POSTGRES);        
         //jooqConfiguration
               //  .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
-
         return jooqConfiguration;
     }
 

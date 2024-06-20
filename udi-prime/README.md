@@ -58,7 +58,7 @@ cd udi-prime
 # IMPORTANT: `generate java jooq` uses JDBC meta data retrieved from the DB
 #            so be sure to only run `generate java` after migration succeeds.
 ./udictl.ts ic generate java jooq 
-unzip -p ../hub-prime/lib/techbd-udi-jooq-ingress.auto.jar 'META-INF/MANIFEST.MF'
+# review the META-INF/MANIFEST.MF `Generated-*` content for accuracy
 # run `mvn clean` to clear your cache of the older JAR file.
 
 ./udictl.ts ic generate docs               # generate all documentation (e.g. SchemaSpye) artifacts

@@ -1,9 +1,15 @@
 package org.techbd.service.http;
 
+import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_INTERACTION;
+import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_INTERACTION_HTTP_REQUEST;
+
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jooq.JSONB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -15,11 +21,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
-import org.techbd.sql.ArtifactsDataSource;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.ArtifactStore;
 import org.techbd.util.ArtifactStore.Artifact;
-import org.techbd.util.ArtifactStore.JdbcPersistence;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -31,6 +35,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebFilter(urlPatterns = "/*")
 @Order(-999)
 public class InteractionsFilter extends OncePerRequestFilter {
+    private static final Logger LOG = LoggerFactory.getLogger(InteractionsFilter.class.getName());
+
     @Value("${org.techbd.service.http.interactions.default-persist-strategy:#{null}}")
     private String defaultPersistStrategy;
 
@@ -122,11 +128,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
         interactions.addHistory(rre);
         setActiveInteraction(mutatableReq, rre);
 
-        // TODO: cache this in the constructor
-        final var udiPrimePersistStrategy = new JdbcPersistence(
-                new ArtifactsDataSource.PostgreSqlBuilder().dataSource(udiPrimeJpaConfig.udiPrimaryDataSource())
-                        .build());
-
         // we want to find our persistence strategy in either properties or in header;
         // because X-TechBD-Interaction-Persistence-Strategy is global, document it in
         // SwaggerConfig.customGlobalHeaders
@@ -137,8 +138,41 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 .strategyJson(strategyJson)
                 .provenanceJson(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PROVENANCE))
                 .mailSender(mailSender)
-                .always(udiPrimePersistStrategy)
                 .appContext(appContext);
+
+        final var provenance = "%s.doFilterInternal".formatted(InteractionsFilter.class.getName());
+        final var artifact = ArtifactStore.jsonArtifact(rre, rre.interactionId().toString(),
+                InteractionsFilter.class.getName() + ".interaction", asb.getProvenance());
+
+        // TODO: use either annotations or other programmable logic for whether to store
+        // interactions into the database (otherwise "all" is too expensive); for
+        // example either all POST or just /Bundle/* etc.
+
+        // TODO: convert this to a stored procedure and insert as one record; the user
+        // should not need to know any internals, just pass in an interation ID and payload
+        try {
+            final var dsl = udiPrimeJpaConfig.dsl();
+            final var intrHubId = rre.interactionId().toString();
+            dsl.insertInto(HUB_INTERACTION)
+                    .set(HUB_INTERACTION.HUB_INTERACTION_ID, intrHubId)
+                    .set(HUB_INTERACTION.KEY, requestEncountered.absoluteUrl())
+                    .set(HUB_INTERACTION.PROVENANCE, provenance)
+                    .set(HUB_INTERACTION.CREATED_BY, InteractionsFilter.class.getName())
+                    .execute();
+
+            dsl.insertInto(SAT_INTERACTION_HTTP_REQUEST)
+                    .set(SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID, intrHubId)
+                    .set(SAT_INTERACTION_HTTP_REQUEST.SAT_INTERACTION_HTTP_REQUEST_ID, intrHubId)
+                    .set(SAT_INTERACTION_HTTP_REQUEST.REQUEST_PAYLOAD,
+                            JSONB.valueOf(
+                                    artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)))
+                    .set(HUB_INTERACTION.PROVENANCE, provenance)
+                    .set(HUB_INTERACTION.CREATED_BY, InteractionsFilter.class.getName())
+                    .execute();
+        } catch (Exception e) {
+            LOG.error("insert HUB_INTERACTION and SAT_INTERACTION_HTTP_REQUEST", e);
+        }
+
         final var ps = asb.build();
         mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, strategyJson);
         if (ps != null) {
@@ -147,8 +181,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
             mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_FACTORY,
                     ps.getClass().getName());
             ps.persist(
-                    ArtifactStore.jsonArtifact(rre, rre.interactionId().toString(),
-                            InteractionsFilter.class.getName() + ".interaction", asb.getProvenance()),
+                    artifact,
                     Optional.of(new ArtifactStore.PersistenceReporter() {
                         @Override
                         public void info(String message) {
@@ -169,7 +202,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
                             // not doing anything with this yet
                         }
                     }));
-
         }
 
         mutatableResp.copyBodyToResponse();

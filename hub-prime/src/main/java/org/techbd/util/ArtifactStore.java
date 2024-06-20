@@ -28,7 +28,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.techbd.sql.ArtifactsDataSource;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,6 +55,8 @@ public class ArtifactStore {
         @Nonnull
         Reader getReader();
 
+        Optional<String> getJsonString();
+
         Map<String, Object> getProvenance();
     }
 
@@ -77,8 +78,7 @@ public class ArtifactStore {
 
     public sealed interface PersistenceStrategy
             permits DiagnosticPersistence, InvalidPersistenceStrategy, InvalidPersistenceNature, BlobStorePersistence,
-            LocalFsPersistence, VirtualFsPersistence, EmailPersistence, JdbcPersistence,
-            AggregatePersistence {
+            LocalFsPersistence, VirtualFsPersistence, EmailPersistence, AggregatePersistence {
         String REQUIRED_ARG_ARTIFACT_ID = "artifactId";
 
         void persist(@NotNull Artifact artifact, @NotNull Optional<PersistenceReporter> reporter);
@@ -319,26 +319,6 @@ public class ArtifactStore {
         }
     }
 
-    public record JdbcPersistence(ArtifactsDataSource artifactDataSrc)
-            implements ArtifactStore.PersistenceStrategy {
-
-        @Override
-        public void persist(@NotNull ArtifactStore.Artifact artifact,
-                @NotNull Optional<ArtifactStore.PersistenceReporter> reporter) {
-
-            final var result = artifactDataSrc.persistArtifact(artifact);
-            if (result.isEmpty()) {
-                reporter.ifPresent(r -> {
-                    r.persisted(artifact, artifact.getArtifactId());
-                    r.info(String.format("Artifact %s inserted in data source", artifact.getArtifactId()));
-                });
-
-            } else {
-                reporter.ifPresent(r -> r.issue("Failed to execute SQL insert: " + result.get().toString()));
-            }
-        }
-    }
-
     public record AggregatePersistence(List<PersistenceStrategy> strategies) implements PersistenceStrategy {
         @Override
         public void persist(@NotNull Artifact artifact, @NotNull Optional<PersistenceReporter> reporter) {
@@ -415,11 +395,6 @@ public class ArtifactStore {
                     case "diags", "diagnostics" -> DIAGNOSTIC_DEFAULT;
                     case "email" -> new EmailPersistence(args, mailSender);
                     case "fs" -> new LocalFsPersistence(args);
-                    case "duckdb" -> new JdbcPersistence(
-                            new ArtifactsDataSource.DuckDbBuilder().userDirFsPath("interactions.duckdb")
-                                    .userAgentArgs(args).build());
-                    case "postgres" -> new JdbcPersistence(
-                            new ArtifactsDataSource.PostgreSqlBuilder().userAgentArgs(args).build());
                     case "vfs" -> new VirtualFsPersistence(args);
                     default -> new InvalidPersistenceNature(nature);
                 };
@@ -502,6 +477,10 @@ public class ArtifactStore {
             @Override
             public Reader getReader() {
                 return new StringReader(jsonString);
+            }
+
+            public Optional<String> getJsonString() {
+                return Optional.of(jsonString);
             }
         };
     }

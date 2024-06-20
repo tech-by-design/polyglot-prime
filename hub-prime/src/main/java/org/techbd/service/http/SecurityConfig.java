@@ -1,27 +1,18 @@
 package org.techbd.service.http;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.filter.ForwardedHeaderFilter;
-import org.springframework.web.filter.OncePerRequestFilter;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.techbd.service.http.filter.GitHubUserAuthorizationFilter;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")

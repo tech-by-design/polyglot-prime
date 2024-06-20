@@ -53,13 +53,18 @@ public class SftpManager {
         static private final Logger LOG = LoggerFactory.getLogger(TenantSftpEgressContent.class);
 
         public Optional<ZonedDateTime> mostRecentEgress() {
+            if(error != null) {
+                LOG.error("Unable to obtain most recent egress for %s".formatted(tenantId), error);
+                return Optional.empty();
+            }
+            
             try {
                 if (directories.length > 0) {
                     final var mostRecent = directories[0];
                     return Optional.of(Instant.ofEpochMilli(mostRecent.getContent().getLastModifiedTime())
                             .atZone(ZoneId.systemDefault()));
                 }
-            } catch (FileSystemException e) {
+            } catch (Exception e) {
                 LOG.error("Unable to obtain most recent egress for %s".formatted(tenantId), e);
             }
             return Optional.empty();
