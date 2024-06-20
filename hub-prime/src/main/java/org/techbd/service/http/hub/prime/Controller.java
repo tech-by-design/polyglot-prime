@@ -1,7 +1,10 @@
 package org.techbd.service.http.hub.prime;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_INTERACTION;
 import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_OPERATION_SESSION;
+import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_OPERATION_SESSION_ENTRY;
+import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP;
+import static org.techbd.udi.auto.jooq.ingress.Tables.LINK_SESSION_ENTRY;
+import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_OPERATION_SESSION_ENTRY_SESSION_STATE;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -12,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jooq.Record;
+import org.jooq.Result;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,10 +242,7 @@ public class Controller {
                 "bundleSessionId", bundleAsyncInteractionId.toString(), // for tracking in database, etc.
                 "isAsync", true,
                 "validationResults", session.getValidationResults(),
-                // add `statusUrl` which is the full URL a user should call to check the
-                // state/status of async operation
-                // -- like statusUrl: https://<server>/Bundle/status/<bundleSessionId> would
-                // return what's in memory or DB
+                "statusUrl","https://" + request.getServerName() + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
                 "device", session.getDevice()));
         final var result = Map.of("OperationOutcome", immediateResult);
         if (uaValidationStrategyJson != null) {
@@ -408,10 +410,9 @@ public class Controller {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        // TODO: don't select from HUB_INTERACTION, use the proper VIEW
         final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.selectFrom(HUB_INTERACTION).offset(page).limit(size).fetch();
-        return new PageImpl<>(result.intoMaps(), PageRequest.of(page, size), DSL.fetchCount(HUB_INTERACTION));
+        final var result = DSL.selectFrom(INTERACTION_HTTP).offset(page).limit(size).fetch();
+        return new PageImpl<>(result.intoMaps(), PageRequest.of(page, size), DSL.fetchCount(INTERACTION_HTTP));
     }
 
     @GetMapping("/admin/observe/interaction/https/recent.json/{interactionId}")
@@ -456,11 +457,11 @@ public class Controller {
     @ResponseBody
     public Page<?> adminDiagnosticsJson(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         // TODO: don't select from HUB_OPERATION_SESSION, use the proper VIEW
         final var DSL = udiPrimeJpaConfig.dsl();
         final var result = DSL.selectFrom(HUB_OPERATION_SESSION).offset(page).limit(size).fetch();
-        return new PageImpl<>(result.intoMaps(), PageRequest.of(page, size), DSL.fetchCount(HUB_OPERATION_SESSION));       
+        return new PageImpl<>(result.intoMaps(), PageRequest.of(page, size), DSL.fetchCount(HUB_OPERATION_SESSION));
     }
 
     @GetMapping("/admin/observe/sessions")
@@ -479,4 +480,74 @@ public class Controller {
                     roles);
         }
     }
+
+    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
+    @ResponseBody
+    @Operation(summary = "Check the state/status of async operation")
+    public Object bundleStatus(@PathVariable String bundleSessionId, final Model model, HttpServletRequest request) {
+
+        final var jooqDSL = udiPrimeJpaConfig.dsl();
+        final var mapper = new ObjectMapper();
+        final var responseJson = mapper.createObjectNode();
+        
+        try {
+            Result<Record> result = jooqDSL.select()
+                    .from(HUB_OPERATION_SESSION)
+                    .join(LINK_SESSION_ENTRY)
+                    .on(LINK_SESSION_ENTRY.HUB_OPERATION_SESSION_ID.eq(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID))
+                    .join(HUB_OPERATION_SESSION_ENTRY)
+                    .on(LINK_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID
+                            .eq(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID))
+                    .join(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE)
+                    .on(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID
+                            .eq(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.HUB_OPERATION_SESSION_ENTRY_ID))
+                    .where(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID.in(bundleSessionId))
+                    .fetch();
+
+            final var dataArray = mapper.createArrayNode();
+
+            for (Record record : result) {
+                String sessionId = record.get(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID);
+                String sessionKey = record.get(HUB_OPERATION_SESSION.KEY); 
+                                                                           
+                String entryId = record.get(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID);
+                String fromStateFull = record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.FROM_STATE);
+                String toStateFull = record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.TO_STATE);
+                String createdBy = record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.CREATED_BY);
+                String provenance = record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.PROVENANCE);
+
+                // Extract only the state part after the last dot (.)
+                String fromState = extractState(fromStateFull);
+                String toState = extractState(toStateFull);
+
+                final var recordJson = mapper.createObjectNode();
+                recordJson.put("sessionId", sessionId);
+                recordJson.put("sessionKey", sessionKey); // Add session key if needed
+                recordJson.put("entryId", entryId);
+                recordJson.put("fromState", fromState);
+                recordJson.put("toState", toState);
+                recordJson.put("createdBy", createdBy);
+                recordJson.put("provenance", provenance);
+
+                dataArray.add(recordJson);
+            }
+
+            responseJson.set("data", dataArray);
+
+            LOG.info("Query execution result: {}", result);
+
+        } catch (Exception e) {
+            LOG.error("Error executing JOOQ query", e);
+            responseJson.put("error", "Error fetching data");
+        }
+
+        return responseJson;
+
+    }
+
+    private String extractState(String fullState) {
+        String[] parts = fullState.split("\\.");
+        return parts[parts.length - 1];
+    }
+
 }

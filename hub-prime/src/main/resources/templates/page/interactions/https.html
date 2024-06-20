@@ -83,7 +83,7 @@
                 let originalData = [];
 
                 var columnDefs = [
-                    { headerName: "Request Time", field: "requestEncounteredAt", sortable: true, filter: true, sort: "desc" },
+                    { headerName: "Request Time", field: "request_encountered_at", sortable: true, filter: true, sort: "desc" },
                     {
                         headerName: "hubIngestSessionId", field: "hubIngestSessionId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true,
                         cellRenderer: function (params) {
@@ -93,17 +93,13 @@
                             return link;
                         }
                      },
-                    { headerName: "hubIngestSessionEntryId", field: "hubIngestSessionEntryId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "sessionId", field: "sessionId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "interactionId", field: "interactionId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "provenance", field: "provenance", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "Tenant ID", field: "tenantId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "Method", field: "requestMethod", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "URI", field: "requestUri", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "Response Status", field: "responseStatus", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "Response Time", field: "responseEncounteredAt", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "IP Address", field: "clientIpAddress", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "User Agent", field: "userAgent", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Tenant ID", field: "tenant_id", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Method", field: "request_method", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "URI", field: "interaction_key", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Response Status", field: "response_status", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Response Time", field: "response_encountered_at", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "IP Address", field: "client_ip_address", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "User Agent", field: "user_agent", sortable: true, filter: true, enablePivot: true, enableRowGroup: true }
                 ];
 
                 const gridOptions = {
@@ -131,23 +127,15 @@
                     .then(data => {
                         originalData = data;
                         const rowData = data.content.map(interaction => ({
-                            hubIngestSessionId: interaction.hubIngestSessionId,
-                            hubIngestSessionEntryId: interaction.hubIngestSessionEntryId,
-                            sessionId: interaction.sessionId,
-                            interactionId: interaction.interactionId,
-                            provenance: interaction.provenance,
-                            tenantId: interaction.tenantId,
-                            requestMethod: interaction.requestMethod,
-                            requestUri: interaction.requestUri,
-                            requestParams: interaction.requestParams,
-                            responseStatus: interaction.responseStatus,
-                            responseTimeSeconds: interaction.responseTimeSeconds,
-                            clientIpAddress: interaction.clientIpAddress,
-                            userAgent: interaction.userAgent,
-                            numRequestHeaders: interaction.numRequestHeaders,
-                            requestEncounteredAt: interaction.requestEncounteredAt,
-                            responseEncounteredAt: interaction.responseEncounteredAt,
-                            responseTimeMicroseconds: interaction.responseTimeMicroseconds
+                            hub_interaction_id: interaction.hub_interaction_id,
+                            request_encountered_at: interaction.request_encountered_at,
+                            tenant_id: interaction.tenant.tenant_id,
+                            request_method: interaction.request_method,
+                            interaction_key: interaction.interaction_key,
+                            response_status: interaction.response_status,
+                            response_encountered_at: interaction.response_encountered_at,
+                            client_ip_address: interaction.client_ip_address,
+                            user_agent: interaction.user_agent
                         }));
                         gridApi.setGridOption('rowData', rowData);
                         gridApi.sizeColumnsToFit();
