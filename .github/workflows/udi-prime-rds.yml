@@ -38,4 +38,4 @@ jobs:
       - name: Run test
         run: |
           cd polyglot-prime/udi-prime
-          ./udictl.ts ic test
+          ./udictl.ts ic test --conn-id PROD_TECHBD_UDI_DS_PRIME
