@@ -10,30 +10,19 @@ supports our diverse range of projects and technologies.
 At TechBD, we focus on the following primary languages and frameworks for our
 enterprise and utility projects:
 
-- **Modern Java 21 LTS and above with Spring Boot 3 and above** for all API and
+- Modern Java 21 LTS and above with Spring Boot 3.3 and above for all API and
   HTTP service-related use cases.
-- **Deno and TypeScript** for utilities and scripting where Java may be too
-  heavy.
-
-## Refactor `fhir` to `hub-prime`
-
-Migrating from `fhir` monorepo project (specific) to `hub-prime` (universal).
-
-- Find all references to `fhir` directory and change to `hub-prime`.
-- moved everything from `application.properties` to `application.yml`
-  - expect all env vars to be `${SPRING_PROFILE_ACTIVE}_TECHBD_*`
-- `export SPRING_PROFILES_ACTIVE=sandbox` is now required for sandbox / prod
-- add `www.hub.techbd.org` as primary web site with `www.hub.devl.techbd.org`
-  and `www.hub.stage.techbd.org` environments.
-  - `synthetic.fhir.api.techbd.org` will be for FHIR APIs only
-  - `synthetic.api.techbd.org` will be for APIs only
-- removed jOOQ dependency for now
-
-### TODO:
-
-- test different profiles in Containers (for promotion to ECS)
-- `.github/workflows/deploy-techbd-org.yml` change `fhir` to `hub-prime`
-- get FHIR engines from user agent
+- Maven for project management.
+- Thymeleaf for HTML templating and HTMX 2.0 for HATEOS interactions.
+- OpenTelemetry (observability) and OpenFeature (feature flags).
+- jOOQ with automatic code generation for type-safe SQL-first database
+  interactions.
+- PostgreSQL 16 for server-side persistence and SQLite for edge-side
+  persistence.
+- JUnit 5 with AssertJ assertions for testing the app server, Playwright for
+  testing the front end, and pgTAP for testing the database.
+- Deployment via containers
+- Deno and TypeScript for utilities and scripting where Java may be too heavy.
 
 ## Monorepo Strategy
 
@@ -58,45 +47,62 @@ maintainability, and scalability. Here are the key aspects of our strategy:
 
 ```
 .
-└── hub-prime
+├── hub-prime
+│   ├── lib
+│   ├── src
+│   │   ├── main
+│   │   │   ├── java
+│   │   │   │   └── org
+│   │   │   │       └── techbd
+│   │   │   │           ├── conf
+│   │   │   │           ├── orchestrate
+│   │   │   │           │   ├── fhir
+│   │   │   │           │   └── sftp
+│   │   │   │           ├── service
+│   │   │   │           │   └── http
+│   │   │   │           │       ├── filter
+│   │   │   │           │       └── hub
+│   │   │   │           ├── udi
+│   │   │   │           └── util
+│   │   │   └── resources
+│   │   │       ├── META-INF
+│   │   │       ├── public
+│   │   │       └── templates
+│   │   │           ├── fragments
+│   │   │           ├── layout
+│   │   │           ├── login
+│   │   │           ├── mock
+│   │   │           │   └── shinny-data-lake
+│   │   │           │       └── 1115-validate
+│   │   │           └── page
+│   │   │               └── interactions
+│   │   ├── site
+│   │   │   └── markdown
+│   │   └── test
+│   │       └── java
+│   │           └── org
+│   │               └── techbd
+│   │                   ├── orchestrate
+│   │                   │   └── fhir
+│   │                   ├── service
+│   │                   │   └── http
+│   │                   │       └── hub
+│   │                   └── util
+│   └── target
+|
+└── udi-prime
+    ├── lib
     ├── src
     │   ├── main
-    │   │   ├── java
-    │   │   │   └── org
-    │   │   │       └── techbd
-    │   │   │           ├── conf
-    │   │   │           ├── orchestrate
-    │   │   │           │   └── fhir
-    │   │   │           ├── service
-    │   │   │           │   └── http
-    │   │   │           │       └── hub
-    │   │   │           │           └── prime
-    │   │   │           ├── sql
-    │   │   │           ├── udi
-    │   │   │           │   └── entity
-    │   │   │           └── util
-    │   │   └── resources
-    │   │       ├── META-INF
-    │   │       ├── sql
-    │   │       │   └── artifact
-    │   │       └── templates
-    │   │           └── mock
-    │   │               └── shinny-data-lake
-    │   │                   └── 1115-validate
+    │   │   └── postgres
+    │   │       └── ingestion-center
     │   └── test
-    │       └── java
-    │           └── org
-    │               └── techbd
-    │                   ├── orchestrate
-    │                   │   └── fhir
-    │                   ├── service
-    │                   │   └── http
-    │                   │       └── hub
-    │                   │           └── prime
-    │                   └── util
+    │       └── postgres
+    │           └── ingestion-center
+    ├── support
+    │   └── jooq
+    │       └── lib
     └── target
-        ├── site
-        └── surefire-reports
 ```
 
 ### Project: TechBD Primary Hub
