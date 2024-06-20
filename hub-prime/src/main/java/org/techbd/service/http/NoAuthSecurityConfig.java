@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -19,12 +20,13 @@ import org.springframework.web.filter.ForwardedHeaderFilter;
 public class NoAuthSecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeRequests(authorizeRequests -> authorizeRequests
-                        .anyRequest().permitAll())
-                .csrf().disable(); // Disable CSRF for simplicity in sandbox
-
+    public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
+        // allow all requests without any security (for local unauthenticated data)
+        // and turn off CSRF to allow POST methods
+        http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .csrf(AbstractHttpConfigurer::disable);
+        // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
+        http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
         return http.build();
     }
 
