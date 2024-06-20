@@ -5,5 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA techbd_udi_assurance;
 SET search_path TO techbd_udi_assurance;
 
 \ir ./fixtures.sql
+\ir ./stored-routines-unittest.psql
 
+SELECT * FROM techbd_udi_assurance.runtests('techbd_udi_assurance'::name, 'test_udi_insert_interaction');
 SELECT * FROM techbd_udi_assurance.runtests('techbd_udi_assurance'::name, 'test_udi_insert_session_with_state');

@@ -1,126 +1,86 @@
 /*==============================================================================================================================*/
-
-CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_udi_insert_session_with_state(schema_name text DEFAULT 'techbd_udi_ingress'::text)
- RETURNS SETOF text
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.udi_insert_interaction(
+interaction_id				TEXT,
+request_payload 			jsonb,
+elaboration 				jsonb, 
+created_by 					TEXT, 
+provenance 					TEXT
+)
+ RETURNS TEXT
  LANGUAGE plpgsql
 AS $function$
-DECLARE
-    hub_exception_row             techbd_udi_ingress.hub_exception%ROWTYPE;
-    err_returned_sqlstate         TEXT; -- Variable to store SQLSTATE of the error
-    err_message_text              TEXT; -- Variable to store the message text of the error
-    err_pg_exception_detail       TEXT; -- Variable to store the detail of the error
-    err_pg_exception_hint         TEXT; -- Variable to store the hint of the error
-    err_pg_exception_context      TEXT; -- Variable to store the context of the error
-    session_info                  techbd_udi_ingress.session_identifier;
-    return_value                  TEXT;
-   	source_content 					TEXT;
+DECLARE	
+	err_returned_sqlstate 					TEXT;	-- Variable to store SQLSTATE of the error
+  	err_message_text 						TEXT;	-- Variable to store the message text of the error
+  	err_pg_exception_detail 				TEXT;	-- Variable to store the detail of the error
+  	err_pg_exception_hint 					TEXT;	-- Variable to store the hint of the error
+  	err_pg_exception_context 				TEXT; 	-- Variable to store the context of the error
+  	
+  	--ROWTYPE variables  	
+  	hub_interaction_row 					techbd_udi_ingress.hub_interaction%ROWTYPE;
+  	sat_interaction_http_request_row		techbd_udi_ingress.sat_interaction_http_request%ROWTYPE;  
+  	hub_exception_row 						techbd_udi_ingress.hub_exception%ROWTYPE;	
+  	hub_interaction_key						text;	
 BEGIN
 	
-	IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
-    			AND table_name = 'pgtap_fixtures_json') THEN 
-   		SELECT "jsonb" INTO source_content
-		FROM techbd_udi_assurance.pgtap_fixtures_json 
-		WHERE "name" = 'interaction-1';
-	ELSE 
-		RETURN NEXT ok(NULL,'Table techbd_udi_assurance.pgtap_fixtures_json exists');
-    END IF;
-    
-    -- Check existence of required functions
-    RETURN NEXT has_function(
-        schema_name,
-        'udi_insert_session_with_state',
-        ARRAY['text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text'],
-        'Function udi_insert_session_with_state exists'
-    );
-   
-    RETURN NEXT has_function(
-        schema_name,
-        'udi_insert_session_state',
-        ARRAY['text', 'text', 'text', 'text', 'text'],
-        'Function udi_insert_session_state exists'
-    );
+	-- Call the function hub_interaction_upserted 
+	hub_interaction_row := techbd_udi_ingress.hub_interaction_upserted(
+		udi_insert_interaction.interaction_id,
+		udi_insert_interaction.created_by,
+		udi_insert_interaction.provenance);
+	
+	IF(hub_interaction_row IS NULL) THEN
+		-- Raise an exception indicating that interaction for hub is not done.
+		RAISE EXCEPTION 'Insert to hub_interaction failed' USING ERRCODE = '23502';  
+	END IF;			
+	
+	sat_interaction_http_request_row := techbd_udi_ingress.sat_interaction_http_request_upserted(
+		hub_interaction_row.hub_interaction_id,
+		request_payload,
+		elaboration,
+		created_by,
+		provenance
+		);
 
-    -- Insert session
-    session_info := techbd_udi_ingress.udi_insert_session(
-        '800f47ce-7a95-4c7f-833f-37399fc86a57', 
-        'namespace1', 
-        source_content,
-        'application/json', 
-        '{"key1": "value1"}', 
-        '{"key2": "value2"}', 
-        'creator1', 
-        'provenance1'
-    );
+	IF(sat_interaction_http_request_row IS NULL) THEN
+		-- Raise an exception indicating that interaction for sat_interaction_http_request is not inserted.
+		RAISE EXCEPTION 'Insert to sat_interaction_http_reques failed' USING ERRCODE = '23502';  
+	END IF;	
 
-    -- Validate session insertion
-    RETURN NEXT ok(session_info.hub_session_id IS NOT NULL AND session_info.hub_session_entry_id IS NOT NULL, 'Successfully executed the function udi_insert_session with return value');
+	-- Returns hub_interaction.hub_interaction_id
+    RETURN hub_interaction_row.hub_interaction_id;   
+EXCEPTION
+	-- Catch any exception thrown during execution.
+	WHEN others THEN
+		-- Retrieve diagnostics information about the exception.
+		GET STACKED DIAGNOSTICS 
+		err_returned_sqlstate = RETURNED_SQLSTATE,
+		err_message_text = MESSAGE_TEXT,
+		err_pg_exception_detail = PG_EXCEPTION_DETAIL,
+		err_pg_exception_hint = PG_EXCEPTION_HINT,
+		err_pg_exception_context = PG_EXCEPTION_CONTEXT;
+		
+	--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/
+		
+	-- Log the error by inserting into the hub_exception table. 
+	hub_exception_row := techbd_udi_ingress.hub_exception_upserted(udi_insert_interaction."key", created_by, provenance);
 
-    -- Insert session state
-    return_value := techbd_udi_ingress.udi_insert_session_state(
-        session_info.hub_session_entry_id, 
-        'state1',
-        'state2',
-        'creator1',
-        'provenance1'
-    );
-	--session_entry_id text, from_state text, to_state text, transition_result text, transition_reason text, elaboration jsonb, created_by text, provenance text
-    -- Validate session state insertion
-    RETURN NEXT ok(return_value IS NOT NULL, 'Successfully executed the function udi_insert_session_state with return value');
-
-    -- Verify inserts into various tables
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_operation_session hub
-               WHERE hub.key = '800f47ce-7a95-4c7f-833f-37399fc86a57'
-               AND hub.provenance = 'provenance1'
-               AND hub.created_by = 'creator1'
-               AND hub.hub_operation_session_id = session_info.hub_session_id),
-        'Successfully inserted into hub_operation_session'
-    );
-
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_operation_session_entry hub
-               WHERE hub.key = '800f47ce-7a95-4c7f-833f-37399fc86a57'
-               AND hub.provenance = 'provenance1'
-               AND hub.created_by = 'creator1'
-               AND hub.hub_operation_session_entry_id = session_info.hub_session_entry_id),
-        'Successfully inserted into hub_operation_session_entry'
-    );
-
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.link_session_entry lnk
-               WHERE lnk.hub_operation_session_id = session_info.hub_session_id 
-               AND lnk.hub_operation_session_entry_id = session_info.hub_session_entry_id
-               AND lnk.created_by = 'creator1'
-               AND lnk.provenance = 'provenance1'),
-        'Successfully inserted into link_session_entry'
-    );
-
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_payload sat
-               WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
-               AND sat.ingest_src = source_content
-               AND sat.content_type = 'application/json'
-               AND sat.elaboration = '{"key2": "value2"}'
-               AND sat.created_by = 'creator1'
-               AND sat.provenance = 'provenance1'),
-        'Successfully inserted payload information into sat_operation_session_entry_payload'
-    );
-
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_session_state sat
-               WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
-               --AND sat.from_state = 'state1'
-               --AND sat.to_state = 'state2'
-               AND sat.created_by = 'creator1'
-               AND sat.provenance = 'provenance1'),
-        'Successfully inserted state information into sat_operation_session_entry_session_state'
-    );
-   
-END;
+	-- Insert diagnostics information into the sat_exception_diagnostics table.
+	PERFORM techbd_udi_ingress.sat_exception_diagnostics_upserted(
+	        hub_exception_row.hub_exception_id,
+	        err_message_text,
+	        err_returned_sqlstate,
+	        err_pg_exception_detail,
+	        err_pg_exception_hint,
+	        err_pg_exception_context,
+	        created_by,
+	        provenance);
+	-- Return NULL to indicate that an exception occurred and was handled.
+	RETURN NULL;   
+	END;
 $function$
 ;
-/*=========================================================END OF UNIT TEST CASE=====================================================================*/
-
+/*==============================================================================================================================*/
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.udi_insert_diagnostics(
 hub_operation_session_entry_id text, 
 validation_engine_payload jsonb, 

@@ -44,14 +44,12 @@ const sessionIdentifierType = SQLa.sqlTypeDefinition("session_identifier", {
   sqlNS: ingressSchema,
 });
 
-// TODO: rename `device` hub to `provenance`
 const provenanceHub = dvts.hubTable("provenance", {
   hub_provenance_id: primaryKey(),
   key: text(),
   ...dvts.housekeeping.columns,
 });
 
-// TODO: rename `sat_device_device` to `sat_provenance_device`
 const deviceSat = provenanceHub.satelliteTable(
   "device",
   {
@@ -68,14 +66,12 @@ const deviceSat = provenanceHub.satelliteTable(
   },
 );
 
-// TODO: rename `hub_request_http_client` to `hub_interaction`
 const interactionHub = dvts.hubTable("interaction", {
   hub_interaction_id: primaryKey(),
   key: text(),
   ...dvts.housekeeping.columns,
 });
 
-// TODO: rename `sat_request_http_client_meta_data` to `sat_interaction_http_request`
 const interactionHttpRequestSat = interactionHub.satelliteTable(
   "http_request",
   {
@@ -88,8 +84,6 @@ const interactionHttpRequestSat = interactionHub.satelliteTable(
   },
 );
 
-// TODO: add `sat_interaction_file_exchange` (for SFTP, etc.)
-//       add `protocol` as a column and create enum for SFTP, S3, etc
 enum EnumFileExchangeProtocol {
   SFTP = "SFTP",
   S3 = "S3",
@@ -308,8 +302,6 @@ const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   },
 });
 
-// TODO: rename `*_ingest_*` (e.g. `hub_ingest_session`) to `*_operation_*`  (e.g. `hub_operation_session`)
-// TODO: add `nature` for different types of _operations_ (e.g. _ingest_)
 // TODO: need to put all construction DDL into stored procedures using ISLM;
 //       see https://github.com/netspective-labs/sql-aide/tree/main/pattern/postgres
 //       see https://github.com/netspective-labs/sql-aide/tree/main/pattern/pgdcp
@@ -325,6 +317,7 @@ function constructables() {
     "./stored-routines.psql",
   ] as const;
   const testDependencies = [
+    "../../../test/postgres/ingestion-center/stored-routines-unittest.psql",
     "../../../test/postgres/ingestion-center/fixtures.sql",
     "../../../test/postgres/ingestion-center/suite.pgtap.psql",
   ] as const;

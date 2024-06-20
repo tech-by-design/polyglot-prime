@@ -1,0 +1,214 @@
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_udi_insert_interaction(schema_name text DEFAULT 'techbd_udi_ingress'::text)
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $function$
+DECLARE    
+    return_value                TEXT;
+    source_content              TEXT;
+    hub_interaction_row         techbd_udi_ingress.hub_interaction%ROWTYPE;
+    sat_interaction_http_request_row techbd_udi_ingress.sat_interaction_http_request%ROWTYPE; 
+    interaction_id_val          TEXT;
+    created_user                TEXT;
+    provenance_info             TEXT;
+    elaboration_info            jsonb;
+BEGIN
+    -- Check if the table 'pgtap_fixtures_json' exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables 
+               WHERE table_schema = 'techbd_udi_assurance' 
+               AND table_name = 'pgtap_fixtures_json') THEN 
+        SELECT "jsonb" INTO source_content
+        FROM techbd_udi_assurance.pgtap_fixtures_json 
+        WHERE "name" = 'interaction-1';
+    ELSE 
+        RETURN NEXT 'Table techbd_udi_assurance.pgtap_fixtures_json does not exist';
+        RETURN;
+    END IF;
+    
+    -- Check existence of required functions
+    RETURN NEXT has_function(
+        schema_name,
+        'udi_insert_interaction',
+        ARRAY['text', 'jsonb', 'jsonb', 'text', 'text'],
+        'Function udi_insert_interaction exists'
+    );
+
+    interaction_id_val := techbd_udi_ingress.uuid_generate_v4();
+    created_user := 'test-user1';
+    provenance_info := 'provenance-1';
+    elaboration_info := '{"key" : "elaboration"}'::jsonb;
+   
+    -- Upsert into hub_interaction
+    hub_interaction_row := techbd_udi_ingress.hub_interaction_upserted(
+        interaction_id_val,
+        created_user,
+        provenance_info
+    );
+        
+    RETURN NEXT ok(hub_interaction_row.hub_interaction_id IS NOT NULL, 'Successfully executed the function hub_interaction_upserted with return value');
+  
+    -- Upsert into sat_interaction_http_request
+    sat_interaction_http_request_row := techbd_udi_ingress.sat_interaction_http_request_upserted(
+        hub_interaction_row.hub_interaction_id,
+        source_content::jsonb,
+        elaboration_info,
+        created_user,
+        provenance_info
+    );  
+
+    RETURN NEXT ok(sat_interaction_http_request_row.sat_interaction_http_request_id IS NOT NULL, 'Successfully executed the function sat_interaction_http_request_upserted with return value');
+
+    -- Insert into udi_insert_interaction
+    return_value := techbd_udi_ingress.udi_insert_interaction(
+        interaction_id_val,
+        source_content::jsonb,
+        elaboration_info,
+        created_user, 
+        provenance_info
+    );
+
+    RETURN NEXT ok(return_value IS NOT NULL, 'Successfully executed the function udi_insert_interaction with return value');
+
+    -- Verify inserts into various tables
+    RETURN NEXT ok(
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub
+               WHERE hub.key = interaction_id_val
+               AND hub.provenance = provenance_info
+               AND hub.created_by = created_user
+               AND hub.hub_interaction_id = hub_interaction_row.hub_interaction_id),
+        'Successfully retrieved the inserted hub_interaction details'
+    );
+
+    RETURN NEXT ok(
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat
+               WHERE sat.sat_interaction_http_request_id = sat_interaction_http_request_row.sat_interaction_http_request_id
+               AND sat.hub_interaction_id = hub_interaction_row.hub_interaction_id
+               AND sat.created_by = created_user
+               AND sat.provenance = provenance_info
+               ),
+        'Successfully retrieved the inserted sat_interaction_http_request details'
+    );   
+   
+END;
+$function$
+;
+/*====================================================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_udi_insert_session_with_state(schema_name text DEFAULT 'techbd_udi_ingress'::text)
+ RETURNS SETOF text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    hub_exception_row             techbd_udi_ingress.hub_exception%ROWTYPE;
+    err_returned_sqlstate         TEXT; -- Variable to store SQLSTATE of the error
+    err_message_text              TEXT; -- Variable to store the message text of the error
+    err_pg_exception_detail       TEXT; -- Variable to store the detail of the error
+    err_pg_exception_hint         TEXT; -- Variable to store the hint of the error
+    err_pg_exception_context      TEXT; -- Variable to store the context of the error
+    session_info                  techbd_udi_ingress.session_identifier;
+    return_value                  TEXT;
+   	source_content 					TEXT;
+BEGIN
+	
+	IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
+    			AND table_name = 'pgtap_fixtures_json') THEN 
+   		SELECT "jsonb" INTO source_content
+		FROM techbd_udi_assurance.pgtap_fixtures_json 
+		WHERE "name" = 'interaction-1';
+	ELSE 
+		RETURN NEXT ok(NULL,'Table techbd_udi_assurance.pgtap_fixtures_json exists');
+    END IF;
+    
+    -- Check existence of required functions
+    RETURN NEXT has_function(
+        schema_name,
+        'udi_insert_session_with_state',
+        ARRAY['text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text'],
+        'Function udi_insert_session_with_state exists'
+    );
+   
+    RETURN NEXT has_function(
+        schema_name,
+        'udi_insert_session_state',
+        ARRAY['text', 'text', 'text', 'text', 'text'],
+        'Function udi_insert_session_state exists'
+    );
+
+    -- Insert session
+    session_info := techbd_udi_ingress.udi_insert_session(
+        '800f47ce-7a95-4c7f-833f-37399fc86a57', 
+        'namespace1', 
+        source_content,
+        'application/json', 
+        '{"key1": "value1"}', 
+        '{"key2": "value2"}', 
+        'creator1', 
+        'provenance1'
+    );
+
+    -- Validate session insertion
+    RETURN NEXT ok(session_info.hub_session_id IS NOT NULL AND session_info.hub_session_entry_id IS NOT NULL, 'Successfully executed the function udi_insert_session with return value');
+
+    -- Insert session state
+    return_value := techbd_udi_ingress.udi_insert_session_state(
+        session_info.hub_session_entry_id, 
+        'state1',
+        'state2',
+        'creator1',
+        'provenance1'
+    );
+	--session_entry_id text, from_state text, to_state text, transition_result text, transition_reason text, elaboration jsonb, created_by text, provenance text
+    -- Validate session state insertion
+    RETURN NEXT ok(return_value IS NOT NULL, 'Successfully executed the function udi_insert_session_state with return value');
+
+    -- Verify inserts into various tables
+    RETURN NEXT ok(
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_operation_session hub
+               WHERE hub.key = '800f47ce-7a95-4c7f-833f-37399fc86a57'
+               AND hub.provenance = 'provenance1'
+               AND hub.created_by = 'creator1'
+               AND hub.hub_operation_session_id = session_info.hub_session_id),
+        'Successfully inserted into hub_operation_session'
+    );
+
+    RETURN NEXT ok(
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_operation_session_entry hub
+               WHERE hub.key = '800f47ce-7a95-4c7f-833f-37399fc86a57'
+               AND hub.provenance = 'provenance1'
+               AND hub.created_by = 'creator1'
+               AND hub.hub_operation_session_entry_id = session_info.hub_session_entry_id),
+        'Successfully inserted into hub_operation_session_entry'
+    );
+
+    RETURN NEXT ok(
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.link_session_entry lnk
+               WHERE lnk.hub_operation_session_id = session_info.hub_session_id 
+               AND lnk.hub_operation_session_entry_id = session_info.hub_session_entry_id
+               AND lnk.created_by = 'creator1'
+               AND lnk.provenance = 'provenance1'),
+        'Successfully inserted into link_session_entry'
+    );
+
+    RETURN NEXT ok(
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_payload sat
+               WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
+               AND sat.ingest_src = source_content
+               AND sat.content_type = 'application/json'
+               AND sat.elaboration = '{"key2": "value2"}'::jsonb
+               AND sat.created_by = 'creator1'
+               AND sat.provenance = 'provenance1'),
+        'Successfully inserted payload information into sat_operation_session_entry_payload'
+    );
+
+    RETURN NEXT ok(
+        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_session_state sat
+               WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
+               --AND sat.from_state = 'state1'
+               --AND sat.to_state = 'state2'
+               AND sat.created_by = 'creator1'
+               AND sat.provenance = 'provenance1'),
+        'Successfully inserted state information into sat_operation_session_entry_session_state'
+    );
+   
+END;
+$function$
+;
+/*==============================================================================================================================*/
