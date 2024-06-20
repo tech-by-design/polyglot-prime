@@ -35,3 +35,7 @@ jobs:
           cd polyglot-prime/udi-prime
           ./udictl.ts ic migrate --conn-id PROD_TECHBD_UDI_DS_PRIME
 
+      - name: Run test
+        run: |
+          cd polyglot-prime/udi-prime
+          ./udictl.ts ic test
