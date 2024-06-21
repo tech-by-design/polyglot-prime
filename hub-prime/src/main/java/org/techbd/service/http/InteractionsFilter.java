@@ -22,6 +22,7 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.udi.UdiPrimeJpaConfig;
+import org.techbd.udi.auto.jooq.ingress.routines.UdiInsertInteraction;
 import org.techbd.util.ArtifactStore;
 import org.techbd.util.ArtifactStore.Artifact;
 
@@ -152,23 +153,14 @@ public class InteractionsFilter extends OncePerRequestFilter {
         // should not need to know any internals, just pass in an interation ID and payload
         try {
             final var dsl = udiPrimeJpaConfig.dsl();
-            final var intrHubId = rre.interactionId().toString();
-            dsl.insertInto(HUB_INTERACTION)
-                    .set(HUB_INTERACTION.HUB_INTERACTION_ID, intrHubId)
-                    .set(HUB_INTERACTION.KEY, requestEncountered.absoluteUrl())
-                    .set(HUB_INTERACTION.PROVENANCE, provenance)
-                    .set(HUB_INTERACTION.CREATED_BY, InteractionsFilter.class.getName())
-                    .execute();
-
-            dsl.insertInto(SAT_INTERACTION_HTTP_REQUEST)
-                    .set(SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID, intrHubId)
-                    .set(SAT_INTERACTION_HTTP_REQUEST.SAT_INTERACTION_HTTP_REQUEST_ID, intrHubId)
-                    .set(SAT_INTERACTION_HTTP_REQUEST.REQUEST_PAYLOAD,
-                            JSONB.valueOf(
-                                    artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)))
-                    .set(HUB_INTERACTION.PROVENANCE, provenance)
-                    .set(HUB_INTERACTION.CREATED_BY, InteractionsFilter.class.getName())
-                    .execute();
+            final var intrHubId = rre.interactionId().toString();  
+            final var insertInteraction = new UdiInsertInteraction();
+            insertInteraction.setInteractionId(intrHubId);
+            insertInteraction.setRequestPayload(JSONB.valueOf(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
+            insertInteraction.setElaboration(JSONB.valueOf("{}"));
+            insertInteraction.setCreatedBy(InteractionsFilter.class.getName());
+            insertInteraction.setProvenance(provenance);
+            insertInteraction.execute(dsl.configuration());
         } catch (Exception e) {
             LOG.error("insert HUB_INTERACTION and SAT_INTERACTION_HTTP_REQUEST", e);
         }
