@@ -4,12 +4,7 @@
 
 # If you want use these, remember to start VSCode or your IDE after `direnv allow`
 
-
 # use Spring profiles as 'localopen' for testing locally with no authentication, `sandbox` for testing with auth in localhost , `devl`, `stage`, `prod`
-export SPRING_PROFILES_ACTIVE=sandbox
-
-# use `localopen', `sandbox` (localhost), `devl`, `stage`, `prod`
-export SPRING_PROFILES_ACTIVE=sandbox
 export sandbox_TECHBD_UDI_DS_PRIME_JDBC_URL=jdbc:postgresql://aws.neon.tech/persistence-prime
 export sandbox_TECHBD_UDI_DS_PRIME_JDBC_USERNAME=persistence-prime
 export sandbox_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD=**********
@@ -34,5 +29,14 @@ export SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID=github-auth-a
 export SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET=github-auth-app-client-secret
 
 export ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_REPO_URL=https://api.github.com/repos/tech-by-design/infrastructure-prime/contents/sensitive/oauth2-github-authz.yml
-#export ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_REPO_URL=https://api.github.com/repos/razakpm/auth-works/contents/oauth2-github-authz.yml
 export ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_TOKEN=*********
+
+# Set the workspace editor to VS Code local or remote (with given distro/host)
+# export UPI_WS_EDITOR=vscode-wsl          # also supply UPI_WS_EDITOR_VSCODE_REMOTE_DISTRO   Files will be accessible as vscode://vscode-remote/wsl+DISTRO/home/username/src/somedir/file.txt:1
+# export UPI_WS_EDITOR=vscode-ssh-remote   # also supply UPI_WS_EDITOR_VSCODE_REMOTE_HOSTNAME Files will be accessible as vscode://vscode-remote/ssh-remote+HOSTNAME/home/username/src/somedir/file.txt:1
+# export UPI_WS_EDITOR=vscode-windows      # Files will be accessible as vscode://file/home/username/src/somedir/file.txt:1
+# export UPI_WS_EDITOR=vscode-linux        # Files will be accessible as vscode://file/home/username/src/somedir/file.txt:1
+# export UPI_WS_EDITOR=vscode-mac          # Files will be accessible as vscode://file/home/username/src/somedir/file.txt:1
+
+export UPI_WS_EDITOR=vscode-wsl
+export UPI_WS_EDITOR_VSCODE_REMOTE_DISTRO=Debian
