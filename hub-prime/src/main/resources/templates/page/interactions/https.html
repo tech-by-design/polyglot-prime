@@ -93,7 +93,7 @@
                 const columnDefs = [
                     { headerName: "Request Time", field: "request_encountered_at", sort: "desc" },
                     {
-                        headerName: "Interaction ID", field: "hub_interaction_id",
+                        headerName: "Interaction ID", field: "interaction_id",
                         cellRenderer: function (params) {
                             const link = document.createElement('a');
                             link.href = '#';
@@ -107,7 +107,7 @@
                     },
                     { headerName: "Tenant ID", field: "tenant_id" },
                     { headerName: "Method", field: "request_method" },
-                    { headerName: "URI", field: "interaction_key" },
+                    { headerName: "URI", field: "request_uri" },
                     { headerName: "Response Status", field: "response_status" },
                     { headerName: "Response Time", field: "response_encountered_at" },
                     { headerName: "IP Address", field: "client_ip_address" },
