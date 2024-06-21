@@ -62,18 +62,17 @@
         <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                let servletContextPath = document.body.dataset.contextPath || "/";
                 let originalData = [];
                 let pageSize = 15;
                 let currentPage = 0;
                 let totalRecords = 0;
-                var lastPage;
+                let lastPage;
 
-                var columnDefs = [
+                const columnDefs = [
                     {
                         headerName: "Artifact", field: "artifactId", sortable: true, filter: true, sort: "desc", enablePivot: true,
                         cellRenderer: function (params) {
-                            var link = document.createElement('a');
+                            const link = document.createElement('a');
                             link.href = '#';
                             link.innerText = params.value;
                             link.addEventListener('click', function (e) {
@@ -96,13 +95,12 @@
                 ];
 
                 const gridOptions = {
-                    columnDefs: columnDefs,
+                    columnDefs,
                     defaultColDef: {
                         flex: 1,
                         minWidth: 100,
                         resizable: true,
                         sortable: true,
-                        filter: true,
                         enablePivot: true
                     },
                     pagination: true,
@@ -135,7 +133,6 @@
                                 issueLocationLine: validation.issueLocationLine,
                                 issueLocationColumn: validation.issueLocationColumn,
                                 issueDiagnostics: validation.issueDiagnostics,
-
                             }));
                             gridOptions.api.setRowData(rowData);
                         })

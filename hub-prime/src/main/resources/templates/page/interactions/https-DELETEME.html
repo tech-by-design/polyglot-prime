@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <title>FHIR Interactions via HTTPs</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- only include inner breadcrumbs, `Home` and active page are fixed -->
+    <link rel="breadcrumb" th:href="@{/interactions/https}" title="Interactions" />
+    
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <style>
+        .ag-theme-alpine .ag-root-wrapper {
+            border: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <ul class="flex flex-wrap border-b border-gray-200">
+            <li class="mr-2">
+                <a href="sftp"
+                    class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">CSV via SFTP (<code>egress</code>)</a>
+            </li>
+            <li class="mr-2">
+                <a href="#"  aria-current="page"
+                    class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">FHIR via HTTPs</a>
+            </li>
+        </ul>
+        <div id="myGrid" class="ag-theme-alpine"></div>
+
+        <!-- Modal -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <json-viewer id="json"></json-viewer>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+        <script id="driver">
+            document.addEventListener('DOMContentLoaded', function () {
+                let originalData = [];
+                let pageSize = 50;
+                let currentPage = 0;
+                let totalRecords = 0;
+                let lastPage;
+
+                const columnDefs = [
+                    { headerName: "Request Time", field: "request_encountered_at", sortable: true, filter: true, sort: "desc" },
+                    {
+                        headerName: "Interaction ID", field: "hub_interaction_id", sortable: true, filter: true, enablePivot: true, enableRowGroup: true,
+                        cellRenderer: function (params) {
+                            const link = document.createElement('a');
+                            link.href = '#';
+                            link.innerText = params.value;
+                            return link;
+                        }
+                     },
+                    { headerName: "Tenant ID", field: "tenant_id", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Method", field: "request_method", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "URI", field: "interaction_key", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Response Status", field: "response_status", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Response Time", field: "response_encountered_at", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "IP Address", field: "client_ip_address", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "User Agent", field: "user_agent", sortable: true, filter: true, enablePivot: true, enableRowGroup: true }
+                ];
+
+                const gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: [],
+                    defaultColDef: {
+                        flex: 1,
+                        minWidth: 100,
+                        resizable: true,
+                        sortable: true,
+                        filter: true,
+                        enablePivot: true
+                    },
+                    pagination: true,
+                    paginationPageSize: pageSize,
+                    paginationAutoPageSize: true, 
+                    paginationPageSizeSelector: [50, 250, 500],
+                    onPaginationChanged: onPaginationChanged,
+                    autoSizeStrategy: { type: "fitCellContents" },
+                    sideBar: true,
+                };
+
+                const eGridDiv = document.querySelector('#myGrid');
+                const gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+                // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
+                eGridDiv.style.height = "750px"
+
+                function fetchPageData(page, size) {
+                    fetch(ssrServletUrl(`/admin/observe/interaction/https/recent.json?page=${page}&size=${size}`))
+                    .then(response => response.json())
+                    .then(data => {
+                        window.fetched = data; // for debugging / development
+                        originalData = data;
+                        totalRecords = data.totalElements;
+                        const rowData = data.content.map(interaction => ({
+                            hub_interaction_id: interaction.hub_interaction_id,
+                            request_encountered_at: interaction.request_encountered_at,
+                            tenant_id: interaction.tenant_id,
+                            request_method: interaction.request_method,
+                            interaction_key: interaction.interaction_key,
+                            response_status: interaction.response_status,
+                            response_encountered_at: interaction.response_encountered_at,
+                            client_ip_address: interaction.client_ip_address,
+                            user_agent: interaction.user_agent
+                        }));
+                        gridApi.setGridOption('rowData', rowData);
+                        gridApi.sizeColumnsToFit();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching interaction data:', error);
+                    });
+                }
+
+                function onPaginationChanged() {
+                    if (gridOptions.api) {
+                        currentPage = gridOptions.api.paginationGetCurrentPage();
+                        if (currentPage !== lastPage) {
+                            lastPage = currentPage;
+                            fetchPageData(currentPage, pageSize);
+                        }
+                    }
+                }
+
+                fetchPageData(currentPage, pageSize);
+
+                function showDetails(interactionId) {
+                    const interaction = originalData.find(item => item.interactionId === interactionId);
+                    if (interaction) {
+                        document.querySelector('#json').data = interaction;
+                        document.getElementById('modal').style.display = 'block';
+                    }
+                }
+
+                document.querySelector('.close').onclick = function () {
+                    document.getElementById('modal').style.display = 'none';
+                };
+
+                window.onclick = function (event) {
+                    if (event.target == document.getElementById('modal')) {
+                        document.getElementById('modal').style.display = 'none';
+                    }
+                };
+            });
+        </script>
+    </div>
+</body>
+
+</html>

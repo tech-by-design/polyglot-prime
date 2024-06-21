@@ -10,7 +10,7 @@
 
     <!-- only include inner breadcrumbs, `Home` and active page are fixed -->
     <link rel="breadcrumb" th:href="@{/interactions/https}" title="Interactions" />
-    
+
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
@@ -60,14 +60,16 @@
         <ul class="flex flex-wrap border-b border-gray-200">
             <li class="mr-2">
                 <a href="sftp"
-                    class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">CSV via SFTP (<code>egress</code>)</a>
+                    class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">CSV
+                    via SFTP (<code>egress</code>)</a>
             </li>
             <li class="mr-2">
-                <a href="#"  aria-current="page"
-                    class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">FHIR via HTTPs</a>
+                <a href="#" aria-current="page"
+                    class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">FHIR
+                    via HTTPs</a>
             </li>
         </ul>
-        <div id="myGrid" class="ag-theme-alpine"></div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
 
         <!-- Modal -->
         <div id="modal" class="modal">
@@ -79,32 +81,40 @@
 
         <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
         <script id="driver">
-            document.addEventListener('DOMContentLoaded', function () {
-                let originalData = [];
+            // in browser inspect console, set `window.logLevel = 1` to see logs
+            window.logLevel = 0;
+            const log = (...args) => {
+                if (window.logLevel) {
+                    console.log(...args);
+                }
+            }
 
-                var columnDefs = [
-                    { headerName: "Request Time", field: "request_encountered_at", sortable: true, filter: true, sort: "desc" },
+            document.addEventListener('DOMContentLoaded', function () {
+                const columnDefs = [
+                    { headerName: "Request Time", field: "request_encountered_at", sort: "desc" },
                     {
-                        headerName: "hubIngestSessionId", field: "hubIngestSessionId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true,
+                        headerName: "Interaction ID", field: "hub_interaction_id",
                         cellRenderer: function (params) {
-                            var link = document.createElement('a');
+                            const link = document.createElement('a');
                             link.href = '#';
                             link.innerText = params.value;
+                            link.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                showDetails(params.value);
+                            });
                             return link;
                         }
-                     },
-                    { headerName: "Tenant ID", field: "tenant_id", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "Method", field: "request_method", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "URI", field: "interaction_key", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "Response Status", field: "response_status", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "Response Time", field: "response_encountered_at", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "IP Address", field: "client_ip_address", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "User Agent", field: "user_agent", sortable: true, filter: true, enablePivot: true, enableRowGroup: true }
+                    },
+                    { headerName: "Tenant ID", field: "tenant_id" },
+                    { headerName: "Method", field: "request_method" },
+                    { headerName: "URI", field: "interaction_key" },
+                    { headerName: "Response Status", field: "response_status" },
+                    { headerName: "Response Time", field: "response_encountered_at" },
+                    { headerName: "IP Address", field: "client_ip_address" },
+                    { headerName: "User Agent", field: "user_agent" }
                 ];
 
                 const gridOptions = {
-                    columnDefs: columnDefs,
-                    rowData: [],
                     defaultColDef: {
                         flex: 1,
                         minWidth: 100,
@@ -113,43 +123,55 @@
                         filter: true,
                         enablePivot: true
                     },
-                    autoSizeStrategy: { type: "fitCellContents" },
+                    columnDefs,
                     sideBar: true,
+                    autoSizeStrategy: { type: "fitCellContents" },
+                    rowModelType: 'serverSide',
+                    serverSideDatasource: {
+                        getRows: async function (params) {
+                            // params.request has startRow, endRow, sort, filter, pivot, etc.
+                            // and the server-side reads it, constructs SQL, executes and returns
+                            const jsonRequest = JSON.stringify(params.request, null, 2);
+                            log("[EnterpriseDatasource] Posted JSON request", jsonRequest);
+                            try {
+                                const response = await fetch(ssrServletUrl(`/support/interaction/http.json`), {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: jsonRequest
+                                });
+                                if (response.ok) {
+                                    const result = await response.json();
+                                    log("[EnterpriseDatasource] Received JSON response", result);
+                                    params.success({ rowData: result.data });
+                                    // TODO: updateSecondaryColumns(params.request, result);
+                                    // see https://github.com/ag-grid/ag-grid-server-side-oracle-example
+                                } else {
+                                    console.error(`[EnterpriseDatasource] Error: ${response.statusText}`);
+                                    params.fail();
+                                }
+                            } catch (error) {
+                                console.error(`[EnterpriseDatasource] Error: ${error.message}`);
+                                params.fail();
+                            }
+                        }
+                    },
                 };
 
-                const eGridDiv = document.querySelector('#myGrid');
-                const gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+                const serverDataGridDiv = document.querySelector('#serverDataGrid');
+                const serverDataGridAPI = agGrid.createGrid(serverDataGridDiv, gridOptions);
                 // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
-                eGridDiv.style.height = "750px"
-
-                fetch(ssrServletUrl(`/admin/observe/interaction/https/recent.json`))
-                    .then(response => response.json())
-                    .then(data => {
-                        originalData = data;
-                        const rowData = data.content.map(interaction => ({
-                            hub_interaction_id: interaction.hub_interaction_id,
-                            request_encountered_at: interaction.request_encountered_at,
-                            tenant_id: interaction.tenant.tenant_id,
-                            request_method: interaction.request_method,
-                            interaction_key: interaction.interaction_key,
-                            response_status: interaction.response_status,
-                            response_encountered_at: interaction.response_encountered_at,
-                            client_ip_address: interaction.client_ip_address,
-                            user_agent: interaction.user_agent
-                        }));
-                        gridApi.setGridOption('rowData', rowData);
-                        gridApi.sizeColumnsToFit();
-                    })
-                    .catch(error => {
-                        console.error('Error fetching interaction data:', error);
-                    });
+                serverDataGridDiv.style.height = "750px"
 
                 function showDetails(interactionId) {
-                    const interaction = originalData.find(item => item.interactionId === interactionId);
-                    if (interaction) {
-                        document.querySelector('#json').data = interaction;
-                        document.getElementById('modal').style.display = 'block';
-                    }
+                    fetch(ssrServletUrl(`/support/interaction/${interactionId}.json`))
+                        .then(response => response.json())
+                        .then(interaction => {
+                            document.querySelector('#json').data = interaction;
+                            document.getElementById('modal').style.display = 'block';
+                        })
+                        .catch(error => {
+                            console.error(`Error fetching interaction ${interactionId}`, error);
+                        });
                 }
 
                 document.querySelector('.close').onclick = function () {

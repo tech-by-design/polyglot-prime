@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.jooq.Record;
-import org.jooq.Result;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,9 +51,14 @@ import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
+import org.techbd.service.http.aggrid.ServerRowsRequest;
+import org.techbd.service.http.aggrid.ServerRowsResponse;
+import org.techbd.service.http.aggrid.SqlQueryBuilder;
 import org.techbd.service.http.InteractionsFilter;
+import org.techbd.service.http.SandboxHelpers;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.UdiInsertSessionWithState;
+import org.techbd.udi.auto.jooq.ingress.tables.records.InteractionHttpRecord;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -78,6 +82,7 @@ public class Controller {
     private final AppConfig appConfig;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private final SftpManager sftpManager;
+    private final SandboxHelpers sboxHelpers;
 
     @Value(value = "${org.techbd.service.baggage.user-agent.enable-sensitive:false}")
     private boolean userAgentSensitiveBaggageEnabled = false;
@@ -90,18 +95,20 @@ public class Controller {
 
     public Controller(final Environment environment, final AppConfig appConfig,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
-            final SftpManager sftpManager) {
+            final SftpManager sftpManager,
+            final SandboxHelpers sboxHelpers) {
         this.environment = environment;
         this.appConfig = appConfig;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         this.sftpManager = sftpManager;
+        this.sboxHelpers = sboxHelpers;
         ssrBaggage.put("appVersion", appConfig.getVersion());
         ssrBaggage.put("activeSpringProfiles", List.of(this.environment.getActiveProfiles()));
     }
 
-    protected void populateModel(final Model model, final HttpServletRequest request) {
+    protected void populateModel(final String templateName, final Model model, final HttpServletRequest request) {
         try {
-            OAuth2User principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            final var principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             AuthenticatedUser authUser = null;
             if (principal != null) {
                 authUser = new AuthenticatedUser(principal, "", new ArrayList<String>());
@@ -116,6 +123,19 @@ public class Controller {
             baggage.put("health",
                     Map.of("udiPrimaryDataSourceAlive", udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));
 
+            if (sboxHelpers.isEditorAvailable()) {
+                final var canonicalTmplName = "templates/" + templateName + ".html";
+                final var targetResource = getClass().getClassLoader().getResource(canonicalTmplName);
+                final var targetFsPath = targetResource != null ? targetResource.getFile() : null;
+                final var srcFsPath = targetFsPath != null
+                        ? targetFsPath.replace("target/classes", "src/main/resources")
+                        : null;
+                final var editUrl = srcFsPath != null ? sboxHelpers.getEditorUrlFromAbsolutePath(srcFsPath) : null;
+                baggage.put("template",
+                        Map.of("supplied", templateName, "canonical", canonicalTmplName, "targetFsPath", targetFsPath,
+                                "srcFsPath", srcFsPath, "editUrl", editUrl));
+            }
+
             // "baggage" is for typed server-side usage by templates
             // "ssrBaggageJSON" is for JavaScript client use
             model.addAttribute("baggage", baggage);
@@ -129,8 +149,9 @@ public class Controller {
 
     @GetMapping("/home")
     public String home(final Model model, final HttpServletRequest request) {
-        populateModel(model, request);
-        return "page/home";
+        final var templateName = "page/home";
+        populateModel(templateName, model, request);
+        return templateName;
     }
 
     @GetMapping("/")
@@ -183,8 +204,9 @@ public class Controller {
 
     @GetMapping("/docs")
     public String docs(final Model model, final HttpServletRequest request) {
-        populateModel(model, request);
-        return "page/documentation";
+        final var templateName = "page/documentation";
+        populateModel(templateName, model, request);
+        return templateName;
     }
 
     @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -242,7 +264,8 @@ public class Controller {
                 "bundleSessionId", bundleAsyncInteractionId.toString(), // for tracking in database, etc.
                 "isAsync", true,
                 "validationResults", session.getValidationResults(),
-                "statusUrl","https://" + request.getServerName() + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
+                "statusUrl",
+                "https://" + request.getServerName() + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
                 "device", session.getDevice()));
         final var result = Map.of("OperationOutcome", immediateResult);
         if (uaValidationStrategyJson != null) {
@@ -391,8 +414,9 @@ public class Controller {
     @GetMapping("/admin/observe/interactions/{nature}")
     public String observeInteractionsNature(@PathVariable String nature, final Model model,
             final HttpServletRequest request) {
-        populateModel(model, request);
-        return "page/interactions/" + nature;
+        final var templateName = "page/interactions/" + nature;
+        populateModel(templateName, model, request);
+        return templateName;
     }
 
     @Operation(summary = "Recent SFTP Interactions")
@@ -402,31 +426,40 @@ public class Controller {
         return sftpManager.tenantEgressSessions();
     }
 
-    @Operation(summary = "Recent HTTP Request/Response Interactions")
-    @GetMapping("/admin/observe/interaction/https/recent.json")
+    @Operation(summary = "HTTP Request/Response Interactions for Populating Grid")
+    @PostMapping(value = "/support/interaction/http.json", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Page<?> observeRecentHttpsInteractionsJooq(final Model model,
-            final HttpServletRequest request,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public ServerRowsResponse httpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload) {
+        // TODO: figure out how to write dynamic queries in jOOQ
+        // final var DSL = udiPrimeJpaConfig.dsl();
+        // final var result =
+        // DSL.selectFrom(INTERACTION_HTTP).offset(payload.getStartRow())
+        // .limit(payload.getEndRow() - payload.getStartRow() + 1).fetch();
+        // return ServerRowsResponse.createResponse(payload, result.intoMaps(), null);
+
+        // TODO: obtain the pivot values from the DB for the requested pivot columns
+        // see
+        // https://github.com/ag-grid/ag-grid-server-side-oracle-example/src/main/java/com/ag/grid/enterprise/oracle/demo/dao/TradeDao.java
+        // final var pivotValues = getPivotValues(request.getPivotCols());
+        final Map<String, List<String>> pivotValues = Map.of();
 
         final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.selectFrom(INTERACTION_HTTP).offset(page).limit(size).fetch();
-        return new PageImpl<>(result.intoMaps(), PageRequest.of(page, size), DSL.fetchCount(INTERACTION_HTTP));
+        final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http",
+                pivotValues));
+
+        // create response with our results
+        return ServerRowsResponse.createResponse(payload, result.intoMaps(), pivotValues);
+
     }
 
-    @GetMapping("/admin/observe/interaction/https/recent.json/{interactionId}")
-    public String observeRecentHttpsInteractionDetails(final Model model, HttpServletRequest request,
-            @PathVariable String interactionId) throws JsonProcessingException {
-        // TODO: read this from the database, not memory
-        Map<UUID, RequestResponseEncountered> history = InteractionsFilter.interactions.getHistory();
-        RequestResponseEncountered reqResp = history.get(UUID.fromString(interactionId));
-        ObjectMapper objectMapper = new ObjectMapper();
-        var jsonRequestResponseEncountered = objectMapper.registerModule(new JavaTimeModule())
-                .writerWithDefaultPrettyPrinter()
-                .writeValueAsString(reqResp);
-        model.addAttribute("sessionDetails", jsonRequestResponseEncountered);
-        return "page/interactions/session-details.html";
+    @Operation(summary = "Specific HTTP Request/Response Interaction which is assumed to exist")
+    @GetMapping("/support/interaction/{interactionId}.json")
+    @ResponseBody
+    public Map<String, Object> httpInteraction(final @PathVariable String interactionId) {
+        final var DSL = udiPrimeJpaConfig.dsl();
+        final var result = DSL.selectFrom(INTERACTION_HTTP).where(INTERACTION_HTTP.INTERACTION_ID.eq(interactionId))
+                .fetchSingle();
+        return result.intoMap();
     }
 
     @Operation(summary = "Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.")
@@ -466,9 +499,10 @@ public class Controller {
 
     @GetMapping("/admin/observe/sessions")
     public String adminDiagnostics(final Model model, final HttpServletRequest request) {
-        populateModel(model, request);
+        final var templateName = "page/diagnostics";
+        populateModel(templateName, model, request);
         model.addAttribute("udiPrimaryDataSrcHealth", udiPrimeJpaConfig.udiPrimaryDataSrcHealth());
-        return "page/diagnostics";
+        return templateName;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -489,9 +523,12 @@ public class Controller {
         final var jooqDSL = udiPrimeJpaConfig.dsl();
         final var mapper = new ObjectMapper();
         final var responseJson = mapper.createObjectNode();
-        
+
+        // TODO: need to give actual response from upstream server (meaning from SHIN-NY
+        // Data Lake) so far, this method gives meta data but not the actual response
+
         try {
-            Result<Record> result = jooqDSL.select()
+            final var result = jooqDSL.select()
                     .from(HUB_OPERATION_SESSION)
                     .join(LINK_SESSION_ENTRY)
                     .on(LINK_SESSION_ENTRY.HUB_OPERATION_SESSION_ID.eq(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID))
@@ -505,49 +542,25 @@ public class Controller {
                     .fetch();
 
             final var dataArray = mapper.createArrayNode();
-
-            for (Record record : result) {
-                String sessionId = record.get(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID);
-                String sessionKey = record.get(HUB_OPERATION_SESSION.KEY); 
-                                                                           
-                String entryId = record.get(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID);
-                String fromStateFull = record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.FROM_STATE);
-                String toStateFull = record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.TO_STATE);
-                String createdBy = record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.CREATED_BY);
-                String provenance = record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.PROVENANCE);
-
-                // Extract only the state part after the last dot (.)
-                String fromState = extractState(fromStateFull);
-                String toState = extractState(toStateFull);
-
+            for (final Record record : result) {
                 final var recordJson = mapper.createObjectNode();
-                recordJson.put("sessionId", sessionId);
-                recordJson.put("sessionKey", sessionKey); // Add session key if needed
-                recordJson.put("entryId", entryId);
-                recordJson.put("fromState", fromState);
-                recordJson.put("toState", toState);
-                recordJson.put("createdBy", createdBy);
-                recordJson.put("provenance", provenance);
-
+                recordJson.put("sessionId", record.get(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID));
+                recordJson.put("sessionKey", record.get(HUB_OPERATION_SESSION.KEY));
+                recordJson.put("entryId", record.get(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID));
+                recordJson.put("fromState", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.FROM_STATE));
+                recordJson.put("toState", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.TO_STATE));
+                recordJson.put("createdBy", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.CREATED_BY));
+                recordJson.put("provenance", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.PROVENANCE));
                 dataArray.add(recordJson);
             }
 
             responseJson.set("data", dataArray);
-
             LOG.info("Query execution result: {}", result);
-
         } catch (Exception e) {
             LOG.error("Error executing JOOQ query", e);
             responseJson.put("error", "Error fetching data");
         }
 
         return responseJson;
-
     }
-
-    private String extractState(String fullState) {
-        String[] parts = fullState.split("\\.");
-        return parts[parts.length - 1];
-    }
-
 }
