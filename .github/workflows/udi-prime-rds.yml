@@ -39,3 +39,9 @@ jobs:
         run: |
           cd polyglot-prime/udi-prime
           ./udictl.ts ic test --conn-id PROD_TECHBD_UDI_DS_PRIME
+          
+      - name: Display log file
+        run: |
+         cd polyglot-prime/udi-prime
+         log_file=$(ls -t ./udictl-test-*.log | head -n 1)
+         cat "$log_file"          
