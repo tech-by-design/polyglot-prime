@@ -1,24 +1,67 @@
 #!/usr/bin/env -S deno run --allow-all
-import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
 import { serveDir } from "https://deno.land/std@0.224.0/http/file_server.ts";
-import * as dax from "https://deno.land/x/dax@0.39.2/mod.ts";
-import {
-  Command,
-  EnumType,
-} from "https://deno.land/x/cliffy@v1.0.0-rc.4/command/mod.ts";
-import * as ic from "./src/main/postgres/ingestion-center/mod.ts";
 import {
   ConsoleHandler,
   FileHandler,
   getLogger,
   setup,
 } from "https://deno.land/std@0.224.0/log/mod.ts";
+import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
+import {
+  Command,
+  EnumType,
+} from "https://deno.land/x/cliffy@v1.0.0-rc.4/command/mod.ts";
+import * as dax from "https://deno.land/x/dax@0.39.2/mod.ts";
+import * as pgpass from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.27/lib/postgres/pgpass/pgpass-parse.ts";
+import * as ic from "./src/main/postgres/ingestion-center/mod.ts";
 
 const $ = dax.build$({
   commandBuilder: new dax.CommandBuilder().noThrow(),
 });
+
 const exists = async (target: string | URL) =>
   await Deno.stat(target).then(() => true).catch(() => false);
+
+const { conns: pgConns, issues: pgConnIssues } = await pgpass.parse(
+  path.join(`${Deno.env.get("HOME")}`, ".pgpass"),
+);
+if (pgConnIssues.length > 0) {
+  console.error("unexpected .pgpass issues", pgConnIssues);
+}
+
+const pgpassJdbcUrl = (
+  connId: string,
+  defaultValue = () => `jdbc:postgresql://unknown-conn-id-${connId}`,
+) => {
+  const conn = pgConns.find((conn) => conn.connDescr.id == connId);
+  return conn
+    ? `jdbc:postgresql://${conn.host}:${
+      String(conn.port)
+    }/${conn.database}?user=${conn.username}&password=${conn.password}`
+    : defaultValue();
+};
+
+const pgpassPsqlArgs = (
+  connId: string,
+  defaultValue = () => `-h unknown-conn-id-${connId}`,
+) => {
+  const conn = pgConns.find((conn) => conn.connDescr.id == connId);
+  return conn
+    ? `-h ${conn.host} -p ${conn.port} -d ${conn.database} -U ${conn.username}`
+    : defaultValue();
+};
+
+const schemaSpyArgs = (
+  connId: string,
+  defaultValue = () => `-host unknown-conn-id-${connId}`,
+) => {
+  const conn = pgConns.find((conn) => conn.connDescr.id == connId);
+  return conn
+    ? `-host ${conn.host} -port ${
+      String(conn.port)
+    } -db ${conn.database} -u ${conn.username} -p ${conn.password}`
+    : defaultValue();
+};
 
 const setupLogger = (options: { readonly logResults?: string }) => {
   if (options.logResults) {
@@ -71,10 +114,11 @@ const toLocalPath = (input: string | URL) =>
 //       sudo apt update && sudo apt install fontconfig fonts-dejavu
 
 const cleanableTargetHome = "./target";
-const cleanableTarget = (relative: string) => path.join(cleanableTargetHome, relative);
+const cleanableTarget = (relative: string) =>
+  path.join(cleanableTargetHome, relative);
 
 // deno-fmt-ignore
-await new Command()
+const CLI = new Command()
   .name("UDI Control Plane")
   .version("0.1.0")
   .description("Universal Data Infrastructure (UDI) Orchestration")
@@ -123,7 +167,6 @@ await new Command()
           .option("--package <name:string>", "Java package name", { default: "org.techbd.udi.auto.jooq.ingress" })
           .option("--schema <name:string>", "Schema to inspect", { default: "techbd_udi_ingress" })
           .option("--jar <path:string>", "The JAR file to create", { default: "../hub-prime/lib/techbd-udi-jooq-ingress.auto.jar" })
-          .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
           .option("-c, --conn-id <id:string>", "pgpass connection ID to use for JDBC URL", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
           .action(async (options) => {
             try {
@@ -132,18 +175,18 @@ await new Command()
             } catch (_notFound) {
                 // directory doesn't exist, it's OK
             }
-            const jdbcURL = await $`${options.pgpass} prepare '\`jdbc:postgresql://\${conn.host}:\${String(conn.port)}/\${conn.database}?user=\${conn.username}&password=\${conn.password}\`' --conn-id=${options.connId}`.text();
+            const jdbcURL = pgpassJdbcUrl(options.connId);
             await $`java -cp "./lib/*:./support/jooq/lib/*" support/jooq/JooqCodegen.java ${jdbcURL} ${options.schema} ${options.package} ${options.buildDir} ${options.jar}`;
             console.log("Java jOOQ generation complete, JAR file", options.jar);
+            console.log("  ==> run `mvn clean compile` to freshen the cache");
           })
        )
       .command("docs", "Generate documentation artifacts")
         .option("--schemaspy-dest <path:string>", "Generate SchemaSpy documentation", { default: cleanableTarget("/docs/schema-spy") })
-        .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
         .option("-c, --conn-id <id:string>", "pgpass connection ID to use for SchemaSpy database credentials", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
         .option("--serve <port:number>", "Serve generated documentation at port")
         .action(async (options) => {
-          const schemaSpyCreds = await $`${options.pgpass} prepare '\`-host \${conn.host} -port \${String(conn.port)} -db \${conn.database} -u \${conn.username} -p \${conn.password}\`' --conn-id=${options.connId}`.text();
+          const schemaSpyCreds = schemaSpyArgs(options.connId);
           await $.raw`java -jar ./lib/schemaspy-6.2.4.jar -t pgsql11 -dp ./lib/postgresql-42.7.3.jar -schemas techbd_udi_ingress ${schemaSpyCreds} -debug -o ${options.schemaspyDest} -vizjs`;
           if(options.serve) {
               Deno.serve({ port: options.serve }, (req) => {
@@ -159,7 +202,6 @@ await new Command()
       .option("--destroy-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "destroy.auto.psql" })
       .option("--driver-fname <file-name:string>", "Filename of the generated construct script in target", { default: "driver.auto.psql" })
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
-      .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
       .option("--destroy-first", "Destroy objects before migration")
       .option("--log-results <path:string>", "Store `psql` results in this log file", { default: `./udictl-migrate-${new Date().toISOString()}.log` })
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
@@ -170,7 +212,7 @@ await new Command()
       .action(async (options) => {
         let psqlErrors = 0;
         const logger = setupLogger(options);
-        const psqlCreds = await $`${options.pgpass} psql-fmt --conn-id=${options.connId}`.text();
+        const psqlCreds = pgpassPsqlArgs(options.connId);
         if(options.destroyFirst) {
             if(options.connId.indexOf("DESTROYABLE") == -1) {
                 console.warn(`Skipping --destroy-first because --conn-id "${options.connId}" does not contain the word DESTROYABLE in the connection identifier.`);
@@ -212,7 +254,6 @@ await new Command()
     .command("test", "Use psql to execute pgTAP scripts")
       .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: cleanableTarget("/postgres/ingestion-center") })
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
-      .option("--pgpass <path:string>", "`pgpass` command", { required: true, default: "pgpass" })
       .option("--suite-fname <file-name:string>", "Filename of the generated test suite script in target", { default: "suite.pgtap.psql" })
       .option("--log-results <path:string>", "Store `psql` results in this log file", { default: `./udictl-test-${new Date().toISOString()}.log` })
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
@@ -223,7 +264,7 @@ await new Command()
       .action(async (options) => {
         let psqlErrors = 0;
         const logger = setupLogger(options);
-        const psqlCreds = await $`${options.pgpass} psql-fmt --conn-id=${options.connId}`.text();
+        const psqlCreds = pgpassPsqlArgs(options.connId);
         const psqlContentFName = `${options.target}/${options.suiteFname}`;
         if(!(await exists(psqlContentFName))) {
           console.warn(`${psqlContentFName} does not exist. Did you run 'generate sql' command?`);
@@ -242,5 +283,14 @@ await new Command()
           console.error(`WARNING: ${psqlErrors} ${options.psql} error(s) occurred, see log file ${options.logResults}`);
         }
       })
-    )
-  .parse(Deno.args);
+    .command("omnibus-fresh", "Freshen the given connection ID")
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .action(async (options) => {
+        await CLI.parse(["ic", "generate", "sql"]);
+        await CLI.parse(["ic", "migrate", "--destroy-first", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "test", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "generate", "java", "jooq", "--conn-id", options.connId]);
+      })
+    );
+
+await CLI.parse(Deno.args);

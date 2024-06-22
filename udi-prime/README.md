@@ -50,6 +50,12 @@ To generate SQL and ERD for the UDI model, run the following command:
 
 ```bash
 cd udi-prime
+
+# "freshen" a development database and generate everything all at once
+./udictl.ts ic omnibus-fresh
+
+# when you want to run specific commands individually
+
 ./udictl.ts ic generate --help  # review code generation options
 ./udictl.ts ic generate sql     # generate all *.sql artifacts
 
