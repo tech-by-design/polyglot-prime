@@ -152,8 +152,8 @@ public class SftpManager {
     }
 
     @CacheEvict(value = { TENANT_EGRESS_CONTENT_CACHE_KEY, TENANT_EGRESS_SESSIONS_CACHE_KEY }, allEntries = true)
-    @Scheduled(fixedRateString = "${org.techbd.cache.tenant-sftp-egress-content.ttl:PT4H}")
+    @Scheduled(fixedRateString = "${org.techbd.cache.tenant-sftp-egress-content.ttl:PT5M}")
     public void emptyTenantEgressCacheScheduled() {
-        LOG.info("emptying " + TENANT_EGRESS_CONTENT_CACHE_KEY + " (scheduled)");
+        LOG.info("emptying " + TENANT_EGRESS_CONTENT_CACHE_KEY + " (scheduled PT5M)");
     }
 }

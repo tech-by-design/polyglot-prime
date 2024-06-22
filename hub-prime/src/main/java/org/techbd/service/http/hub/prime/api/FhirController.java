@@ -1,39 +1,29 @@
-package org.techbd.service.http.hub.prime;
+package org.techbd.service.http.hub.prime.api;
 
 import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_OPERATION_SESSION;
 import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_OPERATION_SESSION_ENTRY;
-import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP;
 import static org.techbd.udi.auto.jooq.ingress.Tables.LINK_SESSION_ENTRY;
 import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_OPERATION_SESSION_ENTRY_SESSION_STATE;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.jooq.Record;
-import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,158 +42,33 @@ import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.SandboxHelpers;
-import org.techbd.service.http.aggrid.ServerRowsRequest;
-import org.techbd.service.http.aggrid.ServerRowsResponse;
-import org.techbd.service.http.aggrid.SqlQueryBuilder;
+import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.UdiInsertSessionWithState;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.swagger.v3.core.util.ObjectMapperFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 
-@org.springframework.stereotype.Controller
-@Tag(name = "TechBD Hub", description = "Business Operations API")
-public class Controller {
-    private static final Logger LOG = LoggerFactory.getLogger(Controller.class.getName());
+@Controller
+@Tag(name = "TechBD Hub FHIR Endpoints")
+public class FhirController {
+    private static final Logger LOG = LoggerFactory.getLogger(FhirController.class.getName());
 
-    private final Map<String, Object> ssrBaggage = new HashMap<>();
-    private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
     private final OrchestrationEngine engine = new OrchestrationEngine();
     private final AppConfig appConfig;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
-    private final SftpManager sftpManager;
-    private final SandboxHelpers sboxHelpers;
 
-    @Value(value = "${org.techbd.service.baggage.user-agent.enable-sensitive:false}")
-    private boolean userAgentSensitiveBaggageEnabled = false;
-
-    @Value(value = "${org.techbd.service.baggage.user-agent.exposure:false}")
-    private boolean userAgentBaggageExposureEnabled = false;
-
-    @Autowired
-    private Environment environment;
-
-    public Controller(final Environment environment, final AppConfig appConfig,
+    public FhirController(final Environment environment, final AppConfig appConfig,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager,
             final SandboxHelpers sboxHelpers) {
-        this.environment = environment;
         this.appConfig = appConfig;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        this.sftpManager = sftpManager;
-        this.sboxHelpers = sboxHelpers;
-        ssrBaggage.put("appVersion", appConfig.getVersion());
-        ssrBaggage.put("activeSpringProfiles", List.of(this.environment.getActiveProfiles()));
-    }
-
-    protected void populateModel(final String templateName, final Model model, final HttpServletRequest request) {
-        try {
-            final var principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            AuthenticatedUser authUser = null;
-            if (principal != null) {
-                authUser = new AuthenticatedUser(principal, "", new ArrayList<String>());
-            }
-
-            // make the request, authUser available to templates
-            model.addAttribute("req", request);
-            model.addAttribute("authUser", authUser);
-
-            final var baggage = new HashMap<>(ssrBaggage);
-            baggage.put("userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled);
-            baggage.put("health",
-                    Map.of("udiPrimaryDataSourceAlive", udiPrimeJpaConfig.udiPrimaryDataSrcHealth().isAlive()));
-
-            if (sboxHelpers.isEditorAvailable()) {
-                final var canonicalTmplName = "templates/" + templateName + ".html";
-                final var targetResource = getClass().getClassLoader().getResource(canonicalTmplName);
-                final var targetFsPath = targetResource != null ? targetResource.getFile() : null;
-                final var srcFsPath = targetFsPath != null
-                        ? targetFsPath.replace("target/classes", "src/main/resources")
-                        : null;
-                final var editUrl = srcFsPath != null ? sboxHelpers.getEditorUrlFromAbsolutePath(srcFsPath) : null;
-                baggage.put("template",
-                        Map.of("supplied", templateName, "canonical", canonicalTmplName, "targetFsPath", targetFsPath,
-                                "srcFsPath", srcFsPath, "editUrl", editUrl));
-            }
-
-            // "baggage" is for typed server-side usage by templates
-            // "ssrBaggageJSON" is for JavaScript client use
-            model.addAttribute("baggage", baggage);
-            model.addAttribute("ssrBaggageJSON", baggageMapper.writeValueAsString(baggage));
-            LOG.info("Logged in user Information"
-                    + SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-        } catch (JsonProcessingException e) {
-            LOG.error("error setting ssrBaggageJSON in populateModel", e);
-        }
-    }
-
-    @GetMapping("/home")
-    public String home(final Model model, final HttpServletRequest request) {
-        final var templateName = "page/home";
-        populateModel(templateName, model, request);
-        return templateName;
-    }
-
-    @GetMapping("/")
-    public String index() {
-        return "login/login";
-    }
-
-    @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
-    @CacheEvict(value = { SftpManager.TENANT_EGRESS_CONTENT_CACHE_KEY,
-            SftpManager.TENANT_EGRESS_SESSIONS_CACHE_KEY }, allEntries = true)
-    public ResponseEntity<?> emptyTenantEgressCacheOnDemand() {
-        LOG.info("emptying tenant-sftp-egress-content (on demand)");
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("emptying tenant-sftp-egress-content");
-    }
-
-    @GetMapping(value = "/dashboard/stat/sftp/most-recent-egress/{tenantId}.{extension}", produces = {
-            "application/json", "text/html" })
-    public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
-        final var account = sftpManager.configuredTenant(tenantId);
-        if (account.isPresent()) {
-            final var content = sftpManager.tenantEgressContent(account.get());
-            final var mre = content.mostRecentEgress();
-
-            if ("html".equalsIgnoreCase(extension)) {
-                String timeAgo = mre.map(zonedDateTime -> new PrettyTime().format(zonedDateTime)).orElse("None");
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(content.error() == null
-                                ? "<span title=\"%d sessions found, most recent %s\">%s</span>".formatted(
-                                        content.directories().length,
-                                        mre,
-                                        timeAgo)
-                                : "<span title=\"No directories found in %s\">⚠️</span>".formatted(content.sftpUri()));
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } else {
-            if ("html".equalsIgnoreCase(extension)) {
-                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("Unknown tenantId '%s'".formatted(tenantId));
-            } else if ("json".equalsIgnoreCase(extension)) {
-                return ResponseEntity.noContent().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-
-        }
-    }
-
-    @GetMapping("/docs")
-    public String docs(final Model model, final HttpServletRequest request) {
-        final var templateName = "page/documentation";
-        populateModel(templateName, model, request);
-        return templateName;
     }
 
     @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -232,7 +97,7 @@ public class Controller {
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             final HttpServletRequest request) throws SQLException {
 
-        final var provenance = "%s.validateBundleAndForward(%s)".formatted(Controller.class.getName(),
+        final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
         final var bundleAsyncInteractionId = UUID.randomUUID();
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
@@ -403,123 +268,6 @@ public class Controller {
         return result;
     }
 
-    @GetMapping("/admin/observe/interactions")
-    public String observeInteractions() {
-        return "redirect:/admin/observe/interactions/https";
-    }
-
-    @GetMapping("/admin/observe/interactions/{nature}")
-    public String observeInteractionsNature(@PathVariable String nature, final Model model,
-            final HttpServletRequest request) {
-        final var templateName = "page/interactions/" + nature;
-        populateModel(templateName, model, request);
-        return templateName;
-    }
-
-    @Operation(summary = "Recent SFTP Interactions")
-    @GetMapping("/admin/observe/interaction/sftp/recent.json")
-    @ResponseBody
-    public List<?> observeRecentSftpInteractions() {
-        return sftpManager.tenantEgressSessions();
-    }
-
-    @Operation(summary = "HTTP Request/Response Interactions for Populating Grid")
-    @PostMapping(value = "/support/interaction/http.json", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ServerRowsResponse httpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload) {
-        // TODO: figure out how to write dynamic queries in jOOQ
-        // final var DSL = udiPrimeJpaConfig.dsl();
-        // final var result =
-        // DSL.selectFrom(INTERACTION_HTTP).offset(payload.getStartRow())
-        // .limit(payload.getEndRow() - payload.getStartRow() + 1).fetch();
-        // return ServerRowsResponse.createResponse(payload, result.intoMaps(), null);
-
-        // TODO: obtain the pivot values from the DB for the requested pivot columns
-        // see
-        // https://github.com/ag-grid/ag-grid-server-side-oracle-example/src/main/java/com/ag/grid/enterprise/oracle/demo/dao/TradeDao.java
-        // final var pivotValues = getPivotValues(request.getPivotCols());
-        final Map<String, List<String>> pivotValues = Map.of();
-
-        final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http",
-                pivotValues));
-        final var rows = result.intoMaps();
-        for (final var row : rows) {
-            // this is a JSONB and might be large so don't send it even if it was requested
-            // since we'll get it in /support/interaction/{interactionId}.json if required;
-            // also since SqlQueryBuilder().createSql() is custom SQL, org.jooq.JSONB type
-            // will not be able to be serialized by Jackson anyway.
-            row.remove("request_payload");
-        }
-
-        // create response with our results
-        return ServerRowsResponse.createResponse(payload, rows, pivotValues);
-
-    }
-
-    @Operation(summary = "Specific HTTP Request/Response Interaction which is assumed to exist")
-    @GetMapping("/support/interaction/{interactionId}.json")
-    @ResponseBody
-    public Map<String, Object> httpInteraction(final @PathVariable String interactionId) {
-        final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.selectFrom(INTERACTION_HTTP).where(INTERACTION_HTTP.INTERACTION_ID.eq(interactionId))
-                .fetchSingle();
-        return result.intoMap();
-    }
-
-    @Operation(summary = "Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.")
-    @GetMapping("/mock/shinny-data-lake/1115-validate/{resourcePath}.json")
-    public ResponseEntity<String> getJsonFile(
-            @PathVariable String resourcePath,
-            @RequestParam(required = false, defaultValue = "0") long simulateLifetimeMs) {
-        final var cpResourceName = "templates/mock/shinny-data-lake/1115-validate/" + resourcePath + ".json";
-        try {
-            if (simulateLifetimeMs > 0) {
-                Thread.sleep(simulateLifetimeMs);
-            }
-            ClassPathResource resource = new ClassPathResource(cpResourceName);
-            String content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            return new ResponseEntity<>(content, headers, HttpStatus.OK);
-        } catch (IOException e) {
-            return new ResponseEntity<>(cpResourceName + " not found", HttpStatus.NOT_FOUND);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return new ResponseEntity<>("Request interrupted", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @Operation(summary = "Recent HTTP Request/Response Diagnostics")
-    @GetMapping("/admin/observe/sessions/data")
-    @ResponseBody
-    public Page<?> adminDiagnosticsJson(@RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        // TODO: don't select from HUB_OPERATION_SESSION, use the proper VIEW
-        final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.selectFrom(HUB_OPERATION_SESSION).offset(page).limit(size).fetch();
-        return new PageImpl<>(result.intoMaps(), PageRequest.of(page, size), DSL.fetchCount(HUB_OPERATION_SESSION));
-    }
-
-    @GetMapping("/admin/observe/sessions")
-    public String adminDiagnostics(final Model model, final HttpServletRequest request) {
-        final var templateName = "page/diagnostics";
-        populateModel(templateName, model, request);
-        model.addAttribute("udiPrimaryDataSrcHealth", udiPrimeJpaConfig.udiPrimaryDataSrcHealth());
-        return templateName;
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record AuthenticatedUser(String name, String emailPrimary, String profilePicUrl, String gitHubId,
-            String tenantId, List<String> roles) {
-        public AuthenticatedUser(final OAuth2User principal, String tenantId, List<String> roles) {
-            this((String) principal.getAttribute("name"), (String) principal.getAttribute("email"),
-                    (String) principal.getAttribute("avatar_url"), (String) principal.getAttribute("login"), tenantId,
-                    roles);
-        }
-    }
-
     @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
     @ResponseBody
     @Operation(summary = "Check the state/status of async operation")
@@ -567,5 +315,28 @@ public class Controller {
         }
 
         return responseJson;
+    }
+
+    @Operation(summary = "Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.")
+    @GetMapping("/mock/shinny-data-lake/1115-validate/{resourcePath}.json")
+    public ResponseEntity<String> getJsonFile(
+            @PathVariable String resourcePath,
+            @RequestParam(required = false, defaultValue = "0") long simulateLifetimeMs) {
+        final var cpResourceName = "templates/mock/shinny-data-lake/1115-validate/" + resourcePath + ".json";
+        try {
+            if (simulateLifetimeMs > 0) {
+                Thread.sleep(simulateLifetimeMs);
+            }
+            ClassPathResource resource = new ClassPathResource(cpResourceName);
+            String content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            return new ResponseEntity<>(content, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<>(cpResourceName + " not found", HttpStatus.NOT_FOUND);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new ResponseEntity<>("Request interrupted", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

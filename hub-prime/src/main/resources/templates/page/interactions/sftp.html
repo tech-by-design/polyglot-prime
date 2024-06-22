@@ -127,7 +127,7 @@
                 // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
                 eGridDiv.style.height = "750px"
 
-                fetch(ssrServletUrl(`/admin/observe/interaction/sftp/recent.json`))
+                fetch(ssrServletUrl(`/support/interaction/sftp/recent.json`))
                     .then(response => response.json())
                     .then(data => {
                         originalData = data;

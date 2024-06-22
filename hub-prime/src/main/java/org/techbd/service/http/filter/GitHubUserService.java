@@ -1,13 +1,16 @@
 package org.techbd.service.http.filter;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
@@ -18,15 +21,25 @@ import okhttp3.Response;
 @ConfigurationProperties(prefix = "org.techbd.service.http.filter.sensitive")
 @Service
 public class GitHubUserService {
-
   private static final Logger LOGGER = LoggerFactory.getLogger(GitHubUserService.class);
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record AuthenticatedUser(String name, String emailPrimary, String profilePicUrl, String gitHubId,
+      String tenantId, List<String> roles) {
+    public AuthenticatedUser(final OAuth2User principal, String tenantId, List<String> roles) {
+      this((String) principal.getAttribute("name"), (String) principal.getAttribute("email"),
+          (String) principal.getAttribute("avatar_url"), (String) principal.getAttribute("login"), tenantId,
+          roles);
+    }
+  }
+
+  public record Users(List<AuthenticatedUser> users) {
+  };
+
   // @Value("${ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_REPO_URL}")
-  // private String url;
   private String url = System.getenv("ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_REPO_URL");
 
   // @Value("${ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_TOKEN}")
-  // private String token;
   private String token = System.getenv("ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_TOKEN");
 
   public Users getUserList() throws IOException {
