@@ -43,11 +43,13 @@ AS WITH cte_interaction AS (
     interaction.request_id,
     interaction.interaction_id,
     interaction.provenance,
-    satreq.request_payload::text AS request_payload
+    satreq.request_payload AS request_payload
    FROM cte_interaction interaction
      LEFT JOIN techbd_udi_ingress.hub_interaction hubint ON hubint.hub_interaction_id = interaction.hub_interaction_id
      LEFT OUTER JOIN techbd_udi_ingress.sat_interaction_http_request satreq ON satreq.hub_interaction_id = interaction.hub_interaction_id;
+
 /*=============================================================================================================*/
+
 DROP VIEW IF EXISTS techbd_udi_ingress.sat_operation_session_entry_session_issue_fhir CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.sat_operation_session_entry_session_issue_fhir AS 
 WITH validation_results_object AS (

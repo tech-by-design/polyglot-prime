@@ -408,7 +408,7 @@ public class Controller {
 
     @GetMapping("/admin/observe/interactions")
     public String observeInteractions() {
-        return "redirect:/admin/observe/interactions/sftp";
+        return "redirect:/admin/observe/interactions/https";
     }
 
     @GetMapping("/admin/observe/interactions/{nature}")
@@ -446,9 +446,17 @@ public class Controller {
         final var DSL = udiPrimeJpaConfig.dsl();
         final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http",
                 pivotValues));
+        final var rows = result.intoMaps();
+        for (final var row : rows) {
+            // this is a JSONB and might be large so don't send it even if it was requested
+            // since we'll get it in /support/interaction/{interactionId}.json if required;
+            // also since SqlQueryBuilder().createSql() is custom SQL, org.jooq.JSONB type
+            // will not be able to be serialized by Jackson anyway.
+            row.remove("request_payload");
+        }
 
         // create response with our results
-        return ServerRowsResponse.createResponse(payload, result.intoMaps(), pivotValues);
+        return ServerRowsResponse.createResponse(payload, rows, pivotValues);
 
     }
 

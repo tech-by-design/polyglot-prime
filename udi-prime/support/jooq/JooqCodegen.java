@@ -21,6 +21,7 @@ import org.jooq.meta.jaxb.Generator;
 import org.jooq.meta.jaxb.Jdbc;
 import org.jooq.meta.jaxb.Strategy;
 import org.jooq.meta.jaxb.Target;
+import org.jooq.meta.jaxb.ForcedType;
 
 public class JooqCodegen {
     private record CliArguments(String jdbcUrl, String schema, String packageName, String directory, String jarName) {
@@ -47,7 +48,12 @@ public class JooqCodegen {
                                 .withName("org.jooq.codegen.DefaultGeneratorStrategy"))
                         .withDatabase(new Database()
                                 .withName("org.jooq.meta.postgres.PostgresDatabase")
-                                .withInputSchema(cliArgs.schema()))
+                                .withInputSchema(cliArgs.schema())
+                                .withForcedTypes(
+                                        new ForcedType()
+                                                .withUserType("com.fasterxml.jackson.databind.JsonNode")
+                                                .withJsonConverter(true)
+                                                .withIncludeTypes("JSON|JSONB")))
                         .withTarget(new Target()
                                 .withPackageName(cliArgs.packageName())
                                 .withDirectory(cliArgs.directory())));

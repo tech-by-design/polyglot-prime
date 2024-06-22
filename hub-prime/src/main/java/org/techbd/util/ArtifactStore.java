@@ -39,7 +39,7 @@ import jakarta.validation.constraints.NotNull;
 
 public class ArtifactStore {
     private static final Logger LOG = LoggerFactory.getLogger(ArtifactStore.class);
-    private static final ObjectMapper objectMapper = JsonMapper.builder()
+    public static final ObjectMapper objectMapper = JsonMapper.builder()
             .findAndAddModules()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)

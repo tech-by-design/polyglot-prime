@@ -156,8 +156,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
             final var intrHubId = rre.interactionId().toString();  
             final var insertInteraction = new UdiInsertInteraction();
             insertInteraction.setInteractionId(intrHubId);
-            insertInteraction.setRequestPayload(JSONB.valueOf(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
-            insertInteraction.setElaboration(JSONB.valueOf("{}"));
+            insertInteraction.setRequestPayload(ArtifactStore.objectMapper.readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
+            insertInteraction.setElaboration(ArtifactStore.objectMapper.readTree("{}"));
             insertInteraction.setCreatedBy(InteractionsFilter.class.getName());
             insertInteraction.setProvenance(provenance);
             insertInteraction.execute(dsl.configuration());
