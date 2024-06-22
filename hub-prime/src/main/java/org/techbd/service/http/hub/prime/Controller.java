@@ -50,20 +50,17 @@ import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.Helpers;
-import org.techbd.service.http.Interactions.RequestResponseEncountered;
+import org.techbd.service.http.InteractionsFilter;
+import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.aggrid.ServerRowsRequest;
 import org.techbd.service.http.aggrid.ServerRowsResponse;
 import org.techbd.service.http.aggrid.SqlQueryBuilder;
-import org.techbd.service.http.InteractionsFilter;
-import org.techbd.service.http.SandboxHelpers;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.UdiInsertSessionWithState;
-import org.techbd.udi.auto.jooq.ingress.tables.records.InteractionHttpRecord;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.swagger.v3.core.util.ObjectMapperFactory;
 import io.swagger.v3.oas.annotations.Operation;

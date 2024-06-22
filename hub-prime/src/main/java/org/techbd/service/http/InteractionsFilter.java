@@ -1,13 +1,9 @@
 package org.techbd.service.http;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_INTERACTION;
-import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_INTERACTION_HTTP_REQUEST;
-
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jooq.JSONB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
