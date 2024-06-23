@@ -1,6 +1,5 @@
 package org.techbd.service.http.hub.prime.ux;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.sftp.SftpManager;
+import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.route.RoutesTree.HtmlAnchor;
@@ -88,15 +88,9 @@ public class Presentation {
 
     protected String populateModel(final String templateName, final Model model, final HttpServletRequest request) {
         try {
-            final var principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            AuthenticatedUser authUser = null;
-            if (principal != null) {
-                authUser = new AuthenticatedUser(principal, "", new ArrayList<String>());
-            }
-
             // make the request, authUser available to templates
             model.addAttribute("req", request);
-            model.addAttribute("authUser", authUser);
+            model.addAttribute("authUser", GitHubUserAuthorizationFilter.getAuthenticatedUser(request));
 
             final var baggage = new HashMap<>(ssrBaggage);
             baggage.put("userAgentBaggageExposureEnabled", userAgentBaggageExposureEnabled);

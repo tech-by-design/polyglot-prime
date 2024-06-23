@@ -28,8 +28,9 @@ export ORG_TECHBD_ORCHESTRATE_SFTP_ACCOUNT_ORCHCTLTS_1_PASSWORD=pw2
 export SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID=github-auth-app-client-id
 export SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET=github-auth-app-client-secret
 
-export ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_REPO_URL=https://api.github.com/repos/tech-by-design/infrastructure-prime/contents/sensitive/oauth2-github-authz.yml
-export ORG_TECHBD_SERVICE_HTTP_FILTER_SENSITIVE_TOKEN=*********
+# URL and associated API token to get list of authorized users, only works via environment (not Spring properties)
+export ORG_TECHBD_SERVICE_HTTP_GITHUB_AUTHZ_USERS_YAML_URL=https://raw.githubusercontent.com/tech-by-design/infrastructure-prime/main/sensitive/oauth2-github-authz.yml
+export ORG_TECHBD_SERVICE_HTTP_GITHUB_API_AUTHN_TOKEN=*********
 
 # Set the workspace editor to VS Code local or remote (with given distro/host)
 # export UPI_WS_EDITOR=vscode-wsl          # also supply UPI_WS_EDITOR_VSCODE_REMOTE_DISTRO   Files will be accessible as vscode://vscode-remote/wsl+DISTRO/home/username/src/somedir/file.txt:1

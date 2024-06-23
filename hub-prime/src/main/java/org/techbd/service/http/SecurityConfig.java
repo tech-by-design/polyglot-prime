@@ -1,5 +1,6 @@
 package org.techbd.service.http;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,12 +13,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.filter.ForwardedHeaderFilter;
-import org.techbd.service.http.filter.GitHubUserAuthorizationFilter;
 
 @Configuration
 @ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")
 @Profile("!localopen")
 public class SecurityConfig {
+    @Autowired
+    private GitHubUserAuthorizationFilter authzFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
@@ -32,10 +34,9 @@ public class SecurityConfig {
                 .oauth2Login(oauth2Login -> oauth2Login
                         .defaultSuccessUrl("/home", true))
                 .csrf(AbstractHttpConfigurer::disable)
-                .addFilterAfter(new GitHubUserAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
-        // System.out.println(http.);
         return http.build();
     }
 
