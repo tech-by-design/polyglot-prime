@@ -47,6 +47,66 @@ public class PathsTest {
         paths = new Paths<>(new SyntheticPayload("root"), supplier);
     }
 
+    private void populateTree() {
+        // root [root]
+        // ├── dir1 [root/dir1]
+        // │ └── dir1_file1.md [root/dir1/dir1_file1.md]
+        // ├── dir2 [root/dir2]
+        // │ ├── dir2_file1.md [root/dir2/dir2_file1.md]
+        // │ └── subdir1 [root/dir2/subdir1]
+        // │ └── dir2_subdir1_file1.md [root/dir2/subdir1/dir2_subdir1_file1.md]
+        // ├── dir3 [root/dir3]
+        // │ ├── dir3_file1.md [root/dir3/dir3_file1.md]
+        // │ └── subdir2 [root/dir3/subdir2]
+        // │ └── dir3_subdir2_file1.md [root/dir3/subdir2/dir3_subdir2_file1.md]
+        // ├── dir4 [root/dir4]
+        // │ ├── dir4_file1.md [root/dir4/dir4_file1.md]
+        // │ └── subdir3 [root/dir4/subdir3]
+        // │ └── dir4_subdir3_file1.md [root/dir4/subdir3/dir4_subdir3_file1.md]
+        // └── dir5 [root/dir5]
+        // ├── dir5_file1.md [root/dir5/dir5_file1.md]
+        // └── subdir4 [root/dir5/subdir4]
+        // ├── dir5_subdir4_file1.md [root/dir5/subdir4/dir5_subdir4_file1.md]
+        // └── subsubdir1 [root/dir5/subdir4/subsubdir1]
+        // └── dir5_subdir4_subsubdir1_file1.md
+        // [root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md]
+
+        // add paths in order of their ancestors then children (parents first, then
+        // kids)
+        final Paths.InterimPayloadSupplier<String, SyntheticPayload> ips = (components, index) -> Optional.empty();
+        paths.populate(new SyntheticPayload("root/dir1"), ips);
+        paths.populate(new SyntheticPayload("root/dir1/dir1_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir2"), ips);
+        paths.populate(new SyntheticPayload("root/dir2/dir2_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir2/subdir1"), ips);
+        paths.populate(new SyntheticPayload("root/dir2/subdir1/dir2_subdir1_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir3"), ips);
+        paths.populate(new SyntheticPayload("root/dir3/dir3_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir3/subdir2"), ips);
+        paths.populate(new SyntheticPayload("root/dir3/subdir2/dir3_subdir2_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir4"), ips);
+        paths.populate(new SyntheticPayload("root/dir4/dir4_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir4/subdir3"), ips);
+        paths.populate(new SyntheticPayload("root/dir4/subdir3/dir4_subdir3_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir5"), ips);
+        paths.populate(new SyntheticPayload("root/dir5/dir5_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir5/subdir4"), ips);
+        paths.populate(new SyntheticPayload("root/dir5/subdir4/dir5_subdir4_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir5/subdir4/subsubdir1"), ips);
+        paths.populate(new SyntheticPayload("root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md"), ips);
+
+        // add paths out of order (parents are created in iterim without payloads)
+        paths.populate(new SyntheticPayload("root/dir6/dir6_file1.md"), ips);
+        paths.populate(new SyntheticPayload("root/dir6"), ips);
+    }
+
+    @Test
+    public void testAsciiTree() {
+        populateTree();
+        // this is not a real test, just debugging for now
+        System.out.println(new PathsVisuals().asciiTree(paths, Optional.empty()));
+    }
+
     @Test
     public void testPopulateAndFindNodes() {
         populateTree();
@@ -95,7 +155,7 @@ public class PathsTest {
     public void testSiblings() {
         populateTree();
 
-        verifySiblings("root/dir1", "root/dir2", "root/dir3", "root/dir4", "root/dir5");
+        verifySiblings("root/dir1", "root/dir2", "root/dir3", "root/dir4", "root/dir5", "root/dir6");
         verifySiblings("root/dir1/dir1_file1.md");
         verifySiblings("root/dir2/dir2_file1.md", "root/dir2/subdir1");
         verifySiblings("root/dir2/subdir1/dir2_subdir1_file1.md");
@@ -116,7 +176,8 @@ public class PathsTest {
                 "root/dir3", "root/dir3/dir3_file1.md", "root/dir3/subdir2", "root/dir3/subdir2/dir3_subdir2_file1.md",
                 "root/dir4", "root/dir4/dir4_file1.md", "root/dir4/subdir3", "root/dir4/subdir3/dir4_subdir3_file1.md",
                 "root/dir5", "root/dir5/dir5_file1.md", "root/dir5/subdir4", "root/dir5/subdir4/dir5_subdir4_file1.md",
-                "root/dir5/subdir4/subsubdir1", "root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md");
+                "root/dir5/subdir4/subsubdir1", "root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md",
+                "root/dir6", "root/dir6/dir6_file1.md");
         verifyDescendants("root/dir2",
                 "root/dir2/dir2_file1.md", "root/dir2/subdir1", "root/dir2/subdir1/dir2_subdir1_file1.md");
         verifyDescendants("root/dir3",
@@ -142,57 +203,11 @@ public class PathsTest {
                 "../../../dir2/dir2_file1.md", "root/dir2/dir2_file1.md");
     }
 
-    private void populateTree() {
-        // root [root]
-        // ├── dir1 [root/dir1]
-        // │ └── dir1_file1.md [root/dir1/dir1_file1.md]
-        // ├── dir2 [root/dir2]
-        // │ ├── dir2_file1.md [root/dir2/dir2_file1.md]
-        // │ └── subdir1 [root/dir2/subdir1]
-        // │ └── dir2_subdir1_file1.md [root/dir2/subdir1/dir2_subdir1_file1.md]
-        // ├── dir3 [root/dir3]
-        // │ ├── dir3_file1.md [root/dir3/dir3_file1.md]
-        // │ └── subdir2 [root/dir3/subdir2]
-        // │ └── dir3_subdir2_file1.md [root/dir3/subdir2/dir3_subdir2_file1.md]
-        // ├── dir4 [root/dir4]
-        // │ ├── dir4_file1.md [root/dir4/dir4_file1.md]
-        // │ └── subdir3 [root/dir4/subdir3]
-        // │ └── dir4_subdir3_file1.md [root/dir4/subdir3/dir4_subdir3_file1.md]
-        // └── dir5 [root/dir5]
-        // ├── dir5_file1.md [root/dir5/dir5_file1.md]
-        // └── subdir4 [root/dir5/subdir4]
-        // ├── dir5_subdir4_file1.md [root/dir5/subdir4/dir5_subdir4_file1.md]
-        // └── subsubdir1 [root/dir5/subdir4/subsubdir1]
-        // └── dir5_subdir4_subsubdir1_file1.md
-        // [root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md]
-
-        paths.populate(new SyntheticPayload("root/dir1"));
-        paths.populate(new SyntheticPayload("root/dir1/dir1_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir2"));
-        paths.populate(new SyntheticPayload("root/dir2/dir2_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir2/subdir1"));
-        paths.populate(new SyntheticPayload("root/dir2/subdir1/dir2_subdir1_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir3"));
-        paths.populate(new SyntheticPayload("root/dir3/dir3_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir3/subdir2"));
-        paths.populate(new SyntheticPayload("root/dir3/subdir2/dir3_subdir2_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir4"));
-        paths.populate(new SyntheticPayload("root/dir4/dir4_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir4/subdir3"));
-        paths.populate(new SyntheticPayload("root/dir4/subdir3/dir4_subdir3_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir5"));
-        paths.populate(new SyntheticPayload("root/dir5/dir5_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir5/subdir4"));
-        paths.populate(new SyntheticPayload("root/dir5/subdir4/dir5_subdir4_file1.md"));
-        paths.populate(new SyntheticPayload("root/dir5/subdir4/subsubdir1"));
-        paths.populate(new SyntheticPayload("root/dir5/subdir4/subsubdir1/dir5_subdir4_subsubdir1_file1.md"));
-    }
-
     private void verifyNodeExists(String path, String expectedContent) {
         final var node = paths.findNode(path);
         assertThat(node).isPresent();
-        assertThat(node.get().payload().absolutePath()).isEqualTo(path);
-        assertThat(node.get().payload().content()).isEqualTo(expectedContent);
+        assertThat(node.get().payload().get().absolutePath()).isEqualTo(path);
+        assertThat(node.get().payload().get().content()).isEqualTo(expectedContent);
     }
 
     private void verifyAncestors(String path, String... expectedAncestors) {
@@ -203,7 +218,7 @@ public class PathsTest {
         assertThat(ancestors).hasSize(expectedAncestors.length);
 
         for (int i = 0; i < expectedAncestors.length; i++) {
-            assertThat(ancestors.get(i).payload().absolutePath()).isEqualTo(expectedAncestors[i]);
+            assertThat(ancestors.get(i).payload().get().absolutePath()).isEqualTo(expectedAncestors[i]);
         }
     }
 
@@ -211,11 +226,11 @@ public class PathsTest {
         final var node = paths.findNode(path);
         assertThat(node).isPresent();
 
-        List<Paths<String, SyntheticPayload>.Node> siblings = node.get().siblings();
+        final var siblings = node.get().siblings();
         assertThat(siblings).hasSize(expectedSiblings.length);
 
         for (int i = 0; i < expectedSiblings.length; i++) {
-            assertThat(siblings.get(i).payload().absolutePath()).isEqualTo(expectedSiblings[i]);
+            assertThat(siblings.get(i).payload().get().absolutePath()).isEqualTo(expectedSiblings[i]);
         }
     }
 
@@ -228,7 +243,7 @@ public class PathsTest {
 
         for (String expectedDescendant : expectedDescendants) {
             assertThat(descendants)
-                    .anyMatch(descendant -> descendant.payload().absolutePath().equals(expectedDescendant));
+                    .anyMatch(descendant -> descendant.payload().get().absolutePath().equals(expectedDescendant));
         }
     }
 
@@ -249,9 +264,9 @@ public class PathsTest {
         // Define a payload renderer
         PathsJson.PayloadJsonSupplier<String, SyntheticPayload> payloadRenderer = (node, paths) -> {
             final var payloadMap = new HashMap<>();
-            payloadMap.put("absolutePath", node.payload().absolutePath());
-            payloadMap.put("content", node.payload().content());
-            payloadMap.put("baseName", node.payload().baseName());
+            payloadMap.put("absolutePath", node.payload().get().absolutePath());
+            payloadMap.put("content", node.payload().get().content());
+            payloadMap.put("baseName", node.payload().get().baseName());
             return Optional.of(payloadMap);
         };
 
@@ -279,11 +294,5 @@ public class PathsTest {
         final var pathsHtml = ph.toHtmlUL(paths, Optional.empty());
 
         // assertThat(json).contentOf("PathsTestJson.fixture.json").isEqualToIgnoringWhitespace(expectedJson);
-    }
-
-    @Test
-    public void testAsciiTree() {
-        populateTree();
-        // System.out.println(new PathsVisuals().asciiTree(paths));
     }
 }

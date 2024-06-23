@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.commons.text.WordUtils;
+
 import lib.aide.paths.Paths;
 
 public class RoutesTree extends Paths<String, RoutesTree.Route> {
@@ -21,20 +23,29 @@ public class RoutesTree extends Paths<String, RoutesTree.Route> {
         return namespace;
     }
 
+    public record HtmlAnchor(Optional<Route> route, Optional<String> href, String text) {
+        public HtmlAnchor(Paths<String, Route>.Node node) {
+            this(node.payload(), node.payload().map(p -> p.href()),
+                    node.payload().map(p -> p.label()).orElse(WordUtils.capitalize(node.components().getLast())));
+        }
+    }
+
     public record Route(String href, String label, Optional<String> description, Optional<Integer> siblingOrder,
             Optional<Object> provenance) {
+
         public Route(String href, String label, String description, int siblingOrder, Object provenance) {
             this(href, label,
                     Optional.ofNullable(description != null ? description.isBlank() ? null : description : null),
                     siblingOrder == Integer.MAX_VALUE ? Optional.empty() : Optional.of(Integer.valueOf(siblingOrder)),
                     Optional.ofNullable(provenance));
         }
+
         public Route(RouteMapping mapping, String href, Object provenance) {
-            this(href, 
-                 mapping.label(), 
-                 mapping.description(), 
-                 mapping.siblingOrder(),
-                 provenance);
+            this(href,
+                    mapping.label(),
+                    mapping.description(),
+                    mapping.siblingOrder(),
+                    provenance);
         }
     }
 

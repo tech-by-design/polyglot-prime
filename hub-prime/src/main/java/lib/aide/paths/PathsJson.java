@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 public class PathsJson<C, P> {
-    private static final ObjectMapper objectMapper = JsonMapper.builder()
+    public static final ObjectMapper objectMapper = JsonMapper.builder()
             .findAndAddModules()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)

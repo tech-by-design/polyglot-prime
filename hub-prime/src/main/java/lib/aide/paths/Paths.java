@@ -15,6 +15,10 @@ import java.util.stream.Stream;
  * @param <P> the type of the payload
  */
 public class Paths<C, P> {
+    @FunctionalInterface
+    public interface InterimPayloadSupplier<C, P> {
+        Optional<P> payload(final List<C> components, final int index);
+    }
 
     /**
      * Interface defining methods to supply and assemble path components.
@@ -34,7 +38,7 @@ public class Paths<C, P> {
      * Represents a node in the hierarchical path structure.
      */
     public class Node {
-        private P payload;
+        private Optional<P> payload;
         private final List<C> components;
         private final Node parent;
         private final List<Node> children = new ArrayList<>();
@@ -47,7 +51,7 @@ public class Paths<C, P> {
          * @param payload    the payload associated with this node
          * @param parent     the parent node
          */
-        public Node(List<C> components, P payload, Node parent) {
+        public Node(List<C> components, Optional<P> payload, Node parent) {
             this.components = components;
             this.payload = payload;
             this.parent = parent;
@@ -57,11 +61,11 @@ public class Paths<C, P> {
             return components;
         }
 
-        public P payload() {
+        public Optional<P> payload() {
             return payload;
         }
 
-        public void setPayload(P payload) {
+        public void setPayload(Optional<P> payload) {
             this.payload = payload;
         }
 
@@ -122,23 +126,36 @@ public class Paths<C, P> {
 
         /**
          * Populates the tree structure with the specified components and payload.
+         * If a parent is not already created, it's called an "interim" node and
+         * will have an "interim payload" which can be empty for default behavior.
+         * An empty interim payload will be filled in with a final payload if it's
+         * supplied later.
          *
          * @param components the components to add
-         * @param payload    the payload associated with the components
+         * @param payload    payload associated with the terminal component
          * @param index      the current index in the components list
+         * @param ips        payload associated with an interim component
          */
-        public void populate(List<C> components, P payload, int index) {
-            if (index < components.size()) {
-                final var component = components.get(index);
-                final var child = findChild(component).orElseGet(() -> {
-                    final var newNode = new Node(new ArrayList<>(components.subList(0, index + 1)), payload, this);
-                    addChild(newNode);
-                    return newNode;
-                });
-                child.populate(components, payload, index + 1);
-            } else {
-                setPayload(payload);
+        public void populate(final List<C> components, final Optional<P> payload, final int index,
+                final InterimPayloadSupplier<C, P> ips) {
+            final var terminalIndex = components.size() - 1;
+            if (index > terminalIndex)
+                return; // end recursion
+            final var isTerminal = index == terminalIndex;
+
+            final var component = components.get(index);
+            final var child = findChild(component).orElseGet(() -> {
+                final var newNode = new Node(new ArrayList<>(components.subList(0, index + 1)),
+                        isTerminal ? payload : ips.payload(components, index), this);
+                addChild(newNode);
+                return newNode;
+            });
+            if (isTerminal && child.payload().isEmpty()) {
+                // this means that the child was defined before parent ("iterim") but now we
+                // have the parent so payload is now available
+                child.setPayload(payload);
             }
+            child.populate(components, payload, index + 1, ips);
         }
 
         /**
@@ -207,7 +224,7 @@ public class Paths<C, P> {
      */
     public Paths(P rootPayload, PayloadComponentsSupplier<C, P> parser) {
         this.pcSupplier = parser;
-        this.roots.add(new Node(parser.components(rootPayload), rootPayload, null));
+        this.roots.add(new Node(parser.components(rootPayload), Optional.of(rootPayload), null));
     }
 
     /**
@@ -218,7 +235,7 @@ public class Paths<C, P> {
     public void addRoot(P rootPayload) {
         final var components = pcSupplier.components(rootPayload);
         if (roots.stream().noneMatch(root -> root.components().equals(components))) {
-            this.roots.add(new Node(components, rootPayload, null));
+            this.roots.add(new Node(components, Optional.of(rootPayload), null));
         }
     }
 
@@ -246,16 +263,27 @@ public class Paths<C, P> {
      * roots.
      *
      * @param payload the payload to populate
+     * @param ips what to do with payloads for child nodes defined before parents
      */
-    public void populate(P payload) {
+    public void populate(final P payload, final InterimPayloadSupplier<C, P> ips) {
         final var components = pcSupplier.components(payload);
         for (Node root : roots) {
             if (root.components().equals(components.subList(0, 1))) {
-                root.populate(components, payload, 1);
+                root.populate(components, Optional.of(payload), 1, ips);
                 return;
             }
         }
         addRoot(payload);
+    }
+
+    /**
+     * Populates the tree structure with the specified payload, starting from all
+     * roots with default behavior for interim payloads.
+     *
+     * @param payload the payload to populate
+     */
+    public void populate(final P payload) {
+        populate(payload, (components, index) -> Optional.empty());
     }
 
     /**

@@ -12,20 +12,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import lib.aide.paths.PathsJson;
 
 @Service
 public class RoutesTrees extends HashMap<String, RoutesTree> {
-    private static final ObjectMapper objectMapper = JsonMapper.builder()
-            .findAndAddModules()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-            .build();
-
     public RoutesTrees(ApplicationContext applicationContext,
             @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping) {
         final var handlerMethods = handlerMapping.getHandlerMethods();
@@ -54,16 +45,11 @@ public class RoutesTrees extends HashMap<String, RoutesTree> {
 
     public JsonNode toJson() {
         PathsJson.PayloadJsonSupplier<String, RoutesTree.Route> payloadRenderer = (node, paths) -> {
-            final var route = node.payload();
-            final var payloadMap = new HashMap<>();
-            payloadMap.put("href", route.href());
-            payloadMap.put("label", route.label());
-            payloadMap.put("description", route.description());
-            payloadMap.put("provenance", route.provenance());
-            return Optional.of(payloadMap);
+            return node.payload().map(route -> Map.of("href", route.href(), "label", route.label(), "description",
+                    route.description(), "provenance", route.provenance()));
         };
 
-        final var result = objectMapper.createObjectNode();
+        final var result = PathsJson.objectMapper.createObjectNode();
         final var pathsJson = new PathsJson<String, RoutesTree.Route>();
         forEach((namespace, routesTree) -> {
             try {

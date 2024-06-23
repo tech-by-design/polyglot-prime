@@ -1,11 +1,16 @@
 package lib.aide.paths;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This class provides visual representation utilities for the Paths class.
  */
 public class PathsVisuals {
+    @FunctionalInterface
+    public interface PayloadContentSupplier<C, P> {
+        String content(Paths<C, P>.Node node, Paths<C, P> paths);
+    }
 
     /**
      * Generates an ASCII tree representation of the given Paths object.
@@ -15,10 +20,11 @@ public class PathsVisuals {
      * @param <P>   the type of the payload
      * @return a string representing the ASCII tree
      */
-    public <C, P> String asciiTree(Paths<C, P> paths) {
+    public <C, P> String asciiTree(Paths<C, P> paths, final Optional<PayloadContentSupplier<C, P>> payloadRenderer) {
         StringBuilder sb = new StringBuilder();
         for (Paths<C, P>.Node root : paths.roots()) {
-            appendNode(sb, root, "", true, true);
+            appendNode(paths, sb, root, "", true, true,
+                    payloadRenderer.orElse((node, tree) -> " [%s %s]".formatted(node.absolutePath(), node.payload())));
         }
         return sb.toString();
     }
@@ -33,20 +39,24 @@ public class PathsVisuals {
      * @param isTail indicates if the current node is the last child
      * @param isRoot indicates if the current node is the root node
      */
-    private <C, P> void appendNode(StringBuilder sb, Paths<C, P>.Node node, String prefix, boolean isTail,
-            boolean isRoot) {
+    private <C, P> void appendNode(Paths<C, P> paths, StringBuilder sb, Paths<C, P>.Node node, String prefix,
+            boolean isTail,
+            boolean isRoot, final PayloadContentSupplier<C, P> payloadRenderer) {
         if (!isRoot) {
             sb.append(prefix).append(isTail ? "└── " : "├── ");
         }
         String baseName = node.components().isEmpty() ? ""
                 : node.components().get(node.components().size() - 1).toString();
-        sb.append(baseName).append(" [").append(node.absolutePath()).append("]").append("\n");
+        sb.append(baseName);
+        sb.append(payloadRenderer.content(node, paths));
+        sb.append("\n");
         List<Paths<C, P>.Node> children = node.children();
         for (int i = 0; i < children.size() - 1; i++) {
-            appendNode(sb, children.get(i), prefix + (isTail ? "    " : "│   "), false, false);
+            appendNode(paths, sb, children.get(i), prefix + (isTail ? "    " : "│   "), false, false, payloadRenderer);
         }
         if (!children.isEmpty()) {
-            appendNode(sb, children.get(children.size() - 1), prefix + (isTail ? "    " : "│   "), true, false);
+            appendNode(paths, sb, children.get(children.size() - 1), prefix + (isTail ? "    " : "│   "), true, false,
+                    payloadRenderer);
         }
     }
 }

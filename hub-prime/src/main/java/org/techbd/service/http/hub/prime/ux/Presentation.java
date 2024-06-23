@@ -16,17 +16,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
+import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.AppConfig;
+import org.techbd.service.http.hub.prime.route.RoutesTree.HtmlAnchor;
 import org.techbd.service.http.hub.prime.route.RoutesTrees;
 import org.techbd.udi.UdiPrimeJpaConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.swagger.v3.core.util.ObjectMapperFactory;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Service
@@ -35,7 +35,6 @@ public class Presentation {
 
     private final RoutesTrees routesTrees;
     private final Map<String, Object> ssrBaggage = new HashMap<>();
-    private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
     private final AppConfig appConfig;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private final SandboxHelpers sboxHelpers;
@@ -66,12 +65,18 @@ public class Presentation {
         if (prime != null) {
             final var root = prime.root();
             if (root != null) {
+                // Stream through the children of the root node, sorting them by their sibling
+                // order if present. If the sibling order is not present, treat it as
+                // Integer.MAX_VALUE for sorting purposes (push to end). Then, map each child to
+                // a Map containing its "href" and "text" if the payload is present. If the
+                // payload is not present, map to an empty Map which means "iterim node".
+
                 ssrBaggage.put("navPrime",
                         root.children().stream()
-                                .sorted(Comparator
-                                        .comparing(child -> child.payload().siblingOrder().orElse(Integer.MAX_VALUE)))
-                                .map(child -> Map.of("href", child.payload().href(), "text",
-                                        child.payload().label()))
+                                .sorted(Comparator.comparing(child -> child.payload()
+                                        .flatMap(payload -> payload.siblingOrder())
+                                        .orElse(Integer.MAX_VALUE)))
+                                .map(child -> new HtmlAnchor(child))
                                 .collect(Collectors.toList()));
             }
         }
@@ -111,10 +116,13 @@ public class Presentation {
                                 "srcFsPath", srcFsPath, "editUrl", editUrl));
             }
 
-            // "baggage" is for typed server-side usage by templates
-            // "ssrBaggageJSON" is for JavaScript client use
+            // "baggage" is for typed server-side usage by templates, anything you want to
+            // use in both server side rendering and to the user agent should be here;
+            // "ssrBaggageJSON" is for JavaScript client use (browser will JSON.parse() it).
+            // IMPORTANT: if there's anything secret or sensitive, don't put it in the
+            // baggage because baggae is available as plain text in the browser.
             model.addAttribute("baggage", baggage);
-            model.addAttribute("ssrBaggageJSON", baggageMapper.writeValueAsString(baggage));
+            model.addAttribute("ssrBaggageJSON", Configuration.objectMapper.writeValueAsString(baggage));
             LOG.info("Logged in user Information"
                     + SecurityContextHolder.getContext().getAuthentication().getPrincipal());
         } catch (JsonProcessingException e) {
