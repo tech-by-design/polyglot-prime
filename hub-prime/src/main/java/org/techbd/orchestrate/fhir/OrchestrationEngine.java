@@ -27,6 +27,7 @@ import java.util.stream.StreamSupport;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.hl7.fhir.r5.model.OperationOutcome;
+import org.techbd.conf.Configuration;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -147,11 +148,9 @@ public class OrchestrationEngine {
         String fhirProfileVersion = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
                 .thenApply(responseBody -> {
-                    final var objectMapper = new ObjectMapper();
-
                     try {
                         // Read JSON response and parse it into a JsonNode
-                        final var rootNode = objectMapper.readTree(responseBody);
+                        final var rootNode = Configuration.objectMapper.readTree(responseBody);
 
                         // Get the value of the "version" key from FHIR IG profile JSON
                         JsonNode versionNode = rootNode.path("version");
@@ -915,7 +914,7 @@ public class OrchestrationEngine {
 
         public static ArrayNode displayValidationErrors(OperationOutcome oo, boolean areErrorsExpected) {
             List<OperationOutcome.OperationOutcomeIssueComponent> issues = oo.getIssue();
-            final var objectMapper = new ObjectMapper();
+            final var objectMapper = Configuration.objectMapper;
             ArrayNode issueArray = objectMapper.createArrayNode();
 
             for (OperationOutcome.OperationOutcomeIssueComponent issue : issues) {

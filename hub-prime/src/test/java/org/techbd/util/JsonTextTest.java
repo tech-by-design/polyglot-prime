@@ -1,20 +1,19 @@
 package org.techbd.util;
 
-import org.junit.jupiter.api.Test;
-import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 class JsonTextTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final JsonText jsonText = new JsonText();
 
     @Test
@@ -232,9 +231,9 @@ class JsonTextTest {
         byte[] jsonData = "{\"key\":\"value\"}".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(jsonData);
 
-        String json = objectMapper.writeValueAsString(record);
+        String json = JsonText.objectMapper.writeValueAsString(record);
 
-        assertThat(json).isEqualTo("{\"data\":{\"key\":\"value\"}}");
+        assertThat(json).isEqualToIgnoringWhitespace("{\"data\":{\"key\":\"value\"}}");
     }
 
     @Test
@@ -242,9 +241,9 @@ class JsonTextTest {
         byte[] stringData = "Hello, World!".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(stringData);
 
-        String json = objectMapper.writeValueAsString(record);
+        String json = JsonText.objectMapper.writeValueAsString(record);
 
-        assertThat(json).isEqualTo("{\"data\":\"Hello, World!\"}");
+        assertThat(json).isEqualToIgnoringWhitespace("{\"data\":\"Hello, World!\"}");
     }
 
     @Test
@@ -252,9 +251,9 @@ class JsonTextTest {
         byte[] emptyData = "".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(emptyData);
 
-        String json = objectMapper.writeValueAsString(record);
+        String json = JsonText.objectMapper.writeValueAsString(record);
 
-        assertThat(json).isEqualTo("{\"data\":null}");
+        assertThat(json).isEqualToIgnoringWhitespace("{\"data\":null}");
     }
 
     @Test
@@ -262,9 +261,9 @@ class JsonTextTest {
         byte[] nestedJsonData = "{\"nested\":{\"key\":\"value\"}}".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(nestedJsonData);
 
-        String json = objectMapper.writeValueAsString(record);
+        String json = JsonText.objectMapper.writeValueAsString(record);
 
-        assertThat(json).isEqualTo("{\"data\":{\"nested\":{\"key\":\"value\"}}}");
+        assertThat(json).isEqualToIgnoringWhitespace("{\"data\":{\"nested\":{\"key\":\"value\"}}}");
     }
 
     @Test
@@ -272,9 +271,9 @@ class JsonTextTest {
         byte[] arrayJsonData = "[{\"key1\":\"value1\"},{\"key2\":\"value2\"}]".getBytes();
         SyntheticBytesRecord record = new SyntheticBytesRecord(arrayJsonData);
 
-        String json = objectMapper.writeValueAsString(record);
+        String json = JsonText.objectMapper.writeValueAsString(record);
 
-        assertThat(json).isEqualTo("{\"data\":[{\"key1\":\"value1\"},{\"key2\":\"value2\"}]}");
+        assertThat(json).isEqualToIgnoringWhitespace("{\"data\":[{\"key1\":\"value1\"},{\"key2\":\"value2\"}]}");
     }
 
 }

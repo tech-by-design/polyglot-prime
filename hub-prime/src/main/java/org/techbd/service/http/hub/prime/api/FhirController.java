@@ -196,9 +196,8 @@ public class FhirController {
                     }, (Throwable error) -> { // Explicitly specify the type Throwable
                         LOG.info("%s webClient.Throwable(error)".formatted(provenance));
                         String content;
-                        final ObjectMapper mapper = new ObjectMapper();
                         try {
-                            content = mapper.writeValueAsString(error);
+                            content = Configuration.objectMapper.writeValueAsString(error);
                         } catch (JsonProcessingException e) {
                             content = e.toString();
                         }

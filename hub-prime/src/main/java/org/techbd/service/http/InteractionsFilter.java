@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.techbd.conf.Configuration;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.UdiInsertInteraction;
@@ -152,8 +153,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
             final var intrHubId = rre.interactionId().toString();  
             final var insertInteraction = new UdiInsertInteraction();
             insertInteraction.setInteractionId(intrHubId);
-            insertInteraction.setRequestPayload(ArtifactStore.objectMapper.readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
-            insertInteraction.setElaboration(ArtifactStore.objectMapper.readTree("{}"));
+            insertInteraction.setRequestPayload(Configuration.objectMapper.readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
+            insertInteraction.setElaboration(Configuration.objectMapper.readTree("{}"));
             insertInteraction.setCreatedBy(InteractionsFilter.class.getName());
             insertInteraction.setProvenance(provenance);
             insertInteraction.execute(dsl.configuration());

@@ -9,6 +9,10 @@ import java.util.regex.Pattern;
 import org.springframework.core.env.Environment;
 import org.springframework.util.PropertyPlaceholderHelper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
 /**
  * Encapsulates configuration that is common across all Technology by Design
  * (TechBD) packages.
@@ -17,6 +21,15 @@ import org.springframework.util.PropertyPlaceholderHelper;
  * submodules.
  */
 public class Configuration {
+    // this is the "global" thread-safe objectMapper for use when a special instance
+    // is not required; use this when possible since it's got good "default"
+    // behavior
+    public static final ObjectMapper objectMapper = JsonMapper.builder()
+            .findAndAddModules()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+            .build();
+
     public static final Map<String, String> ownEnvVars = getEnvVarsAvailable(".*TECHBD.*");
 
     public class Servlet {

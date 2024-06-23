@@ -5,16 +5,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.techbd.conf.Configuration;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 public class JsonText {
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    public static final ObjectMapper objectMapper = Configuration.objectMapper;
 
     /**
      * Parses a JSON string and returns a {@link JsonObjectResult} indicating the
@@ -203,8 +203,7 @@ public class JsonText {
             String stringValue = new String(value);
 
             try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode jsonNode = objectMapper.readTree(stringValue);
+                final var jsonNode = objectMapper.readTree(stringValue);
 
                 // If we reach here, stringValue is valid JSON
                 gen.writeTree(jsonNode);
@@ -268,8 +267,7 @@ public class JsonText {
         @Override
         public void serialize(String value, JsonGenerator gen, SerializerProvider provider) throws IOException {
             try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode jsonNode = objectMapper.readTree(value);
+                final var jsonNode = objectMapper.readTree(value);
 
                 // If we reach here, stringValue is valid JSON
                 gen.writeTree(jsonNode);

@@ -46,18 +46,18 @@ public class GitHubUserService {
     String downloadUrl;
     String ymlData;
 
-    OkHttpClient client = new OkHttpClient.Builder()
+    final var client = new OkHttpClient.Builder()
         .followRedirects(true)
         .build();
 
-    Request request = new Request.Builder()
+    final var request = new Request.Builder()
         .url(url)
         .header("Authorization", "token " + token)
         .build();
 
     try (Response response = client.newCall(request).execute()) {
       if (response.isSuccessful() && response.body() != null) {
-        JSONObject jsonResponse = new JSONObject(response.body().string());
+        final var jsonResponse = new JSONObject(response.body().string());
         downloadUrl = jsonResponse.getString("download_url");
       } else {
         LOGGER.error("Unexpected code {}", response);
@@ -67,7 +67,7 @@ public class GitHubUserService {
       LOGGER.error("Error executing request: ", e);
       return null;
     }
-    Request newRequest = new Request.Builder()
+    final var newRequest = new Request.Builder()
         .url(downloadUrl)
         .header("Authorization", "token " + token)
         .build();
@@ -83,9 +83,8 @@ public class GitHubUserService {
       return null;
     }
 
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    Users users = mapper.readValue(ymlData, Users.class);
-    System.out.println("");
+    final var mapper = new ObjectMapper(new YAMLFactory());
+    final var users = mapper.readValue(ymlData, Users.class);
     return users;
   }
 }

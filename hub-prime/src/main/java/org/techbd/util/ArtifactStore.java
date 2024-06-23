@@ -28,22 +28,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.techbd.conf.Configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.constraints.NotNull;
 
 public class ArtifactStore {
     private static final Logger LOG = LoggerFactory.getLogger(ArtifactStore.class);
-    public static final ObjectMapper objectMapper = JsonMapper.builder()
-            .findAndAddModules()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-            .build();
 
     public interface Artifact {
         @Nonnull
@@ -62,7 +55,7 @@ public class ArtifactStore {
 
     public static String toJsonText(final Map<String, Object> object) {
         try {
-            return objectMapper.writeValueAsString(object);
+            return Configuration.objectMapper.writeValueAsString(object);
         } catch (Exception e) {
             return e.toString();
         }
@@ -350,7 +343,7 @@ public class ArtifactStore {
             if (provenanceJson != null && provenanceJson.trim().length() > 0) {
                 this.provenanceJson = provenanceJson;
                 try {
-                    final var parsedJson = objectMapper.readValue(provenanceJson, Object.class);
+                    final var parsedJson = Configuration.objectMapper.readValue(provenanceJson, Object.class);
                     if (parsedJson instanceof Map) {
                         this.provenance = (Map<String, Object>) parsedJson;
                     }
@@ -421,7 +414,7 @@ public class ArtifactStore {
             }
 
             try {
-                Object parsedJson = objectMapper.readValue(strategyJson, Object.class);
+                Object parsedJson = Configuration.objectMapper.readValue(strategyJson, Object.class);
                 if (parsedJson instanceof Map) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> args = (Map<String, Object>) parsedJson;
@@ -453,7 +446,7 @@ public class ArtifactStore {
 
             {
                 try {
-                    jsonString = objectMapper.writeValueAsString(object);
+                    jsonString = Configuration.objectMapper.writeValueAsString(object);
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException("Failed to convert object to JSON", e);
                 }
