@@ -1,4 +1,4 @@
-package org.techbd.util;
+package lib.aide.vfs;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -20,6 +20,60 @@ import org.apache.commons.vfs2.FileType;
 
 import jakarta.annotation.Nonnull;
 
+/**
+ * The VfsIngressConsumer class is designed to manage and process files from
+ * various locations, organizing them into groups, and handling snapshots
+ * (backup copies) of those files. It works as a builder pattern to set up
+ * different functions to categorize, group, and process files.
+ * 
+ * This class is useful for:
+ * 
+ * - **Ingesting Files**: It helps in collecting files from specified locations.
+ * - **Snapshotting Files**: It determines if a file needs a snapshot (backup)
+ * and moves it to a new location if needed.
+ * - **Grouping Files**: It groups files based on a custom grouping function,
+ * which can be used to categorize files logically.
+ * - **Processing Files**: It allows custom processing of files, such as
+ * extracting files from a ZIP archive.
+ * - **Auditing**: It keeps a record of actions performed on the files, such as
+ * moves, groupings, and any errors encountered.
+ * 
+ * This can be especially useful in scenarios where you have a directory of
+ * files that need to be processed, backed up, and categorized, such as in data
+ * ingestion pipelines, file management systems, or automated archival systems.
+ * 
+ * Suppose you have a directory of various files, some of which are ZIP files.
+ * This class can:
+ * 1. Identify files that need to be "processed" (such as an ETL pipeline).
+ * 2. Move those files to a new "session" directory during processing in case it
+ * takes time to do processing.
+ * 3. Extract contents of ZIP files into a processing directory (in case an ETL
+ * occurs not on the ZIP but the contents of the ZIP).
+ * 4. Group files based on a naming convention or metadata in processing must be
+ * done in groups or "batches" of files.
+ * 5. Keep track of all these operations for auditing and troubleshooting
+ * purposes.
+ * 
+ * This class relies heavily on Apache Commons VFS for file operations and Java
+ * Streams for efficient data handling.
+ * 
+ * <p>
+ * Example Code:
+ * </p>
+ * 
+ * <pre>{@code
+ * VfsIngressConsumer consumer = new VfsIngressConsumer.Builder()
+ *         .addIngressPath(new FileObject("/path/to/files"))
+ *         .isGroup(file -> file.getName().getExtension())
+ *         .isGroupComplete(group -> group.getEntries().size() > 2)
+ *         .isSnapshotable((file, home, snapshot, audit) -> file.getName().getExtension().equals("txt"))
+ *         .populateSnapshot((file, home, snapshot, audit) -> List.of(file))
+ *         .consumables(VfsIngressConsumer::consumeUnzipped)
+ *         .build();
+ * 
+ * consumer.drain(new FileObject("/path/to/egress"), Optional.of(UUID.randomUUID()));
+ * }</pre>
+ */
 public class VfsIngressConsumer {
 
     private final List<IngressPath> ingressPaths;

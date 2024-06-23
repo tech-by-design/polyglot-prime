@@ -51,9 +51,7 @@ public class DiagnosticsController {
 
     @GetMapping("/admin/observe/sessions")
     public String adminDiagnostics(final Model model, final HttpServletRequest request) {
-        final var templateName = "page/diagnostics";
-        presentation.populateModel(templateName, model, request);
         model.addAttribute("udiPrimaryDataSrcHealth", udiPrimeJpaConfig.udiPrimaryDataSrcHealth());
-        return templateName;
+        return presentation.populateModel("page/diagnostics", model, request);
     }
 }

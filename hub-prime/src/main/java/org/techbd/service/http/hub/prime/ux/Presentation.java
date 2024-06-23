@@ -1,9 +1,11 @@
 package org.techbd.service.http.hub.prime.ux;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ import org.springframework.ui.Model;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.AppConfig;
+import org.techbd.service.http.hub.prime.route.RoutesTrees;
 import org.techbd.udi.UdiPrimeJpaConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -30,6 +33,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class Presentation {
     private static final Logger LOG = LoggerFactory.getLogger(Presentation.class.getName());
 
+    private final RoutesTrees routesTrees;
     private final Map<String, Object> ssrBaggage = new HashMap<>();
     private final ObjectMapper baggageMapper = ObjectMapperFactory.buildStrictGenericObjectMapper();
     private final AppConfig appConfig;
@@ -45,19 +49,39 @@ public class Presentation {
     @Autowired
     private Environment environment;
 
-    public Presentation(final Environment environment, final AppConfig appConfig,
+    public Presentation(final Environment environment, final RoutesTrees routesTrees, final AppConfig appConfig,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager,
             final SandboxHelpers sboxHelpers) {
         this.environment = environment;
+        this.routesTrees = routesTrees;
         this.appConfig = appConfig;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         this.sboxHelpers = sboxHelpers;
         ssrBaggage.put("appVersion", this.appConfig.getVersion());
         ssrBaggage.put("activeSpringProfiles", List.of(this.environment.getActiveProfiles()));
+        ssrBaggage.put("routesTrees", routesTrees.toJson());
+
+        final var prime = routesTrees.get("prime");
+        if (prime != null) {
+            final var root = prime.root();
+            if (root != null) {
+                ssrBaggage.put("navPrime",
+                        root.children().stream()
+                                .sorted(Comparator
+                                        .comparing(child -> child.payload().siblingOrder().orElse(Integer.MAX_VALUE)))
+                                .map(child -> Map.of("href", child.payload().href(), "text",
+                                        child.payload().label()))
+                                .collect(Collectors.toList()));
+            }
+        }
     }
 
-    protected void populateModel(final String templateName, final Model model, final HttpServletRequest request) {
+    public RoutesTrees getRoutesTrees() {
+        return routesTrees;
+    }
+
+    protected String populateModel(final String templateName, final Model model, final HttpServletRequest request) {
         try {
             final var principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             AuthenticatedUser authUser = null;
@@ -96,6 +120,9 @@ public class Presentation {
         } catch (JsonProcessingException e) {
             LOG.error("error setting ssrBaggageJSON in populateModel", e);
         }
+
+        // the actual template to render
+        return templateName;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

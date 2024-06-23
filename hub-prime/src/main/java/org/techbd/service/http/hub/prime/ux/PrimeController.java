@@ -4,6 +4,7 @@ import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -11,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.techbd.orchestrate.sftp.SftpManager;
+import org.techbd.service.http.hub.prime.route.RouteMapping;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,10 +32,9 @@ public class PrimeController {
     }
 
     @GetMapping("/home")
+    @RouteMapping(label = "Home", siblingOrder = 0)
     public String home(final Model model, final HttpServletRequest request) {
-        final var templateName = "page/home";
-        presentation.populateModel(templateName, model, request);
-        return templateName;
+        return presentation.populateModel("page/home", model, request);
     }
 
     @GetMapping("/")
@@ -84,10 +85,15 @@ public class PrimeController {
         }
     }
 
+    @RouteMapping(label = "Documentation", siblingOrder = 50)
     @GetMapping("/docs")
     public String docs(final Model model, final HttpServletRequest request) {
-        final var templateName = "page/documentation";
-        presentation.populateModel(templateName, model, request);
-        return templateName;
+        return presentation.populateModel("page/documentation", model, request);
+    }
+
+    @GetMapping(value = "/experiment/{page}.html")
+    @Profile(value = "sandbox")
+    public String navPrimeDebug(@PathVariable String page, final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/experiments/%s".formatted(page), model, request);
     }
 }

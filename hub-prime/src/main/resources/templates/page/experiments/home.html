@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/experiment}">
+
+<head>
+    <title>Experiments</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <article class="w-full prose prose-table:table-fixed full-width-children">
+            <h3 class="mt-5">Developer Links (TODO: make available only in sandbox)</h3>
+            <ul>
+                <li><a th:href="@{/experiment/routes.html}">Application Routes</li>
+                <li><a th:href="@{/metadata}"><code>/metadata</code> Capabilities Endpoint</a></li>
+                <li><a th:href="@{/docs/api/interactive/index.html}">Swagger UI</a></li>
+                <li><a th:href="@{/actuator}" href="/actuator">Management Endpoints Catalog</a></li>
+            </ul>
+        </article>
+    </div>
+</body>
+
+</html>

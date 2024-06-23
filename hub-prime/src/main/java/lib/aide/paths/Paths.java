@@ -1,4 +1,4 @@
-package org.techbd.util;
+package lib.aide.paths;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -153,9 +153,11 @@ public class Paths<C, P> {
             // is the "container" of this child
             var current = this.parent();
 
-            System.out.println("looking for %s in %s".formatted(pcSupplier.assemble(relativeComponents), absolutePath()));
+            System.out
+                    .println("looking for %s in %s".formatted(pcSupplier.assemble(relativeComponents), absolutePath()));
             for (C component : relativeComponents) {
-                System.out.println("  at [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
+                System.out.println(
+                        "  at [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
                 if (component.equals("..")) {
                     if (current != null) {
                         current = current.parent();
@@ -169,7 +171,8 @@ public class Paths<C, P> {
                     }
                     current = child.get();
                 }
-                System.out.println("  now [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
+                System.out.println(
+                        "  now [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
             }
             System.out.println("  found %s".formatted(current != null ? current.absolutePath() : "NULL"));
             return current != null ? Optional.of(current) : Optional.empty();
@@ -226,6 +229,16 @@ public class Paths<C, P> {
      */
     public List<Node> roots() {
         return roots;
+    }
+
+    /**
+     * Returns the first of the root nodes (simple trees only have one root so it's
+     * just convenient).
+     *
+     * @return the list of root nodes
+     */
+    public Paths<C, P>.Node root() {
+        return roots.get(0);
     }
 
     /**

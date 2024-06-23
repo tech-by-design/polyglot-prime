@@ -1,4 +1,4 @@
-package org.techbd.util;
+package lib.aide.paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,6 +10,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class PathsTest {
+
+    public record SyntheticPayload(String absolutePath, String content, String baseName) {
+        public SyntheticPayload(String absolutePath) {
+            this(absolutePath, "this is content for " + absolutePath,
+                    absolutePath.substring(absolutePath.lastIndexOf('/') + 1));
+        }
+
+        @Override
+        public String toString() {
+            return content;
+        }
+    }
 
     private Paths<String, SyntheticPayload> paths;
 
@@ -263,28 +275,15 @@ public class PathsTest {
                 .withIds(node -> "id=\"" + node.absolutePath().replaceAll("[^a-zA-Z0-9]", "-") + "\"")
                 .build(); // Use defaults for all other settings
 
+        @SuppressWarnings("unused")
         final var pathsHtml = ph.toHtmlUL(paths, Optional.empty());
-       
-        // TODO: Compare generated JSON with expected JSON
+
         // assertThat(json).contentOf("PathsTestJson.fixture.json").isEqualToIgnoringWhitespace(expectedJson);
-    }
-
-    public record SyntheticPayload(String absolutePath, String content, String baseName) {
-        public SyntheticPayload(String absolutePath) {
-            this(absolutePath, "this is content for " + absolutePath,
-                    absolutePath.substring(absolutePath.lastIndexOf('/') + 1));
-        }
-
-        @Override
-        public String toString() {
-            return content;
-        }
     }
 
     @Test
     public void testAsciiTree() {
         populateTree();
-        // TODO: assign this to a variable and then test it
         // System.out.println(new PathsVisuals().asciiTree(paths));
     }
 }

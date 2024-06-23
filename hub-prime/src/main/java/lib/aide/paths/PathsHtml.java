@@ -1,14 +1,45 @@
-package org.techbd.util;
+package lib.aide.paths;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import groovyjarjarantlr4.v4.Tool.Option;
+
 /**
  * This class provides HTML representation utilities for the Paths class.
  */
 public class PathsHtml<C, P> {
+    /**
+     * Record to hold HTML content details.
+     */
+    public record HtmlContent(Optional<String> labelHtml, Optional<Map<String, String>> liAttrs,
+            Optional<Map<String, String>> detailsAttrs, Optional<Map<String, String>> summaryAttrs,
+            Optional<Map<String, String>> anchorAttrs) {
+        /**
+         * Constructor for HtmlContent record.
+         *
+         * @param labelHtml    the HTML content for the label
+         * @param liAttrs      the attributes for the
+         *                     <li>tag
+         * @param detailsAttrs the attributes for the <details> tag
+         * @param summaryAttrs the attributes for the <summary> tag
+         * @param anchorAttrs  the attributes for the <a> tag
+         */
+        public HtmlContent {
+            if (labelHtml == null)
+                labelHtml = Optional.empty();
+            if (liAttrs == null)
+                liAttrs = Optional.empty();
+            if (detailsAttrs == null)
+                detailsAttrs = Optional.empty();
+            if (summaryAttrs == null)
+                summaryAttrs = Optional.empty();
+            if (anchorAttrs == null)
+                anchorAttrs = Optional.empty();
+        }
+    }
 
     private final Optional<Function<Paths<C, P>.Node, HtmlContent>> leafNodeHtmlContent;
     private final Optional<Function<Paths<C, P>.Node, HtmlContent>> parentNodeHtmlContent;
@@ -50,6 +81,10 @@ public class PathsHtml<C, P> {
         return sb.toString();
     }
 
+    public String toHtmlUL(final Paths<C, P> paths) {        
+        return toHtmlUL(paths, Optional.empty());
+    }
+
     /**
      * Appends a node and its children to the StringBuilder with the appropriate
      * HTML structure.
@@ -60,7 +95,7 @@ public class PathsHtml<C, P> {
      * @param isFirstNode indicates if the node is the first node to avoid starting
      *                    with a blank line
      */
-    private void appendNode(final StringBuilder sb, final Paths<C, P>.Node node, final int level,
+    protected void appendNode(final StringBuilder sb, final Paths<C, P>.Node node, final int level,
             final boolean isFirstNode) {
         final boolean isLeaf = node.isLeaf();
         final var content = isLeaf
@@ -102,7 +137,7 @@ public class PathsHtml<C, P> {
      * @param attributes the map of attributes
      * @return the string representation of the attributes
      */
-    private String mapToAttributes(final Map<String, String> attributes) {
+    protected String mapToAttributes(final Map<String, String> attributes) {
         return attributes.entrySet().stream()
                 .map(entry -> " " + entry.getKey() + "=\"" + escapeHtml(entry.getValue()) + "\"")
                 .collect(Collectors.joining());
@@ -114,7 +149,7 @@ public class PathsHtml<C, P> {
      * @param text the input string
      * @return the escaped string
      */
-    private String escapeHtml(final String text) {
+    protected String escapeHtml(final String text) {
         return text.replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
@@ -128,7 +163,7 @@ public class PathsHtml<C, P> {
      * @param node the node
      * @return the default label
      */
-    private String getDefaultLabel(final Paths<C, P>.Node node) {
+    protected String getDefaultLabel(final Paths<C, P>.Node node) {
         return node.components().isEmpty() ? "" : node.components().get(node.components().size() - 1).toString();
     }
 
@@ -210,36 +245,6 @@ public class PathsHtml<C, P> {
          */
         public PathsHtml<C, P> build() {
             return new PathsHtml<>(this);
-        }
-    }
-
-    /**
-     * Record to hold HTML content details.
-     */
-    public record HtmlContent(Optional<String> labelHtml, Optional<Map<String, String>> liAttrs,
-            Optional<Map<String, String>> detailsAttrs, Optional<Map<String, String>> summaryAttrs,
-            Optional<Map<String, String>> anchorAttrs) {
-        /**
-         * Constructor for HtmlContent record.
-         *
-         * @param labelHtml    the HTML content for the label
-         * @param liAttrs      the attributes for the
-         *                     <li>tag
-         * @param detailsAttrs the attributes for the <details> tag
-         * @param summaryAttrs the attributes for the <summary> tag
-         * @param anchorAttrs  the attributes for the <a> tag
-         */
-        public HtmlContent {
-            if (labelHtml == null)
-                labelHtml = Optional.empty();
-            if (liAttrs == null)
-                liAttrs = Optional.empty();
-            if (detailsAttrs == null)
-                detailsAttrs = Optional.empty();
-            if (summaryAttrs == null)
-                summaryAttrs = Optional.empty();
-            if (anchorAttrs == null)
-                anchorAttrs = Optional.empty();
         }
     }
 }

@@ -299,9 +299,10 @@
                 </div>
 
                 <div class="w-full mt-8 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-                    <p>v<span th:text=" ${baggage.appVersion}">X.Y.Z</span> <span
-                            id="devl_openFileInEditor_container" style="display: none"><a id="devl_openFileInEditor_anchor"
-                                href="dynamic">dynamic</a></span></p>
+                    <p>v<span th:text=" ${baggage.appVersion}">X.Y.Z</span> <span id="devl_openFileInEditor_container"
+                            style="display: none; padding-left: 10px"><a id="devl_openFileInEditor_anchor"
+                                href="dynamic">dynamic</a></span> <a th:href="@{/experiment/home.html}"
+                            style="padding-left: 10px">🧪 Experiments/Debug</a></p>
                     <div id="devl_exposure_container" style="display: none">
                         <code>document.ssrBaggageJSON</code>:
                         <json-viewer id="devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>

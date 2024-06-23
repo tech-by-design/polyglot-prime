@@ -19,6 +19,7 @@ import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.aggrid.ServerRowsRequest;
 import org.techbd.service.http.aggrid.ServerRowsResponse;
 import org.techbd.service.http.aggrid.SqlQueryBuilder;
+import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.UdiPrimeJpaConfig;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,16 +46,21 @@ public class InteractionsController {
     }
 
     @GetMapping("/admin/observe/interactions")
+    @RouteMapping(label = "Interactions", siblingOrder = 10)
     public String observeInteractions() {
         return "redirect:/admin/observe/interactions/https";
     }
 
-    @GetMapping("/admin/observe/interactions/{nature}")
-    public String observeInteractionsNature(@PathVariable String nature, final Model model,
-            final HttpServletRequest request) {
-        final var templateName = "page/interactions/" + nature;
-        presentation.populateModel(templateName, model, request);
-        return templateName;
+    @GetMapping("/admin/observe/interactions/https")
+    @RouteMapping(label = "FHIR via HTTPs")
+    public String https(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/https", model, request);
+    }
+
+    @GetMapping("/admin/observe/interactions/sftp")
+    @RouteMapping(label = "CSV via SFTP (egress)")
+    public String sftp(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/sftp", model, request);
     }
 
     @Operation(summary = "HTTP Request/Response Interactions for Populating Grid")

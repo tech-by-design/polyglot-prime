@@ -1,4 +1,4 @@
-package org.techbd.util;
+package lib.aide.paths;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -31,7 +32,29 @@ public class PathsJson<C, P> {
      * @return the JSON string representation of the Paths instance
      * @throws Exception if an error occurs during JSON conversion
      */
-    public String toJson(final Paths<C, P> paths, final Optional<PayloadJsonSupplier<C, P>> payloadRenderer)
+    public JsonNode toJson(final Paths<C, P> paths, final Optional<PayloadJsonSupplier<C, P>> payloadRenderer)
+            throws Exception {
+        final var result = new ArrayList<Object>();
+        final var visitedNodes = new HashSet<Paths<C, P>.Node>();
+
+        for (var root : paths.roots()) {
+            final var nodeMap = new HashMap<String, Object>();
+            renderNode(root, nodeMap, paths, payloadRenderer, visitedNodes);
+            result.add(nodeMap);
+        }
+
+        return objectMapper.valueToTree(result);
+    }
+
+    /**
+     * Converts the Paths instance to a JSON string representation.
+     *
+     * @param paths           the Paths instance to convert
+     * @param payloadRenderer an optional payload renderer
+     * @return the JSON string representation of the Paths instance
+     * @throws Exception if an error occurs during JSON conversion
+     */
+    public String toJsonString(final Paths<C, P> paths, final Optional<PayloadJsonSupplier<C, P>> payloadRenderer)
             throws Exception {
         final var result = new ArrayList<Object>();
         final var visitedNodes = new HashSet<Paths<C, P>.Node>();

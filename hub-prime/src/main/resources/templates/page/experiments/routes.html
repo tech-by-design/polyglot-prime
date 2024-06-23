@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/experiment}">
+
+<head>
+    <script src='https://unpkg.com/htmx.org/dist/htmx.min.js'></script>
+    <title>Application Routes</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div th:attr="hx-get=@{/presentation/shell/nav/prime.fragment.html}" hx-trigger="load" hx-swap="innerHTML">Menu</div>
+        <pre th:attr="hx-get=@{/presentation/shell/nav/prime-ascii.fragment.html}" hx-trigger="load" hx-swap="innerHTML">ASCII Tree</pre>
+    </div>
+</body>
+
+</html>
