@@ -29,6 +29,10 @@ public class Configuration {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
             .build();
+    public static final ObjectMapper objectMapperConcise = JsonMapper.builder()
+            .findAndAddModules()
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+            .build();
 
     public static final Map<String, String> ownEnvVars = getEnvVarsAvailable(".*TECHBD.*");
 

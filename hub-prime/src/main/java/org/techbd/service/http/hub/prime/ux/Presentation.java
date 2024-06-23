@@ -115,7 +115,7 @@ public class Presentation {
             // IMPORTANT: if there's anything secret or sensitive, don't put it in the
             // baggage because baggae is available as plain text in the browser.
             model.addAttribute("baggage", baggage);
-            model.addAttribute("ssrBaggageJSON", Configuration.objectMapper.writeValueAsString(baggage));
+            model.addAttribute("ssrBaggageJSON", Configuration.objectMapperConcise.writeValueAsString(baggage));
         } catch (JsonProcessingException e) {
             LOG.error("error setting ssrBaggageJSON in populateModel", e);
         }
