@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
@@ -117,8 +116,6 @@ public class Presentation {
             // baggage because baggae is available as plain text in the browser.
             model.addAttribute("baggage", baggage);
             model.addAttribute("ssrBaggageJSON", Configuration.objectMapper.writeValueAsString(baggage));
-            LOG.info("Logged in user Information"
-                    + SecurityContextHolder.getContext().getAuthentication().getPrincipal());
         } catch (JsonProcessingException e) {
             LOG.error("error setting ssrBaggageJSON in populateModel", e);
         }
