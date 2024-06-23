@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.SandboxHelpers;
+import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.UdiPrimeJpaConfig;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,6 +51,7 @@ public class DiagnosticsController {
     }
 
     @GetMapping("/admin/observe/sessions")
+    @RouteMapping(label = "Diagnostics", siblingOrder = 20)
     public String adminDiagnostics(final Model model, final HttpServletRequest request) {
         model.addAttribute("udiPrimaryDataSrcHealth", udiPrimeJpaConfig.udiPrimaryDataSrcHealth());
         return presentation.populateModel("page/diagnostics", model, request);

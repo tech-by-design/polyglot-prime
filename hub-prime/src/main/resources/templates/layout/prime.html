@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="ssrServletContextPath" th:content="@{/}">
     <meta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}">
+    <script id="shell-head-init" th:src="@{/presentation/shell/js/shell-head-init.js}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
     <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
     <script type="module">
@@ -14,17 +15,6 @@
         mermaid.initialize({ startOnLoad: true });        
     </script>
     <script>
-        const contextPath = document.querySelector('meta[name="ssrServletContextPath"]').content;
-        function ssrServletUrl(relativePath) {
-            return contextPath == "/" ? relativePath : (contextPath + relativePath);
-        }
-
-        const ssrBaggageJSON = document.querySelector('meta[name="ssrBaggageJSON"]')?.content?.trim();
-        if (ssrBaggageJSON.length) {
-            document.ssrBaggageJSON = ssrBaggageJSON;
-            document.ssrBaggage = JSON.parse(ssrBaggageJSON);
-        }
-
         document.addEventListener('DOMContentLoaded', function () {
             const avatarUrl = document.querySelector('#avatar_url')?.innerText;
             const htmlUrl = document.querySelector('#html_url')?.innerText;
@@ -32,18 +22,6 @@
             document.htmlUrl = htmlUrl;
             document.querySelector('#principal_image').src = document.avatarUrl;
             document.querySelector('#principal_html').href = document.htmlUrl;
-
-            const editUrl = document.ssrBaggage?.template?.editUrl;
-            if (editUrl) {
-                document.querySelector('#devl_openFileInEditor_anchor').innerText = `📄 edit ${document.ssrBaggage?.template?.canonical ?? "canonical not set"}`;
-                document.querySelector('#devl_openFileInEditor_anchor').href = editUrl;
-                document.querySelector('#devl_openFileInEditor_container').style.display = '';
-            }
-
-            if (document.ssrBaggage?.userAgentBaggageExposureEnabled) {
-                document.querySelector('#devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer').data = document.ssrBaggage;
-                document.querySelector('#devl_exposure_container').style.display = '';
-            }
 
             // Get the parent element containing all the menu items and distinguish
             // the active page based on what our current location is
@@ -91,6 +69,7 @@
         }
     </style>
     <title layout:title-pattern="$CONTENT_TITLE">Page Title</title>
+    <script id="shell-head-final" th:src="@{/presentation/shell/js/shell-head-final.js}"></script>
 </head>
 
 <body class="h-full">
@@ -127,6 +106,7 @@
                     </div>
                     <div class="hidden md:block">
                         <div class="ml-4 flex items-center md:ml-6">
+                            <div class="text-gray-400">v<span th:text="${baggage.appVersion}"></span></div>
                             <button type="button"
                                 class="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                                 <span class="absolute -inset-1.5"></span>
@@ -304,24 +284,10 @@
                 <div class="w-full mx-auto bg-white p-8 rounded-lg shadow-lg">
                     <div layout:fragment="content"></div>
                 </div>
-
-                <div class="w-full mt-8 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-                    <p>v<span th:text=" ${baggage.appVersion}">X.Y.Z</span> <span id="devl_openFileInEditor_container"
-                            style="display: none; padding-left: 10px"><a id="devl_openFileInEditor_anchor"
-                                href="dynamic">dynamic</a></span> <a th:href="@{/experiment/home.html}"
-                            style="padding-left: 10px">🧪 Experiments/Debug</a></p>
-                    <div id="devl_exposure_container" style="display: none">
-                        <code>document.ssrBaggageJSON</code>:
-                        <json-viewer id="devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
-                        <p>The above is visible because <code>document.ssrBaggageJSON</code> was
-                            sent via <code>&ltmeta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}"&gt;</code>
-                            from the server. You should never share sensitive contents or secrets through SSR Baggage.
-                        </p>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
+    <script id="shell-body-final" th:src="@{/presentation/shell/js/shell-body-final.js}"></script>
 </body>
 
 </html>

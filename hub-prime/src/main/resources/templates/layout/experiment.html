@@ -7,30 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="ssrServletContextPath" th:content="@{/}">
     <meta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}">
+    <script id="shell-head-init" th:src="@{/presentation/shell/js/shell-head-init.js}"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
     <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
-
-    <script>
-        const contextPath = document.querySelector('meta[name="ssrServletContextPath"]').content;
-        function ssrServletUrl(relativePath) {
-            return contextPath == "/" ? relativePath : (contextPath + relativePath);
-        }
-
-        const ssrBaggageJSON = document.querySelector('meta[name="ssrBaggageJSON"]')?.content?.trim();
-        if (ssrBaggageJSON.length) {
-            document.ssrBaggageJSON = ssrBaggageJSON;
-            document.ssrBaggage = JSON.parse(ssrBaggageJSON);
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            if (document.ssrBaggage?.userAgentBaggageExposureEnabled) {
-                document.querySelector('#devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer').data = document.ssrBaggage;
-                document.querySelector('#devl_exposure_container').style.display = '';
-            }
-        });
-    </script>
-
     <title layout:title-pattern="$CONTENT_TITLE">Debug Layout</title>
+    <script id="shell-head-final" th:src="@{/presentation/shell/js/shell-head-final.js}"></script>
 </head>
 
 <body class="h-full">
@@ -38,34 +19,22 @@
         <main>
             <header class="bg-white shadow-sm">
                 <div class="mx-auto max-w-9xl px-4 py-4 sm:px-6 lg:px-8">
-                    <a th:href="@{/home}" style="padding-right:25px">Application Home</a> <a th:href="@{/experiment/home.html}">Experiments Home</a>
+                    <a th:href="@{/home}" style="padding-right:25px">Application Home</a> <a
+                        th:href="@{/experiment/home.html}">Experiments Home</a>
                     <h1 class="text-lg font-semibold leading-6 text-gray-900">
                         <script>document.write(document.querySelector('title')?.innerText ?? `no title tag in head`)</script>
                     </h1>
                 </div>
             </header>
-    
+
             <div class="mx-auto max-w-9xl py-2 sm:px-6 lg:px-8">
                 <div class="w-full mx-auto bg-white p-8 rounded-lg shadow-lg">
                     <div layout:fragment="content"></div>
                 </div>
-
-                <div class="w-full mt-8 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-                    <p>v<span th:text=" ${baggage.appVersion}">X.Y.Z</span> <span id="devl_openFileInEditor_container"
-                            style="display: none"><a id="devl_openFileInEditor_anchor" href="dynamic">dynamic</a></span>
-                    </p>
-                    <div id="devl_exposure_container" style="display: none">
-                        <code>document.ssrBaggageJSON</code>:
-                        <json-viewer id="devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
-                        <p>The above is visible because <code>document.ssrBaggageJSON</code> was
-                            sent via <code>&ltmeta name="ssrBaggageJSON" th:content="${ssrBaggageJSON}"&gt;</code>
-                            from the server. You should never share sensitive contents or secrets through SSR Baggage.
-                        </p>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
+    <script id="shell-body-final" th:src="@{/presentation/shell/js/shell-body-final.js}"></script>
 </body>
 
 </html>
