@@ -84,25 +84,11 @@
                         </div>
                         <div id="nav-prime" class="hidden md:block">
                             <div class="ml-10 flex items-baseline space-x-4">
-                                <a th:href="@{/home}"
-                                    class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Welcome</a>
-                                <a th:href="@{/admin/observe/interactions}"
-                                    class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Interactions</a>
-                                <a th:href="@{/admin/observe/sessions}"
-                                    class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Diagnostics</a>
-                                <a th:href="@{/docs}"
-                                    class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Documentation</a>
-                                <a th:href="@{/actuator}"
-                                    class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Support</a>
-                            </div>
-                        </div>
-                        <!-- <div id="nav-prime" class="hidden md:block">
-                            <div class="ml-10 flex items-baseline space-x-4">
                                 <a th:each="navItem: ${baggage.navPrime}" th:attr="href=@{${navItem.href.orElse('?')}}"
                                     th:text="${navItem.text}"
                                     class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Label</a>
                             </div>
-                        </div> -->
+                        </div>
                     </div>
                     <div class="hidden md:block">
                         <div class="ml-4 flex items-center md:ml-6">

@@ -39,7 +39,7 @@ public class DiagnosticsController {
     }
 
     @Operation(summary = "Recent HTTP Request/Response Diagnostics")
-    @GetMapping("/admin/observe/sessions/data")
+    @GetMapping("/diagnostics.json")
     @ResponseBody
     public Page<?> adminDiagnosticsJson(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -50,7 +50,7 @@ public class DiagnosticsController {
         return new PageImpl<>(result.intoMaps(), PageRequest.of(page, size), DSL.fetchCount(HUB_OPERATION_SESSION));
     }
 
-    @GetMapping("/admin/observe/sessions")
+    @GetMapping("/diagnostics")
     @RouteMapping(label = "Diagnostics", siblingOrder = 20)
     public String adminDiagnostics(final Model model, final HttpServletRequest request) {
         model.addAttribute("udiPrimaryDataSrcHealth", udiPrimeJpaConfig.udiPrimaryDataSrcHealth());

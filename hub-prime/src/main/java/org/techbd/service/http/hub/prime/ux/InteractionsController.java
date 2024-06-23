@@ -45,19 +45,19 @@ public class InteractionsController {
         this.sftpManager = sftpManager;
     }
 
-    @GetMapping("/admin/observe/interactions")
+    @GetMapping("/interactions")
     @RouteMapping(label = "Interactions", siblingOrder = 10)
     public String observeInteractions() {
-        return "redirect:/admin/observe/interactions/https";
+        return "redirect:/interactions/https";
     }
 
-    @GetMapping("/admin/observe/interactions/https")
+    @GetMapping("/interactions/https")
     @RouteMapping(label = "FHIR via HTTPs")
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }
 
-    @GetMapping("/admin/observe/interactions/sftp")
+    @GetMapping("/interactions/sftp")
     @RouteMapping(label = "CSV via SFTP (egress)")
     public String sftp(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/sftp", model, request);

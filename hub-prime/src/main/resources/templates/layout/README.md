@@ -64,8 +64,8 @@ attribute.
 <div id="nav-prime" class="hidden md:block">
     <div class="ml-10 flex items-baseline space-x-4">
         <a th:href="@{/}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Welcome</a>
-        <a th:href="@{/admin/observe/interactions}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Interactions</a>
-        <a th:href="@{/admin/observe/sessions}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Diagnostics</a>
+        <a th:href="@{/interactions}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Interactions</a>
+        <a th:href="@{/diagnostics}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Diagnostics</a>
         <a th:href="@{/docs}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Documentation</a>
         <a th:href="@{/actuator}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Support</a>
     </div>
