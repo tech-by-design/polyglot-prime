@@ -5,8 +5,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import groovyjarjarantlr4.v4.Tool.Option;
-
 /**
  * This class provides HTML representation utilities for the Paths class.
  */
