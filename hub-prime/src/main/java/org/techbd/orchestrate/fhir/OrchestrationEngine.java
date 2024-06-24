@@ -28,6 +28,7 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.text.StringEscapeUtils;
 import org.hl7.fhir.r5.model.OperationOutcome;
 import org.techbd.conf.Configuration;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -281,8 +282,8 @@ public class OrchestrationEngine {
             this.validator = fhirContext.newValidator();
             engineConstructedAt = Instant.now();
             observability = new Observability(HapiValidationEngine.class.getName(),
-                    "HAPI version TODO (FHIR version %s)"
-                            .formatted(fhirContext.getVersion().getVersion().getFhirVersionString()),
+                    "HAPI version %s (FHIR version %s)"
+                            .formatted("7.2.0 (TODO:get from API instead of hard coding)",fhirContext.getVersion().getVersion().getFhirVersionString()),
                     engineInitAt,
                     engineConstructedAt);
         }
@@ -451,7 +452,7 @@ public class OrchestrationEngine {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             fhirProfileVersion = OrchestrationEngine.fetchFhirProfileVersion(fhirProfileUrl);
             engineConstructedAt = Instant.now();
-            observability = new Observability(Hl7ValidationEngineEmbedded.class.getName(),
+             observability = new Observability(Hl7ValidationEngineEmbedded.class.getName(),
                     "HL7 Official Embedded (TODO: version)", engineInitAt,
                     engineConstructedAt);
         }

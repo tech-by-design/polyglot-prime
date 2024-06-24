@@ -4,6 +4,7 @@ import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_OPERATION_SESSION;
 import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_OPERATION_SESSION_ENTRY;
 import static org.techbd.udi.auto.jooq.ingress.Tables.LINK_SESSION_ENTRY;
 import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_OPERATION_SESSION_ENTRY_SESSION_STATE;
+import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_OPERATION_SESSION_ENTRY_PAYLOAD;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -99,7 +100,7 @@ public class FhirController {
 
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
-        final var bundleAsyncInteractionId = UUID.randomUUID();
+        final var bundleAsyncInteractionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
         final var sessionBuilder = engine.session()
@@ -121,13 +122,15 @@ public class FhirController {
 
         // immediateResult is what's returned to the user while async operation
         // continues
+        final var baseUrl = Helpers.getBaseUrl(request);
+        System.out.println("bundleAsyncInteractionId.toString()," +bundleAsyncInteractionId.toString());
         final var immediateResult = new HashMap<>(Map.of(
                 "resourceType", "OperationOutcome",
                 "bundleSessionId", bundleAsyncInteractionId.toString(), // for tracking in database, etc.
                 "isAsync", true,
                 "validationResults", session.getValidationResults(),
                 "statusUrl",
-                "https://" + request.getServerName() + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
+                baseUrl + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
                 "device", session.getDevice()));
         final var result = Map.of("OperationOutcome", immediateResult);
         if (uaValidationStrategyJson != null) {
@@ -290,8 +293,12 @@ public class FhirController {
                     .join(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE)
                     .on(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID
                             .eq(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.HUB_OPERATION_SESSION_ENTRY_ID))
-                    .where(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID.in(bundleSessionId))
+                    .join(SAT_OPERATION_SESSION_ENTRY_PAYLOAD)
+                    .on(SAT_OPERATION_SESSION_ENTRY_PAYLOAD.HUB_OPERATION_SESSION_ENTRY_ID
+                            .eq(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID))
+                    .where(HUB_OPERATION_SESSION.KEY.in(bundleSessionId))
                     .fetch();
+                    
 
             final var dataArray = mapper.createArrayNode();
             for (final Record record : result) {
@@ -303,6 +310,7 @@ public class FhirController {
                 recordJson.put("toState", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.TO_STATE));
                 recordJson.put("createdBy", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.CREATED_BY));
                 recordJson.put("provenance", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.PROVENANCE));
+                recordJson.set("response", record.get(SAT_OPERATION_SESSION_ENTRY_PAYLOAD.INGEST_PAYLOAD));
                 dataArray.add(recordJson);
             }
 
@@ -310,7 +318,7 @@ public class FhirController {
             LOG.info("Query execution result: {}", result);
         } catch (Exception e) {
             LOG.error("Error executing JOOQ query", e);
-            responseJson.put("error", "Error fetching data");
+            responseJson.put("error", "Error fetching data");   
         }
 
         return responseJson;

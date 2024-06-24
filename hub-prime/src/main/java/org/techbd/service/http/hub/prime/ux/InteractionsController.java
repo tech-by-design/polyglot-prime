@@ -2,6 +2,7 @@ package org.techbd.service.http.hub.prime.ux;
 
 import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP;
 
+
 import java.util.List;
 import java.util.Map;
 
@@ -64,9 +65,10 @@ public class InteractionsController {
     }
 
     @Operation(summary = "HTTP Request/Response Interactions for Populating Grid")
-    @PostMapping(value = "/support/interaction/http.json", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/support/interaction/{intrNature}.json", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ServerRowsResponse httpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload) {
+    public ServerRowsResponse httpInteractions(final @PathVariable String intrNature,
+            final @RequestBody @Nonnull ServerRowsRequest payload) {
         // TODO: figure out how to write dynamic queries in jOOQ
         // final var DSL = udiPrimeJpaConfig.dsl();
         // final var result =
@@ -81,8 +83,9 @@ public class InteractionsController {
         final Map<String, List<String>> pivotValues = Map.of();
 
         final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http",
-                pivotValues));
+        final var result = DSL
+                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_" + intrNature,
+                        pivotValues));
         final var rows = result.intoMaps();
         for (final var row : rows) {
             // this is a JSONB and might be large so don't send it even if it was requested
@@ -100,13 +103,13 @@ public class InteractionsController {
     @Operation(summary = "Specific HTTP Request/Response Interaction which is assumed to exist")
     @GetMapping("/support/interaction/{interactionId}.json")
     @ResponseBody
-    public Map<String, Object> httpInteraction(final @PathVariable String interactionId) {
+    public List<Map<String, Object>> httpInteraction(final @PathVariable String interactionId) {
         final var DSL = udiPrimeJpaConfig.dsl();
         final var result = DSL.select(INTERACTION_HTTP.REQUEST_PAYLOAD)
                 .from(INTERACTION_HTTP)
                 .where(INTERACTION_HTTP.INTERACTION_ID.eq(interactionId))
-                .fetchSingle();
-        return result.intoMap();
+                .fetch();
+        return result.intoMaps();
     }
 
     @Operation(summary = "Recent SFTP Interactions")
