@@ -30,10 +30,10 @@ project and run:
 git clone https://github.com/tech-by-design/polyglot-prime.git
 ```
 
-Then, navigate to the Java project folder:
+Then, navigate to the hub-prime folder:
 
 ```
-cd polyglot-prime/support/containers/sandbox
+cd polyglot-prime/support/containers/sandbox/hub-prime/
 cp env.sample .env
 ```
 
@@ -47,6 +47,26 @@ docker-compose up -d
 Then site will be available at:
 
 http://localhost:8080
+
+## For SFTP deploy
+
+Navigate to the sftp folder:
+
+```
+cd polyglot-prime/support/containers/sandbox/sftp/
+cp env.sample .env
+```
+
+Update the .env file with proper values and then build the  image and start the container
+
+```
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+Then site will be available at:
+
+http://localhost:8081
 
 
 ## Running the Project
