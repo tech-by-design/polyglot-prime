@@ -1,6 +1,6 @@
 CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_udi_insert_interaction(schema_name text DEFAULT 'techbd_udi_ingress'::text)
-RETURNS SETOF text
-LANGUAGE plpgsql
+ RETURNS SETOF text
+ LANGUAGE plpgsql
 AS $function$
 DECLARE    
     return_value                TEXT;
@@ -8,6 +8,7 @@ DECLARE
     hub_interaction_row         techbd_udi_ingress.hub_interaction%ROWTYPE;
     sat_interaction_http_request_row techbd_udi_ingress.sat_interaction_http_request%ROWTYPE; 
     interaction_id_val          TEXT;
+   	interaction_key_val			TEXT;
     created_user                TEXT;
     provenance_info             TEXT;
     elaboration_info            jsonb;
@@ -28,11 +29,12 @@ BEGIN
     RETURN NEXT has_function(
         schema_name,
         'udi_insert_interaction',
-        ARRAY['text', 'jsonb', 'jsonb', 'text', 'text'],
+        ARRAY['text', 'text','jsonb', 'jsonb', 'text', 'text'],
         'Function udi_insert_interaction exists'
     );
 
     interaction_id_val := techbd_udi_ingress.uuid_generate_v4();
+   	interaction_key_val := techbd_udi_ingress.uuid_generate_v4();
     created_user := 'test-user1';
     provenance_info := 'provenance-1';
     elaboration_info := '{"key" : "elaboration"}'::jsonb;
@@ -40,6 +42,7 @@ BEGIN
     -- Upsert into hub_interaction
     hub_interaction_row := techbd_udi_ingress.hub_interaction_upserted(
         interaction_id_val,
+        interaction_key_val,
         created_user,
         provenance_info
     );
@@ -60,6 +63,7 @@ BEGIN
     -- Insert into udi_insert_interaction
     return_value := techbd_udi_ingress.udi_insert_interaction(
         interaction_id_val,
+        interaction_key_val,
         source_content::jsonb,
         elaboration_info,
         created_user, 
@@ -71,10 +75,11 @@ BEGIN
     -- Verify inserts into various tables
     RETURN NEXT ok(
         EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub
-               WHERE hub.key = interaction_id_val
+               WHERE hub.key = interaction_key_val
                AND hub.provenance = provenance_info
                AND hub.created_by = created_user
-               AND hub.hub_interaction_id = hub_interaction_row.hub_interaction_id),
+               AND hub.hub_interaction_id = hub_interaction_row.hub_interaction_id
+               ),
         'Successfully retrieved the inserted hub_interaction details'
     );
 
@@ -96,23 +101,54 @@ CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_udi_insert_session_with_sta
  RETURNS SETOF text
  LANGUAGE plpgsql
 AS $function$
-DECLARE
-    hub_exception_row             techbd_udi_ingress.hub_exception%ROWTYPE;
-    err_returned_sqlstate         TEXT; -- Variable to store SQLSTATE of the error
-    err_message_text              TEXT; -- Variable to store the message text of the error
-    err_pg_exception_detail       TEXT; -- Variable to store the detail of the error
-    err_pg_exception_hint         TEXT; -- Variable to store the hint of the error
-    err_pg_exception_context      TEXT; -- Variable to store the context of the error
-    session_info                  techbd_udi_ingress.session_identifier;
-    return_value                  TEXT;
-   	source_content 					TEXT;
+DECLARE    
+    err_returned_sqlstate         			TEXT; -- Variable to store SQLSTATE of the error
+    err_message_text              			TEXT; -- Variable to store the message text of the error
+    err_pg_exception_detail       			TEXT; -- Variable to store the detail of the error
+    err_pg_exception_hint         			TEXT; -- Variable to store the hint of the error
+    err_pg_exception_context      			TEXT; -- Variable to store the context of the error
+    
+    return_value                  			TEXT;
+   	source_content 							TEXT;
+   	hub_exception_row             					techbd_udi_ingress.hub_exception%ROWTYPE;
+   	sat_operation_session_entry_payload_row 		techbd_udi_ingress.sat_operation_session_entry_payload%ROWTYPE;
+   	hub_operation_session_row						techbd_udi_ingress.hub_operation_session%ROWTYPE;
+   	hub_operation_session_entry_row 				techbd_udi_ingress.hub_operation_session_entry%ROWTYPE;
+   	link_session_entry_row							techbd_udi_ingress.link_session_entry%ROWTYPE;
+   	sat_operation_session_entry_session_state_row	techbd_udi_ingress.sat_operation_session_entry_session_state%ROWTYPE;
+   	session_info                  					techbd_udi_ingress.session_identifier;
+   	
+   	interaction_id_value	TEXT;
+   	interaction_key_value	TEXT;
+   	namespace_value			TEXT;
+    created_user      		TEXT;
+    provenance_value      	TEXT;
+   	content_type_value		TEXT;
+   	boundary_value			jsonb;
+    elaboration_value     	jsonb;
+   	from_state_value		TEXT;
+   	to_state_value			TEXT;
+   	hub_interaction_row		techbd_udi_ingress.hub_interaction%ROWTYPE;
+   
 BEGIN
+	
+	interaction_id_value 	:= techbd_udi_ingress.uuid_generate_v4();
+	interaction_key_value	:= techbd_udi_ingress.uuid_generate_v4();
+	namespace_value			:= 'namespace1';
+	created_user 			:= 'test-user1';
+	provenance_value 		:= 'provenance-1';
+	elaboration_value 		:= '{"key" : "elaboration"}'::jsonb;
+	content_type_value 		:= 'application/json';
+	boundary_value			:= '{"key1": "boundary-1"}';
+	created_user			:= 'test-user-1';
+	from_state_value		:= 'start process';
+	to_state_value			:= 'end process';
 	
 	IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
     			AND table_name = 'pgtap_fixtures_json') THEN 
    		SELECT "jsonb" INTO source_content
 		FROM techbd_udi_assurance.pgtap_fixtures_json 
-		WHERE "name" = 'interaction-1';
+		WHERE "name" = 'interaction-2';
 	ELSE 
 		RETURN NEXT ok(NULL,'Table techbd_udi_assurance.pgtap_fixtures_json exists');
     END IF;
@@ -131,83 +167,189 @@ BEGIN
         ARRAY['text', 'text', 'text', 'text', 'text'],
         'Function udi_insert_session_state exists'
     );
+   
+    RETURN NEXT has_function(
+        schema_name,
+        'hub_operation_session_upserted',
+        ARRAY['text', 'text', 'text'],
+        'Function hub_operation_session_upserted exists'
+    );
+   
+    RETURN NEXT has_function(
+        schema_name,
+        'link_session_entry_upserted',
+        ARRAY['text', 'text', 'text', 'text'],
+        'Function link_session_entry_upserted exists'
+    );
+   
+    RETURN NEXT has_function(
+        schema_name,
+        'sat_exception_diagnostics_upserted',
+        ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+        'Function sat_exception_diagnostics_upserted exists'
+    );
+   
+   RETURN NEXT has_function(
+        schema_name,
+        'hub_exception_upserted',
+        ARRAY['text', 'text', 'text'],
+        'Function hub_exception_upserted exists'
+    );
+   
+    RETURN NEXT has_function(
+        schema_name,
+        'sat_operation_session_entry_payload_upserted',
+        ARRAY['text', 'text', 'jsonb', 'text', 'jsonb', 'text', 'text'],
+        'Function sat_operation_session_entry_payload_upserted exists'
+    );
 
+   RETURN NEXT has_function(
+        schema_name,
+        'sat_operation_session_entry_session_state_upserted',
+        ARRAY['text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text'],
+        'Function sat_operation_session_entry_session_state_upserted exists'
+    );
+
+    RETURN NEXT has_function(
+        schema_name,
+        'sat_operation_session_upserted',
+        ARRAY['text', 'text', 'text', 'timestamp', 'timestamp', 'text', 'text', 'jsonb', 'jsonb', 'text', 'jsonb', 'text', 'text'],
+        'Function sat_operation_session_upserted exists'
+    );
+   
+   RETURN NEXT has_function(
+        schema_name,
+        'udi_insert_session_state',
+        ARRAY['text', 'text', 'text', 'text', 'text'],
+        'Function udi_insert_session_state exists'
+    );
+
+	RETURN NEXT has_function(
+        schema_name,
+        'udi_insert_session_with_state',
+        ARRAY['text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text'],
+        'Function udi_insert_session_with_state exists'
+    );
+
+	RETURN NEXT has_function(
+        schema_name,
+        'sat_operation_session_entry_session_state_upserted',
+        ARRAY['text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text'],
+        'Function sat_operation_session_entry_session_state_upserted exists'
+    );
+
+   	return_value := techbd_udi_ingress.udi_insert_interaction(
+				   	interaction_id 	=> interaction_id_value,
+				   	interaction_key	=> interaction_key_value,
+				   	request_payload => source_content::jsonb, 
+				   	elaboration 	=> elaboration_value, 
+				   	created_by		=> created_user, 
+				   	provenance 		=> provenance_value
+				   	);
+				   
+	RETURN NEXT ok(return_value IS NOT NULL, 'Function techbd_udi_ingress.udi_insert_interaction successfully executed');	
+   
+	SELECT * INTO hub_interaction_row 
+	FROM techbd_udi_ingress.hub_interaction hub
+		WHERE 1 = 1 
+		AND hub.key			= interaction_key_value
+		AND hub.created_by 	= created_user
+		AND hub.provenance 	= provenance_value
+		;
+
+	RETURN NEXT ok(hub_interaction_row IS NOT NULL,'Successfully inserted interaction information into hub_interaction');
+	
+	RETURN NEXT ok(
+    EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat
+           WHERE 1 = 1 
+           AND sat.hub_interaction_id	= hub_interaction_row.hub_interaction_id
+           AND sat.request_payload		= source_content::jsonb	
+           AND sat.elaboration			= elaboration_value
+           AND sat.created_by 			= created_user
+           AND sat.provenance 			= provenance_value
+           ),
+    'Successfully inserted interaction information into sat_interaction_http_request'
+	);
+	
     -- Insert session
     session_info := techbd_udi_ingress.udi_insert_session(
-        '800f47ce-7a95-4c7f-833f-37399fc86a57', 
-        'namespace1', 
+        interaction_id_value, 
+        namespace_value, 
         source_content,
-        'application/json', 
-        '{"key1": "value1"}', 
-        '{"key2": "value2"}', 
-        'creator1', 
-        'provenance1'
+        content_type_value, 
+        boundary_value, 
+        elaboration_value, 
+        created_user, 
+        provenance_value
     );
 
-    -- Validate session insertion
-    RETURN NEXT ok(session_info.hub_session_id IS NOT NULL AND session_info.hub_session_entry_id IS NOT NULL, 'Successfully executed the function udi_insert_session with return value');
+   RETURN NEXT ok(session_info.hub_session_id IS NOT NULL AND session_info.hub_session_entry_id IS NOT NULL, 'Successfully executed the function udi_insert_session with return value');
+  
+    RETURN NEXT ok(
+    EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_payload sat
+           WHERE 1 = 1 
+           AND sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
+           AND sat.content_type = content_type_value
+           AND sat.ingest_src	= source_content	
+           AND sat.elaboration 	= elaboration_value
+           AND sat.created_by 	= created_user
+           AND sat.provenance 	= provenance_value
+           ),
+    'Successfully inserted payload information into sat_operation_session_entry_payload'
+	);
 
-    -- Insert session state
-    return_value := techbd_udi_ingress.udi_insert_session_state(
-        session_info.hub_session_entry_id, 
-        'state1',
-        'state2',
-        'creator1',
-        'provenance1'
-    );
-	--session_entry_id text, from_state text, to_state text, transition_result text, transition_reason text, elaboration jsonb, created_by text, provenance text
+	-- Insert session state
+	return_value := techbd_udi_ingress.udi_insert_session_state(
+					session_info.hub_session_entry_id, 
+					from_state_value,
+					to_state_value,
+					created_user,
+					provenance_value
+					);
+				
     -- Validate session state insertion
     RETURN NEXT ok(return_value IS NOT NULL, 'Successfully executed the function udi_insert_session_state with return value');
 
-    -- Verify inserts into various tables
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_operation_session hub
-               WHERE hub.key = '800f47ce-7a95-4c7f-833f-37399fc86a57'
-               AND hub.provenance = 'provenance1'
-               AND hub.created_by = 'creator1'
-               AND hub.hub_operation_session_id = session_info.hub_session_id),
-        'Successfully inserted into hub_operation_session'
-    );
-
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_operation_session_entry hub
-               WHERE hub.key = '800f47ce-7a95-4c7f-833f-37399fc86a57'
-               AND hub.provenance = 'provenance1'
-               AND hub.created_by = 'creator1'
-               AND hub.hub_operation_session_entry_id = session_info.hub_session_entry_id),
-        'Successfully inserted into hub_operation_session_entry'
-    );
-
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.link_session_entry lnk
-               WHERE lnk.hub_operation_session_id = session_info.hub_session_id 
-               AND lnk.hub_operation_session_entry_id = session_info.hub_session_entry_id
-               AND lnk.created_by = 'creator1'
-               AND lnk.provenance = 'provenance1'),
-        'Successfully inserted into link_session_entry'
-    );
-
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_payload sat
-               WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
-               AND sat.ingest_src = source_content
-               AND sat.content_type = 'application/json'
-               AND sat.elaboration = '{"key2": "value2"}'::jsonb
-               AND sat.created_by = 'creator1'
-               AND sat.provenance = 'provenance1'),
-        'Successfully inserted payload information into sat_operation_session_entry_payload'
-    );
-
-    RETURN NEXT ok(
-        EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_operation_session_entry_session_state sat
-               WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
-               --AND sat.from_state = 'state1'
-               --AND sat.to_state = 'state2'
-               AND sat.created_by = 'creator1'
-               AND sat.provenance = 'provenance1'),
-        'Successfully inserted state information into sat_operation_session_entry_session_state'
-    );
+   SELECT hub.* INTO hub_operation_session_row
+   FROM techbd_udi_ingress.hub_operation_session hub
+               WHERE hub.key = interaction_id_value
+               AND hub.provenance = provenance_value
+               AND hub.created_by = created_user
+               AND hub.hub_operation_session_id = session_info.hub_session_id
+               ;
    
+    RETURN NEXT ok(hub_operation_session_row IS NOT NULL, 'Successfully inserted into hub_operation_session');
+                                  	
+	SELECT hub.* INTO hub_operation_session_entry_row
+		FROM techbd_udi_ingress.hub_operation_session_entry hub
+		   	WHERE hub.key = interaction_id_value
+			   	AND hub.provenance = provenance_value
+			   	AND hub.created_by = created_user
+			   	AND hub.hub_operation_session_entry_id = session_info.hub_session_entry_id
+			   	;
+			   
+   	RETURN NEXT ok(hub_operation_session_entry_row IS NOT NULL, 'Successfully inserted into hub_operation_session_entry');
+  	
+  	SELECT lnk.* INTO link_session_entry_row 
+  		FROM techbd_udi_ingress.link_session_entry lnk
+   			WHERE lnk.hub_operation_session_id = session_info.hub_session_id 
+			   	AND lnk.hub_operation_session_entry_id = session_info.hub_session_entry_id
+			   	AND lnk.created_by = created_user
+			   	AND lnk.provenance = provenance_value
+			   	;
+			   	
+  	RETURN NEXT ok(link_session_entry_row IS NOT NULL, 'Successfully inserted into link_session_entry');			   	    
+  	
+  	SELECT sat.* INTO sat_operation_session_entry_session_state_row  
+  	FROM techbd_udi_ingress.sat_operation_session_entry_session_state sat
+  	WHERE sat.hub_operation_session_entry_id = session_info.hub_session_entry_id
+   	AND sat.from_state 	= from_state_value
+   	AND sat.to_state 	= to_state_value
+   	AND sat.created_by 	= created_user
+   	AND sat.provenance 	= provenance_value
+   	;
+   
+   	RETURN NEXT ok(hub_operation_session_entry_row IS NOT NULL, 'Successfully inserted state information into sat_operation_session_entry_session_state');  	   
 END;
 $function$
 ;

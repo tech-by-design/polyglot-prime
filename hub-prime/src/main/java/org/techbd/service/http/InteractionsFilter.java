@@ -150,9 +150,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
         // should not need to know any internals, just pass in an interation ID and payload
         try {
             final var dsl = udiPrimeJpaConfig.dsl();
-            final var intrHubId = rre.interactionId().toString();  
+            final var interactionId = rre.interactionId().toString();  
             final var insertInteraction = new UdiInsertInteraction();
-            insertInteraction.setInteractionId(intrHubId);
+            insertInteraction.setInteractionId(interactionId);
+            insertInteraction.setInteractionKey(requestURI);
             insertInteraction.setRequestPayload(Configuration.objectMapper.readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
             insertInteraction.setElaboration(Configuration.objectMapper.readTree("{}"));
             insertInteraction.setCreatedBy(InteractionsFilter.class.getName());
