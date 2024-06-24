@@ -1,10 +1,6 @@
 package org.techbd.service.http.hub.prime.api;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_OPERATION_SESSION;
-import static org.techbd.udi.auto.jooq.ingress.Tables.HUB_OPERATION_SESSION_ENTRY;
-import static org.techbd.udi.auto.jooq.ingress.Tables.LINK_SESSION_ENTRY;
-import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_OPERATION_SESSION_ENTRY_SESSION_STATE;
-import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_OPERATION_SESSION_ENTRY_PAYLOAD;
+import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_INTERACTION_HTTP_REQUEST;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -12,9 +8,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-import org.jooq.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -48,7 +42,6 @@ import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.UdiInsertSessionWithState;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -123,10 +116,9 @@ public class FhirController {
         // immediateResult is what's returned to the user while async operation
         // continues
         final var baseUrl = Helpers.getBaseUrl(request);
-        System.out.println("bundleAsyncInteractionId.toString()," +bundleAsyncInteractionId.toString());
         final var immediateResult = new HashMap<>(Map.of(
                 "resourceType", "OperationOutcome",
-                "bundleSessionId", bundleAsyncInteractionId.toString(), // for tracking in database, etc.
+                "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
                 "isAsync", true,
                 "validationResults", session.getValidationResults(),
                 "statusUrl",
@@ -138,7 +130,6 @@ public class FhirController {
                     Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
                             "issues",
                             sessionBuilder.getUaStrategyJsonIssues()));
-
         }
         if (includeRequestInOutcome) {
             immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
@@ -148,8 +139,9 @@ public class FhirController {
         if (customDataLakeApi != null && !customDataLakeApi.isEmpty()) {
             dataLakeApiBaseURL = customDataLakeApi;
         } else {
-            dataLakeApiBaseURL = appConfig.getDefaultSdohFhirProfileUrl();
+            dataLakeApiBaseURL = appConfig.getDefaultDatalakeApiUrl();
         }
+        final var dataLakeApiBaseUrlFinal = dataLakeApiBaseURL;
         LOG.debug("%s %s dataLakeApiBaseURL".formatted(provenance, tenantId, dataLakeApiBaseURL));
 
         final var webClient = WebClient.builder().baseUrl(dataLakeApiBaseURL).build();
@@ -159,11 +151,11 @@ public class FhirController {
         try {
             final var init = new UdiInsertSessionWithState();
             final var initState = "%s.IN_PROCESS".formatted(provenance);
-            init.setSessionId(bundleAsyncInteractionId.toString());
+            init.setSessionId(bundleAsyncInteractionId);
             init.setFromState("%s.INIT".formatted(provenance));
             init.setToState(initState);
             init.setContentType(request.getHeader("Content-Type"));
-            init.setContent(payload);
+            init.setContent(Configuration.objectMapper.writeValueAsString(immediateResult));
             init.setCreatedBy(tenantId);
             init.setProvenance(provenance);
             init.setNamespace(provenance);
@@ -182,7 +174,7 @@ public class FhirController {
                     .subscribe(response -> {
                         LOG.info("%s webClient.subscribe(response)".formatted(provenance));
                         final var success = new UdiInsertSessionWithState();
-                        success.setSessionId(bundleAsyncInteractionId.toString());
+                        success.setSessionId(bundleAsyncInteractionId);
                         success.setFromState(initState);
                         success.setToState("%s.SUCCESS".formatted(provenance));
                         success.setContentType("TODO"); // add content type from response
@@ -194,15 +186,39 @@ public class FhirController {
                         final var successExecResult = success.execute(jooqCfg);
                         final var successResults = success.getResults();
 
+                        try {
+                            final var responseJson = Configuration.objectMapper.createObjectNode();
+                            responseJson.set("response", Configuration.objectMapper.readTree(response));
+
+                            final var dsl = udiPrimeJpaConfig.dsl();
+                            dsl.update(SAT_INTERACTION_HTTP_REQUEST)
+                                    .set(SAT_INTERACTION_HTTP_REQUEST.ELABORATION, responseJson)
+                                    .where(SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID
+                                            .eq(bundleAsyncInteractionId))
+                                    .execute();
+
+                            LOG.info("SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID updated for %s"
+                                    .formatted(bundleAsyncInteractionId));
+                        } catch (Exception e) {
+                            LOG.error(
+                                    "error updating SAT_INTERACTION_HTTP_REQUEST.ELABORATION in SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID id "
+                                            + bundleAsyncInteractionId,
+                                    e);
+                        }
+
                         LOG.info("successExecResult" + successExecResult);
                         LOG.info("successResults" + successResults);
                     }, (Throwable error) -> { // Explicitly specify the type Throwable
                         LOG.info("%s webClient.Throwable(error)".formatted(provenance));
                         String content;
                         try {
-                            content = Configuration.objectMapper.writeValueAsString(error);
+                            // TODO: add more details from the WebClient
+                            content = Configuration.objectMapper.writeValueAsString(
+                                    Map.of("dataLakeApiBaseURL", dataLakeApiBaseUrlFinal, "error", error.toString(),
+                                            "tenantId", tenantId));
                         } catch (JsonProcessingException e) {
-                            content = e.toString();
+                            content = "dataLakeApiBaseURL: %s, error %s while %s".formatted(dataLakeApiBaseUrlFinal,
+                                    error.toString(), e.toString());
                         }
                         final var failure = new UdiInsertSessionWithState();
                         failure.setSessionId(bundleAsyncInteractionId.toString());
@@ -276,52 +292,25 @@ public class FhirController {
     public Object bundleStatus(@PathVariable String bundleSessionId, final Model model, HttpServletRequest request) {
 
         final var jooqDSL = udiPrimeJpaConfig.dsl();
-        final var mapper = new ObjectMapper();
-        final var responseJson = mapper.createObjectNode();
 
         // TODO: need to give actual response from upstream server (meaning from SHIN-NY
         // Data Lake) so far, this method gives meta data but not the actual response
 
         try {
             final var result = jooqDSL.select()
-                    .from(HUB_OPERATION_SESSION)
-                    .join(LINK_SESSION_ENTRY)
-                    .on(LINK_SESSION_ENTRY.HUB_OPERATION_SESSION_ID.eq(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID))
-                    .join(HUB_OPERATION_SESSION_ENTRY)
-                    .on(LINK_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID
-                            .eq(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID))
-                    .join(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE)
-                    .on(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID
-                            .eq(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.HUB_OPERATION_SESSION_ENTRY_ID))
-                    .join(SAT_OPERATION_SESSION_ENTRY_PAYLOAD)
-                    .on(SAT_OPERATION_SESSION_ENTRY_PAYLOAD.HUB_OPERATION_SESSION_ENTRY_ID
-                            .eq(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID))
-                    .where(HUB_OPERATION_SESSION.KEY.in(bundleSessionId))
-                    .fetch();
-                    
-
-            final var dataArray = mapper.createArrayNode();
-            for (final Record record : result) {
-                final var recordJson = mapper.createObjectNode();
-                recordJson.put("sessionId", record.get(HUB_OPERATION_SESSION.HUB_OPERATION_SESSION_ID));
-                recordJson.put("sessionKey", record.get(HUB_OPERATION_SESSION.KEY));
-                recordJson.put("entryId", record.get(HUB_OPERATION_SESSION_ENTRY.HUB_OPERATION_SESSION_ENTRY_ID));
-                recordJson.put("fromState", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.FROM_STATE));
-                recordJson.put("toState", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.TO_STATE));
-                recordJson.put("createdBy", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.CREATED_BY));
-                recordJson.put("provenance", record.get(SAT_OPERATION_SESSION_ENTRY_SESSION_STATE.PROVENANCE));
-                recordJson.set("response", record.get(SAT_OPERATION_SESSION_ENTRY_PAYLOAD.INGEST_PAYLOAD));
-                dataArray.add(recordJson);
-            }
-
-            responseJson.set("data", dataArray);
+                    .from(SAT_INTERACTION_HTTP_REQUEST)
+                    .where(SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID.eq(bundleSessionId))
+                    .fetchSingle();
             LOG.info("Query execution result: {}", result);
+            return Configuration.objectMapper.writeValueAsString(result.intoMap());
         } catch (Exception e) {
-            LOG.error("Error executing JOOQ query", e);
-            responseJson.put("error", "Error fetching data");   
+            LOG.error("Error executing JOOQ query for retrieving SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID for "
+                    + bundleSessionId, e);
+            return """
+                    "error": "%s",
+                    "bundleSessionId": "%s"
+                    """.formatted(e.toString(), bundleSessionId);
         }
-
-        return responseJson;
     }
 
     @Operation(summary = "Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.")

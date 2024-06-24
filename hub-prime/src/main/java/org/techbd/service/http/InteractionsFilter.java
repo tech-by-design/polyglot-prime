@@ -92,7 +92,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         // for everything else we only want to keep the request and response without
         // payloads
         final var requestURI = origRequest.getRequestURI();
-        final var persistPayloads = requestURI.contains("/Bundle/$validate");
+        final var persistPayloads = requestURI.contains("/Bundle");
 
         final var mutatableReq = new ContentCachingRequestWrapper(origRequest);
         final var requestBody = persistPayloads ? mutatableReq.getContentAsByteArray()

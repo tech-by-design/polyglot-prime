@@ -2,7 +2,6 @@ package org.techbd.service.http.hub.prime.ux;
 
 import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP;
 
-
 import java.util.List;
 import java.util.Map;
 
@@ -16,12 +15,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.aggrid.ServerRowsRequest;
 import org.techbd.service.http.aggrid.ServerRowsResponse;
 import org.techbd.service.http.aggrid.SqlQueryBuilder;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.UdiPrimeJpaConfig;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -67,8 +69,8 @@ public class InteractionsController {
     @Operation(summary = "HTTP Request/Response Interactions for Populating Grid")
     @PostMapping(value = "/support/interaction/{intrNature}.json", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ServerRowsResponse httpInteractions(final @PathVariable String intrNature,
-            final @RequestBody @Nonnull ServerRowsRequest payload) {
+    public Object httpInteractions(final @PathVariable String intrNature,
+            final @RequestBody @Nonnull ServerRowsRequest payload) throws JsonProcessingException {
         // TODO: figure out how to write dynamic queries in jOOQ
         // final var DSL = udiPrimeJpaConfig.dsl();
         // final var result =
@@ -96,20 +98,19 @@ public class InteractionsController {
         }
 
         // create response with our results
-        return ServerRowsResponse.createResponse(payload, rows, pivotValues);
-
+        return Configuration.objectMapper.writeValueAsString(ServerRowsResponse.createResponse(payload, rows, pivotValues));
     }
 
     @Operation(summary = "Specific HTTP Request/Response Interaction which is assumed to exist")
     @GetMapping("/support/interaction/{interactionId}.json")
     @ResponseBody
-    public List<Map<String, Object>> httpInteraction(final @PathVariable String interactionId) {
+    public Map<String, Object> httpInteraction(final @PathVariable String interactionId) {
         final var DSL = udiPrimeJpaConfig.dsl();
         final var result = DSL.select(INTERACTION_HTTP.REQUEST_PAYLOAD)
                 .from(INTERACTION_HTTP)
                 .where(INTERACTION_HTTP.INTERACTION_ID.eq(interactionId))
-                .fetch();
-        return result.intoMaps();
+                .fetchSingle();
+        return result.intoMap();
     }
 
     @Operation(summary = "Recent SFTP Interactions")
