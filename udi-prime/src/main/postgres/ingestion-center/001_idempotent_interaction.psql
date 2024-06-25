@@ -209,3 +209,31 @@ BEGIN
     END;
 END;
 $$;
+
+/*******************************************************************************************
+ * Comprehensive view of SFTP interactions and their associated requests. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_sftp CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_sftp AS 
+SELECT
+	"substring"(ose.ingest_src::text,
+	'/SFTP/([^/]+)/'::text) as qe,
+	os.orch_started_at as request_time,
+	ose.session_id,
+	os."version",
+	count(ose.ingest_src) as ingress_count,
+	count(ose.ingest_src) as consumed_count,
+   os.session_result::JSON
+FROM
+	techbd_orch_ctl.orch_session_entry ose
+JOIN techbd_orch_ctl.orch_session os on
+	ose.session_id = os.orch_session_id
+WHERE
+	"substring"(ose.ingest_src::text,
+	'/SFTP/([^/]+)/'::text) is not null
+GROUP BY
+	ose.session_id,
+	qe,
+	os."version",
+	os.orch_started_at,
+   os.session_result
