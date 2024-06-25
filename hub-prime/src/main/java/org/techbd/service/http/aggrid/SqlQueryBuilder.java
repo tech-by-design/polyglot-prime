@@ -24,8 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.google.common.collect.Sets;
 
 /**
- * Builds SQL queries from ServerRowsRequest.
- * TODO: switch to pure jOOQ, see
+ * Builds SQL queries from ServerRowsRequest. TODO: switch to pure jOOQ, see
  * https://www.jooq.org/doc/latest/manual/sql-building/dynamic-sql/
  */
 public class SqlQueryBuilder {
@@ -63,8 +62,15 @@ public class SqlQueryBuilder {
 
     private String selectSql() {
         List<String> selectCols;
+        //rowGroupsToInclude.add("request_uri");
+        boolean isPivoting = false;
         if (isPivotMode && !pivotColumns.isEmpty()) {
-            selectCols = concat(rowGroupsToInclude.stream(), extractPivotStatements()).collect(toList());
+            if (null == rowGroupsToInclude || rowGroupsToInclude.isEmpty()) {
+                selectCols = pivotColumns.stream().map(ColumnVO::getField).toList();
+                isPivoting = true;
+            } else {
+                selectCols = concat(rowGroupsToInclude.stream(), extractPivotStatements()).collect(toList());
+            }
         } else {
             Stream<String> valueCols = valueColumns.stream()
                     .map(valueCol -> valueCol.getAggFunc() + '(' + valueCol.getField() + ") as " + valueCol.getField());
@@ -72,7 +78,7 @@ public class SqlQueryBuilder {
             selectCols = concat(rowGroupsToInclude.stream(), valueCols).collect(toList());
         }
 
-        return isGrouping ? "SELECT " + join(", ", selectCols) : "SELECT *";
+        return isGrouping || isPivoting ? "SELECT " + join(", ", selectCols) : "SELECT *";
     }
 
     private String fromSql(String tableName) {
@@ -141,7 +147,7 @@ public class SqlQueryBuilder {
 
             return columnName
                     + (filerType.equals("inRange") ? " BETWEEN " + filterValue + " AND " + filter.getFilterTo()
-                            : " " + operator + " " + filterValue);
+                    : " " + operator + " " + filterValue);
         };
     }
 
@@ -151,8 +157,8 @@ public class SqlQueryBuilder {
         // (BIDTYPE,Sell)...
         List<Set<Pair<String, String>>> pivotPairs = pivotValues.entrySet().stream()
                 .map(e -> e.getValue().stream()
-                        .map(pivotValue -> Pair.of(e.getKey(), pivotValue))
-                        .collect(toCollection(LinkedHashSet::new)))
+                .map(pivotValue -> Pair.of(e.getKey(), pivotValue))
+                .collect(toCollection(LinkedHashSet::new)))
                 .collect(toList());
 
         // create a cartesian product of decode statements for all pivot and value
@@ -176,8 +182,8 @@ public class SqlQueryBuilder {
                             .collect(joining(""));
 
                     return valueColumns.stream()
-                            .map(valueCol -> valueCol.getAggFunc() + "(" + decodeStr + ", " + valueCol.getField() +
-                                    closingBrackets + " \"" + pivotColStr + "_" + valueCol.getField() + "\"");
+                            .map(valueCol -> valueCol.getAggFunc() + "(" + decodeStr + ", " + valueCol.getField()
+                            + closingBrackets + " \"" + pivotColStr + "_" + valueCol.getField() + "\"");
                 });
     }
 

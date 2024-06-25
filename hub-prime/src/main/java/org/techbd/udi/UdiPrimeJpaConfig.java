@@ -17,7 +17,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
@@ -27,10 +26,13 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.techbd.conf.Configuration;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityManagerFactory;
 
-@Configuration
+@org.springframework.context.annotation.Configuration
 @EnableJpaRepositories(basePackages = "org.techbd.udi")
 @EnableTransactionManagement
 public class UdiPrimeJpaConfig {
@@ -52,6 +54,7 @@ public class UdiPrimeJpaConfig {
 
     public record DataSourceHealthCheckResult(DataSource dataSrc, Exception error, Environment environment,
             String... expected) {
+
         public boolean isAlive() {
             return error == null;
         }
@@ -98,14 +101,24 @@ public class UdiPrimeJpaConfig {
     public org.jooq.Configuration configuration() {
         final var jooqConfiguration = new DefaultConfiguration();
         jooqConfiguration.set(connectionProvider());
-        jooqConfiguration.setSQLDialect(SQLDialect.POSTGRES);        
+        jooqConfiguration.setSQLDialect(SQLDialect.POSTGRES);
         //jooqConfiguration
-              //  .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
+        //  .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
         return jooqConfiguration;
     }
 
     @Bean
     public DataSourceConnectionProvider connectionProvider() {
         return new DataSourceConnectionProvider(new TransactionAwareDataSourceProxy(udiPrimaryDataSource()));
+    }
+
+    /**
+     * TODO: Add comment as to why this method is needed.
+     *
+     * @return
+     */
+    @Bean
+    public ObjectMapper objectMapper() {
+        return Configuration.objectMapper;
     }
 }
