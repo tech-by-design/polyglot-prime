@@ -57,13 +57,12 @@ public class InteractionsFilter extends OncePerRequestFilter {
     private ApplicationContext appContext;
 
     private InteractionPersistRules iprDB;
-    private InteractionPersistRules iprSFTP;
 
     // TODO: figure out why this is not being read from application.yml (NULL is
     // being called, though)
     @Value("${org.techbd.service.http.interactions.persist.db.uri-matcher.regex:#{null}}")
-    private void setPersistinDbMatchers(final List<Object> regexAndMethods) {
-        LOG.info("setPersistinDbMatchers %s".formatted(regexAndMethods == null ? "NULL" : regexAndMethods.toString()));
+    private void setPersistInDbMatchers(final List<Object> regexAndMethods) {
+        LOG.info("setPersistInDbMatchers %s".formatted(regexAndMethods == null ? "NULL" : regexAndMethods.toString()));
         this.iprDB = new InteractionPersistRules.Builder()
                 .withMatchers(
                         regexAndMethods == null
@@ -71,21 +70,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                         List.of("^/Bundle/.*", "POST", "persistReqPayload persistRespPayload"))
                                 : regexAndMethods)
                 .build();
-        LOG.info("setPersistinDbMatchers %s".formatted(this.iprDB.toString()));
-    }
-
-    // TODO: figure out why this is not being read from application.yml (NULL is
-    // being called, though)
-    @Value("${org.techbd.service.http.interactions.persist.sftp.uri-matcher.regex:#{null}}")
-    private void setPersistInSftpMatchers(final List<Object> regexAndMethods) {
-        LOG.info(
-                "setPersistInSftpMatchers %s".formatted(regexAndMethods == null ? "NULL" : regexAndMethods.toString()));
-        this.iprSFTP = new InteractionPersistRules.Builder()
-                .withMatchers(regexAndMethods == null
-                        ? List.of("^/Bundle/.*", "POST", "persistReqPayload persistRespPayload")
-                        : regexAndMethods)
-                .build();
-        LOG.info("setPersistinDbMatchers %s".formatted(this.iprSFTP.toString()));
+        LOG.info("setPersistInDbMatchers %s".formatted(this.iprDB.toString()));
     }
 
     public static final Interactions.Tenant getActiveRequestTenant(final @NonNull HttpServletRequest request) {
