@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <title>CSV Interactions via Orchctl with SFTP (egress)</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- only include inner breadcrumbs, `Home` and active page are fixed -->
+    <link rel="breadcrumb" th:href="@{/interactions/https}" title="Interactions" />
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <style>
+        .ag-theme-alpine .ag-root-wrapper {
+            border: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <ul class="flex flex-wrap border-b border-gray-200">
+            <li class="mr-2">
+                <a href="sftp"
+                class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">CSV via SFTP (<code>egress</code>)</a>
+            </li>
+            <li class="mr-2">
+                <a href="https"
+                    class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">FHIR via HTTPs</a>
+            </li>
+            <li class="mr-2">
+                <a href="#"  aria-current="page"
+                class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">CSV via Orchctl</a>
+            </li>
+        </ul>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+
+        <!-- Modal -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <json-viewer id="json"></json-viewer>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+        <script id="driver">
+            window.logLevel = 0;
+            const log = (...args) => {
+                if (window.logLevel) {
+                    console.log(...args);
+                }
+            }
+            document.addEventListener('DOMContentLoaded', function () {
+                let originalData = [];
+
+                var columnDefs = [
+                    { headerName: "QE", field: "qe", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true },
+                    { headerName: "Request Time", field: "request_time", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true },
+                    {
+                        headerName: "Session ID", field: "session_id", sortable: true, filter: true, enablePivot: true, enableRowGroup: true,
+                        cellRenderer: function (params) {
+                            var link = document.createElement('a');
+                            link.href = '#';
+                            link.innerText = params.value;
+                            link.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                var qeValue = params.data.qe;
+                                showDetails(qeValue, params.value);
+                            });
+                            return link;
+                        }
+                    },
+                    { headerName: "Version", field: "version", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Ingress Count", field: "ingress_count", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "Consumed CSV", field: "consumed_count", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "FHIR Posts", field: "published_fhir_count", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                ];
+
+                const gridOptions = {
+                    columnDefs: columnDefs,
+                    rowData: [],
+                    defaultColDef: {
+                        flex: 1,
+                        minWidth: 100,
+                        resizable: true,
+                        sortable: true,
+                        filter: true,
+                        enablePivot: true
+                    },
+                    autoSizeStrategy: { type: "fitCellContents" },
+                    sideBar: true,
+                    rowModelType: 'serverSide',
+                    serverSideDatasource: {
+                        getRows: async function (params) {
+                            // params.request has startRow, endRow, sort, filter, pivot, etc.
+                            // and the server-side reads it, constructs SQL, executes and returns
+                            const jsonRequest = JSON.stringify(params.request, null, 2);
+                            log("[EnterpriseDatasource] Posted JSON request", jsonRequest);
+                            try {
+                                const response = await fetch(ssrServletUrl(`/support/interaction/sftpExplorer.json`), {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: jsonRequest
+                                });
+                                if (response.ok) {
+                                    const result = await response.json();
+                                    log("[EnterpriseDatasource] Received JSON response", result);
+                                    params.success({ rowData: result.data });
+                                    // TODO: updateSecondaryColumns(params.request, result);
+                                    // see https://github.com/ag-grid/ag-grid-server-side-oracle-example
+                                } else {
+                                    console.error(`[EnterpriseDatasource] Error: ${response.statusText}`);
+                                    params.fail();
+                                }
+                            } catch (error) {
+                                console.error(`[EnterpriseDatasource] Error: ${error.message}`);
+                                params.fail();
+                            }
+                        }
+                    },
+                };
+
+                const serverDataGridDiv = document.querySelector('#serverDataGrid');
+                const serverDataGridAPI = agGrid.createGrid(serverDataGridDiv, gridOptions);
+                // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
+                serverDataGridDiv.style.height = "750px"
+
+                function showDetails(tenantId,interactionId) {
+                    console.log(tenantId);
+                    fetch(ssrServletUrl(`/support/interaction/orchctl/${tenantId}/${interactionId}.json`))
+                      .then(response => response.json())
+                      .then(data => {
+                          let session = null;
+                          try {
+                            session = data.sessionJson ? JSON.parse(data.sessionJson) : null;
+                          } catch (error) {
+                            console.error('Error parsing sessionJson:', error);
+                          }
+                          const originalData = {
+                            "QE": data.tenantId,
+                            "Request Time": data.sessionFinalizedAt,
+                            "Session ID": data.sessionId,
+                            "Version": session?.version || 'N/A', // Provide default value if undefined
+                            "Published Fhir Count": session?.publishFhirResult?.length || 0, // Provide default value if undefined
+                            "Exception": data.error?.message || 'No error message', // Provide default value if undefined
+                            "Session Details": session || {}, // Provide default empty object if null
+                          };
+                          document.querySelector('#json').data = originalData;
+                          document.getElementById('modal').style.display = 'block';
+                      })
+                      .catch(error => {
+                          console.error('Error fetching interaction data:', error);
+                      });
+                }
+
+                
+
+                document.querySelector('.close').onclick = function () {
+                    document.getElementById('modal').style.display = 'none';
+                };
+
+                window.onclick = function (event) {
+                    if (event.target == document.getElementById('modal')) {
+                        document.getElementById('modal').style.display = 'none';
+                    }
+                };
+            });
+        </script>
+    </div>
+</body>
+
+</html>
