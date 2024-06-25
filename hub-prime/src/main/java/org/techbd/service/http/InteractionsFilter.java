@@ -318,6 +318,18 @@ public class InteractionsFilter extends OncePerRequestFilter {
             }
 
             private static RegexRequestMatcher createRegexRequestMatcher(Object item, String filterFlag) {
+                // Reads properties or strings that match something like this
+                // regex:
+                // - ^/api/v1/.*, , persistReqPayload persistRespPayload
+                // - [^/admin/.*, POST, persistReqPayload]
+                //
+                // * The first pattern matches any request with a URI that starts with /api/v1/
+                // regardless of the HTTP method. If the request matches this pattern, both
+                // request payload and response payload should be persisted.
+                // * The second pattern matches any POST request with a URI that starts with
+                // /admin/. If the request matches this pattern, only the request payload should
+                // be persisted.
+
                 if (item instanceof String) {
                     return new RegexRequestMatcher((String) item, null);
                 } else if (item instanceof List) {
