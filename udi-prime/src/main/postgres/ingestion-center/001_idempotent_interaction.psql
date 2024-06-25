@@ -222,8 +222,7 @@ SELECT
 	ose.session_id,
 	os."version",
 	count(ose.ingest_src) as ingress_count,
-	count(ose.ingest_src) as consumed_count,
-   os.session_result::JSON
+	count(ose.ingest_src) as consumed_count
 FROM
 	techbd_orch_ctl.orch_session_entry ose
 JOIN techbd_orch_ctl.orch_session os on
@@ -235,5 +234,4 @@ GROUP BY
 	ose.session_id,
 	qe,
 	os."version",
-	os.orch_started_at,
-   os.session_result
+	os.orch_started_at
