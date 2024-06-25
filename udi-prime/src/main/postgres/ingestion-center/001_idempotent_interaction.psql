@@ -12,16 +12,18 @@
  * - This is particularly useful for understanding complex interactions that involve 
  *   several steps or dependent requests to fulfill a single client request.
  ****************************************************************************************/
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request AS
-SELECT
-    hi.hub_interaction_id AS interaction_id,
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request AS 
+SELECT hi.hub_interaction_id AS interaction_id,
     hi.key AS uri,
     hi.created_at AS interaction_created_at,
     hi.created_by AS interaction_created_by,
     hi.provenance AS interaction_provenance,
     sihr.sat_interaction_http_request_id,
     sihr.nature ->> 'nature'::text AS nature,
-    sihr.nature ->> 'tenant_id'::text AS tenant_id,
+    sihr.nature ->> 'tenant_id'::text AS tenant_id,           
+    COALESCE((sihr.payload -> 'request'::text) ->> 'userAgent'::TEXT,sihr.nature ->> 'userAgent'::text) AS user_agent,        
+    COALESCE((sihr.payload -> 'request'::text) ->> 'clientIpAddress'::TEXT, sihr.nature ->> 'clientIpAddress'::TEXT) AS client_ip_address,           
     sihr.content_type,
     sihr.payload,
     sihr.elaboration,
@@ -31,12 +33,10 @@ SELECT
     sihr.created_at AS request_created_at,
     sihr.created_by AS request_created_by,
     sihr.provenance AS request_provenance
-FROM
-    techbd_udi_ingress.hub_interaction hi
-LEFT JOIN
-    techbd_udi_ingress.sat_interaction_http_request sihr
-ON
-    hi.hub_interaction_id = sihr.hub_interaction_id;
+   FROM techbd_udi_ingress.hub_interaction hi
+     LEFT JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
+    ON hi.hub_interaction_id = sihr.hub_interaction_id
+   ;
 
 /*******************************************************************************************
  * Comprehensive view of HTTP interactions and their associated requests.
@@ -59,6 +59,7 @@ ON
  * - If there are more than 3 sat_interaction_http_request rows for a hub_interaction,
  *   only the first three requests (ordered by created_at) will be included in the view.
  ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_multiple_3 CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_multiple_3 AS
 SELECT
     hi.hub_interaction_id AS interaction_id,

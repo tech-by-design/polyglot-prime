@@ -422,7 +422,7 @@ export function generated() {
 
       DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
       DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
-      DROP SCHEMA IF EXISTS ${orchCtlSchema.sqlNamespace} cascade;`),
+      `),
   };
 }
 
