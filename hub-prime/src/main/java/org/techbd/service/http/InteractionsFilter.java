@@ -177,7 +177,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setInteractionId(rre.interactionId().toString());
                 rihr.setNature(Configuration.objectMapper.valueToTree(
                         Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
-                                tenant == null ? "N/A" : tenant.tenantId())));
+                                tenant != null ?  tenant.tenantId() != null ? tenant.tenantId(): "N/A" : "N/A")));
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 rihr.setInteractionKey(requestURI);
                 rihr.setPayload((Configuration.objectMapper

@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.techbd.conf.Configuration;
 
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
@@ -44,6 +46,27 @@ public class SftpManager {
     public record TenantSftpEgressSession(String tenantId, String sessionId, Date cachedAt,
             String sessionJsonPath, String sessionJson, Date sessionFinalizedAt,
             Exception error) {
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        public Integer getFhirCount() {
+            try {
+                JsonNode jsonNode = Configuration.objectMapper.readTree(sessionJson);
+                JsonNode publishFhirResultNode = jsonNode.path("publishFhirResult");
+                if (publishFhirResultNode.isArray()) {
+                    return publishFhirResultNode.size();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return 0;
+        }
+    }
+
+    public record IndividualTenantSftpEgressSession(String tenantId, String sessionId, Date cachedAt,
+            String sessionJsonPath, String sessionJson, Date sessionFinalizedAt,
+            Exception error) {
     }
 
     public record TenantSftpEgressContent(String tenantId, String sftpUri, Date cachedAt, FileObject home,
@@ -53,11 +76,11 @@ public class SftpManager {
         static private final Logger LOG = LoggerFactory.getLogger(TenantSftpEgressContent.class);
 
         public Optional<ZonedDateTime> mostRecentEgress() {
-            if(error != null) {
+            if (error != null) {
                 LOG.error("Unable to obtain most recent egress for %s".formatted(tenantId), error);
                 return Optional.empty();
             }
-            
+
             try {
                 if (directories.length > 0) {
                     final var mostRecent = directories[0];
@@ -97,6 +120,67 @@ public class SftpManager {
     @Cacheable(TENANT_EGRESS_CONTENT_CACHE_KEY)
     public TenantSftpEgressContent tenantEgressContent(final @NonNull SftpAccountsOrchctlConfig.SftpAccount account) {
         return TenantSftpEgressContent.forTenant(account);
+    }
+
+    @Cacheable(TENANT_EGRESS_SESSIONS_CACHE_KEY)
+    public Optional<IndividualTenantSftpEgressSession> getTenantEgressSession(String tenantId, String InteractionId) {
+        final var configuredAccounts = configuredTenants.getOrchctlts();
+        if (configuredAccounts != null) {
+            for (var a : configuredAccounts) {
+                final var tec = tenantEgressContent(a);
+
+                if (tec.error() == null) {
+                    if(tec.tenantId.equals(tenantId) ){
+                        try {
+                            for (var egressSessionDir : tec.directories()) {
+                                if (egressSessionDir.getName().getPath().contains(InteractionId)) {
+                                    FileObject sessionJsonFile;
+                                    try {
+                                        sessionJsonFile = egressSessionDir.resolveFile("session.json");
+                                    } catch (Exception e) {
+                                        // this usually means that the SFTP directory is not a session path
+                                        // so this is not an error
+                                        continue;
+                                    }
+                                    try {
+                                        var sessionJson = sessionJsonFile.getContent();
+                                        // JSONObject sessionJsonObject = (JSONObject) sessionJson;
+                                        return Optional.of(new IndividualTenantSftpEgressSession(tec.tenantId(),
+                                                egressSessionDir.getName().getBaseName(),
+                                                tec.cachedAt(),
+                                                sessionJsonFile.getPublicURIString(),
+                                                sessionJson.getString(Charset.defaultCharset()),
+                                                Date.from(Instant.ofEpochMilli(sessionJson.getLastModifiedTime())),
+                                                null));
+                                    } catch (Exception e) {
+                                        return Optional.of(new IndividualTenantSftpEgressSession(tec.tenantId(),
+                                                egressSessionDir.getName().getBaseName(), tec.cachedAt(),
+                                                sessionJsonFile.getPublicURIString(),
+                                                null,
+                                                Date.from(Instant
+                                                        .ofEpochMilli(
+                                                                egressSessionDir.getContent().getLastModifiedTime())),
+                                                new RuntimeException("Unable to read session.json from %s"
+                                                        .formatted(sessionJsonFile.getPublicURIString()), e)));
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            return Optional
+                                    .of(new IndividualTenantSftpEgressSession(tec.tenantId(), null, tec.cachedAt(),
+                                            tec.home().getPublicURIString(),
+                                            null, null, e));
+                        }
+
+                    }
+                } else {
+                    return Optional.of(new IndividualTenantSftpEgressSession(tenantId, null, tec.cachedAt(), null,
+                            null, null,
+                            new RuntimeException("Invalid SFTP account2 %s".formatted(tenantId), tec.error())));
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     @Cacheable(TENANT_EGRESS_SESSIONS_CACHE_KEY)

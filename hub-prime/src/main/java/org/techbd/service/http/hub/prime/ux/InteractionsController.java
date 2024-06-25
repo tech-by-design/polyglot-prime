@@ -4,6 +4,8 @@ import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.sftp.SftpManager;
+import org.techbd.orchestrate.sftp.SftpManager.TenantSftpEgressSession;
 import org.techbd.service.http.aggrid.ServerRowsRequest;
 import org.techbd.service.http.aggrid.ServerRowsResponse;
 import org.techbd.service.http.aggrid.SqlQueryBuilder;
@@ -119,4 +122,67 @@ public class InteractionsController {
     public List<?> observeRecentSftpInteractions() {
         return sftpManager.tenantEgressSessions();
     }
+
+    
+    @GetMapping("/interactions/orchctl")
+    @RouteMapping(label = "CSV via SFTP (egress)")
+    public String orchctl(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/orchctl", model, request);
+    }
+
+    @Operation(summary = "Recent SFTP Interactions")
+    @GetMapping("/support/interaction/orchctl/{tenantId}/{interactionId}.json")
+    @ResponseBody
+    public Optional<SftpManager.IndividualTenantSftpEgressSession> observeRecentSftpInteractionsWithId(final @PathVariable String tenantId, final @PathVariable String interactionId) {
+        return sftpManager.getTenantEgressSession(tenantId,interactionId);
+    }
+
+    @Operation(summary = "SFTP Interactions for Populating Grid")
+    @PostMapping(value = "/support/interaction/sftpExplorer.json", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ServerRowsResponse sftpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload) {
+        // TODO: figure out how to write dynamic queries in jOOQ
+        // final var DSL = udiPrimeJpaConfig.dsl();
+        // final var result =
+        // DSL.selectFrom(INTERACTION_HTTP).offset(payload.getStartRow())
+        // .limit(payload.getEndRow() - payload.getStartRow() + 1).fetch();
+        // return ServerRowsResponse.createResponse(payload, result.intoMaps(), null);
+
+        // TODO: obtain the pivot values from the DB for the requested pivot columns
+        // see
+        // https://github.com/ag-grid/ag-grid-server-side-oracle-example/src/main/java/com/ag/grid/enterprise/oracle/demo/dao/TradeDao.java
+        // final var pivotValues = getPivotValues(request.getPivotCols());
+        final Map<String, List<String>> pivotValues = Map.of();
+
+        final var DSL = udiPrimeJpaConfig.dsl();
+        final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_sftp",
+                pivotValues));
+        final var rows = result.intoMaps();
+        var sftpResult = sftpManager.tenantEgressSessions();
+        Map<String, TenantSftpEgressSession> sessionMap = sftpResult.stream()
+        .collect(Collectors.toMap(
+                TenantSftpEgressSession::getSessionId,
+                session -> session
+        ));
+        
+
+        for (final var row : rows) {
+            String sessionId = (String) row.get("session_id");
+            TenantSftpEgressSession session = sessionMap.get(sessionId);
+            if (session != null) {
+                row.put("published_fhir_count", session.getFhirCount());
+                // Add any other fields you need from TenantSftpEgressSession
+            }
+            // this is a JSONB and might be large so don't send it even if it was requested
+            // since we'll get it in /support/interaction/{interactionId}.json if required;
+            // also since SqlQueryBuilder().createSql() is custom SQL, org.jooq.JSONB type
+            // will not be able to be serialized by Jackson anyway.
+            row.remove("session_result");
+        }
+
+        // create response with our results
+        return ServerRowsResponse.createResponse(payload, rows, pivotValues);
+
+    }
+
 }
