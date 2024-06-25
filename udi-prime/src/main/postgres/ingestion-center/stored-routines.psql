@@ -547,7 +547,7 @@ BEGIN
     SELECT * INTO sat_request_http_client_meta_data_row
     FROM techbd_udi_ingress.sat_interaction_http_request sat
     WHERE sat.hub_interaction_id = sat_interaction_http_request_upserted.hub_interaction_id        
-    AND sat.request_payload = sat_interaction_http_request_upserted.request_payload
+    AND sat.payload = sat_interaction_http_request_upserted.request_payload
     and sat.provenance = sat_interaction_http_request_upserted.provenance
    ;
     -- If the row is not found, insert it
@@ -555,7 +555,7 @@ BEGIN
        insert into techbd_udi_ingress.sat_interaction_http_request 
 		(sat_interaction_http_request_id,
 		hub_interaction_id,
-		request_payload,
+		payload,
 		elaboration,			
 		created_by,
 		provenance)

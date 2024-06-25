@@ -75,6 +75,13 @@ org:
             defaultDatalakeApiUrl: https://40lafnwsw7.execute-api.us-east-1.amazonaws.com/dev
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
+          persist:
+            db:
+              uri-matcher:
+                # TODO: figure out why this is not being read in InteractionsFilter
+                regex:
+                  - .*
+                  - [^/Bundle/.*, POST, persistReqPayload persistRespPayload]
       baggage:
         user-agent:
           # `enable-sensitive` true should only be used in sandbox (local)

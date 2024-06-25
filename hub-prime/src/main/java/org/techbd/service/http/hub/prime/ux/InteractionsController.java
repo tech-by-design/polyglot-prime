@@ -1,6 +1,6 @@
 package org.techbd.service.http.hub.prime.ux;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP;
+import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
 import java.util.List;
 import java.util.Map;
@@ -67,10 +67,10 @@ public class InteractionsController {
     }
 
     @Operation(summary = "HTTP Request/Response Interactions for Populating Grid")
-    @PostMapping(value = "/support/interaction/{intrNature}.json", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/support/interaction/http.json", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public Object httpInteractions(final @PathVariable String intrNature,
-            final @RequestBody @Nonnull ServerRowsRequest payload) throws JsonProcessingException {
+    public Object httpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload)
+            throws JsonProcessingException {
         // TODO: figure out how to write dynamic queries in jOOQ
         // final var DSL = udiPrimeJpaConfig.dsl();
         // final var result =
@@ -86,7 +86,7 @@ public class InteractionsController {
 
         final var DSL = udiPrimeJpaConfig.dsl();
         final var result = DSL
-                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_" + intrNature,
+                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request",
                         pivotValues));
         final var rows = result.intoMaps();
         for (final var row : rows) {
@@ -94,23 +94,23 @@ public class InteractionsController {
             // since we'll get it in /support/interaction/{interactionId}.json if required;
             // also since SqlQueryBuilder().createSql() is custom SQL, org.jooq.JSONB type
             // will not be able to be serialized by Jackson anyway.
-            row.remove("request_payload");
+            row.remove("payload");
         }
 
         // create response with our results
-        return Configuration.objectMapper.writeValueAsString(ServerRowsResponse.createResponse(payload, rows, pivotValues));
+        return Configuration.objectMapper
+                .writeValueAsString(ServerRowsResponse.createResponse(payload, rows, pivotValues));
     }
 
     @Operation(summary = "Specific HTTP Request/Response Interaction which is assumed to exist")
     @GetMapping("/support/interaction/{interactionId}.json")
     @ResponseBody
-    public Map<String, Object> httpInteraction(final @PathVariable String interactionId) {
+    public Object httpInteraction(final @PathVariable String interactionId) {
         final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.select(INTERACTION_HTTP.REQUEST_PAYLOAD)
-                .from(INTERACTION_HTTP)
-                .where(INTERACTION_HTTP.INTERACTION_ID.eq(interactionId))
-                .fetchSingle();
-        return result.intoMap();
+        final var result = DSL.selectFrom(INTERACTION_HTTP_REQUEST)
+                .where(INTERACTION_HTTP_REQUEST.INTERACTION_ID.eq(interactionId))
+                .fetch();
+        return result.intoMaps();
     }
 
     @Operation(summary = "Recent SFTP Interactions")

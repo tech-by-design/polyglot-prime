@@ -7,22 +7,22 @@ WITH cte_interaction AS (
          SELECT intpayload.sat_interaction_http_request_id,
             intpayload.hub_interaction_id,
             intpayload.provenance,
-            intpayload.request_payload,
-            intpayload.request_payload ->> 'namespace'::text AS namespace,
-            intpayload.request_payload ->> 'interactionId'::text AS interaction_id,
-            (intpayload.request_payload -> 'tenant'::text) ->> 'tenantId'::text AS tenant_id,
-            (intpayload.request_payload -> 'tenant'::text) ->> 'name'::text AS tenant_name,
-            (intpayload.request_payload -> 'request'::text) ->> 'requestId'::text AS request_id,
-            (intpayload.request_payload -> 'request'::text) ->> 'method'::text AS request_method,
-            (intpayload.request_payload -> 'request'::text) ->> 'requestUri'::text AS request_uri,
-            (intpayload.request_payload -> 'request'::text) ->> 'queryString'::text AS request_params,
-            (intpayload.request_payload -> 'request'::text) ->> 'clientIpAddress'::text AS client_ip_address,
-            (intpayload.request_payload -> 'request'::text) ->> 'userAgent'::text AS user_agent,
-            ((intpayload.request_payload -> 'request'::text) ->> 'encounteredAt'::text)::double precision AS request_encountered_at_raw,
-            (intpayload.request_payload -> 'response'::text) ->> 'responseId'::text AS response_id,
-            ((intpayload.request_payload -> 'response'::text) ->> 'status'::text)::integer AS response_status,
-            ((intpayload.request_payload -> 'response'::text) ->> 'encounteredAt'::text)::double precision AS response_encountered_at_raw,
-            jsonb_array_length((intpayload.request_payload -> 'request'::text) -> 'headers'::text) AS num_request_headers            
+            intpayload.payload,
+            intpayload.payload ->> 'namespace'::text AS namespace,
+            intpayload.payload ->> 'interactionId'::text AS interaction_id,
+            (intpayload.payload -> 'tenant'::text) ->> 'tenantId'::text AS tenant_id,
+            (intpayload.payload -> 'tenant'::text) ->> 'name'::text AS tenant_name,
+            (intpayload.payload -> 'request'::text) ->> 'requestId'::text AS request_id,
+            (intpayload.payload -> 'request'::text) ->> 'method'::text AS request_method,
+            (intpayload.payload -> 'request'::text) ->> 'requestUri'::text AS request_uri,
+            (intpayload.payload -> 'request'::text) ->> 'queryString'::text AS request_params,
+            (intpayload.payload -> 'request'::text) ->> 'clientIpAddress'::text AS client_ip_address,
+            (intpayload.payload -> 'request'::text) ->> 'userAgent'::text AS user_agent,
+            ((intpayload.payload -> 'request'::text) ->> 'encounteredAt'::text)::double precision AS request_encountered_at_raw,
+            (intpayload.payload -> 'response'::text) ->> 'responseId'::text AS response_id,
+            ((intpayload.payload -> 'response'::text) ->> 'status'::text)::integer AS response_status,
+            ((intpayload.payload -> 'response'::text) ->> 'encounteredAt'::text)::double precision AS response_encountered_at_raw,
+            jsonb_array_length((intpayload.payload -> 'request'::text) -> 'headers'::text) AS num_request_headers            
            	FROM techbd_udi_ingress.sat_interaction_http_request intpayload
         )
  SELECT interaction.sat_interaction_http_request_id,
@@ -45,7 +45,7 @@ WITH cte_interaction AS (
     interaction.request_id,
     interaction.interaction_id,
     interaction.provenance,
-    interaction.request_payload     
+    interaction.payload     
    FROM cte_interaction interaction      
      LEFT JOIN techbd_udi_ingress.hub_interaction hubint 
      ON hubint.hub_interaction_id = interaction.hub_interaction_id

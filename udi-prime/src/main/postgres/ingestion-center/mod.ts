@@ -78,7 +78,12 @@ const interactionHttpRequestSat = interactionHub.satelliteTable(
     sat_interaction_http_request_id: primaryKey(),
     hub_interaction_id: interactionHub.references
       .hub_interaction_id(),
-    request_payload: jsonB,
+    nature: jsonbNullable(),
+    content_type: textNullable(),
+    payload: jsonB,
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },
@@ -313,6 +318,8 @@ const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
 
 function constructables() {
   const dependencies = [
+    "./000_idempotent_universal.psql",
+    "./001_idempotent_interaction.psql",
     "./views-simple.sql",
     "./stored-routines.psql",
   ] as const;

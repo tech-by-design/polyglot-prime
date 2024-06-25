@@ -1,0 +1,210 @@
+/****************************************************************************************
+ * Comprehensive view of HTTP interactions and their associated requests.
+ * 
+ * This view joins the hub_interaction table with the sat_interaction_http_request table
+ * to provide a detailed record of each interaction and its related HTTP requests.
+ * 
+ * Purpose:
+ * - To offer a business-level overview of HTTP interactions processed by the system.
+ * - Each request is typically represented by a single row. However, in scenarios where 
+ *   completing a request involves multiple asynchronous HTTP requests, multiple rows 
+ *   might be associated with a single interaction.
+ * - This is particularly useful for understanding complex interactions that involve 
+ *   several steps or dependent requests to fulfill a single client request.
+ ****************************************************************************************/
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request AS
+SELECT
+    hi.hub_interaction_id AS interaction_id,
+    hi.key AS uri,
+    hi.created_at AS interaction_created_at,
+    hi.created_by AS interaction_created_by,
+    hi.provenance AS interaction_provenance,
+    sihr.sat_interaction_http_request_id,
+    sihr.nature ->> 'nature'::text AS nature,
+    sihr.nature ->> 'tenant_id'::text AS tenant_id,
+    sihr.content_type,
+    sihr.payload,
+    sihr.elaboration,
+    sihr.from_state,
+    sihr.to_state,
+    sihr.state_transition_reason,
+    sihr.created_at AS request_created_at,
+    sihr.created_by AS request_created_by,
+    sihr.provenance AS request_provenance
+FROM
+    techbd_udi_ingress.hub_interaction hi
+LEFT JOIN
+    techbd_udi_ingress.sat_interaction_http_request sihr
+ON
+    hi.hub_interaction_id = sihr.hub_interaction_id;
+
+/*******************************************************************************************
+ * Comprehensive view of HTTP interactions and their associated requests.
+ * 
+ * This view joins the hub_interaction table with the sat_interaction_http_request table
+ * and pivots the child rows into columns (first_request, second_request, third_request), 
+ * each containing a JSONB object with fields payload, elaboration, and created_at.
+ * 
+ * Purpose:
+ * - To offer a business-level overview of HTTP interactions processed by the system.
+ * - Each interaction typically involves a single HTTP request, but some interactions may
+ *   involve multiple asynchronous HTTP requests. This view shows up to three requests
+ *   per interaction.
+ * - Useful for understanding complex interactions involving multiple steps or dependent
+ *   requests to fulfill a single client request.
+ * 
+ * Note:
+ * - If there are fewer than 3 sat_interaction_http_request rows for a hub_interaction,
+ *   the resulting columns for the missing requests will be NULL.
+ * - If there are more than 3 sat_interaction_http_request rows for a hub_interaction,
+ *   only the first three requests (ordered by created_at) will be included in the view.
+ ******************************************************************************************/
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_multiple_3 AS
+SELECT
+    hi.hub_interaction_id AS interaction_id,
+    hi.key AS uri,
+    hi.created_at AS interaction_created_at,
+    hi.created_by AS interaction_created_by,
+    hi.provenance AS interaction_provenance,
+    (SELECT jsonb_build_object(
+        'nature', sihr.nature,
+        'content_type', sihr.content_type,
+        'payload', sihr.payload,
+        'elaboration', sihr.elaboration,
+        'from_state', sihr.from_state,
+        'to_state', sihr.to_state,
+        'state_transition_reason', sihr.state_transition_reason,
+        'created_at', sihr.created_at
+    )
+    FROM techbd_udi_ingress.sat_interaction_http_request sihr
+    WHERE sihr.hub_interaction_id = hi.hub_interaction_id
+    ORDER BY sihr.created_at
+    LIMIT 1 OFFSET 0) AS first_request,
+    (SELECT jsonb_build_object(
+        'nature', sihr.nature,
+        'content_type', sihr.content_type,
+        'payload', sihr.payload,
+        'elaboration', sihr.elaboration,
+        'from_state', sihr.from_state,
+        'to_state', sihr.to_state,
+        'state_transition_reason', sihr.state_transition_reason,
+        'created_at', sihr.created_at
+    )
+    FROM techbd_udi_ingress.sat_interaction_http_request sihr
+    WHERE sihr.hub_interaction_id = hi.hub_interaction_id
+    ORDER BY sihr.created_at
+    LIMIT 1 OFFSET 1) AS second_request,
+    (SELECT jsonb_build_object(
+        'nature', sihr.nature,
+        'content_type', sihr.content_type,
+        'payload', sihr.payload,
+        'elaboration', sihr.elaboration,
+        'from_state', sihr.from_state,
+        'to_state', sihr.to_state,
+        'state_transition_reason', sihr.state_transition_reason,
+        'created_at', sihr.created_at
+    )
+    FROM techbd_udi_ingress.sat_interaction_http_request sihr
+    WHERE sihr.hub_interaction_id = hi.hub_interaction_id
+    ORDER BY sihr.created_at
+    LIMIT 1 OFFSET 2) AS third_request
+FROM
+    techbd_udi_ingress.hub_interaction hi;
+
+/*******************************************************************************************************************************
+ * Procedure to register an HTTP interaction, handling potential unique constraint violations
+ * and logging exceptions when necessary.
+ *
+ * @param interaction_id TEXT - The unique ID for the interaction.
+ * @param interaction_key TEXT - A key to identify the interaction.
+ * @param payload JSONB - The JSON payload associated with the interaction.
+ * @param elaboration JSONB (nullable) - Additional JSON data elaborating the interaction. Default is NULL.
+ * @param nature JSONB (nullable) - The nature of the HTTP interaction (including tenant, etc.).
+ * @param content_type TEXT (nullable) - The content type of the HTTP interaction.
+ * @param from_state TEXT (nullable) - The initial state before the HTTP interaction.
+ * @param to_state TEXT (nullable) - The state after the HTTP interaction.
+ * @param state_transition_reason TEXT (nullable) - The reason for the state transition.
+ * @param created_at TIMESTAMPTZ (nullable) - The creation timestamp of the record. Defaults to the current timestamp if NULL.
+ * @param created_by TEXT (nullable) - The user who created the record. Defaults to the current user if NULL.
+ * @param provenance TEXT (nullable) - The provenance of the record. Defaults to 'unknown' if NULL.
+ * @param hub_upsert_behavior BOOLEAN - Flag to control behavior on unique constraint violation. Default is TRUE.
+ *                                      If TRUE, unique violation is not treated as an error.
+ *                                      If FALSE, unique violation is treated as an error.
+ *******************************************************************************************************************************/
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_interaction_http_request(
+    IN interaction_id TEXT,
+    IN interaction_key TEXT,
+    IN payload JSONB,
+    IN elaboration JSONB DEFAULT NULL,
+    IN nature JSONB DEFAULT NULL,
+    IN content_type TEXT DEFAULT NULL,
+    IN from_state TEXT DEFAULT NULL,
+    IN to_state TEXT DEFAULT NULL,
+    IN state_transition_reason TEXT DEFAULT NULL,
+    IN created_at TIMESTAMPTZ DEFAULT NULL,
+    IN created_by TEXT DEFAULT NULL,
+    IN provenance TEXT DEFAULT NULL,
+    IN hub_upsert_behavior BOOLEAN DEFAULT TRUE
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_error_msg TEXT;
+    v_sqlstate TEXT;
+    v_pg_detail TEXT;
+    v_pg_hint TEXT;
+    v_pg_context TEXT;
+    v_created_at TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+    v_created_by TEXT := COALESCE(created_by, current_user);
+    v_provenance TEXT := COALESCE(provenance, 'unknown');
+    v_exception_id TEXT;
+BEGIN
+    -- Attempt to insert into hub_interaction
+    BEGIN
+        INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
+        VALUES (interaction_id, interaction_key, v_created_at, v_created_by, v_provenance);
+
+    EXCEPTION
+        WHEN unique_violation THEN
+            IF NOT hub_upsert_behavior THEN
+                -- Capture exception details
+                GET STACKED DIAGNOSTICS
+                    v_error_msg = MESSAGE_TEXT,
+                    v_sqlstate = RETURNED_SQLSTATE,
+                    v_pg_detail = PG_EXCEPTION_DETAIL,
+                    v_pg_hint = PG_EXCEPTION_HINT,
+                    v_pg_context = PG_EXCEPTION_CONTEXT;
+
+                -- Call register_issue to log the exception and get the exception ID
+                v_exception_id := techbd_udi_ingress.register_issue(
+                    NULL, interaction_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                );
+            END IF;
+    END;
+
+    -- Attempt to insert into sat_interaction_http_request
+    BEGIN
+        INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
+            sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, to_state, state_transition_reason, elaboration, created_at, created_by, provenance
+        )
+        VALUES (
+            gen_random_uuid()::text, interaction_id, nature, content_type, payload, from_state, to_state, state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance
+        );
+
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Capture exception details
+            GET STACKED DIAGNOSTICS
+                v_error_msg = MESSAGE_TEXT,
+                v_sqlstate = RETURNED_SQLSTATE,
+                v_pg_detail = PG_EXCEPTION_DETAIL,
+                v_pg_hint = PG_EXCEPTION_HINT,
+                v_pg_context = PG_EXCEPTION_CONTEXT;
+
+            -- Log the exception, reusing the previous exception ID if it exists
+            v_exception_id := techbd_udi_ingress.register_issue(
+                COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+            );
+    END;
+END;
+$$;

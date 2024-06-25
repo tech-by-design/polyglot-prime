@@ -263,7 +263,7 @@ BEGIN
     EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat
            WHERE 1 = 1 
            AND sat.hub_interaction_id	= hub_interaction_row.hub_interaction_id
-           AND sat.request_payload		= source_content::jsonb	
+           AND sat.payload		        = source_content::jsonb	
            AND sat.elaboration			= elaboration_value
            AND sat.created_by 			= created_user
            AND sat.provenance 			= provenance_value

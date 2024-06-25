@@ -58,5 +58,10 @@
     "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiUrl",
     "type": "java.lang.String",
     "description": "The default datalake API URL"
+  },
+  {
+    "name": "org.techbd.service.http.interactions.persist.db.uri-matcher.regex",
+    "type": "java.util.List<java.util.List<Object>>",
+    "description": "Matching rules for persisting HTTP interactions to the database"
   }
 ]}

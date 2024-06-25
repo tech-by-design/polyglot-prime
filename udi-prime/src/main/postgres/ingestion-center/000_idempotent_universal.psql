@@ -1,0 +1,55 @@
+/**
+ * Function to register an exception and its diagnostics in the database.
+ * If you want to add more diagnostics to the same exception_id, just use
+ * the return value from the previous call and call register_issue multiple
+ * times with the same exception_id. 
+ *
+ * @param exception_id TEXT (nullable) - The unique ID for the exception. If NULL, a new UUID will be generated.
+ * @param exception_key TEXT - A key to identify the exception.
+ * @param error_msg TEXT - The error message associated with the exception.
+ * @param sqlstate TEXT - The SQL state code returned by the database.
+ * @param pg_detail TEXT - Detailed error message provided by PostgreSQL.
+ * @param pg_hint TEXT - Hint provided by PostgreSQL to resolve the error.
+ * @param pg_context TEXT - Context of the error as provided by PostgreSQL.
+ * @param created_by TEXT (nullable) - The user who created the record. Defaults to the current user if NULL.
+ * @param provenance TEXT (nullable) - The provenance of the record. Defaults to 'unknown' if NULL.
+ * @return TEXT - The ID of the registered exception.
+ */
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_issue(
+    IN exception_id TEXT,
+    IN exception_key TEXT,
+    IN error_msg TEXT,
+    IN sqlstate TEXT,
+    IN pg_detail TEXT,
+    IN pg_hint TEXT,
+    IN pg_context TEXT,
+    IN created_by TEXT DEFAULT NULL,
+    IN provenance TEXT DEFAULT NULL
+)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_exception_id TEXT := COALESCE(exception_id, gen_random_uuid()::text);
+    v_created_by TEXT := COALESCE(created_by, current_user);
+    v_provenance TEXT := COALESCE(provenance, 'unknown');
+BEGIN
+    -- Insert into hub_exception, ignore conflicts
+    INSERT INTO techbd_udi_ingress.hub_exception (hub_exception_id, key, created_by, provenance)
+    VALUES (v_exception_id, exception_key, v_created_by, v_provenance)
+    ON CONFLICT (hub_exception_id) DO NOTHING;
+
+    -- Insert into sat_exception_diagnostics
+    INSERT INTO techbd_udi_ingress.sat_exception_diagnostics (
+        sat_exception_diagnostics_id, hub_exception_id, message, err_returned_sqlstate,
+        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, created_by, provenance
+    )
+    VALUES (
+        gen_random_uuid()::text, v_exception_id, error_msg, sqlstate,
+        pg_detail, pg_hint, pg_context, v_created_by, v_provenance
+    );
+
+    -- Return the exception ID
+    RETURN v_exception_id;
+END;
+$$;

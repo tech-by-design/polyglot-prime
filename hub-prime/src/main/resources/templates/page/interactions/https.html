@@ -91,7 +91,7 @@
 
             document.addEventListener('DOMContentLoaded', function () {
                 const columnDefs = [
-                    { headerName: "Request Time", field: "request_encountered_at", sort: "desc" },
+                    { headerName: "Request Time", field: "interaction_created_at", sort: "desc" },
                     {
                         headerName: "Interaction ID", field: "interaction_id",
                         cellRenderer: function (params) {
@@ -106,10 +106,10 @@
                         }
                     },
                     { headerName: "Tenant ID", field: "tenant_id" },
-                    { headerName: "Method", field: "request_method" },
-                    { headerName: "URI", field: "request_uri" },
-                    { headerName: "Response Status", field: "response_status" },
-                    { headerName: "Response Time", field: "response_encountered_at" },
+                    { headerName: "URI", field: "uri" },
+                    { headerName: "Nature", field: "nature" },
+                    { headerName: "From State", field: "from_state" },
+                    { headerName: "To State", field: "to_state" },
                     { headerName: "IP Address", field: "client_ip_address" },
                     { headerName: "User Agent", field: "user_agent" }
                 ];

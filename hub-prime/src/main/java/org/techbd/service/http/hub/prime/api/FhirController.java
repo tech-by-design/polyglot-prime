@@ -1,10 +1,11 @@
 package org.techbd.service.http.hub.prime.api;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.SAT_INTERACTION_HTTP_REQUEST;
+import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,7 +41,7 @@ import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
-import org.techbd.udi.auto.jooq.ingress.routines.UdiInsertSessionWithState;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -91,6 +93,7 @@ public class FhirController {
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             final HttpServletRequest request) throws SQLException {
 
+        final var requestURI = request.getRequestURI();
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
         final var bundleAsyncInteractionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
@@ -109,9 +112,6 @@ public class FhirController {
         // TODO: if there are errors that should prevent forwarding, stop here
         // TODO: need to implement `immediate` (sync) webClient op, right now it's async
         // only
-
-        // TODO: since the interaction filter is already storing full interaction,
-        // should we not store the payload again??
 
         // immediateResult is what's returned to the user while async operation
         // continues
@@ -135,107 +135,85 @@ public class FhirController {
             immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
         }
 
-        String dataLakeApiBaseURL = null;
-        if (customDataLakeApi != null && !customDataLakeApi.isEmpty()) {
-            dataLakeApiBaseURL = customDataLakeApi;
-        } else {
-            dataLakeApiBaseURL = appConfig.getDefaultDatalakeApiUrl();
-        }
-        final var dataLakeApiBaseUrlFinal = dataLakeApiBaseURL;
-        LOG.debug("%s %s dataLakeApiBaseURL".formatted(provenance, tenantId, dataLakeApiBaseURL));
-
+        final var dataLakeApiBaseURL = customDataLakeApi != null && !customDataLakeApi.isEmpty() ? customDataLakeApi
+                : appConfig.getDefaultDatalakeApiUrl();
         final var webClient = WebClient.builder().baseUrl(dataLakeApiBaseURL).build();
-        final var jooqDSL = udiPrimeJpaConfig.dsl();
-        final var jooqCfg = jooqDSL.configuration();
+        final var DSL = udiPrimeJpaConfig.dsl();
+        final var jooqCfg = DSL.configuration();
+
+        // TODO: inform the interations filter that we've stored it so it doesn't store
+        // it again
+        final var initRIHR = new RegisterInteractionHttpRequest();
+        try {
+            initRIHR.setInteractionId(bundleAsyncInteractionId);
+            initRIHR.setInteractionKey(requestURI);
+            initRIHR.setNature(Configuration.objectMapper.valueToTree(
+                        Map.of("nature", "FHIR OperationOutcome", "tenant_id", tenantId)));
+            initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+            initRIHR.setPayload(Configuration.objectMapper.valueToTree(immediateResult));
+            initRIHR.setFromState("NONE");
+            initRIHR.setToState("INIT");
+            initRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
+            initRIHR.setCreatedBy(FhirController.class.getName());
+            initRIHR.setProvenance(provenance);
+            final var execResult = initRIHR.execute(jooqCfg);
+            LOG.info("initRIHR execResult" + execResult);
+        } catch (Exception e) {
+            LOG.error("CALL " + initRIHR.getName() + " initRIHR error", e);
+        }
 
         try {
-            final var init = new UdiInsertSessionWithState();
-            final var initState = "%s.IN_PROCESS".formatted(provenance);
-            init.setSessionId(bundleAsyncInteractionId);
-            init.setFromState("%s.INIT".formatted(provenance));
-            init.setToState(initState);
-            init.setContentType(request.getHeader("Content-Type"));
-            init.setContent(Configuration.objectMapper.writeValueAsString(immediateResult));
-            init.setCreatedBy(tenantId);
-            init.setProvenance(provenance);
-            init.setNamespace(provenance);
-
-            final var initExecResult = init.execute(jooqCfg);
-            final var initResults = init.getResults();
-
-            LOG.info("initExecResult" + initExecResult);
-            LOG.info("initResults" + initResults);
-
             webClient.post()
                     .uri("?processingAgent=" + tenantId)
                     .body(BodyInserters.fromValue(payload))
                     .retrieve()
                     .bodyToMono(String.class)
                     .subscribe(response -> {
-                        LOG.info("%s webClient.subscribe(response)".formatted(provenance));
-                        final var success = new UdiInsertSessionWithState();
-                        success.setSessionId(bundleAsyncInteractionId);
-                        success.setFromState(initState);
-                        success.setToState("%s.SUCCESS".formatted(provenance));
-                        success.setContentType("TODO"); // add content type from response
-                        success.setContent(response);
-                        success.setCreatedBy(tenantId);
-                        success.setProvenance(provenance);
-                        success.setNamespace(provenance);
-
-                        final var successExecResult = success.execute(jooqCfg);
-                        final var successResults = success.getResults();
-
+                        final var forwardRIHR = new RegisterInteractionHttpRequest();
                         try {
-                            final var responseJson = Configuration.objectMapper.createObjectNode();
-                            responseJson.set("response", Configuration.objectMapper.readTree(response));
-
-                            final var dsl = udiPrimeJpaConfig.dsl();
-                            dsl.update(SAT_INTERACTION_HTTP_REQUEST)
-                                    .set(SAT_INTERACTION_HTTP_REQUEST.ELABORATION, responseJson)
-                                    .where(SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID
-                                            .eq(bundleAsyncInteractionId))
-                                    .execute();
-
-                            LOG.info("SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID updated for %s"
-                                    .formatted(bundleAsyncInteractionId));
+                            forwardRIHR.setInteractionId(bundleAsyncInteractionId);
+                            forwardRIHR.setInteractionKey(requestURI);
+                            forwardRIHR.setNature(Configuration.objectMapper.valueToTree(
+                                Map.of("nature", "SHIN-NY FHIR Server Response", "tenant_id", tenantId)));                               
+                            forwardRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                            try {
+                                // expecting a JSON payload from the server
+                                forwardRIHR.setPayload(Configuration.objectMapper.readTree(response));
+                            } catch (JsonProcessingException jpe) {
+                                // in case the payload is not JSON store the string
+                                forwardRIHR.setPayload(Configuration.objectMapper.valueToTree(response));
+                            }
+                            forwardRIHR.setFromState("INIT");
+                            forwardRIHR.setToState("COMPLETE");
+                            forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
+                            forwardRIHR.setCreatedBy(FhirController.class.getName());
+                            forwardRIHR.setProvenance(provenance);
+                            final var execResult = forwardRIHR.execute(jooqCfg);
+                            LOG.info("forwardRIHR execResult" + execResult);
                         } catch (Exception e) {
-                            LOG.error(
-                                    "error updating SAT_INTERACTION_HTTP_REQUEST.ELABORATION in SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID id "
-                                            + bundleAsyncInteractionId,
-                                    e);
+                            LOG.error("CALL " + forwardRIHR.getName() + " forwardRIHR error", e);
                         }
-
-                        LOG.info("successExecResult" + successExecResult);
-                        LOG.info("successResults" + successResults);
                     }, (Throwable error) -> { // Explicitly specify the type Throwable
-                        LOG.info("%s webClient.Throwable(error)".formatted(provenance));
-                        String content;
+                        final var errorRIHR = new RegisterInteractionHttpRequest();
                         try {
-                            // TODO: add more details from the WebClient
-                            content = Configuration.objectMapper.writeValueAsString(
-                                    Map.of("dataLakeApiBaseURL", dataLakeApiBaseUrlFinal, "error", error.toString(),
-                                            "tenantId", tenantId));
-                        } catch (JsonProcessingException e) {
-                            content = "dataLakeApiBaseURL: %s, error %s while %s".formatted(dataLakeApiBaseUrlFinal,
-                                    error.toString(), e.toString());
+                            errorRIHR.setInteractionId(bundleAsyncInteractionId);
+                            errorRIHR.setInteractionKey(requestURI);
+                            errorRIHR.setNature(Configuration.objectMapper.valueToTree(
+                                Map.of("nature", "SHIN-NY FHIR Server Error", "tenant_id", tenantId)));                               
+                            errorRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                            errorRIHR.setPayload(Configuration.objectMapper.valueToTree(
+                                    Map.of("dataLakeApiBaseURL", dataLakeApiBaseURL, "error", error.toString(),
+                                            "tenantId", tenantId)));
+                            errorRIHR.setFromState("INIT");
+                            errorRIHR.setToState("FAIL");
+                            errorRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
+                            errorRIHR.setCreatedBy(FhirController.class.getName());
+                            errorRIHR.setProvenance(provenance);
+                            final var execResult = errorRIHR.execute(jooqCfg);
+                            LOG.info("forwardRIHR execResult" + execResult);
+                        } catch (Exception e) {
+                            LOG.error("CALL " + errorRIHR.getName() + " errorRIHR error", e);
                         }
-                        final var failure = new UdiInsertSessionWithState();
-                        failure.setSessionId(bundleAsyncInteractionId.toString());
-                        failure.setFromState(initState);
-                        failure.setToState("%s.FAILURE".formatted(provenance));
-                        failure.setContentType("application/json");
-                        failure.setContent(content);
-                        failure.setCreatedBy(tenantId);
-                        failure.setProvenance(provenance);
-                        failure.setNamespace(provenance);
-
-                        final var failureExecResult = failure.execute(jooqCfg);
-                        final var failureResults = failure.getResults();
-
-                        LOG.info("failureExecResult" + failureExecResult);
-                        LOG.info("failureResults" + failureResults);
-
                     });
         } catch (Exception e) {
             LOG.error(provenance, e);
@@ -290,19 +268,13 @@ public class FhirController {
     @ResponseBody
     @Operation(summary = "Check the state/status of async operation")
     public Object bundleStatus(@PathVariable String bundleSessionId, final Model model, HttpServletRequest request) {
-
         final var jooqDSL = udiPrimeJpaConfig.dsl();
-
-        // TODO: need to give actual response from upstream server (meaning from SHIN-NY
-        // Data Lake) so far, this method gives meta data but not the actual response
-
         try {
             final var result = jooqDSL.select()
-                    .from(SAT_INTERACTION_HTTP_REQUEST)
-                    .where(SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID.eq(bundleSessionId))
-                    .fetchSingle();
-            LOG.info("Query execution result: {}", result);
-            return Configuration.objectMapper.writeValueAsString(result.intoMap());
+                    .from(INTERACTION_HTTP_REQUEST)
+                    .where(INTERACTION_HTTP_REQUEST.INTERACTION_ID.eq(bundleSessionId))
+                    .fetch();
+            return Configuration.objectMapper.writeValueAsString(result.intoMaps());
         } catch (Exception e) {
             LOG.error("Error executing JOOQ query for retrieving SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID for "
                     + bundleSessionId, e);
