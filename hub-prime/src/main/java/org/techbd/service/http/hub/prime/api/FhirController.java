@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
@@ -49,6 +50,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
+import reactor.core.publisher.Mono;
 
 @Controller
 @Tag(name = "TechBD Hub FHIR Endpoints")
@@ -91,6 +93,7 @@ public class FhirController {
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
             @RequestParam(value = "immediate", required = false) boolean isSync,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
+            @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
             final HttpServletRequest request) throws SQLException {
 
         final var requestURI = request.getRequestURI();
@@ -115,6 +118,7 @@ public class FhirController {
 
         // immediateResult is what's returned to the user while async operation
         // continues
+        final var forwardedAt = OffsetDateTime.now();
         final var baseUrl = Helpers.getBaseUrl(request);
         final var immediateResult = new HashMap<>(Map.of(
                 "resourceType", "OperationOutcome",
@@ -135,32 +139,44 @@ public class FhirController {
             immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
         }
 
-        final var dataLakeApiBaseURL = customDataLakeApi != null && !customDataLakeApi.isEmpty() ? customDataLakeApi
-                : appConfig.getDefaultDatalakeApiUrl();
-        final var webClient = WebClient.builder().baseUrl(dataLakeApiBaseURL).build();
         final var DSL = udiPrimeJpaConfig.dsl();
         final var jooqCfg = DSL.configuration();
-
-        // TODO: inform the interations filter that we've stored it so it doesn't store
-        // it again
-        final var initRIHR = new RegisterInteractionHttpRequest();
-        try {
-            initRIHR.setInteractionId(bundleAsyncInteractionId);
-            initRIHR.setInteractionKey(requestURI);
-            initRIHR.setNature(Configuration.objectMapper.valueToTree(
-                        Map.of("nature", "FHIR OperationOutcome", "tenant_id", tenantId)));
-            initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-            initRIHR.setPayload(Configuration.objectMapper.valueToTree(immediateResult));
-            initRIHR.setFromState("NONE");
-            initRIHR.setToState("INIT");
-            initRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
-            initRIHR.setCreatedBy(FhirController.class.getName());
-            initRIHR.setProvenance(provenance);
-            final var execResult = initRIHR.execute(jooqCfg);
-            LOG.info("initRIHR execResult" + execResult);
-        } catch (Exception e) {
-            LOG.error("CALL " + initRIHR.getName() + " initRIHR error", e);
-        }
+        final var dataLakeApiBaseURL = customDataLakeApi != null && !customDataLakeApi.isEmpty() ? customDataLakeApi
+                : appConfig.getDefaultDatalakeApiUrl();
+        final var webClient = WebClient.builder().baseUrl(dataLakeApiBaseURL)
+                .filter(ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
+                    final var requestBuilder = new StringBuilder();
+                    requestBuilder.append(clientRequest.method().name())
+                            .append(" ")
+                            .append(clientRequest.url())
+                            .append(" HTTP/1.1")
+                            .append("\n");
+                    clientRequest.headers().forEach((name, values) -> values
+                            .forEach(value -> requestBuilder.append(name).append(": ").append(value).append("\n")));
+                    final var outboundHttpMessage = requestBuilder.toString();
+                    final var initRIHR = new RegisterInteractionHttpRequest();
+                    try {
+                        immediateResult.put("outboundHttpMessage",
+                                outboundHttpMessage + "\n" + (includeIncomingPayloadInDB ? payload
+                                        : "`?include-incoming-payload-in-db=true` was not passed in as a parameter, payload not stored"));
+                        initRIHR.setInteractionId(bundleAsyncInteractionId);
+                        initRIHR.setInteractionKey(requestURI);
+                        initRIHR.setNature(Configuration.objectMapper.valueToTree(
+                                Map.of("nature", "Forward HTTP Request", "tenant_id", tenantId)));
+                        initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                        initRIHR.setPayload(Configuration.objectMapper.valueToTree(immediateResult));
+                        initRIHR.setFromState("NONE");
+                        initRIHR.setToState("FORWARD");
+                        initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app time
+                        initRIHR.setCreatedBy(FhirController.class.getName());
+                        initRIHR.setProvenance(provenance);
+                        final var execResult = initRIHR.execute(jooqCfg);
+                        LOG.info("initRIHR execResult" + execResult);
+                    } catch (Exception e) {
+                        LOG.error("CALL " + initRIHR.getName() + " initRIHR error", e);
+                    }
+                    return Mono.just(clientRequest);
+                })).build();
 
         try {
             webClient.post()
@@ -174,7 +190,7 @@ public class FhirController {
                             forwardRIHR.setInteractionId(bundleAsyncInteractionId);
                             forwardRIHR.setInteractionKey(requestURI);
                             forwardRIHR.setNature(Configuration.objectMapper.valueToTree(
-                                Map.of("nature", "SHIN-NY FHIR Server Response", "tenant_id", tenantId)));                               
+                                    Map.of("nature", "Forwarded HTTP Response", "tenant_id", tenantId)));
                             forwardRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                             try {
                                 // expecting a JSON payload from the server
@@ -183,7 +199,7 @@ public class FhirController {
                                 // in case the payload is not JSON store the string
                                 forwardRIHR.setPayload(Configuration.objectMapper.valueToTree(response));
                             }
-                            forwardRIHR.setFromState("INIT");
+                            forwardRIHR.setFromState("FORWARD");
                             forwardRIHR.setToState("COMPLETE");
                             forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
                             forwardRIHR.setCreatedBy(FhirController.class.getName());
@@ -199,12 +215,12 @@ public class FhirController {
                             errorRIHR.setInteractionId(bundleAsyncInteractionId);
                             errorRIHR.setInteractionKey(requestURI);
                             errorRIHR.setNature(Configuration.objectMapper.valueToTree(
-                                Map.of("nature", "SHIN-NY FHIR Server Error", "tenant_id", tenantId)));                               
+                                    Map.of("nature", "SHIN-NY FHIR Server Error", "tenant_id", tenantId)));
                             errorRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                             errorRIHR.setPayload(Configuration.objectMapper.valueToTree(
                                     Map.of("dataLakeApiBaseURL", dataLakeApiBaseURL, "error", error.toString(),
                                             "tenantId", tenantId)));
-                            errorRIHR.setFromState("INIT");
+                            errorRIHR.setFromState("FORWARD");
                             errorRIHR.setToState("FAIL");
                             errorRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
                             errorRIHR.setCreatedBy(FhirController.class.getName());
