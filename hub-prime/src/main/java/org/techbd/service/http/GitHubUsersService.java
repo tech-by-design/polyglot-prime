@@ -27,6 +27,7 @@ public class GitHubUsersService {
   // public record AuthorizedUser(String gitHubId, String name, String tenantId,
   // List<String> roles) {
   // }
+  @JsonIgnoreProperties(ignoreUnknown = true)
   public record AuthorizedUser(String name, String emailPrimary, String profilePicUrl, String gitHubId,
       String tenantId, Map<String, Resource> resources) {
   }
