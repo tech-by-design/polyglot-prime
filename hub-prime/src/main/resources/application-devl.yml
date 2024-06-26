@@ -1,12 +1,3 @@
-org:
-  techbd:    
-    service:
-        baggage:
-          user-agent:
-            # `enable-sensitive` is dangerous in non-sandbox (local)
-            enable-sensitive: false
-            exposure: true
-
 management:
   endpoints:
     enabled-by-default: true

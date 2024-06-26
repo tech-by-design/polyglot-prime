@@ -81,14 +81,7 @@ org:
                 # TODO: figure out why this is not being read in InteractionsFilter
                 regex:
                   - .*
-                  - [^/Bundle/.*, POST, persistReqPayload persistRespPayload]
-      baggage:
-        user-agent:
-          # `enable-sensitive` true should only be used in sandbox (local)
-          enable-sensitive: false
-          # `exposure` should be used only be used in sandbox (local) or devl (shared)
-          exposure: false    
-          
+                  - [^/Bundle/.*, POST, persistReqPayload persistRespPayload]         
     udi:
       prime:
         jdbc: 

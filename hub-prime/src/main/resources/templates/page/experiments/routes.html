@@ -17,7 +17,7 @@
     <div layout:fragment="content">
         <h2 class="font-semibold leading-6 text-gray-900">nav-prime links</h1>
         <ul>
-            <li th:each="navItem: ${baggage.navPrime}"><a th:attr="href=@{${navItem.href}}"
+            <li th:each="navItem: ${navPrime}"><a th:attr="href=@{${navItem.href}}"
                     th:text="${navItem.text}">Label</a></li>
 
         </ul>

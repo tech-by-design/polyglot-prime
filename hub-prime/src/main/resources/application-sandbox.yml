@@ -1,14 +1,9 @@
 org:
   techbd:    
     service:
-        baggage:
-          user-agent:
-            # `enable-sensitive` safe only in sandbox (local)
-            enable-sensitive: true
-            exposure: true
-        http:
-          interactions:
-            defaultPersistStrategy: "{ \"nature\": \"fs\" }"
+      http:
+        interactions:
+          defaultPersistStrategy: "{ \"nature\": \"fs\" }"
 
 management:
   endpoints:

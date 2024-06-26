@@ -40,6 +40,10 @@ const layoutSelectOp = (...args) => {
 const contextPath = layoutSelectOp('meta[name="ssrServletContextPath"]', (meta) => { return meta.content });
 if (contextPath == null) console.warn(`<meta name="ssrServletContextPath"> not provided, ssrServletUrl() might not work properly.`);
 
+// Our convention is to pass a JS object as a <meta> to inform whether the sandbox console should be configured
+const sandboxConsoleConf = layoutSelectOp('meta[name="sandboxConsoleConf"]', (meta) => { return JSON.parse(meta.content) });
+if (sandboxConsoleConf) console.log(`Sandbox console configuration`, sandboxConsoleConf);
+
 /**
  * Constructs a full URL using the servlet context path and a relative path.
  * 
@@ -51,33 +55,21 @@ function ssrServletUrl(relativePath) {
     return contextPath == "/" ? relativePath : (contextPath + relativePath);
 }
 
-// Retrieve and parse the SSR baggage JSON if available
-const ssrBaggageJSON = document.querySelector('meta[name="ssrBaggageJSON"]')?.content?.trim();
-if (ssrBaggageJSON.length) {
-    document.ssrBaggageJSON = ssrBaggageJSON;
-    document.ssrBaggage = JSON.parse(ssrBaggageJSON);
-}
-
-// handle SSR baggage, automatic editing of active template, and other developer-focused functionality
+// handle automatic editing of active template, and other developer-focused functionality
 document.addEventListener('DOMContentLoaded', function () {
     let consoleAppended = false;
 
-    const showDevlConsole = (id = "layout-devl-console") => {
+    const showSandboxConsole = (id = "layout-sandbox-console") => {
         if(consoleAppended) return;
         const consoleDiv = document.createElement('div');
         consoleDiv.innerHTML = `
             <div id="${id}" class="w-full mt-4 mx-auto bg-gray-100 p-8 rounded-lg shadow-lg">
-                <div id="devl_exposure_container" style="display: none">
-                    <span id="devl_openFileInEditor_container" style="display: none">
-                        <a id="devl_openFileInEditor_anchor" href="dynamic">dynamic</a>
+                <div id="sandbox-console" style="display: none">
+                    <span id="sandbox-console-openFileInEditor-container" style="display: none">
+                        <a id="sandbox-console-openFileInEditor-anchor" href="dynamic">dynamic</a>
                     </span> 
                     <a href="/experiment/home.html" style="padding-left: 10px">🧪 Experiments/Debug</a>
-                    <json-viewer id="devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer"></json-viewer>
-                    <p>
-                        The above is visible because <code>document.ssrBaggageJSON</code> was
-                        sent via <code>&ltmeta name="ssrBaggageJSON" content="\${document.ssrBaggageJSON}"&gt;</code>
-                        from the server. You should never share sensitive contents or secrets through SSR Baggage.                        
-                    </p>
+                    <json-viewer id="sandbox-console-watch-json"></json-viewer>
                 </div>
             </div>
         `;
@@ -85,21 +77,21 @@ document.addEventListener('DOMContentLoaded', function () {
         consoleAppended = true;
     }
 
-    // If there is an edit URL in the SSR baggage, update the anchor element
-    const editUrl = document.ssrBaggage?.template?.editUrl;
+    // If there is an edit URL in the sandboxConsoleConf, update the anchor element
+    const editUrl = sandboxConsoleConf?.template?.editUrl;
     if (editUrl) {
-        showDevlConsole();
-        layoutSelectOp('#devl_openFileInEditor_anchor', (a) => {
-            a.innerText = `📄 edit ${document.ssrBaggage?.template?.canonical ?? "canonical not set"}`;
+        showSandboxConsole();
+        layoutSelectOp('#sandbox-console-openFileInEditor-anchor', (a) => {
+            a.innerText = `📄 edit ${sandboxConsoleConf?.template?.canonical ?? "canonical not set"}`;
             a.href = editUrl;
-        }, '#devl_openFileInEditor_container', (elem) => { elem.style.display = '' });
+        }, '#sandbox-console-openFileInEditor-container', (elem) => { elem.style.display = '' });
     }
 
-    // If user agent baggage exposure is enabled, update the corresponding elements
-    if (document.ssrBaggage?.userAgentBaggageExposureEnabled) {
-        showDevlConsole();
+    // If user agent sandbox console is enabled, update the corresponding elements
+    if (sandboxConsoleConf?.enabled) {
+        showSandboxConsole();
         layoutSelectOp(
-            '#devl_ssrBaggage_userAgentBaggageExposureEnabledJsonViewer', (elem) => { elem.data = document.ssrBaggage },
-            '#devl_exposure_container', (elem) => { elem.style.display = '' });
+            '#sandbox-console-watch-json', (elem) => { elem.data = { contextPath, sandboxConsoleConf } },
+            '#sandbox-console', (elem) => { elem.style.display = '' });
     }
 });
