@@ -14,8 +14,6 @@
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
-    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
-
     <style>
         .ag-theme-alpine .ag-root-wrapper {
             border: none;
@@ -66,13 +64,13 @@
                     via SFTP (<code>egress</code>)</a>
             </li>
             <li class="mr-2">
-                <a href="#" aria-current="page"
-                    class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">FHIR
+                <a href="https"
+                class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">FHIR
                     via HTTPs</a>
             </li>
             <li class="mr-2">
-                <a href="httpsfailed" 
-                class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">FHIR via HTTPs FAILED</a>
+                <a href="#" aria-current="page"
+                    class="inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active">FHIR via HTTPs FAILED</a>
             </li>
         </ul>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
@@ -85,6 +83,7 @@
             </div>
         </div>
 
+        <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
         <script id="driver">
             // in browser inspect console, set `window.logLevel = 1` to see logs
             window.logLevel = 0;
@@ -96,7 +95,7 @@
 
             document.addEventListener('DOMContentLoaded', function () {
                 const columnDefs = [
-                    { headerName: "Request Time", field: "interaction_created_at", sort: "desc", filter: "agNumberColumnFilter", enableRowGroup: true,
+                    { headerName: "Request Time", field: "interaction_created_at", sort: "desc",
                         valueFormatter: function (params) {
                             if (params.value) {
                                 // Convert Unix timestamp to milliseconds
@@ -126,8 +125,7 @@
                         } 
                     },
                     {
-                        headerName: "Interaction ID", field: "interaction_id", enableRowGroup: true,
-                        filter: "agTextColumnFilter",
+                        headerName: "Interaction ID", field: "interaction_id",
                         cellRenderer: function (params) {
                             const link = document.createElement('a');
                             link.href = '#';
@@ -139,13 +137,13 @@
                             return link;
                         }
                     },
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", enableRowGroup: true},
-                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", enableRowGroup: true }
+                    { headerName: "Tenant ID", field: "tenant_id" },
+                    { headerName: "URI", field: "uri" },
+                    { headerName: "Nature", field: "nature" },
+                    { headerName: "From State", field: "from_state" },
+                    { headerName: "To State", field: "to_state" },
+                    { headerName: "IP Address", field: "client_ip_address" },
+                    { headerName: "User Agent", field: "user_agent" }
                 ];
 
                 const gridOptions = {
@@ -163,32 +161,22 @@
                     rowModelType: 'serverSide',
                     serverSideDatasource: {
                         getRows: async function (params) {
-                            console.log('params.request', params.request);
                             // params.request has startRow, endRow, sort, filter, pivot, etc.
                             // and the server-side reads it, constructs SQL, executes and returns
-                            params.request.valueCols = params.request?.pivotCols && params.request?.pivotCols.length > 0 ? params.request.pivotCols : params.request.valueCols;
                             const jsonRequest = JSON.stringify(params.request, null, 2);
                             log("[EnterpriseDatasource] Posted JSON request", jsonRequest);
                             try {
-                                const response = await fetch(ssrServletUrl(`/support/interaction/http.json`), {
+                                const response = await fetch(ssrServletUrl(`/support/interaction/httpsfailed.json`), {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: jsonRequest
                                 });
                                 if (response.ok) {
-                                    console.log("Response: " + response);
                                     const result = await response.json();
                                     log("[EnterpriseDatasource] Received JSON response", result);
-
+                                    params.success({ rowData: result.data });
                                     // TODO: updateSecondaryColumns(params.request, result);
                                     // see https://github.com/ag-grid/ag-grid-server-side-oracle-example
-                                    console.log("Results: " + result.data);
-                                    console.log("Params: " + params);
-                                    updateSecondaryColumns(params.request, result);
-                                    params.success({
-                                        rowData: result.data,
-                                        rowCount: result.data.length,
-                                    });
                                 } else {
                                     console.error(`[EnterpriseDatasource] Error: ${response.statusText}`);
                                     params.fail();
@@ -200,50 +188,6 @@
                         }
                     },
                 };
-
-                function updateSecondaryColumns(request, result) {
-                    try {
-                        console.log("Request:", request);
-                        console.log("Result:", result);
-
-                        let valueCols = request.valueCols;
-                        console.log("Value Cols:", valueCols);
-
-                        if (request.pivotMode && request.pivotCols.length > 0) {
-                            let secondaryColDefs = createSecondaryColumns(result.data, valueCols);
-                            console.log("Secondary Col Defs:", secondaryColDefs);
-
-                            // Check if grid API is available before updating columns
-                            if (gridOptions) {
-                                // Clear existing columns first (optional, but can be useful to avoid duplications)
-                                gridOptions.setColumnDefs([]);
-                                // Set the new column definitions
-                                gridOptions.setColumnDefs(secondaryColDefs);
-                                console.log("Column definitions successfully updated.");
-                            } else {
-                                console.error("Grid API is not available. Cannot set column definitions.");
-                            }
-                        } else {
-                            if (gridOptions) {
-                                gridOptions.setColumnDefs([]);
-                                console.log("No pivot mode or pivot columns. Cleared column definitions.");
-                            } else {
-                                console.error("Grid API is not available. Cannot clear column definitions.");
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Error in updateSecondaryColumns:", error);
-                    }
-                }
-
-
-                function createSecondaryColumns(data, valueCols) {
-                    // Dummy implementation, replace with actual logic
-                    return valueCols.map(col => ({
-                        headerName: col.displayName,
-                        field: col.field
-                    }));
-                }
 
                 const serverDataGridDiv = document.querySelector('#serverDataGrid');
                 const serverDataGridAPI = agGrid.createGrid(serverDataGridDiv, gridOptions);
