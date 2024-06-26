@@ -111,15 +111,12 @@
                                     hour: '2-digit',
                                     minute: '2-digit',
                                     second: '2-digit',
-                                    fractionalSecondDigits: 3, // To show milliseconds
                                     hour12: false // Use 24-hour format
                                 };
 
                                 // Format the date to EST using Intl.DateTimeFormat
                                 let formatter = new Intl.DateTimeFormat('en-US', options);
                                 let formattedDate = formatter.format(date);
-                                // const date = new Date(params.value);
-                                // Example: "MM/DD/YYYY HH:mm:ss"
                                 return formattedDate;
                             }
                             return '';
