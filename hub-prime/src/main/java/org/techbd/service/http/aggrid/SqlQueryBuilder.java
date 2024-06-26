@@ -89,6 +89,10 @@ public class SqlQueryBuilder {
         String whereFilters = concat(getGroupColumns(), getFilters())
                 .collect(joining(" AND "));
 
+        if (whereFilters.contains(" AND ")) {
+            whereFilters = whereFilters.substring(0, whereFilters.lastIndexOf(" AND "));
+        }
+
         return whereFilters.isEmpty() ? "" : format(" WHERE %s", whereFilters);
     }
 
@@ -122,16 +126,39 @@ public class SqlQueryBuilder {
 
             if (filter instanceof SetColumnFilter) {
                 return setFilter().apply(columnName, (SetColumnFilter) filter);
-            }
 
-            if (filter instanceof NumberColumnFilter) {
+            } else if (filter instanceof NumberColumnFilter) {
                 return numberFilter().apply(columnName, (NumberColumnFilter) filter);
+            } else if (filter instanceof TextColumnFilter) {
+                return getFilterQueryForText((TextColumnFilter) filter, columnName);
             }
 
             return "";
         };
 
         return filterModel.entrySet().stream().map(applyFilters);
+    }
+
+    private String getFilterQueryForText(TextColumnFilter filter, String columnName) {
+        if (filter.getType().equalsIgnoreCase("contains")) {
+            return columnName + " like " + "'%" + filter.getFilter() + "%'";
+        } else if (filter.getType().equalsIgnoreCase("notContains")) {
+            return columnName + " not like " + "'%" + filter.getFilter() + "%'";
+        } else if (filter.getType().equalsIgnoreCase("equals")) {
+            return columnName + " = " + "'" + filter.getFilter() + "'";
+        } else if (filter.getType().equalsIgnoreCase("notEqual")) {
+            return columnName + " <> " + "'" + filter.getFilter() + "'";
+        } else if (filter.getType().equalsIgnoreCase("startsWith")) {
+            return columnName + " like " + "'" + filter.getFilter() + "%'";
+        } else if (filter.getType().equalsIgnoreCase("endsWith")) {
+            return columnName + " like " + "'%" + filter.getFilter() + "'";
+        } else if (filter.getType().equalsIgnoreCase("blank")) {
+            return columnName + " is null ";
+        } else if (filter.getType().equalsIgnoreCase("notBlank")) {
+            return columnName + " is not null ";
+        } else {
+            return "";
+        }
     }
 
     private BiFunction<String, SetColumnFilter, String> setFilter() {

@@ -91,12 +91,11 @@ public class InteractionsController {
         // https://github.com/ag-grid/ag-grid-server-side-oracle-example/src/main/java/com/ag/grid/enterprise/oracle/demo/dao/TradeDao.java
         // final var pivotValues = getPivotValues(request.getPivotCols());
         // final Map<String, List<String>> pivotValues = Map.of();
-        final Map<String, List<String>> pivotValues = /* Map.of(); */ getPivotValues(payload.getPivotCols());
+        final Map<String, List<String>> pivotValues = /*Map.of();*/ getPivotValues(payload.getPivotCols());
 
         final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL
-                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request",
-                        pivotValues));
+        final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request",
+                pivotValues));
 
         // create response with our results
         return ServerRowsResponse.createResponse(payload, result.intoMaps(), pivotValues);
@@ -196,7 +195,7 @@ public class InteractionsController {
 
         for (final var row : rows) {
             String sessionId = (String) row.get("session_id");
-            if(sessionId!=null){
+            if (sessionId != null) {
                 TenantSftpEgressSession session = sessionMap.get(sessionId);
                 if (session != null) {
                     row.put("published_fhir_count", session.getFhirCount());
