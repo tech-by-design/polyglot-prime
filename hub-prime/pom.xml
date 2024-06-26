@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.79.0</version>
+	<version>0.80.0</version>
 	<packaging>war</packaging>
 	<name>TechBD Hub (Prime)</name>
 	<description>TechBD Hub (Primary)</description>
@@ -269,6 +269,11 @@
 			<groupId>org.jooq</groupId>
 			<artifactId>jooq-jackson-extensions</artifactId>
 			<version>3.19.10</version>
+		</dependency>
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-core</artifactId>
+			<version>3.6.7</version>
 		</dependency>		
 	</dependencies>
 
