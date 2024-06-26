@@ -152,13 +152,14 @@ public class InteractionsController {
         return sftpManager.tenantEgressSessions();
     }
 
+    @Operation(summary = "Recent Orchctl Interactions")
     @GetMapping("/interactions/orchctl")
-    @RouteMapping(label = "CSV via SFTP (egress)")
+    @RouteMapping(label = "CSV Interactions via Orchctl with SFTP (egress)")
     public String orchctl(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/orchctl", model, request);
     }
 
-    @Operation(summary = "Recent SFTP Interactions")
+    @Operation(summary = "Individual Orchctl Interactions")
     @GetMapping("/support/interaction/orchctl/{tenantId}/{interactionId}.json")
     @ResponseBody
     public Optional<SftpManager.IndividualTenantSftpEgressSession> observeRecentSftpInteractionsWithId(
@@ -166,8 +167,8 @@ public class InteractionsController {
         return sftpManager.getTenantEgressSession(tenantId, interactionId);
     }
 
-    @Operation(summary = "SFTP Interactions for Populating Grid")
-    @PostMapping(value = "/support/interaction/sftpExplorer.json", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Orchctl Interactions for Populating Grid")
+    @PostMapping(value = "/support/interaction/orchctl.json", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ServerRowsResponse sftpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload) {
         // TODO: figure out how to write dynamic queries in jOOQ
@@ -195,16 +196,13 @@ public class InteractionsController {
 
         for (final var row : rows) {
             String sessionId = (String) row.get("session_id");
-            TenantSftpEgressSession session = sessionMap.get(sessionId);
-            if (session != null) {
-                row.put("published_fhir_count", session.getFhirCount());
-                // Add any other fields you need from TenantSftpEgressSession
+            if(sessionId!=null){
+                TenantSftpEgressSession session = sessionMap.get(sessionId);
+                if (session != null) {
+                    row.put("published_fhir_count", session.getFhirCount());
+                    // Add any other fields you need from TenantSftpEgressSession
+                }
             }
-            // this is a JSONB and might be large so don't send it even if it was requested
-            // since we'll get it in /support/interaction/{interactionId}.json if required;
-            // also since SqlQueryBuilder().createSql() is custom SQL, org.jooq.JSONB type
-            // will not be able to be serialized by Jackson anyway.
-            row.remove("session_result");
         }
 
         // create response with our results

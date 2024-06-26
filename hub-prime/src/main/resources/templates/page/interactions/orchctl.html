@@ -94,7 +94,30 @@
 
                 var columnDefs = [
                     { headerName: "QE", field: "qe", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true },
-                    { headerName: "Request Time", field: "request_time", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true },
+                    { headerName: "Request Time", field: "request_time", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true,
+                        valueFormatter: function (params) {
+                            if (params.value) {
+                                let date = new Date(params.value);
+                                // Define the options for formatting the date to EST
+                                let options = {
+                                    timeZone: 'America/New_York',
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: false // Use 24-hour format
+                                };
+
+                                // Format the date to EST using Intl.DateTimeFormat
+                                let formatter = new Intl.DateTimeFormat('en-US', options);
+                                let formattedDate = formatter.format(date);
+                                return formattedDate;
+                            }
+                            return '';
+                        } 
+                     },
                     {
                         headerName: "Session ID", field: "session_id", sortable: true, filter: true, enablePivot: true, enableRowGroup: true,
                         cellRenderer: function (params) {
@@ -136,7 +159,7 @@
                             const jsonRequest = JSON.stringify(params.request, null, 2);
                             log("[EnterpriseDatasource] Posted JSON request", jsonRequest);
                             try {
-                                const response = await fetch(ssrServletUrl(`/support/interaction/sftpExplorer.json`), {
+                                const response = await fetch(ssrServletUrl(`/support/interaction/orchctl.json`), {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: jsonRequest
