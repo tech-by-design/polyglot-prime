@@ -14,7 +14,7 @@ jobs:
       - name: Create .pgpass file
         run: |
           # Write the metadata comment to the .pgpass file
-          echo "# { id: \"DEVL_TECHBD_UDI_DS_DESTROYABLE\", description: \"UDI Devl database \", boundary: \"Development\" }" > ~/.pgpass
+          echo "# { id: \"DEVL_TECHBD_UDI_DS\", description: \"UDI Devl database \", boundary: \"Development\" }" > ~/.pgpass
 
           # Append the database connection details to the .pgpass file
           echo "${{ secrets.DEVL_TECHBD_UDI_DS_HOST }}:${{ secrets.DEVL_TECHBD_UDI_DS_PORT }}:${{ secrets.DEVL_TECHBD_UDI_DS_NAME }}:${{ secrets.DEVL_TECHBD_UDI_DS_USER }}:${{ secrets.DEVL_TECHBD_UDI_DS_PASSWORD }}" >> ~/.pgpass
@@ -33,12 +33,12 @@ jobs:
       - name: Run Migrations
         run: |
           cd polyglot-prime/udi-prime
-          ./udictl.ts ic migrate --conn-id DEVL_TECHBD_UDI_DS_DESTROYABLE
+          ./udictl.ts ic migrate --conn-id DEVL_TECHBD_UDI_DS
 
       - name: Run test
         run: |
           cd polyglot-prime/udi-prime
-          ./udictl.ts ic test --conn-id DEVL_TECHBD_UDI_DS_DESTROYABLE
+          ./udictl.ts ic test --conn-id DEVL_TECHBD_UDI_DS
           
       - name: Display log file
         run: |
