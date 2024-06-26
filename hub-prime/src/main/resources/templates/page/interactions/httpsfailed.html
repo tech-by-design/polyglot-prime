@@ -95,7 +95,7 @@
 
             document.addEventListener('DOMContentLoaded', function () {
                 const columnDefs = [
-                    { headerName: "Request Time", field: "interaction_created_at", sort: "desc",
+                { headerName: "Request Time", field: "interaction_created_at", sort: "desc", filter: "agNumberColumnFilter", enableRowGroup: true,
                         valueFormatter: function (params) {
                             if (params.value) {
                                 // Convert Unix timestamp to milliseconds
@@ -110,15 +110,12 @@
                                     hour: '2-digit',
                                     minute: '2-digit',
                                     second: '2-digit',
-                                    fractionalSecondDigits: 3, // To show milliseconds
                                     hour12: false // Use 24-hour format
                                 };
 
                                 // Format the date to EST using Intl.DateTimeFormat
                                 let formatter = new Intl.DateTimeFormat('en-US', options);
                                 let formattedDate = formatter.format(date);
-                                // const date = new Date(params.value);
-                                // Example: "MM/DD/YYYY HH:mm:ss"
                                 return formattedDate;
                             }
                             return '';
