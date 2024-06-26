@@ -1,11 +1,11 @@
-name: UDI Prime RDS schema generator
+name: UDI Devl RDS schema generator
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: techbd-sql
+    runs-on: devl-techbd-sql
 
     steps:
       - name: Checkout repository
@@ -14,10 +14,10 @@ jobs:
       - name: Create .pgpass file
         run: |
           # Write the metadata comment to the .pgpass file
-          echo "# { id: \"PROD_TECHBD_UDI_DS_PRIME\", description: \"UDI Prime database \", boundary: \"Production\" }" > ~/.pgpass
+          echo "# { id: \"DEVL_TECHBD_UDI_DS_DESTROYABLE\", description: \"UDI Devl database \", boundary: \"Development\" }" > ~/.pgpass
 
           # Append the database connection details to the .pgpass file
-          echo "${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PASSWORD }}" >> ~/.pgpass
+          echo "${{ secrets.DEVL_TECHBD_UDI_DS_HOST }}:${{ secrets.DEVL_TECHBD_UDI_DS_PORT }}:${{ secrets.DEVL_TECHBD_UDI_DS_NAME }}:${{ secrets.DEVL_TECHBD_UDI_DS_USER }}:${{ secrets.DEVL_TECHBD_UDI_DS_PASSWORD }}" >> ~/.pgpass
 
           # Set the .pgpass file permissions to 600 (read and write for owner only)
           chmod 600 ~/.pgpass
@@ -33,12 +33,12 @@ jobs:
       - name: Run Migrations
         run: |
           cd polyglot-prime/udi-prime
-          ./udictl.ts ic migrate --conn-id PROD_TECHBD_UDI_DS_PRIME
+          ./udictl.ts ic migrate --conn-id DEVL_TECHBD_UDI_DS_DESTROYABLE
 
       - name: Run test
         run: |
           cd polyglot-prime/udi-prime
-          ./udictl.ts ic test --conn-id PROD_TECHBD_UDI_DS_PRIME
+          ./udictl.ts ic test --conn-id DEVL_TECHBD_UDI_DS_DESTROYABLE
           
       - name: Display log file
         run: |

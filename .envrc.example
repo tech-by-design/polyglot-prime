@@ -41,3 +41,5 @@ export ORG_TECHBD_SERVICE_HTTP_GITHUB_API_AUTHN_TOKEN=*********
 
 export UPI_WS_EDITOR=vscode-wsl
 export UPI_WS_EDITOR_VSCODE_REMOTE_DISTRO=Debian
+# variable to store application log file, .log will be automatically added , so not to specify it.
+export ORG_TECHBD_HUB_PRIME_LOG_FILE= #Path to the log file with file name (${HOME}/log/techbd/hub-prime/hub-prime-application)

@@ -2,14 +2,16 @@ package org.techbd.service.http;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-
+import org.techbd.service.http.GitHubUsersService.AuthorizedUser;
+import reactor.util.retry.Retry;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -21,11 +23,19 @@ import reactor.core.publisher.Mono;
 public class GitHubUsersService {
   private static final Logger LOG = LoggerFactory.getLogger(GitHubUsersService.class);
 
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  public record AuthorizedUser(String gitHubId, String name, String tenantId, List<String> roles) {
+  // @JsonIgnoreProperties(ignoreUnknown = true)
+  // public record AuthorizedUser(String gitHubId, String name, String tenantId,
+  // List<String> roles) {
+  // }
+  public record AuthorizedUser(String name, String emailPrimary, String profilePicUrl, String gitHubId,
+      String tenantId, Map<String, Resource> resources) {
   }
 
-  // this record must physically match the structure of sensitive/oauth2-github-authz.yml
+  public record Resource(List<String> roles) {
+  }
+
+  // this record must physically match the structure of
+  // sensitive/oauth2-github-authz.yml
   public record AuthorizedUsers(List<AuthorizedUser> users) {
     public Optional<AuthorizedUser> isAuthorizedUser(final String gitHubUserID) {
       return users.stream().filter(u -> u.gitHubId().equals(gitHubUserID)).findFirst();
@@ -74,6 +84,10 @@ public class GitHubUsersService {
               .error(new IOException("Unexpected response code from GitHub API: " + clientResponse.statusCode()));
         })
         .bodyToMono(String.class)
+        .retryWhen(
+            Retry.backoff(3, Duration.ofSeconds(2))
+                .filter(throwable -> throwable instanceof IOException)
+                .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> retrySignal.failure()))
         .block();
 
     if (responseBody == null) {

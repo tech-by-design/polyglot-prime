@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.techbd.conf.Configuration;
@@ -19,8 +18,6 @@ import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.route.RoutesTree;
 import org.techbd.service.http.hub.prime.route.RoutesTree.HtmlAnchor;
 import org.techbd.service.http.hub.prime.route.RoutesTrees;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -111,13 +108,4 @@ public class Presentation {
         return templateName;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record AuthenticatedUser(String name, String emailPrimary, String profilePicUrl, String gitHubId,
-            String tenantId, List<String> roles) {
-        public AuthenticatedUser(final OAuth2User principal, String tenantId, List<String> roles) {
-            this((String) principal.getAttribute("name"), (String) principal.getAttribute("email"),
-                    (String) principal.getAttribute("avatar_url"), (String) principal.getAttribute("login"), tenantId,
-                    roles);
-        }
-    }
 }
