@@ -63,6 +63,12 @@ public class InteractionsController {
         return presentation.populateModel("page/interactions/https", model, request);
     }
 
+    @GetMapping("/interactions/httpsfailed")
+    @RouteMapping(label = "FHIR via HTTPs FAILED")
+    public String https_failed(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/httpsfailed", model, request);
+    }
+
     @GetMapping("/interactions/sftp")
     @RouteMapping(label = "CSV via SFTP (egress)")
     public String sftp(final Model model, final HttpServletRequest request) {
@@ -85,11 +91,29 @@ public class InteractionsController {
         // https://github.com/ag-grid/ag-grid-server-side-oracle-example/src/main/java/com/ag/grid/enterprise/oracle/demo/dao/TradeDao.java
         // final var pivotValues = getPivotValues(request.getPivotCols());
         // final Map<String, List<String>> pivotValues = Map.of();
-        final Map<String, List<String>> pivotValues = /*Map.of();*/ getPivotValues(payload.getPivotCols());
+        final Map<String, List<String>> pivotValues = /* Map.of(); */ getPivotValues(payload.getPivotCols());
 
         final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request",
-                pivotValues));
+        final var result = DSL
+                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request",
+                        pivotValues));
+
+        // create response with our results
+        return ServerRowsResponse.createResponse(payload, result.intoMaps(), pivotValues);
+
+    }
+
+    @Operation(summary = "HTTP Request/Response Failed Interactions for Populating Grid")
+    @PostMapping(value = "/support/interaction/httpsfailed.json", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ServerRowsResponse httpsFailedInteractions(final @RequestBody @Nonnull ServerRowsRequest payload) {
+
+        final Map<String, List<String>> pivotValues = /* Map.of(); */ getPivotValues(payload.getPivotCols());
+
+        final var DSL = udiPrimeJpaConfig.dsl();
+        final var result = DSL
+                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request_failed",
+                        pivotValues));
 
         // create response with our results
         return ServerRowsResponse.createResponse(payload, result.intoMaps(), pivotValues);
@@ -137,7 +161,8 @@ public class InteractionsController {
     @Operation(summary = "Recent SFTP Interactions")
     @GetMapping("/support/interaction/orchctl/{tenantId}/{interactionId}.json")
     @ResponseBody
-    public Optional<SftpManager.IndividualTenantSftpEgressSession> observeRecentSftpInteractionsWithId(final @PathVariable String tenantId, final @PathVariable String interactionId) {
+    public Optional<SftpManager.IndividualTenantSftpEgressSession> observeRecentSftpInteractionsWithId(
+            final @PathVariable String tenantId, final @PathVariable String interactionId) {
         return sftpManager.getTenantEgressSession(tenantId, interactionId);
     }
 
@@ -166,8 +191,7 @@ public class InteractionsController {
         Map<String, TenantSftpEgressSession> sessionMap = sftpResult.stream()
                 .collect(Collectors.toMap(
                         TenantSftpEgressSession::getSessionId,
-                        session -> session
-                ));
+                        session -> session));
 
         for (final var row : rows) {
             String sessionId = (String) row.get("session_id");

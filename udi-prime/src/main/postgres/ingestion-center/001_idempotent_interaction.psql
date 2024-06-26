@@ -111,6 +111,39 @@ SELECT
     LIMIT 1 OFFSET 2) AS third_request
 FROM
     techbd_udi_ingress.hub_interaction hi;
+/*******************************************************************************************
+This view is to facilitate the analysis and debugging of failed HTTP interactions. 
+This can help in improving the overall reliability and performance of the system by 
+addressing the root causes of these failures. The view captures important fields 
+such as interaction and request metadata, client information, and state transitions, 
+making it a comprehensive resource for monitoring and troubleshooting failed HTTP requests.
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_failed AS 
+SELECT hi.hub_interaction_id AS interaction_id,
+    hi.key AS uri,
+    hi.created_at AS interaction_created_at,
+    hi.created_by AS interaction_created_by,
+    hi.provenance AS interaction_provenance,
+    sihr.sat_interaction_http_request_id,
+    sihr.nature ->> 'nature'::text AS nature,
+    sihr.nature ->> 'tenant_id'::text AS tenant_id,           
+    COALESCE((sihr.payload -> 'request'::text) ->> 'userAgent'::TEXT,sihr.nature ->> 'userAgent'::text) AS user_agent,        
+    COALESCE((sihr.payload -> 'request'::text) ->> 'clientIpAddress'::TEXT, sihr.nature ->> 'clientIpAddress'::TEXT) AS client_ip_address,           
+    sihr.content_type,
+    sihr.payload,
+    sihr.elaboration,
+    sihr.from_state,
+    sihr.to_state,
+    sihr.state_transition_reason,
+    sihr.created_at AS request_created_at,
+    sihr.created_by AS request_created_by,
+    sihr.provenance AS request_provenance
+   FROM techbd_udi_ingress.hub_interaction hi
+     LEFT JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
+    ON hi.hub_interaction_id = sihr.hub_interaction_id
+    WHERE upper(sihr.to_state) = 'FAIL'
+   ;
 
 /*******************************************************************************************************************************
  * Procedure to register an HTTP interaction, handling potential unique constraint violations

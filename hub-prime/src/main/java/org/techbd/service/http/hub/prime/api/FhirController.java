@@ -215,7 +215,7 @@ public class FhirController {
                             errorRIHR.setInteractionId(bundleAsyncInteractionId);
                             errorRIHR.setInteractionKey(requestURI);
                             errorRIHR.setNature(Configuration.objectMapper.valueToTree(
-                                    Map.of("nature", "SHIN-NY FHIR Server Error", "tenant_id", tenantId)));
+                                    Map.of("nature", "Forwarded HTTP Response Error", "tenant_id", tenantId)));
                             errorRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                             errorRIHR.setPayload(Configuration.objectMapper.valueToTree(
                                     Map.of("dataLakeApiBaseURL", dataLakeApiBaseURL, "error", error.toString(),
