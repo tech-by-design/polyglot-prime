@@ -86,12 +86,7 @@ public class InteractionsController {
         // .limit(payload.getEndRow() - payload.getStartRow() + 1).fetch();
         // return ServerRowsResponse.createResponse(payload, result.intoMaps(), null);
 
-        // TODO: obtain the pivot values from the DB for the requested pivot columns
-        // see
-        // https://github.com/ag-grid/ag-grid-server-side-oracle-example/src/main/java/com/ag/grid/enterprise/oracle/demo/dao/TradeDao.java
-        // final var pivotValues = getPivotValues(request.getPivotCols());
-        // final Map<String, List<String>> pivotValues = Map.of();
-        final Map<String, List<String>> pivotValues = /*Map.of();*/ getPivotValues(payload.getPivotCols());
+        final Map<String, List<String>> pivotValues = getPivotValues(payload.getPivotCols());
 
         final var DSL = udiPrimeJpaConfig.dsl();
         final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request",

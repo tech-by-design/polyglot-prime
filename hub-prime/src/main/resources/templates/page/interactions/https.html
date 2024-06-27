@@ -75,7 +75,8 @@
 
             document.addEventListener('DOMContentLoaded', function () {
                 const columnDefs = [
-                    { headerName: "Request Time", field: "interaction_created_at", sort: "desc", filter: "agNumberColumnFilter", enableRowGroup: true,
+                    {
+                        headerName: "Request Time", field: "interaction_created_at", sort: "desc", filter: "agNumberColumnFilter", enableRowGroup: true,
                         valueFormatter: function (params) {
                             if (params.value) {
                                 // Convert Unix timestamp to milliseconds
@@ -99,25 +100,29 @@
                                 return formattedDate;
                             }
                             return '';
-                        } 
+                        }
                     },
                     {
                         headerName: "Interaction ID", field: "interaction_id", enableRowGroup: true,
                         filter: "agTextColumnFilter",
                         cellRenderer: function (params) {
-                            const link = document.createElement('a');
-                            link.href = '#';
-                            link.innerText = params.value;
-                            link.addEventListener('click', function (e) {
-                                e.preventDefault();
-                                showDetails(params.value);
-                            });
-                            return link;
+                            if (params.value) {
+                                const link = document.createElement('a');
+                                link.href = '#';
+                                link.innerText = params.value;
+                                link.addEventListener('click', function (e) {
+                                    e.preventDefault();
+                                    showDetails(params.value);
+                                });
+                                return link;
+                            } else {
+                                return null;
+                            }
                         }
                     },
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", enableRowGroup: true },
                     { headerName: "URI", field: "uri", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", enableRowGroup: true},
+                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", enableRowGroup: true },
                     { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", enableRowGroup: true },
                     { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", enableRowGroup: true },
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", enableRowGroup: true },
