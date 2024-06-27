@@ -189,6 +189,7 @@ public class InteractionsController {
         final var rows = result.intoMaps();
         var sftpResult = sftpManager.tenantEgressSessions();
         Map<String, TenantSftpEgressSession> sessionMap = sftpResult.stream()
+                .filter(session -> session.getSessionId() != null)
                 .collect(Collectors.toMap(
                         TenantSftpEgressSession::getSessionId,
                         session -> session));
