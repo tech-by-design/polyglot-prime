@@ -158,7 +158,7 @@ public class FhirController {
                     try {
                         immediateResult.put("outboundHttpMessage",
                                 outboundHttpMessage + "\n" + (includeIncomingPayloadInDB ? payload
-                                        : "`?include-incoming-payload-in-db=true` was not passed in as a parameter, payload not stored"));
+                                        : "The incoming FHIR payload was not stored (to save space).\nThis is not an error or warning just an FYI - if you'd like to see the incoming FHIR payload for debugging, next time just pass in the optional `?include-incoming-payload-in-db=true` to request payload storage for each request that you'd like to store."));
                         initRIHR.setInteractionId(bundleAsyncInteractionId);
                         initRIHR.setInteractionKey(requestURI);
                         initRIHR.setNature(Configuration.objectMapper.valueToTree(
