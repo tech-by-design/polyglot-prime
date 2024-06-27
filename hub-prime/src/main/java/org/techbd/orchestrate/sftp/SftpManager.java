@@ -176,7 +176,7 @@ public class SftpManager {
                 } else {
                     return Optional.of(new IndividualTenantSftpEgressSession(tenantId, null, tec.cachedAt(), null,
                             null, null,
-                            new RuntimeException("Invalid SFTP account2 %s".formatted(tenantId), tec.error())));
+                            new RuntimeException("Invalid SFTP account %s".formatted(tenantId), tec.error())));
                 }
             }
         }
