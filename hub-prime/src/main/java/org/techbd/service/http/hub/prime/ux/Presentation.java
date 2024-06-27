@@ -1,5 +1,6 @@
 package org.techbd.service.http.hub.prime.ux;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -70,17 +71,15 @@ public class Presentation {
         return routesTrees;
     }
 
-    protected String populateModel(final String templateName, final Model model, final HttpServletRequest request) {
+    public String populateModel(final String templateName, final Model model, final HttpServletRequest request) {
         // make the request, authUser available to templates
         model.addAttribute("appVersion", this.appConfig.getVersion());
         model.addAttribute("req", request);
         model.addAttribute("authUser", GitHubUserAuthorizationFilter.getAuthenticatedUser(request));
-        model.addAttribute("appVersion", this.appConfig.getVersion());
 
         // active route, siblings, ancestors (breadcrumbs) available for navigation
-        final var activeRoute = navPrimeTree.findNode(navPrimeTreeName + request.getRequestURI());
         model.addAttribute("navPrime", navPrimeLinks);
-        model.addAttribute("activeRoute", activeRoute);
+        registerActiveRoute(model, request);
 
         // if we're running in a developer sandbox and want the templates being
         // displayed via the web to be editable
@@ -108,4 +107,37 @@ public class Presentation {
         return templateName;
     }
 
+    protected void registerActiveRoute(final Model model, final HttpServletRequest request) {
+        final var activeRouteFound = navPrimeTree.findNode(navPrimeTreeName + request.getRequestURI());
+        if (activeRouteFound.isEmpty()) {
+            return;
+        }
+
+        final var activeRoute = activeRouteFound.orElseThrow();
+        final var activeRoutePayload = activeRoute.payload().orElseThrow();
+        final var activeRoutePath = "/" + activeRoute.absolutePath(false);
+        final var isHomePage = request.getRequestURI().equals("/home");
+        
+        final var breadcrumbs = activeRoute.ancestors().stream()
+                .map(child -> new HtmlAnchor(child).intoMap())
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        list -> {
+                            Collections.reverse(list);
+                            return list.size() > 1 ? list.subList(1, list.size()) : List.of();
+                        }));
+        final var siblings = activeRoute.siblings(true).stream()
+                .sorted(Comparator.comparing(sibling -> sibling.payload()
+                        .flatMap(payload -> payload.siblingOrder())
+                        .orElse(Integer.MAX_VALUE)))
+                .map(sibling -> new HtmlAnchor(sibling).intoMap())
+                .collect(Collectors.toList());
+
+        model.addAttribute("isHomePage", isHomePage);
+        model.addAttribute("activeRoute", activeRoute);
+        model.addAttribute("activeRoutePath", activeRoutePath);
+        model.addAttribute("activeRouteTitle", activeRoutePayload.title().orElse(activeRoutePayload.label()));
+        model.addAttribute("siblingLinks", isHomePage ? List.of() : siblings);
+        model.addAttribute("breadcrumbs", breadcrumbs);
+    }
 }

@@ -97,7 +97,7 @@ public class PathsJson<C, P> {
                 .map(n -> n.absolutePath())
                 .toArray(String[]::new));
 
-        nodeMap.put("siblings", node.siblings().stream()
+        nodeMap.put("siblings", node.siblings(false).stream()
                 .map(n -> n.absolutePath())
                 .toArray(String[]::new));
 

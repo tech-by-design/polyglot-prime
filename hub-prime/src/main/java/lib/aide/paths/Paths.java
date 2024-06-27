@@ -83,13 +83,14 @@ public class Paths<C, P> {
                     .findFirst();
         }
 
-        public List<Node> siblings() {
+        public List<Node> siblings(boolean withSelf) {
             if (parent == null) {
                 return List.of();
             }
-            return parent.children.stream()
-                    .filter(node -> !node.equals(this))
-                    .collect(Collectors.toList());
+            return withSelf ? parent.children.stream().collect(Collectors.toList())
+                    : parent.children.stream()
+                            .filter(node -> !node.equals(this))
+                            .collect(Collectors.toList());
         }
 
         public List<Node> descendants() {
@@ -116,8 +117,12 @@ public class Paths<C, P> {
             return children.isEmpty();
         }
 
+        public String absolutePath(boolean includeRoot) {
+            return pcSupplier.assemble(includeRoot ? components : components.subList(1, components.size()));
+        }
+
         public String absolutePath() {
-            return pcSupplier.assemble(components);
+            return absolutePath(true);
         }
 
         public List<Node> children() {
@@ -263,7 +268,8 @@ public class Paths<C, P> {
      * roots.
      *
      * @param payload the payload to populate
-     * @param ips what to do with payloads for child nodes defined before parents
+     * @param ips     what to do with payloads for child nodes defined before
+     *                parents
      */
     public void populate(final P payload, final InterimPayloadSupplier<C, P> ips) {
         final var components = pcSupplier.components(payload);

@@ -87,8 +87,14 @@ public class PrimeController {
 
     @RouteMapping(label = "Documentation", siblingOrder = 50)
     @GetMapping("/docs")
-    public String docs(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/documentation", model, request);
+    public String docs() {
+        return "redirect:/docs/swagger-ui";
+    }
+
+    @RouteMapping(label = "OpenAPI UI", title="OpenAPI Endpoints Documentation and Testing", siblingOrder = 0)
+    @GetMapping("/docs/swagger-ui")
+    public String swaggerUI(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/swagger-ui", model, request);
     }
 
     @GetMapping(value = "/experiment/{page}.html")

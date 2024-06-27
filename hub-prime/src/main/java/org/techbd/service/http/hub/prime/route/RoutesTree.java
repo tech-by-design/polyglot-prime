@@ -1,11 +1,15 @@
 package org.techbd.service.http.hub.prime.route;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.text.WordUtils;
+import org.techbd.conf.Configuration;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import lib.aide.paths.Paths;
 
@@ -28,14 +32,26 @@ public class RoutesTree extends Paths<String, RoutesTree.Route> {
             this(node.payload(), node.payload().map(p -> p.href()),
                     node.payload().map(p -> p.label()).orElse(WordUtils.capitalize(node.components().getLast())));
         }
+
+        public Map<String, String> intoMap() {
+            final var result = new HashMap<String, String>();
+            result.put("text", text);
+            if (href.isPresent())
+                result.put("href", href.orElseThrow());
+            return result;
+        }
+
+        public JsonNode toJson() {
+            return Configuration.objectMapper.valueToTree(intoMap());
+        }
     }
 
-    public record Route(String href, String label, Optional<String> description, Optional<Integer> siblingOrder,
+    public record Route(String href, String label, Optional<String> title, Optional<Integer> siblingOrder,
             Optional<Object> provenance) {
 
-        public Route(String href, String label, String description, int siblingOrder, Object provenance) {
+        public Route(String href, String label, String title, int siblingOrder, Object provenance) {
             this(href, label,
-                    Optional.ofNullable(description != null ? description.isBlank() ? null : description : null),
+                    Optional.ofNullable(title != null ? title.isBlank() ? null : title : null),
                     siblingOrder == Integer.MAX_VALUE ? Optional.empty() : Optional.of(Integer.valueOf(siblingOrder)),
                     Optional.ofNullable(provenance));
         }
@@ -43,7 +59,7 @@ public class RoutesTree extends Paths<String, RoutesTree.Route> {
         public Route(RouteMapping mapping, String href, Object provenance) {
             this(href,
                     mapping.label(),
-                    mapping.description(),
+                    mapping.title(),
                     mapping.siblingOrder(),
                     provenance);
         }

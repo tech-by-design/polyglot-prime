@@ -58,19 +58,19 @@ public class InteractionsController {
     }
 
     @GetMapping("/interactions/https")
-    @RouteMapping(label = "FHIR via HTTPs")
+    @RouteMapping(label = "FHIR via HTTPs", title = "FHIR Interactions via HTTPs")
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }
 
     @GetMapping("/interactions/httpsfailed")
-    @RouteMapping(label = "FHIR via HTTPs FAILED")
+    @RouteMapping(label = "FHIR via HTTPs FAILED", title = "FHIR Interactions via HTTPs (POST to SHIN-NY Failures)")
     public String https_failed(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpsfailed", model, request);
     }
 
     @GetMapping("/interactions/sftp")
-    @RouteMapping(label = "CSV via SFTP (egress)")
+    @RouteMapping(label = "CSV via SFTP (egress)", title = "CSV Files via SFTP (egress directory)")
     public String sftp(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/sftp", model, request);
     }
@@ -153,7 +153,7 @@ public class InteractionsController {
 
     @Operation(summary = "Recent Orchctl Interactions")
     @GetMapping("/interactions/orchctl")
-    @RouteMapping(label = "CSV Interactions via Orchctl with SFTP (egress)")
+    @RouteMapping(label = "CSV via SFTP (DB)", title = "CSV Files via SFTP (in PostgreSQL DB)")
     public String orchctl(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/orchctl", model, request);
     }

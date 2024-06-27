@@ -226,7 +226,7 @@ public class PathsTest {
         final var node = paths.findNode(path);
         assertThat(node).isPresent();
 
-        final var siblings = node.get().siblings();
+        final var siblings = node.get().siblings(false);
         assertThat(siblings).hasSize(expectedSiblings.length);
 
         for (int i = 0; i < expectedSiblings.length; i++) {

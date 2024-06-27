@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.Mapping;
 @Mapping
 public @interface RouteMapping {
     String label();
-    String description() default "";
+    String title() default "";
     String namespace() default "prime";
     int siblingOrder() default Integer.MAX_VALUE; // MAX_VALUE means "don't care", greater than zero means sort in that order with lowest to highest
 }

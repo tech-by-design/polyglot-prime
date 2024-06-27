@@ -41,7 +41,7 @@ const contextPath = layoutSelectOp('meta[name="ssrServletContextPath"]', (meta) 
 if (contextPath == null) console.warn(`<meta name="ssrServletContextPath"> not provided, ssrServletUrl() might not work properly.`);
 
 // Our convention is to pass a JS object as a <meta> to inform whether the sandbox console should be configured
-const sandboxConsoleConf = layoutSelectOp('meta[name="sandboxConsoleConf"]', (meta) => { return JSON.parse(meta.content) });
+const sandboxConsoleConf = layoutSelectOp('meta[name="sandboxConsoleConf"]', (meta) => { return meta?.content ? JSON.parse(meta.content) : null });
 if (sandboxConsoleConf) console.log(`Sandbox console configuration`, sandboxConsoleConf);
 
 /**
@@ -89,9 +89,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // If user agent sandbox console is enabled, update the corresponding elements
     if (sandboxConsoleConf?.enabled) {
+        const watch = document.sandboxConsoleWatch ? document.sandboxConsoleWatch : {};
         showSandboxConsole();
         layoutSelectOp(
-            '#sandbox-console-watch-json', (elem) => { elem.data = { contextPath, sandboxConsoleConf } },
+            '#sandbox-console-watch-json', (elem) => { elem.data = { contextPath, sandboxConsoleConf, ...watch } },
             '#sandbox-console', (elem) => { elem.style.display = '' });
     }
 });

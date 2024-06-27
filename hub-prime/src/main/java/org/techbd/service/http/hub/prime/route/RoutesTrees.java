@@ -46,7 +46,7 @@ public class RoutesTrees extends HashMap<String, RoutesTree> {
     public JsonNode toJson() {
         PathsJson.PayloadJsonSupplier<String, RoutesTree.Route> payloadRenderer = (node, paths) -> {
             return node.payload().map(route -> Map.of("href", route.href(), "label", route.label(), "description",
-                    route.description(), "provenance", route.provenance()));
+                    route.title(), "provenance", route.provenance()));
         };
 
         final var result = PathsJson.objectMapper.createObjectNode();
