@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,9 +87,12 @@ public class GitHubUsersService {
               .error(new IOException("Unexpected response code from GitHub API: " + clientResponse.statusCode()));
         })
         .bodyToMono(String.class)
+        .timeout(Duration.ofSeconds(10))
         .retryWhen(
             Retry.backoff(3, Duration.ofSeconds(2))
-                .filter(throwable -> throwable instanceof IOException)
+                .filter(throwable -> throwable instanceof IOException || throwable instanceof WebClientRequestException)
+                .doBeforeRetry(retrySignal -> LOG.warn("GitHub API retry attempt {} due to {}",
+                    retrySignal.totalRetries() + 1, retrySignal.failure().toString())) // Log retry attempt
                 .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> retrySignal.failure()))
         .block();
 
