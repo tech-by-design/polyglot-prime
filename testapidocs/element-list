@@ -1,3 +1,5 @@
+lib.aide.paths
+lib.aide.vfs
 org.techbd.orchestrate.fhir
 org.techbd.service.http.hub.prime
 org.techbd.util
