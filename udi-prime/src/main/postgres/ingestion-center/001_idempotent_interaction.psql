@@ -145,6 +145,52 @@ SELECT hi.hub_interaction_id AS interaction_id,
     WHERE upper(sihr.to_state) = 'FAIL'
    ;
 
+/*******************************************************************************************
+  This view combines data from interaction_http_request_multiple_3 and interaction_http_request_failed
+  to provide a consolidated view of failed HTTP requests and associated interactions.
+******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_forward_fail CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_fail
+AS WITH cte_interaction AS (
+    SELECT intr_multi.interaction_id,
+       hreq_failed.tenant_id,
+       intr_multi.uri,
+       hreq_failed.nature,
+       intr_multi.interaction_created_at,
+       intr_multi.interaction_created_by,
+       intr_multi.interaction_provenance,
+       intr_multi.first_request,
+       intr_multi.second_request,
+       intr_multi.third_request,
+       COALESCE(((intr_multi.first_request -> 'payload'::text) -> 'request'::text) ->> 'clientIpAddress'::text, hreq_failed.client_ip_address) AS client_ip_address,
+       COALESCE(((intr_multi.first_request -> 'payload'::text) -> 'request'::text) ->> 'userAgent'::text, hreq_failed.user_agent) AS user_agent,
+       COALESCE(intr_multi.first_request ->> 'from_state'::text, hreq_failed.from_state) AS from_state,
+       COALESCE(intr_multi.first_request ->> 'to_state'::text, hreq_failed.to_state) AS to_state,
+       "substring"(((((intr_multi.first_request -> 'payload'::text) -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text) AS outbound_http_message,
+       (intr_multi.third_request -> 'payload'::text) ->> 'error'::text AS full_error_message,
+       substring((intr_multi.third_request -> 'payload'::text) ->> 'error'::text FROM position(':' IN ((intr_multi.third_request -> 'payload'::text) ->> 'error'::text)) + 2) AS error_text
+       
+      FROM techbd_udi_ingress.interaction_http_request_multiple_3 intr_multi
+      INNER JOIN techbd_udi_ingress.interaction_http_request_failed hreq_failed ON hreq_failed.interaction_id = intr_multi.interaction_id
+   )
+SELECT intr_hreq.interaction_id AS interaction_id,
+   intr_hreq.tenant_id AS tenant_id,
+   intr_hreq.uri AS uri,
+   intr_hreq.nature AS nature,
+   intr_hreq.interaction_created_at AS interaction_created_at,
+   intr_hreq.interaction_created_by AS interaction_created_by,
+   intr_hreq.interaction_provenance AS interaction_provenance,
+   intr_hreq.first_request AS first_request,
+   intr_hreq.second_request AS second_request,
+   intr_hreq.third_request AS third_request,
+   intr_hreq.client_ip_address AS client_ip_address,
+   intr_hreq.user_agent AS user_agent,
+   intr_hreq.from_state AS from_state,
+   intr_hreq.to_state AS to_state,
+   intr_hreq.outbound_http_message AS outbound_http_message,
+   intr_hreq.error_text AS error
+  FROM cte_interaction AS intr_hreq;
+
 /*******************************************************************************************************************************
  * Procedure to register an HTTP interaction, handling potential unique constraint violations
  * and logging exceptions when necessary.

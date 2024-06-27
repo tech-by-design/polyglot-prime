@@ -111,7 +111,7 @@ public class InteractionsController {
 
         final var DSL = udiPrimeJpaConfig.dsl();
         final var result = DSL
-                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request_failed",
+                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request_forward_fail",
                         pivotValues));
 
         // create response with our results
