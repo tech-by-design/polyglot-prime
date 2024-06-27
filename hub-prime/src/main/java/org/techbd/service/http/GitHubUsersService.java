@@ -1,22 +1,23 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.time.Duration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.techbd.service.http.GitHubUsersService.AuthorizedUser;
-import reactor.util.retry.Retry;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 @ConfigurationProperties(prefix = "org.techbd.service.http.github")
 @Service
