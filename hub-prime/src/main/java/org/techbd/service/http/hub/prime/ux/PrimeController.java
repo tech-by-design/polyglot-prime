@@ -97,6 +97,12 @@ public class PrimeController {
         return presentation.populateModel("page/docs/swagger-ui", model, request);
     }
 
+    @RouteMapping(label = "Health Information", title="Health Information Documentation and Testing", siblingOrder = 1)
+    @GetMapping("/docs/health-info")
+    public String healthInformation(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/health-info", model, request);
+    }
+
     @GetMapping(value = "/experiment/{page}.html")
     @Profile(value = "sandbox")
     public String navPrimeDebug(@PathVariable String page, final Model model, final HttpServletRequest request) {
