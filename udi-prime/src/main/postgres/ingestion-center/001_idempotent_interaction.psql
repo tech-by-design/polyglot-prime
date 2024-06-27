@@ -244,22 +244,121 @@ END;
 $$;
 
 /*******************************************************************************************
+ * Comprehensive view of Orchctl issue classification. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.orch_session_issue_classification CASCADE;
+CREATE OR REPLACE
+VIEW techbd_udi_ingress.orch_session_issue_classification as
+WITH cte_business_rule AS (
+SELECT
+	worksheet AS worksheet,
+	field AS field,
+	required AS required,
+	"Resolved by QE/QCS" AS resolved_by_qe_qcs,
+	CONCAT(
+          case
+		when UPPER("True Rejection") = 'YES' then 'REJECTION'
+		else ''
+	end,
+	case
+		when UPPER("Warning Layer") = 'YES' then 'WARNING'
+		else ''
+	end
+      ) AS record_action
+FROM
+	techbd_orch_ctl.business_rules
+GROUP BY
+	worksheet,
+	field,
+	required,
+	resolved_by_qe_qcs,
+	record_action
+)
+SELECT
+	DISTINCT ON
+	(isi.orch_session_issue_id) 
+  isi.*,
+	CASE
+		WHEN
+        UPPER(isi.issue_type) = 'MISSING COLUMN'
+      THEN
+        'STRUCTURAL ISSUE'
+		ELSE
+        br.record_action
+	END
+  AS disposition,
+	CASE
+		WHEN UPPER(br.resolved_by_qe_qcs) = 'YES' THEN 'Resolved By QE/QCS'
+		ELSE null
+	END AS remediation2
+FROM
+	techbd_orch_ctl.orch_session_issue AS isi
+LEFT JOIN cte_business_rule br ON
+	br.field = isi.issue_column
+WHERE
+	isi.orch_session_issue_id is not null
+;
+
+/*******************************************************************************************
  * Comprehensive view of SFTP interactions and their associated requests. * 
  ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_sftp CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_sftp AS 
+WITH issue_count AS (
+SELECT
+	osi.session_id,
+	count(osi.orch_session_issue_id) AS issue_count
+FROM
+	techbd_udi_ingress.orch_session_issue_classification osi
+GROUP BY
+	osi.session_id
+),
+rejection_count AS (
+SELECT
+	osi.session_id,
+	count(osi.orch_session_issue_id) AS rejection_count
+FROM
+	techbd_udi_ingress.orch_session_issue_classification osi
+WHERE 
+		osi.disposition = 'REJECTION'
+GROUP BY
+	osi.session_id
+),
+warning_count AS (
+SELECT
+	osi.session_id,
+	count(osi.orch_session_issue_id) AS warning_count
+FROM
+	techbd_udi_ingress.orch_session_issue_classification osi
+WHERE 
+		osi.disposition = 'WARNING'
+GROUP BY
+	osi.session_id
+)
 SELECT
 	"substring"(ose.ingest_src::text,
-	'/SFTP/([^/]+)/'::text) as qe,
-	os.orch_started_at as request_time,
+	'/SFTP/([^/]+)/'::text) AS qe,
+	os.orch_started_at AS request_time,
 	ose.session_id,
 	os."version",
-	count(ose.ingest_src) as ingress_count,
-	count(ose.ingest_src) as consumed_count
+	count(ose.ingest_src) AS ingress_count,
+	count(ose.ingest_src) AS consumed_count,
+	coalesce(ic.issue_count,
+	0) AS issue_count,
+	coalesce(rc.rejection_count,
+	0) AS rejection_count,
+	coalesce(wc.warning_count,
+	0) AS warning_count
 FROM
 	techbd_orch_ctl.orch_session_entry ose
-JOIN techbd_orch_ctl.orch_session os on
+JOIN techbd_orch_ctl.orch_session os ON
 	ose.session_id = os.orch_session_id
+LEFT JOIN issue_count ic ON
+	ose.session_id = ic.session_id
+LEFT JOIN rejection_count rc ON
+	ose.session_id = rc.session_id
+LEFT JOIN warning_count wc ON
+	ose.session_id = wc.session_id
 WHERE
 	"substring"(ose.ingest_src::text,
 	'/SFTP/([^/]+)/'::text) is not null
@@ -267,4 +366,8 @@ GROUP BY
 	ose.session_id,
 	qe,
 	os."version",
-	os.orch_started_at
+	os.orch_started_at,
+	ic.issue_count,
+	rc.rejection_count,
+	wc.warning_count;
+
