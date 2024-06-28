@@ -10,6 +10,7 @@ import org.techbd.conf.Configuration;
 public class AppConfig {
 
     public class Servlet {
+        public static final String FHIR_CONTENT_TYPE_HEADER_VALUE = "application/fhir+json";
         public class HeaderName {
             public class Request {
                 public static final String FHIR_STRUCT_DEFN_PROFILE_URI = Configuration.Servlet.HeaderName.PREFIX
