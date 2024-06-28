@@ -82,8 +82,7 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
-            MediaType.APPLICATION_JSON_VALUE + "+fhir" })
+    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE, "application/fhir+json" })
     @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
     @ResponseBody
     @Async
@@ -189,7 +188,7 @@ public class FhirController {
                     .header("Content-Type",
                             Optional.ofNullable(
                                     Optional.ofNullable(dataLakeApiContentType).orElse(request.getContentType()))
-                                    .orElse("application/json+fhir"))
+                                    .orElse("application/fhir+json"))
                     .retrieve()
                     .bodyToMono(String.class)
                     .subscribe(response -> {

@@ -91,16 +91,22 @@ public class PrimeController {
         return "redirect:/docs/swagger-ui";
     }
 
-    @RouteMapping(label = "OpenAPI UI", title="OpenAPI Endpoints Documentation and Testing", siblingOrder = 0)
+    @RouteMapping(label = "OpenAPI UI", title="OpenAPI Documentation", siblingOrder = 0)
     @GetMapping("/docs/swagger-ui")
     public String swaggerUI(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/swagger-ui", model, request);
     }
 
-    @RouteMapping(label = "Health Information", title="Health Information Documentation and Testing", siblingOrder = 1)
+    @RouteMapping(label = "Health Information", title="Health Information", siblingOrder = 1)
     @GetMapping("/docs/health-info")
     public String healthInformation(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/health-info", model, request);
+    }
+
+    @RouteMapping(label = "Announcements", title="Announcements", siblingOrder = 2)
+    @GetMapping("/docs/announcements")
+    public String announcements(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/announcements", model, request);
     }
 
     @GetMapping(value = "/experiment/{page}.html")
