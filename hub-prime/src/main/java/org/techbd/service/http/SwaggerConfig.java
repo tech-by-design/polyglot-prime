@@ -77,23 +77,6 @@ public class SwaggerConfig {
                             Interactions.Servlet.HeaderName.PREFIX))
                     .required(false);
 
-
-
-                final var interactionProvenance = new Parameter()
-                .in(ParameterIn.HEADER.toString())
-                .schema(new StringSchema())
-                .name(Interactions.Servlet.HeaderName.Request.PROVENANCE)
-                .description(String.format(
-                        """
-                                Instructs servlet to send a "provenance" JSON object for tracking in database.
-                                Something like this (as long as it's a JSON object, the content is arbitrary):
-
-                                - { "nature": "integration-test", "test-case": "fhir-fixture-shinny-impl-guide-sample.json" }
-                                - { "nature": "synthetic-scoring", "test-case": "qe-001" }
-                                """,
-                        Interactions.Servlet.HeaderName.PREFIX))
-                .required(false);
-
             operation.addParametersItem(interactionPersistStrategy);
             operation.addParametersItem(interactionProvenance);
             return operation;
