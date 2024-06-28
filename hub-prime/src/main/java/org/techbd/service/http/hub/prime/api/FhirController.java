@@ -9,6 +9,7 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +82,9 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
+            MediaType.APPLICATION_JSON_VALUE + "+fhir" })
+    @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
     @ResponseBody
     @Async
     public Object validateBundleAndForward(final @RequestBody @Nonnull String payload,
@@ -91,6 +94,7 @@ public class FhirController {
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
             @RequestParam(value = "immediate", required = false) boolean isSync,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
@@ -182,6 +186,10 @@ public class FhirController {
             webClient.post()
                     .uri("?processingAgent=" + tenantId)
                     .body(BodyInserters.fromValue(payload))
+                    .header("Content-Type",
+                            Optional.ofNullable(
+                                    Optional.ofNullable(dataLakeApiContentType).orElse(request.getContentType()))
+                                    .orElse("application/json+fhir"))
                     .retrieve()
                     .bodyToMono(String.class)
                     .subscribe(response -> {
@@ -241,6 +249,7 @@ public class FhirController {
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,

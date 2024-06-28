@@ -18,6 +18,8 @@ public class AppConfig {
                         + "FHIR-Validation-Strategy";
                 public static final String DATALAKE_API_URL = Configuration.Servlet.HeaderName.PREFIX
                         + "DataLake-API-URL";
+                public static final String DATALAKE_API_CONTENT_TYPE = Configuration.Servlet.HeaderName.PREFIX
+                        + "DataLake-API-Content-Type";
             }
 
             public class Response {
