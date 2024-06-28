@@ -43,6 +43,8 @@ springdoc:
   api-docs:
     path: /docs/api/openapi
   swagger-ui.path: /docs/api/interactive/index.html
+  swagger-ui:
+    doc-expansion: none
   show-actuator: true 
 
 server:

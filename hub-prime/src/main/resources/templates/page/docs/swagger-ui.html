@@ -4,11 +4,38 @@
 
 <head>
     <title>Documentation</title>
+    <script>
+        function finalizeDisplay(iframe) {
+            const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+            let checkAndDisplayIntervalID = null;
+
+            function displayImportantGroups() {
+                const expandBtn = iframeDocument.querySelector(`#operations-tag-TechBD_Hub_FHIR_Endpoints > button`);
+                if (expandBtn) {
+                    expandBtn.click();
+                    clearInterval(checkAndDisplayIntervalID); // Stop checking once the button is found and clicked
+                }
+            }
+
+            function checkAndDisplay() {
+                checkAndDisplayIntervalID = setInterval(() => {
+                    displayImportantGroups();
+                }, 250); // Check every 250 milliseconds until expand button is available
+            }
+
+            if (iframeDocument.readyState === 'complete') {
+                checkAndDisplay();
+            } else {
+                iframeDocument.addEventListener('DOMContentLoaded', checkAndDisplay);
+            }
+        }
+    </script>
 </head>
 
 <body>
     <div layout:fragment="content">
-        <iframe th:src="@{/docs/api/interactive/index.html}" class="w-full min-h-screen"></iframe>
+        <iframe th:src="@{/docs/api/interactive/index.html}" onload="finalizeDisplay(this)"
+            class="w-full min-h-screen"></iframe>
     </div>
 </body>
 
