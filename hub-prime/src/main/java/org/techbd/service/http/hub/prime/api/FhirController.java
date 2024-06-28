@@ -82,7 +82,7 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE, "application/fhir+json" })
+    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE, AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
     @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
     @ResponseBody
     @Async
@@ -188,7 +188,7 @@ public class FhirController {
                     .header("Content-Type",
                             Optional.ofNullable(
                                     Optional.ofNullable(dataLakeApiContentType).orElse(request.getContentType()))
-                                    .orElse("application/fhir+json"))
+                                    .orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
                     .retrieve()
                     .bodyToMono(String.class)
                     .subscribe(response -> {
@@ -247,7 +247,7 @@ public class FhirController {
         return result;
     }
 
-    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = { MediaType.APPLICATION_JSON_VALUE , "application/fhir+json"})
+    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = { MediaType.APPLICATION_JSON_VALUE , AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
     @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
