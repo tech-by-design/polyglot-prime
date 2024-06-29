@@ -168,8 +168,10 @@ AS WITH cte_interaction AS (
        COALESCE(intr_multi.first_request ->> 'to_state'::text, hreq_failed.to_state) AS to_state,
        "substring"(((((intr_multi.first_request -> 'payload'::text) -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text) AS outbound_http_message,
        (intr_multi.third_request -> 'payload'::text) ->> 'error'::text AS full_error_message,
-       substring((intr_multi.third_request -> 'payload'::text) ->> 'error'::text FROM position(':' IN ((intr_multi.third_request -> 'payload'::text) ->> 'error'::text)) + 2) AS error_text
-       
+       SUBSTRING((intr_multi.third_request -> 'payload'::text) ->> 'error'::text FROM POSITION((':'::text) IN ((intr_multi.third_request -> 'payload'::text) ->> 'error'::text)) + 2) AS error_text,
+        jsonb_array_length(
+		(intr_multi.first_request -> 'payload'::text) -> 'response'::text -> 'responseBody'::text -> 'OperationOutcome'::text -> 'validationResults'::text -> 0 -> 'issues'
+  		) AS issues_count
       FROM techbd_udi_ingress.interaction_http_request_multiple_3 intr_multi
       INNER JOIN techbd_udi_ingress.interaction_http_request_failed hreq_failed ON hreq_failed.interaction_id = intr_multi.interaction_id
    )
@@ -188,8 +190,64 @@ SELECT intr_hreq.interaction_id AS interaction_id,
    intr_hreq.from_state AS from_state,
    intr_hreq.to_state AS to_state,
    intr_hreq.outbound_http_message AS outbound_http_message,
-   intr_hreq.error_text AS error
+   intr_hreq.error_text AS error,
+   intr_hreq.issues_count
   FROM cte_interaction AS intr_hreq;
+
+/*******************************************************************************************
+The view techbd_udi_ingress.interaction_diagnostics retrieves diagnostic information from 
+the techbd_udi_ingress.interaction_http_request_forward_fail object, extracting relevant fields 
+such as bundleSessionId, validation_engine, and various details about issues encountered 
+during interactions. It utilizes Common Table Expressions (CTEs) to structure the query, 
+extracting data from nested JSON structures.
+******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_diagnostics CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_diagnostics
+AS WITH cte_interaction_issues AS(
+SELECT 
+	fwd_fail.interaction_id,
+	fwd_fail.tenant_id,
+	fwd_fail.uri,
+	fwd_fail.interaction_created_at,
+	fwd_fail.interaction_created_by,
+	fwd_fail.interaction_provenance,
+	fwd_fail.client_ip_address,
+	fwd_fail.user_agent,
+	fwd_fail.from_state,
+	fwd_fail.to_state,
+	fwd_fail.first_request -> 'payload' -> 'response' -> 'responseBody' -> 'OperationOutcome' ->> 'bundleSessionId' AS bundleSessionId,
+	validation_results -> 'observability' ->> 'name' AS validation_engine,
+	issue ->> 'message' AS issue_message,
+	issue -> 'location' ->> 'line' AS issue_line,
+	issue -> 'location' ->> 'column' AS issue_column,
+	issue -> 'location' ->> 'diagnostics' AS issue_diagnostics,
+	issue ->> 'severity' AS issue_type
+FROM
+	techbd_udi_ingress.interaction_http_request_forward_fail fwd_fail,
+	jsonb_array_elements(first_request #> '{payload,response,responseBody,OperationOutcome,validationResults}') AS validation_results,
+	jsonb_array_elements(validation_results -> 'issues') AS issue
+   )
+SELECT
+	intr_issue.interaction_id,
+	intr_issue.tenant_id,
+	intr_issue.uri,
+	intr_issue.interaction_created_at,
+	intr_issue.interaction_created_by,
+	intr_issue.interaction_provenance,
+	intr_issue.client_ip_address,
+	intr_issue.user_agent,
+	intr_issue.from_state,
+	intr_issue.to_state,
+	intr_issue.bundleSessionId,
+	intr_issue.validation_engine,
+	intr_issue.issue_message,
+	intr_issue.issue_line,
+	intr_issue.issue_column,
+	intr_issue.issue_diagnostics,
+	intr_issue.issue_type
+FROM
+	cte_interaction_issues intr_issue
+  ;
 
 /*******************************************************************************************************************************
  * Procedure to register an HTTP interaction, handling potential unique constraint violations

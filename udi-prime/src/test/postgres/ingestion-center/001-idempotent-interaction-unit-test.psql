@@ -1,0 +1,142 @@
+
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_register_interaction_http_request(schema_name text DEFAULT 'techbd_udi_ingress'::text)
+ RETURNS SETOF text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE    
+    return_value TEXT;
+    v_interaction_id TEXT; 
+    v_interaction_key TEXT; 
+    v_payload jsonb; 
+    v_elaboration jsonb; 
+    v_nature jsonb; 
+    v_content_type TEXT; 
+    v_from_state TEXT; 
+    v_to_state TEXT; 
+    v_state_transition_reason TEXT; 
+    v_created_at timestamp; 
+    v_created_by TEXT; 
+    v_provenance TEXT; 
+    v_hub_upsert_behavior boolean;
+    v_hub_exception_row techbd_udi_ingress.hub_exception%ROWTYPE;
+   	function_exists boolean;
+BEGIN
+    
+    v_interaction_id            := techbd_udi_ingress.uuid_generate_v4();
+    v_interaction_key           := techbd_udi_ingress.uuid_generate_v4();
+    v_elaboration               := '{"key" : "elaboration"}';
+    v_nature                    := '{"nature": "org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id": "N/A"}';
+    v_content_type              := 'application/json';
+    v_from_state                := 'FORWARD';
+    v_to_state                  := 'COMPLETE';
+    v_state_transition_reason   := 'state_transition_reason_1';
+    v_created_at                := CURRENT_TIMESTAMP;
+    v_created_by                := CURRENT_USER;
+    v_provenance                := 'org.techbd.service.http.InteractionsFilter.doFilterInternal';
+    v_hub_upsert_behavior       := TRUE;
+
+    -- Check if the table 'pgtap_fixtures_json' exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
+               AND table_name = 'pgtap_fixtures_json') THEN 
+        SELECT "jsonb" INTO v_payload
+        FROM techbd_udi_assurance.pgtap_fixtures_json 
+        WHERE "name" = 'interaction_payload';
+    ELSE 
+        RETURN NEXT 'Table techbd_udi_assurance.pgtap_fixtures_json does not exist';
+    END IF;
+    
+    -- Check existence of required functions     
+   RETURN NEXT has_function(
+        schema_name,
+        'register_interaction_http_request',
+        ARRAY['text', 'text', 'jsonb', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean'],
+        'Procedure register_interaction_http_request exists'
+    );
+   
+     RETURN NEXT has_function(
+        schema_name,
+        'register_issue',
+        ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+        'Function register_issue exists'
+    );
+   
+    CALL techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => v_payload,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => true
+    );
+    
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = v_interaction_key
+                            AND hub_intr.created_by              = CURRENT_USER
+                            AND hub_intr.provenance              = v_provenance
+                   ),
+            'Successfully inserted into the table hub_interaction'
+        );
+   
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                            WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                            AND sat_intr.nature                   = v_nature
+                            AND sat_intr.content_type             = v_content_type
+                            AND sat_intr.payload                  = v_payload
+                            AND sat_intr.from_state               = v_from_state
+                            AND sat_intr.to_state                 = v_to_state
+                            AND sat_intr.state_transition_reason  = v_state_transition_reason
+                            AND sat_intr.elaboration              = v_elaboration
+                            AND sat_intr.created_by               = v_created_by
+                            AND sat_intr.provenance               = v_provenance
+                   ),
+            'Successfully inserted into the table sat_interaction_http_request'
+        );
+
+    /*Test the exception handling with Unique Constraint Violation*/
+       
+    CALL techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => v_payload,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => false
+    );
+   
+   SELECT hub_exp.* INTO v_hub_exception_row
+   FROM techbd_udi_ingress.hub_exception hub_exp
+   WHERE hub_exp."key"      = v_interaction_key
+   AND hub_exp.created_by   = CURRENT_USER
+   AND hub_exp.provenance   = v_provenance
+   ;
+   
+  RETURN NEXT ok(v_hub_exception_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_exception');
+   
+  RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_exception_diagnostics sat_exp
+                            WHERE sat_exp.hub_exception_id    = v_hub_exception_row.hub_exception_id                    
+                            AND sat_exp.created_by           = CURRENT_USER
+                            AND sat_exp.provenance           = v_provenance
+                   ),
+            'Successfully inserted exception details into the table sat_exception_diagnostics'
+        );  
+END;
+$function$
+;

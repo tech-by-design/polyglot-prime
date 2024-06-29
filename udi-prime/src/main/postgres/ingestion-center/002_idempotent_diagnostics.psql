@@ -1,0 +1,64 @@
+
+/*******************************************************************************************
+ * Comprehensive view of SFTP diagnostics with their related issues. * 
+ ******************************************************************************************/
+CREATE or REPLACE
+view techbd_udi_ingress.orch_session_diagnostics AS
+WITH cte_business_rule AS (
+SELECT
+	worksheet AS worksheet,
+	field AS field,
+	required AS required,
+	"Resolved by QE/QCS" AS resolved_by_qe_qcs,
+	CONCAT(
+          CASE
+		when UPPER("True Rejection") = 'YES' then 'REJECTION'
+		else ''
+	END,
+	CASE
+		when UPPER("Warning Layer") = 'YES' then 'WARNING'
+		else ''
+	END
+      ) AS record_action
+FROM
+	techbd_orch_ctl.business_rules
+GROUP BY
+	worksheet,
+	field,
+	required,
+	resolved_by_qe_qcs,
+	record_action
+)
+SELECT
+	DISTINCT ON
+	(isi.orch_session_issue_id) 
+  isi.*,
+	SUBSTRING(ose.ingest_src
+FROM
+	'.*/(.*)$') AS ingest_file_name,
+	os.orch_started_at,
+	CASE
+		when
+        UPPER(isi.issue_type) = 'MISSING COLUMN'
+      then
+        'STRUCTURAL ISSUE'
+		else
+        br.record_action
+	END
+  AS disposition,
+	CASE
+		when UPPER(br.resolved_by_qe_qcs) = 'YES' then 'Resolved By QE/QCS'
+		else null
+	END AS remediation2
+FROM
+	techbd_orch_ctl.orch_session_issue AS isi
+LEFT JOIN techbd_orch_ctl.orch_session_entry ose ON
+	ose.orch_session_entry_id = isi.session_entry_id
+LEFT JOIN techbd_orch_ctl.orch_session os ON
+	os.orch_session_id = isi.session_id
+LEFT JOIN cte_business_rule br ON
+	br.field = isi.issue_column
+WHERE
+	isi.orch_session_issue_id IS NOT NULL
+	AND ose.ingest_src like '/SFTP/%';
+;

@@ -5,7 +5,11 @@ CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA techbd_udi_assurance;
 SET search_path TO techbd_udi_assurance;
 
 \ir ./fixtures.sql
-\ir ./stored-routines-unittest.psql
 
-SELECT * FROM techbd_udi_assurance.runtests('techbd_udi_assurance'::name, 'test_udi_insert_interaction');
-SELECT * FROM techbd_udi_assurance.runtests('techbd_udi_assurance'::name, 'test_udi_insert_session_with_state');
+--\ir ./000-idempotent-universal-unit-test.psql
+
+\ir ./001-idempotent-interaction-unit-test.psql
+
+--\ir ./003-idempotent-interaction-view-explain-plan.psql
+
+SELECT * FROM techbd_udi_assurance.runtests('techbd_udi_assurance'::name, 'test_register_interaction_http_request');
