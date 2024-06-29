@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>166</td>
-<td>172</td>
+<td>174</td>
+<td>175</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -86,7 +86,7 @@
 <th>Class</th>
 <th>Bugs</th></tr>
 <tr class="b">
-<td><a href="#lib.aide.cms.FrontmatterNature$Components">lib.aide.cms.FrontmatterNature$Components</a></td>
+<td><a href="#lib.aide.paths.PathSuffixes">lib.aide.paths.PathSuffixes</a></td>
 <td>2</td></tr>
 <tr class="a">
 <td><a href="#lib.aide.paths.Paths">lib.aide.paths.Paths</a></td>
@@ -94,6 +94,12 @@
 <tr class="b">
 <td><a href="#lib.aide.paths.Paths$Node">lib.aide.paths.Paths$Node</a></td>
 <td>6</td></tr>
+<tr class="a">
+<td><a href="#lib.aide.resource.FrontmatterNature$Components">lib.aide.resource.FrontmatterNature$Components</a></td>
+<td>2</td></tr>
+<tr class="b">
+<td><a href="#lib.aide.resource.ResourceFactory$SuffixedTextResourceFactory">lib.aide.resource.ResourceFactory$SuffixedTextResourceFactory</a></td>
+<td>1</td></tr>
 <tr class="a">
 <td><a href="#lib.aide.vfs.VfsIngressConsumer">lib.aide.vfs.VfsIngressConsumer</a></td>
 <td>10</td></tr>
@@ -273,8 +279,8 @@
 <td>4</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.util.JsonText$JsonObjectResult$ValidUntypedResult">org.techbd.util.JsonText$JsonObjectResult$ValidUntypedResult</a></td>
-<td>2</td></tr></table></section><a name="lib.aide.cms.FrontmatterNature$Components"></a><section>
-<h2>lib.aide.cms.FrontmatterNature$Components</h2>
+<td>2</td></tr></table></section><a name="lib.aide.paths.PathSuffixes"></a><section>
+<h2>lib.aide.paths.PathSuffixes</h2>
 <table class="table table-striped">
 <tr class="a">
 <th>Bug</th>
@@ -283,16 +289,16 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>lib.aide.cms.FrontmatterNature$Components.exceptions() may expose internal representation by returning FrontmatterNature$Components.exceptions</td>
+<td>lib.aide.paths.PathSuffixes.suffixes() may expose internal representation by returning PathSuffixes.suffixes</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>23</td>
+<td>9</td>
 <td>Medium</td></tr>
 <tr class="a">
-<td>new lib.aide.cms.FrontmatterNature$Components(String, Optional, String, List) may expose internal representation by storing an externally mutable object into FrontmatterNature$Components.exceptions</td>
+<td>new lib.aide.paths.PathSuffixes(String, Pattern, List) may expose internal representation by storing an externally mutable object into PathSuffixes.suffixes</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>23</td>
+<td>9</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.paths.Paths"></a><section>
 <h2>lib.aide.paths.Paths</h2>
 <table class="table table-striped">
@@ -351,6 +357,40 @@
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
 <td>54</td>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.FrontmatterNature$Components"></a><section>
+<h2>lib.aide.resource.FrontmatterNature$Components</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>lib.aide.resource.FrontmatterNature$Components.exceptions() may expose internal representation by returning FrontmatterNature$Components.exceptions</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
+<td>23</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>new lib.aide.resource.FrontmatterNature$Components(String, Optional, String, List) may expose internal representation by storing an externally mutable object into FrontmatterNature$Components.exceptions</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
+<td>23</td>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.ResourceFactory$SuffixedTextResourceFactory"></a><section>
+<h2>lib.aide.resource.ResourceFactory$SuffixedTextResourceFactory</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>lib.aide.resource.ResourceFactory$SuffixedTextResourceFactory.SUFFIXED_RF_MAP is a mutable collection which should be package protected</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_MUTABLE_COLLECTION_PKGPROTECT">MS_MUTABLE_COLLECTION_PKGPROTECT</a></td>
+<td>17</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.vfs.VfsIngressConsumer"></a><section>
 <h2>lib.aide.vfs.VfsIngressConsumer</h2>
 <table class="table table-striped">

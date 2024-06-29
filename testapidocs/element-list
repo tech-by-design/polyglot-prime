@@ -1,5 +1,5 @@
-lib.aide.cms
 lib.aide.paths
+lib.aide.resource
 lib.aide.vfs
 org.techbd.orchestrate.fhir
 org.techbd.service.http.hub.prime

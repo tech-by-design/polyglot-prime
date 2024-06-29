@@ -1,5 +1,5 @@
-lib.aide.cms
 lib.aide.paths
+lib.aide.resource
 lib.aide.vfs
 org.inferno.validator
 org.inferno.validator.rest
