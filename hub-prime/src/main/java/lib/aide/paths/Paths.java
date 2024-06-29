@@ -174,9 +174,6 @@ public class Paths<C, P> {
             // everything should be relative to the current node's parent which
             // is the "container" of this child
             var current = this.parent();
-
-            System.out
-                    .println("looking for %s in %s".formatted(pcSupplier.assemble(relativeComponents), absolutePath()));
             for (C component : relativeComponents) {
                 System.out.println(
                         "  at [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
@@ -239,7 +236,7 @@ public class Paths<C, P> {
      */
     public void addRoot(P rootPayload) {
         final var components = pcSupplier.components(rootPayload);
-        if (roots.stream().noneMatch(root -> root.components().equals(components))) {
+        if (roots.stream().noneMatch(root -> root.components().getFirst().equals(components.getFirst()))) {
             this.roots.add(new Node(components, Optional.of(rootPayload), null));
         }
     }
@@ -274,7 +271,7 @@ public class Paths<C, P> {
     public void populate(final P payload, final InterimPayloadSupplier<C, P> ips) {
         final var components = pcSupplier.components(payload);
         for (Node root : roots) {
-            if (root.components().equals(components.subList(0, 1))) {
+            if (root.components().getFirst().equals(components.getFirst())) {
                 root.populate(components, Optional.of(payload), 1, ips);
                 return;
             }
