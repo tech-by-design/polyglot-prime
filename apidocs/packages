@@ -1,4 +1,5 @@
 lib.aide.vfs
+lib.aide.cms
 lib.aide.paths
 org.techbd.udi
 org.techbd.service.http
