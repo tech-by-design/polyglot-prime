@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+
+    <style>
+        .ag-theme-alpine .ag-root-wrapper {
+            border: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+
+        <!-- Modal -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <json-viewer id="json"></json-viewer>
+            </div>
+        </div>
+
+        <script id="driver">
+            // in browser inspect console, set `window.logLevel = 1` to see logs
+            window.logLevel = 0;
+            const log = (...args) => {
+                if (window.logLevel) {
+                    console.log(...args);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const columnDefs = [
+                    {
+                        headerName: "Request Time", field: "orch_started_at", sort: "desc", filter: "agNumberColumnFilter", enableRowGroup: true,
+                        valueFormatter: function (params) {
+                            if (params.value) {
+                                let milliseconds = params.value * 1000;
+                                let date = new Date(params.value);
+                                // Define the options for formatting the date to EST
+                                let options = {
+                                    timeZone: 'America/New_York',
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: false // Use 24-hour format
+                                };
+
+                                // Format the date to EST using Intl.DateTimeFormat
+                                let formatter = new Intl.DateTimeFormat('en-US', options);
+                                let formattedDate = formatter.format(date);
+                                return formattedDate;
+                            }
+                            return '';
+                        }
+                    },
+                    { headerName: "Ingested File Name", field: "ingest_file_name", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Issue Type", field: "issue_type", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Disposition", field: "disposition", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Issue Message", field: "issue_message", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Issue Column", field: "issue_column", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Invalid Value", field: "invalid_value", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Remediation", field: "remediation", filter: "agTextColumnFilter", enableRowGroup: true },
+                    {
+                        headerName: "Session ID", field: "session_id", sort: "desc", filter: "agNumberColumnFilter", enableRowGroup: true
+                    },
+                    {
+                        headerName: "Issue ID", field: "orch_session_issue_id", enableRowGroup: true,
+                        filter: "agTextColumnFilter"
+                    },
+                ];
+
+                const gridOptions = {
+                    defaultColDef: {
+                        flex: 1,
+                        minWidth: 100,
+                        resizable: true,
+                        sortable: true,
+                        filter: true,
+                        enablePivot: true
+                    },
+                    columnDefs,
+                    sideBar: true,
+                    autoSizeStrategy: { type: "fitCellContents" },
+                    rowModelType: 'serverSide',
+                    serverSideDatasource: {
+                        getRows: async function (params) {
+                            console.log('params.request', params.request);
+                            // params.request has startRow, endRow, sort, filter, pivot, etc.
+                            // and the server-side reads it, constructs SQL, executes and returns
+                            params.request.valueCols = params.request?.pivotCols && params.request?.pivotCols.length > 0 ? params.request.pivotCols : params.request.valueCols;
+                            const jsonRequest = JSON.stringify(params.request, null, 2);
+                            log("[EnterpriseDatasource] Posted JSON request", jsonRequest);
+                            try {
+                                const response = await fetch(ssrServletUrl(`/support/diagnostics/sftp.json`), {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: jsonRequest
+                                });
+                                if (response.ok) {
+                                    console.log("Response: " + response);
+                                    const result = await response.json();
+                                    log("[EnterpriseDatasource] Received JSON response", result);
+
+                                    // TODO: updateSecondaryColumns(params.request, result);
+                                    // see https://github.com/ag-grid/ag-grid-server-side-oracle-example
+                                    console.log("Results: " + result.data);
+                                    console.log("Params: " + params);
+                                    updateSecondaryColumns(params.request, result);
+                                    params.success({
+                                        rowData: result.data,
+                                        //rowCount: result.data.length,
+                                    });
+                                } else {
+                                    console.error(`[EnterpriseDatasource] Error: ${response.statusText}`);
+                                    params.fail();
+                                }
+                            } catch (error) {
+                                console.error(`[EnterpriseDatasource] Error: ${error.message}`);
+                                params.fail();
+                            }
+                        }
+                    },
+                };
+
+                function updateSecondaryColumns(request, result) {
+                    try {
+                        console.log("Request:", request);
+                        console.log("Result:", result);
+
+                        let valueCols = request.valueCols;
+                        console.log("Value Cols:", valueCols);
+
+                        if (request.pivotMode && request.pivotCols.length > 0) {
+                            let secondaryColDefs = createSecondaryColumns(result.data, valueCols);
+                            console.log("Secondary Col Defs:", secondaryColDefs);
+
+                            // Check if grid API is available before updating columns
+                            if (gridOptions) {
+                                // Clear existing columns first (optional, but can be useful to avoid duplications)
+                                gridOptions.columnDefs = [];
+                                // Set the new column definitions
+                                gridOptions.columnDefs = secondaryColDefs;
+                                console.log("Column definitions successfully updated.");
+                            } else {
+                                console.error("Grid API is not available. Cannot set column definitions.");
+                            }
+                        } else {
+                            if (gridOptions) {
+                                gridOptions.columnDefs = [];
+                                console.log("No pivot mode or pivot columns. Cleared column definitions.");
+                            } else {
+                                console.error("Grid API is not available. Cannot clear column definitions.");
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error in updateSecondaryColumns:", error);
+                    }
+                }
+
+
+                function createSecondaryColumns(data, valueCols) {
+                    // Dummy implementation, replace with actual logic
+                    return valueCols.map(col => ({
+                        headerName: col.displayName,
+                        field: col.field
+                    }));
+                }
+
+                const serverDataGridDiv = document.querySelector('#serverDataGrid');
+                const serverDataGridAPI = agGrid.createGrid(serverDataGridDiv, gridOptions);
+                // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
+                serverDataGridDiv.style.height = "750px"
+
+                // function showDetails(interactionId) {
+                //     fetch(ssrServletUrl(`/support/interaction/${interactionId}.json`))
+                //         .then(response => response.json())
+                //         .then(interaction => {
+                //             document.querySelector('#json').data = interaction;
+                //             document.getElementById('modal').style.display = 'block';
+                //         })
+                //         .catch(error => {
+                //             console.error(`Error fetching interaction ${interactionId}`, error);
+                //         });
+                // }
+
+                // document.querySelector('.close').onclick = function () {
+                //     document.getElementById('modal').style.display = 'none';
+                // };
+
+                // window.onclick = function (event) {
+                //     if (event.target == document.getElementById('modal')) {
+                //         document.getElementById('modal').style.display = 'none';
+                //     }
+                // };
+            });
+        </script>
+    </div>
+</body>
+
+</html>

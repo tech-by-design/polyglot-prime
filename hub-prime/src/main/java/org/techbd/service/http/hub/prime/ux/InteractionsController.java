@@ -58,19 +58,19 @@ public class InteractionsController {
     }
 
     @GetMapping("/interactions/https")
-    @RouteMapping(label = "FHIR via HTTPs", title = "FHIR Interactions via HTTPs")
+    @RouteMapping(label = "FHIR via HTTPs", title = "FHIR Interactions via HTTPs", siblingOrder = 20)
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }
 
     @GetMapping("/interactions/httpsfailed")
-    @RouteMapping(label = "FHIR via HTTPs FAILED", title = "FHIR Interactions via HTTPs (POST to SHIN-NY Failures)")
+    @RouteMapping(label = "FHIR via HTTPs FAILED", title = "FHIR Interactions via HTTPs (POST to SHIN-NY Failures)", siblingOrder = 30)
     public String https_failed(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpsfailed", model, request);
     }
 
     @GetMapping("/interactions/sftp")
-    @RouteMapping(label = "CSV via SFTP (egress)", title = "CSV Files via SFTP (egress directory)")
+    @RouteMapping(label = "CSV via SFTP (egress)", title = "CSV Files via SFTP (egress directory)", siblingOrder = 40)
     public String sftp(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/sftp", model, request);
     }
@@ -89,8 +89,9 @@ public class InteractionsController {
         final Map<String, List<String>> pivotValues = getPivotValues(payload.getPivotCols());
 
         final var DSL = udiPrimeJpaConfig.dsl();
-        final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request",
-                pivotValues));
+        final var result = DSL
+                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request",
+                        pivotValues));
 
         // create response with our results
         return ServerRowsResponse.createResponse(payload, result.intoMaps(), pivotValues);
@@ -106,7 +107,8 @@ public class InteractionsController {
 
         final var DSL = udiPrimeJpaConfig.dsl();
         final var result = DSL
-                .fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_http_request_forward_fail",
+                .fetch(new SqlQueryBuilder().createSql(payload,
+                        "techbd_udi_ingress.interaction_http_request_forward_fail",
                         pivotValues));
 
         // create response with our results
@@ -148,7 +150,7 @@ public class InteractionsController {
 
     @Operation(summary = "Recent Orchctl Interactions")
     @GetMapping("/interactions/orchctl")
-    @RouteMapping(label = "CSV via SFTP (DB)", title = "CSV Files via SFTP (in PostgreSQL DB)")
+    @RouteMapping(label = "CSV via SFTP (DB)", title = "CSV Files via SFTP (in PostgreSQL DB)", siblingOrder = 50)
     public String orchctl(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/orchctl", model, request);
     }

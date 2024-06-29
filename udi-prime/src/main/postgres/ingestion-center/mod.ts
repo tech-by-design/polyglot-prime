@@ -20,6 +20,10 @@ const orchCtlSchema = SQLa.sqlSchemaDefn("techbd_orch_ctl", {
   isIdempotent: true,
 });
 
+const diagnosticsSchema = SQLa.sqlSchemaDefn("techbd_udi_diagnostics", {
+  isIdempotent: true,
+});
+
 const dvts = dvp.dataVaultTemplateState<EmitContext>({
   defaultNS: ingressSchema,
 });
@@ -43,28 +47,6 @@ const sessionIdentifierType = SQLa.sqlTypeDefinition("session_identifier", {
   embeddedStsOptions: dvts.ddlOptions,
   sqlNS: ingressSchema,
 });
-
-const provenanceHub = dvts.hubTable("provenance", {
-  hub_provenance_id: primaryKey(),
-  key: text(),
-  ...dvts.housekeeping.columns,
-});
-
-const deviceSat = provenanceHub.satelliteTable(
-  "device",
-  {
-    sat_provenance_device_id: primaryKey(),
-    hub_provenance_id: provenanceHub.references
-      .hub_provenance_id(),
-    name: text(),
-    state: text(),
-    boundary: text(),
-    segmentation: jsonbNullable(),
-    state_sysinfo: jsonbNullable(),
-    elaboration: jsonbNullable(),
-    ...dvts.housekeeping.columns,
-  },
-);
 
 const interactionHub = dvts.hubTable("interaction", {
   hub_interaction_id: primaryKey(),
@@ -112,162 +94,13 @@ const interactionfileExchangeSat = interactionHub.satelliteTable(
   },
 );
 
-const ingestSessionHub = dvts.hubTable("operation_session", {
-  hub_operation_session_id: primaryKey(),
-  key: text(),
-  nature: text().default("ingest"),
-  ...dvts.housekeeping.columns,
-});
-
-const sessionMetadataSat = ingestSessionHub.satelliteTable("meta_data", {
-  sat_operation_session_meta_data_id: primaryKey(),
-  hub_operation_session_id: ingestSessionHub.references
-    .hub_operation_session_id(),
-  device_id: text(),
-  version: text(),
-  orch_started_at: date(),
-  orch_finished_at: date(),
-  qe_identifier: text(),
-  content_hash: text(),
-  args_json: jsonB,
-  diagnostics_json: jsonbNullable(),
-  diagnostics_md: textNullable(),
-  elaboration: jsonbNullable(),
-  ...dvts.housekeeping.columns,
-}, {
-  constraints: (props, tableName) => {
-    const c = SQLa.tableConstraints(tableName, props);
-    return [
-      c.unique("hub_operation_session_id", "content_hash"),
-    ];
-  },
-});
-
-const ingestSessionEntryHub = dvts.hubTable("operation_session_entry", {
-  hub_operation_session_entry_id: primaryKey(),
-  key: text(),
-  ...dvts.housekeeping.columns,
-});
-
-const entryMetadataSat = ingestSessionEntryHub.satelliteTable("payload", {
-  sat_operation_session_entry_payload_id: primaryKey(),
-  hub_operation_session_entry_id: ingestSessionEntryHub.references
-    .hub_operation_session_entry_id(),
-  ingest_src: text(),
-  ingest_table_name: textNullable(),
-  ingest_payload: jsonB,
-  content_type: text(),
-  elaboration: jsonbNullable(),
-  ...dvts.housekeeping.columns,
-});
-
-const entrySessionStateSat = ingestSessionEntryHub.satelliteTable(
-  "session_state",
-  {
-    sat_operation_session_entry_session_state_id: primaryKey(),
-    hub_operation_session_entry_id: ingestSessionEntryHub.references
-      .hub_operation_session_entry_id(),
-    from_state: text(),
-    to_state: text(),
-    transition_result: textNullable(),
-    transition_reason: textNullable(),
-    elaboration: jsonbNullable(),
-    ...dvts.housekeeping.columns,
-  },
-);
-
-const entrySessionExecSat = ingestSessionEntryHub.satelliteTable(
-  "session_exec",
-  {
-    sat_operation_session_entry_session_exec_id: primaryKey(),
-    hub_operation_session_entry_id: ingestSessionEntryHub.references
-      .hub_operation_session_entry_id(),
-    exec_nature: text(),
-    parent_exec_id: textNullable(),
-    namespace: textNullable(),
-    exec_identity: textNullable(),
-    exec_code: text(),
-    exec_status: integer(),
-    input_text: textNullable(),
-    exec_error_text: textNullable(),
-    output_text: textNullable(),
-    output_nature: textNullable(),
-    narrative_md: textNullable(),
-    elaboration: jsonbNullable(),
-    ...dvts.housekeeping.columns,
-  },
-);
-
-const entrySessionIssueSat = ingestSessionEntryHub.satelliteTable(
-  "session_issue",
-  {
-    sat_operation_session_entry_session_issue_id: primaryKey(),
-    hub_operation_session_entry_id: ingestSessionEntryHub.references
-      .hub_operation_session_entry_id(),
-    issue_type: textNullable(),
-    issue_message: textNullable(),
-    level: textNullable(),
-    issue_column: integerNullable(),
-    issue_row: integerNullable(),
-    message_id: textNullable(),
-    ignorableError: boolean().default(false),
-    invalid_value: textNullable(),
-    comment: textNullable(),
-    display: textNullable(),
-    disposition: textNullable(),
-    remediation: textNullable(),
-    validation_engine_payload: jsonbNullable(),
-    elaboration: jsonbNullable(),
-    ...dvts.housekeeping.columns,
-  },
-);
-
-const entrySessionIssuePayloadSat = ingestSessionEntryHub.satelliteTable(
-  "session_issue_payload",
-  {
-    sat_operation_session_entry_session_issue_payload_id: primaryKey(),
-    hub_operation_session_entry_id: ingestSessionEntryHub.references
-      .hub_operation_session_entry_id(),
-    validation_engine_payload: jsonbNullable(),
-    elaboration: jsonbNullable(),
-    ...dvts.housekeeping.columns,
-  },
-);
-
-const sessionEntryLink = dvts.linkTable("session_entry", {
-  link_session_entry_id: primaryKey(),
-  hub_operation_session_id: ingestSessionHub.references
-    .hub_operation_session_id(),
-  hub_operation_session_entry_id: ingestSessionEntryHub.references
-    .hub_operation_session_entry_id(),
-  ...dvts.housekeeping.columns,
-});
-
-const sessionRequestLink = dvts.linkTable("session_interaction", {
-  link_session_interaction_id: primaryKey(),
-  hub_operation_session_id: ingestSessionHub.references
-    .hub_operation_session_id(),
-  hub_interaction_id: interactionHub.references
-    .hub_interaction_id(),
-  ...dvts.housekeeping.columns,
-});
-
-const sessionDeviceLink = dvts.linkTable("session_provenance", {
-  link_session_provenance_id: primaryKey(),
-  hub_operation_session_id: ingestSessionHub.references
-    .hub_operation_session_id(),
-  hub_provenance_id: provenanceHub.references
-    .hub_provenance_id(),
-  ...dvts.housekeeping.columns,
-});
-
 const hubException = dvts.hubTable("exception", {
   hub_exception_id: primaryKey(),
   key: textNullable(),
   ...dvts.housekeeping.columns,
 });
 
-const hubExceptionDiagnosticSat = hubException.satelliteTable(
+const exceptionDiagnosticSat = hubException.satelliteTable(
   "diagnostics",
   {
     sat_exception_diagnostics_id: primaryKey(),
@@ -277,18 +110,6 @@ const hubExceptionDiagnosticSat = hubException.satelliteTable(
     err_pg_exception_detail: text(),
     err_pg_exception_hint: text(),
     err_pg_exception_context: text(),
-    ...dvts.housekeeping.columns,
-  },
-);
-
-const hubExceptionHttpClientSat = hubException.satelliteTable(
-  "http_client",
-  {
-    sat_exception_http_client_id: primaryKey(),
-    hub_exception_id: hubException.references.hub_exception_id(),
-    http_req: jsonTextNullable(), // eg: Permission Denied to the file
-    http_resp: jsonTextNullable(),
-    elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -320,11 +141,11 @@ function constructables() {
   const dependencies = [
     "./000_idempotent_universal.psql",
     "./001_idempotent_interaction.psql",
-    "./views-simple.sql",
-    "./stored-routines.psql",
+    "./002_idempotent_diagnostics.psql",
   ] as const;
   const testDependencies = [
-    "../../../test/postgres/ingestion-center/stored-routines-unittest.psql",
+    "../../../test/postgres/ingestion-center/001-idempotent-interaction-unit-test.psql",
+    "../../../test/postgres/ingestion-center/003-idempotent-interaction-view-explain-plan.psql",
     "../../../test/postgres/ingestion-center/fixtures.sql",
     "../../../test/postgres/ingestion-center/suite.pgtap.psql",
   ] as const;
@@ -336,13 +157,12 @@ function constructables() {
       CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA ${ingressSchema.sqlNamespace};
 
       ${assuranceSchema}
+      
       ${orchCtlSchema}
 
+      ${diagnosticsSchema}
+
       ${sessionIdentifierType}
-
-      ${provenanceHub}
-
-      ${deviceSat}
 
       ${interactionHub}
 
@@ -354,35 +174,42 @@ function constructables() {
 
       ${interactionfileExchangeSat}
 
-      ${ingestSessionHub}
-
-      ${ingestSessionEntryHub}
-
-      ${sessionMetadataSat}
-
-      ${entryMetadataSat}
-
-      ${entrySessionStateSat}
-
-      ${entrySessionExecSat}
-
-      ${entrySessionIssueSat}
-
-      ${entrySessionIssuePayloadSat}
-
-      ${sessionRequestLink}
-
-      ${sessionEntryLink}
-
-      ${sessionDeviceLink}
-
       ${hubException}
 
-      ${hubExceptionDiagnosticSat}
-
-      ${hubExceptionHttpClientSat}
+      ${exceptionDiagnosticSat}
 
       ${pgTapFixturesJSON}
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id);
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_nature_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request USING gin (nature);
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_from_state_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request USING btree (from_state);
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_to_state_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request USING btree (to_state);
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_created_at_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request USING btree (created_at);
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_provenance_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request USING btree (provenance);
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_jsonb_extracted_payload_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request USING GIN (payload);
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_jsonb_extracted_nature_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request 
+    USING btree ((payload->>'nature'));
+
+    CREATE INDEX IF NOT EXISTS sat_interaction_http_request_jsonb_extracted_tenant_id_idx 
+    ON techbd_udi_ingress.sat_interaction_http_request 
+    USING btree ((payload->'nature'->>'tenant_id'));
+
+    ANALYZE techbd_udi_ingress.sat_interaction_http_request;
       
       ${dependencies.map((dep) => `\\ir ${dep}`).join("\n")}`,
     dependencies: () => dependencies.map((dep) => import.meta.resolve(dep)),

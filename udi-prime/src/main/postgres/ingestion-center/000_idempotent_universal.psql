@@ -53,3 +53,96 @@ BEGIN
     RETURN v_exception_id;
 END;
 $$;
+
+/*==============================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.convert_csv_to_json(p_csv_data text, p_delimiter text DEFAULT ','::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  	json_result jsonb;
+	field_names text[];
+	sql_query text;
+	i int;
+	sample_json jsonb;
+	 first_line text;
+begin
+	
+-- Check if the delimiter is present in the CSV data
+  first_line := (SELECT unnest(string_to_array(p_csv_data, E'\n')) LIMIT 1);
+  IF position(p_delimiter in first_line) = 0 THEN
+    RAISE EXCEPTION 'Delimiter "%" not found in the CSV data.', p_delimiter;
+  END IF;
+ 
+  -- Wrap CTE in a subquery to avoid syntax error
+  WITH row_data AS (
+    SELECT jsonb_agg(
+      to_jsonb(
+        string_to_array(line, p_delimiter)
+      )
+    ) AS json_obj
+    FROM (
+      SELECT unnest(string_to_array(p_csv_data, E'\n')) AS line
+    ) AS s
+  )
+  -- Select the aggregated JSONB object into a variable
+  SELECT json_obj INTO json_result FROM row_data;
+  -- Return the aggregated JSONB object
+  RETURN json_result;
+END;
+$function$
+;
+
+/*==============================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.generate_view_ddl(where_clause text DEFAULT 'content_type = ''text/csv'''::text)
+ RETURNS SETOF text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    rec RECORD;
+    view_ddl text := '';
+    column_names TEXT[];
+    view_name text := '';
+BEGIN
+    FOR rec IN EXECUTE 'SELECT artifact_id, content, provenance FROM artifact WHERE ' || where_clause
+    LOOP
+        -- Extract column names from the first row of content_json
+       	column_names := ARRAY(SELECT jsonb_array_elements_text((rec.content::jsonb)->0));
+        
+        -- Extract view name from provenance JSON
+        view_name := (rec.provenance::jsonb)->>'viewName';
+       
+        -- Generate the DROP VIEW IF EXISTS statement
+        view_ddl := 'DROP VIEW IF EXISTS ' || quote_ident(view_name) || ';';       	 
+        RETURN NEXT view_ddl;
+        
+        -- Generate the CREATE VIEW statement
+        view_ddl := 'CREATE VIEW ' || quote_ident(view_name) || ' AS SELECT ';
+        
+        -- Add column definitions to the CREATE VIEW statement
+        /*FOR i IN 1 .. array_length(column_names, 1)
+        LOOP
+            view_ddl := view_ddl || 'content::jsonb->>' || quote_ident(column_names[i]) || ' AS ' || quote_ident(column_names[i]);
+            IF i < array_length(column_names, 1) THEN
+                view_ddl := view_ddl || ', ';
+            END IF;
+        END LOOP;*/
+              
+		FOR i IN 1 .. array_length(column_names, 1)
+		LOOP
+		    view_ddl := view_ddl || 'json_data_array->>' || i-1 || ' AS ' || column_names[i];
+			IF i < array_length(column_names, 1) THEN
+			    view_ddl := view_ddl || ', ';
+			END IF;
+		END LOOP;
+        
+        -- Add the FROM clause with the artifact_id condition
+        --view_ddl := view_ddl || ' FROM artifact WHERE artifact_id = ' || quote_literal(rec.artifact_id) || ';';       
+       	--view_ddl := view_ddl || ' FROM artifact, jsonb_array_elements(content::jsonb) WITH ORDINALITY arr(json_data_array, ord) WHERE arr.ord > 1 and artifact_id = ' || quote_literal(rec.artifact_id) || ';';
+        
+        RETURN NEXT view_ddl;
+    END LOOP;
+    RETURN;
+END;
+$function$
+;
