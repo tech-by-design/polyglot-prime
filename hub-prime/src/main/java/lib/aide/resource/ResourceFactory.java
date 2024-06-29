@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import lib.aide.paths.PathSuffixes;
@@ -11,10 +12,10 @@ import lib.aide.paths.PathSuffixes;
 public class ResourceFactory {
     public static final Pattern DEFAULT_SUFFIX_PATTERN = Pattern.compile("\\.");
 
-    public record SuffixedTextResourceFactory<T, R extends Resource<? extends Nature, T>>(
-            BiFunction<String, Optional<PathSuffixes>, R> resourceFactory,
+    public record SuffixedTextResourceFactory<T, R extends TextResource<? extends Nature>>(
+            BiFunction<Supplier<String>, Optional<PathSuffixes>, R> resourceFactory,
             PathSuffixes suffixes) {
-        public static final Map<String, BiFunction<String, Optional<PathSuffixes>, Resource<? extends Nature, String>>> SUFFIXED_RF_MAP = new HashMap<>();
+        public static final Map<String, BiFunction<Supplier<String>, Optional<PathSuffixes>, TextResource<? extends Nature>>> SUFFIXED_RF_MAP = new HashMap<>();
 
         static {
             SUFFIXED_RF_MAP.put("md",
@@ -46,20 +47,20 @@ public class ResourceFactory {
      * ".", it might detect a special markdown nature.</li>
      * </ul>
      *
-     * @param src       the source path in which suffixes are found
-     * @param delimiter an optional delimiter to use for suffixes, defaults to the
-     *                  pattern "\\."
-     * @return an Optional containing SuffixedResourceFactory if the nature can be
-     *         determined, otherwise Optional.empty()
+     * @param suffixesSrc the source path in which suffixes are found
+     * @param delimiter   an optional delimiter to use for suffixes, defaults to the
+     *                    pattern "\\."
+     * @return an Optional containing SuffixedTextResourceFactory if the nature can
+     *         be determined, otherwise Optional.empty()
      */
-    public Optional<SuffixedTextResourceFactory<String, Resource<? extends Nature, String>>> textResourceFactoryFromSuffix(
-            final String src, final Optional<Pattern> delimiter) {
-        if (src == null || src.isEmpty()) {
+    public Optional<SuffixedTextResourceFactory<String, TextResource<? extends Nature>>> textResourceFactoryFromSuffix(
+            final String suffixesSrc, final Optional<Pattern> delimiter) {
+        if (suffixesSrc == null || suffixesSrc.isEmpty()) {
             return Optional.empty();
         }
 
         final var suffixPattern = delimiter.orElse(DEFAULT_SUFFIX_PATTERN);
-        final var pathSuffixes = new PathSuffixes(src, suffixPattern);
+        final var pathSuffixes = new PathSuffixes(suffixesSrc, suffixPattern);
 
         if (pathSuffixes.suffixes().isEmpty()) {
             return Optional.empty();
@@ -72,7 +73,25 @@ public class ResourceFactory {
             return Optional.empty();
         }
 
-        // Explicitly specify the types for SuffixedResourceFactory
+        // Explicitly specify the types for SuffixedTextResourceFactory
         return Optional.of(new SuffixedTextResourceFactory<>(resourceFactory, pathSuffixes));
+    }
+
+    /**
+     * Determine if a suffix has a text resource factory and return an
+     * Optional<TextResource>.
+     *
+     * @param suffixesSrc the source path in which suffixes are found
+     * @param content     the supplier of the content to be used for the resource
+     * @param delimiter   an optional delimiter to use for suffixes, defaults to the
+     *                    pattern "\\."
+     * @return an Optional containing TextResource if the resource can be created,
+     *         otherwise Optional.empty()
+     */
+    public Optional<TextResource<? extends Nature>> textResourceFromSuffix(final String suffixesSrc,
+            final Supplier<String> content, final Optional<Pattern> delimiter) {
+        return textResourceFactoryFromSuffix(suffixesSrc, delimiter)
+                .map(factory -> factory.resourceFactory().apply(content,
+                        Optional.of(new PathSuffixes(suffixesSrc, delimiter.orElse(DEFAULT_SUFFIX_PATTERN)))));
     }
 }
