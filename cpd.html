@@ -190,6 +190,36 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/DiagnosticsController.java</td>
+<td>50</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/InteractionsController.java</td>
+<td>117</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>}
+
+    
+    public Map&lt;String, List&lt;String&gt;&gt; getPivotValues(List&lt;ColumnVO&gt; pivotCols) {
+        Map&lt;String, List&lt;String&gt;&gt; pivotValues = new HashMap&lt;&gt;();
+        for (ColumnVO column : pivotCols) {
+            List&lt;String&gt; values = getValuesForField(column.getField());
+            pivotValues.put(column.getField(), values);
+        }
+        return pivotValues;
+    }
+
+    public List&lt;String&gt; getValuesForField(String field) {
+        List&lt;String&gt; values = Arrays.asList(field);
+        return values;
+    }
+
+    @GetMapping(&quot;/diagnostics&quot;)</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
 <td style="text-align: left;">lib/aide/paths/PathsJson.java</td>
 <td>35</td></tr>
 <tr class="a">
