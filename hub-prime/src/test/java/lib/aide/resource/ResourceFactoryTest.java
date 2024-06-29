@@ -72,18 +72,6 @@ public class ResourceFactoryTest {
     }
 
     @Test
-    void testTextResourceFromSuffix_nullContent() {
-        final var factory = new ResourceFactory();
-        final var src = "example-file";
-        final Supplier<String> content = null;
-        final var delimiter = Optional.of(Pattern.compile("\\."));
-
-        final var result = factory.textResourceFromSuffix(src, content, delimiter);
-
-        assertThat(result).isEmpty();
-    }
-
-    @Test
     void testTextResourceFromSuffix_emptySuffix() {
         final var factory = new ResourceFactory();
         final var src = "example-file";
@@ -93,5 +81,22 @@ public class ResourceFactoryTest {
         final var result = factory.textResourceFromSuffix(src, content, delimiter);
 
         assertThat(result).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "example-file.md, This is the content of the markdown file., text/markdown",
+            "example-file.json, {\"key\": \"value\"}, application/json"
+    })
+    void testResourceFromSuffix(final String src, final String content, final String expectedMimeType) {
+        final var factory = new ResourceFactory();
+        final Supplier<String> contentSupplier = () -> content;
+        final var delimiter = Optional.of(Pattern.compile("\\."));
+
+        final var result = factory.resourceFromSuffix(src, contentSupplier, delimiter);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().content()).isEqualTo(content);
+        assertThat(result.get().nature().mimeType()).isEqualTo(expectedMimeType);
     }
 }
