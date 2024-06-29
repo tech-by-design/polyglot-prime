@@ -1,4 +1,4 @@
-package lib.aide.cms;
+package lib.aide.resource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
-public class MarkdownContentTest {
+public class MarkdownResourceTest {
 
     public static class TestFrontmatter {
         public String title;
@@ -23,8 +23,8 @@ public class MarkdownContentTest {
                 This is the body content.
                 """;
 
-        var nature = new MarkdownContent.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
-        var markdownContent = new MarkdownContent<>(yamlContent, nature);
+        var nature = new MarkdownResource.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
+        var markdownContent = new MarkdownResource<>(yamlContent, nature);
 
         var components = nature.components(markdownContent.content());
 
@@ -49,8 +49,8 @@ public class MarkdownContentTest {
                 This is the body content.
                 """;
 
-        var nature = new MarkdownContent.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
-        var markdownContent = new MarkdownContent<>(jsonContent, nature);
+        var nature = new MarkdownResource.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
+        var markdownContent = new MarkdownResource<>(jsonContent, nature);
 
         var components = nature.components(markdownContent.content());
 
@@ -74,8 +74,8 @@ public class MarkdownContentTest {
                 This is the body content.
                 """;
 
-        var nature = new MarkdownContent.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
-        var markdownContent = new MarkdownContent<>(yamlContent, nature);
+        var nature = new MarkdownResource.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
+        var markdownContent = new MarkdownResource<>(yamlContent, nature);
 
         var components = nature.components(markdownContent.content());
 
@@ -97,8 +97,8 @@ public class MarkdownContentTest {
                 This is the body content.
                 """;
 
-        var nature = new MarkdownContent.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
-        var markdownContent = new MarkdownContent<>(jsonContent, nature);
+        var nature = new MarkdownResource.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
+        var markdownContent = new MarkdownResource<>(jsonContent, nature);
 
         var components = nature.components(markdownContent.content());
 
@@ -117,8 +117,8 @@ public class MarkdownContentTest {
                 This is the body content without frontmatter.
                 """;
 
-        var nature = new MarkdownContent.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
-        var markdownContent = new MarkdownContent<>(noFrontmatterContent, nature);
+        var nature = new MarkdownResource.MarkdownNature<TestFrontmatter>(new TypeReference<TestFrontmatter>() {});
+        var markdownContent = new MarkdownResource<>(noFrontmatterContent, nature);
 
         var components = nature.components(markdownContent.content());
 
@@ -138,8 +138,8 @@ public class MarkdownContentTest {
                 This is the body content.
                 """;
 
-        var nature = new MarkdownContent.UntypedMarkdownNature();
-        var markdownContent = new MarkdownContent<>(yamlContent, nature);
+        var nature = new MarkdownResource.UntypedMarkdownNature();
+        var markdownContent = new MarkdownResource<>(yamlContent, nature);
 
         var components = nature.components(markdownContent.content());
 
@@ -165,8 +165,8 @@ public class MarkdownContentTest {
                 This is the body content.
                 """;
 
-        var nature = new MarkdownContent.UntypedMarkdownNature();
-        var markdownContent = new MarkdownContent<>(jsonContent, nature);
+        var nature = new MarkdownResource.UntypedMarkdownNature();
+        var markdownContent = new MarkdownResource<>(jsonContent, nature);
 
         var components = nature.components(markdownContent.content());
 

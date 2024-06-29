@@ -1,4 +1,4 @@
-package lib.aide.cms;
+package lib.aide.resource;
 
 public interface Nature {
     String mimeType();

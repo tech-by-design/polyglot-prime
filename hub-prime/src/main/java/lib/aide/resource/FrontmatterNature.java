@@ -1,4 +1,4 @@
-package lib.aide.cms;
+package lib.aide.resource;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
