@@ -33,39 +33,38 @@ public class VfsResources
 
     @Override
     public Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> paths() {
-        Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> paths;
         final var payloadRoot = new ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>(
                 new VfsFileObjectProvenance(rootVfsFO.getURI(), rootVfsFO),
                 EmptyResource.SINGLETON);
-        paths = new Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>(
+        final var result = new Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>(
                 payloadRoot,
                 fopcs);
         for (var resourceProvenance : resources()) {
-            paths.populate(resourceProvenance);
+            result.populate(resourceProvenance);
         }
-        return paths;
+        return result;
     }
 
     @Override
     public List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> resources() {
-        var resourceList = new ArrayList<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>();
+        final var result = new ArrayList<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>();
         try {
-            walkFileSystem(rootVfsFO, resourceList);
+            walkFileSystem(rootVfsFO, result);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return resourceList;
+        return result;
     }
 
-    private void walkFileSystem(FileObject fileObject,
-            List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> resourceList)
+    protected void walkFileSystem(FileObject fileObject,
+            List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> resources)
             throws Exception {
         if (fileObject.isFolder()) {
             for (var child : fileObject.getChildren()) {
-                walkFileSystem(child, resourceList);
+                walkFileSystem(child, resources);
             }
         } else {
-            var resource = rf.resourceFromSuffix(fileObject.getName().getBaseName(), () -> {
+            final var resource = rf.resourceFromSuffix(fileObject.getName().getBaseName(), () -> {
                 try {
                     // TODO: this should really check the nature first not just always return text
                     // content
@@ -73,9 +72,9 @@ public class VfsResources
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            }, Optional.empty()).orElse(new ExceptionResource(new RuntimeException("Unsupported resource type")));
-            var provenance = new VfsFileObjectProvenance(fileObject.getURI(), fileObject);
-            resourceList.add(new ResourceProvenance<>(provenance, resource));
+            }, Optional.empty()).orElse(new ExceptionResource(new RuntimeException("Unsupported resource type: " + fileObject.getName())));
+            final var provenance = new VfsFileObjectProvenance(fileObject.getURI(), fileObject);
+            resources.add(new ResourceProvenance<>(provenance, resource));
         }
     }
 
