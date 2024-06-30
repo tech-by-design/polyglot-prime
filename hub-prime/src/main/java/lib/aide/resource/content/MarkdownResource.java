@@ -1,4 +1,4 @@
-package lib.aide.resource;
+package lib.aide.resource.content;
 
 import java.util.Map;
 import java.util.Optional;
@@ -7,6 +7,8 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import lib.aide.paths.PathSuffixes;
+import lib.aide.resource.TextResource;
+import lib.aide.resource.nature.FrontmatterNature;
 
 public class MarkdownResource<F, N extends FrontmatterNature<F>> implements TextResource<N> {
     private final Supplier<String> src;

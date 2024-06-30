@@ -1,6 +1,11 @@
-package lib.aide.resource;
+package lib.aide.resource.collection;
 
 import lib.aide.paths.Paths;
+import lib.aide.resource.Nature;
+import lib.aide.resource.Provenance;
+import lib.aide.resource.Resource;
+import lib.aide.resource.ResourceProvenance;
+import lib.aide.resource.ResourcesSupplier;
 
 import java.util.ArrayList;
 import java.util.List;

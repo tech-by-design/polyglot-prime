@@ -1,37 +1,39 @@
-package lib.aide.resource;
+package lib.aide.resource.content;
 
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import lib.aide.paths.PathSuffixes;
+import lib.aide.resource.Nature;
+import lib.aide.resource.TextResource;
 
-public class EmptyResource implements TextResource<EmptyNature> {
+public class ExceptionResource implements TextResource<ExceptionNature> {
     static public final EmptyResource SINGLETON = new EmptyResource();
 
     private final Supplier<String> src;
-    private final EmptyNature nature;
+    private final ExceptionNature nature;
     private final Optional<PathSuffixes> suffixes;
 
-    public EmptyResource() {
-        this.src = () -> "EMPTY";
-        this.nature = new EmptyNature();
+    public ExceptionResource(final Exception exception) {
+        this.src = () -> exception.toString();
+        this.nature = new ExceptionNature();
         this.suffixes = Optional.empty();
     }
 
-    public EmptyResource(final String src, EmptyNature nature, Optional<PathSuffixes> suffixes) {
+    public ExceptionResource(final String src, ExceptionNature nature, Optional<PathSuffixes> suffixes) {
         this.src = () -> src;
         this.nature = nature;
         this.suffixes = suffixes;
     }
 
-    public EmptyResource(final Supplier<String> src, EmptyNature nature, Optional<PathSuffixes> suffixes) {
+    public ExceptionResource(final Supplier<String> src, ExceptionNature nature, Optional<PathSuffixes> suffixes) {
         this.src = src;
         this.nature = nature;
         this.suffixes = suffixes;
     }
 
     @Override
-    public EmptyNature nature() {
+    public ExceptionNature nature() {
         return nature;
     }
 
@@ -45,7 +47,7 @@ public class EmptyResource implements TextResource<EmptyNature> {
     }
 }
 
-class EmptyNature implements Nature {
+class ExceptionNature implements Nature {
     @Override
     public String mimeType() {
         return "text/plain";

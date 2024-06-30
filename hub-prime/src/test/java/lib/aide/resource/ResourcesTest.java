@@ -2,7 +2,9 @@ package lib.aide.resource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.vfs2.FileObject;
@@ -11,6 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.kohsuke.github.GitHub;
 
 import lib.aide.paths.PathsVisuals;
+import lib.aide.resource.collection.GitHubRepoResources;
+import lib.aide.resource.collection.Resources;
+import lib.aide.resource.collection.VfsResources;
+import lib.aide.resource.content.ResourceFactory;
 
 public class ResourcesTest {
 
@@ -95,17 +101,25 @@ public class ResourcesTest {
         System.out.println(pathsPrime.roots());
 
         final var pv = new PathsVisuals();
-        System.out.println(pv.asciiTree(pathsPrime, Optional.empty()));
+        System.out.println(pv.asciiTree(pathsPrime, Optional.of((node, tree) -> "")));
     }
 
     @Test
     void testGitHubProjectResources() throws Exception {
+        final var ghTokenFromEnv = Arrays
+                .stream(new String[] { "ORG_TECHBD_SERVICE_HTTP_GITHUB_API_AUTHN_TOKEN", "CHEZMOI_GITHUB_ACCESS_TOKEN",
+                        "GITHUB_TOKEN" })
+                .map(System::getenv)
+                .filter(Objects::nonNull)
+                .findFirst();
+        assertThat(ghTokenFromEnv).isNotEmpty();
+
         final var rf = new ResourceFactory();
-        final var ghToken = System.getenv("ORG_TECHBD_SERVICE_HTTP_GITHUB_API_AUTHN_TOKEN");
+        final var ghToken = ghTokenFromEnv.orElseThrow();
         assertThat(ghToken).isNotNull().isNotBlank();
 
         final var github = GitHub.connectUsingOAuth(ghToken);
-        final var ghRepo = github.getRepository("tech-by-design/infrastructure-prime");
+        final var ghRepo = github.getRepository("tech-by-design/docs.techbd.org");
 
         final var ghResourcesSupplier = new GitHubRepoResources(rf, ghRepo.getHtmlUrl().toURI(), ghRepo);
         final var builder = new Resources.Builder<String, Resource<? extends Nature, ?>>()
@@ -128,6 +142,6 @@ public class ResourcesTest {
         System.out.println(pathsPrime.roots());
 
         final var pv = new PathsVisuals();
-        System.out.println(pv.asciiTree(pathsPrime, Optional.empty()));
+        System.out.println(pv.asciiTree(pathsPrime, Optional.of((node, tree) -> "")));
     }
 }

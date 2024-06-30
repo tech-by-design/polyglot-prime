@@ -1,4 +1,4 @@
-package lib.aide.resource;
+package lib.aide.resource.collection;
 
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -9,6 +9,14 @@ import java.util.Optional;
 import org.apache.commons.vfs2.FileObject;
 
 import lib.aide.paths.Paths;
+import lib.aide.resource.Nature;
+import lib.aide.resource.Provenance;
+import lib.aide.resource.Resource;
+import lib.aide.resource.ResourceProvenance;
+import lib.aide.resource.ResourcesSupplier;
+import lib.aide.resource.content.EmptyResource;
+import lib.aide.resource.content.ExceptionResource;
+import lib.aide.resource.content.ResourceFactory;
 
 public class VfsResources
         implements ResourcesSupplier<VfsResources.VfsFileObjectProvenance, String, Resource<? extends Nature, ?>> {
@@ -67,7 +75,6 @@ public class VfsResources
             final var resource = rf.resourceFromSuffix(fileObject.getName().getBaseName(), () -> {
                 try {
                     // TODO: this should really check the nature first not just always return text
-                    // content
                     return fileObject.getContent().getString(Charset.defaultCharset());
                 } catch (Exception e) {
                     throw new RuntimeException(e);

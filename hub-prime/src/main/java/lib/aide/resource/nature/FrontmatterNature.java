@@ -1,8 +1,10 @@
-package lib.aide.resource;
+package lib.aide.resource.nature;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import lib.aide.resource.Nature;
 
 import java.util.ArrayList;
 import java.util.List;

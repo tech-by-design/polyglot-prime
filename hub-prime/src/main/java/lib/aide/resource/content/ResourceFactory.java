@@ -1,4 +1,4 @@
-package lib.aide.resource;
+package lib.aide.resource.content;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,6 +8,11 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import lib.aide.paths.PathSuffixes;
+import lib.aide.resource.Nature;
+import lib.aide.resource.Resource;
+import lib.aide.resource.TextResource;
+import lib.aide.resource.content.JsonResource.JsonNature;
+import lib.aide.resource.content.YamlResource.YamlNature;
 
 public class ResourceFactory {
     public static final Pattern DEFAULT_DELIMITER_PATTERN = Pattern.compile("\\.");
@@ -18,14 +23,14 @@ public class ResourceFactory {
         public static final Map<String, BiFunction<Supplier<String>, Optional<PathSuffixes>, TextResource<? extends Nature>>> SUFFIXED_RF_MAP = new HashMap<>();
 
         static {
-            SUFFIXED_RF_MAP.put("md",
+            SUFFIXED_RF_MAP.put(".md",
                     (content, suffixes) -> new MarkdownResource<>(content, new MarkdownResource.UntypedMarkdownNature(),
                             suffixes));
-            SUFFIXED_RF_MAP.put("json",
+            SUFFIXED_RF_MAP.put(".json",
                     (content, suffixes) -> new JsonResource(content, new JsonNature(), suffixes));
-            SUFFIXED_RF_MAP.put("yaml",
+            SUFFIXED_RF_MAP.put(".yaml",
                     (content, suffixes) -> new YamlResource(content, new YamlNature(), suffixes));
-            SUFFIXED_RF_MAP.put("yml",
+            SUFFIXED_RF_MAP.put(".yml",
                     (content, suffixes) -> new YamlResource(content, new YamlNature(), suffixes));
         }
     }
@@ -37,7 +42,6 @@ public class ResourceFactory {
         public static final Map<String, BiFunction<Supplier<?>, Optional<PathSuffixes>, Resource<? extends Nature, ?>>> SUFFIXED_RF_MAP = new HashMap<>();
 
         static {
-            // Text resource factories
             for (Map.Entry<String, BiFunction<Supplier<String>, Optional<PathSuffixes>, TextResource<? extends Nature>>> entry : SuffixedTextResourceFactory.SUFFIXED_RF_MAP
                     .entrySet()) {
                 SUFFIXED_RF_MAP.put(entry.getKey(),
@@ -84,8 +88,7 @@ public class ResourceFactory {
             return Optional.empty();
         }
 
-        final var mostSignificantSuffix = pathSuffixes.suffixes().get(0).toLowerCase();
-        final var resourceFactory = SuffixedTextResourceFactory.SUFFIXED_RF_MAP.get(mostSignificantSuffix);
+        final var resourceFactory = SuffixedTextResourceFactory.SUFFIXED_RF_MAP.get(pathSuffixes.extendedSuffix());
 
         if (resourceFactory == null) {
             return Optional.empty();
@@ -139,9 +142,8 @@ public class ResourceFactory {
             return Optional.empty();
         }
 
-        final var mostSignificantSuffix = pathSuffixes.suffixes().get(0).toLowerCase();
         final var resourceFactory = (BiFunction<Supplier<T>, Optional<PathSuffixes>, Resource<? extends Nature, T>>) (BiFunction<?, ?, ?>) SuffixedResourceFactory.SUFFIXED_RF_MAP
-                .get(mostSignificantSuffix);
+                .get(pathSuffixes.extendedSuffix());
 
         if (resourceFactory == null) {
             return Optional.empty();

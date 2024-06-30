@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import lib.aide.resource.content.MarkdownResource;
+
 public class MarkdownResourceTest {
 
     public static class TestFrontmatter {

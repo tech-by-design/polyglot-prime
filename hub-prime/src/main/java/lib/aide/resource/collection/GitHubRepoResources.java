@@ -1,4 +1,4 @@
-package lib.aide.resource;
+package lib.aide.resource.collection;
 
 import java.io.IOException;
 import java.net.URI;
@@ -11,6 +11,13 @@ import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHRepository;
 
 import lib.aide.paths.Paths;
+import lib.aide.resource.Nature;
+import lib.aide.resource.Provenance;
+import lib.aide.resource.Resource;
+import lib.aide.resource.ResourceProvenance;
+import lib.aide.resource.ResourcesSupplier;
+import lib.aide.resource.content.ExceptionResource;
+import lib.aide.resource.content.ResourceFactory;
 
 public class GitHubRepoResources
         implements ResourcesSupplier<GitHubRepoResources.GitHubFileProvenance, String, Resource<? extends Nature, ?>> {
@@ -63,6 +70,7 @@ public class GitHubRepoResources
             } else {
                 final var resource = rf.resourceFromSuffix(content.getName(), () -> {
                     try (var reader = content.read()) {
+                        // TODO: this should really check the nature first not just always return text
                         return new String(reader.readAllBytes(), Charset.defaultCharset());
                     } catch (IOException e) {
                         throw new RuntimeException(e);

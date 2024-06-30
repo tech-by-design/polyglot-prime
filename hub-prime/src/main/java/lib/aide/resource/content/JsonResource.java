@@ -1,11 +1,13 @@
-package lib.aide.resource;
+package lib.aide.resource.content;
 
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import lib.aide.paths.PathSuffixes;
+import lib.aide.resource.Nature;
+import lib.aide.resource.TextResource;
 
-public class JsonResource implements TextResource<JsonNature> {
+public class JsonResource implements TextResource<JsonResource.JsonNature> {
     private final Supplier<String> src;
     private final JsonNature nature;
     private final Optional<PathSuffixes> suffixes;
@@ -35,11 +37,11 @@ public class JsonResource implements TextResource<JsonNature> {
     public Optional<PathSuffixes> suffixes() {
         return suffixes;
     }
-}
 
-class JsonNature implements Nature {
-    @Override
-    public String mimeType() {
-        return "application/json";
+    public static class JsonNature implements Nature {
+        @Override
+        public String mimeType() {
+            return "application/json";
+        }
     }
 }
