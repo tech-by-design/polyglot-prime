@@ -1,4 +1,15 @@
+/**
+ * @class ModalAide
+ * @classdesc A general-purpose helper class for creating and managing modal 
+ * popups, particularly for displaying JSON data. This class facilitates the
+ * creation of modal elements dynamically and provides methods to view JSON
+ * content within the modal.
+ */
 export class ModalAide {
+    /**
+     * Constructs a new ModalAide instance.
+     * @param {string} modalId - The unique identifier for the modal.
+     */
     constructor(modalId) {
         this.modalId = modalId;
         this.modalContentClass = `${modalId}-content`;
@@ -7,6 +18,11 @@ export class ModalAide {
         this.jsonViewerId = `${modalId}-json`;
     }
 
+    /**
+     * Sets up the JSON viewer modal. This method assumes that the json-viewer
+     * library is loaded. If the modal does not exist in the DOM, it creates
+     * the necessary HTML and CSS for the modal.
+     */
     setupJsonViewerModal() {
         // this method assume that https://github.com/alenaksu/json-viewer has been loaded
         // <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
@@ -73,21 +89,25 @@ export class ModalAide {
         }
     }
 
+    /**
+     * Displays a JSON value within the modal.
+     * @param {Object} value - The JSON object to be displayed in the modal.
+     */
     viewJsonValue(value) {
         this.setupJsonViewerModal();
         document.querySelector(`#${this.jsonViewerId}`).data = value;
         document.getElementById(this.modalId).style.display = 'block';
     }
 
+    /**
+     * Fetches JSON data from a specified URL and displays it within the modal.
+     * @param {string} url - The URL to fetch JSON data from.
+     */
     viewFetchedJsonValue(url) {
         fetch(url)
             .then(response => response.json())
-            .then(data => {
-                this.viewJsonValue(data);
-            })
-            .catch(error => {
-                console.error(`Error fetching data from ${url}`, error);
-            });
+            .then(data => this.viewJsonValue(data))
+            .catch(error => console.error(`Error fetching data from ${url}`, error));
     }
 }
 

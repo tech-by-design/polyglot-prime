@@ -1,9 +1,32 @@
+/**
+ * @class ShellAide
+ * @classdesc This class provides reusable application shell functionalities 
+ * across all pages. It is not specific to any particular functionality but
+ * offers generic support methods and configurations useful for the entire
+ * application.
+ * 
+ * The concept of `serverSideProfile` allows the same ShellAide to be used
+ * across different server-side platforms such as NodeJS, Java, PHP, etc.
+ * By acknowledging the server-side profile during construction, ShellAide
+ * can adapt its behavior and configurations to match the specifics of the
+ * underlying server platform.
+ * 
+ * - `SSP_UNKNOWN`: Represents an unknown or unsupported server-side profile.
+ * - `SSP_JAVA_SPRING_BOOT`: Represents a Java Spring Boot server-side profile, 
+ *                           allowing ShellAide to configure settings specific
+ *                           to Java environments.
+ */
 export class ShellAide {
     static SSP_UNKNOWN = "UNKNOWN";
     static SSP_JAVA_SPRING_BOOT = "java-spring-boot";
     #serverSideProfile;
     #javaServletContextPath;
 
+    /**
+     * Constructs a new ShellAide instance.
+     * @param {Object} [options={}] - Configuration options.
+     * @param {string} [options.serverSideProfile] - Server side profile, defaults to meta tag content if not provided.
+     */
     constructor(options = {}) {
         const { serverSideProfile = this.selectOp('meta[name="shellAideServerSideProfile"]', (meta) => { return meta.content }) } = options;
 
@@ -19,8 +42,10 @@ export class ShellAide {
     }
 
     /**
-    * Setup all the Shell Aide constructs needed to present Java Spring Boot user agents.
-    */
+     * Setup all the Shell Aide constructs needed to present Java Spring Boot user agents.
+     * This method is Java specific.
+     * @param {Object} options - Configuration options.
+     */
     #setupJavaSpringBootProfile(options) {
         this.#serverSideProfile = ShellAide.SSP_JAVA_SPRING_BOOT;
         const { javaServletContextPath = this.selectOp('meta[name="ssrServletContextPath"]', (meta) => { return meta.content }) } = options;
@@ -30,16 +55,26 @@ export class ShellAide {
             console.warn(`No valid options.javaServletContextPath or <meta name="ssrServletContextPath"> provided, ShellAide may not work properly for '${this.#serverSideProfile}' profile.`);
     }
 
+    /**
+     * Gets the server side profile.
+     * @returns {string} The server side profile.
+     */
     get serverSideProfile() {
-        return this.serverSideProfile;
+        return this.#serverSideProfile;
     }
 
+    /**
+     * Gets the Java servlet context path.
+     * This method is Java specific.
+     * @returns {string} The Java servlet context path.
+     */
     get javaServletContextPath() {
-        return this.javaServletContextPath;
+        return this.#javaServletContextPath;
     }
 
     /**
      * Constructs a full URL using the servlet context path and a relative path.
+     * This method is Java specific.
      * 
      * @param {string} relativePath - The relative path to append to the context path.
      * @returns {string} The full URL.
