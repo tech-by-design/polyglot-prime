@@ -1,5 +1,8 @@
 lib.aide.paths
 lib.aide.resource
+lib.aide.resource.collection
+lib.aide.resource.content
+lib.aide.resource.nature
 lib.aide.vfs
 org.inferno.validator
 org.inferno.validator.rest

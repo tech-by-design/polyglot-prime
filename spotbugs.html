@@ -95,25 +95,25 @@
 <td><a href="#lib.aide.paths.Paths$Node">lib.aide.paths.Paths$Node</a></td>
 <td>6</td></tr>
 <tr class="a">
-<td><a href="#lib.aide.resource.FrontmatterNature$Components">lib.aide.resource.FrontmatterNature$Components</a></td>
-<td>2</td></tr>
-<tr class="b">
-<td><a href="#lib.aide.resource.GitHubRepoResources">lib.aide.resource.GitHubRepoResources</a></td>
+<td><a href="#lib.aide.resource.collection.GitHubRepoResources">lib.aide.resource.collection.GitHubRepoResources</a></td>
 <td>1</td></tr>
-<tr class="a">
-<td><a href="#lib.aide.resource.GitHubRepoResources$GitHubFileProvenance">lib.aide.resource.GitHubRepoResources$GitHubFileProvenance</a></td>
-<td>2</td></tr>
 <tr class="b">
-<td><a href="#lib.aide.resource.ResourceFactory$SuffixedResourceFactory">lib.aide.resource.ResourceFactory$SuffixedResourceFactory</a></td>
+<td><a href="#lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance">lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance</a></td>
 <td>2</td></tr>
 <tr class="a">
-<td><a href="#lib.aide.resource.Resources">lib.aide.resource.Resources</a></td>
+<td><a href="#lib.aide.resource.collection.Resources">lib.aide.resource.collection.Resources</a></td>
 <td>4</td></tr>
 <tr class="b">
-<td><a href="#lib.aide.resource.VfsResources">lib.aide.resource.VfsResources</a></td>
+<td><a href="#lib.aide.resource.collection.VfsResources">lib.aide.resource.collection.VfsResources</a></td>
 <td>1</td></tr>
 <tr class="a">
-<td><a href="#lib.aide.resource.VfsResources$VfsFileObjectProvenance">lib.aide.resource.VfsResources$VfsFileObjectProvenance</a></td>
+<td><a href="#lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance">lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance</a></td>
+<td>2</td></tr>
+<tr class="b">
+<td><a href="#lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory">lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</a></td>
+<td>2</td></tr>
+<tr class="a">
+<td><a href="#lib.aide.resource.nature.FrontmatterNature$Components">lib.aide.resource.nature.FrontmatterNature$Components</a></td>
 <td>2</td></tr>
 <tr class="b">
 <td><a href="#lib.aide.vfs.VfsIngressConsumer">lib.aide.vfs.VfsIngressConsumer</a></td>
@@ -307,13 +307,13 @@
 <td>lib.aide.paths.PathSuffixes.suffixes() may expose internal representation by returning PathSuffixes.suffixes</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>9</td>
+<td>49</td>
 <td>Medium</td></tr>
 <tr class="a">
-<td>new lib.aide.paths.PathSuffixes(String, Pattern, List) may expose internal representation by storing an externally mutable object into PathSuffixes.suffixes</td>
+<td>new lib.aide.paths.PathSuffixes(String, Pattern, List, String) may expose internal representation by storing an externally mutable object into PathSuffixes.suffixes</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>9</td>
+<td>49</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.paths.Paths"></a><section>
 <h2>lib.aide.paths.Paths</h2>
 <table class="table table-striped">
@@ -372,8 +372,8 @@
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
 <td>54</td>
-<td>Medium</td></tr></table></section><a name="lib.aide.resource.FrontmatterNature$Components"></a><section>
-<h2>lib.aide.resource.FrontmatterNature$Components</h2>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.GitHubRepoResources"></a><section>
+<h2>lib.aide.resource.collection.GitHubRepoResources</h2>
 <table class="table table-striped">
 <tr class="a">
 <th>Bug</th>
@@ -382,18 +382,32 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>lib.aide.resource.FrontmatterNature$Components.exceptions() may expose internal representation by returning FrontmatterNature$Components.exceptions</td>
+<td>new lib.aide.resource.collection.GitHubRepoResources(ResourceFactory, URI, GHRepository) may expose internal representation by storing an externally mutable object into GitHubRepoResources.repo</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
+<td>35</td>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance"></a><section>
+<h2>lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance.fileContent() may expose internal representation by returning GitHubRepoResources$GitHubFileProvenance.fileContent</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>23</td>
+<td>24</td>
 <td>Medium</td></tr>
 <tr class="a">
-<td>new lib.aide.resource.FrontmatterNature$Components(String, Optional, String, List) may expose internal representation by storing an externally mutable object into FrontmatterNature$Components.exceptions</td>
+<td>new lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance(URI, GHContent) may expose internal representation by storing an externally mutable object into GitHubRepoResources$GitHubFileProvenance.fileContent</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>23</td>
-<td>Medium</td></tr></table></section><a name="lib.aide.resource.GitHubRepoResources"></a><section>
-<h2>lib.aide.resource.GitHubRepoResources</h2>
+<td>24</td>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.Resources"></a><section>
+<h2>lib.aide.resource.collection.Resources</h2>
 <table class="table table-striped">
 <tr class="a">
 <th>Bug</th>
@@ -402,32 +416,30 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>new lib.aide.resource.GitHubRepoResources(ResourceFactory, URI, GHRepository) may expose internal representation by storing an externally mutable object into GitHubRepoResources.repo</td>
+<td>lib.aide.resource.collection.Resources.getPaths() may expose internal representation by returning Resources.paths</td>
 <td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
 <td>28</td>
-<td>Medium</td></tr></table></section><a name="lib.aide.resource.GitHubRepoResources$GitHubFileProvenance"></a><section>
-<h2>lib.aide.resource.GitHubRepoResources$GitHubFileProvenance</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>lib.aide.resource.GitHubRepoResources$GitHubFileProvenance.fileContent() may expose internal representation by returning GitHubRepoResources$GitHubFileProvenance.fileContent</td>
-<td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>17</td>
 <td>Medium</td></tr>
 <tr class="a">
-<td>new lib.aide.resource.GitHubRepoResources$GitHubFileProvenance(URI, GHContent) may expose internal representation by storing an externally mutable object into GitHubRepoResources$GitHubFileProvenance.fileContent</td>
+<td>lib.aide.resource.collection.Resources.getResources() may expose internal representation by returning Resources.resources</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
+<td>24</td>
+<td>Medium</td></tr>
+<tr class="b">
+<td>new lib.aide.resource.collection.Resources(List, List) may expose internal representation by storing an externally mutable object into Resources.paths</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>17</td>
-<td>Medium</td></tr></table></section><a name="lib.aide.resource.ResourceFactory$SuffixedResourceFactory"></a><section>
-<h2>lib.aide.resource.ResourceFactory$SuffixedResourceFactory</h2>
+<td>20</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>new lib.aide.resource.collection.Resources(List, List) may expose internal representation by storing an externally mutable object into Resources.resources</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
+<td>19</td>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.VfsResources"></a><section>
+<h2>lib.aide.resource.collection.VfsResources</h2>
 <table class="table table-striped">
 <tr class="a">
 <th>Bug</th>
@@ -436,12 +448,46 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>lib.aide.resource.ResourceFactory$SuffixedResourceFactory.SUFFIXED_RF_MAP is a mutable collection which should be package protected</td>
+<td>new lib.aide.resource.collection.VfsResources(ResourceFactory, URI, FileObject) may expose internal representation by storing an externally mutable object into VfsResources.rootVfsFO</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
+<td>34</td>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance"></a><section>
+<h2>lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance.fileObject() may expose internal representation by returning VfsResources$VfsFileObjectProvenance.fileObject</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
+<td>23</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>new lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance(URI, FileObject) may expose internal representation by storing an externally mutable object into VfsResources$VfsFileObjectProvenance.fileObject</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
+<td>23</td>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
+<h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory.SUFFIXED_RF_MAP is a mutable collection which should be package protected</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_MUTABLE_COLLECTION_PKGPROTECT">MS_MUTABLE_COLLECTION_PKGPROTECT</a></td>
-<td>37</td>
-<td>Medium</td></tr></table></section><a name="lib.aide.resource.Resources"></a><section>
-<h2>lib.aide.resource.Resources</h2>
+<td>42</td>
+<td>Medium</td></tr></table></section><a name="lib.aide.resource.nature.FrontmatterNature$Components"></a><section>
+<h2>lib.aide.resource.nature.FrontmatterNature$Components</h2>
 <table class="table table-striped">
 <tr class="a">
 <th>Bug</th>
@@ -450,62 +496,16 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>lib.aide.resource.Resources.getPaths() may expose internal representation by returning Resources.paths</td>
+<td>lib.aide.resource.nature.FrontmatterNature$Components.exceptions() may expose internal representation by returning FrontmatterNature$Components.exceptions</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>23</td>
+<td>25</td>
 <td>Medium</td></tr>
 <tr class="a">
-<td>lib.aide.resource.Resources.getResources() may expose internal representation by returning Resources.resources</td>
-<td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>19</td>
-<td>Medium</td></tr>
-<tr class="b">
-<td>new lib.aide.resource.Resources(List, List) may expose internal representation by storing an externally mutable object into Resources.paths</td>
+<td>new lib.aide.resource.nature.FrontmatterNature$Components(String, Optional, String, List) may expose internal representation by storing an externally mutable object into FrontmatterNature$Components.exceptions</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>15</td>
-<td>Medium</td></tr>
-<tr class="a">
-<td>new lib.aide.resource.Resources(List, List) may expose internal representation by storing an externally mutable object into Resources.resources</td>
-<td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>14</td>
-<td>Medium</td></tr></table></section><a name="lib.aide.resource.VfsResources"></a><section>
-<h2>lib.aide.resource.VfsResources</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>new lib.aide.resource.VfsResources(ResourceFactory, URI, FileObject) may expose internal representation by storing an externally mutable object into VfsResources.rootVfsFO</td>
-<td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>26</td>
-<td>Medium</td></tr></table></section><a name="lib.aide.resource.VfsResources$VfsFileObjectProvenance"></a><section>
-<h2>lib.aide.resource.VfsResources$VfsFileObjectProvenance</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>lib.aide.resource.VfsResources$VfsFileObjectProvenance.fileObject() may expose internal representation by returning VfsResources$VfsFileObjectProvenance.fileObject</td>
-<td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>15</td>
-<td>Medium</td></tr>
-<tr class="a">
-<td>new lib.aide.resource.VfsResources$VfsFileObjectProvenance(URI, FileObject) may expose internal representation by storing an externally mutable object into VfsResources$VfsFileObjectProvenance.fileObject</td>
-<td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>15</td>
+<td>25</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.vfs.VfsIngressConsumer"></a><section>
 <h2>lib.aide.vfs.VfsIngressConsumer</h2>
 <table class="table table-striped">

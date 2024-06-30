@@ -1,4 +1,7 @@
 lib.aide.resource
+lib.aide.resource.nature
+lib.aide.resource.collection
+lib.aide.resource.content
 lib.aide.vfs
 lib.aide.paths
 org.techbd.udi
