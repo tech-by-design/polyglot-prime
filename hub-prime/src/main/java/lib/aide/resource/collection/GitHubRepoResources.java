@@ -29,6 +29,7 @@ public class GitHubRepoResources
     private final GitHubFilePathComponentsSupplier ghfpcs = new GitHubFilePathComponentsSupplier();
     private final URI identity;
     private final GHRepository repo;
+    private String rootPath = "";
 
     private final AtomicReference<List<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>> resources = new AtomicReference<>();
     private final AtomicReference<Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>> paths = new AtomicReference<>();
@@ -39,56 +40,51 @@ public class GitHubRepoResources
         this.repo = repo;
     }
 
+    public GitHubRepoResources withRootPath(final String rootPath) {
+        this.rootPath = rootPath;
+        return this;
+    }
+
     @Override
     public URI identity() {
         return identity;
     }
 
-    /**
-     * Call clearCache().resources() or clearCache().paths() to re-read from
-     * sources.
-     * 
-     * @return this resources supplier instance to allow fluent chaining
-     */
-    public GitHubRepoResources clearCache() {
-        resources.set(null);
-        paths.set(null);
-        return this;
-    }
-
     @Override
     public Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>> paths() {
-        if (paths.get() == null) {
-            synchronized (this) {
-                if (paths.get() == null) {
-                    final var result = new Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>(
-                            ghfpcs);
-                    for (var resourceProvenance : resources()) {
-                        result.populate(resourceProvenance);
-                    }
-                    paths.set(result);
+        return paths.updateAndGet(existingPaths -> {
+            if (existingPaths == null) {
+                final var result = new Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>(
+                        ghfpcs);
+                for (var resourceProvenance : resources()) {
+                    result.populate(resourceProvenance);
                 }
+                return result;
             }
-        }
-        return paths.get();
+            return existingPaths;
+        });
     }
 
     @Override
     public List<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>> resources() {
-        if (resources.get() == null) {
-            synchronized (this) {
-                if (resources.get() == null) {
-                    final var result = new ArrayList<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>();
-                    try {
-                        walkRepository(repo.getDirectoryContent(""), result);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    resources.set(result);
+        return resources.updateAndGet(existingResources -> {
+            if (existingResources == null) {
+                final var result = new ArrayList<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>();
+                try {
+                    walkRepository(repo.getDirectoryContent(rootPath), result);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
+                return result;
             }
-        }
-        return resources.get();
+            return existingResources;
+        });
+    }
+
+    public GitHubRepoResources clearCache() {
+        resources.set(null);
+        paths.set(null);
+        return this;
     }
 
     protected void walkRepository(List<GHContent> contents,

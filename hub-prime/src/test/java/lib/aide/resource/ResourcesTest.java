@@ -121,7 +121,8 @@ public class ResourcesTest {
         final var github = GitHub.connectUsingOAuth(ghToken);
         final var ghRepo = github.getRepository("tech-by-design/docs.techbd.org");
 
-        final var ghResourcesSupplier = new GitHubRepoResources(rf, ghRepo.getHtmlUrl().toURI(), ghRepo);
+        final var ghResourcesSupplier = new GitHubRepoResources(rf, ghRepo.getHtmlUrl().toURI(), ghRepo)
+                .withRootPath("src/content/docs");
         final var builder = new Resources.Builder<String, Resource<? extends Nature, ?>>()
                 .withSupplier(ghResourcesSupplier);
 

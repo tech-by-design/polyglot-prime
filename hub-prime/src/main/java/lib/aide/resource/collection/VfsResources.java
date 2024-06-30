@@ -43,6 +43,41 @@ public class VfsResources
         return identity;
     }
 
+    @Override
+    public Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> paths() {
+        return paths.updateAndGet(existingPaths -> {
+            if (existingPaths == null) {
+                final var payloadRoot = new ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>(
+                        new VfsFileObjectProvenance(rootVfsFO.getURI(), rootVfsFO),
+                        EmptyResource.SINGLETON);
+                final var result = new Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>(
+                        payloadRoot,
+                        fopcs);
+                for (var resourceProvenance : resources()) {
+                    result.populate(resourceProvenance);
+                }
+                return result;
+            }
+            return existingPaths;
+        });
+    }
+
+    @Override
+    public List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> resources() {
+        return resources.updateAndGet(existingResources -> {
+            if (existingResources == null) {
+                final var result = new ArrayList<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>();
+                try {
+                    walkFileSystem(rootVfsFO, result);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                return result;
+            }
+            return existingResources;
+        });
+    }
+
     /**
      * Call clearCache().resources() or clearCache().paths() to re-read from
      * sources.
@@ -53,45 +88,6 @@ public class VfsResources
         resources.set(null);
         paths.set(null);
         return this;
-    }
-
-    @Override
-    public Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> paths() {
-        if (paths.get() == null) {
-            synchronized (this) {
-                if (paths.get() == null) {
-                    final var payloadRoot = new ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>(
-                            new VfsFileObjectProvenance(rootVfsFO.getURI(), rootVfsFO),
-                            EmptyResource.SINGLETON);
-                    final var result = new Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>(
-                            payloadRoot,
-                            fopcs);
-                    for (var resourceProvenance : resources()) {
-                        result.populate(resourceProvenance);
-                    }
-                    paths.set(result);
-                }
-            }
-        }
-        return paths.get();
-    }
-
-    @Override
-    public List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> resources() {
-        if (resources.get() == null) {
-            synchronized (this) {
-                if (resources.get() == null) {
-                    final var result = new ArrayList<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>();
-                    try {
-                        walkFileSystem(rootVfsFO, result);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    resources.set(result);
-                }
-            }
-        }
-        return resources.get();
     }
 
     protected void walkFileSystem(FileObject fileObject,
