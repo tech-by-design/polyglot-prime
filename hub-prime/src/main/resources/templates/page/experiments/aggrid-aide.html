@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/experiment}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import ShellAide from '@presentation/shell/shell-aide.js';
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const shellAide = new ShellAide();
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "Request Time",
+                        field: "interaction_created_at",
+                        sort: "desc",
+                        filter: "agNumberColumnFilter",
+                        enableRowGroup: true,
+                        valueFormatter: AGGridAide.dateTimeValueFormatter()
+                    },
+                    {
+                        headerName: "Interaction ID",
+                        field: "interaction_id",
+                        enableRowGroup: true,
+                        filter: "agTextColumnFilter",
+                        cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
+                            modalAide.viewFetchedJsonValue(shellAide.serverSideUrl(`/support/interaction/${value}.json`));
+                        }, modalAide)
+                    },
+                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", enableRowGroup: true }
+                ])
+                .withServerSideDatasource(
+                    shellAide.serverSideUrl('/support/interaction/http.json'),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    }
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "500px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>
