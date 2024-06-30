@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHRepository;
@@ -29,6 +30,9 @@ public class GitHubRepoResources
     private final URI identity;
     private final GHRepository repo;
 
+    private final AtomicReference<List<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>> resources = new AtomicReference<>();
+    private final AtomicReference<Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>> paths = new AtomicReference<>();
+
     public GitHubRepoResources(final ResourceFactory rf, final URI identity, final GHRepository repo) throws Exception {
         this.rf = rf;
         this.identity = identity;
@@ -40,25 +44,51 @@ public class GitHubRepoResources
         return identity;
     }
 
+    /**
+     * Call clearCache().resources() or clearCache().paths() to re-read from
+     * sources.
+     * 
+     * @return this resources supplier instance to allow fluent chaining
+     */
+    public GitHubRepoResources clearCache() {
+        resources.set(null);
+        paths.set(null);
+        return this;
+    }
+
     @Override
     public Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>> paths() {
-        final var result = new Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>(
-                ghfpcs);
-        for (var resourceProvenance : resources()) {
-            result.populate(resourceProvenance);
+        if (paths.get() == null) {
+            synchronized (this) {
+                if (paths.get() == null) {
+                    final var result = new Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>(
+                            ghfpcs);
+                    for (var resourceProvenance : resources()) {
+                        result.populate(resourceProvenance);
+                    }
+                    paths.set(result);
+                }
+            }
         }
-        return result;
+        return paths.get();
     }
 
     @Override
     public List<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>> resources() {
-        var resourceList = new ArrayList<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>();
-        try {
-            walkRepository(repo.getDirectoryContent(""), resourceList);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (resources.get() == null) {
+            synchronized (this) {
+                if (resources.get() == null) {
+                    final var result = new ArrayList<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>();
+                    try {
+                        walkRepository(repo.getDirectoryContent(""), result);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    resources.set(result);
+                }
+            }
         }
-        return resourceList;
+        return resources.get();
     }
 
     protected void walkRepository(List<GHContent> contents,

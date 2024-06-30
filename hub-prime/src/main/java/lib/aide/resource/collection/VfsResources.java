@@ -5,6 +5,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.vfs2.FileObject;
 
@@ -28,6 +29,9 @@ public class VfsResources
     private final URI identity;
     private final FileObject rootVfsFO;
 
+    private final AtomicReference<List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>> resources = new AtomicReference<>();
+    private final AtomicReference<Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>> paths = new AtomicReference<>();
+
     public VfsResources(final ResourceFactory rf, final URI identity, final FileObject rootVfsFO) throws Exception {
         this.rf = rf;
         this.identity = identity;
@@ -39,29 +43,55 @@ public class VfsResources
         return identity;
     }
 
+    /**
+     * Call clearCache().resources() or clearCache().paths() to re-read from
+     * sources.
+     * 
+     * @return this resources supplier instance to allow fluent chaining
+     */
+    public VfsResources clearCache() {
+        resources.set(null);
+        paths.set(null);
+        return this;
+    }
+
     @Override
     public Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> paths() {
-        final var payloadRoot = new ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>(
-                new VfsFileObjectProvenance(rootVfsFO.getURI(), rootVfsFO),
-                EmptyResource.SINGLETON);
-        final var result = new Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>(
-                payloadRoot,
-                fopcs);
-        for (var resourceProvenance : resources()) {
-            result.populate(resourceProvenance);
+        if (paths.get() == null) {
+            synchronized (this) {
+                if (paths.get() == null) {
+                    final var payloadRoot = new ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>(
+                            new VfsFileObjectProvenance(rootVfsFO.getURI(), rootVfsFO),
+                            EmptyResource.SINGLETON);
+                    final var result = new Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>(
+                            payloadRoot,
+                            fopcs);
+                    for (var resourceProvenance : resources()) {
+                        result.populate(resourceProvenance);
+                    }
+                    paths.set(result);
+                }
+            }
         }
-        return result;
+        return paths.get();
     }
 
     @Override
     public List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> resources() {
-        final var result = new ArrayList<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>();
-        try {
-            walkFileSystem(rootVfsFO, result);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (resources.get() == null) {
+            synchronized (this) {
+                if (resources.get() == null) {
+                    final var result = new ArrayList<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>();
+                    try {
+                        walkFileSystem(rootVfsFO, result);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    resources.set(result);
+                }
+            }
         }
-        return result;
+        return resources.get();
     }
 
     protected void walkFileSystem(FileObject fileObject,
@@ -79,7 +109,8 @@ public class VfsResources
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            }, Optional.empty()).orElse(new ExceptionResource(new RuntimeException("Unsupported resource type: " + fileObject.getName())));
+            }, Optional.empty()).orElse(
+                    new ExceptionResource(new RuntimeException("Unsupported resource type: " + fileObject.getName())));
             final var provenance = new VfsFileObjectProvenance(fileObject.getURI(), fileObject);
             resources.add(new ResourceProvenance<>(provenance, resource));
         }
