@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.VFS;
 import org.junit.jupiter.api.Test;
+import org.kohsuke.github.GitHub;
 
 import lib.aide.paths.PathsVisuals;
 
@@ -67,7 +68,7 @@ public class ResourcesTest {
     }
 
     @Test
-    void testProjectResources() throws Exception {
+    void testLocalProjectResources() throws Exception {
         final var rf = new ResourceFactory();
         final var fsManager = VFS.getManager();
         final var currentDir = System.getProperty("user.dir"); // Get the current directory
@@ -76,6 +77,39 @@ public class ResourcesTest {
         final var vfsResourcesSupplier = new VfsResources(rf, rootFileObject.getURI(), rootFileObject);
         final var builder = new Resources.Builder<String, Resource<? extends Nature, ?>>()
                 .withSupplier(vfsResourcesSupplier);
+
+        // you can hang on to the builder to "refresh" the resources later;
+        // to refresh you just call builder.build() again
+        final var catalog = builder.build();
+        assertThat(catalog).isNotNull();
+
+        final var resources = catalog.getResources();
+        assertThat(resources).isNotNull();
+        assertThat(resources).hasSizeGreaterThan(0);
+
+        final var paths = catalog.getPaths();
+        assertThat(paths).isNotNull();
+        assertThat(paths).hasSize(1);
+
+        final var pathsPrime = paths.getFirst();
+        System.out.println(pathsPrime.roots());
+
+        final var pv = new PathsVisuals();
+        System.out.println(pv.asciiTree(pathsPrime, Optional.empty()));
+    }
+
+    @Test
+    void testGitHubProjectResources() throws Exception {
+        final var rf = new ResourceFactory();
+        final var ghToken = System.getenv("ORG_TECHBD_SERVICE_HTTP_GITHUB_API_AUTHN_TOKEN");
+        assertThat(ghToken).isNotNull().isNotBlank();
+
+        final var github = GitHub.connectUsingOAuth(ghToken);
+        final var ghRepo = github.getRepository("tech-by-design/infrastructure-prime");
+
+        final var ghResourcesSupplier = new GitHubRepoResources(rf, ghRepo.getHtmlUrl().toURI(), ghRepo);
+        final var builder = new Resources.Builder<String, Resource<? extends Nature, ?>>()
+                .withSupplier(ghResourcesSupplier);
 
         // you can hang on to the builder to "refresh" the resources later;
         // to refresh you just call builder.build() again

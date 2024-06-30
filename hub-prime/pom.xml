@@ -35,17 +35,18 @@
 				<scope>import</scope>
 			</dependency>
 		</dependencies>
-	</dependencyManagement> 
+	</dependencyManagement>
 
 	<dependencies>
-		<!-- auto-generate jOOQ and other artifacts created by /udi-prime/udictl.ts generate java jooq -->
+		<!-- auto-generate jOOQ and other artifacts created by /udi-prime/udictl.ts generate java
+		jooq -->
 		<dependency>
 			<groupId>org.techbd.udi.auto</groupId>
 			<artifactId>udi-jooq-ingress</artifactId>
 			<scope>system</scope>
 			<version>1.0</version>
 			<systemPath>${basedir}/lib/techbd-udi-jooq-ingress.auto.jar</systemPath>
-		 </dependency>  
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -71,9 +72,9 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.github.bxforce</groupId>
 			<artifactId>commons-vfs2-spring-boot-starter</artifactId>
@@ -177,8 +178,8 @@
 			<version>5.0.8.Final</version>
 		</dependency>
 		<dependency>
- 			<groupId>org.springframework.boot</groupId>
- 			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.vladsch.flexmark</groupId>
@@ -243,7 +244,7 @@
 		<dependency>
 			<groupId>com.squareup.okio</groupId>
 			<artifactId>okio</artifactId>
-			<version>3.6.0</version> 
+			<version>3.6.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.json</groupId>
@@ -261,9 +262,9 @@
 			<version>2.17.1</version>
 		</dependency>
 		<dependency>
- 		   <groupId>org.springframework.boot</groupId>
-    		<artifactId>spring-boot-starter-jooq</artifactId>
-   		 	<version>3.3.1</version>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jooq</artifactId>
+			<version>3.3.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jooq</groupId>
@@ -274,7 +275,17 @@
 			<groupId>io.projectreactor</groupId>
 			<artifactId>reactor-core</artifactId>
 			<version>3.6.7</version>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>org.kohsuke</groupId>
+			<artifactId>github-api</artifactId>
+			<version>1.322</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.wimdeblauwe</groupId>
+			<artifactId>htmx-spring-boot-thymeleaf</artifactId>
+			<version>3.4.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -424,42 +435,43 @@
 			</plugin>
 			<!-- Spotbugs Maven Plugin -->
 			<plugin>
-			<groupId>com.github.spotbugs</groupId>
-			<artifactId>spotbugs-maven-plugin</artifactId>
-			<version>4.8.5.0</version>
-			<dependencies>
-				<!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
-				<dependency>
 				<groupId>com.github.spotbugs</groupId>
-				<artifactId>spotbugs</artifactId>
-				<version>4.8.5</version>
-				</dependency>
-			</dependencies>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.8.5.0</version>
+				<dependencies>
+					<!-- overwrite dependency on spotbugs if you want to specify the version of
+					spotbugs -->
+					<dependency>
+						<groupId>com.github.spotbugs</groupId>
+						<artifactId>spotbugs</artifactId>
+						<version>4.8.5</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<!-- git-commit-id Maven Plugin -->
 			<plugin>
-                <groupId>io.github.git-commit-id</groupId>
-                <artifactId>git-commit-id-maven-plugin</artifactId>
-                <version>5.0.0</version>
-                <executions>
-                    <execution>
-                        <id>get-the-git-infos</id>
-                        <goals>
-                            <goal>revision</goal>
-                        </goals>
-                        <phase>initialize</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
-                    <includeOnlyProperties>
-                        <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
-                        <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
-                    </includeOnlyProperties>
-                    <commitIdGenerationMode>full</commitIdGenerationMode>
-                </configuration>
-            </plugin>
+				<groupId>io.github.git-commit-id</groupId>
+				<artifactId>git-commit-id-maven-plugin</artifactId>
+				<version>5.0.0</version>
+				<executions>
+					<execution>
+						<id>get-the-git-infos</id>
+						<goals>
+							<goal>revision</goal>
+						</goals>
+						<phase>initialize</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<generateGitPropertiesFile>true</generateGitPropertiesFile>
+					<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+					<includeOnlyProperties>
+						<includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
+						<includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
+					</includeOnlyProperties>
+					<commitIdGenerationMode>full</commitIdGenerationMode>
+				</configuration>
+			</plugin>
 			<!-- Modernizer Plugin -->
 			<plugin>
 				<groupId>org.gaul</groupId>
@@ -480,8 +492,8 @@
 				</configuration>
 				<executions>
 					<execution>
-					<id>modernizer</id>
-					<phase>verify</phase>
+						<id>modernizer</id>
+						<phase>verify</phase>
 						<goals>
 							<goal>modernizer</goal>
 						</goals>
@@ -494,33 +506,34 @@
 				<artifactId>maven-enforcer-plugin</artifactId>
 				<version>3.5.0</version>
 				<executions>
-				<execution>
-					<id>enforce-versions</id>
-					<goals>
-					<goal>enforce</goal>
-					</goals>
-					<configuration>
-					<rules>
-						<bannedPlugins>
-						<!-- will only display a warning but does not fail the build. -->
-						<level>WARN</level>
-						<excludes>
-							<exclude>org.apache.maven.plugins:maven-verifier-plugin</exclude>
-						</excludes>
-						<message>Please consider using the maven-invoker-plugin (http://maven.apache.org/plugins/maven-invoker-plugin/)!</message>
-						</bannedPlugins>
-						<requireMavenVersion>
-						<version>2.0.6</version>
-						</requireMavenVersion>
-						<requireJavaVersion>
-						<version>1.5</version>
-						</requireJavaVersion>
-						<requireOS>
-						<family>unix</family>
-						</requireOS>
-					</rules>
-					</configuration>
-				</execution>
+					<execution>
+						<id>enforce-versions</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<bannedPlugins>
+									<!-- will only display a warning but does not fail the build. -->
+									<level>WARN</level>
+									<excludes>
+										<exclude>org.apache.maven.plugins:maven-verifier-plugin</exclude>
+									</excludes>
+									<message>Please consider using the maven-invoker-plugin
+										(http://maven.apache.org/plugins/maven-invoker-plugin/)!</message>
+								</bannedPlugins>
+								<requireMavenVersion>
+									<version>2.0.6</version>
+								</requireMavenVersion>
+								<requireJavaVersion>
+									<version>1.5</version>
+								</requireJavaVersion>
+								<requireOS>
+									<family>unix</family>
+								</requireOS>
+							</rules>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<!-- javadoc Plugin -->
@@ -529,8 +542,8 @@
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.7.0</version>
 				<configuration>
-				<show>private</show>
-				<nohelp>true</nohelp>
+					<show>private</show>
+					<nohelp>true</nohelp>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -557,7 +570,7 @@
 				<configuration>
 					<configLocation>checkstyle.xml</configLocation>
 					<outputFile>${project.build.directory}/output-results/checkstyle-result.xml</outputFile>
-        			<outputFileFormat>xml</outputFileFormat>
+					<outputFileFormat>xml</outputFileFormat>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
@@ -590,7 +603,7 @@
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
-			<!-- Spotbugs Maven Plugin -->		
+			<!-- Spotbugs Maven Plugin -->
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
@@ -632,9 +645,9 @@
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.7.0</version>
 				<configuration>
-				<failOnError>false</failOnError>
-				<stylesheetfile>${project.build.directory}/site/apidocs/stylesheet.css</stylesheetfile>
-				<show>public</show>
+					<failOnError>false</failOnError>
+					<stylesheetfile>${project.build.directory}/site/apidocs/stylesheet.css</stylesheetfile>
+					<show>public</show>
 				</configuration>
 			</plugin>
 		</plugins>
