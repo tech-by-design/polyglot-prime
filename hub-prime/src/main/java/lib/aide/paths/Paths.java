@@ -230,6 +230,15 @@ public class Paths<C, P> {
     }
 
     /**
+     * Constructs a Paths object with payload components supplier.
+     *
+     * @param parser      the supplier for payload components
+     */
+    public Paths(PayloadComponentsSupplier<C, P> parser) {
+        this.pcSupplier = parser;
+    }
+
+    /**
      * Adds a new root node to the Paths structure.
      *
      * @param rootPayload the payload for the new root node
