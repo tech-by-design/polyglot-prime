@@ -10,28 +10,36 @@
         .selected {
             background-color: #f0f0f0;
         }
+
+        .mermaid {
+            background-color: #ffffff !important;
+            /* Ensure the background is white */
+            color: #000000 !important;
+            /* Ensure the text is black */
+        }
     </style>
     <script>
         async function loadResource(event) {
             event.preventDefault(); // Prevent default link behavior
             const target = event.target;
             const resourceUrl = target.getAttribute('href');
-    
+
             // Highlight the selected sidebar item
             const sidebar = document.getElementById('sidebar');
             sidebar.querySelectorAll('a').forEach(a => a.classList.remove('selected'));
             target.classList.add('selected');
-    
+
             try {
                 const fetchURL = ssrServletUrl(`/docs/techbd-hub/resource/content?path=${resourceUrl}`);
-                console.log("fetching " + fetchURL);
                 const response = await fetch(fetchURL);
                 const mimeType = response.headers.get('Content-Type');
-    
+
                 const resourceContent = document.getElementById('resource');
                 if (mimeType.includes('markdown')) {
                     const text = await response.text();
                     resourceContent.innerHTML = marked.parse(text);
+                    // in <head> window.mermaid was set so use it to re-initialize Mermaid diagrams
+                    if (window.mermaid) await window.mermaid.run();
                 } else {
                     resourceContent.innerHTML = 'Unsupported content type';
                 }
@@ -40,7 +48,7 @@
                 document.getElementById('resource').innerHTML = 'Error loading resource';
             }
         }
-    </script>   
+    </script>
 </head>
 
 <body>
@@ -48,8 +56,8 @@
         <div class="flex">
             <div id="sidebar" class="w-1/4 p-4" hx:get="@{/docs/techbd-hub/sidebar/content}" hx-trigger="load"
                 hx-swap="innerHTML"></div>
-            <div id="resource" class="w-3/4 p-4">
-                <!-- Resource content goes here -->
+            <div id="resource" class="w-3/4 p-4 prose max-w-none">
+                <!-- Resource content is inserted dynamically when the sidebar menu items are tapped -->
             </div>
         </div>
     </div>
