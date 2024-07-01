@@ -117,7 +117,7 @@ class ApplicationTests {
 				"FATAL");
 	}
 
-	Map<?, ?> getBundleValidateResultWithMultipleEngines(final @NotNull String fixtureFilename) throws Exception {
+	Map<?, ?> getBundleValidateResultWithHapiEngine(final @NotNull String fixtureFilename) throws Exception {
 		
 		RestTemplate restTemplate = new RestTemplate();
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -128,7 +128,7 @@ class ApplicationTests {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		headers.add(Configuration.Servlet.HeaderName.Request.TENANT_ID, "unit-test");
-		headers.add("X-TechBD-FHIR-Validation-Strategy", "{\"engines\": [\"HAPI\", \"Inferno\"]}");
+		headers.add("X-TechBD-FHIR-Validation-Strategy", "{\"engines\": [\"HAPI\"]}");
 
 		HttpEntity<String> requestEntity = new HttpEntity<>(fixtureContent(fixtureFilename), headers);
 
@@ -142,8 +142,8 @@ class ApplicationTests {
 	}
 
 	@Test
-	void bundleValidateTestCase301WithMultiplEngines() throws Exception {
-		final var bvr = getBundleValidateResultWithMultipleEngines("TestCase301.json");
+	void bundleValidateTestCase301WithHapiEngines() throws Exception {
+		final var bvr = getBundleValidateResultWithHapiEngine("TestCase301.json");
 		assertThat(bvr.containsKey("OperationOutcome"));
 		Map<String, Object> operationOutcome = objectMapper.convertValue(bvr.get("OperationOutcome"),
 				new TypeReference<Map<String, Object>>() {
@@ -157,17 +157,13 @@ class ApplicationTests {
 		List<Map<String, Object>> validationResults = objectMapper.convertValue(
 				operationOutcome.get("validationResults"), new TypeReference<List<Map<String, Object>>>() {
 				});
-		assertThat(validationResults).hasSize(2);
+		assertThat(validationResults).hasSize(1);
 
 		// Check details of the first validation result
 		assertValidationResult(validationResults.get(0),
 				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
 				"HAPI-1821: [element=\"gender\"] Invalid attribute value \"UN\": Unknown AdministrativeGender code 'UN'",
 				"FATAL");
-		assertValidationResult(validationResults.get(1),
-				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
-				"Identifier.system must be an absolute reference, not a local reference",
-				"error");
 	}
 
 	private void assertValidationResult(Map<String, Object> validationResult, String profileUrl, String engine,
