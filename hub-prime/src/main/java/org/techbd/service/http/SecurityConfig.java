@@ -42,7 +42,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated())
                 .oauth2Login(oauth2Login -> oauth2Login
                         .successHandler(gitHubLoginSuccessHandler())
-                        .defaultSuccessUrl("/home"))
+                        .defaultSuccessUrl("/home")
+                        .loginPage("/login"))
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)

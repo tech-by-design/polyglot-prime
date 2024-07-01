@@ -1,5 +1,7 @@
 package org.techbd.service.http.hub.prime.ux;
 
+import java.io.IOException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,11 @@ public class PrimeController {
     @GetMapping("/")
     public String index() {
         return "login/login";
+    }
+
+    @GetMapping("/login")
+    public void login(HttpServletResponse response) throws IOException {
+        response.sendRedirect("/oauth2/authorization/github");
     }
 
     @GetMapping(value = "/admin/cache/tenant-sftp-egress-content/clear")
