@@ -77,7 +77,7 @@
 <th>Missing Classes</th></tr>
 <tr class="b">
 <td>192</td>
-<td>188</td>
+<td>189</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -240,7 +240,7 @@
 <td>1</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.service.http.hub.prime.ux.DocsController">org.techbd.service.http.hub.prime.ux.DocsController</a></td>
-<td>1</td></tr>
+<td>2</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.ux.ExperimentsController">org.techbd.service.http.hub.prime.ux.ExperimentsController</a></td>
 <td>1</td></tr>
@@ -457,7 +457,7 @@
 <td>new lib.aide.resource.collection.VfsResources(ResourceFactory, URI, FileObject) may expose internal representation by storing an externally mutable object into VfsResources.rootVfsFO</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>39</td>
+<td>41</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance"></a><section>
 <h2>lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance</h2>
 <table class="table table-striped">
@@ -471,13 +471,13 @@
 <td>lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance.fileObject() may expose internal representation by returning VfsResources$VfsFileObjectProvenance.fileObject</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>25</td>
+<td>26</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>new lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance(URI, FileObject) may expose internal representation by storing an externally mutable object into VfsResources$VfsFileObjectProvenance.fileObject</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>25</td>
+<td>26</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
 <table class="table table-striped">
@@ -1558,10 +1558,16 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
+<td>Exception thrown in class org.techbd.service.http.hub.prime.ux.DocsController at new org.techbd.service.http.hub.prime.ux.DocsController(Presentation) will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks.</td>
+<td>BAD_PRACTICE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#CT_CONSTRUCTOR_THROW">CT_CONSTRUCTOR_THROW</a></td>
+<td>34</td>
+<td>Medium</td></tr>
+<tr class="a">
 <td>new org.techbd.service.http.hub.prime.ux.DocsController(Presentation) may expose internal representation by storing an externally mutable object into DocsController.presentation</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>31</td>
+<td>33</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.ux.ExperimentsController"></a><section>
 <h2>org.techbd.service.http.hub.prime.ux.ExperimentsController</h2>
 <table class="table table-striped">
