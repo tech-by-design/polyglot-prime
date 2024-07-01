@@ -50,7 +50,7 @@ public class PathsHtml<C, P> {
             Optional.of(Map.of("style", "text-indent: -1em; padding-left: 1em;")),
             Optional.of(Map.of("class", "cursor-pointer font-semibold", "open", "true")),
             Optional.empty(),
-            Optional.empty());
+            Optional.of(Map.of("onclick", "loadResource(event)")));
 
     private PathsHtml(final Builder<C, P> builder) {
         this.leafNodeHtmlContent = Optional.ofNullable(builder.leafNodeHtmlContent);
@@ -99,7 +99,9 @@ public class PathsHtml<C, P> {
                         .orElse(DEFAULT_HTML_CONTENT)
                 : parentNodeHtmlContent.flatMap(func -> Optional.ofNullable(func.apply(node)))
                         .orElse(DEFAULT_HTML_CONTENT);
-        final var label = content.labelHtml().orElse(isLeaf ? "📄 " + getDefaultLabel(node) : getDefaultLabel(node));
+        final var anchorAttrs = content.anchorAttrs().map(this::mapToAttributes).orElse("");
+        final var label = "<a href=\""+ node.absolutePath() +"\"" + anchorAttrs + ">"
+                + content.labelHtml().orElse(isLeaf ? "📄 " + getDefaultLabel(node) : getDefaultLabel(node)) + "</a>";
         final var liAttrs = content.liAttrs().map(this::mapToAttributes).orElse("");
         final var detailsAttrs = content.detailsAttrs().map(this::mapToAttributes).orElse("");
         final var summaryAttrs = content.summaryAttrs().map(this::mapToAttributes).orElse("");
