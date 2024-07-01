@@ -12,6 +12,7 @@
     <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script>
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        window.mermaid = mermaid; // make sure it's available to other <script>s in the page
         mermaid.initialize({ startOnLoad: true });        
     </script>
     <script th:inline="javascript">
@@ -26,7 +27,7 @@
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function () {
             const activeRouteTitle = /*[[${activeRouteTitle}]]*/ "";
-            if(activeRouteTitle && activeRouteTitle.length) document.title = activeRouteTitle;
+            if (activeRouteTitle && activeRouteTitle.length) document.title = activeRouteTitle;
 
             const avatarUrl = document.querySelector('#avatar_url')?.innerText;
             const htmlUrl = document.querySelector('#html_url')?.innerText;
