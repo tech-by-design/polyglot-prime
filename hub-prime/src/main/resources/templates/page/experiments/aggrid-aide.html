@@ -28,19 +28,19 @@
                     {
                         headerName: "Interaction ID",
                         field: "interaction_id",
-                        enableRowGroup: true,
+                        enableRowGroup: true, pivot: true,
                         filter: "agTextColumnFilter",
                         cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
                             modalAide.viewFetchedJsonValue(shellAide.serverSideUrl(`/support/interaction/${value}.json`));
                         }, modalAide)
                     },
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", enableRowGroup: true }
+                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", rowGroup: true, enableRowGroup: true },
+                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", rowGroup: true, enableRowGroup: true },
+                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", enableRowGroup: true, pivot: true },
+                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", enableRowGroup: true, pivot: true },
+                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", enableRowGroup: true, pivot: true },
+                    { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", enableRowGroup: true, pivot: true },
+                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", enableRowGroup: true, pivot: true }
                 ])
                 .withServerSideDatasource(
                     shellAide.serverSideUrl('/support/interaction/http.json'),
