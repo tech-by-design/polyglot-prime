@@ -32,7 +32,8 @@ SELECT hi.hub_interaction_id AS interaction_id,
     sihr.state_transition_reason,
     sihr.created_at AS request_created_at,
     sihr.created_by AS request_created_by,
-    sihr.provenance AS request_provenance
+    sihr.provenance AS request_provenance,
+    jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count
    FROM techbd_udi_ingress.hub_interaction hi
      LEFT JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
     ON hi.hub_interaction_id = sihr.hub_interaction_id
