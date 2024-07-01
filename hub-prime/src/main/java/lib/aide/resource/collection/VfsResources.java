@@ -2,6 +2,8 @@ package lib.aide.resource.collection;
 
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +17,6 @@ import lib.aide.resource.Provenance;
 import lib.aide.resource.Resource;
 import lib.aide.resource.ResourceProvenance;
 import lib.aide.resource.ResourcesSupplier;
-import lib.aide.resource.content.EmptyResource;
 import lib.aide.resource.content.ExceptionResource;
 import lib.aide.resource.content.ResourceFactory;
 
@@ -47,11 +48,7 @@ public class VfsResources
     public Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> paths() {
         return paths.updateAndGet(existingPaths -> {
             if (existingPaths == null) {
-                final var payloadRoot = new ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>(
-                        new VfsFileObjectProvenance(rootVfsFO.getURI(), rootVfsFO),
-                        EmptyResource.SINGLETON);
                 final var result = new Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>(
-                        payloadRoot,
                         fopcs);
                 for (var resourceProvenance : resources()) {
                     result.populate(resourceProvenance);
@@ -117,7 +114,7 @@ public class VfsResources
         @Override
         public List<String> components(
                 ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>> payload) {
-            return components(payload.provenance().fileObject().toString());
+            return components(payload.provenance().fileObject().getName().getPath());
         }
 
         @Override
@@ -129,5 +126,30 @@ public class VfsResources
         public String assemble(List<String> components) {
             return String.join("/", components);
         }
+    }
+
+    /**
+     * Searches for a specific relative directory path by traversing up the parent
+     * directories from the given start directory or the current directory if no
+     * start directory is provided.
+     *
+     * @param relativePath the relative directory path to search for.
+     * @param startFrom    an optional starting directory. If not provided, the
+     *                     search starts from the current directory.
+     * @return an Optional containing the found directory path if it exists,
+     *         otherwise Optional.empty().
+     */
+    public static Optional<Path> findRelativeDirectory(String relativePath, Optional<Path> startFrom) {
+        var startDir = startFrom.orElse(Path.of(System.getProperty("user.dir")));
+        var targetPath = startDir.resolve(relativePath);
+
+        while (startDir != null) {
+            if (Files.isDirectory(targetPath)) {
+                return Optional.of(targetPath);
+            }
+            startDir = startDir.getParent();
+            targetPath = startDir != null ? startDir.resolve(relativePath) : null;
+        }
+        return Optional.empty();
     }
 }

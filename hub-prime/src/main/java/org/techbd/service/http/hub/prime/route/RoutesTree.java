@@ -1,6 +1,5 @@
 package org.techbd.service.http.hub.prime.route;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,17 +13,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lib.aide.paths.Paths;
 
 public class RoutesTree extends Paths<String, RoutesTree.Route> {
-    private final String namespace;
-
-    public RoutesTree(final String namespace) {
-        super(new Route(namespace, namespace, Optional.empty(), Optional.empty(),
-                Optional.of(Map.of("class", RoutesTree.class.getName()))),
-                new RouteComponentsSupplier(namespace));
-        this.namespace = namespace;
-    }
-
-    public String getNamespace() {
-        return namespace;
+    public RoutesTree() {
+        super(new RouteComponentsSupplier());
     }
 
     public record HtmlAnchor(Optional<Route> route, Optional<String> href, String text) {
@@ -66,18 +56,9 @@ public class RoutesTree extends Paths<String, RoutesTree.Route> {
     }
 
     public static class RouteComponentsSupplier implements PayloadComponentsSupplier<String, Route> {
-        private final String root;
-
-        public RouteComponentsSupplier(final String root) {
-            this.root = root == null ? "unknown" : root;
-        }
-
         @Override
         public List<String> components(final String path) {
-            final var result = new ArrayList<String>(List.of(path.split("/")));
-            // we assume that / is the root prefix (which signifies the namespace)
-            result.set(0, root);
-            return result;
+            return List.of(path.split("/"));
         }
 
         @Override
@@ -94,8 +75,8 @@ public class RoutesTree extends Paths<String, RoutesTree.Route> {
     public static class Builder {
         private final RoutesTree routesTree;
 
-        public Builder(String namespace) {
-            this.routesTree = new RoutesTree(namespace);
+        public Builder() {
+            this.routesTree = new RoutesTree();
         }
 
         public Builder addRoute(Route route) {

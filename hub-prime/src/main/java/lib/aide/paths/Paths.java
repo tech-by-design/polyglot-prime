@@ -106,6 +106,8 @@ public class Paths<C, P> {
                 ancestors.add(ancestor);
                 ancestor = ancestor.parent;
             }
+            // the physical root isn't really an ancestor
+            if(ancestors.size() > 0) ancestors.removeLast();
             return ancestors;
         }
 
@@ -175,8 +177,6 @@ public class Paths<C, P> {
             // is the "container" of this child
             var current = this.parent();
             for (C component : relativeComponents) {
-                System.out.println(
-                        "  at [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
                 if (component.equals("..")) {
                     if (current != null) {
                         current = current.parent();
@@ -190,10 +190,7 @@ public class Paths<C, P> {
                     }
                     current = child.get();
                 }
-                System.out.println(
-                        "  now [%s] {%s}".formatted(component, current != null ? current.absolutePath() : "NULL"));
             }
-            System.out.println("  found %s".formatted(current != null ? current.absolutePath() : "NULL"));
             return current != null ? Optional.of(current) : Optional.empty();
         }
 
@@ -214,7 +211,7 @@ public class Paths<C, P> {
         }
     }
 
-    private final List<Node> roots = new ArrayList<>();
+    private final Node root = new Node(List.of(), Optional.empty(), null);
     private final PayloadComponentsSupplier<C, P> pcSupplier;
 
     /**
@@ -224,49 +221,17 @@ public class Paths<C, P> {
      * @param rootPayload the payload for the initial root node
      * @param parser      the supplier for payload components
      */
-    public Paths(P rootPayload, PayloadComponentsSupplier<C, P> parser) {
-        this.pcSupplier = parser;
-        this.roots.add(new Node(parser.components(rootPayload), Optional.of(rootPayload), null));
-    }
-
-    /**
-     * Constructs a Paths object with payload components supplier.
-     *
-     * @param parser      the supplier for payload components
-     */
     public Paths(PayloadComponentsSupplier<C, P> parser) {
         this.pcSupplier = parser;
     }
 
     /**
-     * Adds a new root node to the Paths structure.
+     * Returns the root node.
      *
-     * @param rootPayload the payload for the new root node
-     */
-    public void addRoot(P rootPayload) {
-        final var components = pcSupplier.components(rootPayload);
-        if (roots.stream().noneMatch(root -> root.components().getFirst().equals(components.getFirst()))) {
-            this.roots.add(new Node(components, Optional.of(rootPayload), null));
-        }
-    }
-
-    /**
-     * Returns the list of root nodes.
-     *
-     * @return the list of root nodes
-     */
-    public List<Node> roots() {
-        return roots;
-    }
-
-    /**
-     * Returns the first of the root nodes (simple trees only have one root so it's
-     * just convenient).
-     *
-     * @return the list of root nodes
+     * @return the root node
      */
     public Paths<C, P>.Node root() {
-        return roots.get(0);
+        return root;
     }
 
     /**
@@ -278,14 +243,7 @@ public class Paths<C, P> {
      *                parents
      */
     public void populate(final P payload, final InterimPayloadSupplier<C, P> ips) {
-        final var components = pcSupplier.components(payload);
-        for (Node root : roots) {
-            if (root.components().getFirst().equals(components.getFirst())) {
-                root.populate(components, Optional.of(payload), 1, ips);
-                return;
-            }
-        }
-        addRoot(payload);
+        root.populate(pcSupplier.components(payload), Optional.of(payload), 0, ips);
     }
 
     /**
@@ -307,21 +265,17 @@ public class Paths<C, P> {
      */
     public Optional<Node> findNode(String fullPath) {
         final var components = pcSupplier.components(fullPath);
-        for (Node root : roots) {
-            if (root.components().equals(components.subList(0, 1))) {
-                var current = root;
-                for (C component : components.subList(1, components.size())) {
-                    var child = current.findChild(component);
-                    if (child.isEmpty()) {
-                        current = null;
-                        break;
-                    }
-                    current = child.get();
-                }
-                if (current != null) {
-                    return Optional.of(current);
-                }
+        var current = root;
+        for (final var component : components) {
+            var child = current.findChild(component);
+            if (child.isEmpty()) {
+                current = null;
+                break;
             }
+            current = child.get();
+        }
+        if (current != null) {
+            return Optional.of(current);
         }
         return Optional.empty();
     }

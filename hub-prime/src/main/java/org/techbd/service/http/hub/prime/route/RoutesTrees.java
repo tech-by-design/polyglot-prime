@@ -28,14 +28,12 @@ public class RoutesTrees extends HashMap<String, RoutesTree> {
             if (routeAnn != null && getMapAnn != null) {
                 final var patternVals = info.getPatternValues();
                 if (patternVals != null) {
-                    for (final var path : patternVals) {
+                    for (var path : patternVals) {
                         final var provenance = Map.of("routeAnn", routeAnn.toString(), "getMapAnn",
                                 getMapAnn.toString(), "class",
                                 handlerMethod.getBeanType().getName(), "method", handlerMethod.getMethod().getName());
                         final var route = new RoutesTree.Route(routeAnn, path, provenance);
-
-                        final var routesTree = this.computeIfAbsent(routeAnn.namespace(),
-                                k -> new RoutesTree(routeAnn.namespace()));
+                        final var routesTree = this.computeIfAbsent(routeAnn.namespace(), k -> new RoutesTree());
                         routesTree.populate(route);
                     }
                 }

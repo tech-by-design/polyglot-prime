@@ -46,22 +46,19 @@ public class Presentation {
         navPrimeTree = routesTrees.get(navPrimeTreeName);
         if (navPrimeTree != null) {
             final var navPrimeTreeRoot = navPrimeTree.root();
-            if (navPrimeTreeRoot != null) {
-                // Stream through the children of the root node, sorting them by their sibling
-                // order if present. If the sibling order is not present, treat it as
-                // Integer.MAX_VALUE for sorting purposes (push to end). Then, map each child to
-                // a Map containing its "href" and "text" if the payload is present. If the
-                // payload is not present, map to an empty Map which means "iterim node".
+            // Stream through the children of the root node, sorting them by their sibling
+            // order if present. If the sibling order is not present, treat it as
+            // Integer.MAX_VALUE for sorting purposes (push to end). Then, map each child to
+            // a Map containing its "href" and "text" if the payload is present. If the
+            // payload is not present, map to an empty Map which means "iterim node".
 
-                navPrimeLinks = navPrimeTreeRoot.children().stream()
-                        .sorted(Comparator.comparing(child -> child.payload()
-                                .flatMap(payload -> payload.siblingOrder())
-                                .orElse(Integer.MAX_VALUE)))
-                        .map(child -> new HtmlAnchor(child))
-                        .collect(Collectors.toList());
-            } else {
-                navPrimeLinks = List.of();
-            }
+            // the root's first child is `/` so we look under there
+            navPrimeLinks = navPrimeTreeRoot.children().getFirst().children().stream()
+                    .sorted(Comparator.comparing(child -> child.payload()
+                            .flatMap(payload -> payload.siblingOrder())
+                            .orElse(Integer.MAX_VALUE)))
+                    .map(child -> new HtmlAnchor(child))
+                    .collect(Collectors.toList());
         } else {
             navPrimeLinks = List.of();
         }
@@ -108,7 +105,7 @@ public class Presentation {
     }
 
     protected void registerActiveRoute(final Model model, final HttpServletRequest request) {
-        final var activeRouteFound = navPrimeTree.findNode(navPrimeTreeName + request.getRequestURI());
+        final var activeRouteFound = navPrimeTree.findNode(request.getRequestURI());
         if (activeRouteFound.isEmpty()) {
             return;
         }
@@ -117,7 +114,7 @@ public class Presentation {
         final var activeRoutePayload = activeRoute.payload().orElseThrow();
         final var activeRoutePath = "/" + activeRoute.absolutePath(false);
         final var isHomePage = request.getRequestURI().equals("/home");
-        
+
         final var breadcrumbs = activeRoute.ancestors().stream()
                 .map(child -> new HtmlAnchor(child).intoMap())
                 .collect(Collectors.collectingAndThen(

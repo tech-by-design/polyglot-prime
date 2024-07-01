@@ -37,35 +37,11 @@ public class PathsJson<C, P> {
         final var result = new ArrayList<Object>();
         final var visitedNodes = new HashSet<Paths<C, P>.Node>();
 
-        for (var root : paths.roots()) {
-            final var nodeMap = new HashMap<String, Object>();
-            renderNode(root, nodeMap, paths, payloadRenderer, visitedNodes);
-            result.add(nodeMap);
-        }
+        final var nodeMap = new HashMap<String, Object>();
+        renderNode(paths.root(), nodeMap, paths, payloadRenderer, visitedNodes);
+        result.add(nodeMap);
 
         return objectMapper.valueToTree(result);
-    }
-
-    /**
-     * Converts the Paths instance to a JSON string representation.
-     *
-     * @param paths           the Paths instance to convert
-     * @param payloadRenderer an optional payload renderer
-     * @return the JSON string representation of the Paths instance
-     * @throws Exception if an error occurs during JSON conversion
-     */
-    public String toJsonString(final Paths<C, P> paths, final Optional<PayloadJsonSupplier<C, P>> payloadRenderer)
-            throws Exception {
-        final var result = new ArrayList<Object>();
-        final var visitedNodes = new HashSet<Paths<C, P>.Node>();
-
-        for (var root : paths.roots()) {
-            final var nodeMap = new HashMap<String, Object>();
-            renderNode(root, nodeMap, paths, payloadRenderer, visitedNodes);
-            result.add(nodeMap);
-        }
-
-        return objectMapper.writeValueAsString(result);
     }
 
     /**

@@ -48,7 +48,7 @@ public class PathsHtml<C, P> {
     private static final HtmlContent DEFAULT_HTML_CONTENT = new HtmlContent(
             Optional.empty(),
             Optional.of(Map.of("style", "text-indent: -1em; padding-left: 1em;")),
-            Optional.of(Map.of("class", "cursor-pointer font-semibold")),
+            Optional.of(Map.of("class", "cursor-pointer font-semibold", "open", "true")),
             Optional.empty(),
             Optional.empty());
 
@@ -72,14 +72,12 @@ public class PathsHtml<C, P> {
         sb.append(lineIndent).append("<ul")
                 .append(ulAttrs.map(this::mapToAttributes).orElse(""))
                 .append(">");
-        for (var root : paths.roots()) {
-            appendNode(sb, root, 0, true);
-        }
+        appendNode(sb, paths.root(), 0, true);
         sb.append(lineIndent).append("</ul>");
         return sb.toString();
     }
 
-    public String toHtmlUL(final Paths<C, P> paths) {        
+    public String toHtmlUL(final Paths<C, P> paths) {
         return toHtmlUL(paths, Optional.empty());
     }
 

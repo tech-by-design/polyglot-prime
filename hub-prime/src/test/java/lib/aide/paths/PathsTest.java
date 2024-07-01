@@ -44,7 +44,7 @@ public class PathsTest {
             }
         };
 
-        paths = new Paths<>(new SyntheticPayload("root"), supplier);
+        paths = new Paths<>(supplier);
     }
 
     private void populateTree() {
@@ -214,11 +214,11 @@ public class PathsTest {
         final var node = paths.findNode(path);
         assertThat(node).isPresent();
 
-        List<Paths<String, SyntheticPayload>.Node> ancestors = node.get().ancestors();
+        final var ancestors = node.get().ancestors();
         assertThat(ancestors).hasSize(expectedAncestors.length);
 
         for (int i = 0; i < expectedAncestors.length; i++) {
-            assertThat(ancestors.get(i).payload().get().absolutePath()).isEqualTo(expectedAncestors[i]);
+            assertThat(ancestors.get(i).absolutePath()).isEqualTo(expectedAncestors[i]);
         }
     }
 
@@ -264,9 +264,11 @@ public class PathsTest {
         // Define a payload renderer
         PathsJson.PayloadJsonSupplier<String, SyntheticPayload> payloadRenderer = (node, paths) -> {
             final var payloadMap = new HashMap<>();
-            payloadMap.put("absolutePath", node.payload().get().absolutePath());
-            payloadMap.put("content", node.payload().get().content());
-            payloadMap.put("baseName", node.payload().get().baseName());
+            node.payload().ifPresent(payload -> {
+                payloadMap.put("absolutePath", payload.absolutePath());
+                payloadMap.put("content", payload.content());
+                payloadMap.put("baseName", payload.baseName());    
+            });
             return Optional.of(payloadMap);
         };
 

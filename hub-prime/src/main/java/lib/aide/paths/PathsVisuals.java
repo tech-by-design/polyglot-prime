@@ -22,10 +22,8 @@ public class PathsVisuals {
      */
     public <C, P> String asciiTree(Paths<C, P> paths, final Optional<PayloadContentSupplier<C, P>> payloadRenderer) {
         StringBuilder sb = new StringBuilder();
-        for (Paths<C, P>.Node root : paths.roots()) {
-            appendNode(paths, sb, root, "", true, true,
-                    payloadRenderer.orElse((node, tree) -> " [%s %s]".formatted(node.absolutePath(), node.payload())));
-        }
+        appendNode(paths, sb, paths.root(), "", true, true,
+                payloadRenderer.orElse((node, tree) -> " [%s %s]".formatted(node.absolutePath(), node.payload())));
         return sb.toString();
     }
 

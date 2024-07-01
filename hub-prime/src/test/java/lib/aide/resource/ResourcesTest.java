@@ -98,7 +98,7 @@ public class ResourcesTest {
         assertThat(paths).hasSize(1);
 
         final var pathsPrime = paths.getFirst();
-        System.out.println(pathsPrime.roots());
+        System.out.println(pathsPrime.root());
 
         final var pv = new PathsVisuals();
         System.out.println(pv.asciiTree(pathsPrime, Optional.of((node, tree) -> "")));
@@ -140,7 +140,7 @@ public class ResourcesTest {
         assertThat(paths).hasSize(1);
 
         final var pathsPrime = paths.getFirst();
-        System.out.println(pathsPrime.roots());
+        System.out.println(pathsPrime.root());
 
         final var pv = new PathsVisuals();
         System.out.println(pv.asciiTree(pathsPrime, Optional.of((node, tree) -> "")));
