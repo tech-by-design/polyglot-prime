@@ -1,5 +1,7 @@
 package org.techbd.service.http;
 
+import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +15,12 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.filter.ForwardedHeaderFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 
 @Configuration
 @ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")
@@ -27,12 +35,14 @@ public class SecurityConfig {
         // and turn off CSRF to allow POST methods
         http.authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**", "/metadata",
-                        "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**", "/docs/api/openapi/**",
+                        "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**",
+                        "/docs/api/openapi/**",
                         "/error", "/error/**")
                 .permitAll()
                 .anyRequest().authenticated())
                 .oauth2Login(oauth2Login -> oauth2Login
-                        .defaultSuccessUrl("/home", true))
+                        .successHandler(gitHubLoginSuccessHandler())
+                        .defaultSuccessUrl("/home"))
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
@@ -55,6 +65,31 @@ public class SecurityConfig {
     @Bean
     ForwardedHeaderFilter forwardedHeaderFilter() {
         return new ForwardedHeaderFilter();
+    }
+
+    @Bean
+    public AuthenticationSuccessHandler gitHubLoginSuccessHandler() {
+        return new GitHubLoginSuccessHandler();
+    }
+
+    private static class GitHubLoginSuccessHandler implements AuthenticationSuccessHandler {
+
+        private final RequestCache requestCache = new HttpSessionRequestCache();
+
+        @Override
+        public void onAuthenticationSuccess(HttpServletRequest request,
+                HttpServletResponse response, Authentication authentication)
+                throws IOException, jakarta.servlet.ServletException {
+            final var savedRequest = requestCache.getRequest(request, response);
+
+            if (savedRequest == null) {
+                response.sendRedirect("/home");
+                return;
+            }
+
+            final var targetUrl = savedRequest.getRedirectUrl();
+            response.sendRedirect(targetUrl);
+        }
     }
 
 }
