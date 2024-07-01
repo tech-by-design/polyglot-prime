@@ -117,6 +117,7 @@ export class AGGridAideBuilder {
             },
             columnDefs: [],
             sideBar: true,
+            pivotMode: true,
             autoSizeStrategy: { type: "fitCellContents" },
             rowModelType: 'serverSide',
             serverSideDatasource: null,
@@ -163,6 +164,7 @@ export class AGGridAideBuilder {
     withServerSideDatasource(dataSourceUrl, withSecondaryColumns = null) {
         this.gridOptions.serverSideDatasource = {
             getRows: async (params) => {
+                params.request.valueCols = params.request?.pivotCols && params.request?.pivotCols.length > 0 ? params.request.pivotCols : params.request.valueCols;
                 const jsonRequest = JSON.stringify(params.request, null, 2);
                 try {
                     const response = await fetch(dataSourceUrl, {
