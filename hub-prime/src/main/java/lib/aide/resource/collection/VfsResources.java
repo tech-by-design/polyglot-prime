@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 
 import lib.aide.paths.Paths;
 import lib.aide.resource.Nature;
@@ -29,6 +30,7 @@ public class VfsResources
     private final FileObjectPathComponetsSupplier fopcs = new FileObjectPathComponetsSupplier();
     private final URI identity;
     private final FileObject rootVfsFO;
+    private boolean populateAbsolutePaths = false;
 
     private final AtomicReference<List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>> resources = new AtomicReference<>();
     private final AtomicReference<Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>> paths = new AtomicReference<>();
@@ -37,6 +39,11 @@ public class VfsResources
         this.rf = rf;
         this.identity = identity;
         this.rootVfsFO = rootVfsFO;
+    }
+
+    public VfsResources populateAbsolutePaths(boolean value) {
+        this.populateAbsolutePaths = value;
+        return this;
     }
 
     @Override
@@ -114,7 +121,15 @@ public class VfsResources
         @Override
         public List<String> components(
                 ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>> payload) {
-            return components(payload.provenance().fileObject().getName().getPath());
+            final var actualName = payload.provenance().fileObject().getName();
+            String computedPath;
+            try {
+                computedPath = populateAbsolutePaths ? actualName.getPath()
+                        : rootVfsFO.getName().getRelativeName(actualName);
+            } catch (FileSystemException e) {
+                computedPath = actualName.getPath();
+            }
+            return components(computedPath);
         }
 
         @Override
