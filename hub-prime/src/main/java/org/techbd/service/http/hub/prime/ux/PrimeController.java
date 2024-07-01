@@ -4,7 +4,6 @@ import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -83,35 +82,5 @@ public class PrimeController {
             }
 
         }
-    }
-
-    @RouteMapping(label = "Documentation", siblingOrder = 50)
-    @GetMapping("/docs")
-    public String docs() {
-        return "redirect:/docs/swagger-ui";
-    }
-
-    @RouteMapping(label = "OpenAPI UI", title="OpenAPI Documentation", siblingOrder = 0)
-    @GetMapping("/docs/swagger-ui")
-    public String swaggerUI(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/swagger-ui", model, request);
-    }
-
-    @RouteMapping(label = "Health Information", title="Health Information", siblingOrder = 1)
-    @GetMapping("/docs/health-info")
-    public String healthInformation(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/health-info", model, request);
-    }
-
-    @RouteMapping(label = "Announcements", title="Announcements", siblingOrder = 2)
-    @GetMapping("/docs/announcements")
-    public String announcements(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/announcements", model, request);
-    }
-
-    @GetMapping(value = "/experiment/{page}.html")
-    @Profile(value = "sandbox")
-    public String navPrimeDebug(@PathVariable String page, final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/experiments/%s".formatted(page), model, request);
     }
 }
