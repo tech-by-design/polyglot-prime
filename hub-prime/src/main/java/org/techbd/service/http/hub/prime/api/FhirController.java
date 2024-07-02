@@ -82,7 +82,8 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE, AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
+    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
+            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
     @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
     @ResponseBody
     @Async
@@ -156,6 +157,32 @@ public class FhirController {
                             .append("\n");
                     clientRequest.headers().forEach((name, values) -> values
                             .forEach(value -> requestBuilder.append(name).append(": ").append(value).append("\n")));
+
+                    final var payloadRIHR = new RegisterInteractionHttpRequest();
+                    try {
+                        payloadRIHR.setInteractionId(bundleAsyncInteractionId);
+                        payloadRIHR.setInteractionKey(requestURI);
+                        payloadRIHR.setNature(Configuration.objectMapper.valueToTree(
+                                Map.of("nature", "Original FHIR Payload", "tenant_id", tenantId)));
+                        payloadRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                        try {
+                            // input FHIR Bundle JSON payload from the server
+                            payloadRIHR.setPayload(Configuration.objectMapper.readTree(payload));
+                        } catch (JsonProcessingException jpe) {
+                            // in case the payload is not JSON store the string
+                            payloadRIHR.setPayload(Configuration.objectMapper.valueToTree(payload));
+                        }
+                        payloadRIHR.setFromState("NONE");
+                        payloadRIHR.setToState("ACCEPT_FHIR_BUNDLE");
+                        payloadRIHR.setCreatedAt(OffsetDateTime.now());
+                        payloadRIHR.setCreatedBy(FhirController.class.getName());
+                        payloadRIHR.setProvenance(provenance);
+                        final var execResult = payloadRIHR.execute(jooqCfg);
+                        LOG.info("payloadRIHR execResult" + execResult);
+                    } catch (Exception e) {
+                        LOG.error("CALL " + payloadRIHR.getName() + " payloadRIHR error", e);
+                    }
+
                     final var outboundHttpMessage = requestBuilder.toString();
                     final var initRIHR = new RegisterInteractionHttpRequest();
                     try {
@@ -168,14 +195,7 @@ public class FhirController {
                                 Map.of("nature", "Forward HTTP Request", "tenant_id", tenantId)));
                         initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                         initRIHR.setPayload(Configuration.objectMapper.valueToTree(immediateResult));
-                        // TODO: add to elaboration, review later for the best final location   
-                        try {
-                            initRIHR.setElaboration(Configuration.objectMapper.readTree(payload));
-                        } catch (JsonProcessingException jpe) {
-                            // in case the payload is not JSON store the string
-                            initRIHR.setElaboration(Configuration.objectMapper.valueToTree(payload));
-                        }
-                        initRIHR.setFromState("NONE");
+                        initRIHR.setFromState("ACCEPT_FHIR_BUNDLE");
                         initRIHR.setToState("FORWARD");
                         initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app time
                         initRIHR.setCreatedBy(FhirController.class.getName());
@@ -254,7 +274,8 @@ public class FhirController {
         return result;
     }
 
-    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = { MediaType.APPLICATION_JSON_VALUE , AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
+    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
+            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
     @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
