@@ -151,7 +151,7 @@ public class OrchestrationEngine {
     }
 
     public enum ValidationEngineIdentifier {
-        HAPI, HL7_EMBEDDED, HL7_API, INFERNO
+        HAPI, HL7_EMBEDDED, HL7_API
     }
 
     private static class ValidationEngineKey {
@@ -744,9 +744,6 @@ public class OrchestrationEngine {
                                             case "HL7-Official-Embedded":
                                                 addHl7ValidationEmbeddedEngine();
                                                 break;
-                                            case "Inferno":
-                                                addInfernoValidationEngine();
-                                                break;
                                             default:
                                                 uaStrategyJsonIssues.add(
                                                         "uaStrategyJson engine `%s` in withUserAgentValidationStrategy was not recognized"
@@ -794,12 +791,6 @@ public class OrchestrationEngine {
             public Builder addHl7ValidationApiEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl));
-                return this;
-            }
-
-            public Builder addInfernoValidationEngine() {
-                this.validationEngines
-                        .add(engine.getValidationEngine(ValidationEngineIdentifier.INFERNO, this.fhirProfileUrl));
                 return this;
             }
 
