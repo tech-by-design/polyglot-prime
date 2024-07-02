@@ -50,7 +50,7 @@ public class PathsHtml<C, P> {
             Optional.of(Map.of("style", "text-indent: -1em; padding-left: 1em;")),
             Optional.of(Map.of("class", "cursor-pointer font-semibold", "open", "true")),
             Optional.empty(),
-            Optional.of(Map.of("onclick", "loadResource(event)")));
+            Optional.of(Map.of("onclick", "window.loadResource(event)")));
 
     private PathsHtml(final Builder<C, P> builder) {
         this.leafNodeHtmlContent = Optional.ofNullable(builder.leafNodeHtmlContent);

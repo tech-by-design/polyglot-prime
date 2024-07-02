@@ -3,22 +3,21 @@
     layout:decorate="~{layout/prime}">
 
 <head>
-    <script src='https://unpkg.com/htmx.org/dist/htmx.min.js'></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <title>TechBD Hub Documentation</title>
-    <style>
-        .selected {
-            background-color: #f0f0f0;
-        }
+    <script type="module">
+        import { unified } from 'https://cdn.jsdelivr.net/npm/unified@11.0.5/+esm';
+        import remarkParse from 'https://cdn.jsdelivr.net/npm/remark-parse@11.0.0/+esm';
+        import remarkFrontmatter from 'https://cdn.jsdelivr.net/npm/remark-frontmatter@5.0.0/+esm';
+        import remarkRehype from 'https://cdn.jsdelivr.net/npm/remark-rehype@11.1.0/+esm';
+        import remarkGfm from 'https://cdn.jsdelivr.net/npm/remark-gfm@4.0.0/+esm';
+        import remarkHtml from 'https://cdn.jsdelivr.net/npm/remark-html@16.0.1/+esm';
+        import rehypeStringify from 'https://cdn.jsdelivr.net/npm/rehype-stringify@10.0.0/+esm';
 
-        .mermaid {
-            background-color: #ffffff !important;
-            /* Ensure the background is white */
-            color: #000000 !important;
-            /* Ensure the text is black */
-        }
-    </style>
-    <script>
+        // TODO: support MDX in the browser, too
+        // import remarkMdx from 'https://cdn.jsdelivr.net/npm/remark-mdx@3.0.1/+esm';
+        // import rehypeReact from 'https://cdn.jsdelivr.net/npm/rehype-react@8.0.0/+esm';
+        // import react from 'https://cdn.jsdelivr.net/npm/react@18.3.1/+esm';
+        // import reactDom from 'https://cdn.jsdelivr.net/npm/react-dom@18.3.1/+esm';
+
         async function loadResource(event) {
             event.preventDefault(); // Prevent default link behavior
             const target = event.target;
@@ -35,20 +34,60 @@
                 const mimeType = response.headers.get('Content-Type');
 
                 const resourceContent = document.getElementById('resource');
-                if (mimeType.includes('markdown')) {
-                    const text = await response.text();
-                    resourceContent.innerHTML = marked.parse(text);
-                    // in <head> window.mermaid was set so use it to re-initialize Mermaid diagrams
+                const text = await response.text();
+
+                if (mimeType.includes('markdown') || mimeType.includes('mdx')) {
+                    if (mimeType.includes('mdx')) {
+                        // TODO: support MDX in the browser, too
+                        // const file = await unified()
+                        //     .use(remarkParse)
+                        //     .use(remarkFrontmatter)
+                        //     .use(remarkMdx)
+                        //     .use(remarkRehype, { allowDangerousHtml: true })
+                        //     .use(rehypeReact, {
+                        //         createElement: react.createElement,
+                        //         Fragment: react.Fragment
+                        //     })
+                        //     .process(text);
+                        // reactDom.render(file.result, resourceContent);
+                        resourceContent.innerHTML = `MDX support not implemented yet`;
+                    } else {
+                        const file = await unified()
+                            .use(remarkParse, { fragment: true })
+                            .use(remarkFrontmatter)
+                            .use(remarkGfm) // support GFM (autolink literals, footnotes, strikethrough, tables, tasklists)
+                            .use(remarkRehype, { allowDangerousHtml: true })
+                            .use(rehypeStringify, { allowDangerousHtml: true })
+                            .process(text);
+                        resourceContent.innerHTML = file.toString();
+                    }
+                    // in prime.html layout <head> window.mermaid was set so use it to re-initialize Mermaid diagrams
                     if (window.mermaid) await window.mermaid.run();
                 } else {
-                    resourceContent.innerHTML = 'Unsupported content type';
+                    resourceContent.innerHTML = `Unsupported content type <code>${mimeType}</code>`;
                 }
             } catch (error) {
                 console.error('Error fetching resource:', error);
                 document.getElementById('resource').innerHTML = 'Error loading resource';
             }
         }
+
+        window.loadResource = loadResource;
     </script>
+    <script src='https://cdn.jsdelivr.net/npm/htmx.org@1.9.12/dist/htmx.min.js'></script>
+    <title>TechBD Hub Documentation</title>
+    <style>
+        .selected {
+            background-color: #f0f0f0;
+        }
+
+        .mermaid {
+            background-color: #ffffff !important;
+            /* Ensure the background is white */
+            color: #000000 !important;
+            /* Ensure the text is black */
+        }
+    </style>
 </head>
 
 <body>
