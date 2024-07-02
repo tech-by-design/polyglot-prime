@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-07-02<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.95.0</li>
+          <li id="projectVersion">Version: 0.96.0</li>
         <li class="pull-right"><a href="./">TechBD Hub (Prime)</a></li>
           </ul>
         </div>
@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>197</td>
-<td>189</td>
+<td>178</td>
+<td>177</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -130,30 +130,6 @@
 <tr class="b">
 <td><a href="#lib.aide.vfs.VfsIngressConsumer$IngressPath">lib.aide.vfs.VfsIngressConsumer$IngressPath</a></td>
 <td>4</td></tr>
-<tr class="a">
-<td><a href="#org.inferno.validator.JsonParser">org.inferno.validator.JsonParser</a></td>
-<td>2</td></tr>
-<tr class="b">
-<td><a href="#org.inferno.validator.Validator">org.inferno.validator.Validator</a></td>
-<td>4</td></tr>
-<tr class="a">
-<td><a href="#org.inferno.validator.rest.Endpoints">org.inferno.validator.rest.Endpoints</a></td>
-<td>1</td></tr>
-<tr class="b">
-<td><a href="#org.inferno.validator.rest.FHIRPathEndpoint">org.inferno.validator.rest.FHIRPathEndpoint</a></td>
-<td>1</td></tr>
-<tr class="a">
-<td><a href="#org.inferno.validator.rest.ValidatorEndpoint">org.inferno.validator.rest.ValidatorEndpoint</a></td>
-<td>1</td></tr>
-<tr class="b">
-<td><a href="#org.inferno.validator.utils.EmbeddedJettyFactoryConstructor">org.inferno.validator.utils.EmbeddedJettyFactoryConstructor</a></td>
-<td>1</td></tr>
-<tr class="a">
-<td><a href="#org.inferno.validator.utils.EmbeddedJettyServerFactory">org.inferno.validator.utils.EmbeddedJettyServerFactory</a></td>
-<td>1</td></tr>
-<tr class="b">
-<td><a href="#org.inferno.validator.utils.RequestLogFactory">org.inferno.validator.utils.RequestLogFactory</a></td>
-<td>1</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.conf.Configuration">org.techbd.conf.Configuration</a></td>
 <td>1</td></tr>
@@ -672,142 +648,6 @@
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
 <td>170</td>
-<td>Medium</td></tr></table></section><a name="org.inferno.validator.JsonParser"></a><section>
-<h2>org.inferno.validator.JsonParser</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>Found reliance on default encoding in org.inferno.validator.JsonParser.composeBackboneElement(BackboneElement): java.io.ByteArrayOutputStream.toString()</td>
-<td>I18N</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>129</td>
-<td>High</td></tr>
-<tr class="a">
-<td>The class name org.inferno.validator.JsonParser shadows the simple name of the superclass org.hl7.fhir.r4.formats.JsonParser</td>
-<td>BAD_PRACTICE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NM_SAME_SIMPLE_NAME_AS_SUPERCLASS">NM_SAME_SIMPLE_NAME_AS_SUPERCLASS</a></td>
-<td>22</td>
-<td>High</td></tr></table></section><a name="org.inferno.validator.Validator"></a><section>
-<h2>org.inferno.validator.Validator</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>Exception thrown in class org.inferno.validator.Validator at new org.inferno.validator.Validator(String) will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks.</td>
-<td>BAD_PRACTICE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#CT_CONSTRUCTOR_THROW">CT_CONSTRUCTOR_THROW</a></td>
-<td>48</td>
-<td>Medium</td></tr>
-<tr class="a">
-<td>Exception thrown in class org.inferno.validator.Validator at new org.inferno.validator.Validator(String, boolean) will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks.</td>
-<td>BAD_PRACTICE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#CT_CONSTRUCTOR_THROW">CT_CONSTRUCTOR_THROW</a></td>
-<td>74</td>
-<td>Medium</td></tr>
-<tr class="b">
-<td>Null passed for non-null parameter of org.inferno.validator.rest.IgResponse.fromPackage(NpmPackage) in org.inferno.validator.Validator.loadIg(String, String)</td>
-<td>CORRECTNESS</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_PARAM_DEREF">NP_NULL_PARAM_DEREF</a></td>
-<td>303</td>
-<td>Medium</td></tr>
-<tr class="a">
-<td>Exceptional return value of java.io.File.delete() ignored in org.inferno.validator.Validator.loadPackage(byte[])</td>
-<td>BAD_PRACTICE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#RV_RETURN_VALUE_IGNORED_BAD_PRACTICE">RV_RETURN_VALUE_IGNORED_BAD_PRACTICE</a></td>
-<td>326</td>
-<td>Medium</td></tr></table></section><a name="org.inferno.validator.rest.Endpoints"></a><section>
-<h2>org.inferno.validator.rest.Endpoints</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>Instance-getter method of class using singleton design pattern (org.inferno.validator.rest.Endpoints) is not synchronized.</td>
-<td>CORRECTNESS</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SING_SINGLETON_GETTER_NOT_SYNCHRONIZED">SING_SINGLETON_GETTER_NOT_SYNCHRONIZED</a></td>
-<td>137</td>
-<td>Medium</td></tr></table></section><a name="org.inferno.validator.rest.FHIRPathEndpoint"></a><section>
-<h2>org.inferno.validator.rest.FHIRPathEndpoint</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>Instance-getter method of class using singleton design pattern (org.inferno.validator.rest.FHIRPathEndpoint) is not synchronized.</td>
-<td>CORRECTNESS</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SING_SINGLETON_GETTER_NOT_SYNCHRONIZED">SING_SINGLETON_GETTER_NOT_SYNCHRONIZED</a></td>
-<td>28</td>
-<td>Medium</td></tr></table></section><a name="org.inferno.validator.rest.ValidatorEndpoint"></a><section>
-<h2>org.inferno.validator.rest.ValidatorEndpoint</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>Instance-getter method of class using singleton design pattern (org.inferno.validator.rest.ValidatorEndpoint) is not synchronized.</td>
-<td>CORRECTNESS</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SING_SINGLETON_GETTER_NOT_SYNCHRONIZED">SING_SINGLETON_GETTER_NOT_SYNCHRONIZED</a></td>
-<td>32</td>
-<td>Medium</td></tr></table></section><a name="org.inferno.validator.utils.EmbeddedJettyFactoryConstructor"></a><section>
-<h2>org.inferno.validator.utils.EmbeddedJettyFactoryConstructor</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>new org.inferno.validator.utils.EmbeddedJettyFactoryConstructor(CustomRequestLog) may expose internal representation by storing an externally mutable object into EmbeddedJettyFactoryConstructor.requestLog</td>
-<td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>10</td>
-<td>Medium</td></tr></table></section><a name="org.inferno.validator.utils.EmbeddedJettyServerFactory"></a><section>
-<h2>org.inferno.validator.utils.EmbeddedJettyServerFactory</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>Useless condition: it's known that maxThreads &gt; 0 at this point</td>
-<td>STYLE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UC_USELESS_CONDITION">UC_USELESS_CONDITION</a></td>
-<td>19</td>
-<td>High</td></tr></table></section><a name="org.inferno.validator.utils.RequestLogFactory"></a><section>
-<h2>org.inferno.validator.utils.RequestLogFactory</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>org.inferno.validator.utils.RequestLogFactory.getLog() may expose internal representation by returning RequestLogFactory.crl</td>
-<td>MALICIOUS_CODE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>34</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.conf.Configuration"></a><section>
 <h2>org.techbd.conf.Configuration</h2>
 <table class="table table-striped">
@@ -835,7 +675,7 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$Device.INSTANCE isn't final but should be</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_SHOULD_BE_FINAL">MS_SHOULD_BE_FINAL</a></td>
-<td>960</td>
+<td>638</td>
 <td>High</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$Hl7ValidationEngineApi"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$Hl7ValidationEngineApi</h2>
 <table class="table table-striped">
@@ -849,7 +689,7 @@
 <td>Format string should use %n rather than \n in org.techbd.orchestrate.fhir.OrchestrationEngine$Hl7ValidationEngineApi.validate(String)</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#VA_FORMAT_STRING_USES_NEWLINE">VA_FORMAT_STRING_USES_NEWLINE</a></td>
-<td>576</td>
+<td>517</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
@@ -863,7 +703,7 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession.getValidationResults() may expose internal representation by returning OrchestrationEngine$OrchestrationSession.validationResults</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>998</td>
+<td>676</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder</h2>
 <table class="table table-striped">
@@ -877,7 +717,7 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.getUaStrategyJsonIssues() may expose internal representation by returning OrchestrationEngine$OrchestrationSession$Builder.uaStrategyJsonIssues</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>1031</td>
+<td>709</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.sftp.SftpAccountsOrchctlConfig"></a><section>
 <h2>org.techbd.orchestrate.sftp.SftpAccountsOrchctlConfig</h2>
 <table class="table table-striped">

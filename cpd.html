@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-07-02<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.95.0</li>
+          <li id="projectVersion">Version: 0.96.0</li>
         <li class="pull-right"><a href="./">TechBD Hub (Prime)</a></li>
           </ul>
         </div>
@@ -66,125 +66,6 @@
 <h1>CPD Results</h1><a id="CPD_Results"></a>
 <p>The following document contains the results of PMD's  <a class="externalLink" href="https://pmd.github.io/latest/pmd_userdocs_cpd.html">CPD</a> 7.0.0.</p><section>
 <h2>Duplications</h2><a id="Duplications"></a>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
-<td style="text-align: left;">org/techbd/orchestrate/fhir/OrchestrationEngine.java</td>
-<td>617</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/orchestrate/fhir/OrchestrationEngine.java</td>
-<td>771</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>}
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-
-                                return issuesList;
-                            }
-
-                            private List&lt;OrchestrationEngine.ValidationIssue&gt; extractIssues(JsonNode issues) {
-                                return StreamSupport.stream(issues.spliterator(), false)
-                                        .map(issue -&gt; new OrchestrationEngine.ValidationIssue() {
-                                            @Override
-                                            public String getMessage() {
-                                                return issue.path(&quot;message&quot;).asText();
-                                            }
-
-                                            @Override
-                                            public OrchestrationEngine.SourceLocation getLocation() {
-                                                Integer line = issue.path(&quot;line&quot;).isInt()
-                                                        ? issue.path(&quot;line&quot;).intValue()
-                                                        : null;
-                                                Integer column = issue.path(&quot;col&quot;).isInt()
-                                                        ? issue.path(&quot;col&quot;).intValue()
-                                                        : null;
-                                                String diagnostics = &quot;ca.uhn.fhir.parser.DataFormatException&quot;;
-                                                return new OrchestrationEngine.SourceLocation(line, column,
-                                                        diagnostics);
-                                            }
-
-                                            @Override
-                                            public String getSeverity() {
-                                                return issue.path(&quot;level&quot;).asText();
-                                            }
-                                        })
-                                        .collect(Collectors.toList());
-                            }
-
-                            @Override
-                            public String getProfileUrl() {
-                                return Hl7ValidationEngineApi.this.fhirProfileUrl;</pre></td></tr></table>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
-<td style="text-align: left;">org/techbd/orchestrate/fhir/OrchestrationEngine.java</td>
-<td>341</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/orchestrate/fhir/OrchestrationEngine.java</td>
-<td>815</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>return HapiValidationEngine.this.fhirProfileVersion;
-                    }
-
-                    @Override
-                    public ValidationEngine.Observability getObservability() {
-                        return observability;
-                    }
-
-                    @Override
-                    public Instant getInitiatedAt() {
-                        return initiatedAt;
-                    }
-
-                    @Override
-                    public Instant getCompletedAt() {
-                        return completedAt;
-                    }
-                };
-
-            } catch (Exception e) {
-                final var completedAt = Instant.now();
-                return new OrchestrationEngine.ValidationResult() {
-                    @Override
-                    public String getOperationOutcome() {
-                        return null;
-                    }
-
-                    @Override
-                    public boolean isValid() {
-                        return false;
-                    }
-
-                    @Override
-                    public List&lt;OrchestrationEngine.ValidationIssue&gt; getIssues() {
-                        return List.of(new OrchestrationEngine.ValidationIssue() {
-                            @Override
-                            public String getMessage() {
-                                return e.getMessage();
-                            }
-
-                            @Override
-                            public SourceLocation getLocation() {
-                                return new SourceLocation(null, null, e.getClass().getName());
-                            }
-
-                            @Override
-                            public String getSeverity() {
-                                return &quot;FATAL&quot;;
-                            }
-                        });
-                    }
-
-                    @Override
-                    public String getProfileUrl() {
-                        return HapiValidationEngine.this.fhirProfileUrl;</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>

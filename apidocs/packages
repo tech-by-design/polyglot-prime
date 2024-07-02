@@ -15,6 +15,3 @@ org.techbd.util
 org.techbd.orchestrate.sftp
 org.techbd.orchestrate.fhir
 org.techbd.conf
-org.inferno.validator.rest
-org.inferno.validator
-org.inferno.validator.utils
