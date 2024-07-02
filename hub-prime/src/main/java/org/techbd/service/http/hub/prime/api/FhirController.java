@@ -166,7 +166,7 @@ public class FhirController {
                                 Map.of("nature", "Original FHIR Payload", "tenant_id", tenantId)));
                         payloadRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                         try {
-                            // input FHIR Bundle JSON payload from the server
+                            // input FHIR Bundle JSON payload
                             payloadRIHR.setPayload(Configuration.objectMapper.readTree(payload));
                         } catch (JsonProcessingException jpe) {
                             // in case the payload is not JSON store the string
