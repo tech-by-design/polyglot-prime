@@ -13,7 +13,6 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.techbd.service.http.hub.prime.route.RoutesTree;
-import org.techbd.service.http.hub.prime.route.RoutesTree.HtmlAnchor;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,12 +44,7 @@ public class ShellController {
     @GetMapping(value = "/presentation/shell/nav/prime-ascii.fragment.html", produces = { "text/html" })
     public ResponseEntity<?> navPrimeAscii() {
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                .body(new PathsVisuals().asciiTree(presentation.getRoutesTrees().get("prime"),
-                        Optional.of((node, paths) -> {
-                            final var anchor = new HtmlAnchor(node);
-                            return "[%s] {%s: %s}".formatted(node.absolutePath(), anchor.text(),
-                                    anchor.href().orElse("(interim route, no href)"));
-                        })));
+                .body(new PathsVisuals().asciiTree(presentation.getRoutesTrees().get("prime"), Optional.empty()));
     }
 
     @Operation(summary = "RoutesTrees")
