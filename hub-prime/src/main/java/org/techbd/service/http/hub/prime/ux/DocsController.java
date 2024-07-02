@@ -56,6 +56,7 @@ public class DocsController {
     @RouteMapping(label = "TechBD Hub", title = "Business and Technology Documentation", siblingOrder = 0)
     @GetMapping("/docs/techbd-hub")
     public String techbdHub(final Model model, final HttpServletRequest request) {
+        model.addAttribute("sidebarItems", techBdHubDocsCatalog.getPaths().getFirst());
         return presentation.populateModel("page/docs/techbd-hub", model, request);
     }
 
