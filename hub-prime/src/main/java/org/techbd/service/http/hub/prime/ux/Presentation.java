@@ -76,6 +76,7 @@ public class Presentation {
 
         // active route, siblings, ancestors (breadcrumbs) available for navigation
         model.addAttribute("navPrime", navPrimeLinks);
+        model.addAttribute("navPrimeTree", navPrimeTree);
         registerActiveRoute(model, request);
 
         // if we're running in a developer sandbox and want the templates being
