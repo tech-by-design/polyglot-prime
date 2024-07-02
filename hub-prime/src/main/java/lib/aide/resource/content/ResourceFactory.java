@@ -26,6 +26,9 @@ public class ResourceFactory {
             SUFFIXED_RF_MAP.put(".md",
                     (content, suffixes) -> new MarkdownResource<>(content, new MarkdownResource.UntypedMarkdownNature(),
                             suffixes));
+            SUFFIXED_RF_MAP.put(".mdx",
+                    (content, suffixes) -> new MdxResource<>(content, new MdxResource.UntypedMdxNature(),
+                            suffixes));
             SUFFIXED_RF_MAP.put(".json",
                     (content, suffixes) -> new JsonResource(content, new JsonNature(), suffixes));
             SUFFIXED_RF_MAP.put(".yaml",
