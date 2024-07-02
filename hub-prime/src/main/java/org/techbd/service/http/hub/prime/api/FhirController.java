@@ -175,8 +175,6 @@ public class FhirController {
                             // in case the payload is not JSON store the string
                             initRIHR.setElaboration(Configuration.objectMapper.valueToTree(payload));
                         }
-                        System.out.println("payloadpayloadpayloadpayload");
-                        System.out.print(payload);
                         initRIHR.setFromState("NONE");
                         initRIHR.setToState("FORWARD");
                         initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app time
