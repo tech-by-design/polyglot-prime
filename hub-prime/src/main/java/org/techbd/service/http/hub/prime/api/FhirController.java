@@ -168,6 +168,13 @@ public class FhirController {
                                 Map.of("nature", "Forward HTTP Request", "tenant_id", tenantId)));
                         initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                         initRIHR.setPayload(Configuration.objectMapper.valueToTree(immediateResult));
+                        // TODO: add to elaboration, review later for the best final location   
+                        try {
+                            initRIHR.setElaboration(Configuration.objectMapper.readTree(payload));
+                        } catch (JsonProcessingException jpe) {
+                            // in case the payload is not JSON store the string
+                            initRIHR.setElaboration(Configuration.objectMapper.valueToTree(payload));
+                        }
                         initRIHR.setFromState("NONE");
                         initRIHR.setToState("FORWARD");
                         initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app time
