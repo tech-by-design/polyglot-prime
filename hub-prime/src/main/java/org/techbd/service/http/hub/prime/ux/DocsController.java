@@ -135,4 +135,9 @@ public class DocsController {
     public String announcements(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/announcements", model, request);
     }
+    @RouteMapping(label = "Project", title = "Project", siblingOrder = 40)
+    @GetMapping("/docs/project")
+    public String projects(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/project", model, request);
+    }
 }
