@@ -50,8 +50,12 @@ public class MdxResource<F, N extends FrontmatterNature<F>> implements TextResou
     }
 
     public static class MdxNature<F> extends FrontmatterNature<F> {
-        public MdxNature(TypeReference<F> frontmatterType) {
+        public MdxNature(final TypeReference<F> frontmatterType) {
             super(frontmatterType);
+        }
+
+        public MdxNature(final TypeReference<F> frontmatterType, final Supplier<String> content) {
+            super(frontmatterType, content);
         }
 
         @Override
@@ -68,6 +72,11 @@ public class MdxResource<F, N extends FrontmatterNature<F>> implements TextResou
         public UntypedMdxNature() {
             super(new TypeReference<Map<String, Object>>() {
             });
+        }
+
+        public UntypedMdxNature(final Supplier<String> content) {
+            super(new TypeReference<Map<String, Object>>() {
+            }, content);
         }
 
         @Override

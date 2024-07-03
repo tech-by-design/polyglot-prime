@@ -106,7 +106,7 @@
             <div id="sidebar" class="w-1/4 p-4">
                 <ul class="top-level space-y-2">
                     <li th:each="node : ${sidebarItems.root().children().get(1).children()}">
-                        <div th:if="${node != null}" th:replace="this :: nodeFragment(${node}, 1)"></div>
+                        <div th:if="${node != null}" th:replace="~{this :: nodeFragment(${node}, 1)}"></div>
                     </li>
                 </ul>
 
@@ -114,7 +114,7 @@
                     <details th:if="${node != null and !node.isLeaf()}" class="w-full" open>
                         <summary class="flex items-center justify-between w-full py-1 cursor-pointer">
                             <div class="group-label flex items-center">
-                                <span th:text="${node.components.last}" class="text font-semibold"></span>
+                                <span th:text="${sidebarNS.caption(node)}" class="text font-semibold"></span>
                             </div>
                             <svg aria-hidden="true" class="caret w-4 h-4 flex-none" fill="currentColor">
                                 <path d="M14.83 11.29L10.59 7.05a1 1 0 00-1.42 1.42L12.71 12l-3.54 3.54a1 1 0 001.42 1.42l4.24-4.24a1 1 0 000-1.42z"></path>
@@ -122,14 +122,14 @@
                         </summary>
                         <ul class="pl-4 border-l border-gray-300">
                             <li th:each="child : ${node.children()}" class="relative">
-                                <div th:if="${child != null}" th:replace="this :: nodeFragment(${child}, ${level + 1})">
+                                <div th:if="${child != null}" th:replace="~{this :: nodeFragment(${child}, ${level + 1})}">
                                     <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-300"></div>
                                 </div>
                             </li>
                         </ul>
                     </details>
                     <div th:if="${node != null and node.isLeaf()}">
-                        <a th:href="${node.absolutePath()}" th:text="${node.components.last}" class="text-gray-800" onclick="loadResource(event)"></a>
+                        <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}" class="text-gray-800" onclick="loadResource(event)"></a>
                     </div>
                 </div>
             </div>

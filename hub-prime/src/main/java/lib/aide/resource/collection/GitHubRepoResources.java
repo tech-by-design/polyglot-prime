@@ -65,12 +65,12 @@ public class GitHubRepoResources
                                         newNode);
                                 if (pe.isPresent()) {
                                     pathElaboration.add(pe.orElseThrow());
-                                } else {
-                                    parent.addChild(newNode);
+                                    return;
                                 }
-                            } else {
-                                parent.addChild(newNode);
                             }
+
+                            // if we get to here, nothing special was found so just add the child
+                            parent.addChild(newNode);
                         });
                 for (var resourceProvenance : resources()) {
                     result.populate(resourceProvenance);

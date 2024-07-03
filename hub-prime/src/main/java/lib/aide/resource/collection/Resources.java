@@ -36,6 +36,20 @@ public class Resources<C, R extends Resource<? extends Nature, ?>> {
             return this;
         }
 
+        // TODO: add withPathsFilter that can remove specific resources from paths such as:
+        // - **/*.mp4 for example
+        // - etc. any files that shouldn't be in a navigation path or otherwise filtered
+
+        // TODO: add withLinter that can lint resources as they're loaded and collect
+        // issues such as:
+        // - filename format
+        // - frontmatter matching JSON Schema
+        // - .path.(yml|yaml|json) elaboration matching JSON Schema
+        // - .path.(yml|yaml|json) elaboration missing could fill in human-readable
+        // - etc.
+        // multiple linters can be defined and can operate before loading resources,
+        // after loading, etc.
+
         @SuppressWarnings("unchecked")
         public Resources<C, R> build() {
             final var allPaths = new ArrayList<Paths<C, ResourceProvenance<?, R>>>();

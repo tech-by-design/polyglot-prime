@@ -9,23 +9,33 @@ import lib.aide.resource.Nature;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public abstract class FrontmatterNature<F> implements Nature {
-
-    private final TypeReference<F> frontmatterType;
-    private final ObjectMapper yamlMapper;
-    private final ObjectMapper jsonMapper;
-
-    public FrontmatterNature(final TypeReference<F> frontmatterType) {
-        this.frontmatterType = frontmatterType;
-        this.yamlMapper = new ObjectMapper(new YAMLFactory());
-        this.jsonMapper = new ObjectMapper();
-    }
+    static private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    static private final ObjectMapper jsonMapper = new ObjectMapper();
 
     public record Components<F>(String original, Optional<F> frontmatter, String content, List<Exception> exceptions) {
     }
 
-    protected Components<F> parseContent(final String content) {
+    private final TypeReference<F> frontmatterType;
+    private final Components<F> parsedComponents;
+
+    public FrontmatterNature(final TypeReference<F> frontmatterType) {
+        this.frontmatterType = frontmatterType;
+        this.parsedComponents = null;
+    }
+
+    public FrontmatterNature(final TypeReference<F> frontmatterType, Supplier<String> content) {
+        this.frontmatterType = frontmatterType;
+        this.parsedComponents = parseContent(content.get());
+    }
+
+    public Components<F> parsedComponents() {
+        return parsedComponents;
+    }
+
+    public Components<F> parseContent(final String content) {
         final var original = content;
         var frontmatter = Optional.<F>empty();
         var bodyContent = content;

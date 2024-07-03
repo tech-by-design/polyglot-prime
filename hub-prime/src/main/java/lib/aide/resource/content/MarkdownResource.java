@@ -50,8 +50,12 @@ public class MarkdownResource<F, N extends FrontmatterNature<F>> implements Text
     }
 
     public static class MarkdownNature<F> extends FrontmatterNature<F> {
-        public MarkdownNature(TypeReference<F> frontmatterType) {
+        public MarkdownNature(final TypeReference<F> frontmatterType) {
             super(frontmatterType);
+        }
+
+        public MarkdownNature(final TypeReference<F> frontmatterType, final Supplier<String> content) {
+            super(frontmatterType, content);
         }
 
         @Override
@@ -68,6 +72,11 @@ public class MarkdownResource<F, N extends FrontmatterNature<F>> implements Text
         public UntypedMarkdownNature() {
             super(new TypeReference<Map<String, Object>>() {
             });
+        }
+
+        public UntypedMarkdownNature(final Supplier<String> content) {
+            super(new TypeReference<Map<String, Object>>() {
+            }, content);
         }
 
         @Override

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -251,6 +252,20 @@ public class Paths<C, P> {
         public String toString() {
             return "Node [absolutePath()=" + absolutePath() + "]";
         }
+
+        /**
+         * Runs action for every node in the tree, depth first
+         *
+         * @param action     callback to run
+         * @param depthFirst true to run depth-first
+         */
+        public void forEach(Consumer<? super Node> action, boolean depthFirst) {
+            if (!depthFirst)
+                action.accept(this);
+            children.stream().forEach(c -> c.forEach(action, depthFirst));
+            if (depthFirst)
+                action.accept(this);
+        }
     }
 
     private final Node root = new Node(List.of(), Optional.empty(), null);
@@ -332,6 +347,25 @@ public class Paths<C, P> {
             return Optional.of(current);
         }
         return Optional.empty();
+    }
+
+    /**
+     * Runs action for every node in the tree
+     *
+     * @param action     callback to run
+     * @param depthFirst whether to run depth-first
+     */
+    public void forEach(Consumer<? super Node> action, boolean depthFirst) {
+        root.forEach(action, depthFirst);
+    }
+
+    /**
+     * Runs action for every node in the tree
+     *
+     * @param action callback to run depth-first
+     */
+    public void forEach(Consumer<? super Node> action) {
+        root.forEach(action, true);
     }
 
     /**

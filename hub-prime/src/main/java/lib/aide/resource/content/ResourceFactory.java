@@ -32,10 +32,10 @@ public class ResourceFactory {
 
         static {
             SUFFIXED_RF_MAP.put(".md",
-                    (content, suffixes) -> new MarkdownResource<>(content, new MarkdownResource.UntypedMarkdownNature(),
+                    (content, suffixes) -> new MarkdownResource<>(content, new MarkdownResource.UntypedMarkdownNature(content),
                             suffixes));
             SUFFIXED_RF_MAP.put(".mdx",
-                    (content, suffixes) -> new MdxResource<>(content, new MdxResource.UntypedMdxNature(),
+                    (content, suffixes) -> new MdxResource<>(content, new MdxResource.UntypedMdxNature(content),
                             suffixes));
             SUFFIXED_RF_MAP.put(".json",
                     (content, suffixes) -> new JsonResource(content, new JsonNature(), suffixes));
