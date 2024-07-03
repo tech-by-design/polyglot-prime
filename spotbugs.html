@@ -76,7 +76,7 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>183</td>
+<td>186</td>
 <td>184</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
@@ -315,13 +315,13 @@
 <td>lib.aide.paths.Paths.root() may expose internal representation by returning Paths.root</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>290</td>
+<td>305</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>new lib.aide.paths.Paths(Paths$PayloadComponentsSupplier, Paths$NodePopulationStrategy) may expose internal representation by storing an externally mutable object into Paths.nodePopulate</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>270</td>
+<td>285</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.paths.Paths$Node"></a><section>
 <h2>lib.aide.paths.Paths$Node</h2>
 <table class="table table-striped">
@@ -335,37 +335,37 @@
 <td>lib.aide.paths.Paths$Node.children() may expose internal representation by returning Paths$Node.children</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>163</td>
+<td>164</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>lib.aide.paths.Paths$Node.components() may expose internal representation by returning Paths$Node.components</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>72</td>
+<td>73</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>lib.aide.paths.Paths$Node.parent() may expose internal representation by returning Paths$Node.parent</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>84</td>
+<td>85</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>new lib.aide.paths.Paths$Node(Paths, List, Optional, Paths$Node) may expose internal representation by storing an externally mutable object into Paths$Node.components</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>66</td>
+<td>67</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>new lib.aide.paths.Paths$Node(Paths, List, Optional, Paths$Node) may expose internal representation by storing an externally mutable object into Paths$Node.parent</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>68</td>
+<td>69</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>new lib.aide.paths.Paths$Node(Paths, List, Optional, Paths$Node) may expose internal representation by storing an externally mutable object into Paths$Node.this$0</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>65</td>
+<td>66</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.GitHubRepoResources"></a><section>
 <h2>lib.aide.resource.collection.GitHubRepoResources</h2>
 <table class="table table-striped">
@@ -545,13 +545,13 @@
 <td>lib.aide.resource.nature.FrontmatterNature$Components.exceptions() may expose internal representation by returning FrontmatterNature$Components.exceptions</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>25</td>
+<td>18</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>new lib.aide.resource.nature.FrontmatterNature$Components(String, Optional, String, List) may expose internal representation by storing an externally mutable object into FrontmatterNature$Components.exceptions</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>25</td>
+<td>18</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.vfs.VfsIngressConsumer"></a><section>
 <h2>lib.aide.vfs.VfsIngressConsumer</h2>
 <table class="table table-striped">
@@ -1465,13 +1465,13 @@
 <td>Exception thrown in class org.techbd.service.http.hub.prime.ux.DocsController at new org.techbd.service.http.hub.prime.ux.DocsController(Presentation) will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks.</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#CT_CONSTRUCTOR_THROW">CT_CONSTRUCTOR_THROW</a></td>
-<td>34</td>
+<td>55</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>new org.techbd.service.http.hub.prime.ux.DocsController(Presentation) may expose internal representation by storing an externally mutable object into DocsController.presentation</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>33</td>
+<td>54</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.ux.ExperimentsController"></a><section>
 <h2>org.techbd.service.http.hub.prime.ux.ExperimentsController</h2>
 <table class="table table-striped">
