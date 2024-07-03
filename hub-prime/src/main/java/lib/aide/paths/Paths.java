@@ -1,10 +1,14 @@
 package lib.aide.paths;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * This class represents a hierarchical path structure that supports
@@ -18,6 +22,11 @@ public class Paths<C, P> {
     @FunctionalInterface
     public interface InterimPayloadSupplier<C, P> {
         Optional<P> payload(final List<C> components, final int index);
+    }
+
+    @FunctionalInterface
+    public interface NodePopulationStrategy<C, P> {
+        void populate(final Paths<C, P>.Node parent, final Paths<C, P>.Node newNode);
     }
 
     /**
@@ -42,6 +51,8 @@ public class Paths<C, P> {
         private final List<C> components;
         private final Node parent;
         private final List<Node> children = new ArrayList<>();
+        private final Map<String, Object> attributes = new HashMap<>();
+        private final List<Exception> issues = new ArrayList<>();
 
         /**
          * Constructs a new Node with the specified components, payload, and parent
@@ -51,7 +62,7 @@ public class Paths<C, P> {
          * @param payload    the payload associated with this node
          * @param parent     the parent node
          */
-        public Node(List<C> components, Optional<P> payload, Node parent) {
+        public Node(final List<C> components, final Optional<P> payload, final Node parent) {
             this.components = components;
             this.payload = payload;
             this.parent = parent;
@@ -65,7 +76,7 @@ public class Paths<C, P> {
             return payload;
         }
 
-        public void setPayload(Optional<P> payload) {
+        public void setPayload(final Optional<P> payload) {
             this.payload = payload;
         }
 
@@ -73,17 +84,33 @@ public class Paths<C, P> {
             return parent;
         }
 
-        public void addChild(Node child) {
+        public void addChild(final Node child) {
             children.add(child);
         }
 
-        public Optional<Node> findChild(C component) {
+        public void addAttribute(final String key, Object value) {
+            attributes.put(key, value);
+        }
+
+        public List<Map.Entry<String, DeepMergeOperation>> mergeAttributes(final Map<String, Object> updates) {
+            return deepMerge(attributes, updates);
+        }
+
+        public Optional<Object> getAttribute(final String key) {
+            return Optional.ofNullable(attributes.get(key));
+        }
+
+        public void addIssue(final Exception e) {
+            issues.add(e);
+        }
+
+        public Optional<Node> findChild(final C component) {
             return children.stream()
                     .filter(node -> node.components().get(node.components().size() - 1).equals(component))
                     .findFirst();
         }
 
-        public List<Node> siblings(boolean withSelf) {
+        public List<Node> siblings(final boolean withSelf) {
             if (parent == null) {
                 return List.of();
             }
@@ -107,7 +134,8 @@ public class Paths<C, P> {
                 ancestor = ancestor.parent;
             }
             // the physical root isn't really an ancestor
-            if(ancestors.size() > 0) ancestors.removeLast();
+            if (ancestors.size() > 0)
+                ancestors.removeLast();
             return ancestors;
         }
 
@@ -119,7 +147,7 @@ public class Paths<C, P> {
             return children.isEmpty();
         }
 
-        public String absolutePath(boolean includeRoot) {
+        public String absolutePath(final boolean includeRoot) {
             return pcSupplier.assemble(includeRoot ? components : components.subList(1, components.size()));
         }
 
@@ -127,8 +155,20 @@ public class Paths<C, P> {
             return absolutePath(true);
         }
 
+        public Optional<C> basename() {
+            return components.isEmpty() ? Optional.empty() : Optional.of(components.getLast());
+        }
+
         public List<Node> children() {
             return children;
+        }
+
+        public Map<String, Object> attributes() {
+            return Map.copyOf(attributes);
+        }
+
+        public List<Exception> issues() {
+            return List.copyOf(issues);
         }
 
         /**
@@ -154,7 +194,9 @@ public class Paths<C, P> {
             final var child = findChild(component).orElseGet(() -> {
                 final var newNode = new Node(new ArrayList<>(components.subList(0, index + 1)),
                         isTerminal ? payload : ips.payload(components, index), this);
-                addChild(newNode);
+                // it's the delegate's job to either add it as a child or set attributes or just
+                // ignore it
+                Paths.this.nodePopulate.populate(this, newNode);
                 return newNode;
             });
             if (isTerminal && child.payload().isEmpty()) {
@@ -213,6 +255,7 @@ public class Paths<C, P> {
 
     private final Node root = new Node(List.of(), Optional.empty(), null);
     private final PayloadComponentsSupplier<C, P> pcSupplier;
+    private final NodePopulationStrategy<C, P> nodePopulate;
 
     /**
      * Constructs a Paths object with the specified root payload and payload
@@ -221,8 +264,21 @@ public class Paths<C, P> {
      * @param rootPayload the payload for the initial root node
      * @param parser      the supplier for payload components
      */
-    public Paths(PayloadComponentsSupplier<C, P> parser) {
+    public Paths(final @NotNull PayloadComponentsSupplier<C, P> parser,
+            @NotNull final NodePopulationStrategy<C, P> nodePopulate) {
         this.pcSupplier = parser;
+        this.nodePopulate = nodePopulate;
+    }
+
+    /**
+     * Constructs a Paths object with the specified root payload and payload
+     * components supplier.
+     *
+     * @param rootPayload the payload for the initial root node
+     * @param parser      the supplier for payload components
+     */
+    public Paths(final @NotNull PayloadComponentsSupplier<C, P> parser) {
+        this(parser, (parent, newNode) -> parent.addChild(newNode));
     }
 
     /**
@@ -235,8 +291,7 @@ public class Paths<C, P> {
     }
 
     /**
-     * Populates the tree structure with the specified payload, starting from all
-     * roots.
+     * Populates the tree structure with the specified payload, starting from root.
      *
      * @param payload the payload to populate
      * @param ips     what to do with payloads for child nodes defined before
@@ -247,8 +302,8 @@ public class Paths<C, P> {
     }
 
     /**
-     * Populates the tree structure with the specified payload, starting from all
-     * roots with default behavior for interim payloads.
+     * Populates the tree structure with the specified payload, starting from root
+     * with default behavior for interim payloads.
      *
      * @param payload the payload to populate
      */
@@ -257,8 +312,7 @@ public class Paths<C, P> {
     }
 
     /**
-     * Finds a node in the tree structure based on the full path, starting from all
-     * roots.
+     * Finds a node in the tree structure based on the full path.
      *
      * @param fullPath the full path of the node to find
      * @return an Optional containing the found node if exists, or an empty Optional
@@ -278,5 +332,50 @@ public class Paths<C, P> {
             return Optional.of(current);
         }
         return Optional.empty();
+    }
+
+    /**
+     * Enum to represent the type of merge operation performed.
+     */
+    public enum DeepMergeOperation {
+        ADD, REPLACE
+    }
+
+    /**
+     * Deeply merges the updates map into the original map. If both maps contain
+     * nested maps for the same key, those maps are merged recursively. Otherwise,
+     * the value from the updates map overwrites the value in the original map.
+     *
+     * @param original The original map to be updated.
+     * @param updates  The map containing updates to be merged into the original
+     *                 map.
+     * @return A list of key and MergeOperation pairs representing the changes made
+     *         during the merge.
+     */
+    public static List<Map.Entry<String, DeepMergeOperation>> deepMerge(final Map<String, Object> original,
+            final Map<String, Object> updates) {
+        final var changes = new ArrayList<Map.Entry<String, DeepMergeOperation>>();
+        deepMerge(original, updates, "", changes);
+        return changes;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected static void deepMerge(final Map<String, Object> original, final Map<String, Object> updates,
+            final String prefix, final List<Map.Entry<String, DeepMergeOperation>> changes) {
+        updates.forEach((mergeKey, mergeValue) -> {
+            String fullKey = prefix.isEmpty() ? mergeKey : prefix + "." + mergeKey;
+            if (original.containsKey(mergeKey)) {
+                final var existingMap = original.get(mergeKey);
+                if (existingMap instanceof Map && mergeValue instanceof Map) {
+                    deepMerge((Map<String, Object>) existingMap, (Map<String, Object>) mergeValue, fullKey, changes);
+                } else {
+                    original.put(mergeKey, mergeValue);
+                    changes.add(Map.entry(fullKey, DeepMergeOperation.REPLACE));
+                }
+            } else {
+                original.put(mergeKey, mergeValue);
+                changes.add(Map.entry(fullKey, DeepMergeOperation.ADD));
+            }
+        });
     }
 }

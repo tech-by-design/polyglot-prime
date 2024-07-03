@@ -94,8 +94,9 @@ public class ResourceFactoryTest {
         final var factory = new ResourceFactory();
         final Supplier<String> contentSupplier = () -> content;
         final var delimiter = Optional.of(Pattern.compile("\\."));
+        final var assembler = Optional.of(".");
 
-        final var result = factory.resourceFromSuffix(src, contentSupplier, delimiter);
+        final var result = factory.resourceFromSuffix(src, contentSupplier, delimiter, assembler);
 
         assertThat(result).isPresent();
         assertThat(result.get().content()).isEqualTo(content);

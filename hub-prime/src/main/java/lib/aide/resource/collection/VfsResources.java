@@ -27,7 +27,8 @@ public class VfsResources
     }
 
     private final ResourceFactory rf;
-    private final FileObjectPathComponetsSupplier fopcs = new FileObjectPathComponetsSupplier();
+    private final FileObjectPathComponentsSupplier fopcs = new FileObjectPathComponentsSupplier();
+    private final List<PathElaboration> pathElaboration = new ArrayList<>();
     private final URI identity;
     private final FileObject rootVfsFO;
     private boolean populateAbsolutePaths = false;
@@ -56,7 +57,22 @@ public class VfsResources
         return paths.updateAndGet(existingPaths -> {
             if (existingPaths == null) {
                 final var result = new Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>(
-                        fopcs);
+                        fopcs, (parent, newNode) -> {
+                            // If the file is `.path.yml` `.path.yaml` or `.path.json` or
+                            // `.[parent-dir-name].path.yml` or `.yaml` or `.json` it's a special file which
+                            // "elaborates" the current path, not a content resource
+                            if (newNode.basename().isPresent()) {
+                                final var pe = PathElaboration.fromBasename(newNode.basename().orElseThrow(), parent,
+                                        newNode);
+                                if (pe.isPresent()) {
+                                    pathElaboration.add(pe.orElseThrow());
+                                } else {
+                                    parent.addChild(newNode);
+                                }
+                            } else {
+                                parent.addChild(newNode);
+                            }
+                        });
                 for (var resourceProvenance : resources()) {
                     result.populate(resourceProvenance);
                 }
@@ -109,14 +125,14 @@ public class VfsResources
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            }, Optional.empty()).orElse(
+            }, Optional.empty(), Optional.empty()).orElse(
                     new ExceptionResource(new RuntimeException("Unsupported resource type: " + fileObject.getName())));
             final var provenance = new VfsFileObjectProvenance(fileObject.getURI(), fileObject);
             resources.add(new ResourceProvenance<>(provenance, resource));
         }
     }
 
-    class FileObjectPathComponetsSupplier implements
+    class FileObjectPathComponentsSupplier implements
             Paths.PayloadComponentsSupplier<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>> {
         @Override
         public List<String> components(

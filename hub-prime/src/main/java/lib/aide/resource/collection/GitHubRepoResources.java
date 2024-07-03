@@ -27,6 +27,7 @@ public class GitHubRepoResources
 
     private final ResourceFactory rf;
     private final GitHubFilePathComponentsSupplier ghfpcs = new GitHubFilePathComponentsSupplier();
+    private final List<PathElaboration> pathElaboration = new ArrayList<>();
     private final URI identity;
     private final GHRepository repo;
     private String rootPath = "";
@@ -55,7 +56,22 @@ public class GitHubRepoResources
         return paths.updateAndGet(existingPaths -> {
             if (existingPaths == null) {
                 final var result = new Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>(
-                        ghfpcs);
+                        ghfpcs, (parent, newNode) -> {
+                            // If the file is `.path.yml` `.path.yaml` or `.path.json` or
+                            // `.[parent-dir-name].path.yml` or `.yaml` or `.json` it's a special file which
+                            // "elaborates" the current path, not a content resource
+                            if (newNode.basename().isPresent()) {
+                                final var pe = PathElaboration.fromBasename(newNode.basename().orElseThrow(), parent,
+                                        newNode);
+                                if (pe.isPresent()) {
+                                    pathElaboration.add(pe.orElseThrow());
+                                } else {
+                                    parent.addChild(newNode);
+                                }
+                            } else {
+                                parent.addChild(newNode);
+                            }
+                        });
                 for (var resourceProvenance : resources()) {
                     result.populate(resourceProvenance);
                 }
@@ -101,7 +117,7 @@ public class GitHubRepoResources
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                }, Optional.empty()).orElse(
+                }, Optional.empty(), Optional.empty()).orElse(
                         new ExceptionResource(new RuntimeException("Unsupported resource type: " + content.getName())));
                 final var provenance = new GitHubFileProvenance(URI.create(content.getHtmlUrl()), content);
                 resources.add(new ResourceProvenance<>(provenance, resource));
