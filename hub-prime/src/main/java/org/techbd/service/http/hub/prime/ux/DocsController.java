@@ -38,9 +38,10 @@ public class DocsController {
                 Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
             // attributes may be filled by PathElaboration, loadTechBdHubDocsCatalog or any
             // other resource hooks
-            for(final var key: captionKeyNames) {
+            for (final var key : captionKeyNames) {
                 var tryAttr = node.getAttribute(key);
-                if (tryAttr.isPresent()) return tryAttr.orElseThrow().toString();
+                if (tryAttr.isPresent())
+                    return tryAttr.orElseThrow().toString();
             }
             return node.basename().orElse("UNKNOWN BASENAME");
         }
@@ -135,6 +136,7 @@ public class DocsController {
     public String announcements(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/announcements", model, request);
     }
+
     @RouteMapping(label = "Project", title = "Project", siblingOrder = 40)
     @GetMapping("/docs/project")
     public String projects(final Model model, final HttpServletRequest request) {
