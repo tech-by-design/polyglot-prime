@@ -14,6 +14,13 @@
  ****************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request AS 
+WITH cte_resource_types AS (
+    SELECT sat_interaction_http_request_id, 
+           string_agg(DISTINCT entry->'resource'->>'resourceType', ', ') AS resource_types
+    FROM techbd_udi_ingress.sat_interaction_http_request,
+         LATERAL jsonb_array_elements(payload->'entry') AS entry
+    GROUP BY sat_interaction_http_request_id   
+)
 SELECT hi.hub_interaction_id AS interaction_id,
     hi.key AS uri,
     hi.created_at AS interaction_created_at,
@@ -33,10 +40,13 @@ SELECT hi.hub_interaction_id AS interaction_id,
     sihr.created_at AS request_created_at,
     sihr.created_by AS request_created_by,
     sihr.provenance AS request_provenance,
-    jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count
+    jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count,
+    rtyp.resource_types
    FROM techbd_udi_ingress.hub_interaction hi
-     LEFT JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
+  	LEFT JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
     ON hi.hub_interaction_id = sihr.hub_interaction_id
+    LEFT OUTER JOIN cte_resource_types rtyp
+   	ON rtyp.sat_interaction_http_request_id = sihr.sat_interaction_http_request_id
    ;
 
 /*******************************************************************************************
@@ -121,6 +131,13 @@ making it a comprehensive resource for monitoring and troubleshooting failed HTT
  ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_failed AS 
+WITH cte_resource_types AS (
+    SELECT sat_interaction_http_request_id, 
+           string_agg(DISTINCT entry->'resource'->>'resourceType', ', ') AS resource_types
+    FROM techbd_udi_ingress.sat_interaction_http_request,
+         LATERAL jsonb_array_elements(payload->'entry') AS entry
+    GROUP BY sat_interaction_http_request_id   
+)
 SELECT hi.hub_interaction_id AS interaction_id,
     hi.key AS uri,
     hi.created_at AS interaction_created_at,
@@ -139,10 +156,13 @@ SELECT hi.hub_interaction_id AS interaction_id,
     sihr.state_transition_reason,
     sihr.created_at AS request_created_at,
     sihr.created_by AS request_created_by,
-    sihr.provenance AS request_provenance
+    sihr.provenance AS request_provenance,
+    rtyp.resource_types
    FROM techbd_udi_ingress.hub_interaction hi
-     LEFT JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
+   	LEFT JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
     ON hi.hub_interaction_id = sihr.hub_interaction_id
+	LEFT OUTER JOIN cte_resource_types rtyp
+	ON rtyp.sat_interaction_http_request_id = sihr.sat_interaction_http_request_id
     WHERE upper(sihr.to_state) = 'FAIL'
    ;
 
@@ -152,7 +172,15 @@ SELECT hi.hub_interaction_id AS interaction_id,
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_forward_fail CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_fail
-AS WITH cte_interaction AS (
+AS 
+WITH cte_resource_type AS (
+    SELECT  interaction_id, 
+        string_agg(DISTINCT entry->'resource'->>'resourceType', ', ') AS resource_types
+    FROM techbd_udi_ingress.interaction_http_request,
+        LATERAL jsonb_array_elements(payload->'entry') AS entry
+    WHERE upper(nature::text) = 'ORIGINAL FHIR PAYLOAD'
+    GROUP BY interaction_id
+), cte_interaction AS (
     SELECT intr_multi.interaction_id,
        hreq_failed.tenant_id,
        intr_multi.uri,
@@ -172,10 +200,14 @@ AS WITH cte_interaction AS (
        SUBSTRING((intr_multi.third_request -> 'payload'::text) ->> 'error'::text FROM POSITION((':'::text) IN ((intr_multi.third_request -> 'payload'::text) ->> 'error'::text)) + 2) AS error_text,
         jsonb_array_length(
 		(intr_multi.first_request -> 'payload'::text) -> 'response'::text -> 'responseBody'::text -> 'OperationOutcome'::text -> 'validationResults'::text -> 0 -> 'issues'
-  		) AS issues_count
-      FROM techbd_udi_ingress.interaction_http_request_multiple_3 intr_multi
-      INNER JOIN techbd_udi_ingress.interaction_http_request_failed hreq_failed ON hreq_failed.interaction_id = intr_multi.interaction_id
-   )
+  		) AS issues_count,
+  		crt.resource_types
+      	FROM techbd_udi_ingress.interaction_http_request_multiple_3 intr_multi
+      	INNER JOIN techbd_udi_ingress.interaction_http_request_failed hreq_failed 
+      	ON hreq_failed.interaction_id = intr_multi.interaction_id
+      	LEFT OUTER JOIN cte_resource_type crt 
+        ON crt.interaction_id = intr_multi.interaction_id
+   		)
 SELECT intr_hreq.interaction_id AS interaction_id,
    intr_hreq.tenant_id AS tenant_id,
    intr_hreq.uri AS uri,
@@ -192,8 +224,10 @@ SELECT intr_hreq.interaction_id AS interaction_id,
    intr_hreq.to_state AS to_state,
    intr_hreq.outbound_http_message AS outbound_http_message,
    intr_hreq.error_text AS error,
-   intr_hreq.issues_count
-  FROM cte_interaction AS intr_hreq;
+   intr_hreq.issues_count,
+   intr_hreq.resource_types
+  FROM cte_interaction AS intr_hreq
+ ;
 
 /*******************************************************************************************
 The view techbd_udi_ingress.interaction_diagnostics retrieves diagnostic information from 

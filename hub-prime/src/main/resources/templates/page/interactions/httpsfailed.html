@@ -113,15 +113,16 @@
                             return link;
                         }
                     },
-                    { headerName: "Tenant ID", field: "tenant_id" },
-                    { headerName: "URI", field: "uri" },
-                    { headerName: "Nature", field: "nature" },
-                    { headerName: "From State", field: "from_state" },
-                    { headerName: "To State", field: "to_state" },
-                    { headerName: "Error", field: "error" },
-                    { headerName: "Issues", field: "issues_count" },                        
-                    { headerName: "IP Address", field: "client_ip_address" },
-                    { headerName: "User Agent", field: "user_agent" }
+                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Error", field: "error" , filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "Issues", field: "issues_count", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", enableRowGroup: true },
+                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", enableRowGroup: true }
                 ];
 
                 const gridOptions = {
