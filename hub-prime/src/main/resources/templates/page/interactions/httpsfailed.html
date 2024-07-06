@@ -145,7 +145,7 @@
                             const jsonRequest = JSON.stringify(params.request, null, 2);
                             log("[EnterpriseDatasource] Posted JSON request", jsonRequest);
                             try {
-                                const response = await fetch(ssrServletUrl(`/support/interaction/httpsfailed.json`), {
+                                const response = await fetch(window.shell.serverSideUrl(`/support/interaction/httpsfailed.json`), {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: jsonRequest
@@ -174,7 +174,7 @@
                 serverDataGridDiv.style.height = "750px"
 
                 function showDetails(interactionId) {
-                    fetch(ssrServletUrl(`/support/interaction/${interactionId}.json`))
+                    fetch(window.shell.serverSideUrl(`/support/interaction/${interactionId}.json`))
                         .then(response => response.json())
                         .then(interaction => {
                             document.querySelector('#json').data = interaction;

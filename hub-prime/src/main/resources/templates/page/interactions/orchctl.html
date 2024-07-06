@@ -143,7 +143,7 @@
                             const jsonRequest = JSON.stringify(params.request, null, 2);
                             log("[EnterpriseDatasource] Posted JSON request", jsonRequest);
                             try {
-                                const response = await fetch(ssrServletUrl(`/support/interaction/orchctl.json`), {
+                                const response = await fetch(window.shell.serverSideUrl(`/support/interaction/orchctl.json`), {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: jsonRequest
@@ -173,7 +173,7 @@
 
                 function showDetails(tenantId,interactionId) {
                     console.log(tenantId);
-                    fetch(ssrServletUrl(`/support/interaction/orchctl/${tenantId}/${interactionId}.json`))
+                    fetch(window.shell.serverSideUrl(`/support/interaction/orchctl/${tenantId}/${interactionId}.json`))
                       .then(response => response.json())
                       .then(data => {
                           let session = null;

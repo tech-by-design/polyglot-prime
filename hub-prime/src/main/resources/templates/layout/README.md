@@ -133,7 +133,7 @@ the breadcrumbs JavaScript will just do structural copies and replacement of
 preview-friendly in any browser.
 
 ```html
-<nav id="nav-breadcrumb" aria-label="Breadcrumb">
+<nav id="nav-breadcrumbs" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
         <li id="breadcrumb-home" class="inline-flex items-center">
             <a href="/">Home</a>
@@ -155,7 +155,7 @@ based on the defined rules.
 
 ```javascript
 document.addEventListener("DOMContentLoaded", () => {
-  const breadcrumbNav = document.getElementById("nav-breadcrumb");
+  const breadcrumbNav = document.getElementById("nav-breadcrumbs");
   const breadcrumbList = breadcrumbNav.querySelector("ol");
   const breadcrumbInnerTemplate = document.getElementById("breadcrumb-inner");
   const breadcrumbTerminal = document.getElementById("breadcrumb-terminal");

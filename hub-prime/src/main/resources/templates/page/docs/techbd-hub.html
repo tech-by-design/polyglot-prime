@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-    layout:decorate="~{layout/prime}">
+    layout:decorate="~{layout/docs}">
 
 <head>
     <script type="module">
         import { unified } from 'https://cdn.jsdelivr.net/npm/unified@11.0.5/+esm';
         import remarkParse from 'https://cdn.jsdelivr.net/npm/remark-parse@11.0.0/+esm';
         import remarkFrontmatter from 'https://cdn.jsdelivr.net/npm/remark-frontmatter@5.0.0/+esm';
+        import remarkParseFrontmatter from 'https://cdn.jsdelivr.net/npm/remark-parse-frontmatter@1.0.3/+esm';
         import remarkRehype from 'https://cdn.jsdelivr.net/npm/remark-rehype@11.1.0/+esm';
         import remarkGfm from 'https://cdn.jsdelivr.net/npm/remark-gfm@4.0.0/+esm';
         import remarkHtml from 'https://cdn.jsdelivr.net/npm/remark-html@16.0.1/+esm';
@@ -29,9 +30,20 @@
             target.classList.add('selected');
 
             try {
-                const fetchURL = ssrServletUrl(`/docs/techbd-hub/resource/content?path=${resourceUrl}`);
+                const fetchURL = window.shell.serverSideUrl(`/docs/techbd-hub/resource/content?path=${resourceUrl}`);
                 const response = await fetch(fetchURL);
                 const mimeType = response.headers.get('Content-Type');
+                
+                const relbreadcrumbsJSON = response.headers.get('Resource-Breadcrumbs');
+                const relBreadcrumbs = relbreadcrumbsJSON 
+                    ? JSON.parse(relbreadcrumbsJSON) 
+                    : null;
+                relBreadcrumbs.reverse();
+
+                const layout = window.layout;
+                const breadcrumbs = [...layout.activeRoute.breadcrumbs, ...relBreadcrumbs];
+                layout.title(response.headers.get('Resource-Title'));
+                layout.breadcrumbs(breadcrumbs, false);
 
                 const resourceContent = document.getElementById('resource');
                 const text = await response.text();
@@ -50,11 +62,12 @@
                         //     })
                         //     .process(text);
                         // reactDom.render(file.result, resourceContent);
-                        resourceContent.innerHTML = `MDX support not implemented yet`;
+                        resourceContent.innerHTML = `MDX support not implemented yet (TODO).`;
                     } else {
                         const file = await unified()
                             .use(remarkParse, { fragment: true })
                             .use(remarkFrontmatter)
+                            .use(remarkParseFrontmatter)
                             .use(remarkGfm) // support GFM (autolink literals, footnotes, strikethrough, tables, tasklists)
                             .use(remarkRehype, { allowDangerousHtml: true })
                             .use(rehypeStringify, { allowDangerousHtml: true })
@@ -103,7 +116,7 @@
 <body>
     <div layout:fragment="content">
         <div class="flex">
-            <div id="sidebar" class="w-1/4 p-4">
+            <nav id="sidebar" class="w-1/4 p-4">
                 <ul class="top-level space-y-2">
                     <li th:each="node : ${sidebarItems.root().children().get(1).children()}">
                         <div th:if="${node != null}" th:replace="~{this :: nodeFragment(${node}, 1)}"></div>
@@ -117,25 +130,36 @@
                                 <span th:text="${sidebarNS.caption(node)}" class="text font-semibold"></span>
                             </div>
                             <svg aria-hidden="true" class="caret w-4 h-4 flex-none" fill="currentColor">
-                                <path d="M14.83 11.29L10.59 7.05a1 1 0 00-1.42 1.42L12.71 12l-3.54 3.54a1 1 0 001.42 1.42l4.24-4.24a1 1 0 000-1.42z"></path>
+                                <path
+                                    d="M14.83 11.29L10.59 7.05a1 1 0 00-1.42 1.42L12.71 12l-3.54 3.54a1 1 0 001.42 1.42l4.24-4.24a1 1 0 000-1.42z">
+                                </path>
                             </svg>
                         </summary>
                         <ul class="pl-4 border-l border-gray-300">
                             <li th:each="child : ${node.children()}" class="relative">
-                                <div th:if="${child != null}" th:replace="~{this :: nodeFragment(${child}, ${level + 1})}">
+                                <div th:if="${child != null}"
+                                    th:replace="~{this :: nodeFragment(${child}, ${level + 1})}">
                                     <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-300"></div>
                                 </div>
                             </li>
                         </ul>
                     </details>
                     <div th:if="${node != null and node.isLeaf()}">
-                        <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}" class="text-gray-800" onclick="loadResource(event)"></a>
+                        <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}" class="text-gray-800"
+                            onclick="loadResource(event)"></a>
                     </div>
                 </div>
-            </div>
+            </nav>
 
-            <div id="resource" class="w-3/4 p-4 prose max-w-none">
-                <!-- Resource content is inserted dynamically when the sidebar menu items are tapped -->
+            <div class="w-3/4 p-4 prose max-w-none">
+                <header>
+                    <h1 id="heading-prime">
+                        <!-- Primary Heading (usually page title) -->
+                    </h1>
+                </header>
+                <div id="resource">
+                    <!-- Resource content is inserted dynamically when the sidebar menu items are tapped -->
+                </div>            
             </div>
         </div>
     </div>

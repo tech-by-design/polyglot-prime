@@ -116,7 +116,7 @@
                 eGridDiv.style.height = "750px"
 
                 function fetchPageData(page, size) {
-                    fetch(ssrServletUrl(`/diagnostics.json?page=${page}&size=${size}`))
+                    fetch(window.shell.serverSideUrl(`/diagnostics.json?page=${page}&size=${size}`))
                         .then(response => response.json())
                         .then(data => {
                             originalData = data;

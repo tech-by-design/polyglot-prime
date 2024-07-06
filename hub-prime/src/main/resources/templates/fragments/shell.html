@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Application "Shell" Fragments</title>
+
+    <!-- always set this as the first script since it sets up the importMap for subsequent ESM imports -->
+    <script th:fragment="script-import-map" th:inline="javascript">
+        const reqContextPath = /*[[${req.getContextPath()}]]*/ "";
+        const importmap = document.createElement("script");
+        importmap.type = "importmap";
+        importmap.textContent = JSON.stringify({ imports: { "@presentation/shell/": reqContextPath + `/presentation/shell/js/` } });
+        document.currentScript.after(importmap);
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>

@@ -47,27 +47,21 @@
     <div class="min-h-full">
         <div th:replace="~{fragments/nav :: main-menu-horiz-and-authn-profile}"></div>
 
-        <header class="bg-white shadow-sm mx-auto max-w-9xl px-4 py-4 sm:px-6 lg:px-8">
-            <h1 id="heading-prime" class="text-lg font-semibold leading-6 text-gray-900">
-                <!-- Primary Heading (usually page title) -->
-            </h1>
-        </header>
-
-        <div th:replace="~{fragments/nav :: breadcrumbs}"></div>
-
-        <main>
+        <main>            
             <div class="mx-auto max-w-9xl py-2 sm:px-6 lg:px-8">
-                <div class="w-full mx-auto bg-white p-8 rounded-lg shadow-lg">
-                    <ul th:if="${siblingLinks.size()} > 0" class="flex flex-wrap border-b border-gray-200">
-                        <li th:each="link : ${siblingLinks}" class="mr-2">
-                            <a th:href="@{${link.href}}" th:text="${link.text}" th:attr="for=${activeRoutePath}"
-                                th:class="${link.href == activeRoutePath
-                                            ? 'inline-block bg-gray-100 text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active' 
-                                            : 'inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center'}"
-                                class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">Tab
-                                Label</a>
-                        </li>
-                    </ul>
+                <ul th:if="${siblingLinks.size()} > 0" class="flex flex-wrap">
+                    <li th:each="link, iterStat : ${siblingLinks}" 
+                        th:classappend="${iterStat.index == 0} ? 'ml-2' : ''"
+                        class="mr-2">
+                        <a th:href="@{${link.href}}" th:text="${link.text}" th:attr="for=${activeRoutePath}"
+                            th:class="${link.href == activeRoutePath
+                                        ? 'inline-block bg-white text-blue-600 rounded-t-lg py-2 px-4 text-sm font-medium text-center active' 
+                                        : 'inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center'}"
+                            class="inline-block text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-t-lg py-2 px-4 text-sm font-medium text-center">Tab
+                            Label</a>
+                    </li>
+                </ul>                
+                <div class="w-full mx-auto bg-white p-8 rounded-lg shadow-lg">           
                     <div layout:fragment="content"></div>
                 </div>
             </div>
