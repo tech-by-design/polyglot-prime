@@ -12,6 +12,7 @@ import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHRepository;
 
 import lib.aide.paths.Paths;
+import lib.aide.resource.Editable;
 import lib.aide.resource.Nature;
 import lib.aide.resource.Provenance;
 import lib.aide.resource.Resource;
@@ -22,7 +23,8 @@ import lib.aide.resource.content.ResourceFactory;
 
 public class GitHubRepoResources
         implements ResourcesSupplier<GitHubRepoResources.GitHubFileProvenance, String, Resource<? extends Nature, ?>> {
-    public record GitHubFileProvenance(URI uri, GHContent fileContent) implements Provenance {
+    public record GitHubFileProvenance(URI uri, Optional<URI> editURI, GHContent fileContent)
+            implements Provenance, Editable {
     }
 
     private final ResourceFactory rf;
@@ -119,7 +121,8 @@ public class GitHubRepoResources
                     }
                 }, Optional.empty(), Optional.empty()).orElse(
                         new ExceptionResource(new RuntimeException("Unsupported resource type: " + content.getName())));
-                final var provenance = new GitHubFileProvenance(URI.create(content.getHtmlUrl()), content);
+                final var ghContentURI = URI.create(content.getHtmlUrl());
+                final var provenance = new GitHubFileProvenance(ghContentURI, Optional.of(ghContentURI), content);
                 resources.add(new ResourceProvenance<>(provenance, resource));
             }
         }

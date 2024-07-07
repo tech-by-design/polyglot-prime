@@ -17,8 +17,10 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
+import org.techbd.service.http.SandboxHelpers;
 
 import lib.aide.paths.Paths;
+import lib.aide.resource.Editable;
 import lib.aide.resource.Nature;
 import lib.aide.resource.Provenance;
 import lib.aide.resource.Resource;
@@ -104,6 +106,29 @@ public class DocResourcesService {
             return this.attributeExpr(node, propertyPath, Optional.empty());
         }
 
+        public Optional<URI> editURI(
+                Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
+            if (node.payload().isPresent()) {
+                if (node.payload().orElseThrow().provenance() instanceof Editable provenance) {
+                    return provenance.editURI();
+                }
+            }
+            return Optional.empty();
+        }
+
+        public String editableUrlOrBlank(
+                Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
+            final var editURI = this.editURI(node);
+            if (editURI.isEmpty())
+                return "";
+            final var editableUrl = editURI.orElseThrow();
+            if (editableUrl.getScheme().equals("file")) {
+                return sboxHelpers.getEditorUrlFromAbsolutePath(editableUrl.getPath());
+            } else {
+                return editableUrl.toString();
+            }
+        }
+
         /**
          * Returns the children of a node sorted by the nested property
          * 'nav.sequence.weight' in the node's attributes.
@@ -148,9 +173,11 @@ public class DocResourcesService {
     private Resources<String, Resource<? extends Nature, ?>> resources;
     private NamingStrategy namingStrategy = new NamingStrategy();
     private NodeAide nodeAide = new NodeAide();
+    private final SandboxHelpers sboxHelpers;
 
-    public DocResourcesService() throws Exception {
+    public DocResourcesService(final SandboxHelpers sboxHelpers) throws Exception {
         vfsManager = VFS.getManager();
+        this.sboxHelpers = sboxHelpers;
         loadResources();
     }
 

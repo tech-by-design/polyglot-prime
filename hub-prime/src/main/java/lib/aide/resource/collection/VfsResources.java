@@ -13,6 +13,7 @@ import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 
 import lib.aide.paths.Paths;
+import lib.aide.resource.Editable;
 import lib.aide.resource.Nature;
 import lib.aide.resource.Provenance;
 import lib.aide.resource.Resource;
@@ -23,7 +24,8 @@ import lib.aide.resource.content.ResourceFactory;
 
 public class VfsResources
         implements ResourcesSupplier<VfsResources.VfsFileObjectProvenance, String, Resource<? extends Nature, ?>> {
-    public record VfsFileObjectProvenance(URI uri, FileObject fileObject) implements Provenance {
+    public record VfsFileObjectProvenance(URI uri, Optional<URI> editURI, FileObject fileObject)
+            implements Provenance, Editable {
     }
 
     private final ResourceFactory rf;
@@ -127,7 +129,8 @@ public class VfsResources
                 }
             }, Optional.empty(), Optional.empty()).orElse(
                     new ExceptionResource(new RuntimeException("Unsupported resource type: " + fileObject.getName())));
-            final var provenance = new VfsFileObjectProvenance(fileObject.getURI(), fileObject);
+            final var provenance = new VfsFileObjectProvenance(fileObject.getURI(), Optional.of(fileObject.getURI()),
+                    fileObject);
             resources.add(new ResourceProvenance<>(provenance, resource));
         }
     }
