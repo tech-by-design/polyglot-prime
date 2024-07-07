@@ -19,13 +19,17 @@
                 })
             }
         );
-        document.addEventListener('DOMContentLoaded', window.rr.fromURI("docs/techbd-intro.md"));
+        document.addEventListener('DOMContentLoaded', () => {
+            window.sidebar = new Sidebar();
+            window.rr.fromURI("docs/techbd-intro.md");
+        });
+
         document.addEventListener(RenderableResource.RESOURCE_RENDERED_EVENT_NAME, async function (event) {
             const { resourceURI, resource } = event.detail;
 
             window.layout.title(resource.title);
             window.layout.breadcrumbs([...window.layout.activeRoute.breadcrumbs, ...resource.breadcrumbs], false);
-            document.querySelectorAll('#sidebar a').forEach(a => a.classList.toggle('selected', a.getAttribute('href') == resourceURI));
+            document.querySelectorAll('#sidebar a').forEach(a => a.classList.toggle('selected', a.dataset.resourcePath == resourceURI));
             if (window.mermaid) await window.mermaid.run();
 
             // TODO: replace attempt-rewrite.png with something like 
@@ -34,7 +38,46 @@
             handleExternalRefErrors(
                 (providedSrc, target) => 'attempt-rewrite.png',
                 { handleElement: element => targetElem.contains(element) });
+
+            window.sidebar.renderSequenced(resourceURI);
         });
+
+        class Sidebar {
+            constructor() {
+                // Initialize references to the navigation elements
+                this.seqNavElem = document.getElementById('nav-sequenceable');
+                this.prevElem = document.getElementById('nav-sequenceable-prev');
+                this.nextElem = document.getElementById('nav-sequenceable-next');
+            }
+
+            renderSequenced(resourcePath) {
+                // Find the current anchor element based on the resourcePath
+                const currentAnchor = document.querySelector(`#sidebar a[data-resource-path="${resourcePath}"]`);
+                if (!currentAnchor) {
+                    console.warn(`Anchor with data-resource-path="${resourcePath}" not found.`);
+                    return;
+                }
+
+                // XPath expression to find the first preceding anchor with a data-resource-path attribute
+                const previousAnchor = document.evaluate('preceding::a[@data-resource-path][1]',
+                    currentAnchor, null /* no namespace */, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+
+                // XPath expression to find the first following anchor with a data-resource-path attribute
+                const nextAnchor = document.evaluate('following::a[@data-resource-path][1]',
+                    currentAnchor, null /* no namespace */, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+
+                // Update the previous button visibility and data attribute
+                this.prevElem.classList.toggle('hidden', !previousAnchor); // Hide if no previous anchor
+                this.prevElem.dataset.navResourcePath = previousAnchor ? previousAnchor.dataset.resourcePath : "#"; // Set data attribute
+
+                // Update the next button visibility and data attribute
+                this.nextElem.classList.toggle('hidden', !nextAnchor); // Hide if no next anchor
+                this.nextElem.dataset.navResourcePath = nextAnchor ? nextAnchor.dataset.resourcePath : "#"; // Set data attribute
+
+                // Toggle the visibility of the navigation container based on the presence of previous or next anchors
+                this.seqNavElem.classList.toggle('hidden', !previousAnchor && !nextAnchor);
+            }
+        }
     </script>
     <script src='https://cdn.jsdelivr.net/npm/htmx.org@1.9.12/dist/htmx.min.js'></script>
     <title>TechBD Hub Documentation</title>
@@ -137,6 +180,19 @@
                 </header>
                 <div id="resource">
                     <!-- Resource content is inserted dynamically when the sidebar menu items are tapped -->
+                </div>
+                <div id="nav-sequenceable" class="flex justify-between mt-4 hidden">
+                    <button id="nav-sequenceable-prev" data-nav-resource-path="#"
+                        class="bg-gray-300 text-gray-500 hover:bg-blue-500 hover:text-white py-2 px-4 rounded hidden"
+                        onclick="window.rr.fromURI(this.dataset.navResourcePath);">
+                        ⏮️ Previous
+                    </button>
+                    <div class="flex-grow"></div> <!-- Flex-grow div to push the next button to the right if no `previous` is available -->
+                    <button id="nav-sequenceable-next" data-nav-resource-path="#"
+                        class="bg-gray-300 text-gray-500 hover:bg-blue-500 hover:text-white py-2 px-4 rounded hidden"
+                        onclick="window.rr.fromURI(this.dataset.navResourcePath);">
+                        Next ⏭️
+                    </button>
                 </div>
             </div>
         </div>
