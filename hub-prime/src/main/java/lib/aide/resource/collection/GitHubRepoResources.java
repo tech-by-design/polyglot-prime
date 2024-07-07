@@ -33,6 +33,7 @@ public class GitHubRepoResources
     private final URI identity;
     private final GHRepository repo;
     private String rootPath = "";
+    private boolean populateAbsolutePaths = false;
 
     private final AtomicReference<List<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>> resources = new AtomicReference<>();
     private final AtomicReference<Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>> paths = new AtomicReference<>();
@@ -45,6 +46,11 @@ public class GitHubRepoResources
 
     public GitHubRepoResources withRootPath(final String rootPath) {
         this.rootPath = rootPath;
+        return this;
+    }
+
+    public GitHubRepoResources populateAbsolutePaths(boolean value) {
+        this.populateAbsolutePaths = value;
         return this;
     }
 
@@ -133,7 +139,20 @@ public class GitHubRepoResources
         @Override
         public List<String> components(
                 ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>> payload) {
-            return components(payload.provenance().fileContent().getPath());
+            final var suppliedPath = payload.provenance().fileContent().getPath();
+            String computedPath;
+            if (populateAbsolutePaths) {
+                computedPath = suppliedPath;
+            } else {
+                if (suppliedPath.startsWith(rootPath)) {
+                    computedPath = suppliedPath.substring(rootPath.length());
+                    if (computedPath.startsWith("/"))
+                        computedPath = computedPath.substring(1);
+                } else {
+                    computedPath = suppliedPath;
+                }
+            }
+            return components(computedPath);
         }
 
         @Override

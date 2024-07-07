@@ -53,7 +53,6 @@ public class DocsController {
     public String techbdHub(final Model model, final HttpServletRequest request) {
         model.addAttribute("sidebarNS", drs.getNamingStrategy());
         model.addAttribute("nodeAide", drs.getNodeAide());
-        model.addAttribute("sidebarItems", drs.sidebarItems());
         return presentation.populateModel("page/docs/techbd-hub", model, request);
     }
 
@@ -67,13 +66,13 @@ public class DocsController {
                 .withIds(node -> "id=\"" + node.absolutePath().replaceAll("[^a-zA-Z0-9]", "-") + "\"")
                 .build(); // Use defaults for all other settings
 
-        final var pathsHtml = ph.toHtmlUL(drs.sidebarItems(), Optional.empty());
+        final var pathsHtml = ph.toHtmlUL(drs.sidebarPaths(), Optional.empty());
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(pathsHtml);
     }
 
     @GetMapping("/docs/techbd-hub/resource/content")
     public ResponseEntity<?> techbdHubResource(@RequestParam String path) throws JsonProcessingException {
-        final var found = drs.sidebarItems().findNode(path);
+        final var found = drs.sidebarPaths().findNode(path);
         if (found.isPresent()) {
             final var node = found.orElseThrow();
             if (node.payload().isPresent()) {

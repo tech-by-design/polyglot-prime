@@ -162,6 +162,16 @@ public class DocResourcesService {
                     }))
                     .collect(Collectors.toList());
         }
+
+        public List<Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node> sidebarItems() {
+            final var sbp = sidebarPaths();
+            final var docs = sbp.root().findChild("docs");
+            if (docs.isPresent()) {
+                return sequenceableChildren(docs.orElseThrow());
+            } else {
+                return sequenceableChildren(sbp.root());
+            }
+        }
     }
 
     private final String[] ghEnvVarNames = new String[] { "ORG_TECHBD_SERVICE_HTTP_GITHUB_API_AUTHN_TOKEN",
@@ -199,7 +209,7 @@ public class DocResourcesService {
                 final var github = GitHub.connectUsingOAuth(ghTokenFromEnv.orElseThrow());
                 final var ghRepo = github.getRepository("tech-by-design/docs.techbd.org");
                 final var ghResourcesSupplier = new GitHubRepoResources(rf, ghRepo.getHtmlUrl().toURI(), ghRepo)
-                        .withRootPath("src/content/docs");
+                        .withRootPath("src/content");
                 final var builder = new Resources.Builder<String, Resource<? extends Nature, ?>>()
                         .withSupplier(ghResourcesSupplier);
                 resources = builder.build();
@@ -245,7 +255,7 @@ public class DocResourcesService {
         return nodeAide;
     }
 
-    public Paths<String, ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>> sidebarItems() {
+    public Paths<String, ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>> sidebarPaths() {
         return resources.getPaths().size() > 0 ? resources.getPaths().getFirst()
                 : new Paths<String, ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>(
                         new EmptyPathsComponents());

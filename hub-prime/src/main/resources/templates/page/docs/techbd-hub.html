@@ -111,7 +111,7 @@
         <div class="flex">
             <nav id="sidebar" class="w-1/4 p-4">
                 <ul class="top-level space-y-2">
-                    <li th:each="node : ${nodeAide.sequenceableChildren(sidebarItems.root().children().get(1))}">
+                    <li th:each="node : ${nodeAide.sidebarItems()}">
                         <div th:if="${node != null}" th:replace="~{this :: nodeFragment(${node}, 1)}"></div>
                     </li>
                 </ul>
