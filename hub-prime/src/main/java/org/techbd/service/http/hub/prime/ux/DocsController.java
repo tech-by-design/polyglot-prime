@@ -21,10 +21,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.github.wimdeblauwe.htmx.spring.boot.mvc.HxRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import lib.aide.paths.Paths;
 import lib.aide.paths.PathsHtml;
 import lib.aide.resource.Nature;
-import lib.aide.resource.Provenance;
 import lib.aide.resource.Resource;
 import lib.aide.resource.ResourceProvenance;
 
@@ -35,22 +33,6 @@ public class DocsController {
             .findAndAddModules()
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
             .build();
-
-    public class NamingStrategy {
-        private final String[] captionKeyNames = { "caption", "title" };
-
-        public String caption(
-                Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
-            // attributes may be filled by PathElaboration, loadTechBdHubDocsCatalog or any
-            // other resource hooks
-            for (final var key : captionKeyNames) {
-                var tryAttr = node.getAttribute(key);
-                if (tryAttr.isPresent())
-                    return tryAttr.orElseThrow().toString();
-            }
-            return node.basename().orElse("UNKNOWN BASENAME");
-        }
-    }
 
     private final Presentation presentation;
     private final DocResourcesService drs;
@@ -70,6 +52,7 @@ public class DocsController {
     @GetMapping("/docs/techbd-hub")
     public String techbdHub(final Model model, final HttpServletRequest request) {
         model.addAttribute("sidebarNS", drs.getNamingStrategy());
+        model.addAttribute("nodeAide", drs.getNodeAide());
         model.addAttribute("sidebarItems", drs.sidebarItems());
         return presentation.populateModel("page/docs/techbd-hub", model, request);
     }
