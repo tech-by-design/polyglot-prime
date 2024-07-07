@@ -76,7 +76,7 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>201</td>
+<td>202</td>
 <td>209</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
@@ -397,7 +397,7 @@
 <td>new lib.aide.resource.collection.GitHubRepoResources(ResourceFactory, URI, GHRepository) may expose internal representation by storing an externally mutable object into GitHubRepoResources.repo</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>41</td>
+<td>43</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance"></a><section>
 <h2>lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance</h2>
 <table class="table table-striped">
@@ -411,13 +411,13 @@
 <td>lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance.fileContent() may expose internal representation by returning GitHubRepoResources$GitHubFileProvenance.fileContent</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>25</td>
+<td>26</td>
 <td>Medium</td></tr>
 <tr class="a">
-<td>new lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance(URI, GHContent) may expose internal representation by storing an externally mutable object into GitHubRepoResources$GitHubFileProvenance.fileContent</td>
+<td>new lib.aide.resource.collection.GitHubRepoResources$GitHubFileProvenance(URI, Optional, GHContent) may expose internal representation by storing an externally mutable object into GitHubRepoResources$GitHubFileProvenance.fileContent</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>25</td>
+<td>26</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.PathElaboration"></a><section>
 <h2>lib.aide.resource.collection.PathElaboration</h2>
 <table class="table table-striped">
@@ -483,7 +483,7 @@
 <td>new lib.aide.resource.collection.VfsResources(ResourceFactory, URI, FileObject) may expose internal representation by storing an externally mutable object into VfsResources.rootVfsFO</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>42</td>
+<td>44</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance"></a><section>
 <h2>lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance</h2>
 <table class="table table-striped">
@@ -497,13 +497,13 @@
 <td>lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance.fileObject() may expose internal representation by returning VfsResources$VfsFileObjectProvenance.fileObject</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP">EI_EXPOSE_REP</a></td>
-<td>26</td>
+<td>27</td>
 <td>Medium</td></tr>
 <tr class="a">
-<td>new lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance(URI, FileObject) may expose internal representation by storing an externally mutable object into VfsResources$VfsFileObjectProvenance.fileObject</td>
+<td>new lib.aide.resource.collection.VfsResources$VfsFileObjectProvenance(URI, Optional, FileObject) may expose internal representation by storing an externally mutable object into VfsResources$VfsFileObjectProvenance.fileObject</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
-<td>26</td>
+<td>27</td>
 <td>Medium</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$MapFromTextResult"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$MapFromTextResult</h2>
 <table class="table table-striped">
@@ -1178,10 +1178,10 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>Exception thrown in class org.techbd.service.DocResourcesService at new org.techbd.service.DocResourcesService() will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks.</td>
+<td>Exception thrown in class org.techbd.service.DocResourcesService at new org.techbd.service.DocResourcesService(SandboxHelpers) will leave the constructor. The object under construction remains partially initialized and may be vulnerable to Finalizer attacks.</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#CT_CONSTRUCTOR_THROW">CT_CONSTRUCTOR_THROW</a></td>
-<td>153</td>
+<td>179</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.GitHubUserAuthorizationFilter"></a><section>
 <h2>org.techbd.service.http.GitHubUserAuthorizationFilter</h2>
 <table class="table table-striped">
