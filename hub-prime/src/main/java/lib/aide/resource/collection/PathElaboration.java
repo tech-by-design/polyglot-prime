@@ -20,8 +20,10 @@ public record PathElaboration(MapFromTextResult elaboration,
 
     /**
      * If the file is `.path.yml` `.path.yaml` or `.path.json` or
-     * `.[parent-dir-name].path.yml` or `.yaml` or `.json` it's a special file which
-     * "elaborates" the current path, not a content resource
+     * `.[parent-dir-name].path.yml` or `[parent-dir-name].path.yml` or `.yaml` or
+     * `.json` it's a special file which "elaborates" the current path, not a
+     * content resource. Usually this means we just take all the contents of the
+     * file and merge them as the parent node's attributes.
      * 
      * @param basename the basename to test
      * @param parent   the parent to test
@@ -31,9 +33,10 @@ public record PathElaboration(MapFromTextResult elaboration,
             final Paths<String, ResourceProvenance<T, Resource<? extends Nature, ?>>>.Node parent,
             final Paths<String, ResourceProvenance<T, Resource<? extends Nature, ?>>>.Node newNode) {
         // if the file is `.path.yml` `.path.yaml` or `.path.json` or
-        // `<parent-dir-name>.path.yml` or `.yaml` or `.json` it's a special file which
+        // `.<parent-dir-name>.path.yml` or `<parent-dir-name>.path.yml` or `.yaml` or
+        // `.json` it's a special file which
         // "elaborates" the current path, not a content resource
-        if (basename.matches("(%s)?\\.path\\.(yml|yaml|json)".formatted(parent.basename().orElse("ROOT")))) {
+        if (basename.matches("(\\.?%s)?\\.path\\.(yml|yaml|json)".formatted(parent.basename().orElse("ROOT")))) {
             if (newNode.payload().isPresent()) {
                 final var rp = newNode.payload().orElseThrow();
                 final var elaboration = ResourceFactory.mapFromText(basename,
