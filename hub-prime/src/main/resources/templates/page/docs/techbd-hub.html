@@ -4,88 +4,37 @@
 
 <head>
     <script type="module">
-        import { unified } from 'https://cdn.jsdelivr.net/npm/unified@11.0.5/+esm';
-        import remarkParse from 'https://cdn.jsdelivr.net/npm/remark-parse@11.0.0/+esm';
-        import remarkFrontmatter from 'https://cdn.jsdelivr.net/npm/remark-frontmatter@5.0.0/+esm';
-        import remarkParseFrontmatter from 'https://cdn.jsdelivr.net/npm/remark-parse-frontmatter@1.0.3/+esm';
-        import remarkRehype from 'https://cdn.jsdelivr.net/npm/remark-rehype@11.1.0/+esm';
-        import remarkGfm from 'https://cdn.jsdelivr.net/npm/remark-gfm@4.0.0/+esm';
-        import remarkHtml from 'https://cdn.jsdelivr.net/npm/remark-html@16.0.1/+esm';
-        import rehypeStringify from 'https://cdn.jsdelivr.net/npm/rehype-stringify@10.0.0/+esm';
+        import { RenderableResource, RenderableResources, handleExternalRefErrors } from '@presentation/shell/renderable-resource.js';
 
-        // TODO: support MDX in the browser, too
-        // import remarkMdx from 'https://cdn.jsdelivr.net/npm/remark-mdx@3.0.1/+esm';
-        // import rehypeReact from 'https://cdn.jsdelivr.net/npm/rehype-react@8.0.0/+esm';
-        // import react from 'https://cdn.jsdelivr.net/npm/react@18.3.1/+esm';
-        // import reactDom from 'https://cdn.jsdelivr.net/npm/react-dom@18.3.1/+esm';
-
-        async function loadResource(event) {
-            event.preventDefault(); // Prevent default link behavior
-            const target = event.target;
-            const resourceUrl = target.getAttribute('href');
-
-            // Highlight the selected sidebar item
-            const sidebar = document.getElementById('sidebar');
-            sidebar.querySelectorAll('a').forEach(a => a.classList.remove('selected'));
-            target.classList.add('selected');
-
-            try {
-                const fetchURL = window.shell.serverSideUrl(`/docs/techbd-hub/resource/content?path=${resourceUrl}`);
-                const response = await fetch(fetchURL);
-                const mimeType = response.headers.get('Content-Type');
-                
-                const relbreadcrumbsJSON = response.headers.get('Resource-Breadcrumbs');
-                const relBreadcrumbs = relbreadcrumbsJSON 
-                    ? JSON.parse(relbreadcrumbsJSON) 
-                    : null;
-                relBreadcrumbs.reverse();
-
-                const layout = window.layout;
-                const breadcrumbs = [...layout.activeRoute.breadcrumbs, ...relBreadcrumbs];
-                layout.title(response.headers.get('Resource-Title'));
-                layout.breadcrumbs(breadcrumbs, false);
-
-                const resourceContent = document.getElementById('resource');
-                const text = await response.text();
-
-                if (mimeType.includes('markdown') || mimeType.includes('mdx')) {
-                    if (mimeType.includes('mdx')) {
-                        // TODO: support MDX in the browser, too
-                        // const file = await unified()
-                        //     .use(remarkParse)
-                        //     .use(remarkFrontmatter)
-                        //     .use(remarkMdx)
-                        //     .use(remarkRehype, { allowDangerousHtml: true })
-                        //     .use(rehypeReact, {
-                        //         createElement: react.createElement,
-                        //         Fragment: react.Fragment
-                        //     })
-                        //     .process(text);
-                        // reactDom.render(file.result, resourceContent);
-                        resourceContent.innerHTML = `MDX support not implemented yet (TODO).`;
-                    } else {
-                        const file = await unified()
-                            .use(remarkParse, { fragment: true })
-                            .use(remarkFrontmatter)
-                            .use(remarkParseFrontmatter)
-                            .use(remarkGfm) // support GFM (autolink literals, footnotes, strikethrough, tables, tasklists)
-                            .use(remarkRehype, { allowDangerousHtml: true })
-                            .use(rehypeStringify, { allowDangerousHtml: true })
-                            .process(text);
-                        resourceContent.innerHTML = file.toString();
-                    }
-                    // in prime.html layout <head> window.mermaid was set so use it to re-initialize Mermaid diagrams
-                    if (window.mermaid) await window.mermaid.run();
-                } else {
-                    resourceContent.innerHTML = `Unsupported content type <code>${mimeType}</code>`;
-                }
-            } catch (error) {
-                console.error('Error fetching resource:', error);
-                document.getElementById('resource').innerHTML = 'Error loading resource';
+        const isAbsoluteURL = url => { try { return new URL(url).origin !== 'null'; } catch { return false; } };
+        const renderElemSupplier = () => document.getElementById('resource');
+        window.rr = new RenderableResources(
+            (resourceUrl) => window.shell.serverSideUrl(`/docs/techbd-hub/resource/content?path=${resourceUrl}`),
+            renderElemSupplier,
+            {
+                markdownUrlRewriter: ((url) => {
+                    if (!isAbsoluteURL(url))
+                        console.warn(`A relative URL was encountered in Markdown but not rewritten`, { url });
+                    return url;
+                })
             }
-        }
+        );
+        document.addEventListener('DOMContentLoaded', window.rr.fromURI("docs/techbd-intro.md"));
+        document.addEventListener(RenderableResource.RESOURCE_RENDERED_EVENT_NAME, async function (event) {
+            const { resourceURI, resource } = event.detail;
 
-        window.loadResource = loadResource;
+            window.layout.title(resource.title);
+            window.layout.breadcrumbs([...window.layout.activeRoute.breadcrumbs, ...resource.breadcrumbs], false);
+            document.querySelectorAll('#sidebar a').forEach(a => a.classList.toggle('selected', a.getAttribute('href') == resourceURI));
+            if (window.mermaid) await window.mermaid.run();
+
+            // TODO: replace attempt-rewrite.png with something like 
+            //       /docs/techbd-hub/resource/proxy/<path> which would proxy items from the source
+            const targetElem = renderElemSupplier();
+            handleExternalRefErrors(
+                (providedSrc, target) => 'attempt-rewrite.png',
+                { handleElement: element => targetElem.contains(element) });
+        });
     </script>
     <script src='https://cdn.jsdelivr.net/npm/htmx.org@1.9.12/dist/htmx.min.js'></script>
     <title>TechBD Hub Documentation</title>
@@ -123,11 +72,38 @@
                     </li>
                 </ul>
 
+                <!-- 
+                This fragment, `nodeFragment`, conditionally renders a tree node structure based on the presence and type of nodes.
+                1. For non-leaf nodes:
+                - A `<details>` element is rendered with a `<summary>` displaying the node's caption.
+                - If the node has a payload, an `<a>` tag is rendered with:
+                    - `href` attribute set to the node's absolute path.
+                    - `data-resource-path` attribute set to the node's absolute path.
+                    - `data-resource-mime-type` attribute conditionally set based on the node's payload.
+                    - An `onclick` event that prevents default navigation and calls `window.rr.fromURI` with the node's href.
+                - If the node does not have a payload, a `<span>` tag is rendered displaying the node's caption.
+                - A `<svg>` caret icon is included in the `<summary>`.
+                - Child nodes are recursively rendered within `<ul>` and `<li>` elements.
+                2. For leaf nodes:
+                - An `<a>` tag is always rendered with:
+                    - `href` attribute set to the node's absolute path.
+                    - `data-resource-path` attribute set to the node's absolute path.
+                    - `data-resource-mime-type` attribute conditionally set based on the node's payload.
+                    - An `onclick` event that prevents default navigation and calls `window.rr.fromURI` with the node's href.
+                -->
                 <div th:fragment="nodeFragment(node, level)">
                     <details th:if="${node != null and !node.isLeaf()}" class="w-full" open>
                         <summary class="flex items-center justify-between w-full py-1 cursor-pointer">
                             <div class="group-label flex items-center">
-                                <span th:text="${sidebarNS.caption(node)}" class="text font-semibold"></span>
+                                <div th:if="${node.payload().isPresent()}">
+                                    <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}"
+                                        class="text font-semibold" th:attr="data-resource-path=${node.absolutePath()}"
+                                        th:attrappend="data-resource-mime-type=${node.payload().get().resource().nature().mimeType()}"
+                                        onclick="event.preventDefault(); window.rr.fromURI(event.target.getAttribute('href'));"></a>
+                                </div>
+                                <div th:if="${!node.payload().isPresent()}">
+                                    <span th:text="${sidebarNS.caption(node)}" class="text font-semibold"></span>
+                                </div>
                             </div>
                             <svg aria-hidden="true" class="caret w-4 h-4 flex-none" fill="currentColor">
                                 <path
@@ -146,7 +122,9 @@
                     </details>
                     <div th:if="${node != null and node.isLeaf()}">
                         <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}" class="text-gray-800"
-                            onclick="loadResource(event)"></a>
+                            th:attr="data-resource-path=${node.absolutePath()}"
+                            th:attrappend="data-resource-mime-type=${node.payload().isPresent() ? node.payload().get().resource().nature().mimeType() : null}"
+                            onclick="event.preventDefault(); window.rr.fromURI(event.target.dataset.resourcePath);"></a>
                     </div>
                 </div>
             </nav>
@@ -159,7 +137,7 @@
                 </header>
                 <div id="resource">
                     <!-- Resource content is inserted dynamically when the sidebar menu items are tapped -->
-                </div>            
+                </div>
             </div>
         </div>
     </div>
