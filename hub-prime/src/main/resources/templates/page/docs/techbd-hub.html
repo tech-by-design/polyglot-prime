@@ -66,15 +66,10 @@
                 const nextAnchor = document.evaluate('following::a[@data-resource-path][1]',
                     currentAnchor, null /* no namespace */, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
 
-                // Update the previous button visibility and data attribute
-                this.prevElem.classList.toggle('hidden', !previousAnchor); // Hide if no previous anchor
-                this.prevElem.dataset.navResourcePath = previousAnchor ? previousAnchor.dataset.resourcePath : "#"; // Set data attribute
-
-                // Update the next button visibility and data attribute
-                this.nextElem.classList.toggle('hidden', !nextAnchor); // Hide if no next anchor
-                this.nextElem.dataset.navResourcePath = nextAnchor ? nextAnchor.dataset.resourcePath : "#"; // Set data attribute
-
-                // Toggle the visibility of the navigation container based on the presence of previous or next anchors
+                this.prevElem.classList.toggle('hidden', !previousAnchor);
+                this.prevElem.dataset.navResourcePath = previousAnchor ? previousAnchor.dataset.resourcePath : "#"; 
+                this.nextElem.classList.toggle('hidden', !nextAnchor);
+                this.nextElem.dataset.navResourcePath = nextAnchor ? nextAnchor.dataset.resourcePath : "#";
                 this.seqNavElem.classList.toggle('hidden', !previousAnchor && !nextAnchor);
             }
         }
@@ -110,7 +105,7 @@
         <div class="flex">
             <nav id="sidebar" class="w-1/4 p-4">
                 <ul class="top-level space-y-2">
-                    <li th:each="node : ${sidebarItems.root().children().get(1).children()}">
+                    <li th:each="node : ${nodeAide.sequenceableChildren(sidebarItems.root().children().get(1))}">
                         <div th:if="${node != null}" th:replace="~{this :: nodeFragment(${node}, 1)}"></div>
                     </li>
                 </ul>
@@ -123,6 +118,7 @@
                     - `href` attribute set to the node's absolute path.
                     - `data-resource-path` attribute set to the node's absolute path.
                     - `data-resource-mime-type` attribute conditionally set based on the node's payload.
+                    - `data-resource-nav-sequence-weight` attribute conditionally set based on the nested `nav.sequence.weight` attribute from frontmatter.
                     - An `onclick` event that prevents default navigation and calls `window.rr.fromURI` with the node's href.
                 - If the node does not have a payload, a `<span>` tag is rendered displaying the node's caption.
                 - A `<svg>` caret icon is included in the `<summary>`.
@@ -132,17 +128,19 @@
                     - `href` attribute set to the node's absolute path.
                     - `data-resource-path` attribute set to the node's absolute path.
                     - `data-resource-mime-type` attribute conditionally set based on the node's payload.
+                    - `data-resource-nav-sequence-weight` attribute conditionally set based on the nested `nav.sequence.weight` attribute from frontmatter.
                     - An `onclick` event that prevents default navigation and calls `window.rr.fromURI` with the node's href.
                 -->
                 <div th:fragment="nodeFragment(node, level)">
                     <details th:if="${node != null and !node.isLeaf()}" class="w-full" open>
                         <summary class="flex items-center justify-between w-full py-1 cursor-pointer">
                             <div class="group-label flex items-center">
-                                <div th:if="${node.payload().isPresent()}">
+                                <div th:if="${node.payload().isPresent()}" 
+                                     th:with="mimeType=${node.payload().get().resource().nature().mimeType()}, navSequenceWeight=${nodeAide.attributeExpr(node, 'nav.sequence.weight')}">
                                     <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}"
                                         class="text font-semibold" th:attr="data-resource-path=${node.absolutePath()}"
-                                        th:attrappend="data-resource-mime-type=${node.payload().get().resource().nature().mimeType()}"
-                                        onclick="event.preventDefault(); window.rr.fromURI(event.target.getAttribute('href'));"></a>
+                                        th:attrappend="data-resource-mime-type=${mimeType},data-resource-nav-sequence-weight=${navSequenceWeight}"
+                                        onclick="event.preventDefault(); window.rr.fromURI(event.target.dataset.resourcePath);"></a>
                                 </div>
                                 <div th:if="${!node.payload().isPresent()}">
                                     <span th:text="${sidebarNS.caption(node)}" class="text font-semibold"></span>
@@ -155,7 +153,7 @@
                             </svg>
                         </summary>
                         <ul class="pl-4 border-l border-gray-300">
-                            <li th:each="child : ${node.children()}" class="relative">
+                            <li th:each="child : ${nodeAide.sequenceableChildren(node)}" class="relative">
                                 <div th:if="${child != null}"
                                     th:replace="~{this :: nodeFragment(${child}, ${level + 1})}">
                                     <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-300"></div>
@@ -163,13 +161,14 @@
                             </li>
                         </ul>
                     </details>
-                    <div th:if="${node != null and node.isLeaf()}">
-                        <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}" class="text-gray-800"
+                    <div th:if="${node != null and node.isLeaf()}" th:with="mimeType=${node.payload.get.resource.nature.mimeType}, navSequenceWeight=${nodeAide.attributeExpr(node, 'nav.sequence.weight')}">
+                        <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}"
                             th:attr="data-resource-path=${node.absolutePath()}"
-                            th:attrappend="data-resource-mime-type=${node.payload().isPresent() ? node.payload().get().resource().nature().mimeType() : null}"
-                            onclick="event.preventDefault(); window.rr.fromURI(event.target.dataset.resourcePath);"></a>
+                            th:attrappend="data-resource-mime-type=${mimeType},data-resource-nav-sequence-weight=${navSequenceWeight}"
+                            onclick="event.preventDefault(); window.rr.fromURI(event.target.getAttribute('href'));"></a>
                     </div>
                 </div>
+
             </nav>
 
             <div class="w-3/4 p-4 prose max-w-none">
@@ -187,7 +186,8 @@
                         onclick="window.rr.fromURI(this.dataset.navResourcePath);">
                         ⏮️ Previous
                     </button>
-                    <div class="flex-grow"></div> <!-- Flex-grow div to push the next button to the right if no `previous` is available -->
+                    <div class="flex-grow"></div>
+                    <!-- Flex-grow div to push the next button to the right if no `previous` is available -->
                     <button id="nav-sequenceable-next" data-nav-resource-path="#"
                         class="bg-gray-300 text-gray-500 hover:bg-blue-500 hover:text-white py-2 px-4 rounded hidden"
                         onclick="window.rr.fromURI(this.dataset.navResourcePath);">

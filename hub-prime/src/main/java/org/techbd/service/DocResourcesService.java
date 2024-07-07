@@ -2,14 +2,20 @@ package org.techbd.service;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.VFS;
 import org.kohsuke.github.GitHub;
+import org.springframework.context.expression.MapAccessor;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.ReflectivePropertyAccessor;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
 
 import lib.aide.paths.Paths;
@@ -58,6 +64,81 @@ public class DocResourcesService {
         }
     }
 
+    /**
+     * Utility class to access node's content in a manner convenient for Thymeleaf
+     * or others.
+     */
+    public class NodeAide {
+        private final SpelExpressionParser parser = new SpelExpressionParser();
+        private final StandardEvaluationContext typicalCtx;
+
+        NodeAide() {
+            typicalCtx = new StandardEvaluationContext();
+            typicalCtx.addPropertyAccessor(new MapAccessor());
+            typicalCtx.addPropertyAccessor(new ReflectivePropertyAccessor());
+        }
+
+        /**
+         * Retrieves the value of a nested property from a node's attributes map using
+         * Spring Expression Language (SpEL).
+         *
+         * @param node         the node containing the attributes map
+         * @param propertyPath the dot-notated path to the property
+         * @return the value of the nested property, or an exception message if an error
+         *         occurs
+         */
+        public Object attributeExpr(
+                Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node,
+                final String propertyPath,
+                final Optional<Object> defaultValue) {
+            try {
+                return parser.parseExpression(propertyPath).getValue(typicalCtx, node.attributes());
+            } catch (Exception e) {
+                return defaultValue.isPresent() ? defaultValue.orElseThrow() : e.toString();
+            }
+        }
+
+        public Object attributeExpr(
+                Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node,
+                final String propertyPath) {
+            return this.attributeExpr(node, propertyPath, Optional.empty());
+        }
+
+        /**
+         * Returns the children of a node sorted by the nested property
+         * 'nav.sequence.weight' in the node's attributes.
+         *
+         * @param node the node containing the children
+         * @return the list of children nodes sorted by 'nav.sequence.weight'
+         */
+        public List<Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node> sequenceableChildren(
+                Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
+
+            return node.children().stream()
+                    .sorted(Comparator.comparingInt(child -> {
+                        final var attributes = child.attributes();
+                        final var navVal = attributes.get("nav");
+                        if (navVal instanceof Map nav) {
+                            final var seqVal = nav.get("sequence");
+                            if (seqVal instanceof Map sequence) {
+                                final var weightVal = sequence.get("weight");
+                                if (weightVal instanceof Integer weight) {
+                                    return weight.intValue();
+                                } else if (weightVal != null) {
+                                    try {
+                                        return Integer.parseInt(weightVal.toString());
+                                    } catch (NumberFormatException e) {
+                                        // Ignore and fall through to default value
+                                    }
+                                }
+                            }
+                        }
+                        return Integer.MAX_VALUE;
+                    }))
+                    .collect(Collectors.toList());
+        }
+    }
+
     private final String[] ghEnvVarNames = new String[] { "ORG_TECHBD_SERVICE_HTTP_GITHUB_API_AUTHN_TOKEN",
             "CHEZMOI_GITHUB_ACCESS_TOKEN",
             "GITHUB_TOKEN" };
@@ -66,6 +147,7 @@ public class DocResourcesService {
     private Optional<LoadedFrom> loadedFrom = Optional.empty();
     private Resources<String, Resource<? extends Nature, ?>> resources;
     private NamingStrategy namingStrategy = new NamingStrategy();
+    private NodeAide nodeAide = new NodeAide();
 
     public DocResourcesService() throws Exception {
         vfsManager = VFS.getManager();
@@ -130,6 +212,10 @@ public class DocResourcesService {
 
     public NamingStrategy getNamingStrategy() {
         return namingStrategy;
+    }
+
+    public NodeAide getNodeAide() {
+        return nodeAide;
     }
 
     public Paths<String, ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>> sidebarItems() {
