@@ -1,11 +1,14 @@
 package org.techbd.service.http.hub.prime.ux;
 
 import java.util.List;
+import java.util.Map;
 
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,5 +67,19 @@ public class DynamicSqlQueryController {
             return ServerRowsResponse.createResponse(payload, List.of(),
                     includeGeneratedSqlInErrorResp ? fromSQL : null, reportError);
         }
+    }
+
+    @Operation(summary = "SQL rows from a master table or view for a specific column value")
+    @GetMapping("/api/ux/get-records/{schemaName}/{masterTableNameOrViewName}/{columnName}/{columnValue}.json")
+    @ResponseBody
+    public List<Map<String, Object>> getRecords(final @PathVariable(required = false) String schemaName,
+            final @PathVariable String masterTableNameOrViewName, final @PathVariable String columnName,
+            final @PathVariable String columnValue) {
+        final var result = udiPrimeJpaConfig.dsl().select()
+                .from(DSL.table(schemaName != null ? DSL.name(schemaName, masterTableNameOrViewName)
+                        : DSL.name(masterTableNameOrViewName)))
+                .where(DSL.field(DSL.name(columnName)).eq(columnValue))
+                .fetch();
+        return result.intoMaps();
     }
 }

@@ -9,11 +9,35 @@
     <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
     <script type="module">
         import { ShellAide } from '@presentation/shell/shell-aide.js';
+
+        // this script block is a separate module since it's only used for "experiment" modules
+        // not in the main application
+        window.agGridAideExperimentalInspect = {
+            beforeRequest: async (dataSourceUrl, reqPayload) => {
+                document.querySelector('#debug-request').data = { dataSourceUrl, payload: reqPayload };
+                document.querySelector('#debug-response').data = "Fetching...";
+                document.querySelector('#sql-from-server').innerText = "Fetching...";
+                document.querySelector('#ux-reportable-error').innerText = "Fetching...";
+            },
+            beforeSuccess: async (dataSourceUrl, reqPayload, result) => {
+                document.querySelector('#debug-response').data = result;
+                document.querySelector('#sql-from-server').innerText = result?.fromSQL?.dynamicSQL
+                    ? result.fromSQL.dynamicSQL
+                    : "No result.fromSQL.dynamicSQL available.";
+                document.querySelector('#ux-reportable-error').innerText = result?.uxReportableError
+                    ? result?.uxReportableError
+                    : "No UX-reportable Server-side Error";
+            },
+        };
+
+        // manually setup window.shell in experiments, automatically done automatically in the app
+        new ShellAide().global(); 
+    </script>
+    <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         document.addEventListener('DOMContentLoaded', function () {
-            const shellAide = new ShellAide();
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
@@ -29,8 +53,7 @@
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            // TODO: create /api/ux/aggrid/techbd_udi_ingress.interaction_http_request/{ID}.json endpoint
-                            modalAide.viewFetchedJsonValue(shellAide.serverSideUrl(`/support/interaction/${value}.json`));
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/get-records/techbd_udi_ingress/interaction_http_request/interaction_id/${value}.json`));
                         }, modalAide)
                     },
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
@@ -42,30 +65,14 @@
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter" }
                 ])
                 .withServerSideDatasource(
-                    shellAide.serverSideUrl('/api/ux/aggrid/techbd_udi_ingress/interaction_http_request.json'),
+                    window.shell.serverSideUrl('/api/ux/aggrid/techbd_udi_ingress/interaction_http_request.json'),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
                             headerName: col.displayName,
                             field: col.field
                         }));
                     },
-                    {
-                        beforeRequest: async (dataSourceUrl, reqPayload) => {
-                            document.querySelector('#debug-request').data = { dataSourceUrl, payload: reqPayload };
-                            document.querySelector('#debug-response').data = "Fetching...";
-                            document.querySelector('#sql-from-server').innerText = "Fetching...";
-                            document.querySelector('#ux-reportable-error').innerText = "Fetching...";
-                        },
-                        beforeSuccess: async (dataSourceUrl, reqPayload, result) => {
-                            document.querySelector('#debug-response').data = result;
-                            document.querySelector('#sql-from-server').innerText = result?.fromSQL?.dynamicSQL
-                                ? result.fromSQL.dynamicSQL
-                                : "No result.fromSQL.dynamicSQL available.";
-                            document.querySelector('#ux-reportable-error').innerText = result?.uxReportableError
-                                ? result?.uxReportableError
-                                : "No UX-reportable Server-side Error";
-                        },
-                    }
+                    window.agGridAideExperimentalInspect, // remove this when custom inspectors not required
                 )
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "500px", width: "100%" })
