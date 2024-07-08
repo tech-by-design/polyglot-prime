@@ -119,7 +119,7 @@ export class AGGridAideBuilder {
                 enablePivot: true
             },
             columnDefs: [],
-            sideBar: true,
+            sideBar: false, // TODO: turn this back on when Pivots work
             pivotMode: false,
             autoSizeStrategy: { type: "fitCellContents" },
             rowModelType: 'serverSide',
@@ -162,6 +162,16 @@ export class AGGridAideBuilder {
      * Sets the server-side datasource for the AG Grid.
      * @param {string} dataSourceUrl - The URL of the server-side datasource.
      * @param {Function} [withSecondaryColumns=null] - A function to update secondary columns if pivot mode is enabled.
+     * @param {Object} [inspect={}] - Object to optionally refine how errors are reported and content is to be transformed.
+     * @param {Function} [inspect.includeGeneratedSqlInResp] - Optionally set to true to have the server include the SQL it generated in serverRespPayload 
+     * @param {Function} [inspect.includeGeneratedSqlInErrorResp] - Optionally set to true to have the server include the SQL it generated in serverRespPayload if there's an error (indepenently of includeGeneratedSqlInResp)
+     * @param {Function} [inspect.secondaryColsError] - Called when error encountered in updateSecondaryColumns
+     * @param {Function} [inspect.resultServerError] - Called when a UX-reportable error is reported in serverRespPayload so that the UI can be properly updated
+     * @param {Function} [inspect.fetchRespNotOK] - Called when fetch completed but the result is not an HTTP 200 (OK)
+     * @param {Function} [inspect.fetchError] - Called when unhandle-able error encountered during fetch
+     * @param {Function} [inspect.beforeRequest] - Optional method which can preview or modify reqPayload before it is sent to the server
+     * @param {Function} [inspect.beforeSuccess] - Optional method which can preview or modify serverRespPayload before AGGrid { rowData: [] } object is built
+     * @param {Function} [inspect.customizedContent] - Optional method which can replace the rowData and other content sent to AGGrid in params.success(?)
      * @returns {AGGridAideBuilder} The builder instance.
      */
     withServerSideDatasource(dataSourceUrl, withSecondaryColumns = null, inspect = {}) {
@@ -169,51 +179,63 @@ export class AGGridAideBuilder {
             getRows: async (params) => {
                 //params.request.valueCols = params.request?.pivotCols && params.request?.pivotCols.length > 0 ? params.request.pivotCols : params.request.valueCols;
                 const {
-                    secondaryColsError = async (dataSourceUrl, reqPayload, result, error) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, reqPayload, result, error }),
-                    resultServerError = async (dataSourceUrl, reqPayload, result) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, reqPayload, result }),
+                    includeGeneratedSqlInResp = true, // TODO: set this to false after initial development is concluded
+                    includeGeneratedSqlInErrorResp = true,
+
+                    // hooks to customize how errors are reported
+                    secondaryColsError = async (dataSourceUrl, reqPayload, serverRespPayload, error) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, reqPayload, result: serverRespPayload, error }),
+                    resultServerError = async (dataSourceUrl, reqPayload, serverRespPayload) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, reqPayload, result: serverRespPayload }),
                     fetchRespNotOK = async (dataSourceUrl, reqPayload, response) => console.error(`[ServerDatasource] Fetched response not OK: ${response.statusText}`, { dataSourceUrl, reqPayload, response }),
                     fetchError = async (dataSourceUrl, reqPayload, error) => console.error(`[ServerDatasource] Fetch error: ${error}`, { dataSourceUrl, reqPayload, error }),
-                    beforeRequest = async (dataSourceUrl, reqPayload) => { },
-                    beforeSuccess = async (dataSourceUrl, reqPayload, result) => { },
+
+                    // hooks to preview/modify payload before the request or preview/modify results after success
+                    beforeRequest = async (reqPayload, dataSourceUrl) => { },
+                    beforeSuccess = async (serverRespPayload, reqPayload, dataSourceUrl) => { },
+
+                    // refine the `success` ({ rowData: [] }) object sent to AGGrid to merge or join other data
+                    customizedContent = async (success, serverRespPayload, reqPayload, dataSourceUrl) => success,
                 } = inspect;
 
                 const reqPayload = {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Include-Generated-SQL-In-Response': true,
-                        'X-Include-Generated-SQL-In-Error-Response': true,
+                        'X-Include-Generated-SQL-In-Response': includeGeneratedSqlInResp,
+                        'X-Include-Generated-SQL-In-Error-Response': includeGeneratedSqlInErrorResp,
                     },
-                    // reqPayload is used for inspection so start with body in useful form
+                    // reqPayload is used for inspection so start with body in useful object form
                     body: params.request
                 };
                 try {
-                    await beforeRequest?.(dataSourceUrl, reqPayload);
+                    await beforeRequest?.(reqPayload, dataSourceUrl);
                     const response = await fetch(dataSourceUrl, {
                         ...reqPayload,
                         // body needs to be string on the way out
-                        body: JSON.stringify(params.request, null, 2)
+                        body: JSON.stringify(reqPayload.body, null, 2)
                     });
                     if (response.ok) {
-                        const result = await response.json();
+                        const serverRespPayload = await response.json();
                         if (withSecondaryColumns) {
                             try {
                                 if (params.request.pivotMode && params.request.pivotCols.length > 0) {
-                                    let secondaryColDefs = withSecondaryColumns(result.data, params.request.valueCols);
+                                    let secondaryColDefs = withSecondaryColumns(serverRespPayload.data, params.request.valueCols);
                                     params.api.updateGridOptions({ columnDefs: secondaryColDefs })
                                 } else {
                                     // why is this being done?
                                     // params.api.updateGridOptions({ columnDefs: [] })
                                 }
                             } catch (error) {
-                                await secondaryColsError?.(dataSourceUrl, reqPayload, result, error);
+                                await secondaryColsError?.(dataSourceUrl, reqPayload, serverRespPayload, error);
                             }
                         }
-                        if (result.uxReportableError) await resultServerError?.(dataSourceUrl, reqPayload, result);
-                        await beforeSuccess?.(dataSourceUrl, reqPayload, result);
-                        params.success({
-                            rowData: result.data,
-                        });
+                        if (serverRespPayload.uxReportableError) await resultServerError?.(dataSourceUrl, reqPayload, serverRespPayload);
+                        await beforeSuccess?.(serverRespPayload, reqPayload, dataSourceUrl);
+                        const successArgs = {
+                            rowData: serverRespPayload.data,
+                        };
+                        params.success(customizedContent
+                            ? await customizedContent(successArgs, serverRespPayload, reqPayload, dataSourceUrl)
+                            : successArgs);
                     } else {
                         await fetchRespNotOK?.(dataSourceUrl, reqPayload, response);
                         params.fail();

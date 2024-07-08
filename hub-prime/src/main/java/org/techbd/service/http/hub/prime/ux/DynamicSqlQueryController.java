@@ -3,7 +3,6 @@ package org.techbd.service.http.hub.prime.ux;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.jooq.DSLContext;
 import org.jooq.Field;
@@ -19,8 +18,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.techbd.orchestrate.sftp.SftpManager;
-import org.techbd.orchestrate.sftp.SftpManager.TenantSftpEgressSession;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
 
@@ -38,11 +35,9 @@ public class DynamicSqlQueryController {
     static private final Logger LOG = LoggerFactory.getLogger(DynamicSqlQueryController.class);
 
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
-    private final SftpManager sftpManager;
 
-    public DynamicSqlQueryController(final UdiPrimeJpaConfig udiPrimeJpaConfig, final SftpManager sftpManager) {
+    public DynamicSqlQueryController(final UdiPrimeJpaConfig udiPrimeJpaConfig) {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        this.sftpManager = sftpManager;
     }
 
     @Operation(summary = "SQL rows from a master table or view")
@@ -108,42 +103,6 @@ public class DynamicSqlQueryController {
                 .fetch();
 
         return result.intoMaps();
-    }
-
-    @Operation(summary = "Orchctl Interactions for Populating Grid")
-    @PostMapping(value = "/api/ux/aggrid/orchctl.json", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public ServerRowsResponse sftpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload,
-            @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false) boolean includeGeneratedSqlInResp,
-            @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
-
-        return serverRowsResponse(
-                udiPrimeJpaConfig.dsl(),
-                payload,
-                "techbd_udi_ingress",
-                "interaction_sftp",
-                includeGeneratedSqlInResp,
-                includeGeneratedSqlInErrorResp,
-                rows -> {
-                    // Customize rows with additional SFTP session data
-                    final var sftpResult = sftpManager.tenantEgressSessions();
-                    final var sessionMap = sftpResult.stream()
-                            .filter(session -> session.getSessionId() != null)
-                            .collect(Collectors.toMap(
-                                    TenantSftpEgressSession::getSessionId,
-                                    session -> session));
-
-                    for (final var row : rows) {
-                        final var sessionId = (String) row.get("session_id");
-                        if (sessionId != null) {
-                            final var session = sessionMap.get(sessionId);
-                            if (session != null) {
-                                row.put("published_fhir_count", session.getFhirCount());
-                                // Add any other fields you need from TenantSftpEgressSession
-                            }
-                        }
-                    }
-                });
     }
 
     /**
