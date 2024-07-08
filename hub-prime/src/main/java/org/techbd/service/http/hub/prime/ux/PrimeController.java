@@ -61,7 +61,7 @@ public class PrimeController {
     public ResponseEntity<?> handleRequest(@PathVariable String tenantId, @PathVariable String extension) {
         final var account = sftpManager.configuredTenant(tenantId);
         if (account.isPresent()) {
-            final var content = sftpManager.tenantEgressContent(account.get());
+            final var content = sftpManager.tenantEgressContent(account.get(), 10);
             final var mre = content.mostRecentEgress();
 
             if ("html".equalsIgnoreCase(extension)) {

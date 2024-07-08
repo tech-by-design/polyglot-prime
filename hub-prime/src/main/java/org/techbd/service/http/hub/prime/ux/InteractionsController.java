@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.orchestrate.sftp.SftpManager.TenantSftpEgressSession;
@@ -70,7 +71,7 @@ public class InteractionsController {
     }
 
     @GetMapping("/interactions/sftp")
-    @RouteMapping(label = "CSV via SFTP (egress)", title = "CSV Files via SFTP (egress directory)", siblingOrder = 40)
+    @RouteMapping(label = "CSV via SFTP (recent 10 egress)", title = "CSV Files via SFTP (egress directory)", siblingOrder = 40)
     public String sftp(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/sftp", model, request);
     }
@@ -144,8 +145,8 @@ public class InteractionsController {
     @Operation(summary = "Recent SFTP Interactions")
     @GetMapping("/support/interaction/sftp/recent.json")
     @ResponseBody
-    public List<?> observeRecentSftpInteractions() {
-        return sftpManager.tenantEgressSessions();
+    public List<?> observeRecentSftpInteractions(final @RequestParam(defaultValue = "10") int limitMostRecent) {
+        return sftpManager.tenantEgressSessions(limitMostRecent);
     }
 
     @Operation(summary = "Recent Orchctl Interactions")
@@ -159,14 +160,16 @@ public class InteractionsController {
     @GetMapping("/support/interaction/orchctl/{tenantId}/{interactionId}.json")
     @ResponseBody
     public Optional<SftpManager.IndividualTenantSftpEgressSession> observeRecentSftpInteractionsWithId(
-            final @PathVariable String tenantId, final @PathVariable String interactionId) {
-        return sftpManager.getTenantEgressSession(tenantId, interactionId);
+            final @PathVariable String tenantId, final @PathVariable String interactionId,
+            final @RequestParam(defaultValue = "10") int limitMostRecent) {
+        return sftpManager.getTenantEgressSession(tenantId, interactionId, limitMostRecent);
     }
 
     @Operation(summary = "Orchctl Interactions for Populating Grid")
     @PostMapping(value = "/support/interaction/orchctl.json", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ServerRowsResponse sftpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload) {
+    public ServerRowsResponse sftpInteractions(final @RequestBody @Nonnull ServerRowsRequest payload,
+            final @RequestParam(defaultValue = "10") int limitMostRecent) {
         // TODO: figure out how to write dynamic queries in jOOQ
         // final var DSL = udiPrimeJpaConfig.dsl();
         // final var result =
@@ -184,7 +187,7 @@ public class InteractionsController {
         final var result = DSL.fetch(new SqlQueryBuilder().createSql(payload, "techbd_udi_ingress.interaction_sftp",
                 pivotValues));
         final var rows = result.intoMaps();
-        var sftpResult = sftpManager.tenantEgressSessions();
+        var sftpResult = sftpManager.tenantEgressSessions(limitMostRecent);
         Map<String, TenantSftpEgressSession> sessionMap = sftpResult.stream()
                 .filter(session -> session.getSessionId() != null)
                 .collect(Collectors.toMap(

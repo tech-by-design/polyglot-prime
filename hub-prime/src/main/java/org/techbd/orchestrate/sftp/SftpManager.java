@@ -93,7 +93,8 @@ public class SftpManager {
             return Optional.empty();
         }
 
-        static TenantSftpEgressContent forTenant(final @NonNull SftpAccountsOrchctlConfig.SftpAccount account) {
+        static TenantSftpEgressContent forTenant(final @NonNull SftpAccountsOrchctlConfig.SftpAccount account,
+                int limitMostRecent) {
             final var sftpUri = "sftp://%s:%s@%s:%d/egress".formatted(account.getUsername(),
                     account.getPassword(), account.getServer(), account.getPort());
             try {
@@ -107,7 +108,7 @@ public class SftpManager {
                     }
                 });
                 return new TenantSftpEgressContent(account.getTenantId(), sftpUri, Date.from(Instant.now()), sftpDir,
-                        directories,
+                        Arrays.copyOf(directories, Math.min(directories.length, limitMostRecent)),
                         null);
             } catch (Exception e) {
                 LOG.error(sftpUri, e);
@@ -118,19 +119,21 @@ public class SftpManager {
     }
 
     @Cacheable(TENANT_EGRESS_CONTENT_CACHE_KEY)
-    public TenantSftpEgressContent tenantEgressContent(final @NonNull SftpAccountsOrchctlConfig.SftpAccount account) {
-        return TenantSftpEgressContent.forTenant(account);
+    public TenantSftpEgressContent tenantEgressContent(final @NonNull SftpAccountsOrchctlConfig.SftpAccount account,
+            int limitMostRecent) {
+        return TenantSftpEgressContent.forTenant(account, limitMostRecent);
     }
 
     @Cacheable(TENANT_EGRESS_SESSIONS_CACHE_KEY)
-    public Optional<IndividualTenantSftpEgressSession> getTenantEgressSession(String tenantId, String InteractionId) {
+    public Optional<IndividualTenantSftpEgressSession> getTenantEgressSession(String tenantId, String InteractionId,
+            int limitMostRecent) {
         final var configuredAccounts = configuredTenants.getOrchctlts();
         if (configuredAccounts != null) {
             for (var a : configuredAccounts) {
-                final var tec = tenantEgressContent(a);
+                final var tec = tenantEgressContent(a, limitMostRecent);
 
                 if (tec.error() == null) {
-                    if(tec.tenantId.equals(tenantId) ){
+                    if (tec.tenantId.equals(tenantId)) {
                         try {
                             for (var egressSessionDir : tec.directories()) {
                                 if (egressSessionDir.getName().getPath().contains(InteractionId)) {
@@ -184,12 +187,12 @@ public class SftpManager {
     }
 
     @Cacheable(TENANT_EGRESS_SESSIONS_CACHE_KEY)
-    public List<TenantSftpEgressSession> tenantEgressSessions() {
+    public List<TenantSftpEgressSession> tenantEgressSessions(int limitMostRecent) {
         final var result = new ArrayList<TenantSftpEgressSession>();
         final var configuredAccounts = configuredTenants.getOrchctlts();
         if (configuredAccounts != null) {
             for (var a : configuredAccounts) {
-                final var tec = tenantEgressContent(a);
+                final var tec = tenantEgressContent(a, limitMostRecent);
                 if (tec.error() == null) {
                     try {
                         for (var egressSessionDir : tec.directories()) {
