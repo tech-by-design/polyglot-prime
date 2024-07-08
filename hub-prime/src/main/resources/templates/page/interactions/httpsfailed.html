@@ -9,193 +9,64 @@
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
-    <style>
-        .ag-theme-alpine .ag-root-wrapper {
-            border: none;
-        }
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
 
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'interaction_http_request_failed';
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "Request Time",
+                        field: "interaction_created_at",
+                        sort: "desc",
+                        filter: "agNumberColumnFilter",
+                        valueFormatter: AGGridAide.dateTimeValueFormatter()
+                    },
+                    {
+                        headerName: "Interaction ID",
+                        field: "interaction_id",
+                        filter: "agTextColumnFilter",
+                        cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/get-records/${schemaName}/${viewName}/interaction_id/${value}.json`));
+                        }, modalAide)
+                    },
+                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
+                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter" },
+                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
+                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter" },
+                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter" },
+                    { headerName: "Error", field: "error" , filter: "agTextColumnFilter" },
+                    { headerName: "Issues", field: "issues_count", filter: "agTextColumnFilter" },
+                    { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter" },
+                    { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter" },
+                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter" }
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/aggrid/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
 
-        .modal-content {
-            background-color: #fff;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>    
 </head>
 
 <body>
     <div layout:fragment="content">
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
-
-        <!-- Modal -->
-        <div id="modal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <json-viewer id="json"></json-viewer>
-            </div>
-        </div>
-
-        <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
-        <script id="driver">
-            // in browser inspect console, set `window.logLevel = 1` to see logs
-            window.logLevel = 0;
-            const log = (...args) => {
-                if (window.logLevel) {
-                    console.log(...args);
-                }
-            }
-
-            document.addEventListener('DOMContentLoaded', function () {
-                const columnDefs = [
-                { headerName: "Request Time", field: "interaction_created_at", sort: "desc", filter: "agNumberColumnFilter", enableRowGroup: true,
-                        valueFormatter: function (params) {
-                            if (params.value) {
-                                // Convert Unix timestamp to milliseconds
-                                let milliseconds = params.value * 1000;
-                                let date = new Date(milliseconds);
-                                // Define the options for formatting the date to EST
-                                let options = {
-                                    timeZone: 'America/New_York',
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit',
-                                    hour12: false // Use 24-hour format
-                                };
-
-                                // Format the date to EST using Intl.DateTimeFormat
-                                let formatter = new Intl.DateTimeFormat('en-US', options);
-                                let formattedDate = formatter.format(date);
-                                return formattedDate;
-                            }
-                            return '';
-                        } 
-                    },
-                    {
-                        headerName: "Interaction ID", field: "interaction_id",
-                        cellRenderer: function (params) {
-                            const link = document.createElement('a');
-                            link.href = '#';
-                            link.innerText = params.value;
-                            link.addEventListener('click', function (e) {
-                                e.preventDefault();
-                                showDetails(params.value);
-                            });
-                            return link;
-                        }
-                    },
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "Error", field: "error" , filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "Issues", field: "issues_count", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", enableRowGroup: true },
-                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", enableRowGroup: true }
-                ];
-
-                const gridOptions = {
-                    defaultColDef: {
-                        flex: 1,
-                        minWidth: 100,
-                        resizable: true,
-                        sortable: true,
-                        filter: true,
-                        enablePivot: true
-                    },
-                    columnDefs,
-                    sideBar: true,
-                    autoSizeStrategy: { type: "fitCellContents" },
-                    rowModelType: 'serverSide',
-                    serverSideDatasource: {
-                        getRows: async function (params) {
-                            // params.request has startRow, endRow, sort, filter, pivot, etc.
-                            // and the server-side reads it, constructs SQL, executes and returns
-                            const jsonRequest = JSON.stringify(params.request, null, 2);
-                            log("[EnterpriseDatasource] Posted JSON request", jsonRequest);
-                            try {
-                                const response = await fetch(window.shell.serverSideUrl(`/support/interaction/httpsfailed.json`), {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: jsonRequest
-                                });
-                                if (response.ok) {
-                                    const result = await response.json();
-                                    log("[EnterpriseDatasource] Received JSON response", result);
-                                    params.success({ rowData: result.data });
-                                    // TODO: updateSecondaryColumns(params.request, result);
-                                    // see https://github.com/ag-grid/ag-grid-server-side-oracle-example
-                                } else {
-                                    console.error(`[EnterpriseDatasource] Error: ${response.statusText}`);
-                                    params.fail();
-                                }
-                            } catch (error) {
-                                console.error(`[EnterpriseDatasource] Error: ${error.message}`);
-                                params.fail();
-                            }
-                        }
-                    },
-                };
-
-                const serverDataGridDiv = document.querySelector('#serverDataGrid');
-                const serverDataGridAPI = agGrid.createGrid(serverDataGridDiv, gridOptions);
-                // TODO: figure out why this is required (otherwise Grid goes to height of 1 pixel)
-                serverDataGridDiv.style.height = "750px"
-
-                function showDetails(interactionId) {
-                    fetch(window.shell.serverSideUrl(`/support/interaction/${interactionId}.json`))
-                        .then(response => response.json())
-                        .then(interaction => {
-                            document.querySelector('#json').data = interaction;
-                            document.getElementById('modal').style.display = 'block';
-                        })
-                        .catch(error => {
-                            console.error(`Error fetching interaction ${interactionId}`, error);
-                        });
-                }
-
-                document.querySelector('.close').onclick = function () {
-                    document.getElementById('modal').style.display = 'none';
-                };
-
-                window.onclick = function (event) {
-                    if (event.target == document.getElementById('modal')) {
-                        document.getElementById('modal').style.display = 'none';
-                    }
-                };
-            });
-        </script>
     </div>
 </body>
 
