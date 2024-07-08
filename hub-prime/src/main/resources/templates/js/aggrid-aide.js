@@ -117,7 +117,7 @@ export class AGGridAideBuilder {
             },
             columnDefs: [],
             sideBar: true,
-            pivotMode: true,
+            pivotMode: false,
             autoSizeStrategy: { type: "fitCellContents" },
             rowModelType: 'serverSide',
             serverSideDatasource: null,
@@ -161,16 +161,35 @@ export class AGGridAideBuilder {
      * @param {Function} [withSecondaryColumns=null] - A function to update secondary columns if pivot mode is enabled.
      * @returns {AGGridAideBuilder} The builder instance.
      */
-    withServerSideDatasource(dataSourceUrl, withSecondaryColumns = null) {
+    withServerSideDatasource(dataSourceUrl, withSecondaryColumns = null, inspect = {}) {
         this.gridOptions.serverSideDatasource = {
             getRows: async (params) => {
-                params.request.valueCols = params.request?.pivotCols && params.request?.pivotCols.length > 0 ? params.request.pivotCols : params.request.valueCols;
-                const jsonRequest = JSON.stringify(params.request, null, 2);
+                //params.request.valueCols = params.request?.pivotCols && params.request?.pivotCols.length > 0 ? params.request.pivotCols : params.request.valueCols;
+                const {
+                    secondaryColsError = async (dataSourceUrl, reqPayload, result, error) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, reqPayload, result, error }),
+                    resultServerError = async (dataSourceUrl, reqPayload, result) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, reqPayload, result }),
+                    fetchRespNotOK = async (dataSourceUrl, reqPayload, response) => console.error(`[ServerDatasource] Fetched response not OK: ${response.statusText}`, { dataSourceUrl, reqPayload, response }),
+                    fetchError = async (dataSourceUrl, reqPayload, error) => console.error(`[ServerDatasource] Fetch error: ${error}`, { dataSourceUrl, reqPayload, error }),
+                    beforeRequest = async (dataSourceUrl, reqPayload) => {},
+                    beforeSuccess = async (dataSourceUrl, reqPayload, result) => {},
+                } = inspect;
+
+                const reqPayload = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Include-Generated-SQL-In-Response': true,
+                        'X-Include-Generated-SQL-In-Error-Response': true,
+                    },
+                    // reqPayload is used for inspection so start with body in useful form
+                    body: params.request
+                };
                 try {
-                    const response = await fetch(dataSourceUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: jsonRequest
+                    await beforeRequest?.(dataSourceUrl, reqPayload);
+                    const response = await fetch(dataSourceUrl, { 
+                        ...reqPayload, 
+                        // body needs to be string on the way out
+                        body: JSON.stringify(params.request, null, 2) 
                     });
                     if (response.ok) {
                         const result = await response.json();
@@ -184,18 +203,20 @@ export class AGGridAideBuilder {
                                     // params.api.updateGridOptions({ columnDefs: [] })
                                 }
                             } catch (error) {
-                                console.error("Error in updateSecondaryColumns:", error);
+                                await secondaryColsError?.(dataSourceUrl, reqPayload, result, error);
                             }
                         }
+                        if (result.uxReportableError) await resultServerError?.(dataSourceUrl, reqPayload, result);
+                        await beforeSuccess?.(dataSourceUrl, reqPayload, result);
                         params.success({
                             rowData: result.data,
                         });
                     } else {
-                        console.error(`[EnterpriseDatasource] Error: ${response.statusText}`);
+                        await fetchRespNotOK?.(dataSourceUrl, reqPayload, response);
                         params.fail();
                     }
                 } catch (error) {
-                    console.error(`[EnterpriseDatasource] Error: ${error.message}`);
+                    await fetchError?.(dataSourceUrl, reqPayload, error);
                     params.fail();
                 }
             }

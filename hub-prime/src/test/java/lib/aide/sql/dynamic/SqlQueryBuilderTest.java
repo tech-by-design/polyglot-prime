@@ -46,7 +46,7 @@ public class SqlQueryBuilderTest {
         assertThat(request.getValueCols().get(0).getField()).isEqualTo("region");
         assertThat(request.getValueCols().get(1).getField()).isEqualTo("sales");
 
-        var query = sqlQueryBuilder.createSql(request, "sales_data", Map.of());
+        var query = sqlQueryBuilder.createSql(request, null, "sales_data");
         var expected = """
                     SELECT "region", "sales"
                     FROM "sales_data"
@@ -86,7 +86,7 @@ public class SqlQueryBuilderTest {
         assertThat(request.getSortModel().get(1).getColId()).isEqualTo("sales");
         assertThat(request.getSortModel().get(1).getSort()).isEqualTo("desc");
 
-        var query = sqlQueryBuilder.createSql(request, "sales_data", Map.of());
+        var query = sqlQueryBuilder.createSql(request, null, "sales_data");
         var expected = """
                     SELECT "region", "sales"
                     FROM "sales_data"
@@ -128,7 +128,7 @@ public class SqlQueryBuilderTest {
         assertThat(request.getSortModel().get(1).getSort()).isEqualTo("desc");
         assertThat(((TextColumnFilter) request.getFilterModel().get("region")).getFilter()).isEqualTo("North");
 
-        var query = sqlQueryBuilder.createSql(request, "sales_data", Map.of());
+        var query = sqlQueryBuilder.createSql(request, null, "sales_data");
         var expected = """
                     SELECT "region", "sales"
                     FROM "sales_data"
@@ -172,7 +172,7 @@ public class SqlQueryBuilderTest {
         assertThat(request.getSortModel().get(0).getColId()).isEqualTo("region");
         assertThat(request.getSortModel().get(0).getSort()).isEqualTo("asc");
 
-        var query = sqlQueryBuilder.createSql(request, "sales_data", Map.of());
+        var query = sqlQueryBuilder.createSql(request, null, "sales_data");
         var expected = """
                     SELECT region, sum("sales") AS "sales"
                     FROM "sales_data"
@@ -205,6 +205,8 @@ public class SqlQueryBuilderTest {
                     }
                 """;
         var request = objectMapper.readValue(jsonRequest, ServerRowsRequest.class);
+
+        // TODO: figure out how to handle pivot values in request
         var pivotValues = Map.of("quarter", List.of("Q1", "Q2", "Q3", "Q4"));
 
         // Verify the deserialized request object
@@ -224,7 +226,7 @@ public class SqlQueryBuilderTest {
         assertThat(request.getSortModel().get(0).getColId()).isEqualTo("region");
         assertThat(request.getSortModel().get(0).getSort()).isEqualTo("asc");
 
-        var query = sqlQueryBuilder.createSql(request, "sales_data", pivotValues);
+        var query = sqlQueryBuilder.createSql(request, null, "sales_data");
         var expectedSql = """
                     SELECT "region",
                            sum(CASE WHEN "quarter" = 'Q1' THEN "sales" END) AS "pivot_0_sales",

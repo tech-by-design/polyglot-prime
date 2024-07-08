@@ -6,6 +6,7 @@ import static java.util.Collections.emptyMap;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ServerRowsRequest implements Serializable {
 
@@ -22,6 +23,10 @@ public class ServerRowsRequest implements Serializable {
 
     // true if pivot mode is one, otherwise false
     private boolean pivotMode;
+
+    // TODO: this isn't quite right, see the original ORACLE version for help
+    // mapped pivot values from ColumnVO
+    private Map<String, List<String>> pivotValues;
 
     // what groups the user is viewing
     private List<String> groupKeys;
@@ -77,8 +82,15 @@ public class ServerRowsRequest implements Serializable {
         return pivotCols;
     }
 
+    public Map<String, List<String>>  getPivotValues() {
+        return pivotValues;
+    }
+
     public void setPivotCols(List<ColumnVO> pivotCols) {
         this.pivotCols = pivotCols;
+        // TODO: this isn't quite right, see the original ORACLE version for help
+        this.pivotValues = pivotCols.stream()
+                .collect(Collectors.toMap(ColumnVO::getField, column -> List.of(column.getField())));
     }
 
     public boolean isPivotMode() {

@@ -30,6 +30,9 @@ import org.jooq.impl.SQLDataType;
 
 import com.google.common.collect.Sets;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 public class SqlQueryBuilder {
 
     private List<String> groupKeys;
@@ -56,13 +59,14 @@ public class SqlQueryBuilder {
         this.dsl = dsl.configuration().derive(settings).dsl();
     }
 
-    public Query createSql(final ServerRowsRequest request, final String tableName,
-            final Map<String, List<String>> pivotValues) {
+    public Query createSql(final @Nonnull ServerRowsRequest request, final @Nullable String schemaName,
+            final @Nonnull String tableName) {
         this.valueColumns = Optional.ofNullable(request.getValueCols()).orElse(List.of());
         this.pivotColumns = Optional.ofNullable(request.getPivotCols()).orElse(List.of());
         this.groupKeys = Optional.ofNullable(request.getGroupKeys()).orElse(List.of());
         this.rowGroupCols = Optional.ofNullable(request.getRowGroupCols()).orElse(List.of());
-        this.pivotValues = Optional.ofNullable(pivotValues).orElse(Map.of());
+        this.pivotValues = request.getPivotCols().stream()
+                .collect(Collectors.toMap(ColumnVO::getField, column -> List.of(column.getField())));
         this.isPivotMode = request.isPivotMode();
         this.rowGroups = getRowGroups();
         this.rowGroupsToInclude = getRowGroupsToInclude();
@@ -73,14 +77,15 @@ public class SqlQueryBuilder {
         this.endRow = request.getEndRow();
 
         final var select = selectSql();
-        final var from = select.from(DSL.table(DSL.name(tableName)));
+        final var from = select
+                .from(DSL.table(schemaName != null ? DSL.name(schemaName, tableName) : DSL.name(tableName)));
         final var where = from.where(whereSql());
         final var groupByFields = groupBySql();
         final var groupBy = groupByFields.isEmpty() ? where : where.groupBy(groupByFields);
         final var finalQuery = groupBy.orderBy(orderBySql()).offset(startRow).limit(endRow - startRow + 1);
 
         // Bind variables for execution
-        List<Object> bindValues = new ArrayList<>();
+        final var bindValues = new ArrayList<>();
         if (isGrouping) {
             bindValues.addAll(groupKeys);
         }
