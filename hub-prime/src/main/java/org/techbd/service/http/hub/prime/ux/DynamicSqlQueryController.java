@@ -2,8 +2,12 @@ package org.techbd.service.http.hub.prime.ux;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +22,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.orchestrate.sftp.SftpManager.TenantSftpEgressSession;
 import org.techbd.udi.UdiPrimeJpaConfig;
-import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
+import org.techbd.udi.auto.jooq.ingress.Tables;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lib.aide.sql.dynamic.ServerRowsRequest;
 import lib.aide.sql.dynamic.ServerRowsResponse;
 import lib.aide.sql.dynamic.SqlQueryBuilder;
@@ -30,7 +35,6 @@ import lib.aide.sql.dynamic.SqlQueryBuilder;
 @Controller
 @Tag(name = "TechBD Hub UX Dynamic SQL API Endpoints")
 public class DynamicSqlQueryController {
-
     static private final Logger LOG = LoggerFactory.getLogger(DynamicSqlQueryController.class);
 
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
@@ -42,8 +46,8 @@ public class DynamicSqlQueryController {
     }
 
     @Operation(summary = "SQL rows from a master table or view")
-    @PostMapping(value = {"/api/ux/aggrid/{masterTableNameOrViewName}.json",
-        "/api/ux/aggrid/{schemaName}/{masterTableNameOrViewName}.json"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = { "/api/ux/aggrid/{masterTableNameOrViewName}.json",
+            "/api/ux/aggrid/{schemaName}/{masterTableNameOrViewName}.json" }, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ServerRowsResponse aggridContent(@PathVariable(required = false) String schemaName,
             final @PathVariable String masterTableNameOrViewName,
@@ -51,29 +55,15 @@ public class DynamicSqlQueryController {
             @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false) boolean includeGeneratedSqlInResp,
             @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
 
-        ServerRowsResponse.DynamicSQL fromSQL = null;
-
-        try {
-            final var DSL = udiPrimeJpaConfig.dsl();
-            final var sqlQueryBuilder = new SqlQueryBuilder(DSL);
-
-            final var query = sqlQueryBuilder.createSql(payload, schemaName, masterTableNameOrViewName);
-            fromSQL = new ServerRowsResponse.DynamicSQL(query.getSQL(), query.getBindValues());
-
-            try {
-                final var result = DSL.resultQuery(query.getSQL(), query.getBindValues().toArray()).fetch();
-                return ServerRowsResponse.createResponse(payload, result.intoMaps(),
-                        includeGeneratedSqlInResp ? fromSQL : null, null);
-            } catch (Exception reportError) {
-                LOG.error("aggridContent jOOQ", reportError);
-                return ServerRowsResponse.createResponse(payload, List.of(),
-                        includeGeneratedSqlInErrorResp ? fromSQL : null, reportError);
-            }
-        } catch (Exception reportError) {
-            LOG.error("aggridContent", reportError);
-            return ServerRowsResponse.createResponse(payload, List.of(),
-                    includeGeneratedSqlInErrorResp ? fromSQL : null, reportError);
-        }
+        return serverRowsResponse(
+                udiPrimeJpaConfig.dsl(),
+                payload,
+                schemaName,
+                masterTableNameOrViewName,
+                includeGeneratedSqlInResp,
+                includeGeneratedSqlInErrorResp,
+                null // No customization needed for this endpoint
+        );
     }
 
     @Operation(summary = "SQL rows from a master table or view for a specific column value")
@@ -82,18 +72,41 @@ public class DynamicSqlQueryController {
     public Object getRecords(final @PathVariable(required = false) String schemaName,
             final @PathVariable String masterTableNameOrViewName, final @PathVariable String columnName,
             final @PathVariable String columnValue) {
-        if (columnName.equals("interaction_id")) {
-            //TODO: figure out why the following is necessary to ensure `payload` is properly converted to JSON and return to client
-            final var result = udiPrimeJpaConfig.dsl().selectFrom(INTERACTION_HTTP_REQUEST)
-                    .where(INTERACTION_HTTP_REQUEST.INTERACTION_ID.eq(columnValue))
-                    .fetch();
-            return result.intoMaps();
+        Table<?> table;
+        Field<Object> column;
+
+        // TODO: add PostgreSQL RLS checks to ensure invalid row access not possible
+
+        // Attempt to find a generated table and column reference using reflection; when
+        // we can use a jOOQ-generated class it means that special column types like
+        // JSON will work (otherwise pure dynamic without generated jOOQ assistance may
+        // treat certain columns incorrectly).
+        try {
+            final var staticInTableClass = Tables.class.getField(masterTableNameOrViewName.toUpperCase());
+            table = (Table<?>) staticInTableClass.get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            // If not found, fall back to dynamic table reference
+            table = DSL.table(schemaName != null ? DSL.name(schemaName, masterTableNameOrViewName)
+                    : DSL.name(masterTableNameOrViewName));
         }
-        final var result = udiPrimeJpaConfig.dsl().select()
-                .from(DSL.table(schemaName != null ? DSL.name(schemaName, masterTableNameOrViewName)
-                        : DSL.name(masterTableNameOrViewName)))
-                .where(DSL.field(DSL.name(columnName)).eq(columnValue))
+
+        try {
+            final var instanceInTableRef = table.getClass().getField(columnName.toUpperCase());
+            if (instanceInTableRef.get(table) instanceof org.jooq.Field<?> columnField) {
+                column = columnField.coerce(Object.class);
+            } else {
+                column = DSL.field(DSL.name(columnName));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            column = DSL.field(DSL.name(columnName));
+        }
+
+        // Fetch the result using the dynamically determined table and column; if
+        // jOOQ-generated types were found, automatic column value mapping will occur
+        final var result = udiPrimeJpaConfig.dsl().selectFrom(table)
+                .where(column.eq(columnValue))
                 .fetch();
+
         return result.intoMaps();
     }
 
@@ -104,47 +117,105 @@ public class DynamicSqlQueryController {
             @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false) boolean includeGeneratedSqlInResp,
             @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
 
+        return serverRowsResponse(
+                udiPrimeJpaConfig.dsl(),
+                payload,
+                "techbd_udi_ingress",
+                "interaction_sftp",
+                includeGeneratedSqlInResp,
+                includeGeneratedSqlInErrorResp,
+                rows -> {
+                    // Customize rows with additional SFTP session data
+                    final var sftpResult = sftpManager.tenantEgressSessions();
+                    final var sessionMap = sftpResult.stream()
+                            .filter(session -> session.getSessionId() != null)
+                            .collect(Collectors.toMap(
+                                    TenantSftpEgressSession::getSessionId,
+                                    session -> session));
+
+                    for (final var row : rows) {
+                        final var sessionId = (String) row.get("session_id");
+                        if (sessionId != null) {
+                            final var session = sessionMap.get(sessionId);
+                            if (session != null) {
+                                row.put("published_fhir_count", session.getFhirCount());
+                                // Add any other fields you need from TenantSftpEgressSession
+                            }
+                        }
+                    }
+                });
+    }
+
+    /**
+     * Generates a ServerRowsResponse by executing a SQL query dynamically.
+     *
+     * @param dsl                            The DSL context to be used for the
+     *                                       query.
+     * @param payload                        The request payload containing the
+     *                                       query details.
+     * @param schemaName                     The schema name of the table or view,
+     *                                       can be null.
+     * @param masterTableNameOrViewName      The name of the master table or view.
+     * @param includeGeneratedSqlInResp      Whether to include the generated SQL in
+     *                                       the response.
+     * @param includeGeneratedSqlInErrorResp Whether to include the generated SQL in
+     *                                       the error response.
+     * @param customizeRows                  A nullable function that accepts a list
+     *                                       of rows (as maps) and allows
+     *                                       modification of the row entries before
+     *                                       creating the response.
+     * @return A ServerRowsResponse object containing the result of the query.
+     */
+    public static ServerRowsResponse serverRowsResponse(@Nonnull DSLContext dsl,
+            @Nonnull ServerRowsRequest ssRequest,
+            @Nullable String schemaName,
+            @Nonnull String masterTableNameOrViewName,
+            boolean includeGeneratedSqlInResp,
+            boolean includeGeneratedSqlInErrorResp,
+            @Nullable Consumer<List<Map<String, Object>>> customizeRows) {
         ServerRowsResponse.DynamicSQL fromSQL = null;
 
         try {
-            final var DSL = udiPrimeJpaConfig.dsl();
-            final var sqlQueryBuilder = new SqlQueryBuilder(DSL);
+            final var sqlQueryBuilder = new SqlQueryBuilder(dsl);
+            Table<?> table;
 
-            final var query = sqlQueryBuilder.createSql(payload, "techbd_udi_ingress", "interaction_sftp");
+            // Attempt to find a generated table reference using reflection;
+            // when we can use a jOOQ-generated class it means that special
+            // column types like JSON will work (otherwise pure dynamic without
+            // generated jOOQ assistance may treat certain columns incorrectly).
+            try {
+                final var field = Tables.class.getField(masterTableNameOrViewName.toUpperCase());
+                table = (Table<?>) field.get(null);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                // If not found, fall back to dynamic table reference
+                table = DSL.table(schemaName != null ? DSL.name(schemaName, masterTableNameOrViewName)
+                        : DSL.name(masterTableNameOrViewName));
+            }
+
+            // TODO: pass in tableReference to `createSql` otherwise it will be treated as
+            // dynamic
+            final var query = sqlQueryBuilder.createSql(ssRequest, schemaName, table.getName());
             fromSQL = new ServerRowsResponse.DynamicSQL(query.getSQL(), query.getBindValues());
 
             try {
-                final var result = DSL.resultQuery(query.getSQL(), query.getBindValues().toArray()).fetch();
+                final var result = dsl.resultQuery(query.getSQL(), query.getBindValues().toArray()).fetch();
                 final var rows = result.intoMaps();
 
-                var sftpResult = sftpManager.tenantEgressSessions();
-                Map<String, TenantSftpEgressSession> sessionMap = sftpResult.stream()
-                        .filter(session -> session.getSessionId() != null)
-                        .collect(Collectors.toMap(
-                                TenantSftpEgressSession::getSessionId,
-                                session -> session));
-
-                for (final var row : rows) {
-                    String sessionId = (String) row.get("session_id");
-                    if (sessionId != null) {
-                        TenantSftpEgressSession session = sessionMap.get(sessionId);
-                        if (session != null) {
-                            row.put("published_fhir_count", session.getFhirCount());
-                            // Add any other fields you need from TenantSftpEgressSession
-                        }
-                    }
+                // Customize rows if the function is provided
+                if (customizeRows != null) {
+                    customizeRows.accept(rows);
                 }
 
-                return ServerRowsResponse.createResponse(payload, rows,
+                return ServerRowsResponse.createResponse(ssRequest, rows,
                         includeGeneratedSqlInResp ? fromSQL : null, null);
             } catch (Exception reportError) {
-                LOG.error("aggridContent jOOQ", reportError);
-                return ServerRowsResponse.createResponse(payload, List.of(),
+                LOG.error("serverRowsResponse jOOQ", reportError);
+                return ServerRowsResponse.createResponse(ssRequest, List.of(),
                         includeGeneratedSqlInErrorResp ? fromSQL : null, reportError);
             }
         } catch (Exception reportError) {
-            LOG.error("aggridContent", reportError);
-            return ServerRowsResponse.createResponse(payload, List.of(),
+            LOG.error("serverRowsResponse", reportError);
+            return ServerRowsResponse.createResponse(ssRequest, List.of(),
                     includeGeneratedSqlInErrorResp ? fromSQL : null, reportError);
         }
     }
