@@ -73,10 +73,13 @@ export class AGGridAide {
      * date and time strings.
      * @returns {Function} The value formatter function.
      */
-    static dateTimeValueFormatter() {
+    static dateTimeValueFormatter(inSeconds = true) {
         return function (params) {
             if (params.value) {
-                let milliseconds = params.value * 1000;
+                let milliseconds = params.value;
+                if (inSeconds) {
+                    milliseconds = params.value * 1000;
+                }
                 let date = new Date(milliseconds);
                 let options = {
                     timeZone: 'America/New_York',
@@ -170,8 +173,8 @@ export class AGGridAideBuilder {
                     resultServerError = async (dataSourceUrl, reqPayload, result) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, reqPayload, result }),
                     fetchRespNotOK = async (dataSourceUrl, reqPayload, response) => console.error(`[ServerDatasource] Fetched response not OK: ${response.statusText}`, { dataSourceUrl, reqPayload, response }),
                     fetchError = async (dataSourceUrl, reqPayload, error) => console.error(`[ServerDatasource] Fetch error: ${error}`, { dataSourceUrl, reqPayload, error }),
-                    beforeRequest = async (dataSourceUrl, reqPayload) => {},
-                    beforeSuccess = async (dataSourceUrl, reqPayload, result) => {},
+                    beforeRequest = async (dataSourceUrl, reqPayload) => { },
+                    beforeSuccess = async (dataSourceUrl, reqPayload, result) => { },
                 } = inspect;
 
                 const reqPayload = {
@@ -186,10 +189,10 @@ export class AGGridAideBuilder {
                 };
                 try {
                     await beforeRequest?.(dataSourceUrl, reqPayload);
-                    const response = await fetch(dataSourceUrl, { 
-                        ...reqPayload, 
+                    const response = await fetch(dataSourceUrl, {
+                        ...reqPayload,
                         // body needs to be string on the way out
-                        body: JSON.stringify(params.request, null, 2) 
+                        body: JSON.stringify(params.request, null, 2)
                     });
                     if (response.ok) {
                         const result = await response.json();

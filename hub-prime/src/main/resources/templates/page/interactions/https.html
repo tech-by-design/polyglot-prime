@@ -14,6 +14,8 @@
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
 
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'interaction_http_request';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
@@ -30,7 +32,7 @@
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/get-records/techbd_udi_ingress/interaction_http_request/interaction_id/${value}.json`));
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/get-records/${schemaName}/${viewName}/interaction_id/${value}.json`));
                         }, modalAide)
                     },
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
@@ -38,11 +40,12 @@
                     { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
                     { headerName: "From State", field: "from_state", filter: "agTextColumnFilter" },
                     { headerName: "To State", field: "to_state", filter: "agTextColumnFilter" },
+                    { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter" },
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter" },
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter" }
                 ])
                 .withServerSideDatasource(
-                    window.shell.serverSideUrl('/api/ux/aggrid/techbd_udi_ingress/interaction_http_request.json'),
+                    window.shell.serverSideUrl(`/api/ux/aggrid/${schemaName}/${viewName}.json`),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
                             headerName: col.displayName,
