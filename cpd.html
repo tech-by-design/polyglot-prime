@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-07-08<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.100.0</li>
+          <li id="projectVersion">Version: 0.101.0</li>
         <li class="pull-right"><a href="./">TechBD Hub (Prime)</a></li>
           </ul>
         </div>
@@ -321,6 +321,40 @@
                 .collect(toList());
     }
 }</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/DynamicSqlQueryController.java</td>
+<td>117</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/InteractionsController.java</td>
+<td>185</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>final var result = DSL.resultQuery(query.getSQL(), query.getBindValues().toArray()).fetch();
+                final var rows = result.intoMaps();
+
+                var sftpResult = sftpManager.tenantEgressSessions();
+                Map&lt;String, TenantSftpEgressSession&gt; sessionMap = sftpResult.stream()
+                        .filter(session -&gt; session.getSessionId() != null)
+                        .collect(Collectors.toMap(
+                                TenantSftpEgressSession::getSessionId,
+                                session -&gt; session));
+
+                for (final var row : rows) {
+                    String sessionId = (String) row.get(&quot;session_id&quot;);
+                    if (sessionId != null) {
+                        TenantSftpEgressSession session = sessionMap.get(sessionId);
+                        if (session != null) {
+                            row.put(&quot;published_fhir_count&quot;, session.getFhirCount());
+                            // Add any other fields you need from TenantSftpEgressSession
+                        }
+                    }
+                }
+
+                return ServerRowsResponse.createResponse(payload, rows,</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
