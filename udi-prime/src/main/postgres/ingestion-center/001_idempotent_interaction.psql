@@ -197,7 +197,7 @@ WITH cte_resource_type AS (
        COALESCE(intr_multi.first_request ->> 'to_state'::text, hreq_failed.to_state) AS to_state,
        "substring"(((((intr_multi.first_request -> 'payload'::text) -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text) AS outbound_http_message,
        (intr_multi.third_request -> 'payload'::text) ->> 'error'::text AS full_error_message,
-       SUBSTRING((intr_multi.third_request -> 'payload'::text) ->> 'error'::text FROM POSITION((':'::text) IN ((intr_multi.third_request -> 'payload'::text) ->> 'error'::text)) + 2) AS error_text,
+        SUBSTRING((hreq_failed.payload ->> 'error') FROM POSITION(':' IN (hreq_failed.payload ->> 'error')) + 2) AS error_text,
         jsonb_array_length(
 		(intr_multi.first_request -> 'payload'::text) -> 'response'::text -> 'responseBody'::text -> 'OperationOutcome'::text -> 'validationResults'::text -> 0 -> 'issues'
   		) AS issues_count,
