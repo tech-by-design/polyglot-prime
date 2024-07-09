@@ -183,17 +183,17 @@ export class AGGridAideBuilder {
                     includeGeneratedSqlInErrorResp = true,
 
                     // hooks to customize how errors are reported
-                    secondaryColsError = async (dataSourceUrl, reqPayload, serverRespPayload, error) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, reqPayload, result: serverRespPayload, error }),
-                    resultServerError = async (dataSourceUrl, reqPayload, serverRespPayload) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, reqPayload, result: serverRespPayload }),
-                    fetchRespNotOK = async (dataSourceUrl, reqPayload, response) => console.error(`[ServerDatasource] Fetched response not OK: ${response.statusText}`, { dataSourceUrl, reqPayload, response }),
+                    secondaryColsError = async (dataSourceUrl, reqPayload, serverRespPayload, error, respMetrics) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, reqPayload, result: serverRespPayload, error, respMetrics }),
+                    resultServerError = async (dataSourceUrl, reqPayload, serverRespPayload, respMetrics) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, reqPayload, result: serverRespPayload, respMetrics }),
+                    fetchRespNotOK = async (dataSourceUrl, reqPayload, response, respMetrics) => console.error(`[ServerDatasource] Fetched response not OK: ${response.statusText}`, { dataSourceUrl, reqPayload, response, respMetrics }),
                     fetchError = async (dataSourceUrl, reqPayload, error) => console.error(`[ServerDatasource] Fetch error: ${error}`, { dataSourceUrl, reqPayload, error }),
 
                     // hooks to preview/modify payload before the request or preview/modify results after success
                     beforeRequest = async (reqPayload, dataSourceUrl) => { },
-                    beforeSuccess = async (serverRespPayload, reqPayload, dataSourceUrl) => { },
+                    beforeSuccess = async (serverRespPayload, respMetrics, reqPayload, dataSourceUrl) => { },
 
                     // refine the `success` ({ rowData: [] }) object sent to AGGrid to merge or join other data
-                    customizedContent = async (success, serverRespPayload, reqPayload, dataSourceUrl) => success,
+                    customizedContent = async (success, serverRespPayload, respMetrics, reqPayload, dataSourceUrl) => success,
                 } = inspect;
 
                 const reqPayload = {
@@ -213,6 +213,15 @@ export class AGGridAideBuilder {
                         // body needs to be string on the way out
                         body: JSON.stringify(reqPayload.body, null, 2)
                     });
+                    const respMetrics = response.headers ? {
+                        startTime: response.headers.get("X-Observability-Metric-Interaction-Start-Time"),
+                        finishTime: response.headers.get("X-Observability-Metric-Interaction-Finish-Time"),
+                        durationMillisecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Nanosecs"),
+                        durationNanosecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Millisecs"),
+                    } : {};
+                    if(respMetrics && window.layout?.observability?.metricsCollection) {
+                        window.layout.addIdentifiableMetrics(`fetch-${dataSourceUrl}`, respMetrics);
+                    }
                     if (response.ok) {
                         const serverRespPayload = await response.json();
                         if (withSecondaryColumns) {
@@ -229,15 +238,15 @@ export class AGGridAideBuilder {
                             }
                         }
                         if (serverRespPayload.uxReportableError) await resultServerError?.(dataSourceUrl, reqPayload, serverRespPayload);
-                        await beforeSuccess?.(serverRespPayload, reqPayload, dataSourceUrl);
+                        await beforeSuccess?.(serverRespPayload, respMetrics, reqPayload, dataSourceUrl);
                         const successArgs = {
                             rowData: serverRespPayload.data,
                         };
                         params.success(customizedContent
-                            ? await customizedContent(successArgs, serverRespPayload, reqPayload, dataSourceUrl)
+                            ? await customizedContent(successArgs, serverRespPayload, respMetrics, reqPayload, dataSourceUrl)
                             : successArgs);
                     } else {
-                        await fetchRespNotOK?.(dataSourceUrl, reqPayload, response);
+                        await fetchRespNotOK?.(dataSourceUrl, reqPayload, response, respMetrics);
                         params.fail();
                     }
                 } catch (error) {

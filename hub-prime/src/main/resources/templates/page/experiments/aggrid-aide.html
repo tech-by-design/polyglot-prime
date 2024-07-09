@@ -19,8 +19,8 @@
                 document.querySelector('#sql-from-server').innerText = "Fetching...";
                 document.querySelector('#ux-reportable-error').innerText = "Fetching...";
             },
-            beforeSuccess: async (serverRespPayload, reqPayload, dataSourceUrl) => {
-                document.querySelector('#debug-response').data = serverRespPayload;
+            beforeSuccess: async (serverRespPayload, respMetrics, reqPayload, dataSourceUrl) => {
+                document.querySelector('#debug-response').data = { serverRespPayload, respMetrics };
                 document.querySelector('#sql-from-server').innerText = serverRespPayload?.fromSQL?.dynamicSQL
                     ? serverRespPayload.fromSQL.dynamicSQL
                     : "No result.fromSQL.dynamicSQL available.";
@@ -74,7 +74,7 @@
                         }));
                     }, {
                     // customizedContent is only used when the rowData is to be joined or merged
-                    customizedContent: async (gridContent) => { 
+                    customizedContent: async (gridContent) => {
                         // you can run `await fetch(...)` or get other join data from the server and "merge" it;
                         // in our case we're just creating sample rows
                         gridContent.rowData.forEach((row, index) => row.custom_content = `custom${index}`);

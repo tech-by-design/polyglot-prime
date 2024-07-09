@@ -1,4 +1,136 @@
 /**
+ * Class representing a single cookie.
+ */
+export class Cookie {
+    #name;
+    #value;
+
+    /**
+     * Create a cookie instance.
+     * @param {string} name - The name of the cookie.
+     * @param {string} value - The value of the cookie.
+     */
+    constructor(name, value) {
+        this.#name = name;
+        this.#value = value;
+    }
+
+    get name() { return this.#name; }
+    get value() { return this.#value; }
+
+    json(defaultValue = null, onError = null) {
+        try {
+            return this.#value?.trim().length
+                ? JSON.parse(this.#value)
+                : defaultValue;
+        } catch {
+            return onError
+                ? (typeof onError === "function" ? onError(this, this.#value) : onError)
+                : defaultValue;
+        }
+    }
+}
+
+/**
+ * Class representing a collection of cookies.
+ */
+export class Cookies {
+    static #SINGLETON = null;
+    #cookies = {};
+
+    /**
+     * Private constructor to enforce singleton pattern.
+     */
+    constructor(cookieString = document.cookie) {
+        const cookies = cookieString.split('; ');
+        for (let cookie of cookies) {
+            const [encodedName, encodedValue] = cookie.split('=');
+            const cookieName = decodeURIComponent(encodedName);
+            if (cookieName.trim().length) {
+                this.#cookies[cookieName] = new Cookie(
+                    cookieName, 
+                    // on the Java side URLEncoder adds + for spaces but decodeURIComponent does not handle '+'
+                    decodeURIComponent(encodedValue.replace(/\+/g, ' '))
+                );
+            }
+        }
+    }
+
+    /**
+     * Get the singleton instance of Cookies for typed access to browser's default document.cookie.
+     * @returns {Cookies} The singleton instance of Cookies.
+     */
+    static get SINGLETON() {
+        if (!Cookies.#SINGLETON) {
+            Cookies.#SINGLETON = new Cookies();
+        }
+        return Cookies.#SINGLETON;
+    }
+
+    get all() {
+        return this.#cookies;
+    }
+
+    /**
+     * Get a cookie by name and return an instance of the Cookie class.
+     * @param {string} name - The name of the cookie to retrieve.
+     * @returns {Cookie|null} An instance of Cookie if found, otherwise null.
+     */
+    get(name) {
+        return this.#cookies[name];
+    }
+}
+
+export class UxReportableMetrics {
+    #identity;
+    #metrics = {};
+
+    constructor(identity, metrics = {}) {
+        this.#identity = identity;
+        this.#metrics = metrics;
+    }
+
+    get identity() { return this.#identity; }
+    get metrics() { return this.#metrics; }
+}
+
+export class UxReportableMetricsCollection {
+    #reportableMetrics = [];
+
+    constructor() {
+    }
+
+    get reportableMetrics() {
+        return this.#reportableMetrics;
+    }
+
+    addReportable(uxReportableMetrics) {
+        this.#reportableMetrics.push(uxReportableMetrics);
+    }
+
+    getReportable(identity) {
+        this.#reportableMetrics.find(rm => rm.identity == identity);
+    }
+}
+
+export class ObservabilityAide {
+    #serverRespMetricsCookie;
+    #uxrMetricsCollection = new UxReportableMetricsCollection();
+    #pageInitMetrics;
+
+    constructor() {
+        // since HTML pages and JavaScript don't have access to HTTP headers, the server
+        // should send us interaction response metrics via a cookie so let's grab it
+        this.#serverRespMetricsCookie = Cookies.SINGLETON.get("Observability-Metric-Interaction-Active");
+        this.#pageInitMetrics = this.#serverRespMetricsCookie ? new UxReportableMetrics("page-init", this.#serverRespMetricsCookie.json()) : null;
+        if (this.#pageInitMetrics) this.#uxrMetricsCollection.addReportable(this.#pageInitMetrics);
+    }
+
+    get metricsCollection() { return this.#uxrMetricsCollection; }
+    get pageInitMetrics() { return this.#pageInitMetrics; }
+}
+
+/**
  * @class ShellAide
  * @classdesc This class provides reusable application shell functionalities 
  * across all pages. It is not specific to any particular functionality but
@@ -250,6 +382,7 @@ export class LayoutAide {
     static GLOBAL_PROPERTY_NAME = "layout";
     static SINGLETON = (windowPropertyName = LayoutAide.GLOBAL_PROPERTY_NAME) => window[windowPropertyName];
 
+    #observability = new ObservabilityAide();
     #shellAide;
     #layoutOptions;
     #activeRoute;
@@ -279,6 +412,7 @@ export class LayoutAide {
     }
 
     get shellAide() { return this.#shellAide; }
+    get observability() { return this.#observability }
     get layoutOptions() { return this.#layoutOptions; }
     get activeRoute() { return this.#activeRoute; }
     get activeRouteURI() { return this.#activeRouteURI; }
@@ -302,6 +436,24 @@ export class LayoutAide {
         window[windowPropertyName] = this;
         this.debugLog({ propertyName: windowPropertyName, layout: this });
         return this;
+    }
+
+    addIdentifiableMetrics(identity, metrics) {
+        this.observability.metricsCollection.addReportable(new UxReportableMetrics(identity, metrics));
+        this.activeRouteObservability(); // update the UI
+    }
+
+    activeRouteObservability() {
+        const obsElem = document.getElementById("nav-prime-notification");
+        if (obsElem && this.observability.metricsCollection.reportableMetrics.length) {
+            let title = "";
+            for(const rm of this.observability.metricsCollection.reportableMetrics) {
+                const duration = rm.metrics.durationMillisecs > 10 ? `${rm.metrics.durationMillisecs} ms` : `${rm.metrics.durationNanosecs} nanosecs`;
+                if(title.length) title += "\n";
+                title += `[${rm.identity}] generated: ${rm.metrics.finishTime}\n[${rm.identity}] duration: ${duration}`;
+            }
+            obsElem.title = title;
+        }
     }
 
     /**
@@ -420,6 +572,7 @@ export class LayoutAide {
      */
     initActiveRoute() {
         // alawys use this specific order since the later methods depend on the previous ones
+        this.activeRouteObservability();
         this.activeRouteURI(this.activeRoute.uri, this.activeRoute.isHomePage);
         this.title(this.activeRoute.title);
         this.breadcrumbs(this.activeRoute.breadcrumbs, this.activeRoute.isHomePage);
