@@ -1,6 +1,7 @@
 lib.aide.paths
 lib.aide.resource
 lib.aide.sql.dynamic
+lib.aide.tabular
 lib.aide.vfs
 org.techbd.orchestrate.fhir
 org.techbd.service.http.hub.prime

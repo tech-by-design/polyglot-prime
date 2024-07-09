@@ -4,6 +4,7 @@ lib.aide.resource.collection
 lib.aide.resource.content
 lib.aide.resource.nature
 lib.aide.sql.dynamic
+lib.aide.tabular
 lib.aide.vfs
 org.techbd.conf
 org.techbd.orchestrate.fhir
