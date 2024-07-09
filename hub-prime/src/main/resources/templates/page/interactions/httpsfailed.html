@@ -15,7 +15,8 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'interaction_http_request_failed';
+        const viewName = 'interaction_http_request_forward_fail';
+        const popViewName = 'interaction_http_request';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
@@ -32,7 +33,7 @@
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/get-records/${schemaName}/${viewName}/interaction_id/${value}.json`));
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/get-records/${schemaName}/${popViewName}/interaction_id/${value}.json`));
                         }, modalAide)
                     },
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
@@ -40,8 +41,9 @@
                     { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
                     { headerName: "From State", field: "from_state", filter: "agTextColumnFilter" },
                     { headerName: "To State", field: "to_state", filter: "agTextColumnFilter" },
-                    { headerName: "Error", field: "error" , filter: "agTextColumnFilter" },
-                    { headerName: "Issues", field: "issues_count", filter: "agTextColumnFilter" },
+                    { headerName: "Outbound Http Message", field: "outbound_http_message" , filter: "agTextColumnFilter" },
+                    { headerName: "Error Message", field: "error" , filter: "agTextColumnFilter" },
+                    { headerName: "Validation Issues", field: "issues_count", filter: "agTextColumnFilter" },
                     { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter" },
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter" },
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter" }
