@@ -84,22 +84,31 @@
     <title>TechBD Hub Documentation</title>
     <style>
         .selected {
-            background-color: #f0f0f0;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: rgb(37 99 235);
+            display: block;
+            border-radius: .25rem;
+            text-decoration: none;
+            padding: .3em;
+            line-height: 1.4;
         }
-
         .mermaid {
             background-color: #ffffff !important;
             color: #000000 !important;
         }
-
         summary::-webkit-details-marker {
             display: none;
         }
-
         details[open] .caret {
             transform: rotate(90deg);
         }
-
+        details[open] details .caret, details[open] details[open] details .caret {
+            transform: none;
+        }
+        details[open] details[open] .caret, details[open] details[open] details[open] .caret {
+            transform: rotate(90deg);
+        }
         .caret {
             transition: transform 0.3s;
         }
@@ -152,7 +161,7 @@
                                     <span th:text="${sidebarNS.caption(node)}" class="text font-semibold"></span>
                                 </div>
                             </div>
-                            <svg aria-hidden="true" class="caret w-4 h-4 flex-none" fill="currentColor">
+                            <svg aria-hidden="true" class="caret w-6 h-6 flex-none" fill="currentColor">
                                 <path
                                     d="M14.83 11.29L10.59 7.05a1 1 0 00-1.42 1.42L12.71 12l-3.54 3.54a1 1 0 001.42 1.42l4.24-4.24a1 1 0 000-1.42z">
                                 </path>
