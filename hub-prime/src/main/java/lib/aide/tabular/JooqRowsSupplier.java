@@ -46,13 +46,15 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var whereConditions = new ArrayList<Condition>();
         final var bindValues = new ArrayList<Object>();
         final var sortFields = new ArrayList<SortField<?>>();
+        final var groupByFields = new ArrayList<Field<?>>();
 
         // Adding columns to select
         request.valueCols().forEach(col -> selectFields.add(DSL.field(DSL.name(col.field()))));
 
         // Adding filters
         request.filterModel().forEach((field, filter) -> {
-            whereConditions.add(DSL.field(DSL.name(field)).eq(DSL.param(field, filter.filter())));
+            final var condition = createCondition(field, filter);
+            whereConditions.add(condition);
             bindValues.add(filter.filter());
         });
 
@@ -65,15 +67,50 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             }
         }
 
+        // Adding grouping
+        request.rowGroupCols().forEach(col -> {
+            final var field = DSL.field(DSL.name(col.field()));
+            groupByFields.add(field);
+            selectFields.add(field);
+        });
+
+        // Adding aggregations
+        request.aggregationFunctions().forEach(aggFunc -> {
+            aggFunc.columns().forEach(col -> {
+                final var field = DSL.field(DSL.name(col));
+                final var aggregationField = switch (aggFunc.functionName().toLowerCase()) {
+                    case "sum" -> DSL.sum(field.cast(Double.class));
+                    case "avg" -> DSL.avg(field.cast(Double.class));
+                    case "count" -> DSL.count(field);
+                    default ->
+                        throw new IllegalArgumentException("Unknown aggregation function: " + aggFunc.functionName());
+                };
+                selectFields.add(aggregationField);
+            });
+        });
+
         // Creating the base query
         final var limit = request.endRow() - request.startRow();
-        final var select = DSL.select(selectFields).from(table).where(whereConditions).orderBy(sortFields)
-                .limit(request.startRow(), limit);
+        final var select = groupByFields.isEmpty()
+                ? this.dsl.select(selectFields).from(table).where(whereConditions).orderBy(sortFields)
+                        .limit(request.startRow(), limit)
+                : this.dsl.select(selectFields).from(table).where(whereConditions).groupBy(groupByFields).orderBy(sortFields)
+                        .limit(request.startRow(), limit);
 
         bindValues.add(request.startRow());
         bindValues.add(limit);
 
         return new JooqQuery(select, bindValues);
+    }
+
+    private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {
+        final var dslField = DSL.field(DSL.name(field));
+        return switch (filter.filterType()) {
+            case "text" -> dslField.likeIgnoreCase("%" + filter.filter() + "%");
+            case "number" -> dslField.eq(DSL.param(field, filter.filter()));
+            case "date" -> dslField.eq(DSL.param(field, filter.filter()));
+            default -> throw new IllegalArgumentException("Unknown filter type: " + filter.filterType());
+        };
     }
 
     public static final class Builder {
