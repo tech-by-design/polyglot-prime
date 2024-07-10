@@ -1,10 +1,14 @@
 package org.techbd.service.http.hub.prime.ux;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -21,11 +25,13 @@ public class InteractionsController {
     private static final Logger LOG = LoggerFactory.getLogger(InteractionsController.class.getName());
 
     private final Presentation presentation;
+    private final SftpManager sftpManager;
 
     public InteractionsController(final Presentation presentation,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager) {
         this.presentation = presentation;
+        this.sftpManager = sftpManager;
     }
 
     @GetMapping("/interactions")
@@ -57,5 +63,12 @@ public class InteractionsController {
     @RouteMapping(label = "CSV via SFTP (DB)", title = "CSV Files via SFTP (in PostgreSQL DB)", siblingOrder = 50)
     public String orchctl(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/orchctl", model, request);
+    }
+
+    @Operation(summary = "Recent SFTP Interactions")
+    @GetMapping("/support/interaction/sftp/recent.json")
+    @ResponseBody
+    public List<?> observeRecentSftpInteractions(final @RequestParam(defaultValue = "10") int limitMostRecent) {
+        return sftpManager.tenantEgressSessions(limitMostRecent);
     }
 }
