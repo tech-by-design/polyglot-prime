@@ -37,13 +37,13 @@ public class InteractionsController {
     @GetMapping("/interactions")
     @RouteMapping(label = "Interactions", siblingOrder = 10)
     public String observeInteractions() {
-        return "redirect:/interactions/https";
+        return "redirect:/interactions/httpsfhir";
     }
 
-    @GetMapping("/interactions/https")
+    @GetMapping("/interactions/httpsfhir")
     @RouteMapping(label = "FHIR via HTTPs", title = "FHIR Interactions via HTTPs", siblingOrder = 20)
-    public String https(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/interactions/https", model, request);
+    public String httpsfhir(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/httpsfhir", model, request);
     }
 
     @GetMapping("/interactions/httpsfailed")
@@ -70,5 +70,11 @@ public class InteractionsController {
     @ResponseBody
     public List<?> observeRecentSftpInteractions(final @RequestParam(defaultValue = "10") int limitMostRecent) {
         return sftpManager.tenantEgressSessions(limitMostRecent);
+    }
+
+    @GetMapping("/interactions/https")
+    @RouteMapping(label = "HTTP", title = "Interactions via HTTPs", siblingOrder = 60)
+    public String https(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/https", model, request);
     }
 }

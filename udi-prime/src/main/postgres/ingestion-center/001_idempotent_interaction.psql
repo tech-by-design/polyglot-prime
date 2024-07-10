@@ -284,6 +284,47 @@ FROM
 	cte_interaction_issues intr_issue
   ;
 
+/*******************************************************************************************
+This view combines data from hub_interaction and sat_interaction_http_request tables to 
+provide a consolidated view of HTTP FHIR requests, including resource types, 
+interaction details, request attributes, and validation issues.
+******************************************************************************************/
+
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request
+AS WITH cte_resource_types AS (
+         SELECT sat_interaction_http_request.sat_interaction_http_request_id,
+            string_agg(DISTINCT (entry.value -> 'resource'::text) ->> 'resourceType'::text, ', '::text) AS resource_types
+           FROM techbd_udi_ingress.sat_interaction_http_request,
+            LATERAL jsonb_array_elements(sat_interaction_http_request.payload -> 'entry'::text) entry(value)
+          GROUP BY sat_interaction_http_request.sat_interaction_http_request_id
+        )
+ SELECT hi.hub_interaction_id AS interaction_id,
+    hi.key AS uri,
+    hi.created_at AS interaction_created_at,
+    hi.created_by AS interaction_created_by,
+    hi.provenance AS interaction_provenance,
+    sihr.sat_interaction_http_request_id,
+    sihr.nature ->> 'nature'::text AS nature,
+    sihr.nature ->> 'tenant_id'::text AS tenant_id,
+    COALESCE((sihr.payload -> 'request'::text) ->> 'userAgent'::text, sihr.nature ->> 'userAgent'::text) AS user_agent,
+    COALESCE((sihr.payload -> 'request'::text) ->> 'clientIpAddress'::text, sihr.nature ->> 'clientIpAddress'::text) AS client_ip_address,
+    sihr.content_type,
+    sihr.payload,
+    sihr.elaboration,
+    sihr.from_state,
+    sihr.to_state,
+    sihr.state_transition_reason,
+    sihr.created_at AS request_created_at,
+    sihr.created_by AS request_created_by,
+    sihr.provenance AS request_provenance,
+    jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count,
+    rtyp.resource_types
+   FROM techbd_udi_ingress.hub_interaction hi
+     LEFT JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hi.hub_interaction_id = sihr.hub_interaction_id
+     LEFT JOIN cte_resource_types rtyp ON rtyp.sat_interaction_http_request_id = sihr.sat_interaction_http_request_id
+     WHERE hi.key IN('/Bundle','/Bundle/$validate')
+    ;
+
 /*******************************************************************************************************************************
  * Procedure to register an HTTP interaction, handling potential unique constraint violations
  * and logging exceptions when necessary.
