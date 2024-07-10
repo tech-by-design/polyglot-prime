@@ -23,7 +23,9 @@
                 document.querySelector('#debug-response').data = { serverRespPayload, respMetrics };
                 document.querySelector('#sql-from-server').innerText = serverRespPayload?.fromSQL?.dynamicSQL
                     ? serverRespPayload.fromSQL.dynamicSQL
-                    : "No result.fromSQL.dynamicSQL available.";
+                    : (serverRespPayload?.provenance?.fromSQL
+                        ? serverRespPayload?.provenance?.fromSQL
+                        : "No result.fromSQL.dynamicSQL available.");
                 document.querySelector('#ux-reportable-error').innerText = serverRespPayload?.uxReportableError
                     ? serverRespPayload?.uxReportableError
                     : "No UX-reportable Server-side Error";

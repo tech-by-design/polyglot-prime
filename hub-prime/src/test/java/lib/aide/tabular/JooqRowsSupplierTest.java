@@ -72,7 +72,7 @@ public class JooqRowsSupplierTest {
                     "pivotMode": false,
                     "groupKeys": [],
                     "filterModel": {
-                        "country": {"filterType": "text", "filter": "USA"}
+                        "country": {"filterType": "equals", "filter": "USA"}
                     },
                     "sortModel": [
                         {"colId": "gold", "sort": "desc"}
@@ -94,7 +94,7 @@ public class JooqRowsSupplierTest {
         final var expectedSQL = """
                 SELECT "country", "gold"
                 FROM medals
-                WHERE CAST("country" AS varchar) ILIKE ?
+                WHERE "country" = ?
                 ORDER BY "gold" DESC
                 OFFSET ? ROWS
                 FETCH NEXT ? ROWS ONLY

@@ -13,32 +13,84 @@ import org.jooq.conf.RenderKeywordCase;
 import org.jooq.conf.RenderQuotedNames;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
+import org.slf4j.Logger;
 
-public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSupplier.JooqQuery> {
+import jakarta.annotation.Nullable;
 
+public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSupplier.JooqProvenance> {
+    public static record JooqQuery(Query query, List<Object> bindValues, boolean stronglyTyped) {
+    }
+
+    public static record JooqProvenance(String fromSQL, List<Object> bindValues, boolean stronglyTyped) {
+    }
+
+    private final boolean stronglyTyped;
     private final TabularRowsRequest request;
     private final Table<?> table;
     private final DSLContext dsl;
+    private final boolean includeGeneratedSqlInResp;
+    private final boolean includeGeneratedSqlInErrorResp;
+    private final Logger logger;
 
     private JooqRowsSupplier(final Builder builder) {
+        this.stronglyTyped = builder.stronglyTyped;
         this.request = builder.request;
         this.table = builder.table;
         this.dsl = builder.dsl;
+        this.includeGeneratedSqlInResp = builder.includeGeneratedSqlInResp;
+        this.includeGeneratedSqlInErrorResp = builder.includeGeneratedSqlInErrorResp;
+        this.logger = builder.logger;
+    }
+
+    public TabularRowsRequest request() {
+        return request;
+    }
+
+    public boolean isStronglyTyped() {
+        return stronglyTyped;
+    }
+
+    public Table<?> table() {
+        return table;
+    }
+
+    public Field<Object> column(final String columnName) {
+        if (this.stronglyTyped) {
+            try {
+                // try to find the Tables.TABLE.COLUMN_NAME in jOOQ generated code
+                final var instanceInTableRef = table.getClass().getField(columnName.toUpperCase());
+                if (instanceInTableRef.get(table) instanceof org.jooq.Field<?> columnField) {
+                    return columnField.coerce(Object.class);
+                } else {
+                    return DSL.field(DSL.name(columnName));
+                }
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+            }
+        }
+        return DSL.field(DSL.name(columnName));
     }
 
     @Override
-    public TabularRowsResponse<JooqQuery> response() {
-        final var jooqQuery = query();
-        final var query = jooqQuery.query();
-        final var result = dsl.fetch(query.getSQL(), jooqQuery.bindValues().toArray());
-        final var data = result.intoMaps();
+    public TabularRowsResponse<JooqProvenance> response() {
+        final var jq = query();
+        final var provenance = new JooqProvenance(jq.query.getSQL(), jq.bindValues(), stronglyTyped);
+        try {
+            final var query = jq.query();
+            final var result = dsl.fetch(query.getSQL(), jq.bindValues().toArray());
+            final var data = result.intoMaps();
 
-        var lastRow = request.startRow() + data.size();
-        if (data.size() < (request.endRow() - request.startRow())) {
-            lastRow = -1;
+            var lastRow = request.startRow() + data.size();
+            if (data.size() < (request.endRow() - request.startRow())) {
+                lastRow = -1;
+            }
+
+            return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, data, lastRow, null);
+        } catch (Exception e) {
+            if (logger != null)
+                logger.error("JooqRowsSupplier error", e);
+            return new TabularRowsResponse<>(includeGeneratedSqlInErrorResp ? provenance : null, null, -1,
+                    e.getMessage());
         }
-
-        return new TabularRowsResponse<>(jooqQuery, data, lastRow, null);
     }
 
     public JooqQuery query() {
@@ -49,74 +101,88 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var groupByFields = new ArrayList<Field<?>>();
 
         // Adding columns to select
-        request.valueCols().forEach(col -> selectFields.add(DSL.field(DSL.name(col.field()))));
+        if (request.valueCols() != null)
+            request.valueCols().forEach(col -> selectFields.add(column(col.field())));
 
         // Adding filters
-        request.filterModel().forEach((field, filter) -> {
-            final var condition = createCondition(field, filter);
-            whereConditions.add(condition);
-            bindValues.add(filter.filter());
-        });
+        if (request.filterModel() != null)
+            request.filterModel().forEach((field, filter) -> {
+                final var condition = createCondition(field, filter);
+                whereConditions.add(condition);
+                bindValues.add(filter.filter());
+            });
 
         // Adding sorting
-        for (final var sort : request.sortModel()) {
-            final var sortField = DSL.field(DSL.name(sort.colId()));
-            switch (sort.sort()) {
-                case "asc" -> sortFields.add(sortField.asc());
-                case "desc" -> sortFields.add(sortField.desc());
+        if (request.sortModel() != null)
+            for (final var sort : request.sortModel()) {
+                final var sortField = column(sort.colId());
+                switch (sort.sort()) {
+                    case "asc" -> sortFields.add(sortField.asc());
+                    case "desc" -> sortFields.add(sortField.desc());
+                }
             }
-        }
 
         // Adding grouping
-        request.rowGroupCols().forEach(col -> {
-            final var field = DSL.field(DSL.name(col.field()));
-            groupByFields.add(field);
-            selectFields.add(field);
-        });
+        if (request.rowGroupCols() != null)
+            request.rowGroupCols().forEach(col -> {
+                final var field = column(col.field());
+                groupByFields.add(field);
+                selectFields.add(field);
+            });
 
         // Adding aggregations
-        request.aggregationFunctions().forEach(aggFunc -> {
-            aggFunc.columns().forEach(col -> {
-                final var field = DSL.field(DSL.name(col));
-                final var aggregationField = switch (aggFunc.functionName().toLowerCase()) {
-                    case "sum" -> DSL.sum(field.cast(Double.class));
-                    case "avg" -> DSL.avg(field.cast(Double.class));
-                    case "count" -> DSL.count(field);
-                    default ->
-                        throw new IllegalArgumentException("Unknown aggregation function: " + aggFunc.functionName());
-                };
-                selectFields.add(aggregationField);
+        if (request.aggregationFunctions() != null)
+            request.aggregationFunctions().forEach(aggFunc -> {
+                aggFunc.columns().forEach(col -> {
+                    final var field = column(col);
+                    final var aggregationField = switch (aggFunc.functionName().toLowerCase()) {
+                        case "sum" -> DSL.sum(field.cast(Double.class));
+                        case "avg" -> DSL.avg(field.cast(Double.class));
+                        case "count" -> DSL.count(field);
+                        default ->
+                            throw new IllegalArgumentException(
+                                    "Unknown aggregation function: " + aggFunc.functionName());
+                    };
+                    selectFields.add(aggregationField);
+                });
             });
-        });
 
         // Creating the base query
         final var limit = request.endRow() - request.startRow();
         final var select = groupByFields.isEmpty()
                 ? this.dsl.select(selectFields).from(table).where(whereConditions).orderBy(sortFields)
                         .limit(request.startRow(), limit)
-                : this.dsl.select(selectFields).from(table).where(whereConditions).groupBy(groupByFields).orderBy(sortFields)
+                : this.dsl.select(selectFields).from(table).where(whereConditions).groupBy(groupByFields)
+                        .orderBy(sortFields)
                         .limit(request.startRow(), limit);
 
         bindValues.add(request.startRow());
         bindValues.add(limit);
 
-        return new JooqQuery(select, bindValues);
+        return new JooqQuery(select, bindValues, stronglyTyped);
     }
 
     private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {
-        final var dslField = DSL.field(DSL.name(field));
+        final var dslField = column(field);
         return switch (filter.filterType()) {
-            case "text" -> dslField.likeIgnoreCase("%" + filter.filter() + "%");
+            case "like" -> dslField.likeIgnoreCase("%" + filter.filter() + "%");
+            case "equals" -> dslField.eq(DSL.param(field, filter.filter()));
             case "number" -> dslField.eq(DSL.param(field, filter.filter()));
             case "date" -> dslField.eq(DSL.param(field, filter.filter()));
-            default -> throw new IllegalArgumentException("Unknown filter type: " + filter.filterType());
+            default -> throw new IllegalArgumentException(
+                    "Unknown filter type '" + filter.filterType() + "' in filter for field '" + field
+                            + "' see JooqRowsSupplier::createCondition");
         };
     }
 
     public static final class Builder {
+        private boolean stronglyTyped;
         private TabularRowsRequest request;
         private Table<?> table;
         private DSLContext dsl;
+        private boolean includeGeneratedSqlInResp;
+        private boolean includeGeneratedSqlInErrorResp;
+        private Logger logger;
 
         public Builder withRequest(final TabularRowsRequest request) {
             this.request = request;
@@ -128,6 +194,25 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             return this;
         }
 
+        public Builder withTable(Class<?> tablesClass, @Nullable String schemaName, String tablishName) {
+            // Attempt to find a generated table reference using reflection;
+            // when we can use a jOOQ-generated class it means that special
+            // column types like JSON will work (otherwise pure dynamic without
+            // generated jOOQ assistance may treat certain columns incorrectly).
+            try {
+                // looking for Tables.TABLISH_NAME ("tablish" means table or view)
+                final var field = tablesClass.getField(tablishName.toUpperCase());
+                this.table = (Table<?>) field.get(null);
+                this.stronglyTyped = true;
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                // If not found, fall back to dynamic table reference
+                this.table = DSL.table(schemaName != null ? DSL.name(schemaName, tablishName)
+                        : DSL.name(tablishName));
+                this.stronglyTyped = true;
+            }
+            return this;
+        }
+
         public Builder withDSL(final DSLContext dsl) {
             this.dsl = dsl.configuration().derive(new Settings()
                     .withRenderFormatted(true)
@@ -136,11 +221,23 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             return this;
         }
 
+        public Builder includeGeneratedSqlInResp(boolean flag) {
+            this.includeGeneratedSqlInResp = flag;
+            return this;
+        }
+
+        public Builder includeGeneratedSqlInErrorResp(boolean flag) {
+            this.includeGeneratedSqlInErrorResp = flag;
+            return this;
+        }
+
+        public Builder withLogger(Logger logger) {
+            this.logger = logger;
+            return this;
+        }
+
         public JooqRowsSupplier build() {
             return new JooqRowsSupplier(this);
         }
-    }
-
-    public static record JooqQuery(Query query, List<Object> bindValues) {
     }
 }
