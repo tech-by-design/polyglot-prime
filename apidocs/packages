@@ -12,7 +12,6 @@ org.techbd.service.http.hub.prime.route
 org.techbd.service.http.hub.prime
 org.techbd.service.http.hub.prime.ux
 org.techbd.service.http.hub.prime.api
-org.techbd.service.http.aggrid
 org.techbd.service
 org.techbd.util
 org.techbd.orchestrate.sftp
