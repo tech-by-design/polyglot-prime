@@ -15,27 +15,61 @@ import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
 public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSupplier.JooqProvenance> {
-    public static record JooqQuery(Query query, List<Object> bindValues, boolean stronglyTyped) {
+    public static record TypableTable(Table<?> table, boolean stronglyTyped) {
+        static public TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
+                @Nonnull String tableLikeName) {
+
+            // Attempt to find a generated table reference using reflection;
+            // when we can use a jOOQ-generated class it means that special
+            // column types like JSON will work (otherwise pure dynamic without
+            // generated jOOQ assistance may treat certain columns incorrectly).
+            try {
+                // looking for Tables.TABLISH_NAME ("tablish" means table or view)
+                final var field = tablesRegistry.getField(tableLikeName.toUpperCase());
+                return new TypableTable((Table<?>) field.get(null), true);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName, tableLikeName)
+                        : DSL.name(tableLikeName)), false);
+            }
+        }
+
+        public Field<Object> column(final String columnName) {
+            if (this.stronglyTyped) {
+                try {
+                    // try to find the Tables.TABLE.COLUMN_NAME in jOOQ generated code
+                    final var instanceInTableRef = table.getClass().getField(columnName.toUpperCase());
+                    if (instanceInTableRef.get(table) instanceof org.jooq.Field<?> columnField) {
+                        return columnField.coerce(Object.class);
+                    } else {
+                        return DSL.field(DSL.name(columnName));
+                    }
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                }
+            }
+            return DSL.field(DSL.name(columnName));
+        }    
     }
 
-    public static record JooqProvenance(String fromSQL, List<Object> bindValues, boolean stronglyTyped) {
+    public record JooqQuery(Query query, List<Object> bindValues, boolean stronglyTyped) {
     }
 
-    private final boolean stronglyTyped;
+    public record JooqProvenance(String fromSQL, List<Object> bindValues, boolean stronglyTyped) {
+    }
+
     private final TabularRowsRequest request;
-    private final Table<?> table;
+    private final TypableTable typableTable;
     private final DSLContext dsl;
     private final boolean includeGeneratedSqlInResp;
     private final boolean includeGeneratedSqlInErrorResp;
     private final Logger logger;
 
     private JooqRowsSupplier(final Builder builder) {
-        this.stronglyTyped = builder.stronglyTyped;
         this.request = builder.request;
-        this.table = builder.table;
+        this.typableTable = builder.table;
         this.dsl = builder.dsl;
         this.includeGeneratedSqlInResp = builder.includeGeneratedSqlInResp;
         this.includeGeneratedSqlInErrorResp = builder.includeGeneratedSqlInErrorResp;
@@ -47,33 +81,17 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     }
 
     public boolean isStronglyTyped() {
-        return stronglyTyped;
+        return typableTable.stronglyTyped();
     }
 
-    public Table<?> table() {
-        return table;
-    }
-
-    public Field<Object> column(final String columnName) {
-        if (this.stronglyTyped) {
-            try {
-                // try to find the Tables.TABLE.COLUMN_NAME in jOOQ generated code
-                final var instanceInTableRef = table.getClass().getField(columnName.toUpperCase());
-                if (instanceInTableRef.get(table) instanceof org.jooq.Field<?> columnField) {
-                    return columnField.coerce(Object.class);
-                } else {
-                    return DSL.field(DSL.name(columnName));
-                }
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-            }
-        }
-        return DSL.field(DSL.name(columnName));
+    public TypableTable table() {
+        return typableTable;
     }
 
     @Override
     public TabularRowsResponse<JooqProvenance> response() {
         final var jq = query();
-        final var provenance = new JooqProvenance(jq.query.getSQL(), jq.bindValues(), stronglyTyped);
+        final var provenance = new JooqProvenance(jq.query.getSQL(), jq.bindValues(), typableTable.stronglyTyped);
         try {
             final var query = jq.query();
             final var result = dsl.fetch(query.getSQL(), jq.bindValues().toArray());
@@ -102,7 +120,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
         // Adding columns to select
         if (request.valueCols() != null)
-            request.valueCols().forEach(col -> selectFields.add(column(col.field())));
+            request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
 
         // Adding filters
         if (request.filterModel() != null)
@@ -115,7 +133,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         // Adding sorting
         if (request.sortModel() != null)
             for (final var sort : request.sortModel()) {
-                final var sortField = column(sort.colId());
+                final var sortField = typableTable.column(sort.colId());
                 switch (sort.sort()) {
                     case "asc" -> sortFields.add(sortField.asc());
                     case "desc" -> sortFields.add(sortField.desc());
@@ -125,7 +143,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         // Adding grouping
         if (request.rowGroupCols() != null)
             request.rowGroupCols().forEach(col -> {
-                final var field = column(col.field());
+                final var field = typableTable.column(col.field());
                 groupByFields.add(field);
                 selectFields.add(field);
             });
@@ -134,7 +152,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         if (request.aggregationFunctions() != null)
             request.aggregationFunctions().forEach(aggFunc -> {
                 aggFunc.columns().forEach(col -> {
-                    final var field = column(col);
+                    final var field = typableTable.column(col);
                     final var aggregationField = switch (aggFunc.functionName().toLowerCase()) {
                         case "sum" -> DSL.sum(field.cast(Double.class));
                         case "avg" -> DSL.avg(field.cast(Double.class));
@@ -150,20 +168,20 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         // Creating the base query
         final var limit = request.endRow() - request.startRow();
         final var select = groupByFields.isEmpty()
-                ? this.dsl.select(selectFields).from(table).where(whereConditions).orderBy(sortFields)
+                ? this.dsl.select(selectFields).from(typableTable.table).where(whereConditions).orderBy(sortFields)
                         .limit(request.startRow(), limit)
-                : this.dsl.select(selectFields).from(table).where(whereConditions).groupBy(groupByFields)
+                : this.dsl.select(selectFields).from(typableTable.table).where(whereConditions).groupBy(groupByFields)
                         .orderBy(sortFields)
                         .limit(request.startRow(), limit);
 
         bindValues.add(request.startRow());
         bindValues.add(limit);
 
-        return new JooqQuery(select, bindValues, stronglyTyped);
+        return new JooqQuery(select, bindValues, typableTable.stronglyTyped);
     }
 
     private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {
-        final var dslField = column(field);
+        final var dslField = typableTable.column(field);
         return switch (filter.filterType()) {
             case "like" -> dslField.likeIgnoreCase("%" + filter.filter() + "%");
             case "equals" -> dslField.eq(DSL.param(field, filter.filter()));
@@ -176,9 +194,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     }
 
     public static final class Builder {
-        private boolean stronglyTyped;
         private TabularRowsRequest request;
-        private Table<?> table;
+        private TypableTable table;
         private DSLContext dsl;
         private boolean includeGeneratedSqlInResp;
         private boolean includeGeneratedSqlInErrorResp;
@@ -190,26 +207,12 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         }
 
         public Builder withTable(final Table<?> table) {
-            this.table = table;
+            this.table = new TypableTable(table, true);
             return this;
         }
 
-        public Builder withTable(Class<?> tablesClass, @Nullable String schemaName, String tablishName) {
-            // Attempt to find a generated table reference using reflection;
-            // when we can use a jOOQ-generated class it means that special
-            // column types like JSON will work (otherwise pure dynamic without
-            // generated jOOQ assistance may treat certain columns incorrectly).
-            try {
-                // looking for Tables.TABLISH_NAME ("tablish" means table or view)
-                final var field = tablesClass.getField(tablishName.toUpperCase());
-                this.table = (Table<?>) field.get(null);
-                this.stronglyTyped = true;
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                // If not found, fall back to dynamic table reference
-                this.table = DSL.table(schemaName != null ? DSL.name(schemaName, tablishName)
-                        : DSL.name(tablishName));
-                this.stronglyTyped = true;
-            }
+        public Builder withTable(Class<?> tablesClass, @Nullable String schemaName, String tableLikeName) {
+            this.table = TypableTable.fromTablesRegistry(tablesClass, schemaName, tableLikeName);
             return this;
         }
 
