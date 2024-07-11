@@ -72,6 +72,7 @@ SELECT
 	issue_type, 
 	issue_message, 
 	issue_column, 
+	issue_row, 
 	invalid_value, 
 	remediation, 
 	session_id, 
