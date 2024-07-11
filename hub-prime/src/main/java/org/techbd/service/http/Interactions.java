@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
@@ -91,7 +91,7 @@ public class Interactions {
             String contentType,
             String queryString,
             String protocol,
-            HttpSession session,
+            @JsonIgnore HttpSession session,
             List<Cookie> cookies,
             @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class) byte[] requestBody) {
 
@@ -101,7 +101,8 @@ public class Interactions {
                     new Tenant(request),
                     request.getMethod(),
                     request.getRequestURL().toString(),
-                    request.getRequestURL().append(request.getQueryString() != null ? "?" + request.getQueryString() : "").toString(),
+                    request.getRequestURL()
+                            .append(request.getQueryString() != null ? "?" + request.getQueryString() : "").toString(),
                     request.getRequestURI(),
                     request.getRemoteAddr(),
                     request.getHeader("User-Agent"),
