@@ -15,7 +15,7 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'orch_session_diagnostics';
+        const viewName = 'orch_session_diagnostics_rejection';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
@@ -24,7 +24,6 @@
                     { headerName: "QE", field: "qe", filter: "agTextColumnFilter" },
                     { headerName: "Ingested File Source", field: "ingest_file_source", filter: "agTextColumnFilter" },
                     { headerName: "Issue Type", field: "issue_type", filter: "agTextColumnFilter" },
-                    { headerName: "Disposition", field: "disposition", filter: "agTextColumnFilter" },
                     { headerName: "Issue Message", field: "issue_message", filter: "agTextColumnFilter" },
                     { headerName: "Issue Column", field: "issue_column", filter: "agTextColumnFilter" },
                     { headerName: "Invalid Value", field: "invalid_value" , filter: "agTextColumnFilter" },
