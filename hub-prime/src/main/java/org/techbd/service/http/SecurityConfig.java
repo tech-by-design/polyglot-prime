@@ -21,6 +21,9 @@ import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.http.HttpStatus;
 
 @Configuration
 @ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")
@@ -44,6 +47,11 @@ public class SecurityConfig {
                         .successHandler(gitHubLoginSuccessHandler())
                         .defaultSuccessUrl("/home")
                         .loginPage("/login"))
+                .logout(logout -> logout
+                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessUrl("/")
+                        .invalidateHttpSession(true)
+                        .permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
