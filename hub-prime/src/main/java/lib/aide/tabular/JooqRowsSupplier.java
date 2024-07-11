@@ -182,8 +182,9 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
     private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {
         final var dslField = typableTable.column(field);
-        return switch (filter.filterType()) {
+        return switch (filter.type()) {
             case "like" -> dslField.likeIgnoreCase("%" + filter.filter() + "%");
+            case "contains" -> dslField.likeIgnoreCase("%" + filter.filter() + "%");
             case "equals" -> dslField.eq(DSL.param(field, filter.filter()));
             case "number" -> dslField.eq(DSL.param(field, filter.filter()));
             case "date" -> dslField.eq(DSL.param(field, filter.filter()));

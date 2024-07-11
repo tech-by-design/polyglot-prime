@@ -44,7 +44,7 @@ public class TabularRowsRequestTest {
         assertThat(request.pivotCols()).isEmpty();
         assertThat(request.pivotMode()).isFalse();
         assertThat(request.groupKeys()).isEmpty();
-        assertThat(request.filterModel()).containsEntry("country", new TabularRowsRequest.FilterModel("text", "USA"));
+        assertThat(request.filterModel()).containsEntry("country", new TabularRowsRequest.FilterModel("text", "text", "USA"));
         assertThat(request.sortModel()).hasSize(1);
         assertThat(request.sortModel().get(0)).isEqualTo(new TabularRowsRequest.SortModel("gold", "desc"));
         assertThat(request.requestContext()).containsEntry("contextKey", "contextValue");
