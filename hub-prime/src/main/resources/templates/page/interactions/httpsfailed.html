@@ -33,7 +33,7 @@
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/get-records/${schemaName}/${popViewName}/interaction_id/${value}.json`));
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${popViewName}/interaction_id/${value}.json`));
                         }, modalAide)
                     },
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
@@ -49,7 +49,7 @@
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter" }
                 ])
                 .withServerSideDatasource(
-                    window.shell.serverSideUrl(`/api/ux/aggrid/${schemaName}/${viewName}.json`),
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
                             headerName: col.displayName,

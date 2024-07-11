@@ -32,7 +32,7 @@
                     { headerName: "Issue ID", field: "orch_session_issue_id", filter: "agNumberColumnFilter" }
                 ])
                 .withServerSideDatasource(
-                    window.shell.serverSideUrl(`/api/ux/aggrid/${schemaName}/${viewName}.json`),
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
                             headerName: col.displayName,
