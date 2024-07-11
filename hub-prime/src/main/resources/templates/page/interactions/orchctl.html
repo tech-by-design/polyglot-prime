@@ -31,7 +31,7 @@
                         filter: "agTextColumnFilter",
                         sort: "desc",
                         cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/get-records/${schemaName}/${viewName}/session_id/${value}.json`));
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/session_id/${value}.json`));
                         }, modalAide)
                     },
                     { headerName: "Version", field: "version", filter: "agTextColumnFilter" },
@@ -43,7 +43,7 @@
                     { headerName: "FHIR Posts", field: "published_fhir_count", filter: "agTextColumnFilter" },
                 ])
                 .withServerSideDatasource(
-                    window.shell.serverSideUrl(`/api/ux/aggrid/${schemaName}/${viewName}.json`),
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
                             headerName: col.displayName,
@@ -51,7 +51,7 @@
                         }));
                     }, {
                     customizedContent: async (gridContent) => {
-                        // gridContent.rowData contains server side PostgreSQL result from `/api/ux/aggrid/${schemaName}/${viewName}.json`
+                        // gridContent.rowData contains server side PostgreSQL result from `/api/ux/tabular/jooq/${schemaName}/${viewName}.json`
                         // but we also need `published_fhir_count` from `/support/interaction/sftp/recent.json` so let's join them.
                         await fetch(window.shell.serverSideUrl(`/support/interaction/sftp/recent.json`))
                             .then(response => response.json())
