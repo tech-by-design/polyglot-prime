@@ -36,14 +36,14 @@ public class DiagnosticsController {
         return values;
     }
 
-    @GetMapping("/diagnostics")
-    @RouteMapping(label = "Diagnostics", siblingOrder = 20)
+    @GetMapping("/data-quality")
+    @RouteMapping(label = "Data Quality", siblingOrder = 20)
     public String adminDiagnostics() {
-        return "redirect:/diagnostics/sftp";
+        return "redirect:/data-quality/sftp";
     }
 
-    @GetMapping("/diagnostics/sftp")
-    @RouteMapping(label = "CSV via SFTP(DB)", title = "CSV Diagnostics via SFTPs", siblingOrder = 10)
+    @GetMapping("/data-quality/sftp")
+    @RouteMapping(label = "Flat File (CSV) Data Quality", title = "Flat File (CSV) Data Quality", siblingOrder = 10)
     public String diagnostics(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/sftp", model, request);
     }
