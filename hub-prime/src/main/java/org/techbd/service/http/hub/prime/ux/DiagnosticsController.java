@@ -44,7 +44,13 @@ public class DiagnosticsController {
 
     @GetMapping("/data-quality/sftp")
     @RouteMapping(label = "Flat File (CSV) Data Quality", title = "Flat File (CSV) Data Quality", siblingOrder = 10)
-    public String diagnostics(final Model model, final HttpServletRequest request) {
+    public String diagnosticsSftp(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/sftp", model, request);
+    }
+
+    @GetMapping("/data-quality/sftp-rejected")
+    @RouteMapping(label = "Flat File (CSV) Data Quality - REJECTION", title = "Flat File (CSV) Data Quality - FHIR Generation Failures due to REJECTION", siblingOrder = 20)
+    public String diagnosticsSftpRejected(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/sftp-rejected", model, request);
     }
 }
