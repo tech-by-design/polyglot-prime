@@ -53,4 +53,10 @@ public class DiagnosticsController {
     public String diagnosticsSftpRejected(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/sftp-rejected", model, request);
     }
+
+    @GetMapping("/data-quality/fhir-validation-issues")
+    @RouteMapping(label = "FHIR Data Quality", title = "FHIR validation issues", siblingOrder = 30)
+    public String diagnosticsFhirValidationIssues(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/fhir-validation-issues", model, request);
+    }
 }
