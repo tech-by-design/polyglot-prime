@@ -1,24 +1,29 @@
 package lib.aide.resource.collection;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.Tika;
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHRepository;
 
 import lib.aide.paths.Paths;
 import lib.aide.resource.Editable;
+import lib.aide.resource.ForwardableResource;
 import lib.aide.resource.Nature;
 import lib.aide.resource.Provenance;
 import lib.aide.resource.Resource;
 import lib.aide.resource.ResourceProvenance;
 import lib.aide.resource.ResourcesSupplier;
-import lib.aide.resource.content.ExceptionResource;
+import lib.aide.resource.StreamResource;
 import lib.aide.resource.content.ResourceFactory;
 
 public class GitHubRepoResources
@@ -27,6 +32,7 @@ public class GitHubRepoResources
             implements Provenance, Editable {
     }
 
+    private final Tika tika = new Tika();
     private final ResourceFactory rf;
     private final GitHubFilePathComponentsSupplier ghfpcs = new GitHubFilePathComponentsSupplier();
     private final List<PathElaboration> pathElaboration = new ArrayList<>();
@@ -125,11 +131,11 @@ public class GitHubRepoResources
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                }, Optional.empty(), Optional.empty()).orElse(
-                        new ExceptionResource(new RuntimeException("Unsupported resource type: " + content.getName())));
+                }, Optional.empty(), Optional.empty());
                 final var ghContentURI = URI.create(content.getHtmlUrl());
                 final var provenance = new GitHubFileProvenance(ghContentURI, Optional.of(ghContentURI), content);
-                resources.add(new ResourceProvenance<>(provenance, resource));
+                resources.add(resource.isPresent() ? new ResourceProvenance<>(provenance, resource.orElseThrow())
+                        : new ResourceProvenance<>(provenance, new GitHubForwardableResource(content)));
             }
         }
     }
@@ -165,4 +171,50 @@ public class GitHubRepoResources
             return String.join("/", components);
         }
     }
+
+    public class GitHubForwardableResource
+            implements ForwardableResource<GitHubForwardableNature, InputStream>,
+            StreamResource<GitHubForwardableNature> {
+
+        private final GHContent ghContent;
+        private final GitHubForwardableNature nature;
+
+        public GitHubForwardableResource(final GHContent ghContent) {
+            this.ghContent = ghContent;
+            this.nature = new GitHubForwardableNature(ghContent);
+        }
+
+        @Override
+        public GitHubForwardableNature nature() {
+            return nature;
+        }
+
+        @Override
+        public InputStream content() {
+            try {
+                return ghContent.read();
+            } catch (IOException e) {
+                return new ByteArrayInputStream(e.getMessage().getBytes(StandardCharsets.UTF_8));
+            }
+        }
+
+        @Override
+        public Class<InputStream> contentClass() {
+            return InputStream.class;
+        }
+    }
+
+    public class GitHubForwardableNature implements Nature {
+        final String mimeType;
+
+        GitHubForwardableNature(final GHContent fileObject) {
+            this.mimeType = tika.detect(fileObject.getPath());
+        }
+
+        @Override
+        public String mimeType() {
+            return mimeType;
+        }
+    }
+
 }

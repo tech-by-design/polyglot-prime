@@ -1,7 +1,11 @@
 package lib.aide.resource.collection;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -11,15 +15,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
+import org.apache.tika.Tika;
 
 import lib.aide.paths.Paths;
 import lib.aide.resource.Editable;
+import lib.aide.resource.ForwardableResource;
 import lib.aide.resource.Nature;
 import lib.aide.resource.Provenance;
 import lib.aide.resource.Resource;
 import lib.aide.resource.ResourceProvenance;
 import lib.aide.resource.ResourcesSupplier;
-import lib.aide.resource.content.ExceptionResource;
+import lib.aide.resource.StreamResource;
 import lib.aide.resource.content.ResourceFactory;
 
 public class VfsResources
@@ -28,6 +34,7 @@ public class VfsResources
             implements Provenance, Editable {
     }
 
+    private final Tika tika = new Tika();
     private final ResourceFactory rf;
     private final FileObjectPathComponentsSupplier fopcs = new FileObjectPathComponentsSupplier();
     private final List<PathElaboration> pathElaboration = new ArrayList<>();
@@ -127,11 +134,11 @@ public class VfsResources
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            }, Optional.empty(), Optional.empty()).orElse(
-                    new ExceptionResource(new RuntimeException("Unsupported resource type: " + fileObject.getName())));
+            }, Optional.empty(), Optional.empty());
             final var provenance = new VfsFileObjectProvenance(fileObject.getURI(), Optional.of(fileObject.getURI()),
                     fileObject);
-            resources.add(new ResourceProvenance<>(provenance, resource));
+            resources.add(resource.isPresent() ? new ResourceProvenance<>(provenance, resource.orElseThrow())
+                    : new ResourceProvenance<>(provenance, new VfsForwardableResource(fileObject)));
         }
     }
 
@@ -159,6 +166,56 @@ public class VfsResources
         @Override
         public String assemble(List<String> components) {
             return String.join("/", components);
+        }
+    }
+
+    public class VfsForwardableResource
+            implements ForwardableResource<VfsForwardableNature, InputStream>, StreamResource<VfsForwardableNature> {
+
+        private final FileObject fileObject;
+        private final VfsForwardableNature nature;
+
+        public VfsForwardableResource(final FileObject fileObject) {
+            this.fileObject = fileObject;
+            this.nature = new VfsForwardableNature(fileObject);
+        }
+
+        @Override
+        public VfsForwardableNature nature() {
+            return nature;
+        }
+
+        @Override
+        public InputStream content() {
+            try {
+                return fileObject.getContent().getInputStream();
+            } catch (FileSystemException e) {
+                return new ByteArrayInputStream(e.getMessage().getBytes(StandardCharsets.UTF_8));
+            }
+        }
+
+        @Override
+        public Class<InputStream> contentClass() {
+            return InputStream.class;
+        }        
+    }
+
+    public class VfsForwardableNature implements Nature {
+        final String mimeType;
+
+        VfsForwardableNature(final FileObject fileObject) {
+            var mimeType = "text/plain";
+            try {
+                mimeType = tika.detect(fileObject.getPath());
+            } catch (IOException e) {
+                mimeType = "text/plain";
+            }
+            this.mimeType = mimeType;
+        }
+
+        @Override
+        public String mimeType() {
+            return mimeType;
         }
     }
 

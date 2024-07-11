@@ -4,19 +4,37 @@
 
 <head>
     <script type="module">
-        import { RenderableResource, RenderableResources, handleExternalRefErrors } from '@presentation/shell/renderable-resource.js';
+        import { RenderableResource, RenderableResources } from '@presentation/shell/renderable-resource.js';
 
+        // take a resourceURI and prepare a path relative to that resource in a "dummy" URL
+        const proxyablePath = (relativePath, resource) => {
+            try {
+                const absPath = new URL(relativePath, `http://dummy.com/${resource.resourceURI}`).pathname;
+                return window.shell.serverSideUrl(`/docs/techbd-hub/resource/proxy${absPath}`);
+            } catch (err) {
+                console.error(`Unable to create new absolute path to '${relativePath}' from ${resource.resourceURI}`, { err, relativePath, resource });
+                return relativePath;
+            }
+        }
         const isAbsoluteURL = url => { try { return new URL(url).origin !== 'null'; } catch { return false; } };
         const renderElemSupplier = () => document.getElementById('resource');
         window.rr = new RenderableResources(
-            (resourceUrl) => window.shell.serverSideUrl(`/docs/techbd-hub/resource/content?path=${resourceUrl}`),
+            (resourceUrl) => window.shell.serverSideUrl(`/docs/techbd-hub/resource/content/${resourceUrl}`),
             renderElemSupplier,
             {
-                markdownUrlRewriter: ((url) => {
-                    if (!isAbsoluteURL(url))
-                        console.warn(`A relative URL was encountered in Markdown but not rewritten`, { url });
-                    return url;
-                })
+                markdownUrlInspector: (inspect, resource) => {
+                    if (!isAbsoluteURL(inspect.url)) {
+                        switch (inspect.node.tagName) {
+                            case "img":
+                                const pp = proxyablePath(inspect.url, resource);
+                                // inspect.node is HAST Element node where the URL was found, let's rewrite the src
+                                if(pp != inspect.url) inspect.node.properties.src = pp;
+                                break;
+                            default:
+                                console.warn(`A relative URL was encountered in Markdown Rehype node but not rewritten`, inspect);
+                        }
+                    }
+                }
             }
         );
         document.addEventListener('DOMContentLoaded', () => {
@@ -31,13 +49,6 @@
             window.layout.breadcrumbs([...window.layout.activeRoute.breadcrumbs, ...resource.breadcrumbs], false);
             document.querySelectorAll('#sidebar a').forEach(a => a.classList.toggle('selected', a.dataset.resourcePath == resourceURI));
             if (window.mermaid) await window.mermaid.run();
-
-            // TODO: replace attempt-rewrite.png with something like 
-            //       /docs/techbd-hub/resource/proxy/<path> which would proxy items from the source
-            const targetElem = renderElemSupplier();
-            handleExternalRefErrors(
-                (providedSrc, target) => 'attempt-rewrite.png',
-                { handleElement: element => targetElem.contains(element) });
 
             window.sidebar.renderSequenced(resourceURI);
         });
@@ -93,22 +104,30 @@
             padding: .3em;
             line-height: 1.4;
         }
+
         .mermaid {
             background-color: #ffffff !important;
             color: #000000 !important;
         }
+
         summary::-webkit-details-marker {
             display: none;
         }
+
         details[open] .caret {
             transform: rotate(90deg);
         }
-        details[open] details .caret, details[open] details[open] details .caret {
+
+        details[open] details .caret,
+        details[open] details[open] details .caret {
             transform: none;
         }
-        details[open] details[open] .caret, details[open] details[open] details[open] .caret {
+
+        details[open] details[open] .caret,
+        details[open] details[open] details[open] .caret {
             transform: rotate(90deg);
         }
+
         .caret {
             transition: transform 0.3s;
         }
@@ -147,7 +166,7 @@
                     - An `onclick` event that prevents default navigation and calls `window.rr.fromURI` with the node's href.
                 -->
                 <div th:fragment="nodeFragment(node, level)">
-                    <details th:if="${node != null and !node.isLeaf()}" class="w-full" open>
+                    <details th:if="${node != null and !node.isLeaf() and nodeAide.sequenceableChildren(node).size > 0}" class="w-full" open>
                         <summary class="flex items-center justify-between w-full py-1 cursor-pointer">
                             <div class="group-label flex items-center">
                                 <div th:if="${node.payload().isPresent()}"
@@ -176,7 +195,7 @@
                             </li>
                         </ul>
                     </details>
-                    <div th:if="${node != null and node.isLeaf()}"
+                    <div th:if="${node != null and node.isLeaf() and node.payload.isPresent}"
                         th:with="mimeType=${node.payload.get.resource.nature.mimeType}, navSequenceWeight=${nodeAide.attributeExpr(node, 'nav.sequence.weight')}, editableUrlOrBlank=${nodeAide.editableUrlOrBlank(node)}">
                         <a th:href="${node.absolutePath()}" th:text="${sidebarNS.caption(node)}"
                             th:attr="data-resource-path=${node.absolutePath()}"

@@ -25,6 +25,7 @@ import lib.aide.resource.Nature;
 import lib.aide.resource.Provenance;
 import lib.aide.resource.Resource;
 import lib.aide.resource.ResourceProvenance;
+import lib.aide.resource.TextResource;
 import lib.aide.resource.collection.GitHubRepoResources;
 import lib.aide.resource.collection.Resources;
 import lib.aide.resource.collection.VfsResources;
@@ -140,6 +141,9 @@ public class DocResourcesService {
                 Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
 
             return node.children().stream()
+                    .filter(child -> child.payload().isPresent()
+                            ? child.payload().orElseThrow().resource() instanceof TextResource ? true : false
+                            : true)
                     .sorted(Comparator.comparingInt(child -> {
                         final var attributes = child.attributes();
                         final var navVal = attributes.get("nav");

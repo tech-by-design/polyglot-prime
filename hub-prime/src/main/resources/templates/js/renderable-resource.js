@@ -2,7 +2,7 @@ import { unified } from 'https://cdn.jsdelivr.net/npm/unified@11.0.5/+esm';
 import remarkParse from 'https://cdn.jsdelivr.net/npm/remark-parse@11.0.0/+esm';
 import remarkFrontmatter from 'https://cdn.jsdelivr.net/npm/remark-frontmatter@5.0.0/+esm';
 import remarkParseFrontmatter from 'https://cdn.jsdelivr.net/npm/remark-parse-frontmatter@1.0.3/+esm';
-import remarkLinkRewrite from 'https://cdn.jsdelivr.net/npm/remark-link-rewrite@1.0.7/+esm';
+import rehypeUrlInspector from 'https://cdn.jsdelivr.net/npm/rehype-url-inspector@2.0.2/+esm';
 import remarkRehype from 'https://cdn.jsdelivr.net/npm/remark-rehype@11.1.0/+esm';
 import remarkGfm from 'https://cdn.jsdelivr.net/npm/remark-gfm@4.0.0/+esm';
 import rehypeStringify from 'https://cdn.jsdelivr.net/npm/rehype-stringify@10.0.0/+esm';
@@ -112,11 +112,15 @@ export class MarkdownResource extends RenderableResource {
         const markdown = await response.text();
         const transformed = await unified()
             .use(remarkParse, { fragment: true })
-            .use(remarkLinkRewrite, { replacer: this.options.markdownUrlRewriter ?? ((url) => url) })
             .use(remarkFrontmatter)
             .use(remarkParseFrontmatter)
             .use(remarkGfm) // support GFM (autolink literals, footnotes, strikethrough, tables, tasklists)
             .use(remarkRehype, { allowDangerousHtml: true })
+            .use(rehypeUrlInspector, {
+                inspectEach: (node) => {
+                    this.options.markdownUrlInspector?.(node, this);
+                }
+              })
             .use(rehypeStringify, { allowDangerousHtml: true })
             .process(markdown);
         targetElem.innerHTML = transformed.toString();
