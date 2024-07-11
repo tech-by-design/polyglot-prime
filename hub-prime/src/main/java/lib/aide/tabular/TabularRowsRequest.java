@@ -50,7 +50,7 @@ public record TabularRowsRequest(
      * @param filterType The type of the filter.
      * @param filter     The filter value.
      */
-    public static record FilterModel(String filterType, Object filter) {}
+    public static record FilterModel(String filterType,String type, Object filter) {}
 
     /**
      * Record representing a sort model.
