@@ -52,7 +52,8 @@ WITH cte_business_rule AS (
             ELSE NULL::text
         END AS remediation2
    FROM techbd_orch_ctl.orch_session_issue isi
-     LEFT JOIN techbd_orch_ctl.orch_session_entry ose ON ose.orch_session_entry_id::text = isi.session_entry_id::text
+     LEFT JOIN techbd_orch_ctl.orch_session_entry ose ON ose.orch_session_entry_id::text = isi.session_entry_id::text 
+		 AND ose.session_id::text = isi.session_id::text
      LEFT JOIN techbd_orch_ctl.orch_session os ON os.orch_session_id::text = isi.session_id::text
      LEFT JOIN cte_business_rule br ON br.field::text = isi.issue_column::text
   WHERE isi.orch_session_issue_id IS NOT NULL AND ose.ingest_src::text ~~ '/SFTP/%'::text;
