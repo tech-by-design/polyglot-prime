@@ -15,5 +15,4 @@ lib.aide.resource.content
 lib.aide.resource.nature
 lib.aide.resource.collection
 lib.aide.paths
-lib.aide.sql.dynamic
 lib.aide.tabular
