@@ -362,53 +362,36 @@ for each row and reduces repeated scanning of the JSONB arrays.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_observe CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_observe
-AS WITH cte_interaction_observe AS (
-     SELECT sihr.sat_interaction_http_request_id AS interaction_http_request_id,
-        sihr.hub_interaction_id AS interaction_id,
-        headers.start_time,
-        headers.finish_time,
-        headers.duration_nanosecs,
-        headers.duration_millisecs,
-        sihr.payload->'request'::TEXT ->> 'requestUri'::TEXT AS uri
-       FROM techbd_udi_ingress.sat_interaction_http_request sihr
-         JOIN LATERAL ( SELECT max(
-                    CASE
-                        WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Start-Time'::text THEN header.value ->> 'value'::text
-                        ELSE NULL::text
-                    END) AS start_time,
-                max(
-                    CASE
-                        WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Finish-Time'::text THEN header.value ->> 'value'::text
-                        ELSE NULL::text
-                    END) AS finish_time,
-                max(
-                    CASE
-                        WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Duration-Nanosecs'::text THEN header.value ->> 'value'::text
-                        ELSE NULL::text
-                    END) AS duration_nanosecs,
-                max(
-                    CASE
-                        WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Duration-Millisecs'::text THEN header.value ->> 'value'::text
-                        ELSE NULL::text
-                    END) AS duration_millisecs
-               FROM jsonb_array_elements((sihr.payload -> 'response'::text) -> 'headers'::text) header(value)) headers ON true
-      WHERE 1 = 1 AND (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text
-    )
-	SELECT 
-	intr_observe.interaction_id,
-	intr_observe.uri,
-	intr_observe.start_time,
-	intr_observe.finish_time,
-	intr_observe.duration_nanosecs,
-	intr_observe.duration_millisecs,
-	intr_observe.interaction_http_request_id
-	FROM cte_interaction_observe intr_observe  
-		WHERE intr_observe.start_time IS NOT NULL 
-		AND intr_observe.finish_time IS NOT NULL 
-		AND intr_observe.duration_nanosecs IS NOT NULL 
-		AND intr_observe.duration_millisecs IS NOT NULL
-		ORDER BY intr_observe.duration_millisecs desc
-		;
+AS WITH cte_interaction_observe AS (			
+SELECT sihr.sat_interaction_http_request_id AS interaction_http_request_id,
+    sihr.hub_interaction_id AS interaction_id,
+    headers.start_time,
+    headers.finish_time,
+   (headers.finish_time::timestamp - headers.start_time::timestamp) AS duration_millisecs,
+    (sihr.payload -> 'request'::text) ->> 'requestUri'::text AS uri
+   FROM techbd_udi_ingress.sat_interaction_http_request sihr
+     JOIN LATERAL ( SELECT max(
+                CASE
+                    WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Start-Time'::text THEN header.value ->> 'value'::text
+                    ELSE NULL::text
+                END) AS start_time,
+            max(
+                CASE
+                    WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Finish-Time'::text THEN header.value ->> 'value'::text
+                    ELSE NULL::text
+                END) AS finish_time
+           FROM jsonb_array_elements((sihr.payload -> 'response'::text) -> 'headers'::text) header(value)) headers ON true
+  WHERE 1 = 1 AND (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text
+)
+SELECT 	intr_observe.interaction_id,
+		intr_observe.uri,
+		intr_observe.start_time,
+		intr_observe.finish_time,   
+		intr_observe.duration_millisecs,
+		intr_observe.interaction_http_request_id
+FROM cte_interaction_observe intr_observe
+WHERE intr_observe.start_time IS NOT NULL AND intr_observe.finish_time IS NOT NULL
+ORDER BY intr_observe.duration_millisecs DESC;
 
 /*******************************************************************************************
 This view extracts diagnostic information from JSON payloads of HTTP requests stored in 
