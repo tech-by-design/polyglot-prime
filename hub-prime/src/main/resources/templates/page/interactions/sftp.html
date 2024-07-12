@@ -112,15 +112,19 @@
                     { headerName: "Consumed CSV", field: "consumedCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "FHIR POSTs Failed", field: "publishedFhirFailedCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true, cellRenderer: function (params) {
-                            var link = document.createElement('a');
-                            link.href = '#';
-                            link.innerText = params.value;
-                            link.addEventListener('click', function (e) {
-                                e.preventDefault();
-                                document.querySelector('#json').data = params.data.publishedFhirFailedResponse;
-                                document.getElementById('modal').style.display = 'block';
-                            });
-                            return link;
+                            if(parseInt(params.value) > 0){
+                                var link = document.createElement('a');
+                                link.href = '#';
+                                link.innerText = params.value;
+                                link.addEventListener('click', function (e) {
+                                    e.preventDefault();
+                                    document.querySelector('#json').data = params.data.publishedFhirFailedResponse;
+                                    document.getElementById('modal').style.display = 'block';
+                                });
+                                return link;
+                            }else{
+                                return params.value
+                            }                            
                         } },
                     { headerName: "FHIR POSTs Success", field: "publishedFhirSuccessCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "Exception", field: "exception", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
@@ -158,14 +162,28 @@
                             let publishedFhirFailedCount = 0;
                             let publishedFhirSuccessCount = 0;
                             const publishedFhirFailedResponse = [];
-                            const publishedFhirFailed = session?.publishFhirResult?.map(r => {
-                                if(!JSON.parse(r.response).scoredcardResponse.includes('TestResult: PASS')){
-                                    publishedFhirFailedCount = publishedFhirFailedCount + 1;
-                                    publishedFhirFailedResponse.push({"File":r.fhirFileName,"Response":JSON.parse(r.response).scoredcardResponse, "BundleID":JSON.parse(r.response).bundleID});
-                                }else{
-                                    publishedFhirSuccessCount = publishedFhirSuccessCount + 1;
-                                }
-                            })
+                            if (session?.publishFhirResult) {
+                                session.publishFhirResult.forEach(r => {
+                                    let response;
+                                    try {
+                                        response = JSON.parse(r?.response);
+                                    } catch (e) {
+                                        // Handle JSON parsing error if needed
+                                        return;
+                                    }
+
+                                    if (!response?.scoredcardResponse?.includes('TestResult: PASS')) {
+                                        publishedFhirFailedCount++;
+                                        publishedFhirFailedResponse.push({
+                                            "File": r.fhirFileName,
+                                            "Response": response.scoredcardResponse,
+                                            "BundleID": response.bundleID
+                                        });
+                                    } else {
+                                        publishedFhirSuccessCount++;
+                                    }
+                                });
+                            }
                             return {
                                 tenantId: row.tenantId,
                                 sessionFinalizedAt: row.sessionFinalizedAt,
