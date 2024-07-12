@@ -203,4 +203,10 @@ public class DocsController {
     public String projects(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/project", model, request);
     }
+
+    @RouteMapping(label = "Schema", title = "Schema", siblingOrder = 50)
+    @GetMapping("/docs/schema")
+    public String schemaSpy(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/schema", model, request);
+    }
 }
