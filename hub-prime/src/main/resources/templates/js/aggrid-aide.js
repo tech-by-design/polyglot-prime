@@ -119,6 +119,7 @@ export class AGGridAideBuilder {
                 enablePivot: true
             },
             columnDefs: [],
+            groupDisplayType: 'singleColumn', // optional as 'singleColumn' is the default group display type
             sideBar: false, // TODO: turn this back on when Pivots work
             pivotMode: false,
             autoSizeStrategy: { type: "fitCellContents" },
@@ -219,7 +220,7 @@ export class AGGridAideBuilder {
                         durationMillisecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Nanosecs"),
                         durationNanosecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Millisecs"),
                     } : {};
-                    if(respMetrics && window.layout?.observability?.metricsCollection) {
+                    if (respMetrics && window.layout?.observability?.metricsCollection) {
                         window.layout.addIdentifiableMetrics(`fetch-${dataSourceUrl}`, respMetrics);
                     }
                     if (response.ok) {

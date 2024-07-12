@@ -19,15 +19,22 @@
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
-                .withColumnDefs([
-                    { headerName: "Encountered Time", field: "encounteredat", sortable: true, sort: "desc", filter: "agNumberColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true) },
-                    { headerName: "Session ID", field: "session_id", filter: "agTextColumnFilter" },
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
-                    { headerName: "Severity", field: "severity", filter: "agTextColumnFilter" },
-                    { headerName: "Issue Message", field: "message", filter: "agTextColumnFilter" }, 
-                    { headerName: "Issue Line", field: "line", filter: "agNumberColumnFilter" },
-                    { headerName: "Issue Column", field: "column", filter: "agNumberColumnFilter" },
-                    { headerName: "Diagnostics", field: "diagnostics" , filter: "agTextColumnFilter" }
+            .withColumnDefs([
+                    {
+                        headerName: "Encountered Time",
+                        field: "encounteredat",
+                        sortable: true,
+                        sort: "desc",
+                        filter: "agNumberColumnFilter", rowGroup: true, rowGroupIndex: 1, hide: true,
+                        valueFormatter: AGGridAide.dateTimeValueFormatter(true)
+                    },
+                    { headerName: "Session ID", field: "session_id", filter: "agTextColumnFilter", rowGroup: true, rowGroupIndex: 5, hide: true },
+                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", rowGroup: true, rowGroupIndex: 0, hide: true },
+                    { headerName: "Severity", field: "severity", filter: "agTextColumnFilter", rowGroup: true, rowGroupIndex: 2, hide: true },
+                    { headerName: "Issue Message", field: "message", filter: "agTextColumnFilter", rowGroup: true, rowGroupIndex: 3, hide: true },
+                    { headerName: "Issue Line", field: "line", filter: "agNumberColumnFilter", rowGroup: true, rowGroupIndex: 6, hide: true },
+                    { headerName: "Issue Column", field: "column", filter: "agNumberColumnFilter", rowGroup: true,  rowGroupIndex: 7, hide: true },
+                    { headerName: "Diagnostics", field: "diagnostics", filter: "agTextColumnFilter", rowGroup: true, rowGroupIndex: 4, hide: true }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
@@ -44,7 +51,7 @@
 
             agGridInstance.init('serverDataGrid');
         });
-    </script>    
+    </script>
 </head>
 
 <body>
