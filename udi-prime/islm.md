@@ -582,6 +582,97 @@ CALL "info_schema_lifecycle".islm_migrate_ctl('rollback', 'Vupdate-table1_202407
     }
    ```
 
+## Implementation with Techbd
+
+### Generating SQL
+
+To generate SQL and ERD for the UDI model, run the following command:
+
+```bash
+cd udi-prime
+
+# when you want to run specific commands individually
+
+./islm.ts islm generate --help  # review code generation options
+./islm.ts islm generate sql     # generate all *.sql artifacts
+
+```
+
+`./udictl.ts ic generate sql` command will produce SQL files in
+`./target/postgres/ingestion-center/islm` that includes all necessary DDL statements for setting up the database schema.
+
+
+
+### Deploying SQL to PostgreSQL and Testing 
+
+In addition to generating the SQL script, you can deploy it to your PostgreSQL
+database using the below commands:
+
+```bash
+cd udi-prime
+./islm.ts islm bootstrap --help           # review SQL migration options
+./islm.ts islm bootstrap                  # use generated SQL to deploy the ISLM infrastructure SQL
+
+./islm.ts islm test --help              # review test options
+./islm.ts islm test                     # perform pgTAP tests
+```
+
+### Loading the SQL to PostgreSQL for Migration and Testing 
+
+In addition to deploying the ISLM SQL script, you can load your PostgreSQL migration procedures to the
+database using the below commands:
+
+```bash
+cd udi-prime
+./islm.ts islm load-migrate-sql --help           # review SQL migration options
+./islm.ts islm load-migrate-sql                  # use generated SQL to load the Migration SQL with test cases
+
+```
+
+### Execute the migration 
+
+In addition to loading the Migration SQL script, you can execute your PostgreSQL migration procedures in the
+database using the below commands:
+
+```bash
+cd udi-prime
+./islm.ts islm migrate --help           # review SQL migration options
+./islm.ts islm migrate                  # use loaded SQL to execute the Migration SQL with test cases
+
+```
+
+`./islm.ts islm migrate` executes the SQL scripts using credentials stored in
+your `.pgpass` file and uses
+[pgpass](https://github.com/netspective-labs/sql-aide/tree/main/lib/postgres/pgpass)
+for password-less authentication.
+
+Add the following `UDI_PRIME_DESTROYABLE_DEVL` connection ID to your
+`~/.pgpass`:
+
+```
+# { id: "UDI_PRIME_DESTROYABLE_DEVL", description: "UDI Prime database that can be destroyed", boundary: "Development" } 
+DB_HOST:5432:DB_NAME:USER_NAME:PASSWORD
+```
+
+The `./islm.ts islm bootstrap` and `./islm.ts islm migrate` commands use `psql`
+PostgreSQL client. If you do not have installed, you can use any package manager
+to install it:
+
+```bash
+$ sudo upt install -y postgresql-client
+```
+
+## UDI Naming Standards
+
+- `src/*` directory should only have src (not generated) files
+- `target/*` directory should contain generated files
+- `*.sql` extension should be used for ANSI SQL (not PostgreSQL-specific, for
+  example)
+- `*.psql` extension should be used for PostgreSQL-specific files (using stored
+  routines, for example)
+- `*.auto.*` are auto-generated files (always include `.auto.` for generated
+  files)
+
 
 ## Conclusion
 
