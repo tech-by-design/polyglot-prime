@@ -1,7 +1,6 @@
 package org.techbd.service.http;
 
 import java.util.Arrays;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -24,11 +23,6 @@ import org.springframework.security.core.authority.AuthorityUtils;
 @ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")
 @Profile("localopen")
 public class NoAuthSecurityConfig {
-    @Autowired
-    public NoAuthSecurityConfig() {
-        System.out.println("NoAuthSecurityConfig initialized with profile: Localopen");
-    }
-
     @Bean
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
         // allow all requests without any security (for local unauthenticated data)
@@ -38,9 +32,6 @@ public class NoAuthSecurityConfig {
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
         http.anonymous();
-        // SecurityContextHolder.getContext().setAuthentication(
-        // new AnonymousAuthenticationToken("key", "anonymousUser",
-        // AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
         return http.build();
     }
 
