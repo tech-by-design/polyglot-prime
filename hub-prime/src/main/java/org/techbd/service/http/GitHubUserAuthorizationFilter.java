@@ -52,7 +52,8 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
     final var sessionUser = getAuthenticatedUser(request);
     if (sessionUser.isEmpty()) {
       final var authentication = SecurityContextHolder.getContext().getAuthentication();
-      if (authentication != null && authentication.isAuthenticated()) {
+      if (authentication != null && authentication.isAuthenticated()
+          && "anonymousUser" != authentication.getPrincipal().toString()) {
         final var gitHubPrincipal = (DefaultOAuth2User) authentication.getPrincipal();
         final var gitHubLoginId = gitHubPrincipal.getAttribute("login");
         final var gitHubAuthnUser = gitHubUsers.isAuthorizedUser(gitHubLoginId.toString());
