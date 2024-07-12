@@ -1,0 +1,16 @@
+CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA info_schema_lifecycle;
+
+-- TODO: figure out why this is required; when search_path is not set then seeing:
+--       `ERROR:  42883: function findfuncs(name, unknown) does not exist`
+SET search_path TO info_schema_lifecycle;
+
+\ir ./000-idempotent-islm-unit-test.psql
+
+SELECT * FROM info_schema_lifecycle.runtests('info_schema_lifecycle'::name, 'test_all_islm_objects');
+
+-- Call the function to run the tests and log the results
+SELECT info_schema_lifecycle.run_and_log_tests(
+    'test_all_islm_objects', 
+    'ADMIN', -- Created by
+    'pgtap'
+);

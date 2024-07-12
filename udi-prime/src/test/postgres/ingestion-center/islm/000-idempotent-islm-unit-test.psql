@@ -1,0 +1,324 @@
+CREATE OR REPLACE FUNCTION info_schema_lifecycle.test_all_islm_objects(schema_name text DEFAULT 'info_schema_lifecycle'::text)
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+	ddl_statement 			TEXT;
+	return_mig_status		INT;
+	retrun_object_exists	INT;
+  procedure_name TEXT;
+BEGIN
+	
+	RETURN NEXT has_schema( 'info_schema_lifecycle');
+
+	RETURN NEXT has_function(
+    'info_schema_lifecycle',  -- Schema name
+    'islm_init',       -- Function name
+    'Stored procedure ''islm_init'' exists'
+	);
+	
+	RETURN NEXT has_table(schema_name::name, 'islm_governance'::name);
+	RETURN NEXT columns_are(
+	schema_name,
+	'islm_governance',
+	ARRAY[ 	'islm_governance_id',
+			'migrate_version',
+			'sp_migration',
+			'sp_migration_undo',
+			'fn_migration_status',
+			'from_state',
+			'to_state',
+			'transition_result',
+			'transition_reason',
+			'created_at',
+			'created_by',
+			'updated_at',
+			'updated_by',
+			'deleted_at',
+			'deleted_by',
+			'activity_log']
+		);
+	
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'islm_governance_id'::name);
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'migrate_version'::name);
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'sp_migration'::name);
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'sp_migration_undo'::name);
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'fn_migration_status'::name);
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'from_state'::name);
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'to_state'::name);
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'transition_result'::name);
+	RETURN NEXT col_not_null(schema_name::name, 'islm_governance'::name, 'transition_reason'::name);
+
+
+	RETURN NEXT col_is_null(schema_name::name, 'islm_governance'::name, 'created_at'::name);
+	RETURN NEXT col_is_null(schema_name::name, 'islm_governance'::name, 'created_by'::name);
+	RETURN NEXT col_is_null(schema_name::name, 'islm_governance'::name, 'updated_at'::name);
+	RETURN NEXT col_is_null(schema_name::name, 'islm_governance'::name, 'updated_by'::name);
+	RETURN NEXT col_is_null(schema_name::name, 'islm_governance'::name, 'deleted_at'::name);
+	RETURN NEXT col_is_null(schema_name::name, 'islm_governance'::name, 'deleted_by'::name);
+	RETURN NEXT col_is_null(schema_name::name, 'islm_governance'::name, 'activity_log'::name);
+
+	
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'islm_governance_id'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'migrate_version'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'sp_migration'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'sp_migration_undo'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'fn_migration_status'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'from_state'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'to_state'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'transition_result'::name, 'jsonb'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'transition_reason'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'created_at'::name, 'timestamp with time zone'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'created_by'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'updated_at'::name, 'timestamp with time zone'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'updated_by'::name, 'text'::name);	
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'deleted_at'::name, 'timestamp with time zone'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'deleted_by'::name, 'text'::name);
+	RETURN NEXT col_type_is(schema_name::name, 'islm_governance'::name, 'activity_log'::name, 'jsonb'::name);
+		
+	--Check default value for the table columns
+	RETURN NEXT ok(
+            EXISTS(SELECT 1 
+					FROM information_schema.columns
+					WHERE table_name = 'islm_governance'
+					AND column_name = 'created_at'
+					AND column_default IS NOT NULL
+                   ),
+            'Table ''islm_governance'' have default value for the column ''created_at'''
+	);  
+
+	RETURN NEXT ok(
+            EXISTS(SELECT 1 
+					FROM information_schema.columns
+					WHERE table_name = 'islm_governance'
+					AND column_name = 'created_by'
+					AND column_default IS NOT NULL
+                   ),
+            'Table ''islm_governance'' have default value for the column ''created_by'''
+	);  
+
+	 -- Check existence of required functions     
+	RETURN NEXT has_function(
+	    'info_schema_lifecycle',  -- Schema name
+	    'islm_migrate_ctl',       -- Function name
+	    ARRAY['text', 'text'],  -- Argument types
+	    'Function info_schema_lifecycle.islm_migrate_ctl(text, text) exists'
+	);
+
+	-- Mock the migration procedure
+	ddl_statement := '
+        CREATE OR REPLACE PROCEDURE info_schema_lifecycle."migrate_Vsample_20231016101645"()
+        LANGUAGE plpgsql
+        AS $$
+        DECLARE
+            ddl_statement TEXT;
+        BEGIN
+            ddl_statement := ''
+                CREATE TABLE IF NOT EXISTS info_schema_lifecycle.migration_test_table (
+                    id SERIAL PRIMARY KEY,
+                    description TEXT,
+                    status INT DEFAULT 0
+                )'';
+            
+            EXECUTE ddl_statement;
+        END;
+        $$;'
+		;
+    
+    EXECUTE ddl_statement;   
+   
+	RETURN NEXT has_function(
+    schema_name,  -- Schema name
+    'migrate_Vsample_20231016101645',   -- Function name
+    'Stored procedure ''migrate_Vsample_20231016101645'' should exists'
+	);
+
+RETURN NEXT ok('migrate_Vsample_20231016101645' SIMILAR TO 'migrate_V%_[0-9]{14}', 
+                       'Procedure name matches the pattern migrate_V<arbitrarytext>_YYYYMMDDHHMMSS');
+	
+   
+	IF EXISTS(SELECT 1 FROM information_schema.routines 
+			    WHERE routine_schema = schema_name 
+			    AND routine_name = 'migrate_Vsample_20231016101645' 
+			    AND routine_type = 'PROCEDURE') THEN
+		CALL "migrate_Vsample_20231016101645"();
+	END IF;
+
+	RETURN NEXT has_table(schema_name::name, 'migration_test_table'::name);
+
+-- Mock the migration status function to return 0 (not executed)
+	ddl_statement := '
+    CREATE OR REPLACE FUNCTION info_schema_lifecycle."migration_Vsample_20231016101645_status"()
+    RETURNS INT AS $$
+    DECLARE
+      status INTEGER := 0; -- Initialize status to 0 (not executed)
+    BEGIN
+      IF EXISTS (
+        SELECT FROM information_schema.columns
+        WHERE table_name = ''migration_test_table''
+      ) THEN
+        status := 1; -- Set status to 1 (already executed)
+      END IF;
+      
+      RETURN status; -- Return the status
+    END;
+    $$ LANGUAGE plpgsql;';
+
+    EXECUTE ddl_statement;
+   
+   	RETURN NEXT has_function(
+    'info_schema_lifecycle',  -- Schema name
+    'migration_Vsample_20231016101645_status',       -- Function name
+    'Stored function ''migration_Vsample_20231016101645_status'' exists'
+	);
+
+	RETURN NEXT ok('migration_Vsample_20231016101645_status' SIMILAR TO 'migration_V%_[0-9]{14}_status', 
+                       'Function name matches the pattern migration_V<arbitrarytext>_YYYYMMDDHHMMSS_status');
+		
+
+	IF EXISTS(SELECT 1 FROM information_schema.routines
+				WHERE routine_schema = schema_name
+  				AND routine_name = 'migration_Vsample_20231016101645_status') THEN
+  		SELECT info_schema_lifecycle."migration_Vsample_20231016101645_status"() INTO return_mig_status;
+  	
+  		RETURN NEXT ok(return_mig_status IS NOT NULL, 'Function ''migration_Vsample_20231016101645_status'' successfully executed with return value ' 
+  						||  COALESCE(return_mig_status::text,''));	
+  	END IF;
+
+	ddl_statement := 'CREATE OR REPLACE PROCEDURE info_schema_lifecycle."migration_Vsample_20231016101645_undo"()
+						LANGUAGE plpgsql
+						AS $$
+						DECLARE
+						    ddl_statement TEXT;
+						BEGIN
+						    ddl_statement := ''DROP TABLE IF EXISTS info_schema_lifecycle.migration_test_table;'';
+						       
+							EXECUTE ddl_statement;    
+						END;
+						$$;';
+		EXECUTE ddl_statement;						
+
+	RETURN NEXT has_function(
+    'info_schema_lifecycle',  -- Schema name
+    'migration_Vsample_20231016101645_undo',       -- Function name
+    'Stored procedure ''migration_Vsample_20231016101645_undo'' should exists'
+	);
+
+	RETURN NEXT ok('migration_Vsample_20231016101645_undo' SIMILAR TO 'migration_V%_[0-9]{14}_undo', 
+                       'Procedure name matches the pattern migration_V<arbitrarytext>_YYYYMMDDHHMMSS_undo');
+
+	IF EXISTS(SELECT 1 FROM information_schema.routines 
+		    WHERE routine_schema = 'info_schema_lifecycle' 
+		    AND routine_name = 'migration_Vsample_20231016101645_undo' 
+		    AND routine_type = 'PROCEDURE') THEN
+		CALL "migration_Vsample_20231016101645_undo"();
+		
+		IF NOT EXISTS(SELECT 1 FROM information_schema.tables 
+				WHERE table_schema = 'info_schema_lifecycle' 
+    			AND table_name = 'migration_test_table') THEN 
+   			RETURN NEXT ok(true, 'Procedure ''migration_Vsample_20231016101645_undo'' successfully executed');	
+    	END IF;
+    
+    	CALL "migration_Vsample_20231016101645_undo"();
+	END IF;
+	
+	IF EXISTS(SELECT 1 FROM information_schema.tables 
+				WHERE table_schema = 'info_schema_lifecycle' 
+    			AND table_name = 'islm_governance') THEN 
+    	-- Setup: Insert necessary data into islm_governance table    			
+	
+		INSERT INTO info_schema_lifecycle.islm_governance 
+		(islm_governance_id,
+		migrate_version, 
+		sp_migration, 
+		sp_migration_undo, 
+		fn_migration_status, 
+		from_state, 
+		to_state,
+		transition_result,
+		transition_reason) 
+		VALUES 
+		('3bb3263e-0299-4a48-ac37-98ff26e84670', 
+		'Vsample_20231016101645', 
+		'migrate_Vsample_20231016101645',
+		'migration_Vsample_20231016101645_undo', 
+		'migration_Vsample_20231016101645_status', 
+		'None', 
+		'SQL Loaded',
+		'{"key" : "transition_result"}'::jsonb,
+		'{"key" : "transition_reason"}'::jsonb
+		);
+    END IF;   
+   	
+   RETURN NEXT ok(EXISTS(SELECT 1 
+					    FROM info_schema_lifecycle.islm_governance 
+					    WHERE islm_governance_id = '3bb3263e-0299-4a48-ac37-98ff26e84670'
+					    AND migrate_version = 'Vsample_20231016101645'
+					    AND sp_migration = 'migrate_Vsample_20231016101645'
+					    AND sp_migration_undo = 'migration_Vsample_20231016101645_undo'
+					    AND fn_migration_status = 'migration_Vsample_20231016101645_status'
+					    AND from_state = 'None'
+					    AND to_state = 'SQL Loaded'
+					), 'Successfully inserted into the table ''info_schema_lifecycle.islm_governance''');
+
+	
+	IF EXISTS(SELECT 1 FROM information_schema.routines 
+			    WHERE routine_schema = 'info_schema_lifecycle' 
+				AND routine_name = 'islm_migrate_ctl' 
+				AND routine_type = 'PROCEDURE') THEN
+	
+		-- Test the migration
+		CALL info_schema_lifecycle.islm_migrate_ctl('migrate','Vsample_20231016101645');
+	
+		-- Check if the migration has been inserted into the governance table
+		RETURN NEXT ok(EXISTS(SELECT 1 FROM info_schema_lifecycle.islm_governance WHERE UPPER(to_state) = 'MIGRATED'),'Migration completed successfully');
+		
+		-- Test the rollback
+		CALL info_schema_lifecycle.islm_migrate_ctl('rollback', 'Vsample_20231016101645');
+		
+		-- Check if the rollback has been inserted into the governance table	
+		RETURN NEXT ok(EXISTS(SELECT 1 FROM info_schema_lifecycle.islm_governance WHERE UPPER(to_state) = 'ROLLBACK'),'Migration Rollback Done');
+	
+		
+		-- Check for exception
+		RETURN NEXT throws_ok('CALL info_schema_lifecycle.islm_migrate_ctl(''unknown_task'', ''Vsample_20231016101645'')', 'Unknown task: unknown_task');
+
+	END IF;
+END;
+$function$
+;
+
+
+-- Create a function to run the tests and insert the results into the table
+CREATE OR REPLACE FUNCTION info_schema_lifecycle.run_and_log_tests(test_name TEXT, created_by TEXT, provenance TEXT)
+RETURNS VOID LANGUAGE plpgsql AS $$
+DECLARE
+    test_output TEXT := '';
+    test_row RECORD;
+    test_success BOOLEAN;
+BEGIN
+    -- Run the tests and capture the output
+    FOR test_row IN SELECT * FROM info_schema_lifecycle.runtests('info_schema_lifecycle'::name, test_name) LOOP
+        test_output := test_output || test_row.* || E'\n';
+    END LOOP;
+
+    -- Determine success based on the test output
+    -- Assuming success is determined by the absence of 'not ok' in the output
+    test_success := (test_output NOT LIKE '%not ok%');
+
+    -- Insert the results into the pgtap_tests_result table
+    INSERT INTO info_schema_lifecycle.pgtap_tests_result (
+        test_name,
+        tap_output,
+        success,
+        created_by,
+        provenance
+    ) VALUES (
+        test_name,
+        test_output,
+        test_success,
+        created_by,
+        provenance
+    );
+END;
+$$;
