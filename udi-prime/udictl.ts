@@ -182,7 +182,7 @@ const CLI = new Command()
           })
        )
       .command("docs", "Generate documentation artifacts")
-        .option("--schemaspy-dest <path:string>", "Generate SchemaSpy documentation", { default: cleanableTarget("/docs/schema-spy") })
+        .option("--schemaspy-dest <path:string>", "Generate SchemaSpy documentation", { default: cleanableTarget("../../hub-prime/target/site/schemaSpy") })
         .option("-c, --conn-id <id:string>", "pgpass connection ID to use for SchemaSpy database credentials", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
         .option("--serve <port:number>", "Serve generated documentation at port")
         .action(async (options) => {
