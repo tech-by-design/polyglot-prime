@@ -111,6 +111,18 @@
                     { headerName: "Ingress Count", field: "ingressCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "Consumed CSV", field: "consumedCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
+                    { headerName: "FHIR POSTs Failed", field: "publishedFhirFailedCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true, cellRenderer: function (params) {
+                            var link = document.createElement('a');
+                            link.href = '#';
+                            link.innerText = params.value;
+                            link.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                document.querySelector('#json').data = params.data.publishedFhirFailedResponse;
+                                document.getElementById('modal').style.display = 'block';
+                            });
+                            return link;
+                        } },
+                    { headerName: "FHIR POSTs Success", field: "publishedFhirSuccessCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "Exception", field: "exception", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                 ];
 
@@ -143,6 +155,17 @@
                             // session might be null if the SFTP account is invalid;
                             // in that case only `tenantId` and `error` will be available
                             const session = row.sessionJson ? JSON.parse(row.sessionJson) : null;
+                            let publishedFhirFailedCount = 0;
+                            let publishedFhirSuccessCount = 0;
+                            const publishedFhirFailedResponse = [];
+                            const publishedFhirFailed = session?.publishFhirResult?.map(r => {
+                                if(!JSON.parse(r.response).scoredcardResponse.includes('TestResult: PASS')){
+                                    publishedFhirFailedCount = publishedFhirFailedCount + 1;
+                                    publishedFhirFailedResponse.push({"File":r.fhirFileName,"Response":JSON.parse(r.response).scoredcardResponse, "BundleID":JSON.parse(r.response).bundleID});
+                                }else{
+                                    publishedFhirSuccessCount = publishedFhirSuccessCount + 1;
+                                }
+                            })
                             return {
                                 tenantId: row.tenantId,
                                 sessionFinalizedAt: row.sessionFinalizedAt,
@@ -151,8 +174,11 @@
                                 ingressCount: session?.src?.length,
                                 consumedCount: session?.consumed?.length,
                                 publishedFhirCount: session?.publishFhirResult?.length,
+                                publishedFhirFailedCount: publishedFhirFailedCount,
+                                publishedFhirSuccessCount: publishedFhirSuccessCount,
                                 exception: row.error?.message,
                                 session,
+                                publishedFhirFailedResponse
                             }
                         });
                         gridApi.setGridOption('rowData', rowData);
