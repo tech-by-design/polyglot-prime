@@ -77,7 +77,7 @@
 <th>Missing Classes</th></tr>
 <tr class="b">
 <td>202</td>
-<td>187</td>
+<td>188</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -195,7 +195,7 @@
 <td>1</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.http.GitHubUserAuthorizationFilter">org.techbd.service.http.GitHubUserAuthorizationFilter</a></td>
-<td>2</td></tr>
+<td>3</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.service.http.GitHubUsersService$AuthorizedUser">org.techbd.service.http.GitHubUsersService$AuthorizedUser</a></td>
 <td>2</td></tr>
@@ -1237,16 +1237,22 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
+<td>Comparison of String objects using == or != in org.techbd.service.http.GitHubUserAuthorizationFilter.doFilterInternal(HttpServletRequest, HttpServletResponse, FilterChain)</td>
+<td>BAD_PRACTICE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#ES_COMPARING_STRINGS_WITH_EQ">ES_COMPARING_STRINGS_WITH_EQ</a></td>
+<td>56</td>
+<td>High</td></tr>
+<tr class="a">
 <td>Store of non serializable org.techbd.service.http.GitHubUserAuthorizationFilter$AuthenticatedUser into HttpSession in org.techbd.service.http.GitHubUserAuthorizationFilter.setAuthenticatedUser(HttpServletRequest, GitHubUserAuthorizationFilter$AuthenticatedUser)</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#J2EE_STORE_OF_NON_SERIALIZABLE_OBJECT_INTO_SESSION">J2EE_STORE_OF_NON_SERIALIZABLE_OBJECT_INTO_SESSION</a></td>
 <td>39</td>
 <td>High</td></tr>
-<tr class="a">
+<tr class="b">
 <td>Possible null pointer dereference in org.techbd.service.http.GitHubUserAuthorizationFilter.doFilterInternal(HttpServletRequest, HttpServletResponse, FilterChain) due to return value of called method</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
-<td>58</td>
+<td>59</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.GitHubUsersService$AuthorizedUser"></a><section>
 <h2>org.techbd.service.http.GitHubUsersService$AuthorizedUser</h2>
 <table class="table table-striped">
