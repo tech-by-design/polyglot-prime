@@ -22,8 +22,8 @@ DECLARE
    	function_exists boolean;
 BEGIN
     
-    v_interaction_id            := techbd_udi_ingress.uuid_generate_v4();
-    v_interaction_key           := techbd_udi_ingress.uuid_generate_v4();
+    v_interaction_id            := 'b41ccd27-9a4f-5cc8-9c5d-b55242d90fb0';
+    v_interaction_key           := 'fa7874f6-f848-572b-a9ab-9db4c8d5e959';
     v_elaboration               := '{"key" : "elaboration"}';
     v_nature                    := '{"nature": "org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id": "N/A"}';
     v_content_type              := 'application/json';
