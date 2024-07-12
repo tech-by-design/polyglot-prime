@@ -119,7 +119,6 @@ export class AGGridAideBuilder {
                 enablePivot: true
             },
             columnDefs: [],
-            groupDisplayType: 'singleColumn', // optional as 'singleColumn' is the default group display type
             sideBar: false, // TODO: turn this back on when Pivots work
             pivotMode: false,
             autoSizeStrategy: { type: "fitCellContents" },
