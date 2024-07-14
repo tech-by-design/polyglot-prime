@@ -8,9 +8,9 @@ RETURNS void LANGUAGE plpgsql AS
 $$
 BEGIN
     IF expected IS DISTINCT FROM actual THEN
-        RAISE NOTICE '[FAIL] % - Expected: %, Actual: %', description, expected, actual;
+        RAISE LOG 'ASSERT: [FAIL] % - Expected: `%`, Actual: `%`', description, expected, actual;
     ELSE
-        RAISE NOTICE '[pass] %', description;
+        RAISE LOG 'ASSERT: [pass] %', description;
     END IF;
 END;
 $$;
@@ -69,6 +69,7 @@ CREATE OR REPLACE PROCEDURE info_schema_lifecycle_assurance.islm_test_candidates
 LANGUAGE plpgsql AS
 $$
 BEGIN
+    -- Create test functions and procedures
     CREATE FUNCTION info_schema_lifecycle_assurance.migrate_v2024_07_14_12_00_stateful_example() 
     RETURNS void LANGUAGE sql AS 
     'SELECT 1';
@@ -93,6 +94,7 @@ BEGIN
     RETURNS void LANGUAGE sql AS 
     'SELECT 1';
 
+    -- Test the migration routine candidates
     PERFORM info_schema_lifecycle_assurance.assert_equals(
         '3',
         (SELECT COUNT(*)::TEXT FROM info_schema_lifecycle.migration_routine_candidate('info_schema_lifecycle_assurance')),
@@ -191,6 +193,77 @@ BEGIN
         (SELECT COUNT(*)::TEXT FROM information_schema.routines WHERE routine_schema = 'info_schema_lifecycle_assurance' AND routine_name = 'migrate_v2024_07_14_12_02_stateful_example_status')::TEXT,
         'Status function for migrate_v2024_07_14_12_02_stateful_example should not exist'
     );
+
+    -- Drop test functions and procedures
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_00_stateful_example" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_00_stateful_example_undo" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_00_stateful_example_status" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_01_idempotent_example" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_01_idempotent_example_status" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_02_stateful_example" CASCADE;
+END;
+$$;
+
+-- Create the islm_test_migrations_unapplied procedure in the info_schema_lifecycle_assurance schema
+CREATE OR REPLACE PROCEDURE info_schema_lifecycle_assurance.islm_test_migrations_unapplied()
+LANGUAGE plpgsql AS
+$$
+DECLARE
+    migration_script TEXT;
+BEGIN
+    CREATE FUNCTION info_schema_lifecycle_assurance.migrate_v2024_07_14_12_00_stateful_example() 
+    RETURNS void LANGUAGE sql AS 
+    'SELECT 1';
+
+    CREATE FUNCTION info_schema_lifecycle_assurance.migrate_v2024_07_14_12_00_stateful_example_undo() 
+    RETURNS void LANGUAGE sql AS 
+    'SELECT 1';
+
+    CREATE FUNCTION info_schema_lifecycle_assurance.migrate_v2024_07_14_12_00_stateful_example_status() 
+    RETURNS void LANGUAGE sql AS 
+    'SELECT 1';
+
+    CREATE FUNCTION info_schema_lifecycle_assurance.migrate_v2024_07_14_12_01_idempotent_example() 
+    RETURNS void LANGUAGE sql AS 
+    'SELECT 1';
+
+    CREATE FUNCTION info_schema_lifecycle_assurance.migrate_v2024_07_14_12_01_idempotent_example_status() 
+    RETURNS void LANGUAGE sql AS 
+    'SELECT 1';
+
+    CREATE FUNCTION info_schema_lifecycle_assurance.migrate_v2024_07_14_12_02_stateful_example() 
+    RETURNS void LANGUAGE sql AS 
+    'SELECT 1';
+
+    -- Store the output of info_schema_lifecycle.islm_migration_script into a variable
+    migration_script := info_schema_lifecycle.islm_migration_script('info_schema_lifecycle_assurance', true);
+
+    -- for debugging
+    -- RAISE NOTICE 'Migration Script: %', migration_script;
+
+    -- Check that the variable matches expectations
+    PERFORM info_schema_lifecycle_assurance.assert_equals(
+        regexp_replace(
+            $expected$CALL migrate_v2024_07_14_12_00_stateful_example();
+            INSERT INTO info_schema_lifecycle.islm_governance (migration_version, migration_routine_name, from_state, to_state, transition_result, transition_reason, migration_reason, transition_count, created_at, created_by, is_idempotent, elaboration) VALUES ('2024_07_14_12_00', 'migrate_v2024_07_14_12_00_stateful_example', 'unapplied', 'applied', NULL, NULL, 'example', 0, CURRENT_TIMESTAMP, CURRENT_USER, false, NULL);
+            CALL migrate_v2024_07_14_12_01_idempotent_example();
+            INSERT INTO info_schema_lifecycle.islm_governance (migration_version, migration_routine_name, from_state, to_state, transition_result, transition_reason, migration_reason, transition_count, created_at, created_by, is_idempotent, elaboration) VALUES ('2024_07_14_12_01', 'migrate_v2024_07_14_12_01_idempotent_example', 'unapplied', 'applied', NULL, NULL, 'example', 0, CURRENT_TIMESTAMP, CURRENT_USER, true, NULL);
+            CALL migrate_v2024_07_14_12_02_stateful_example();
+            INSERT INTO info_schema_lifecycle.islm_governance (migration_version, migration_routine_name, from_state, to_state, transition_result, transition_reason, migration_reason, transition_count, created_at, created_by, is_idempotent, elaboration) VALUES ('2024_07_14_12_02', 'migrate_v2024_07_14_12_02_stateful_example', 'unapplied', 'applied', NULL, NULL, 'example', 0, CURRENT_TIMESTAMP, CURRENT_USER, false, NULL);
+            $expected$, 
+            E'^[ \\t]+', '', 'gm'
+        ),
+        migration_script,
+        'islm_migration_script should return correct script for unapplied migrations'
+    );
+
+    -- Drop test functions and procedures
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_00_stateful_example" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_00_stateful_example_undo" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_00_stateful_example_status" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_01_idempotent_example" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_01_idempotent_example_status" CASCADE;
+    DROP FUNCTION IF EXISTS "info_schema_lifecycle_assurance"."migrate_v2024_07_14_12_02_stateful_example" CASCADE;
 END;
 $$;
 
@@ -204,6 +277,7 @@ BEGIN
 
     CALL info_schema_lifecycle_assurance.islm_test_structs();
     CALL info_schema_lifecycle_assurance.islm_test_candidates();
+    CALL info_schema_lifecycle_assurance.islm_test_migrations_unapplied();
     
     -- Additional tests can be added here in future
 END;

@@ -165,6 +165,8 @@ BEGIN
         WHERE
             p.specific_schema = schema_name
             AND p.routine_name ~ '^migrate_v\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_(stateful|idempotent)(_.*)?$'
+            AND p.routine_name NOT LIKE '%_undo%'
+            AND p.routine_name NOT LIKE '%_status%'
     )
     SELECT
         r.routine_name AS migration_routine_name,
@@ -258,9 +260,7 @@ BEGIN
     LEFT JOIN
         "info_schema_lifecycle"."islm_governance" g
     ON
-        c.migration_routine_name = g.migration_routine_name
-        AND c.from_state = g.from_state
-        AND c.to_state = g.to_state;
+        c.migration_routine_name = g.migration_routine_name;
 END;
 $$;
 
@@ -286,73 +286,114 @@ COMMENT ON FUNCTION "info_schema_lifecycle"."migration_routine_state" IS 'Use mi
 CREATE OR REPLACE FUNCTION "info_schema_lifecycle"."islm_migration_instruction"(schema_name TEXT DEFAULT 'info_schema_lifecycle', rerun_idempotent BOOLEAN DEFAULT true)
 RETURNS TABLE (
     action TEXT,
-    command JSONB,
-    comment TEXT
+    sql_stmt TEXT,
+    comment TEXT,
+    elaboration JSONB
 ) 
 LANGUAGE plpgsql AS 
 $$
 DECLARE
-    record RECORD;
-    command_json JSONB;
+    rec RECORD;
+    insert_stmt TEXT;
+    insert_stmt_elaboration JSONB;
+    new_transition_count INT;
 BEGIN
-    FOR record IN
+    FOR rec IN
         SELECT
-            migration_routine_name,
-            migration_version,
-            migration_reason,
-            is_migrated,
-            is_idempotent,
-            migrated_at,
-            migrated_by,
-            from_state,
-            to_state,
-            transition_result,
-            transition_reason,
-            COALESCE(
-                (SELECT MAX(transition_count) FROM "info_schema_lifecycle"."islm_governance"
-                 WHERE migration_routine_name = record.migration_routine_name
-                 AND from_state = record.from_state
-                 AND to_state = record.to_state), 0) + 1 AS transition_cnt
+            mrc.migration_routine_name,
+            mrc.migration_version,
+            mrc.migration_reason,
+            mrc.is_migrated,
+            mrc.is_idempotent,
+            mrc.migrated_at,
+            mrc.migrated_by,
+            g.from_state,
+            g.to_state,
+            g.transition_result,
+            g.transition_reason,
+            COALESCE(g.transition_count, 0) AS transition_count
         FROM
-            "info_schema_lifecycle"."migration_routine_state"(schema_name) record
+            info_schema_lifecycle.migration_routine_state(schema_name) mrc
+        LEFT JOIN
+            info_schema_lifecycle.islm_governance g
+        ON
+            mrc.migration_routine_name = g.migration_routine_name
     LOOP
-        command_json := jsonb_build_object(
-            'table', 'info_schema_lifecycle.islm_governance',
-            'columns', jsonb_build_object(
-                'migration_version', quote_literal(record.migration_version),
-                'migration_routine_name', quote_literal(record.migration_routine_name),
-                'from_state', CASE 
-                    WHEN NOT record.is_migrated THEN quote_literal('unapplied')
-                    WHEN record.is_idempotent THEN quote_literal('applied')
-                    ELSE quote_literal('reapplied')
-                END,
-                'to_state', CASE 
-                    WHEN NOT record.is_migrated THEN quote_literal('applied')
-                    ELSE quote_literal('reapplied')
-                END,
-                'transition_result', COALESCE(quote_literal(record.transition_result::text), 'NULL'),
-                'transition_reason', COALESCE(quote_literal(record.transition_reason), 'NULL'),
-                'migration_reason', quote_literal(record.migration_reason),
-                'transition_count', record.transition_cnt,
-                'created_at', 'CURRENT_TIMESTAMP',
-                'created_by', 'CURRENT_USER',
-                'is_idempotent', record.is_idempotent,
-                'elaboration', 'NULL'
-            )
+        IF rec.is_migrated AND rec.is_idempotent AND rerun_idempotent THEN
+            new_transition_count := rec.transition_count + 1;
+        ELSE
+            new_transition_count := 0;
+        END IF;
+
+        insert_stmt_elaboration := jsonb_build_object(
+            'migration_version', rec.migration_version,
+            'migration_routine_name', rec.migration_routine_name,
+            'from_state', CASE 
+                WHEN NOT rec.is_migrated THEN 'unapplied'
+                ELSE 'applied'
+            END,
+            'to_state', CASE 
+                WHEN NOT rec.is_migrated THEN 'applied'
+                ELSE 'reapplied'
+            END,
+            'transition_result', 'NULL',
+            'transition_reason', 'NULL',
+            'migration_reason', rec.migration_reason,
+            'transition_count', new_transition_count,
+            'created_at', 'CURRENT_TIMESTAMP',
+            'created_by', 'CURRENT_USER',
+            'is_idempotent', rec.is_idempotent,
+            'elaboration', 'NULL'
         );
 
-        IF NOT record.is_migrated THEN
-            RETURN QUERY SELECT 'CALL', jsonb_build_object('command', 'CALL ' || record.migration_routine_name || '()'), NULL;
-            RETURN QUERY SELECT 'INSERT', command_json, NULL;
-        ELSIF record.is_migrated AND record.is_idempotent AND rerun_idempotent THEN
-            RETURN QUERY SELECT 'CALL', jsonb_build_object('command', 'CALL ' || record.migration_routine_name || '()'), '-- Routine ' || record.migration_routine_name || ' was run on ' || record.migrated_at || ' by ' || record.migrated_by || ' but is being run again since it is idempotent.';
-            RETURN QUERY SELECT 'INSERT', command_json, NULL;
-        ELSIF record.is_migrated AND NOT record.is_idempotent THEN
-            RETURN QUERY SELECT 'COMMENT', NULL, '-- Routine ' || record.migration_routine_name || ' was run on ' || record.migrated_at || ' by ' || record.migrated_by || ' and will not be run again since it is stateful.';
+        insert_stmt := 'INSERT INTO info_schema_lifecycle.islm_governance (migration_version, migration_routine_name, from_state, to_state, transition_result, transition_reason, migration_reason, transition_count, created_at, created_by, is_idempotent, elaboration) VALUES (' ||
+            quote_literal(insert_stmt_elaboration->>'migration_version') || ', ' ||
+            quote_literal(insert_stmt_elaboration->>'migration_routine_name') || ', ' ||
+            quote_literal(insert_stmt_elaboration->>'from_state') || ', ' ||
+            quote_literal(insert_stmt_elaboration->>'to_state') || ', ' ||
+            'NULL' || ', ' ||  -- transition_result
+            'NULL' || ', ' ||  -- transition_reason
+            quote_literal(insert_stmt_elaboration->>'migration_reason') || ', ' ||
+            new_transition_count || ', ' ||
+            'CURRENT_TIMESTAMP' || ', ' ||
+            'CURRENT_USER' || ', ' ||
+            (insert_stmt_elaboration->>'is_idempotent')::BOOLEAN || ', ' ||
+            'NULL' || ')';  -- elaboration
+
+        -- for debugging
+        -- RAISE NOTICE 'Elaboration: %', insert_stmt_elaboration;      
+        -- RAISE NOTICE 'Insert Statement: %', insert_stmt;
+        
+        IF NOT rec.is_migrated THEN
+            RETURN QUERY SELECT 
+                'CALL', 
+                'CALL ' || rec.migration_routine_name || '()', 
+                NULL, 
+                jsonb_build_object('routineName', rec.migration_routine_name);
+            RETURN QUERY SELECT 
+                'INSERT', 
+                insert_stmt, 
+                NULL, 
+                insert_stmt_elaboration;
+        ELSIF rec.is_migrated AND rec.is_idempotent AND rerun_idempotent THEN
+            RETURN QUERY SELECT 
+                'CALL', 
+                'CALL ' || rec.migration_routine_name || '()', 
+                '-- Routine ' || rec.migration_routine_name || ' was run on ' || rec.migrated_at || ' by ' || rec.migrated_by || ' but is being run again since it is idempotent.', 
+                jsonb_build_object('routineName', rec.migration_routine_name);
+            RETURN QUERY SELECT 
+                'INSERT', 
+                insert_stmt, 
+                NULL, 
+                insert_stmt_elaboration;
+        ELSIF rec.is_migrated AND NOT rec.is_idempotent THEN
+            RETURN QUERY SELECT 
+                'COMMENT', 
+                NULL, 
+                '-- Routine ' || rec.migration_routine_name || ' was run on ' || rec.migrated_at || ' by ' || rec.migrated_by || ' and will not be run again since it is stateful.', 
+                jsonb_build_object('routineName', rec.migration_routine_name);
         END IF;
     END LOOP;
-
-    RETURN;
 END;
 $$;
 
@@ -378,36 +419,15 @@ LANGUAGE plpgsql AS
 $$
 DECLARE
     result TEXT := '';
-    record RECORD;
-    command JSONB;
-    column_names TEXT;
-    column_values TEXT;
+    rec RECORD;
 BEGIN
-    FOR record IN
-        SELECT action, command, comment
-        FROM "info_schema_lifecycle"."islm_migration_instruction"(schema_name, rerun_idempotent)
+    FOR rec IN
+        SELECT action, sql_stmt, comment, elaboration
+        FROM info_schema_lifecycle.islm_migration_instruction(schema_name, rerun_idempotent)
     LOOP
-        IF record.comment IS NOT NULL THEN
-            result := result || record.comment || E'\n';
-        END IF;
-
-        IF record.action = 'CALL' THEN
-            command := record.command;
-            result := result || command->>'command' || E'\n';
-        ELSIF record.action = 'INSERT' THEN
-            command := record.command;
-            SELECT string_agg(quote_ident(key), ', ') INTO column_names
-            FROM jsonb_each(command->'columns');
-            
-            SELECT string_agg(
-                CASE 
-                    WHEN value = 'NULL' THEN 'NULL' 
-                    ELSE quote_literal(value) 
-                END, ', ') INTO column_values
-            FROM jsonb_each_text(command->'columns');
-            
-            result := result || 'INSERT INTO ' || command->>'table' || ' (' || column_names || ') VALUES (' || column_values || ');' || E'\n';
-        END IF;
+        -- for debugging
+        -- RAISE NOTICE 'Action: %, SQL: %, Comment: %', rec.action, rec.sql_stmt, rec.comment;
+        result := result || rec.sql_stmt || ';' || E'\n';
     END LOOP;
 
     RETURN result;
