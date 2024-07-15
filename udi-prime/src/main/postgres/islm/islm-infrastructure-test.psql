@@ -278,6 +278,10 @@ BEGIN
     CALL info_schema_lifecycle_assurance.islm_test_structs();
     CALL info_schema_lifecycle_assurance.islm_test_candidates();
     CALL info_schema_lifecycle_assurance.islm_test_migrations_unapplied();
+
+    -- TODO: add more test cases
+    -- CALL info_schema_lifecycle_assurance.islm_test_migrations_partial_applied();
+    -- CALL info_schema_lifecycle_assurance.islm_test_migrations_all_applied();
     
     -- Additional tests can be added here in future
 END;

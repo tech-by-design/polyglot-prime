@@ -101,11 +101,11 @@ const CLI = new Command()
   })
   .command("evolve", new Command()
     .description("ISLM Schema Evoluation Handler")    
-    .command("up", "Use psql to execute migration scripts")
+    .command("up", "Use psql to load migration scripts into the database")
       .option("-s, --src <path:string>", "Source location for artifacts", { required: true, default: path.fromFileUrl(import.meta.resolve("./")) })
       .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: cleanableTarget("/evolve") })
-      .option("--destroy-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "islm-prime-destroy.psql" })
-      .option("--driver-fname <file-name:string>", "Filename of the generated construct script in target", { default: "islm-prime.psql" })
+      .option("--destroy-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "islm-infrastructure-destroy.psql" })
+      .option("--driver-fname <file-name:string>", "Filename of the generated construct script in target", { default: "islm-driver.psql" })
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
       .option("--destroy-first", "Destroy objects before migration")
       .option("--log-results <path:string>", "Store `psql` results in this log file", { default: `./islmctl-migrate-${new Date().toISOString()}.log` })
@@ -156,11 +156,32 @@ const CLI = new Command()
           console.error(`WARNING: ${psqlErrors} ${options.psql} error(s) occurred, see log file ${options.logResults}`);
         }
       })
-    .command("test", "Use psql to execute test scripts")
+    .command("candidates", "Use psql to check for migration candidates (stored procedures)")
+      .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .action(async (options) => {
+        const psqlCreds = pgpassPsqlArgs(options.connId);
+        console.log((await $.raw`${options.psql} ${psqlCreds} -c "SELECT * FROM info_schema_lifecycle.migration_routine_candidate();"`.captureCombined().lines()).join("\n"));
+      })
+    .command("state", "Use psql to get the migration state for each candidate routine")
+      .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .action(async (options) => {
+        const psqlCreds = pgpassPsqlArgs(options.connId);
+        console.log((await $.raw`${options.psql} ${psqlCreds} -c "SELECT * FROM info_schema_lifecycle.migration_routine_state();"`.captureCombined().lines()).join("\n"));
+      })
+    .command("script", "Use psql to generate migration scripts based on current state")
+      .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .action(async (options) => {
+        const psqlCreds = pgpassPsqlArgs(options.connId);
+        console.log((await $.raw`${options.psql} ${psqlCreds} -q -t -A -P border=0 -X -c "SELECT * FROM info_schema_lifecycle.islm_migration_script();"`.captureCombined().lines()).join("\n"));
+      })
+    .command("test", "Use psql to execute test scripts for ISLM infrastructure")
       .option("-s, --src <path:string>", "Source location for artifacts", { required: true, default: path.fromFileUrl(import.meta.resolve("./")) })
       .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: cleanableTarget("/evolve") })
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
-      .option("--suite-fname <file-name:string>", "Filename of the generated test suite script in target", { default: "islm-prime-test.psql" })
+      .option("--suite-fname <file-name:string>", "Filename of the generated test suite script in target", { default: "islm-infrastructure-test.psql" })
       .option("--log-results <path:string>", "Store `psql` results in this log file", { default: `./islmctl-test-${new Date().toISOString()}.log` })
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
       .type("pg-client-min-messages-level", postreSqlClientMinMessagesLevelCliffyEnum)
@@ -195,7 +216,7 @@ const CLI = new Command()
           console.error(`WARNING: ${psqlErrors} ${options.psql} error(s) occurred, see log file ${options.logResults}`);
         }
       })
-    .command("omnibus-fresh", "Freshen the given connection ID")
+    .command("omnibus-fresh", "Freshen the given connection ID by dropping and recreating the schema")
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
       .action(async (options) => {
         await CLI.parse(["evolve", "up", "--destroy-first", "--conn-id", options.connId]);
