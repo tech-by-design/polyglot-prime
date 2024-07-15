@@ -367,7 +367,7 @@ SELECT sihr.sat_interaction_http_request_id AS interaction_http_request_id,
     sihr.hub_interaction_id AS interaction_id,
     headers.start_time,
     headers.finish_time,
-   (headers.finish_time::timestamp - headers.start_time::timestamp) AS duration_millisecs,
+    EXTRACT(EPOCH FROM (headers.finish_time::timestamp without time zone - headers.start_time::timestamp without time zone)) * 1000 AS duration_millisecs,
     (sihr.payload -> 'request'::text) ->> 'requestUri'::text AS uri
    FROM techbd_udi_ingress.sat_interaction_http_request sihr
      JOIN LATERAL ( SELECT max(
