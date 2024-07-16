@@ -22,7 +22,7 @@ public class TabularRowsRequestTest {
                 "pivotCols": [],
                 "pivotMode": false,
                 "groupKeys": [],
-                "filterModel": {"country": {"filterType": "text", "filter": "USA"}},
+                "filterModel": {"country": {"filterType": "text", "type": "text", "filter": "USA"}},
                 "sortModel": [{"colId": "gold", "sort": "desc"}],
                 "requestContext": {"contextKey": "contextValue"},
                 "rangeSelection": [{"startRow": 0, "endRow": 10}],
