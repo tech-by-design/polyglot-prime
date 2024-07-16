@@ -1,1 +1,1 @@
-/opt/hostedtoolcache/Java_Corretto_jdk/21.0.3-9.1/x64/bin/javadoc @options @packages
+/opt/hostedtoolcache/Java_Corretto_jdk/21.0.4-7.1/x64/bin/javadoc @options @packages
