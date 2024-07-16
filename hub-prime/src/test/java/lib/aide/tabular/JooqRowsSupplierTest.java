@@ -72,7 +72,7 @@ public class JooqRowsSupplierTest {
                     "pivotMode": false,
                     "groupKeys": [],
                     "filterModel": {
-                        "country": {"filterType": "equals", "filter": "USA"}
+                        "country": {"filterType": "equals", "type": "equals", "filter": "USA"}
                     },
                     "sortModel": [
                         {"colId": "gold", "sort": "desc"}
@@ -253,7 +253,7 @@ public class JooqRowsSupplierTest {
                     "pivotMode": false,
                     "groupKeys": [],
                     "filterModel": {
-                        "event_date": {"filterType": "date", "filter": "2023-07-01"}
+                        "event_date": {"filterType": "date", "type": "date", "filter": "2023-07-01"}
                     },
                     "sortModel": [],
                     "requestContext": {},
