@@ -97,6 +97,33 @@ export class AGGridAide {
             return '';
         }
     }
+    
+    /**
+     * Creates a value formatter for displaying timestamps with timezone
+     * information in 'MM/DD/YYYY, HH:MM:SS' format
+     * @returns {Function} The value formatter function.
+     */
+    static isoDateTimeValueFormatter() {
+        return function (params) {
+            if (params.value) {
+                let date = new Date(params.value);
+                let options = {
+                    timeZone: 'America/New_York',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                };
+                let formatter = new Intl.DateTimeFormat('en-US', options);
+                return formatter.format(date);
+            }
+            return '';
+        }
+    }
+
 }
 
 /**
