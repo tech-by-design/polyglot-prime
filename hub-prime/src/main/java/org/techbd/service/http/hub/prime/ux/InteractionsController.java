@@ -77,4 +77,10 @@ public class InteractionsController {
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }
+
+    @GetMapping("/interactions/observe")
+    @RouteMapping(label = "Observe", title = "Observe", siblingOrder = 70)
+    public String osberve(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/observe", model, request);
+    }
 }
