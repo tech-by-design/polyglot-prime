@@ -29,7 +29,12 @@ jobs:
         run: |
           cd sql-aide/lib/postgres/islm
           chmod +x islmctl.ts
-          ./islmctl.ts evolve omnibus-fresh --conn-id DEVL_TECHBD_UDI_DS
+          ./islmctl.ts evolve up --conn-id DEVL_TECHBD_UDI_DS
+
+      - name: Run ISLM test
+        run: |
+          cd sql-aide/lib/postgres/islm
+          ./islmctl.ts evolve test --conn-id DEVL_TECHBD_UDI_DS
           
       - name: Clone Polyglot Prime repository
         run: git clone https://github.com/tech-by-design/polyglot-prime.git
