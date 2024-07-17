@@ -77,7 +77,7 @@
 <th>Missing Classes</th></tr>
 <tr class="b">
 <td>202</td>
-<td>188</td>
+<td>189</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -222,7 +222,7 @@
 <td>3</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.service.http.hub.prime.api.FhirController">org.techbd.service.http.hub.prime.api.FhirController</a></td>
-<td>2</td></tr>
+<td>3</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.route.RoutesTree$Builder">org.techbd.service.http.hub.prime.route.RoutesTree$Builder</a></td>
 <td>1</td></tr>
@@ -1483,12 +1483,18 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
+<td>Dead store to forwardedAt in org.techbd.service.http.hub.prime.api.FhirController.validateBundleAndForward(String, String, String, String, String, String, String, boolean, boolean, boolean, HttpServletRequest)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>125</td>
+<td>Medium</td></tr>
+<tr class="a">
 <td>new org.techbd.service.http.hub.prime.api.FhirController(Environment, AppConfig, UdiPrimeJpaConfig, SftpManager, SandboxHelpers) may expose internal representation by storing an externally mutable object into FhirController.appConfig</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
 <td>69</td>
 <td>Medium</td></tr>
-<tr class="a">
+<tr class="b">
 <td>Format string should use %n rather than \n in org.techbd.service.http.hub.prime.api.FhirController.bundleStatus(String, Model, HttpServletRequest)</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#VA_FORMAT_STRING_USES_NEWLINE">VA_FORMAT_STRING_USES_NEWLINE</a></td>
