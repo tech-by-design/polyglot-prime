@@ -22,6 +22,20 @@ jobs:
           # Set the .pgpass file permissions to 600 (read and write for owner only)
           chmod 600 ~/.pgpass
 
+      - name: Clone SQL Aide repository
+        run: git clone https://github.com/netspective-labs/sql-aide.git
+
+      - name: Navigate to SQL Aide and Generate ISLM SQL
+        run: |
+          cd sql-aide/lib/postgres/islm
+          chmod +x islmctl.ts
+          ./islmctl.ts evolve up --conn-id PROD_TECHBD_UDI_DS_PRIME
+
+      - name: Run ISLM test
+        run: |
+          cd sql-aide/lib/postgres/islm
+          ./islmctl.ts evolve test --conn-id PROD_TECHBD_UDI_DS_PRIME
+          
       - name: Clone Polyglot Prime repository
         run: git clone https://github.com/tech-by-design/polyglot-prime.git
 
