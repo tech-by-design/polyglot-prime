@@ -197,7 +197,7 @@ public class FhirController {
                         initRIHR.setPayload(Configuration.objectMapper.valueToTree(immediateResult));
                         initRIHR.setFromState("ACCEPT_FHIR_BUNDLE");
                         initRIHR.setToState("FORWARD");
-                        initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app time
+                        initRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
                         initRIHR.setCreatedBy(FhirController.class.getName());
                         initRIHR.setProvenance(provenance);
                         final var execResult = initRIHR.execute(jooqCfg);
