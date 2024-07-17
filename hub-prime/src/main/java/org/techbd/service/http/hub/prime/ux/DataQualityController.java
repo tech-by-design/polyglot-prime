@@ -17,14 +17,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@Tag(name = "TechBD Hub Diagnostics UX API")
-public class DiagnosticsController {
+@Tag(name = "TechBD Hub Data Quality UX API")
+public class DataQualityController {
     @SuppressWarnings("unused")
-    private static final Logger LOG = LoggerFactory.getLogger(DiagnosticsController.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(DataQualityController.class.getName());
 
     private final Presentation presentation;
 
-    public DiagnosticsController(final Presentation presentation,
+    public DataQualityController(final Presentation presentation,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager,
             final SandboxHelpers sboxHelpers) {
@@ -37,7 +37,7 @@ public class DiagnosticsController {
     }
 
     @GetMapping("/data-quality")
-    @RouteMapping(label = "Data Quality", siblingOrder = 20)
+    @RouteMapping(label = "Data Quality", siblingOrder = 10)
     public String adminDiagnostics() {
         return "redirect:/data-quality/sftp";
     }

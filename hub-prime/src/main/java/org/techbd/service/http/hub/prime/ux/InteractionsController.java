@@ -35,7 +35,7 @@ public class InteractionsController {
     }
 
     @GetMapping("/interactions")
-    @RouteMapping(label = "Interactions", siblingOrder = 10)
+    @RouteMapping(label = "Interactions", siblingOrder = 20)
     public String observeInteractions() {
         return "redirect:/interactions/httpsfhir";
     }

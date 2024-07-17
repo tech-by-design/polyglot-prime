@@ -5,19 +5,66 @@
 <head>
     <script src='https://unpkg.com/htmx.org/dist/htmx.min.js'></script>
     <title>Welcome</title>
+    <style>
+        .hanging-indent {
+            padding-left: 1.5rem;
+            text-indent: -1.5rem;
+        }
+    </style>
 </head>
 
-<body>
-    <div layout:fragment="content">
-        <div sec:authorize="isAuthenticated()">
-            <div>Welcome GitHub User <span sec:authentication="principal.attributes['name']"></span></div>
-        </div>
-        <div sec:authorize="isAnonymous()">
-            <div>Welcome Guest</div>
+<body class="bg-gray-100">
+    <div layout:fragment="content" class="flex flex-col items-center justify-center p-4">
+        <img src="/techbd-hub.svg" class="mb-8" />
+        <div class="prose bg-white p-8 w-full max-w-6xl">
+            <h1 class="text-3xl font-bold mb-4 text-center">Welcome to Technology-by-Design's Collaboration Hub</h1>
+            <p class="mb-4 text-center">The central place where New York's finest healthcare institutions can
+                collaborate, share, and manage HIE datasets and other assets.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <ul class="list-disc list-inside pl-8">
+                    <li class="mb-2 hanging-indent">The Hub connects HIE data submitters, data consumers, and IT teams.
+                        <a th:href="@{/interactions}">Explore FHIR and flat file submissions.</a></li>
+                    <li class="mb-2 hanging-indent">We're an <em></em>open by default</em> community that welcomes
+                        contributions across the HIE ecosystem. <a href="https://github.com/tech-by-design">Explore our
+                            GitHub projects.</a></li>
+                </ul>
+                <ul class="list-disc list-inside pl-8">
+                    <li class="mb-2 hanging-indent">We help ensure high-quality data submissions and usage. <a
+                            th:href="@{/data-quality}">Explore FHIR and flat file validations.</a></li>
+                    <li class="mb-2 hanging-indent">The Hub encourages sharing of documentation and code. <a
+                            th:href="@{/docs/techbd-hub}">Read the docs</a> and <a th:href="@{/docs/swagger-ui}">Explore
+                            our APIs</a>.</li>
+                </ul>
+                <ul class="list-disc list-inside pl-8">
+                    <li class="mb-2 hanging-indent">The Hub efficiently oversees multiple HIE-related projects.</li>
+                    <li class="hanging-indent">We facilitate data analysis and insights for business analysts and
+                        stakeholders.</li>
+                </ul>
+            </div>
         </div>
 
-        <div>
-            <div>Most Recent SFTP <code>egress</code> Interactions (hover to see details)</div>
+        <div sec:authorize="isAuthenticated()">
+            <div>You're logged in as GitHub User <span sec:authentication="principal.attributes['name']"></span> with
+                role <code>TODO</code>.</div>
+        </div>
+        <div sec:authorize="isAnonymous()">
+            <div>You're not logged in so you only have guest privileges.</div>
+        </div>
+
+        <div class="mt-8 flex flex-col items-center justify-center p-4">
+            <div class="text-center">Most Recent FHIR Interactions</div>
+            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                <div>TODO</div>
+                <div>TODO</div>
+                <div>TODO</div>
+                <div>TODO</div>
+                <div>TODO</div>
+                <div>TODO</div>
+            </dl>
+        </div>
+
+        <div class="mt-8 flex flex-col items-center justify-center p-4">
+            <div class="text-center">Most Recent Flat Files SFTP <code>egress</code> Interactions (hover to see details)</div>
             <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                 <div
                     th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/sftp/most-recent-egress/healthelink.html})}">
@@ -37,28 +84,10 @@
             </dl>
         </div>
 
-        <article class="w-full prose prose-table:table-fixed full-width-children">
-            <h3 class="mt-5">Quick Links</h3>
-            <ul>
-                <li><a th:href="@{/metadata}"><code>/metadata</code> Capabilities Endpoint</a></li>
-                <li><a th:href="@{/data-quality}">Recent Data Quality Analysis</a></li>
-                <li><a th:href="@{/interactions}">Recent HTTP Request/Response Interactions (<span
-                            th:text="${interactionsCount}"></span>)</a></li>
-                <li><a th:href="@{/docs/api/interactive/index.html}">Interactive OpenAPI Documentation and
-                        Playground</a></li>
-                <li><a href="https://tech-by-design.github.io/docs.techbd.org/">TechBD Technical Documentation
-                        Microsite</a></li>
-                <li><a
-                        href="https://tech-by-design.github.io/docs.techbd.org/1115-hub/fhir-services/regression-test-results/">Regression
-                        Test Results</a></li>
-                <li><a th:href="@{/actuator}" href="/actuator">Management Endpoints Catalog</a></li>
-            </ul>
-        </article>
-
-        <div class="mt-5 w-full grid grid-cols-2">
+        <div class="mt-12 w-full grid grid-cols-2 gap-8">
             <div>
-                <h3>Synthetic Testing</h3>
-                <pre class="mermaid bg-white">
+                <h3 class="text-xl font-bold mb-4">Synthetic Testing (FHIR)</h3>
+                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
                     sequenceDiagram
                         participant CrossroadsSCN as Crossroads SCN
                         participant QE as QE
@@ -72,8 +101,8 @@
                 </pre>
             </div>
             <div>
-                <h3>Production</h3>
-                <pre class="mermaid bg-white">
+                <h3 class="text-xl font-bold mb-4">Production (FHIR)</h3>
+                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
                     sequenceDiagram
                         participant SCN as SCN
                         participant QE
@@ -84,6 +113,23 @@
                         QE ->> TechBD: Proxy FHIR
                         TechBD ->> TechBD: Validate and Store FHIR JSON
                         TechBD ->> DataLake: Proxy Validated FHIR JSON
+                </pre>
+            </div>
+        </div>
+
+        <div class="mt-12 w-full grid grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-xl font-bold mb-4">Synthetic Testing (flat files)</h3>
+                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
+                    sequenceDiagram
+                        participant TODO as TODO
+                </pre>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold mb-4">Production (flat files)</h3>
+                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
+                    sequenceDiagram
+                        participant TODO as TODO
                 </pre>
             </div>
         </div>
