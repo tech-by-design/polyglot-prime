@@ -28,6 +28,7 @@ jobs:
       - name: Navigate to SQL Aide and Generate ISLM SQL
         run: |
           cd sql-aide/lib/postgres/islm
+          chmod +x islmctl.ts
           ./islmctl.ts evolve omnibus-fresh --conn-id DEVL_TECHBD_UDI_DS
           
       - name: Clone Polyglot Prime repository
