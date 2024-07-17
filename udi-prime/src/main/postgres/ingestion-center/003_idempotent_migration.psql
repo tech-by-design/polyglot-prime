@@ -1,0 +1,9 @@
+
+/*******************************************************************************************
+ * Comprehensive view of ISLM Migration state. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.islm_migration_state CASCADE;
+CREATE or REPLACE
+view techbd_udi_ingress.islm_migration_state AS
+SELECT * FROM "info_schema_lifecycle"."migration_routine_state"();
+

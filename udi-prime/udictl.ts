@@ -13,7 +13,7 @@ import {
 } from "https://deno.land/x/cliffy@v1.0.0-rc.4/command/mod.ts";
 import * as dax from "https://deno.land/x/dax@0.39.2/mod.ts";
 import * as pgpass from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.27/lib/postgres/pgpass/pgpass-parse.ts";
-import * as ic from "./src/main/postgres/ingestion-center/mod.ts";
+import * as ic from "./src/main/postgres/ingestion-center/migrate-basic-infrastructure.ts";
 
 const $ = dax.build$({
   commandBuilder: new dax.CommandBuilder().noThrow(),
@@ -150,15 +150,18 @@ const CLI = new Command()
           }
           Deno.mkdirSync(options.target, { recursive: true });
           const generated = ic.generated();
-          Deno.writeTextFileSync(`${options.target}/${options.driverFname}`, generated.driverSQL);
+          Deno.writeTextFileSync(`${options.target}/${options.driverFname}`, generated.driverGenerateMigrationSQL);
           Deno.writeTextFileSync(`${options.target}/${options.destroyFname}`, generated.destroySQL);
           logger.debug(`${options.target}/${options.driverFname}`);
           logger.debug(`${options.target}/${options.destroyFname}`);
-          [...generated.dependencies, ...generated.testDependencies].forEach((dep) => {
+          [...generated.testDependencies].forEach((dep) => {
             const targetLocal = path.join(options.target, path.basename(dep));
             Deno.copyFileSync(toLocalPath(dep), targetLocal);
             logger.debug(targetLocal);
           });
+          if(ic.migrationInput.description.length >= 20){
+            throw new Error('Migration version description `'+ic.migrationInput.description+'` length cannot exceed 20 characters');
+          }
         })
       .command("java", new Command()
         .description("Generate Java code artifacts")
@@ -197,13 +200,13 @@ const CLI = new Command()
             }
         })
     )
-    .command("migrate", "Use psql to execute generated migration scripts")
+    .command("load-sql", "Use psql to execute generated migration scripts")
       .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: cleanableTarget("/postgres/ingestion-center") })
       .option("--destroy-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "destroy.auto.psql" })
       .option("--driver-fname <file-name:string>", "Filename of the generated construct script in target", { default: "driver.auto.psql" })
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
       .option("--destroy-first", "Destroy objects before migration")
-      .option("--log-results <path:string>", "Store `psql` results in this log file", { default: `./udictl-migrate-${new Date().toISOString()}.log` })
+      .option("--log-results <path:string>", "Store `psql` results in this log file", { default: `./udictl-load-sql-${new Date().toISOString()}.log` })
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
       .type("pg-client-min-messages-level", postreSqlClientMinMessagesLevelCliffyEnum)
       .option("-l, --psql-log-level <level:pg-client-min-messages-level>", "psql `client_min_messages` level.", {
@@ -246,7 +249,7 @@ const CLI = new Command()
           psqlErrors++;
         }
         logger.debug(`-- END ${options.driverFname} at ${new Date()}\n\n`);
-        console.log("Migration complete, results logged in", options.logResults);
+        console.log("Load SQL complete, results logged in", options.logResults);
         if(psqlErrors) {
           console.error(`WARNING: ${psqlErrors} ${options.psql} error(s) occurred, see log file ${options.logResults}`);
         }
@@ -283,12 +286,20 @@ const CLI = new Command()
           console.error(`WARNING: ${psqlErrors} ${options.psql} error(s) occurred, see log file ${options.logResults}`);
         }
       })
+    .command("migrate", "Use psql to generate migration scripts based on current state")
+      .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .action(async (options) => {
+        const psqlCreds = pgpassPsqlArgs(options.connId);
+        console.log((await $.raw`${options.psql} ${psqlCreds} -q -t -A -P border=0 -X -c "CALL info_schema_lifecycle.islm_migrate();"`.captureCombined().lines()).join("\n"));
+      })      
     .command("omnibus-fresh", "Freshen the given connection ID")
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
       .action(async (options) => {
         await CLI.parse(["ic", "generate", "sql"]);
-        await CLI.parse(["ic", "migrate", "--destroy-first", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "load-sql", "--destroy-first", "--conn-id", options.connId]);
         await CLI.parse(["ic", "test", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "migrate", "--conn-id", options.connId]);
         await CLI.parse(["ic", "generate", "java", "jooq", "--conn-id", options.connId]);
       })
     );
