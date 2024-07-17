@@ -79,22 +79,22 @@ statements for setting up the database schema.
 `./target/docs/schema-spy` that includes HTML, diagrams, and documentation to
 explain the database schema.
 
-### Deploying SQL to PostgreSQL
+### Loading SQL to PostgreSQL for Migration
 
-In addition to generating the SQL script, you can deploy it to your PostgreSQL
-database using one of the following `udictl.ts ic migrate` commands:
+In addition to generating the SQL script, you can load it to your PostgreSQL 
+database for migration using one of the following `udictl.ts ic load-sql` commands:
 
 ```bash
 cd udi-prime
-./udictl.ts ic migrate --help           # review SQL migration options
-./udictl.ts ic migrate --destroy-first  # use generated SQL to first destroy all SQL objects in and then perform migrations
-./udictl.ts ic migrate                  # use generated SQL to perform migrations without destroying existing objects
+./udictl.ts ic load-sql --help           # review SQL migration options
+./udictl.ts ic load-sql --destroy-first  # use generated SQL to first destroy all SQL objects in and then perform migrations
+./udictl.ts ic load-sql                  # use generated SQL to perform migrations without destroying existing objects
 
 ./udictl.ts ic test --help              # review test options
 ./udictl.ts ic test                     # perform pgTAP tests
 ```
 
-`./udictl.ts ic migrate` executes the SQL scripts using credentials stored in
+`./udictl.ts ic load-sql` executes the SQL scripts using credentials stored in
 your `.pgpass` file and uses
 [pgpass](https://github.com/netspective-labs/sql-aide/tree/main/lib/postgres/pgpass)
 for password-less authentication.
@@ -107,12 +107,24 @@ Add the following `UDI_PRIME_DESTROYABLE_DEVL` connection ID to your
 DB_HOST:5432:DB_NAME:USER_NAME:PASSWORD
 ```
 
-The `udictl.ts ic migrate` and `udictl.ts ic test` commands use `psql`
+The `udictl.ts ic load-sql` and `udictl.ts ic test` commands use `psql`
 PostgreSQL client. If you do not have installed, you can use any package manager
 to install it:
 
 ```bash
 $ sudo upt install -y postgresql-client
+```
+
+### Executing Migration in PostgreSQL
+
+Once generated SQL is loaded in the database, you can execute the migration in your PostgreSQL
+database using one of the following `udictl.ts ic migrate` commands:
+
+```bash
+cd udi-prime
+./udictl.ts ic migrate --help           # review SQL migration options
+./udictl.ts ic migrate                  # use generated SQL to perform migrations without destroying existing objects
+
 ```
 
 ## UDI Naming Standards
