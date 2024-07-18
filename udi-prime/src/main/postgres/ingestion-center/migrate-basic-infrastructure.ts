@@ -58,14 +58,6 @@ const {
 } = dvts.domains;
 const { ulidPrimaryKey: primaryKey } = dvts.keys;
 
-const sessionIdentifierType = SQLa.sqlTypeDefinition("session_identifier", {
-  hub_session_id: text(),
-  hub_session_entry_id: text(),
-}, {
-  embeddedStsOptions: dvts.ddlOptions,
-  sqlNS: ingressSchema,
-});
-
 const interactionHub = dvts.hubTable("interaction", {
   hub_interaction_id: primaryKey(),
   key: text(),
@@ -256,15 +248,18 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${diagnosticsSchema}
 
-      ${sessionIdentifierType}
-
       ${interactionHub}
 
       ${interactionHttpRequestSat}
 
       ${fileExchangeProtocol}
 
-      ${fileExchangeProtocol.seedDML}
+      BEGIN
+        ${fileExchangeProtocol.seedDML}
+      EXCEPTION
+          WHEN unique_violation THEN
+              RAISE NOTICE 'Enum already exists. Insert skipped.';
+      END;
 
       ${interactionfileExchangeSat}
 
