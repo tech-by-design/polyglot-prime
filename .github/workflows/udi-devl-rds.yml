@@ -22,15 +22,9 @@ jobs:
           # Set the .pgpass file permissions to 600 (read and write for owner only)
           chmod 600 ~/.pgpass
 
-      - name: Get latest SQL Aide release tag
-        id: get_tag
+      - name: Clone SQL Aide repository
         run: |
-          LATEST_TAG=$(curl --silent "https://api.github.com/repos/netspective-labs/sql-aide/releases/latest" | jq -r .tag_name)
-          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-
-      - name: Clone SQL Aide repository with latest release tag
-        run: |
-          git clone --branch ${{ env.LATEST_TAG }} https://github.com/netspective-labs/sql-aide.git
+          git clone https://github.com/netspective-labs/sql-aide.git
 
       - name: Navigate to SQL Aide and Generate ISLM SQL
         run: |
