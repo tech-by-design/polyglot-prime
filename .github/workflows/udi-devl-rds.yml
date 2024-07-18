@@ -45,9 +45,9 @@ jobs:
 
       - name: Display ISLM Test log 
         run: |
-         cd sql-aide/lib/postgres/islm
-         log_file=$(ls -t ./islmctl-test-*.log | head -n 1)
-         cat "$log_file"  
+          cd sql-aide/lib/postgres/islm
+          log_file=$(ls -t ./islmctl-test-*.log | head -n 1)
+          cat "$log_file"  
 
       - name: Clone Polyglot Prime repository
         run: git clone https://github.com/tech-by-design/polyglot-prime.git
@@ -64,9 +64,9 @@ jobs:
 
       - name: Display Load SQL log 
         run: |
-         cd polyglot-prime/udi-prime
-         log_file=$(ls -t ./udictl-load-sql-*.log | head -n 1)
-         cat "$log_file"  
+          cd polyglot-prime/udi-prime
+          log_file=$(ls -t ./udictl-load-sql-*.log | head -n 1)
+          cat "$log_file"  
 		 
       - name: Run UDI test
         run: |
@@ -80,6 +80,6 @@ jobs:
     
       - name: Display UDI Test log
         run: |
-         cd polyglot-prime/udi-prime
-         log_file=$(ls -t ./udictl-test-*.log | head -n 1)
-         cat "$log_file"          
+          cd polyglot-prime/udi-prime
+          log_file=$(ls -t ./udictl-test-*.log | head -n 1)
+          cat "$log_file"          
