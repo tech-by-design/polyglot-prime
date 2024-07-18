@@ -43,11 +43,11 @@ jobs:
           cd sql-aide/lib/postgres/islm
           ./islmctl.ts evolve test --conn-id DEVL_TECHBD_UDI_DS
 
-      - name: Display ISLM Test log 
+      - name: Display ISLM Test log
         run: |
           cd sql-aide/lib/postgres/islm
           log_file=$(ls -t ./islmctl-test-*.log | head -n 1)
-          cat "$log_file"  
+          cat "$log_file"
 
       - name: Clone Polyglot Prime repository
         run: git clone https://github.com/tech-by-design/polyglot-prime.git
@@ -62,24 +62,24 @@ jobs:
           cd polyglot-prime/udi-prime
           ./udictl.ts ic load-sql
 
-      - name: Display Load SQL log 
+      - name: Display Load SQL log
         run: |
           cd polyglot-prime/udi-prime
           log_file=$(ls -t ./udictl-load-sql-*.log | head -n 1)
-          cat "$log_file"  
-		 
+          cat "$log_file"
+
       - name: Run UDI test
         run: |
           cd polyglot-prime/udi-prime
           ./udictl.ts ic test --conn-id DEVL_TECHBD_UDI_DS
-		  
+
       - name: Run UDI Migrations
         run: |
           cd polyglot-prime/udi-prime
           ./udictl.ts ic migrate --conn-id DEVL_TECHBD_UDI_DS
-    
+
       - name: Display UDI Test log
         run: |
           cd polyglot-prime/udi-prime
           log_file=$(ls -t ./udictl-test-*.log | head -n 1)
-          cat "$log_file"          
+          cat "$log_file"
