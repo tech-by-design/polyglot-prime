@@ -1,3 +1,4 @@
+TRUNCATE techbd_udi_assurance.pgtap_fixtures_json ;
 INSERT INTO  techbd_udi_assurance.pgtap_fixtures_json 
 ("name","jsonb") values
 (
