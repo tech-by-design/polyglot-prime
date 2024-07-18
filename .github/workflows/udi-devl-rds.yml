@@ -54,7 +54,7 @@ jobs:
       - name: Load SQL into database
         run: |
           cd polyglot-prime/udi-prime
-          ./udictl.ts ic load-sql
+          ./udictl.ts ic load-sql --conn-id DEVL_TECHBD_UDI_DS
 
       - name: Display Load SQL log
         run: |
