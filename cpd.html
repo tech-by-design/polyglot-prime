@@ -71,6 +71,35 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>89</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
+<td>137</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>: &quot;&lt;span title=\&quot;No directories found in %s\&quot;&gt;&#x26a0;&#xfe0f;&lt;/span&gt;&quot;.formatted(content.sftpUri()));
+            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        } else {
+            if (&quot;html&quot;.equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                        .body(&quot;Unknown tenantId '%s'&quot;.formatted(tenantId));
+            } else if (&quot;json&quot;.equalsIgnoreCase(extension)) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+    }</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
 <td style="text-align: left;">lib/aide/resource/collection/GitHubRepoResources.java</td>
 <td>73</td></tr>
 <tr class="a">
