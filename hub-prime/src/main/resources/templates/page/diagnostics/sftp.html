@@ -22,7 +22,7 @@
                 .withColumnDefs([
                     { headerName: "Request Time", field: "orch_started_at", sortable: true, sort: "desc", filter: "agNumberColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(false) },
                     { headerName: "QE", field: "qe", filter: "agTextColumnFilter" },
-                    { headerName: "Ingested File Source", field: "ingest_file_source", filter: "agTextColumnFilter" },
+                    { headerName: "Ingested File Source", field: "ingest_file", filter: "agTextColumnFilter" },
                     { headerName: "Issue Type", field: "issue_type", filter: "agTextColumnFilter" },
                     { headerName: "Issue Message", field: "issue_message", filter: "agTextColumnFilter" },
                     { headerName: "Issue Column", field: "issue_column", filter: "agTextColumnFilter" },

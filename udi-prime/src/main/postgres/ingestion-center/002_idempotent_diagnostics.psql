@@ -41,6 +41,7 @@ WITH cte_business_rule AS (
     isi.remediation,
     isi.elaboration,
     ose.ingest_src AS ingest_file_source,
+    SUBSTRING(ose.ingest_src FROM '.*/(.*)$') AS ingest_file,
     upper(substring(ose.ingest_src FROM '/SFTP/([^/]+)/')) AS qe,
     os.orch_started_at,
         CASE
@@ -69,6 +70,7 @@ SELECT
 	orch_started_at, 
 	qe, 
 	ingest_file_source, 
+    ingest_file,
 	issue_type, 
 	issue_message, 
 	issue_column, 
