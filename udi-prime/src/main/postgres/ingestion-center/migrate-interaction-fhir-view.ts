@@ -108,6 +108,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
       
       ${dependenciesSQL}
+      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_jsonb_extracted_nature_nature_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree((nature ->> 'nature'));
+      ANALYZE techbd_udi_ingress.sat_interaction_http_request;
 
       
     END
