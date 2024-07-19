@@ -31,6 +31,8 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.util.ArtifactStore;
 import org.techbd.util.ArtifactStore.Artifact;
 
+import com.nimbusds.jose.util.StandardCharset;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebFilter;
@@ -124,7 +126,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
         final var mutatableReq = new ContentCachingRequestWrapper(origRequest);
         final var requestBody = persistReqPayloadDB ? mutatableReq.getContentAsByteArray()
-                : "persistPayloads = false".getBytes();
+                : "persistPayloads = false".getBytes(StandardCharset.UTF_8);
 
         LOG.info("InteractionsFilter Persist DB %s %s (req body %s, resp body %s)".formatted(requestURI,
                 persistInteractionDB, persistReqPayloadDB, persistRespPayloadDB));
@@ -177,7 +179,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setInteractionId(rre.interactionId().toString());
                 rihr.setNature(Configuration.objectMapper.valueToTree(
                         Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
-                                tenant != null ?  tenant.tenantId() != null ? tenant.tenantId(): "N/A" : "N/A")));
+                                tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 rihr.setInteractionKey(requestURI);
                 rihr.setPayload((Configuration.objectMapper

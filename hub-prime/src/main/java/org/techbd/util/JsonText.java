@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.nimbusds.jose.util.StandardCharset;
 
 public class JsonText {
     public static final ObjectMapper objectMapper = Configuration.objectMapper;
@@ -200,7 +201,7 @@ public class JsonText {
 
         @Override
         public void serialize(byte[] value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-            String stringValue = new String(value);
+            String stringValue = new String(value, StandardCharset.UTF_8);
 
             try {
                 final var jsonNode = objectMapper.readTree(stringValue);

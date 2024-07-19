@@ -32,11 +32,11 @@ public class SftpManager {
     private final SftpAccountsOrchctlConfig configuredTenants;
 
     public SftpManager(final SftpAccountsOrchctlConfig saoc) {
-        this.configuredTenants = saoc;
+        this.configuredTenants = new SftpAccountsOrchctlConfig(saoc);
     }
 
     public SftpAccountsOrchctlConfig configuredTenants() {
-        return configuredTenants;
+        return new SftpAccountsOrchctlConfig(this.configuredTenants);
     }
 
     public Optional<SftpAccountsOrchctlConfig.SftpAccount> configuredTenant(final String tenantId) {

@@ -1,6 +1,7 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Optional;
 
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +25,7 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
   private static final String supportEmail = "NYeC QCS Support <qcs-help@qualifiedentity.org>";
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public record AuthenticatedUser(OAuth2User principal, GitHubUsersService.AuthorizedUser ghUser) {
+  public record AuthenticatedUser(OAuth2User principal, GitHubUsersService.AuthorizedUser ghUser) implements Serializable {
   }
 
   public static final Optional<AuthenticatedUser> getAuthenticatedUser(
@@ -53,9 +54,9 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
     if (sessionUser.isEmpty()) {
       final var authentication = SecurityContextHolder.getContext().getAuthentication();
       if (authentication != null && authentication.isAuthenticated()
-          && "anonymousUser" != authentication.getPrincipal().toString()) {
+          && !"anonymousUser".equals(authentication.getPrincipal().toString())) {
         final var gitHubPrincipal = (DefaultOAuth2User) authentication.getPrincipal();
-        final var gitHubLoginId = gitHubPrincipal.getAttribute("login");
+        final var gitHubLoginId = Optional.ofNullable(gitHubPrincipal.getAttribute("login")).orElseThrow();
         final var gitHubAuthnUser = gitHubUsers.isAuthorizedUser(gitHubLoginId.toString());
         if (!gitHubAuthnUser.isPresent()) {
           response.setStatus(HttpServletResponse.SC_FORBIDDEN);
