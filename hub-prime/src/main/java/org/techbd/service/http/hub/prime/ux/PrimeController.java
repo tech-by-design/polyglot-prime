@@ -1,11 +1,12 @@
 package org.techbd.service.http.hub.prime.ux;
 
 import java.io.IOException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List; // Ensure this import is present
 import java.util.Map;
-
 import org.jooq.impl.DSL;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
@@ -128,7 +129,7 @@ public class PrimeController {
                         .body(mre.length() > 0
                                 ? "<span title=\"%d sessions found, most recent %s \">%s</span>".formatted(
                                         recentInteractions.size(),
-                                        mre,
+                                        convertToEST(mre),
                                         formattedTime)
                                 : "<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
 
@@ -198,6 +199,18 @@ public class PrimeController {
 
         return formattedTime;
 
+    }
+  
+    private String convertToEST(String inputTime) {
+        // Parse the input time string to a ZonedDateTime
+        ZonedDateTime inputDateTime = ZonedDateTime.parse(inputTime, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+    
+        // Convert the ZonedDateTime to the EST time zone
+        ZonedDateTime estDateTime = inputDateTime.withZoneSameInstant(ZoneId.of("America/New_York"));
+    
+        // Format the ZonedDateTime to a string in the desired format
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return estDateTime.format(formatter);
     }
 
 }
