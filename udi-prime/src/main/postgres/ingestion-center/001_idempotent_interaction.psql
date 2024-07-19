@@ -657,3 +657,26 @@ GROUP BY
 	rc.rejection_count,
 	wc.warning_count;
 
+
+/*******************************************************************************************
+ * Comprehensive view of Latest FHIR Interactions per Tenant IDs* 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_fhir CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_fhir
+AS WITH ranked_records AS (
+         SELECT sihr.sat_interaction_http_request_id,
+            hi.hub_interaction_id AS interaction_id,
+            sihr.nature ->> 'tenant_id'::text AS tenant_id,
+            hi.created_at AS interaction_created_at,
+            row_number() OVER (PARTITION BY (upper(sihr.nature ->> 'tenant_id'::text)) ORDER BY hi.created_at DESC) AS rn
+           FROM techbd_udi_ingress.hub_interaction hi
+             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hi.hub_interaction_id = sihr.hub_interaction_id
+          WHERE hi.key = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text])
+        )
+ SELECT sat_interaction_http_request_id,
+    interaction_id,
+    tenant_id,
+    interaction_created_at
+   FROM ranked_records
+  WHERE rn = 1;
+
