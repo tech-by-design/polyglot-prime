@@ -633,7 +633,7 @@ public class OrchestrationEngine {
     }
 
     public record Device(String deviceId, String deviceName) {
-        public static Device INSTANCE = createDefault();
+        public static final Device INSTANCE = createDefault();
 
         public static Device createDefault() {
             try {
@@ -671,7 +671,7 @@ public class OrchestrationEngine {
         }
 
         public List<ValidationResult> getValidationResults() {
-            return validationResults;
+            return Collections.unmodifiableList(validationResults);
         }
 
         public Device getDevice() {
@@ -704,7 +704,7 @@ public class OrchestrationEngine {
             }
 
             public List<String> getUaStrategyJsonIssues() {
-                return uaStrategyJsonIssues;
+                return Collections.unmodifiableList(uaStrategyJsonIssues);
             }
 
             public Builder onDevice(@NotNull final Device device) {
