@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/docs}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'islm_migration_state';
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    { headerName: "Migration Time", field: "migrated_at", sortable: true, sort: "desc", filter: "agNumberColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true) },
+                    { headerName: "Version", field: "migration_version", filter: "agTextColumnFilter" },
+                    { headerName: "Migration Reason", field: "migration_reason", filter: "agTextColumnFilter" },
+                    { headerName: "Idempotent", field: "is_idempotent", filter: "agTextColumnFilter" },
+                    { headerName: "Migration Status", field: "is_migrated", filter: "agTextColumnFilter" },
+                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter" },
+                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter" },
+                    { headerName: "Transition Count", field: "transition_count" , filter: "agTextColumnFilter" },
+                    { headerName: "Migration Routine Name", field: "migration_routine_name" , filter: "agTextColumnFilter" }
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>    
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>
