@@ -54,12 +54,21 @@
         <div class="mt-8 flex flex-col items-center justify-center p-4">
             <div class="text-center">Most Recent FHIR Interactions</div>
             <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                <div>TODO</div>
-                <div>TODO</div>
-                <div>TODO</div>
-                <div>TODO</div>
-                <div>TODO</div>
-                <div>TODO</div>
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/fhir/most-recent/healthelink.html})}">
+                </div>
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('Healtheconnections', @{/dashboard/stat/fhir/most-recent/healtheconn.html})}">
+                </div>
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/fhir/most-recent/healthix.html})}">
+                </div> 
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/fhir/most-recent/grrhio.html})}">
+                </div>
+                <div
+                    th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/fhir/most-recent/hixny.html})}">
+                </div>
             </dl>
         </div>
 
