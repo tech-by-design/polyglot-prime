@@ -209,4 +209,11 @@ public class DocsController {
     public String schemaSpy(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/schema", model, request);
     }
+
+    @RouteMapping(label = "ISLM Migration", title = "ISLM", siblingOrder = 60)
+    @GetMapping("/docs/islm")
+    public String islm(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/islm", model, request);
+    }
+    
 }
