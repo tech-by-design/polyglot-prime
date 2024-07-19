@@ -32,6 +32,15 @@ const ingressSchema = SQLa.sqlSchemaDefn("techbd_udi_ingress", {
   isIdempotent: true,
 });
 
+const assuranceSchema = SQLa.sqlSchemaDefn("techbd_udi_assurance", {
+  isIdempotent: true,
+});
+
+const diagnosticsSchema = SQLa.sqlSchemaDefn("techbd_udi_diagnostics", {
+  isIdempotent: true,
+});
+
+
 export const dvts = dvp.dataVaultTemplateState<EmitContext>({
   defaultNS: ingressSchema,
 });
@@ -153,6 +162,13 @@ export function generated() {
     pumlERD: dvts.pumlERD(ctx).content,
     destroySQL: ws.unindentWhitespace(`
 
+      DROP SCHEMA IF EXISTS public CASCADE;
+
+      DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${diagnosticsSchema.sqlNamespace} cascade;
+
+      DROP PROCEDURE IF EXISTS "${migrateSP.sqlNS?.sqlNamespace}"."${migrateSP.routineName}" CASCADE;
 
 
       `),
