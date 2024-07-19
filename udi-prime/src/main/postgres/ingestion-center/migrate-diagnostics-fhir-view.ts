@@ -32,14 +32,6 @@ const ingressSchema = SQLa.sqlSchemaDefn("techbd_udi_ingress", {
   isIdempotent: true,
 });
 
-const assuranceSchema = SQLa.sqlSchemaDefn("techbd_udi_assurance", {
-  isIdempotent: true,
-});
-
-const diagnosticsSchema = SQLa.sqlSchemaDefn("techbd_udi_diagnostics", {
-  isIdempotent: true,
-});
-
 export const dvts = dvp.dataVaultTemplateState<EmitContext>({
   defaultNS: ingressSchema,
 });
@@ -62,7 +54,7 @@ async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
 
 // List of dependencies and test dependencies
 const dependencies = [
-  "./001_idempotent_interaction.psql",
+  "./002_idempotent_diagnostics.psql",
 ] as const;
 
 // Read SQL queries from files
@@ -82,8 +74,8 @@ const infoSchemaLifecycle = SQLa.sqlSchemaDefn("info_schema_lifecycle", {
 
 
 export const migrationInput: MigrationVersion = {
-  description: "interaction-view",
-  dateTime: new Date(2024, 7, 18, 18, 16),
+  description: "diagnostics-view",
+  dateTime: new Date(2024, 7, 19, 16, 16),
 };
 function formatDateToCustomString(date: Date): string {
   const year = date.getFullYear();
@@ -116,9 +108,7 @@ const migrateSP = pgSQLa.storedProcedure(
     BEGIN
 
       
-      ${dependenciesSQL}
-      CREATE INDEX IF NOT EXISTS sat_interaction_http_request_jsonb_extracted_nature_nature_idx ON techbd_udi_ingress.sat_interaction_http_request USING btree((nature ->> 'nature'));
-      ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+      ${dependenciesSQL}      
 
       
     END
@@ -162,13 +152,8 @@ export function generated() {
     driverGenerateMigrationSQL,
     pumlERD: dvts.pumlERD(ctx).content,
     destroySQL: ws.unindentWhitespace(`
-      DROP SCHEMA IF EXISTS public CASCADE;
 
-      DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
-      DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
-      DROP SCHEMA IF EXISTS ${diagnosticsSchema.sqlNamespace} cascade;
 
-      DROP PROCEDURE IF EXISTS "${migrateSP.sqlNS?.sqlNamespace}"."${migrateSP.routineName}" CASCADE;
 
       `),
     testDependencies,
