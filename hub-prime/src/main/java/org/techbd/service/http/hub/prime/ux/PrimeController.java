@@ -122,13 +122,15 @@ public class PrimeController {
 
             String mre = recentInteractions.get(0).get("interaction_created_at").toString();
 
-            String formattedTime = getrecentInteractioString(mre);
+            String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
+
+            String formattedTime = getrecentInteractioString(mre);            
 
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
                         .body(mre.length() > 0
-                                ? "<span title=\"%d sessions found, most recent %s \">%s</span>".formatted(
-                                        recentInteractions.size(),
+                                ? "<span title=\"%s sessions found, most recent %s \">%s</span>".formatted(
+                                        interactionCount,
                                         convertToEST(mre),
                                         formattedTime)
                                 : "<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
