@@ -23,7 +23,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <ul class="list-disc list-inside pl-8">
                     <li class="mb-2 hanging-indent">The Hub connects HIE data submitters, data consumers, and IT teams.
-                        <a th:href="@{/interactions}">Explore FHIR and flat file submissions.</a></li>
+                        <a th:href="@{/interactions}">Explore FHIR and flat file submissions.</a>
+                    </li>
                     <li class="mb-2 hanging-indent">We're an <em></em>open by default</em> community that welcomes
                         contributions across the HIE ecosystem. <a href="https://github.com/tech-by-design">Explore our
                             GitHub projects.</a></li>
@@ -62,7 +63,7 @@
                 </div>
                 <div
                     th:replace="~{fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/fhir/most-recent/healthix.html})}">
-                </div> 
+                </div>
                 <div
                     th:replace="~{fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/fhir/most-recent/grrhio.html})}">
                 </div>
@@ -73,7 +74,8 @@
         </div>
 
         <div class="mt-8 flex flex-col items-center justify-center p-4">
-            <div class="text-center">Most Recent Flat Files SFTP <code>egress</code> Interactions (hover to see details)</div>
+            <div class="text-center">Most Recent Flat Files SFTP <code>egress</code> Interactions (hover to see details)
+            </div>
             <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                 <div
                     th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/sftp/most-recent-egress/healthelink.html})}">
