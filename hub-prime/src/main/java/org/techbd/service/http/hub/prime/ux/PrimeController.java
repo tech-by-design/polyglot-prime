@@ -2,16 +2,12 @@ package org.techbd.service.http.hub.prime.ux;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
+import java.time.temporal.ChronoUnit;
 import java.util.List; // Ensure this import is present
 import java.util.Map;
-import org.ocpsoft.prettytime.PrettyTime;
-import java.time.temporal.ChronoUnit;
 
-import jakarta.servlet.http.HttpServletResponse;
-import lib.aide.tabular.JooqRowsSupplier;
+import org.jooq.impl.DSL;
 import org.ocpsoft.prettytime.PrettyTime;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -28,6 +24,8 @@ import org.techbd.udi.auto.jooq.ingress.Tables;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lib.aide.tabular.JooqRowsSupplier;
 
 @Controller
 @Tag(name = "TechBD Hub UX API")
@@ -115,26 +113,24 @@ public class PrimeController {
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 viewName);
         List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(typableTable.column("tenant_id").eq(tenantId)) 
+                .where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
                 .fetch()
                 .intoMaps();
 
-        System.out.println("recentInteractionshh" + recentInteractions.get(0).get("interaction_created_at"));
+        if (recentInteractions != null && recentInteractions.size() > 0) {
 
-        if (recentInteractions.size() > 0) {
-            // final var mre = recentInteractions.get(0).get("interaction_created_at");
-            // Example value of input (mre)
             String mre = recentInteractions.get(0).get("interaction_created_at").toString();
+
             String formattedTime = getrecentInteractioString(mre);
 
-            System.out.println("recentInteractions" + recentInteractions.get(0).get("interaction_created_at"));
-            if ("html".equalsIgnoreCase(extension)) { 
+            if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body(mre.length() > 0 ?"<span title=\"%d sessions found, most recent %s \">%s</span>".formatted(
-                                recentInteractions.size(),
-                                mre,
-                                formattedTime)
-                                : "<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));                             
+                        .body(mre.length() > 0
+                                ? "<span title=\"%d sessions found, most recent %s \">%s</span>".formatted(
+                                        recentInteractions.size(),
+                                        mre,
+                                        formattedTime)
+                                : "<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
 
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
@@ -144,7 +140,7 @@ public class PrimeController {
         } else {
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("Unknown tenantId '%s'".formatted(tenantId));
+                        .body("<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.noContent().build();
             } else {
@@ -203,5 +199,5 @@ public class PrimeController {
         return formattedTime;
 
     }
- 
+
 }
