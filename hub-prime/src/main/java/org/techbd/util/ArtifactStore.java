@@ -259,7 +259,7 @@ public class ArtifactStore {
                     try (var reader = artifact.getReader();
                             var byteArrayOutputStream = new ByteArrayOutputStream();
                             var zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
-                            var zipOutputWriter = new OutputStreamWriter(zipOutputStream)) {
+                            var zipOutputWriter = new OutputStreamWriter(zipOutputStream, StandardCharsets.UTF_8)) {
 
                         zipOutputStream.putNextEntry(new ZipEntry(artifactId + ".json"));
                         reader.transferTo(zipOutputWriter);
