@@ -13,7 +13,7 @@ import {
 } from "https://deno.land/x/cliffy@v1.0.0-rc.4/command/mod.ts";
 import * as dax from "https://deno.land/x/dax@0.39.2/mod.ts";
 import * as pgpass from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.27/lib/postgres/pgpass/pgpass-parse.ts";
-import * as ic from "./src/main/postgres/ingestion-center/migrate-basic-infrastructure.ts";
+import * as ic from "./src/main/postgres/ingestion-center/migrate-interaction-fhir-view.ts";
 
 const $ = dax.build$({
   commandBuilder: new dax.CommandBuilder().noThrow(),
@@ -291,7 +291,7 @@ const CLI = new Command()
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
       .action(async (options) => {
         const psqlCreds = pgpassPsqlArgs(options.connId);
-        console.log((await $.raw`${options.psql} ${psqlCreds} -q -t -A -P border=0 -X -c "CALL info_schema_lifecycle.islm_migrate();"`.captureCombined().lines()).join("\n"));
+        console.log((await $.raw`${options.psql} ${psqlCreds} -q -t -A -P border=0 -X -c "CALL info_schema_lifecycle.islm_migrate('info_schema_lifecycle',false);"`.captureCombined().lines()).join("\n"));
       })      
     .command("omnibus-fresh", "Freshen the given connection ID")
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
