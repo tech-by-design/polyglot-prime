@@ -51,7 +51,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 }
             }
             return DSL.field(DSL.name(columnName));
-        }    
+        }
     }
 
     public record JooqQuery(Query query, List<Object> bindValues, boolean stronglyTyped) {
@@ -118,20 +118,45 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var sortFields = new ArrayList<SortField<?>>();
         final var groupByFields = new ArrayList<Field<?>>();
 
-        // Adding columns to select
-        if (request.valueCols() != null)
-            request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
+        // Check if groupKeys are available
+        if (request.groupKeys() != null && !request.groupKeys().isEmpty()) {
+            // Adding the select field '*'
+            selectFields.add(DSL.field("*"));
+            // Adding where conditions based on groupKeys and rowGroupCols
+            for (int i = 0; i < request.rowGroupCols().size(); i++) {
+                final var col = request.rowGroupCols().get(i);
+                final var value = request.groupKeys().get(i);
+                final var condition = typableTable.column(col.field()).eq(value);
+                whereConditions.add(condition);
+                bindValues.add(value);
+            }
+        } else {
+            // Adding grouping
+            if (request.rowGroupCols() != null) {
+                request.rowGroupCols().forEach(col -> {
+                    final var field = typableTable.column(col.field());
+                    groupByFields.add(field);
+                    selectFields.add(field);
+                });
+            }
+
+            // Adding columns to select if no grouping
+            if (groupByFields.isEmpty() && request.valueCols() != null) {
+                request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
+            }
+        }
 
         // Adding filters
-        if (request.filterModel() != null)
+        if (request.filterModel() != null) {
             request.filterModel().forEach((field, filter) -> {
                 final var condition = createCondition(field, filter);
                 whereConditions.add(condition);
                 bindValues.add(filter.filter());
             });
+        }
 
         // Adding sorting
-        if (request.sortModel() != null)
+        if (request.sortModel() != null) {
             for (final var sort : request.sortModel()) {
                 final var sortField = typableTable.column(sort.colId());
                 switch (sort.sort()) {
@@ -139,17 +164,10 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     case "desc" -> sortFields.add(sortField.desc());
                 }
             }
-
-        // Adding grouping
-        if (request.rowGroupCols() != null)
-            request.rowGroupCols().forEach(col -> {
-                final var field = typableTable.column(col.field());
-                groupByFields.add(field);
-                selectFields.add(field);
-            });
+        }
 
         // Adding aggregations
-        if (request.aggregationFunctions() != null)
+        if (request.aggregationFunctions() != null) {
             request.aggregationFunctions().forEach(aggFunc -> {
                 aggFunc.columns().forEach(col -> {
                     final var field = typableTable.column(col);
@@ -157,27 +175,26 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                         case "sum" -> DSL.sum(field.cast(Double.class));
                         case "avg" -> DSL.avg(field.cast(Double.class));
                         case "count" -> DSL.count(field);
-                        default ->
-                            throw new IllegalArgumentException(
-                                    "Unknown aggregation function: " + aggFunc.functionName());
+                        default -> throw new IllegalArgumentException(
+                                "Unknown aggregation function: " + aggFunc.functionName());
                     };
                     selectFields.add(aggregationField);
                 });
             });
+        }
 
         // Creating the base query
         final var limit = request.endRow() - request.startRow();
-        final var select = groupByFields.isEmpty()
-                ? this.dsl.select(selectFields).from(typableTable.table).where(whereConditions).orderBy(sortFields)
-                        .limit(request.startRow(), limit)
-                : this.dsl.select(selectFields).from(typableTable.table).where(whereConditions).groupBy(groupByFields)
-                        .orderBy(sortFields)
+        final var select = !groupByFields.isEmpty()
+                ? this.dsl.select(selectFields).from(typableTable.table()).where(whereConditions).groupBy(groupByFields)
+                        .orderBy(sortFields).limit(request.startRow(), limit)
+                : this.dsl.select(selectFields).from(typableTable.table()).where(whereConditions).orderBy(sortFields)
                         .limit(request.startRow(), limit);
 
         bindValues.add(request.startRow());
         bindValues.add(limit);
 
-        return new JooqQuery(select, bindValues, typableTable.stronglyTyped);
+        return new JooqQuery(select, bindValues, typableTable.stronglyTyped());
     }
 
     private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {

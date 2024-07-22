@@ -5,7 +5,7 @@
 <head>
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
-    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js">grouped</script> -->
     <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
     <script type="module">
         import { ShellAide } from '@presentation/shell/shell-aide.js';
@@ -48,13 +48,16 @@
                     {
                         headerName: "Encountered Time",
                         field: "encounteredat",
-                        sortable: true,
-                        sort: "desc",
                         filter: "agNumberColumnFilter",
                         valueFormatter: AGGridAide.dateTimeValueFormatter(true)
                     },
                     { headerName: "Session ID", field: "session_id", filter: "agTextColumnFilter" },
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", enableRowGroup: true  },
+                    {
+                    headerName: 'Tenant ID',
+                    field: 'tenant_id',
+                    cellRenderer: 'agGroupCellRenderer', 
+                    rowGroup: true  , hide: true
+                    },
                     { headerName: "Severity", field: "severity", filter: "agTextColumnFilter"  },
                     { headerName: "Issue Message", field: "message", filter: "agTextColumnFilter"  },
                     { headerName: "Issue Line", field: "line", filter: "agNumberColumnFilter"  },
