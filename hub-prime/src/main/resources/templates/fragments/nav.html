@@ -51,9 +51,9 @@
                                             <a th:href="${#authentication.getPrincipal().attributes['html_url']}" id="principal_html">
                                                 <img th:src="${#authentication.getPrincipal().attributes['avatar_url']}" class="h-8 w-8 rounded-full" alt="User Profile" id="principal_image" />
                                             </a>
-                                            <div class="hidden group-hover:block absolute z-10 mt-2 w-48 origin-top-right right-2 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5"
-                                                role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
-                                                <a href="#" class="block px-2 py-2 text-sm text-gray-700 text-left" role="menuitem" tabindex="-1" id="user-menu-item-0">
+                                            <div class="absolute opacity-0 group-hover:opacity-100 invisible group-hover:visible !cursor-default z-10 mt-2 w-48 origin-top-right right-2 rounded-md bg-white py-2 shadow-lg ring-1 ring-black ring-opacity-5 transition-[opacity] duration-300"
+                                             role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
+                                                <a href="#" class="block px-2 py-2 text-sm text-gray-700 text-left leading-[1.75rem] cursor-defualt" role="menuitem" tabindex="-1" id="user-menu-item-0">
                                                     <div>
                                                         Name: <span sec:authentication="principal.attributes['name']"></span>
                                                     </div>
