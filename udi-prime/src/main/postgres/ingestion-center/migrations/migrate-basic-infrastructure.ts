@@ -156,17 +156,17 @@ async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
 
 // List of dependencies and test dependencies
 const dependencies = [
-  "./000_idempotent_universal.psql",
-  "./001_idempotent_interaction.psql",
-  "./002_idempotent_diagnostics.psql",
-  "./003_idempotent_migration.psql",
+  "../000_idempotent_universal.psql",
+  "../001_idempotent_interaction.psql",
+  "../002_idempotent_diagnostics.psql",
+  "../003_idempotent_migration.psql",
 ] as const;
 
 const testMigrateDependencies = [
-  "../../../test/postgres/ingestion-center/001-idempotent-interaction-unit-test.psql",
-  "../../../test/postgres/ingestion-center/003-idempotent-interaction-view-explain-plan.psql",
-  "../../../test/postgres/ingestion-center/004-idempotent-migrate-unit-test.psql",
-  "../../../test/postgres/ingestion-center/fixtures.sql",
+  "../../../../test/postgres/ingestion-center/001-idempotent-interaction-unit-test.psql",
+  "../../../../test/postgres/ingestion-center/003-idempotent-interaction-view-explain-plan.psql",
+  "../../../../test/postgres/ingestion-center/004-idempotent-migrate-unit-test.psql",
+  "../../../../test/postgres/ingestion-center/fixtures.sql",
 ] as const;
 
 // Read SQL queries from files
@@ -174,7 +174,7 @@ const dependenciesSQL = await readSQLFiles(dependencies);
 const testDependenciesSQL = await readSQLFiles(testMigrateDependencies);
 const testMigrateDependenciesWithPgtap = [
   ...testMigrateDependencies,
-  "../../../test/postgres/ingestion-center/suite.pgtap.psql",
+  "../../../../test/postgres/ingestion-center/suite.pgtap.psql",
 ] as const;
 
 const ctx = SQLa.typicalSqlEmitContext({
