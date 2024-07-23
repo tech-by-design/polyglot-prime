@@ -13,7 +13,7 @@ import {
 } from "https://deno.land/x/cliffy@v1.0.0-rc.4/command/mod.ts";
 import * as dax from "https://deno.land/x/dax@0.39.2/mod.ts";
 import * as pgpass from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.27/lib/postgres/pgpass/pgpass-parse.ts";
-import * as ic from "./src/main/postgres/ingestion-center/migrate-interaction-fhir-view.ts";
+import * as migrateIc from "./src/main/postgres/ingestion-center/migrations/migrations.ts";
 
 const $ = dax.build$({
   commandBuilder: new dax.CommandBuilder().noThrow(),
@@ -149,19 +149,28 @@ const CLI = new Command()
               }
           }
           Deno.mkdirSync(options.target, { recursive: true });
-          const generated = ic.generated();
-          Deno.writeTextFileSync(`${options.target}/${options.driverFname}`, generated.driverGenerateMigrationSQL);
-          Deno.writeTextFileSync(`${options.target}/${options.destroyFname}`, generated.destroySQL);
-          logger.debug(`${options.target}/${options.driverFname}`);
-          logger.debug(`${options.target}/${options.destroyFname}`);
-          [...generated.testDependencies].forEach((dep) => {
-            const targetLocal = path.join(options.target, path.basename(dep));
-            Deno.copyFileSync(toLocalPath(dep), targetLocal);
-            logger.debug(targetLocal);
-          });
-          if(ic.migrationInput.description.length >= 20){
-            throw new Error('Migration version description `'+ic.migrationInput.description+'` length cannot exceed 20 characters');
-          }
+          let driverGenerateMigrationSQL:string = '';
+          let destroySQL:string = '';
+          (migrateIc.ic).forEach(async (module,index) => {
+            const generated = await module.generated();
+            driverGenerateMigrationSQL = driverGenerateMigrationSQL + '\n' + generated.driverGenerateMigrationSQL;
+            destroySQL = destroySQL + '\n' +generated.destroySQL;
+            if(module.migrationInput.description.length >= 20){
+              throw new Error('Migration version description `'+module.migrationInput.description+'` length cannot exceed 20 characters');
+            }
+            if(migrateIc.ic.length-1==index){
+              Deno.writeTextFileSync(`${options.target}/${options.driverFname}`, driverGenerateMigrationSQL);
+              Deno.writeTextFileSync(`${options.target}/${options.destroyFname}`, destroySQL);
+              logger.debug(`${options.target}/${options.driverFname}`);
+              logger.debug(`${options.target}/${options.destroyFname}`);
+              [...generated.testDependencies].forEach((dep) => {
+                const targetLocal = path.join(options.target, path.basename(dep));
+                Deno.copyFileSync(toLocalPath(dep), targetLocal);
+                logger.debug(targetLocal);
+              });
+            }
+          });  
+          
         })
       .command("java", new Command()
         .description("Generate Java code artifacts")
