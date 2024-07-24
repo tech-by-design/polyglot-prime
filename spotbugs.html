@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>202</td>
-<td>168</td>
+<td>203</td>
+<td>169</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -218,45 +218,48 @@
 <td><a href="#org.techbd.service.http.hub.prime.ux.PrimeController">org.techbd.service.http.hub.prime.ux.PrimeController</a></td>
 <td>2</td></tr>
 <tr class="b">
-<td><a href="#org.techbd.service.http.hub.prime.ux.ShellController">org.techbd.service.http.hub.prime.ux.ShellController</a></td>
+<td><a href="#org.techbd.service.http.hub.prime.ux.QaFabricController">org.techbd.service.http.hub.prime.ux.QaFabricController</a></td>
 <td>1</td></tr>
 <tr class="a">
+<td><a href="#org.techbd.service.http.hub.prime.ux.ShellController">org.techbd.service.http.hub.prime.ux.ShellController</a></td>
+<td>1</td></tr>
+<tr class="b">
 <td><a href="#org.techbd.udi.UdiPrimeJpaConfig$DataSourceHealthCheckResult">org.techbd.udi.UdiPrimeJpaConfig$DataSourceHealthCheckResult</a></td>
 <td>5</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.util.ArtifactStore$AggregatePersistence">org.techbd.util.ArtifactStore$AggregatePersistence</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.util.ArtifactStore$BlobStorePersistence">org.techbd.util.ArtifactStore$BlobStorePersistence</a></td>
 <td>2</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.util.ArtifactStore$Builder">org.techbd.util.ArtifactStore$Builder</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.util.ArtifactStore$EmailPersistence">org.techbd.util.ArtifactStore$EmailPersistence</a></td>
 <td>4</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.util.ArtifactStore$InvalidPersistenceStrategy">org.techbd.util.ArtifactStore$InvalidPersistenceStrategy</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.util.ArtifactStore$LocalFsPersistence">org.techbd.util.ArtifactStore$LocalFsPersistence</a></td>
 <td>3</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.util.ArtifactStore$VirtualFsPersistence">org.techbd.util.ArtifactStore$VirtualFsPersistence</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.util.JsonText$JsonObjectResult$InvalidResult">org.techbd.util.JsonText$JsonObjectResult$InvalidResult</a></td>
 <td>2</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.util.JsonText$JsonObjectResult$ValidResult">org.techbd.util.JsonText$JsonObjectResult$ValidResult</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.util.JsonText$JsonObjectResult$ValidResultClassNotFound">org.techbd.util.JsonText$JsonObjectResult$ValidResultClassNotFound</a></td>
 <td>2</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.util.JsonText$JsonObjectResult$ValidResultClassNotInstantiated">org.techbd.util.JsonText$JsonObjectResult$ValidResultClassNotInstantiated</a></td>
 <td>4</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.util.JsonText$JsonObjectResult$ValidUntypedResult">org.techbd.util.JsonText$JsonObjectResult$ValidUntypedResult</a></td>
 <td>2</td></tr></table></section><a name="lib.aide.paths.PathSuffixes"></a><section>
 <h2>lib.aide.paths.PathSuffixes</h2>
@@ -1402,6 +1405,20 @@
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#ICAST_INT_CAST_TO_FLOAT_PASSED_TO_ROUND">ICAST_INT_CAST_TO_FLOAT_PASSED_TO_ROUND</a></td>
 <td>190</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.ux.QaFabricController"></a><section>
+<h2>org.techbd.service.http.hub.prime.ux.QaFabricController</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>new org.techbd.service.http.hub.prime.ux.QaFabricController(Presentation) may expose internal representation by storing an externally mutable object into QaFabricController.presentation</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#EI_EXPOSE_REP2">EI_EXPOSE_REP2</a></td>
+<td>30</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.ux.ShellController"></a><section>
 <h2>org.techbd.service.http.hub.prime.ux.ShellController</h2>
 <table class="table table-striped">
