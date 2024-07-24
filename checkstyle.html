@@ -73,9 +73,9 @@
 <th><img src="images/icon_warning_sml.gif" />&#160;Warnings</th>
 <th><img src="images/icon_error_sml.gif" />&#160;Errors</th></tr>
 <tr class="b">
-<td style="text-align: left;">17</td>
+<td style="text-align: left;">18</td>
 <td>0</td>
-<td>46</td>
+<td>47</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -122,7 +122,7 @@
 <tr class="a">
 <td style="text-align: left;"><a href="#lib.2Faide.2Ftabular.2FJooqRowsSupplier.java">lib/aide/tabular/JooqRowsSupplier.java</a></td>
 <td>0</td>
-<td>4</td>
+<td>3</td>
 <td>0</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fconf.2FConfiguration.java">org/techbd/conf/Configuration.java</a></td>
@@ -168,6 +168,11 @@
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FTabularRowsController.java">org/techbd/service/http/hub/prime/ux/TabularRowsController.java</a></td>
 <td>0</td>
 <td>1</td>
+<td>0</td></tr>
+<tr class="a">
+<td style="text-align: left;"><a href="#org.2Ftechbd.2Futil.2FArtifactStore.java">org/techbd/util/ArtifactStore.java</a></td>
+<td>0</td>
+<td>2</td>
 <td>0</td></tr></table></section><section>
 <h2>Rules</h2><a id="Rules"></a>
 <table class="table table-striped">
@@ -212,37 +217,32 @@
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
 <td style="text-align: left;"></td>
-<td><a class="externalLink" href="https://checkstyle.org/config_coding.html#MissingSwitchDefault">MissingSwitchDefault</a></td>
-<td>1</td>
-<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
-<td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_coding.html#OverloadMethodsDeclarationOrder">OverloadMethodsDeclarationOrder</a></td>
 <td>1</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;">design</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_design.html#OneTopLevelClass">OneTopLevelClass</a></td>
 <td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;">indentation</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_indentation.html#CommentsIndentation">CommentsIndentation</a></td>
-<td>2</td>
-<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
-<td style="text-align: left;">modifier</td>
-<td><a class="externalLink" href="https://checkstyle.org/config_modifier.html#ModifierOrder">ModifierOrder</a></td>
-<td>13</td>
+<td>3</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="b">
+<td style="text-align: left;">modifier</td>
+<td><a class="externalLink" href="https://checkstyle.org/config_modifier.html#ModifierOrder">ModifierOrder</a></td>
+<td>14</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
 <td style="text-align: left;">naming</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_naming.html#ParameterName">ParameterName</a>
 <ul>
 <li>format: <code>&quot;^[a-z]([a-z0-9][a-zA-Z0-9]*)?$&quot;</code></li></ul></td>
 <td>1</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;">whitespace</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#EmptyLineSeparator">EmptyLineSeparator</a>
 <ul>
@@ -251,7 +251,7 @@
 <li>allowMultipleEmptyLinesInsideClassMembers: <code>&quot;false&quot;</code></li></ul></td>
 <td>3</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#WhitespaceAround">WhitespaceAround</a>
 <ul>
@@ -476,13 +476,7 @@
 <td>blocks</td>
 <td>NeedBraces</td>
 <td>'if' construct must use '{}'s.</td>
-<td>107</td></tr>
-<tr class="a">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>coding</td>
-<td>MissingSwitchDefault</td>
-<td>switch without &quot;default&quot; clause.</td>
-<td>162</td></tr></table></section><section>
+<td>107</td></tr></table></section><section>
 <h3>org/techbd/conf/Configuration.java</h3><a id="org.2Ftechbd.2Fconf.2FConfiguration.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -674,7 +668,27 @@
 <td>modifier</td>
 <td>ModifierOrder</td>
 <td>'private' modifier out of order with the JLS suggestions.</td>
-<td>26</td></tr></table></section></section></section>
+<td>26</td></tr></table></section><section>
+<h3>org/techbd/util/ArtifactStore.java</h3><a id="org.2Ftechbd.2Futil.2FArtifactStore.java"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>Severity</th>
+<th>Category</th>
+<th>Rule</th>
+<th>Message</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>modifier</td>
+<td>ModifierOrder</td>
+<td>'static' modifier out of order with the JLS suggestions.</td>
+<td>443</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>indentation</td>
+<td>CommentsIndentation</td>
+<td>Comment has incorrect indentation level 117, expected is 12, indentation should be the same level as line 456.</td>
+<td>455</td></tr></table></section></section></section>
         </main>
       </div>
     </div>
