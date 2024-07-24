@@ -151,6 +151,7 @@ export class AGGridAideBuilder {
             autoSizeStrategy: { type: "fitCellContents" },
             rowModelType: 'serverSide',
             serverSideDatasource: null,
+            tooltipShowDelay: 500
         };
         this.gridDivStyles = { height: "750px" };
     }

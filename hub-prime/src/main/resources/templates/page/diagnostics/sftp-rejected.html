@@ -13,24 +13,26 @@
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
-
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'orch_session_diagnostics_rejection';
         document.addEventListener('DOMContentLoaded', function () {
-            const modalAide = new ModalAide();
+            const modalAide = new ModalAide('sftp-rejected');
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    { headerName: "Request Time", field: "orch_started_at", sortable: true, sort: "desc", filter: "agNumberColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(false) },
-                    { headerName: "QE", field: "qe", filter: "agTextColumnFilter" },
-                    { headerName: "Ingested File Source", field: "ingest_file", filter: "agTextColumnFilter" },
-                    { headerName: "Issue Column", field: "issue_column", filter: "agTextColumnFilter" },
-                    { headerName: "Issue Message", field: "issue_message", filter: "agTextColumnFilter" },
-                    { headerName: "Remediation", field: "remediation", filter: "agTextColumnFilter" },
-                    { headerName: "Issue Type", field: "issue_type", filter: "agTextColumnFilter" },
-                    { headerName: "Issue Row", field: "issue_row", filter: "agTextColumnFilter" },
-                    { headerName: "Invalid Value", field: "invalid_value" , filter: "agTextColumnFilter" },
-                    { headerName: "Session ID", field: "session_id", filter: "agTextColumnFilter" },
-                    { headerName: "Issue ID", field: "orch_session_issue_id", filter: "agNumberColumnFilter" }
+                    { headerName: "Request Time", field: "orch_started_at", sortable: true, sort: "desc", filter: "agNumberColumnFilter", headerTooltip: "Time at which the session started", valueFormatter: AGGridAide.dateTimeValueFormatter(false) },
+                    { headerName: "QE", field: "qe", filter: "agTextColumnFilter", headerTooltip: "Name of the QE" },
+                    { headerName: "Ingested File Source", field: "ingest_file", width:100, filter: "agTextColumnFilter", headerTooltip: "Name of the CSV file where the issue occured",tooltipValueGetter: (p) =>
+                    p.value },
+                    { headerName: "Issue Column", field: "issue_column", filter: "agTextColumnFilter", headerTooltip: "Affected Column" },
+                    { headerName: "Issue Message",  field: "issue_message", filter: "agTextColumnFilter",headerTooltip: "Issue Message", tooltipValueGetter: (p) =>
+                    p.value },
+                    { headerName: "Remediation",  field: "remediation", filter: "agTextColumnFilter",tooltipValueGetter: (p) =>
+                    p.value, headerTooltip: "What can be done to fix the issue" }, 
+                    { headerName: "Issue Type", field: "issue_type", filter: "agTextColumnFilter", headerTooltip: "Type of the issue" },
+                    { headerName: "Issue Row", field: "issue_row", filter: "agTextColumnFilter", headerTooltip: "Corresponding row no. in the CSV where the issue occured" },
+                    { headerName: "Invalid Value", field: "invalid_value" , filter: "agTextColumnFilter", headerTooltip: "Invalid Value" },
+                    { headerName: "Session ID", field: "session_id", filter: "agTextColumnFilter", headerTooltip: "Session ID" },
+                    { headerName: "Issue ID", field: "orch_session_issue_id", filter: "agNumberColumnFilter", headerTooltip: "Issue ID" }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
