@@ -689,3 +689,123 @@ FROM
     ranked_records
 WHERE rn = 1;
 
+
+
+ /**
+ * Function to retrieve the latest paginated list of FHIR interactions per tenant ID from the database.
+ * This function returns a detailed view of the HTTP request interactions, including metadata
+ * such as tenant ID, user agent, client IP address, content type, and payload. The function
+ * also aggregates resource types involved in the interactions and calculates the duration
+ * of each interaction in milliseconds.
+ *
+ * The function uses multiple Common Table Expressions (CTEs) to organize and extract
+ * data:
+ * 1. `cte_sihr`: Extracts core details of HTTP requests from the `sat_interaction_http_request` table.
+ * 2. `cte_resource_types`: Aggregates resource types from the interaction payload.
+ * 3. `cte_intr_observe`: Calculates the duration of each interaction using observability metrics from headers.
+ *
+ * The main SELECT query combines these CTEs to provide a comprehensive dataset for each
+ * interaction, including:
+ * - Interaction metadata (ID, URI, nature, states, etc.)
+ * - Tenant and client information (tenant ID, user agent, client IP address)
+ * - Payload details and elaboration
+ * - Resource types involved
+ * - Interaction duration in milliseconds
+ *
+ * @param offset_value NUMERIC (default 0) - The offset for pagination.
+ * @param limit_value NUMERIC (default 100) - The limit for the number of rows returned.
+ * @return TABLE - A table containing details of the latest FHIR interactions per tenant ID.
+ */
+
+ DROP FUNCTION IF EXISTS techbd_udi_ingress.get_interaction_http_request;
+ CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_http_request(offset_value numeric DEFAULT 0, limit_value numeric DEFAULT 100)
+ RETURNS TABLE(sat_interaction_http_request_id text, interaction_id text, uri text, nature text, tenant_id text, user_agent text, client_ip_address text, content_type text, payload jsonb, elaboration jsonb, from_state text, to_state text, state_transition_reason text, request_created_at timestamp with time zone, request_created_by text, request_provenance text, interaction_created_at timestamp with time zone, interaction_created_by text, interaction_provenance text, issues_count integer, resource_types text, start_time text, finish_time text, duration_millisecs numeric)
+ LANGUAGE plpgsql
+    AS $function$
+    BEGIN
+        RETURN QUERY
+        WITH cte_interaction AS (
+            SELECT 
+                sihr.sat_interaction_http_request_id,
+                sihr.hub_interaction_id,
+                sihr.content_type,
+                sihr.payload,
+                sihr.nature,
+                sihr.elaboration,
+                sihr.from_state,
+                sihr.to_state,
+                sihr.state_transition_reason,
+                sihr.created_at AS request_created_at,
+                sihr.created_by AS request_created_by,
+                sihr.provenance AS request_provenance,
+                hi.key AS uri,
+                hi.created_at AS interaction_created_at,
+                hi.created_by AS interaction_created_by,
+                hi.provenance AS interaction_provenance
+            FROM techbd_udi_ingress.hub_interaction hi
+            INNER JOIN techbd_udi_ingress.sat_interaction_http_request sihr
+            ON hi.hub_interaction_id = sihr.hub_interaction_id
+            OFFSET offset_value ROWS
+            FETCH NEXT limit_value ROWS ONLY
+        ),
+        cte_resource_types AS (
+        SELECT 
+            intr.sat_interaction_http_request_id,
+            string_agg(DISTINCT (entry.value -> 'resource'::text) ->> 'resourceType'::text, ', '::text) AS resource_types
+        FROM cte_interaction intr
+        LEFT JOIN LATERAL jsonb_array_elements(intr.payload -> 'entry'::text) entry(value) ON true
+        GROUP BY intr.sat_interaction_http_request_id
+        ),
+        cte_intr_observe AS (
+            SELECT intr.sat_interaction_http_request_id,
+                intr.hub_interaction_id,
+                headers.start_time,
+                headers.finish_time,
+                EXTRACT(epoch FROM headers.finish_time::timestamp without time zone - headers.start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
+            FROM cte_interaction intr
+                JOIN LATERAL ( SELECT max(
+                            CASE
+                                WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Start-Time'::text THEN header.value ->> 'value'::text
+                                ELSE NULL
+                            END) AS start_time,
+                        max(
+                            CASE
+                                WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Finish-Time'::text THEN header.value ->> 'value'::text
+                                ELSE NULL
+                            END) AS finish_time
+                    FROM jsonb_array_elements((intr.payload -> 'response') -> 'headers') header(value)) headers ON true
+            --WHERE (intr.nature ->> 'nature') = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+            )
+        SELECT
+        intr.sat_interaction_http_request_id,
+        intr.hub_interaction_id	AS interaction_id,
+        intr.uri,
+        intr.nature ->> 'nature' AS nature,
+        intr.nature ->> 'tenant_id'::text AS tenant_id,
+        COALESCE((intr.payload -> 'request') ->> 'userAgent', intr.nature ->> 'userAgent') AS user_agent,
+        COALESCE((intr.payload -> 'request') ->> 'clientIpAddress', intr.nature ->> 'clientIpAddress') AS client_ip_address,
+        intr.content_type,
+        intr.payload,
+        intr.elaboration,
+        intr.from_state,
+        intr.to_state,
+        intr.state_transition_reason,
+        intr.request_created_at,
+        intr.request_created_by,
+        intr.request_provenance,
+        intr.interaction_created_at,
+        intr.interaction_created_by,
+        intr.interaction_provenance,
+        jsonb_array_length((((((intr.payload -> 'response') -> 'responseBody') -> 'OperationOutcome') -> 'validationResults') -> 0) -> 'issues') AS issues_count,
+        rt.resource_types,    
+        obsrv.start_time,
+        obsrv.finish_time,
+        obsrv.duration_millisecs    
+        FROM cte_interaction intr
+        LEFT JOIN cte_resource_types rt ON intr.sat_interaction_http_request_id = rt.sat_interaction_http_request_id
+        LEFT OUTER JOIN cte_intr_observe obsrv ON obsrv.sat_interaction_http_request_id = intr.sat_interaction_http_request_id
+        ;
+    END;
+    $function$
+    ;
+
