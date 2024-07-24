@@ -1,5 +1,6 @@
 package lib.aide.vfs;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -398,10 +399,10 @@ public class VfsIngressConsumer {
                         "%s from %s".formatted(unzippedFile.getName().getBaseName(), zipFile.getPublicURIString())));
                 zipInputStream.closeEntry();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException | IOException e) {
             audit.addEvent(new AuditEvent("exception", zipFile.getPublicURIString(), Optional.of(individual.entry()),
                     Optional.of(e)));
-        }
+        } 
 
         return unzippedFiles;
     }

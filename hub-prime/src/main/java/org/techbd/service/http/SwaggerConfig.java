@@ -58,7 +58,7 @@ public class SwaggerConfig {
                                     - Aggregated: `[{ ... first ... }, { ... second ... }]`
 
                                     ${cwd()} refers to current working directory (CWD) on the API server, ${artifactId} refers to the `interactionId`.
-                                    """,
+                                    """.replace("\n", "%n"),
                             Interactions.Servlet.HeaderName.PREFIX))
                     .required(false);
 
@@ -73,7 +73,7 @@ public class SwaggerConfig {
 
                                     - { "nature": "integration-test", "test-case": "fhir-fixture-shinny-impl-guide-sample.json" }
                                     - { "nature": "synthetic-scoring", "test-case": "qe-001" }
-                                    """,
+                                    """.replace("\n", "%n"),
                             Interactions.Servlet.HeaderName.PREFIX))
                     .required(false);
 

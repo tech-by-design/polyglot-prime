@@ -495,24 +495,24 @@ public class OrchestrationEngine {
                     .connectTimeout(Duration.ofSeconds(120))
                     .build();
 
-            final var fileContent = """
-                    {
-                      "cliContext": {
-                        "sv": "%s",
-                        "ig": [
-                          "%s"
-                        ],
-                        "locale": "%s"
-                      },
-                      "filesToValidate": [
+                    final var fileContent = String.format("""
                         {
-                          "fileName": "%s",
-                          "fileContent": "%s",
-                          "fileType": "%s"
+                          "cliContext": {
+                            "sv": "%s",
+                            "ig": [
+                              "%s"
+                            ],
+                            "locale": "%s"
+                          },
+                          "filesToValidate": [
+                            {
+                              "fileName": "%s",
+                              "fileContent": "%s",
+                              "fileType": "%s"
+                            }
+                          ]
                         }
-                      ]
-                    }
-                    """.formatted(fhirContext, fhirProfileUrl, locale, fileName, result, fileType);
+                        """.replace("\n", "%n"), fhirContext, fhirProfileUrl, locale, fileName, result, fileType);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://validator.fhir.org/validate"))

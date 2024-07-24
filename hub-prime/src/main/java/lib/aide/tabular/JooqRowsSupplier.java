@@ -162,6 +162,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 switch (sort.sort()) {
                     case "asc" -> sortFields.add(sortField.asc());
                     case "desc" -> sortFields.add(sortField.desc());
+                    default -> throw new IllegalArgumentException(
+                        "Unknown sort order: Please specify a sort order.");
                 }
             }
         }

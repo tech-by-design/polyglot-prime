@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -439,42 +440,53 @@ public class ArtifactStore {
         }
     }
 
+    private final static class JsonArtifact implements Artifact {
+        private final String jsonString;
+        private final String artifactId;
+        private final String namespace;
+        private final Map<String, Object> provenance;
+
+        // Constructor for JsonArtifact
+        private JsonArtifact(final Object object, final String artifactId, final String namespace,
+                final Map<String, Object> provenance) {
+            this.artifactId = artifactId;
+            this.namespace = namespace;
+            this.provenance = provenance == null ? Collections.emptyMap() : Collections.unmodifiableMap(provenance); // Ensure
+                                                                                                                     // immutability
+            try {
+                this.jsonString = Configuration.objectMapper.writeValueAsString(object);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to convert object to JSON", e);
+            }
+        }
+
+        @Override
+        public String getArtifactId() {
+            return artifactId;
+        }
+
+        @Override
+        public String getNamespace() {
+            return namespace;
+        }
+
+        @Override
+        public Map<String, Object> getProvenance() {
+            return provenance;
+        }
+
+        @Override
+        public Reader getReader() {
+            return new StringReader(jsonString);
+        }
+
+        public Optional<String> getJsonString() {
+            return Optional.of(jsonString);
+        }
+    }
+
     public static Artifact jsonArtifact(final Object object, final String artifactId, final String namespace,
             final Map<String, Object> provenance) {
-        return new Artifact() {
-            private final String jsonString;
-
-            {
-                try {
-                    jsonString = Configuration.objectMapper.writeValueAsString(object);
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException("Failed to convert object to JSON", e);
-                }
-            }
-
-            @Override
-            public String getArtifactId() {
-                return artifactId;
-            }
-
-            @Override
-            public String getNamespace() {
-                return namespace;
-            }
-
-            @Override
-            public Map<String, Object> getProvenance() {
-                return provenance;
-            }
-
-            @Override
-            public Reader getReader() {
-                return new StringReader(jsonString);
-            }
-
-            public Optional<String> getJsonString() {
-                return Optional.of(jsonString);
-            }
-        };
+        return new ArtifactStore.JsonArtifact(object, artifactId, namespace, provenance);
     }
 }

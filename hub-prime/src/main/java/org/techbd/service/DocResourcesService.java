@@ -34,7 +34,7 @@ import lib.aide.resource.content.ResourceFactory;
 import lib.aide.resource.nature.FrontmatterNature.Components;
 
 @Service
-public class DocResourcesService {
+public final class DocResourcesService {
     public record LoadedFrom(Optional<URI> uri, boolean isValid) {
     }
 

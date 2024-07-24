@@ -330,10 +330,10 @@ public class FhirController {
         } catch (Exception e) {
             LOG.error("Error executing JOOQ query for retrieving SAT_INTERACTION_HTTP_REQUEST.HUB_INTERACTION_ID for "
                     + bundleSessionId, e);
-            return """
-                    "error": "%s",
-                    "bundleSessionId": "%s"
-                    """.formatted(e.toString(), bundleSessionId);
+            return String.format("""
+                      "error": "%s",
+                      "bundleSessionId": "%s"
+                    """.replace("\n", "%n"), e.toString(), bundleSessionId);
         }
     }
 
