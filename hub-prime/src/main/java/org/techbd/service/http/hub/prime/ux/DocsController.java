@@ -55,7 +55,7 @@ public class DocsController {
     @RouteMapping(label = "Documentation", siblingOrder = 50)
     @GetMapping("/docs")
     public String docs() {
-        return "redirect:/docs/swagger-ui";
+        return "redirect:/docs/swagger-ui/techbd-api";
     }
 
     @RouteMapping(label = "TechBD Hub", title = "Business and Technology Documentation", siblingOrder = 0)
@@ -180,10 +180,28 @@ public class DocsController {
         }
     }
 
-    @RouteMapping(label = "OpenAPI UI", title = "OpenAPI Documentation", siblingOrder = 10)
+    @RouteMapping(label = "SHIN-NY FHIR IG", title = "SHIN-NY FHIR Implementation Guide (IG)", siblingOrder = 9)
+    @GetMapping("/docs/shinny-fhir-ig")
+    public String shinnyFhirIg(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/fhir-ig", model, request);
+    }
+
+    @RouteMapping(label = "OpenAPI UI", title = "TechBD OpenAPI Documentation", siblingOrder = 10)
     @GetMapping("/docs/swagger-ui")
     public String swaggerUI(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/swagger-ui", model, request);
+        return "redirect:/docs/swagger-ui/techbd-api";
+    }
+
+    @RouteMapping(label = "TechBD OpenAPI UI", title = "TechBD OpenAPI Documentation", siblingOrder = 10)
+    @GetMapping("/docs/swagger-ui/techbd-api")
+    public String techBdSwaggerUI(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/swagger-ui/techbd-api", model, request);
+    }
+
+    @RouteMapping(label = "HRSN Query OpenAPI UI", title = "HRSN Query OpenAPI Documentation", siblingOrder = 20)
+    @GetMapping("/docs/swagger-ui/query-api")
+    public String hrsnQuerySwaggerUI(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/docs/swagger-ui/query-api", model, request);
     }
 
     @RouteMapping(label = "Health Information", title = "Health Information", siblingOrder = 20)

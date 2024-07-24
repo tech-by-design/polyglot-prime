@@ -91,8 +91,9 @@ public class Presentation {
                     : null;
             final var editUrl = srcFsPath != null ? sboxHelpers.getEditorUrlFromAbsolutePath(srcFsPath) : null;
             final var template = Map.of("supplied", templateName, "canonical", canonicalTmplName, "targetFsPath",
-                    targetFsPath,
-                    "srcFsPath", srcFsPath, "editUrl", editUrl);
+                    targetFsPath != null ? targetFsPath : "%s not found".formatted(canonicalTmplName),
+                    "srcFsPath", srcFsPath != null ? srcFsPath : "%s not found".formatted(canonicalTmplName), "editUrl",
+                    editUrl != null ? editUrl : "%s not found".formatted(canonicalTmplName));
             model.addAttribute("template", template);
             sandboxConsoleConf.put("template", template);
         }
@@ -114,6 +115,7 @@ public class Presentation {
         final var activeRoute = activeRouteFound.orElseThrow();
         final var activeRoutePayload = activeRoute.payload().orElseThrow();
         final var activeRoutePath = "/" + activeRoute.absolutePath(false);
+        final var activeRouteParentPath = "/" + activeRoute.parent().absolutePath(false);
         final var isHomePage = request.getRequestURI().equals("/home");
 
         final var breadcrumbs = activeRoute.ancestors().stream()
@@ -124,6 +126,7 @@ public class Presentation {
                             Collections.reverse(list);
                             return list.size() > 1 ? list.subList(1, list.size()) : List.of();
                         }));
+
         final var siblings = activeRoute.siblings(true).stream()
                 .sorted(Comparator.comparing(sibling -> sibling.payload()
                         .flatMap(payload -> payload.siblingOrder())
@@ -131,11 +134,20 @@ public class Presentation {
                 .map(sibling -> new HtmlAnchor(sibling).intoMap())
                 .collect(Collectors.toList());
 
+        final var parentSiblings = activeRoute.parent() != null ? activeRoute.parent().siblings(true).stream()
+                .sorted(Comparator.comparing(sibling -> sibling.payload()
+                        .flatMap(payload -> payload.siblingOrder())
+                        .orElse(Integer.MAX_VALUE)))
+                .map(sibling -> new HtmlAnchor(sibling).intoMap())
+                .collect(Collectors.toList()) : List.of();
+
         model.addAttribute("isHomePage", isHomePage);
         model.addAttribute("activeRoute", activeRoute);
         model.addAttribute("activeRoutePath", activeRoutePath);
+        model.addAttribute("activeRouteParentPath", activeRouteParentPath);
         model.addAttribute("activeRouteTitle", activeRoutePayload.title().orElse(activeRoutePayload.label()));
         model.addAttribute("siblingLinks", isHomePage ? List.of() : siblings);
+        model.addAttribute("parentSiblingLinks", isHomePage ? List.of() : parentSiblings);
         model.addAttribute("breadcrumbs", breadcrumbs);
     }
 }
