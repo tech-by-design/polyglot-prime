@@ -50,7 +50,7 @@ public class ResourceFactory {
     public record SuffixedResourceFactory<T, R extends Resource<? extends Nature, T>>(
             BiFunction<Supplier<T>, Optional<PathSuffixes>, R> resourceFactory,
             PathSuffixes suffixes) {
-        public static final Map<String, BiFunction<Supplier<?>, Optional<PathSuffixes>, Resource<? extends Nature, ?>>> SUFFIXED_RF_MAP = new HashMap<>();
+        static final Map<String, BiFunction<Supplier<?>, Optional<PathSuffixes>, Resource<? extends Nature, ?>>> SUFFIXED_RF_MAP = new HashMap<>();
 
         static {
             for (Map.Entry<String, BiFunction<Supplier<String>, Optional<PathSuffixes>, TextResource<? extends Nature>>> entry : SuffixedTextResourceFactory.SUFFIXED_RF_MAP
