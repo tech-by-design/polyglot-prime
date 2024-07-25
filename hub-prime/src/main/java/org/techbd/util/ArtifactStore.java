@@ -34,6 +34,7 @@ import org.techbd.conf.Configuration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import jakarta.annotation.Nonnull;
+import jakarta.mail.MessagingException;
 import jakarta.validation.constraints.NotNull;
 
 public class ArtifactStore {
@@ -138,7 +139,7 @@ public class ArtifactStore {
             try {
                 final var parentPath = path.getParent();
                 if (parentPath != null) {
-                    Files.createDirectories(path.getParent());
+                    Files.createDirectories(parentPath);
                 }
                 try (Reader reader = artifact.getReader();
                         Writer writer = Files.newBufferedWriter(path)) {
@@ -268,7 +269,7 @@ public class ArtifactStore {
 
                         ByteArrayResource byteArrayResource = new ByteArrayResource(
                                 byteArrayOutputStream.toByteArray());
-                        var attachment = attachmentName == null ? "artifact.zip" : ie.interpolate(attachmentName);
+                        var attachment = ie.interpolate(attachmentName);
                         helper.addAttachment(attachment, byteArrayResource);
 
                         mailSender.send(message);
@@ -306,7 +307,7 @@ public class ArtifactStore {
                                         + e.toString()));
                     }
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException | MessagingException e) {
                 reporter.ifPresent(
                         r -> r.issue("Failed to send email in ArtifactStore.EmailPersistence: " + e.toString()));
             }

@@ -187,7 +187,7 @@ public class PrimeController {
         String formattedTime = null;
         for (int i = 0; i < rangesInSeconds.length; i++) {
             if (Math.abs(secondsElapsed) >= rangesInSeconds[i]) {
-                long delta = Math.round(secondsElapsed / rangesInSeconds[i]);
+                long delta = Math.round((double) secondsElapsed / rangesInSeconds[i]);
                 formattedTime = delta + " " + rangeLabels[i] + (delta != 1 ? "s" : "") + " ago";
                 break;
             }
@@ -195,7 +195,7 @@ public class PrimeController {
 
         // Handle seconds if within the minute range
         if (formattedTime == null) {
-            formattedTime = Math.round(secondsElapsed) + " second" + (Math.abs(secondsElapsed) != 1 ? "s" : "")
+            formattedTime = Math.abs(secondsElapsed) + " second" + (Math.abs(secondsElapsed) != 1 ? "s" : "")
                     + " ago";
         }
 

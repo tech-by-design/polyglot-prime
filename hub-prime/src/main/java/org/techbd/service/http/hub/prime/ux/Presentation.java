@@ -32,7 +32,7 @@ public class Presentation {
     private final AppConfig appConfig;
     private final SandboxHelpers sboxHelpers;
 
-    private final String navPrimeTreeName = "prime";
+    private static final String navPrimeTreeName = "prime";
     private final RoutesTree navPrimeTree;
     private final List<HtmlAnchor> navPrimeLinks;
 

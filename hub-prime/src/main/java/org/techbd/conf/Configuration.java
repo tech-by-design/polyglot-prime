@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.springframework.core.env.Environment;
@@ -60,16 +62,12 @@ public class Configuration {
                 final var placeholderHelper = new PropertyPlaceholderHelper("${", "}", ":", true);
                 final var resolvedPropertyName = placeholderHelper.replacePlaceholders(propertyExpression,
                         environment::getProperty);
-                missingProperties.add(resolvedPropertyName);
-                if (resolvedPropertyName != null) {
-                    if (environment.getProperty(resolvedPropertyName) == null
-                            && System.getenv(resolvedPropertyName) == null) {
-                        missingProperties.add(resolvedPropertyName);
-                    }
-                } else {
-                    missingProperties.add(propertyExpression); // Add the expression itself if it couldn't be resolved
+                missingProperties.add(Optional.ofNullable(resolvedPropertyName).orElseThrow());
+                if (environment.getProperty(resolvedPropertyName) == null
+                        && System.getenv(resolvedPropertyName) == null) {
+                    missingProperties.add(resolvedPropertyName);
                 }
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException | NoSuchElementException ex) {
                 // Add the expression itself if it couldn't be resolved
                 missingProperties.add(propertyExpression);
             }
