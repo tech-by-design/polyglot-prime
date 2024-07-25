@@ -409,6 +409,9 @@
 						<version>4.8.5</version>
 					</dependency>
 				</dependencies>
+				<configuration>
+                    <excludeFilterFile>spotbug-exclude-filter.xml</excludeFilterFile>
+                </configuration>
 			</plugin>
 			<!-- git-commit-id Maven Plugin -->
 			<plugin>
@@ -572,6 +575,7 @@
 				<version>4.8.5.0</version>
 				<configuration>
 					<configLocation>spotbugs.xml</configLocation>
+					<excludeFilterFile>spotbug-exclude-filter.xml</excludeFilterFile>
 					<outputFile>${project.build.directory}/output-results/spotbugs.xml</outputFile>
 					<outputFileFormat>xml</outputFileFormat>
 					<encoding>UTF-8</encoding>
