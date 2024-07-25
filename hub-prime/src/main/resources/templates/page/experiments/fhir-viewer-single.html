@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/experiment}">
+
+<head>
+    <script src="https://www.jsviews.com/download/jsrender.js"></script>
+    <script type="module">
+        import { FhirViewer } from '@presentation/shell/fhir-view.js';
+        customElements.define('fhir-viewer', FhirViewer);
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content" class="container mx-auto p-4 prose w-full max-w-6xl">
+        <h2>AHCHRSNQuestionnaireResponseExample.json</h2>
+        <fhir-viewer id="fhir-viewer" src="https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-07-18/AHCHRSNQuestionnaireResponseExample.json"></fhir-viewer>
+    </div>
+</body>
+
+</html>

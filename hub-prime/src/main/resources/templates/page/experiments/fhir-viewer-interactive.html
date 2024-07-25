@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/experiment}">
+
+<head>
+    <title>FHIR Viewer (Interactive)</title>
+    <script src="https://www.jsviews.com/download/jsrender.js"></script>
+    <script type="module">
+        import { FhirViewer } from '@presentation/shell/fhir-view.js';
+        customElements.define('fhir-viewer', FhirViewer);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Event listener for the example select
+            document.getElementById("example-select").addEventListener("change", (event) => {
+                const selectedUrl = event.target.value;
+                const fhirUrlInput = document.getElementById("fhir-url");
+                fhirUrlInput.value = selectedUrl;
+
+                // Trigger the fetch button click event
+                document.getElementById("fetch-fhir").click();
+            });
+
+            // Event listener for the fetch button
+            document.getElementById("fetch-fhir").addEventListener("click", () => {
+                const fhirUrl = document.getElementById("fhir-url").value;
+                const fhirViewer = document.getElementById('fhir-viewer');
+                fhirViewer.setAttribute('src', fhirUrl);
+                document.getElementById("rendered-heading").innerText = `Rendered ${fhirUrl.split('/').pop()}`;
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content" class="container mx-auto p-4 prose w-full max-w-6xl">
+        <div>
+            <label for="example-select">Choose an Example:</label>
+            <select id="example-select">
+                <option value="" disabled selected>Select an example...</option>
+                <option value="https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-07-18/AHCHRSNQuestionnaireResponseExample.json">AHCHRSNQuestionnaireResponseExample.json</option>
+                <option value="https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-07-18/AHCHRSNScreeningResponseExample.json">AHCHRSNScreeningResponseExample.json</option>
+                <option value="https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-07-18/NYScreeningResponseExample.json">NYScreeningResponseExample.json</option>
+                <option value="https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-07-18/ServiceRequestExample.json">ServiceRequestExample.json</option>
+                <option value="https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-07-18/TaskCompletedExample.json">TaskCompletedExample.json</option>
+                <option value="https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-07-18/TaskExample.json">TaskExample.json</option>
+                <option value="https://raw.githubusercontent.com/tech-by-design/docs.techbd.org/main/assurance/1115-waiver/ahc-hrsn/screening/regression-test-prime/fhir-service-prime/src/2024-07-18/TaskOutputProcedureExample.json">TaskOutputProcedureExample.json</option>
+            </select>
+        </div>
+        <div>
+            <label for="fhir-url">FHIR JSON URL:</label>
+            <input type="text" id="fhir-url" size="90">
+            <button id="fetch-fhir">Fetch & Render</button>
+        </div>
+        <h2 id="rendered-heading">Rendered Data</h2>
+        <fhir-viewer id="fhir-viewer"></fhir-viewer>
+    </div>
+</body>
+
+</html>
