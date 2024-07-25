@@ -145,7 +145,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         if (!persistRespPayloadDB) {
             rre = new Interactions.RequestResponseEncountered(requestEncountered,
                     new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
-                            "persistPayloads = false".getBytes()));
+                            "persistPayloads = false".getBytes(StandardCharset.UTF_8)));
         } else {
             rre = new Interactions.RequestResponseEncountered(requestEncountered,
                     new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
@@ -329,7 +329,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     if (filterFlag == null || tuples > 2 && tuple.get(2).contains(filterFlag)) {
                         LOG.info("%s (%s)".formatted(tuple, filterFlag));
                         return new RegexRequestMatcher(pattern,
-                                httpMethod == null ? httpMethod : (httpMethod.isBlank() ? null : httpMethod));
+                                (httpMethod == null || httpMethod.isBlank()) ? null : httpMethod);
                     }
                     return null;
                 } else {
