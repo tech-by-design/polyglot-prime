@@ -138,7 +138,6 @@ const migrateSP = pgSQLa.storedProcedure(
       ANALYZE techbd_udi_ingress.sat_interaction_http_request;
 
 
-      CLUSTER techbd_udi_ingress.sat_interaction_http_request USING  sat_interaction_http_request_created_at_idx;
 
       ANALYZE techbd_udi_ingress.sat_interaction_http_request;
 
