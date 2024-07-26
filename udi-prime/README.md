@@ -11,6 +11,8 @@ Following `SQLa`'s philosophy, all SQL should be generated into files that can
 be inspected and version-controlled and be executed using `psql` as a separate
 step.
 
+Additionally, for the UDI Prime SQL generation and usage, we utilize ISLM migration, a tool available in SQL Aide. This tool helps manage schema migrations in PostgreSQL. The process also integrates session orchestration tables from the CSV ingestion orchestration process within the techbd_orch_ctl schema.
+
 ### Features
 
 - **SQL Generation**: Automatically generate SQL scripts for creating UDI
@@ -19,6 +21,7 @@ step.
   structure of the UDI model.
 - **Configurable**: Supports customization options like schema destruction and
   naming through command-line arguments.
+- **ISLM Migration**: Facilitates schema migrations in PostgreSQL, ensuring a smooth upgrade and downgrade process for database schemas.  
 
 ## Prerequisites
 
@@ -29,6 +32,8 @@ step.
   `.pgpass` file and use
   [pgpass](https://github.com/netspective-labs/sql-aide/tree/main/lib/postgres/pgpass)
   for password-less authentication.
+- **ISLM Migration**: Ensure the ISLM migration schemas and procedures are installed, which are part of the [SQL Aide package](https://github.com/netspective-labs/sql-aide/tree/main/lib/postgres/islm), for handling database migrations.  
+- **techbd_orch_ctl Schema**: Ensure we have the `techbd_orch_ctl` schema and the 10 tables `business_rules`, `demographic_data`, `device`, `orch_session`, `orch_session_entry`, `orch_session_exec`, `orch_session_issue`, `orch_session_state`, `qe_admin_data`, `screening` available as a result of CSV ingestion process. 
 
 ## Installation
 
