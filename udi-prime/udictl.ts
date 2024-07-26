@@ -199,7 +199,7 @@ const CLI = new Command()
         .option("--serve <port:number>", "Serve generated documentation at port")
         .action(async (options) => {
           const schemaSpyCreds = schemaSpyArgs(options.connId);
-          await $.raw`java -jar ./lib/schemaspy-6.2.4.jar -t pgsql11 -dp ./lib/postgresql-42.7.3.jar -schemas techbd_udi_ingress ${schemaSpyCreds} -debug -o ${options.schemaspyDest} -vizjs`;
+          await $.raw`java -jar ./lib/schemaspy-6.2.4.jar -t pgsql11 -dp ./lib/postgresql-42.7.3.jar -schemas techbd_udi_ingress,info_schema_lifecycle ${schemaSpyCreds} -debug -o ${options.schemaspyDest} -vizjs`;
           if(options.serve) {
               Deno.serve({ port: options.serve }, (req) => {
                 return serveDir(req, {
