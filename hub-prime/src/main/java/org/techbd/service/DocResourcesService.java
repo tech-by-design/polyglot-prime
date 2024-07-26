@@ -18,6 +18,7 @@ import org.springframework.expression.spel.support.ReflectivePropertyAccessor;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
 import org.techbd.service.http.SandboxHelpers;
+import org.techbd.util.NoOpUtils;
 
 import lib.aide.paths.Paths;
 import lib.aide.resource.Editable;
@@ -109,12 +110,14 @@ public final class DocResourcesService {
 
         public Optional<URI> editURI(
                 Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
-            if (node.payload().isPresent()) {
-                if (node.payload().orElseThrow().provenance() instanceof Editable provenance) {
-                    return provenance.editURI();
-                }
-            }
-            return Optional.empty();
+            return node.payload()
+                    .flatMap(payload -> {
+                        if (payload.provenance() instanceof Editable provenance) {
+                            return provenance.editURI();
+                        } else {
+                            return Optional.empty();
+                        }
+                    });
         }
 
         public String editableUrlOrBlank(
@@ -141,9 +144,8 @@ public final class DocResourcesService {
                 Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
 
             return node.children().stream()
-                    .filter(child -> child.payload().isPresent()
-                            ? child.payload().orElseThrow().resource() instanceof TextResource ? true : false
-                            : true)
+                    .filter(child -> child.payload().map(payload -> payload.resource() instanceof TextResource)
+                            .orElse(true))
                     .sorted(Comparator.comparingInt(child -> {
                         final var attributes = child.attributes();
                         final var navVal = attributes.get("nav");
@@ -158,6 +160,7 @@ public final class DocResourcesService {
                                         return Integer.parseInt(weightVal.toString());
                                     } catch (NumberFormatException e) {
                                         // Ignore and fall through to default value
+                                        NoOpUtils.ignore(e);
                                     }
                                 }
                             }
