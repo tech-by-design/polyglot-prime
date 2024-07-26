@@ -36,22 +36,22 @@ public record PathElaboration(MapFromTextResult elaboration,
         // `.<parent-dir-name>.path.yml` or `<parent-dir-name>.path.yml` or `.yaml` or
         // `.json` it's a special file which
         // "elaborates" the current path, not a content resource
-        if (basename.matches("(\\.?%s)?\\.path\\.(yml|yaml|json)".formatted(parent.basename().orElse("ROOT")))) {
-            if (newNode.payload().isPresent()) {
-                final var rp = newNode.payload().orElseThrow();
-                final var elaboration = ResourceFactory.mapFromText(basename,
-                        Optional.of(() -> ((TextResource<?>) rp.resource()).content()));
-                // if there are any issues in reading the path elaboration yaml
-                List<Entry<String, DeepMergeOperation>> merged;
-                if (elaboration.issues() != null && elaboration.issues().size() > 0) {
-                    elaboration.issues().forEach(ei -> parent.addIssue(ei));
-                    merged = List.of();
-                } else {
-                    parent.addAttribute("isPathElaboration", elaboration);
-                    merged = parent.mergeAttributes(elaboration.result());
-                }
-                return Optional.of(new PathElaboration(elaboration, rp, merged));
+        if (basename.matches("(\\.?%s)?\\.path\\.(yml|yaml|json)".formatted(parent.basename().orElse("ROOT")))
+                &&
+                newNode.payload().isPresent()) {
+            final var rp = newNode.payload().orElseThrow();
+            final var elaboration = ResourceFactory.mapFromText(basename,
+                    Optional.of(() -> ((TextResource<?>) rp.resource()).content()));
+            // if there are any issues in reading the path elaboration yaml
+            List<Entry<String, DeepMergeOperation>> merged;
+            if (elaboration.issues() != null && elaboration.issues().size() > 0) {
+                elaboration.issues().forEach(ei -> parent.addIssue(ei));
+                merged = List.of();
+            } else {
+                parent.addAttribute("isPathElaboration", elaboration);
+                merged = parent.mergeAttributes(elaboration.result());
             }
+            return Optional.of(new PathElaboration(elaboration, rp, merged));
         }
         return Optional.empty();
     }

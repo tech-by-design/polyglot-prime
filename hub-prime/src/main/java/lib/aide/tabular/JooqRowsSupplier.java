@@ -14,12 +14,13 @@ import org.jooq.conf.RenderQuotedNames;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
+import org.techbd.util.NoOpUtils;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
 public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSupplier.JooqProvenance> {
-    public static record TypableTable(Table<?> table, boolean stronglyTyped) {
+    public record TypableTable(Table<?> table, boolean stronglyTyped) {
         static public TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
                 @Nonnull String tableLikeName) {
 
@@ -42,12 +43,13 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 try {
                     // try to find the Tables.TABLE.COLUMN_NAME in jOOQ generated code
                     final var instanceInTableRef = table.getClass().getField(columnName.toUpperCase());
-                    if (instanceInTableRef.get(table) instanceof org.jooq.Field<?> columnField) {
+                    if (instanceInTableRef.get(table) instanceof Field<?> columnField) {
                         return columnField.coerce(Object.class);
                     } else {
                         return DSL.field(DSL.name(columnName));
                     }
                 } catch (NoSuchFieldException | IllegalAccessException e) {
+                    NoOpUtils.ignore(e);
                 }
             }
             return DSL.field(DSL.name(columnName));
