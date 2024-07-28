@@ -136,10 +136,29 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ANALYZE techbd_udi_ingress.hub_interaction;
       ANALYZE techbd_udi_ingress.sat_interaction_http_request;
-
-
-
       ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+
+
+      --1) interaction_http_request_mat
+      CREATE INDEX IF NOT EXISTS interaction_http_request_mat_sat_id_idx ON techbd_udi_ingress.interaction_http_request_mat (sat_interaction_http_request_id);
+      CREATE INDEX IF NOT EXISTS interaction_http_request_mat_hub_id_idx ON techbd_udi_ingress.interaction_http_request_mat (hub_interaction_id);
+      
+      --2) interaction_http_request_observe_mat
+      CREATE INDEX IF NOT EXISTS interaction_http_request_observe_mat_sat_id_idx ON techbd_udi_ingress.interaction_http_request_observe_mat (sat_interaction_http_request_id);
+      CREATE INDEX IF NOT EXISTS interaction_http_request_observe_mat_hub_id_idx ON techbd_udi_ingress.interaction_http_request_observe_mat (hub_interaction_id);
+      
+      --3) interaction_http_request_resource_type_mat
+      CREATE INDEX IF NOT EXISTS interaction_http_request_resource_type_mat_sat_id_idx ON techbd_udi_ingress.interaction_http_request_resource_type_mat (sat_interaction_http_request_id);
+      CREATE INDEX IF NOT EXISTS interaction_http_request_resource_type_mat_hub_id_idx ON techbd_udi_ingress.interaction_http_request_resource_type_mat (hub_interaction_id);
+      
+      --4) Composite Indexes
+      CREATE INDEX IF NOT EXISTS interaction_http_request_mat_composite_idx ON techbd_udi_ingress.interaction_http_request_mat (sat_interaction_http_request_id, hub_interaction_id);
+      CREATE INDEX IF NOT EXISTS interaction_http_request_observe_mat_composite_idx ON techbd_udi_ingress.interaction_http_request_observe_mat (sat_interaction_http_request_id, hub_interaction_id);
+      CREATE INDEX IF NOT EXISTS interaction_http_request_resource_type_mat_composite_idx ON techbd_udi_ingress.interaction_http_request_resource_type_mat (sat_interaction_http_request_id, hub_interaction_id);
+      
+      ANALYZE techbd_udi_ingress.interaction_http_request_mat;
+      ANALYZE techbd_udi_ingress.interaction_http_request_observe_mat;
+      ANALYZE techbd_udi_ingress.interaction_http_request_resource_type_mat;
 
 
 

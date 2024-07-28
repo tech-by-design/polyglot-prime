@@ -5,5 +5,32 @@
 DROP VIEW IF EXISTS techbd_udi_ingress.islm_migration_state CASCADE;
 CREATE or REPLACE
 view techbd_udi_ingress.islm_migration_state AS
-SELECT * FROM "info_schema_lifecycle"."migration_routine_state"();
+WITH result AS (
+    SELECT * FROM info_schema_lifecycle.migration_routine_state()
+)
+, latest_versions AS (
+    SELECT
+        migration_routine_name,
+        from_state,
+        to_state,
+        MAX(migrated_at) AS latest_migrated_at
+    FROM
+        result
+    GROUP BY
+        migration_routine_name,
+        from_state,
+        to_state
+)
+SELECT
+    r.*
+FROM
+    result r
+JOIN
+    latest_versions lv
+ON
+    r.migration_routine_name = lv.migration_routine_name
+    AND r.from_state = lv.from_state
+    AND r.to_state = lv.to_state
+    AND r.migrated_at = lv.latest_migrated_at
+ORDER BY r.migrated_at;
 
