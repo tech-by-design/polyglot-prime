@@ -1,0 +1,154 @@
+
+/*******************************************************************************************
+ * Comprehensive view of FHIR Content Screening. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_info as
+WITH filtered_data AS (
+    SELECT sihr.hub_interaction_id,
+    	sihr.nature ->> 'tenant_id'::text AS tenant_id,
+        sihr.payload::jsonb AS payload,
+        hintr.created_at
+    FROM techbd_udi_ingress.hub_interaction hintr
+    JOIN techbd_udi_ingress.sat_interaction_http_request sihr
+    ON hintr.hub_interaction_id = sihr.hub_interaction_id
+    WHERE hintr.key LIKE '/Bundle%'
+    AND sihr.nature ->> 'nature' = 'Original FHIR Payload'    
+),
+extracted_data AS (
+    SELECT 	hub_interaction_id,
+    		tenant_id,
+    		created_at,
+        -- 1) If "resourceType" = "Bundle", select meta -> lastUpdated
+        CASE 
+            WHEN payload ->> 'resourceType' = 'Bundle' 
+            THEN (payload -> 'meta' ->> 'lastUpdated') 
+        END AS last_updated,
+
+        -- 2) If entry[] -> resource -> "resourceType" = "Patient", get entry[] -> resource -> id
+        (SELECT entry -> 'resource' ->> 'id'
+         FROM jsonb_array_elements(payload -> 'entry') AS entry
+         WHERE (entry -> 'resource' ->> 'resourceType') = 'Patient'
+        ) AS patient_id,
+
+        -- 3) If "resourceType" = "Observation", get category[] -> coding -> display element values in comma separated manner
+        (SELECT string_agg(DISTINCT coding ->> 'display', ', ')
+         FROM jsonb_array_elements(payload -> 'entry') AS entry
+         JOIN jsonb_array_elements(entry -> 'resource' -> 'category') AS category ON true
+         JOIN jsonb_array_elements(category -> 'coding') AS coding ON true
+         WHERE entry -> 'resource' ->> 'resourceType' = 'Observation'
+        ) AS category_display,
+
+        -- 4) If entry[] -> resource -> code -> coding[] -> display = "Total Safety Score" 
+        -- and entry[] -> resource -> valueCodeableConcept -> coding[] -> code = "{score}" 
+        -- then get value of entry[] -> resource -> valueCodeableConcept -> coding[] -> display
+        (SELECT value_coding ->> 'display'
+         FROM jsonb_array_elements(payload -> 'entry') AS entry
+         JOIN jsonb_array_elements(entry -> 'resource' -> 'code' -> 'coding') AS code_coding ON true
+         JOIN jsonb_array_elements(entry -> 'resource' -> 'valueCodeableConcept' -> 'coding') AS value_coding ON true
+         WHERE code_coding ->> 'display' = 'Total Safety Score'
+         AND value_coding ->> 'code' = '{score}'
+        ) AS score_display
+    FROM filtered_data
+)
+SELECT hub_interaction_id, 
+		tenant_id AS qe_name,
+		patient_id AS patient_mrn,
+		last_updated AS survey_date_time,
+		category_display AS areas_of_interest,
+		score_display AS total_safety_score
+FROM extracted_data
+WHERE 1 = 1 
+ORDER BY created_at DESC 
+;
+
+
+/*******************************************************************************************
+ * Comprehensive view of FHIR Content Details Screening. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_detail CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_detail
+AS WITH filtered_resources AS (
+         SELECT sihr.hub_interaction_id,
+            sihr.nature ->> 'tenant_id'::text AS tenant_id,
+            jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry
+           FROM techbd_udi_ingress.hub_interaction hintr
+             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
+          WHERE hintr.key ~~ '/Bundle%'::text AND (sihr.nature ->> 'nature'::text) = 'Original FHIR Payload'::text
+        ), filtered_data AS (
+         SELECT filtered_resources.hub_interaction_id,
+            filtered_resources.tenant_id,
+            filtered_resources.entry -> 'resource'::text AS resource,
+            (filtered_resources.entry -> 'resource'::text) ->> 'resourceType'::text AS resource_type,
+            ( SELECT (entry_inner.value -> 'resource'::text) ->> 'id'::text
+                   FROM techbd_udi_ingress.hub_interaction hintr_inner
+                     JOIN techbd_udi_ingress.sat_interaction_http_request sihr_inner ON hintr_inner.hub_interaction_id = sihr_inner.hub_interaction_id
+                     CROSS JOIN LATERAL jsonb_array_elements(sihr_inner.payload -> 'entry'::text) entry_inner(value)
+                  WHERE ((entry_inner.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text AND hintr_inner.hub_interaction_id = filtered_resources.hub_interaction_id
+                 LIMIT 1) AS patient_mrn
+           FROM filtered_resources
+        )
+ SELECT hub_interaction_id,
+    tenant_id,
+    resource,
+    resource_type,
+    patient_mrn
+   FROM filtered_data;
+
+
+/*******************************************************************************************
+ * Comprehensive view of FHIR Content Screening Patient. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_patient CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_patient 
+AS WITH filtered_data AS (
+    SELECT sihr.hub_interaction_id,
+           sihr.nature ->> 'tenant_id' AS tenant_id,
+           sihr.payload::jsonb AS payload,
+           hintr.created_at
+    FROM techbd_udi_ingress.hub_interaction hintr
+    JOIN techbd_udi_ingress.sat_interaction_http_request sihr
+    ON hintr.hub_interaction_id = sihr.hub_interaction_id
+    WHERE hintr.key LIKE '/Bundle%'
+      AND sihr.nature ->> 'nature' = 'Original FHIR Payload'    
+),
+patient_details AS (
+    SELECT tenant_id,
+           (entry -> 'resource') ->> 'id' AS patient_id,
+           (entry -> 'resource') ->> 'resourceType' AS patient_resource_type,
+           (entry -> 'resource') -> 'name'->0->>'text' AS full_name,
+           (entry -> 'resource') -> 'name'->0->>'family' AS last_name,
+           (entry -> 'resource') ->'name'->0->>'given' AS first_name,
+           (entry -> 'resource') ->>'gender' AS gender,
+           (entry -> 'resource') ->>'birthDate' AS birth_date,
+           (entry -> 'resource') ->'address'->0->>'text' AS address,
+           (entry -> 'resource') ->'address'->0->>'city' AS city,
+           (entry -> 'resource') ->'address'->0->>'state' AS state,
+           (entry -> 'resource') ->'address'->0->>'postalCode' AS postal_code,
+           (entry -> 'resource') ->>'language' AS language,
+           (entry -> 'resource') ->'identifier'->0->>'value' AS medical_record_number,
+           (entry -> 'resource') ->'identifier'->3->>'value' AS social_security_number
+    FROM filtered_data,
+         jsonb_array_elements(payload -> 'entry') AS entry
+    WHERE (entry -> 'resource') ->> 'resourceType' = 'Patient'
+)
+
+SELECT tenant_id AS qe_name,
+       patient_id,
+       MAX(patient_resource_type) as patient_type,
+       MAX(full_name) as patient_full_name,
+       MAX(first_name) as patient_first_name,
+       MAX(last_name) as patient_last_name,
+       MAX(gender) as patient_gender,
+       MAX(birth_date) as patient_birth_date,
+       MAX(address) as patient_address,
+       MAX(city) as patient_city,
+       MAX(state) as patient_state,
+       MAX(postal_code) as patient_postal_code,
+       MAX(language) as patient_language,
+       MAX(medical_record_number) as patient_mrn,
+       MAX(social_security_number) as patient_ssn
+FROM patient_details
+GROUP BY tenant_id, patient_id
+ORDER BY patient_id DESC;
+
