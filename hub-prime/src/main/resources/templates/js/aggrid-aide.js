@@ -104,9 +104,13 @@ export class AGGridAide {
      * @returns {Function} The value formatter function.
      */
     static isoDateTimeValueFormatter() {
-        return function (params) {
+        return function (params) { 
             if (params.value) {
                 let date = new Date(params.value);
+                if (isNaN(date)) {
+                    // Handle invalid date
+                    return params.value;
+                } 
                 let options = {
                     timeZone: 'America/New_York',
                     year: 'numeric',
