@@ -74,8 +74,14 @@ export class FhirViewer extends HTMLElement {
                     <table class="table">
                         <tbody>
                             <tr>
-                                <th>Observation</th>
-                                <td>{{:code?.text || 'N/A'}}</td>
+                                <th>Observation</th>                              
+                                <td> 
+                                {{if code?.coding[0]}}
+                                        {{:code?.coding[0]?.display || 'N/A'}}  
+                                    {{else}}
+                                        No observation provided
+                                {{/if}}
+                                </td>
                             </tr>
                             <tr>
                                 <th>ID</th>
@@ -87,9 +93,9 @@ export class FhirViewer extends HTMLElement {
                             </tr>
                             <tr>
                                 <th>Value</th>
-                                <td>
-                                    {{if valueQuantity}}
-                                        {{:valueQuantity?.value || 'N/A'}} {{:valueQuantity?.unit || ''}}
+                                <td> 
+                                    {{if valueCodeableConcept?.coding[0]}}
+                                        {{:valueCodeableConcept?.coding[0]?.display || 'N/A'}}  
                                     {{else}}
                                         No value provided
                                     {{/if}}
