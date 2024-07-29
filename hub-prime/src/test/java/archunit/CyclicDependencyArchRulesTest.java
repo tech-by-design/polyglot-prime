@@ -13,14 +13,23 @@ public class CyclicDependencyArchRulesTest {
 
     @Test
     void checkForCyclicDependencies() {
-        JavaClasses importedClasses = new ClassFileImporter()
-                .importPackages("org.techbd.service.http.hub.prime.ux");
+        checkForCyclicDependenciesInPackages(
+                "lib.aide",
+                "org.techbd"
+        );
+    }
 
-        ArchRule rule = ArchRuleDefinition.noClasses()
-                .should()
-                .dependOnClassesThat()
-                .resideInAPackage("..org.techbd.service.http.hub.prime.ux..");
+    void checkForCyclicDependenciesInPackages(String... packages) {
+        for (String pkg : packages) {
+            JavaClasses importedClasses = new ClassFileImporter()
+                    .importPackages(pkg);
 
-        rule.check(importedClasses);
+            ArchRule rule = ArchRuleDefinition.noClasses()
+                    .should()
+                    .dependOnClassesThat()
+                    .resideInAPackage(".." + pkg + "..");
+
+            rule.check(importedClasses);
+        }
     }
 }
