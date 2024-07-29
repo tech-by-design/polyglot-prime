@@ -143,7 +143,7 @@ export class FhirViewer extends HTMLElement {
                                 <th>Address</th>
                                 <td>
                                     {{if address && address.length > 0}}
-                                        {{:address[0]?.line?.[0] || ''}}, {{:address[0]?.city || ''}}, {{:address[0]?.state || ''}} {{:address[0]?.postalCode || ''}}
+                                        {{:address[0]?.text || ''}}, {{:address[0]?.city || ''}}, {{:address[0]?.state || ''}} {{:address[0]?.postalCode || ''}}
                                     {{else}}
                                         No address provided
                                     {{/if}}
