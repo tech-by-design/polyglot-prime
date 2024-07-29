@@ -42,13 +42,19 @@
                     {
                         headerName: "Date",
                         field: "survey_date_time",
-                        sort: "desc",
                         filter: "agNumberColumnFilter",
                         valueFormatter: AGGridAide.isoDateTimeValueFormatter()
                     },
 
                     { headerName: "Areas of Interest ", field: "areas_of_interest", filter: "agTextColumnFilter" },
-                    { headerName: "Total Safety Score", field: "total_safety_score", filter: "agTextColumnFilter" }
+                    { headerName: "Total Safety Score", field: "total_safety_score", filter: "agTextColumnFilter" },
+                    {
+                        headerName: "Submission Date",
+                        field: "submitted_date_time",
+                        sort: "desc",
+                        filter: "agNumberColumnFilter",
+                        valueFormatter: AGGridAide.dateTimeValueFormatter()
+                    }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
