@@ -37,6 +37,7 @@ extracted_data AS (
          JOIN jsonb_array_elements(entry -> 'resource' -> 'category') AS category ON true
          JOIN jsonb_array_elements(category -> 'coding') AS coding ON true
          WHERE entry -> 'resource' ->> 'resourceType' = 'Observation'
+         AND (coding.value ->> 'system'::text = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes' )
         ) AS category_display,
 
         -- 4) If entry[] -> resource -> code -> coding[] -> display = "Total Safety Score" 
@@ -53,12 +54,13 @@ extracted_data AS (
 )
 SELECT hub_interaction_id, 
 		tenant_id AS qe_name,
+        created_at AS submitted_date_time,
 		patient_id AS patient_mrn,
 		last_updated AS survey_date_time,
 		category_display AS areas_of_interest,
 		score_display AS total_safety_score
 FROM extracted_data
-WHERE 1 = 1 
+WHERE patient_id IS NOT NULL
 ORDER BY created_at DESC 
 ;
 
