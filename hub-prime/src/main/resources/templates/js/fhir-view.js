@@ -79,7 +79,7 @@ export class FhirViewer extends HTMLElement {
                                 {{if code?.coding[0]}}
                                         {{:code?.coding[0]?.display || 'N/A'}}  
                                     {{else}}
-                                        No Observation provided
+                                        No observation provided
                                 {{/if}}
                                 </td>
                             </tr>
