@@ -16,6 +16,10 @@ export class ModalAide {
         this.modalClass = `${modalId}`;
         this.closeClass = `${modalId}-close`;
         this.jsonViewerId = `${modalId}-json`;
+        this.fhirViewerId = 'fhir-viewer';
+        this.fhirViewerModalId = 'fhir-viewer-modal';  
+        this.fhirViewerModalContentClass = 'fhir-viewer-content';
+        this.fhirViewerCloseClass = 'fhir-viewer-close';      
     }
 
     /**
@@ -88,7 +92,7 @@ export class ModalAide {
             };
         }
     }
-
+   
     /**
      * Displays a JSON value within the modal.
      * @param {Object} value - The JSON object to be displayed in the modal.
@@ -109,6 +113,93 @@ export class ModalAide {
             .then(data => this.viewJsonValue(data))
             .catch(error => console.error(`Error fetching data from ${url}`, error));
     }
+
+    /**
+     * Sets up the FHIR viewer modal. This method creates the necessary HTML 
+     * and CSS for the FHIR viewer modal if it does not exist in the DOM.
+     */
+    setupFhirViewerModal() {
+        if (!document.getElementById(this.fhirViewerModalId)) {
+            const style = document.createElement('style');
+            style.id = `${this.fhirViewerModalId}-styles`;
+            style.innerHTML = `
+                .${this.fhirViewerModalId} {
+                        display: none;
+                        position: fixed;
+                        z-index: 1000;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        overflow: auto;
+                        background-color: rgba(0, 0, 0, 0.5);
+                    }
+
+                    .${this.fhirViewerModalContentClass} {
+                        background-color: #fff;
+                        margin: 15% auto;
+                        padding: 20px;
+                        border: 1px solid #888;
+                        width: 80%;
+                    }
+
+                    .${this.fhirViewerCloseClass} {
+                        color: #aaa;
+                        float: right;
+                        font-size: 28px;
+                        font-weight: bold;
+                        cursor: pointer;
+                    }
+
+                    .${this.fhirViewerCloseClass}:hover,
+                    .${this.fhirViewerCloseClass}:focus {
+                        color: black;
+                        text-decoration: none;
+                        cursor: pointer;
+                    }
+                `;
+                document.head.appendChild(style);
+
+                const modalHtml = `
+                    <div id="${this.fhirViewerModalId}" class="${this.fhirViewerModalId}">
+                        <div class="${this.fhirViewerModalContentClass}">
+                            <span id="fhir-viewer-close" class="${this.fhirViewerCloseClass}">&times;</span>
+                            <fhir-viewer id="${this.fhirViewerId}"></fhir-viewer>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+                // Add event listeners for closing the modal
+                document.getElementById('fhir-viewer-close').addEventListener('click', this.closeFhirViewer.bind(this));
+                window.addEventListener('click', (event) => {
+                    if (event.target.id === this.fhirViewerModalId) {
+                        this.closeFhirViewer();
+                    }
+                });
+            }
+    }
+
+    /**
+     * Shows the FHIR viewer modal with the specified URL.
+     * @param {string} fhirUrl - The URL to be displayed in the FHIR viewer.
+     */
+    showFhirViewer(fhirUrl) {
+        this.setupFhirViewerModal();
+        const fhirViewer = document.getElementById(this.fhirViewerId);
+        fhirViewer.setAttribute('src', fhirUrl);
+        document.getElementById(this.fhirViewerModalId).style.display = 'block';
+    }
+
+    /**
+     * Closes the FHIR viewer modal.
+     */
+    closeFhirViewer() {
+        const modal = document.getElementById(this.fhirViewerModalId);
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }    
 }
 
 export default ModalAide;
