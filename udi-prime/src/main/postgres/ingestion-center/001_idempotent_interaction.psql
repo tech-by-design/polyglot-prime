@@ -401,7 +401,7 @@ AS SELECT htt_req.hub_interaction_id AS interaction_id,
    LEFT OUTER JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe
    ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id
    AND intr_observe.hub_interaction_id  = htt_req.hub_interaction_id 
-   WHERE htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text]);
+   WHERE htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text]);
    
 
 
