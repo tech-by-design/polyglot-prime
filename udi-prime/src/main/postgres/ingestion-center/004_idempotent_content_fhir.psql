@@ -105,52 +105,52 @@ DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_patient CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_patient 
 AS WITH filtered_data AS (
     SELECT sihr.hub_interaction_id,
-           sihr.nature ->> 'tenant_id' AS tenant_id,
-           sihr.payload::jsonb AS payload,
-           hintr.created_at
-    FROM techbd_udi_ingress.hub_interaction hintr
-    JOIN techbd_udi_ingress.sat_interaction_http_request sihr
-    ON hintr.hub_interaction_id = sihr.hub_interaction_id
-    WHERE hintr.key LIKE '/Bundle%'
-      AND sihr.nature ->> 'nature' = 'Original FHIR Payload'    
-),
-patient_details AS (
-    SELECT tenant_id,
-           (entry -> 'resource') ->> 'id' AS patient_id,
-           (entry -> 'resource') ->> 'resourceType' AS patient_resource_type,
-           (entry -> 'resource') -> 'name'->0->>'text' AS full_name,
-           (entry -> 'resource') -> 'name'->0->>'family' AS last_name,
-           (entry -> 'resource') ->'name'->0->>'given' AS first_name,
-           (entry -> 'resource') ->>'gender' AS gender,
-           (entry -> 'resource') ->>'birthDate' AS birth_date,
-           (entry -> 'resource') ->'address'->0->>'text' AS address,
-           (entry -> 'resource') ->'address'->0->>'city' AS city,
-           (entry -> 'resource') ->'address'->0->>'state' AS state,
-           (entry -> 'resource') ->'address'->0->>'postalCode' AS postal_code,
-           (entry -> 'resource') ->>'language' AS language,
-           (entry -> 'resource') ->'identifier'->0->>'value' AS medical_record_number,
-           (entry -> 'resource') ->'identifier'->3->>'value' AS social_security_number
-    FROM filtered_data,
-         jsonb_array_elements(payload -> 'entry') AS entry
-    WHERE (entry -> 'resource') ->> 'resourceType' = 'Patient'
-)
-
-SELECT tenant_id AS qe_name,
-       patient_id,
-       MAX(patient_resource_type) as patient_type,
-       MAX(full_name) as patient_full_name,
-       MAX(first_name) as patient_first_name,
-       MAX(last_name) as patient_last_name,
-       MAX(gender) as patient_gender,
-       MAX(birth_date) as patient_birth_date,
-       MAX(address) as patient_address,
-       MAX(city) as patient_city,
-       MAX(state) as patient_state,
-       MAX(postal_code) as patient_postal_code,
-       MAX(language) as patient_language,
-       MAX(medical_record_number) as patient_mrn,
-       MAX(social_security_number) as patient_ssn
-FROM patient_details
-GROUP BY tenant_id, patient_id
-ORDER BY patient_id DESC;
+        sihr.nature ->> 'tenant_id'::text AS tenant_id,
+        sihr.payload,
+        hintr.created_at
+        FROM techbd_udi_ingress.hub_interaction hintr
+            JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
+        WHERE hintr.key ~~ '/Bundle%'::text AND (sihr.nature ->> 'nature'::text) = 'Original FHIR Payload'::text
+    ), patient_details AS (
+        SELECT filtered_data.tenant_id,
+        (entry.value -> 'resource'::text) ->> 'id'::text AS patient_id,
+        (entry.value -> 'resource'::text) ->> 'resourceType'::text AS patient_resource_type,
+        (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'text'::text AS full_name,
+        (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'family'::text AS last_name, 
+            array_to_string(
+            ARRAY(
+                SELECT jsonb_array_elements_text((((entry.value -> 'resource'::text) -> 'name'::text) -> 0) -> 'given')
+            ), ' '
+        ) AS first_name,
+        (entry.value -> 'resource'::text) ->> 'gender'::text AS gender,
+        (entry.value -> 'resource'::text) ->> 'birthDate'::text AS birth_date,
+        (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'text'::text AS address,
+        (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'city'::text AS city,
+        (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'state'::text AS state,
+        (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'postalCode'::text AS postal_code,
+        (entry.value -> 'resource'::text) ->> 'language'::text AS language,
+        (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 0) ->> 'value'::text AS medical_record_number,
+        (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 3) ->> 'value'::text AS social_security_number
+        FROM filtered_data,
+        LATERAL jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+        WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text
+    )
+    SELECT tenant_id AS qe_name,
+        patient_id,
+        max(patient_resource_type) AS patient_type,
+        max(full_name) AS patient_full_name,
+        max(first_name) AS patient_first_name,
+        max(last_name) AS patient_last_name,
+        max(gender) AS patient_gender,
+        max(birth_date) AS patient_birth_date,
+        max(address) AS patient_address,
+        max(city) AS patient_city,
+        max(state) AS patient_state,
+        max(postal_code) AS patient_postal_code,
+        max(language) AS patient_language,
+        max(medical_record_number) AS patient_mrn,
+        max(social_security_number) AS patient_ssn
+    FROM patient_details
+    GROUP BY tenant_id, patient_id
+    ORDER BY patient_id DESC;
 
