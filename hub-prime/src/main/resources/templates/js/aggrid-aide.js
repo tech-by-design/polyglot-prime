@@ -97,20 +97,20 @@ export class AGGridAide {
             return '';
         }
     }
-    
+
     /**
      * Creates a value formatter for displaying timestamps with timezone
      * information in 'MM/DD/YYYY, HH:MM:SS' format
      * @returns {Function} The value formatter function.
      */
     static isoDateTimeValueFormatter() {
-        return function (params) { 
+        return function (params) {
             if (params.value) {
                 let date = new Date(params.value);
                 if (isNaN(date)) {
                     // Handle invalid date
                     return params.value;
-                } 
+                }
                 let options = {
                     timeZone: 'America/New_York',
                     year: 'numeric',
@@ -155,7 +155,9 @@ export class AGGridAideBuilder {
             autoSizeStrategy: { type: "fitCellContents" },
             rowModelType: 'serverSide',
             serverSideDatasource: null,
-            tooltipShowDelay: 500
+            tooltipShowDelay: 500,
+            masterDetail: false,
+            detailCellRendererParams: null
         };
         this.gridDivStyles = { height: "750px" };
     }
@@ -169,7 +171,26 @@ export class AGGridAideBuilder {
         this.gridOptions.columnDefs = columnDefs;
         return this;
     }
+    /**
+ * Sets the master details definitions for the AG Grid.
+ * @param {Array} masterDetail - The master detail definitions.
+ * @returns {AGGridAideBuilder} The builder instance.
+ */
+    withMasterDetail(masterDetail) {
+        this.gridOptions.masterDetail = masterDetail;
+        return this;
+    }
 
+
+    /**
+      * Sets the default cell renderer definitions for the AG Grid.
+      * @param {Array} columnDefs - The Default cell renderer definitions.
+      * @returns {AGGridAideBuilder} The builder instance.
+      */
+    withDetailCellRendererParams(detailCellRendererParams) {
+        this.gridOptions.detailCellRendererParams = detailCellRendererParams;
+        return this;
+    }
     /**
      * Sets the default column definitions for the AG Grid.
      * @param {Object} defaultColDef - The default column definitions.
