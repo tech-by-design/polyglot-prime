@@ -730,7 +730,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_fhir CASCADE;
     JOIN 
         techbd_udi_ingress.sat_interaction_http_request sihr 
         ON hi.hub_interaction_id = sihr.hub_interaction_id
-    WHERE hi.key = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text])
+    WHERE hi.key = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text])
 )
 SELECT 
     sat_interaction_http_request_id,
