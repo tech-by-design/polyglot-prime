@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 @Tag(name = "TechBD Hub Contents")
 public class ContentController {
+
     @SuppressWarnings("unused")
     private static final Logger LOG = LoggerFactory.getLogger(DataQualityController.class.getName());
 
@@ -47,5 +48,11 @@ public class ContentController {
     public String screenings(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/content/screenings", model, request);
     }
- 
+
+    @GetMapping("/content/patients")
+    @RouteMapping(label = "Patients", title = "Patients", siblingOrder = 20)
+    public String patients(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/content/patients", model, request);
+    }
+
 }

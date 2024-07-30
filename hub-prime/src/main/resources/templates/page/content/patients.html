@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script src="https://www.jsviews.com/download/jsrender.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+        import { FhirViewer } from '@presentation/shell/fhir-view.js';
+        customElements.define('fhir-viewer', FhirViewer);
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'fhir_screening_patient';
+        const detailTableViewName = 'fhir_screening_info';
+        const popViewName = 'fhir_screening_detail';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "Patient ID", field: "patient_id", filter: "agTextColumnFilter"
+                        , cellRenderer: 'agGroupCellRenderer'
+                    },
+                    { headerName: "QE Name", field: "qe_name", filter: "agTextColumnFilter" },
+                    { headerName: "Type", field: "patient_type", filter: "agTextColumnFilter" },
+                    { headerName: "Full Name", field: "patient_full_name", filter: "agTextColumnFilter" },
+                    {
+                        headerName: "First Name",
+                        field: "patient_first_name",
+                        filter: "agTextColumnFilter"
+                    },
+                    { headerName: "Last Name ", field: "patient_last_name", filter: "agTextColumnFilter" },
+                    { headerName: "Gender", field: "patient_gender", filter: "agTextColumnFilter" },
+                    { headerName: "Birth Date", field: "patient_birth_date", filter: "agTextColumnFilter" },
+                    { headerName: "Address", field: "patient_address", filter: "agTextColumnFilter" },
+                    { headerName: "City", field: "patient_city", filter: "agTextColumnFilter" },
+                    { headerName: "State", field: "patient_state", filter: "agTextColumnFilter" },
+                    { headerName: "Postal Code", field: "patient_postal_code", filter: "agTextColumnFilter" },
+                    { headerName: "Language", field: "patient_language", filter: "agTextColumnFilter" },
+                    { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" },
+                    { headerName: "Patient", field: "patient_ssn", filter: "agTextColumnFilter" }
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withDetailCellRendererParams({// provide the Grid Options to use on the Detail Grid
+                    detailGridOptions: {
+                        columnDefs: [
+                            {
+                                headerName: "Interaction ID",
+                                field: "hub_interaction_id",
+                                filter: "agTextColumnFilter",
+                                cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
+                                    modalAide.showFhirViewer(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${popViewName}/hub_interaction_id/${value}.json`));
+                                }, modalAide)
+                            },
+                            {
+                                headerName: "Date",
+                                field: "survey_date_time",
+                                filter: "agNumberColumnFilter",
+                                valueFormatter: AGGridAide.isoDateTimeValueFormatter()
+                            },
+                            { headerName: "Areas of Interest ", field: "areas_of_interest", filter: "agTextColumnFilter" },
+                            { headerName: "Total Safety Score", field: "total_safety_score", filter: "agTextColumnFilter" },
+                            {
+                                headerName: "Submission Date",
+                                field: "submitted_date_time",
+                                sort: "desc",
+                                filter: "agNumberColumnFilter",
+                                valueFormatter: AGGridAide.dateTimeValueFormatter()
+                            }
+                        ],
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        const value = params.data.patient_id;
+                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/patient_mrn/${value}.json`))
+                            .then(response => response.json())
+                            .then(response => {
+                                console.log(response);
+                                params.successCallback(response);
+                            })
+                            .catch(error => {
+                                console.error('Error fetching details data' + error);
+                            });
+                    }
+                })
+                .withMasterDetail(true)
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+
+</body>
+
+</html>
