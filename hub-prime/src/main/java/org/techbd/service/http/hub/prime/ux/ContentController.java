@@ -38,7 +38,7 @@ public class ContentController {
     }
 
     @GetMapping("/content")
-    @RouteMapping(label = "Content", siblingOrder = 10)
+    @RouteMapping(label = "Content", siblingOrder = 9)
     public String fhirContent() {
         return "redirect:/content/screenings";
     }
