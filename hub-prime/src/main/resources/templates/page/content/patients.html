@@ -30,7 +30,6 @@
                         , cellRenderer: 'agGroupCellRenderer'
                     },
                     { headerName: "QE Name", field: "qe_name", filter: "agTextColumnFilter" },
-                    { headerName: "Type", field: "patient_type", filter: "agTextColumnFilter" },
                     { headerName: "Full Name", field: "patient_full_name", filter: "agTextColumnFilter" },
                     {
                         headerName: "First Name",
@@ -46,7 +45,7 @@
                     { headerName: "Postal Code", field: "patient_postal_code", filter: "agTextColumnFilter" },
                     { headerName: "Language", field: "patient_language", filter: "agTextColumnFilter" },
                     { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" },
-                    { headerName: "Patient", field: "patient_ssn", filter: "agTextColumnFilter" }
+                    { headerName: "SSN", field: "patient_ssn", filter: "agTextColumnFilter" }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),

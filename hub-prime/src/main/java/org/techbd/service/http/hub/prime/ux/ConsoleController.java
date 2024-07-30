@@ -15,10 +15,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@Tag(name = "QA Fabric API")
-public class QaFabricController {
+@Tag(name = "Console API")
+public class ConsoleController {
     @SuppressWarnings("unused")
-    private static final Logger LOG = LoggerFactory.getLogger(QaFabricController.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(ConsoleController.class.getName());
     public static final ObjectMapper headersOM = JsonMapper.builder()
             .findAndAddModules()
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
@@ -26,25 +26,25 @@ public class QaFabricController {
 
     private final Presentation presentation;
 
-    public QaFabricController(final Presentation presentation) throws Exception {
+    public ConsoleController(final Presentation presentation) throws Exception {
         this.presentation = presentation;
     }
 
-    @RouteMapping(label = "QA Fabric", siblingOrder = 60)
-    @GetMapping("/qa-fabric")
+    @RouteMapping(label = "Console", siblingOrder = 80)
+    @GetMapping("/console")
     public String docs() {
-        return "redirect:/qa-fabric/hrsn-viewer-app";
+        return "redirect:/console/hrsn-viewer-app";
     }
 
     @RouteMapping(label = "Certification Engine Scorecard", title = "Certification Engine Scorecard", siblingOrder = 10)
-    @GetMapping("/qa-fabric/cert-engine-scorecard")
+    @GetMapping("/console/cert-engine-scorecard")
     public String certEngineScorecard(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/qa-fabric/cert-engine-scorecard", model, request);
+        return presentation.populateModel("page/console/cert-engine-scorecard", model, request);
     }
 
     @RouteMapping(label = "HRSN Viewer", title = "HRSN Viewer App", siblingOrder = 20)
-    @GetMapping("/qa-fabric/hrsn-viewer-app")
+    @GetMapping("/console/hrsn-viewer-app")
     public String hrsnViewerApp(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/qa-fabric/hrsn-viewer-app", model, request);
+        return presentation.populateModel("page/console/hrsn-viewer-app", model, request);
     }
 }
