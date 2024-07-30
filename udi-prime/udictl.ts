@@ -14,6 +14,7 @@ import {
 import * as dax from "https://deno.land/x/dax@0.39.2/mod.ts";
 import * as pgpass from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.27/lib/postgres/pgpass/pgpass-parse.ts";
 import * as migrateIc from "./src/main/postgres/ingestion-center/migrations/migrations.ts";
+import * as ddlTable from "./src/main/postgres/ingestion-center/migrations/ddl-table.ts";
 
 const $ = dax.build$({
   commandBuilder: new dax.CommandBuilder().noThrow(),
@@ -208,6 +209,21 @@ const CLI = new Command()
               });
             }
         })
+      .command("prepare-diagram", "Generate puml diagram")
+        .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: cleanableTarget("/postgres/ingestion-center") })
+        .option("--puml-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "ddl-table.auto.puml" })
+        .option("--overwrite", "Don't remove existing target file first, overwrite instead")
+        .action((options) => {
+          if(!options.overwrite) {
+            try {
+                Deno.removeSync(options.target+'/'+options.pumlFname, { recursive: true });
+            } catch (_notFound) {
+                // directory doesn't exist, it's OK
+            }
+          }
+          Deno.mkdirSync(options.target, { recursive: true });
+          Deno.writeTextFileSync(`${options.target}/${options.pumlFname}`, ddlTable.generated().pumlERD);
+        })        
     )
     .command("load-sql", "Use psql to execute generated migration scripts")
       .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: cleanableTarget("/postgres/ingestion-center") })
