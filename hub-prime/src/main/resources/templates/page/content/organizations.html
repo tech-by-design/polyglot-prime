@@ -17,34 +17,21 @@
         import { FhirViewer } from '@presentation/shell/fhir-view.js';
         customElements.define('fhir-viewer', FhirViewer);
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'fhir_screening_patient';
+        const viewName = 'fhir_screening_organization';
         const detailTableViewName = 'fhir_screening_info';
-        const popViewName = 'fhir_screening_detail';
 
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    {
-                        headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter"
-                        , cellRenderer: 'agGroupCellRenderer'
-                    },
+                    { headerName: "Organization ID", field: "org_id", filter: "agTextColumnFilter", hide: true },
+                    { headerName: "Organization Name", field: "org_name", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' },
                     { headerName: "QE Name", field: "qe_name", filter: "agTextColumnFilter" },
-                    { headerName: "Full Name", field: "patient_full_name", filter: "agTextColumnFilter" },
-                    {
-                        headerName: "First Name",
-                        field: "patient_first_name",
-                        filter: "agTextColumnFilter"
-                    },
-                    { headerName: "Last Name ", field: "patient_last_name", filter: "agTextColumnFilter" },
-                    { headerName: "Gender", field: "patient_gender", filter: "agTextColumnFilter" },
-                    { headerName: "Birth Date", field: "patient_birth_date", filter: "agTextColumnFilter" },
-                    { headerName: "Address", field: "patient_address", filter: "agTextColumnFilter" },
-                    { headerName: "City", field: "patient_city", filter: "agTextColumnFilter" },
-                    { headerName: "State", field: "patient_state", filter: "agTextColumnFilter" },
-                    { headerName: "Postal Code", field: "patient_postal_code", filter: "agTextColumnFilter" },
-                    { headerName: "Language", field: "patient_language", filter: "agTextColumnFilter" },
-                    { headerName: "SSN", field: "patient_ssn", filter: "agTextColumnFilter" }
+                    { headerName: "Active", field: "org_active", filter: "agTextColumnFilter" },
+                    { headerName: "Address", field: "org_address", filter: "agTextColumnFilter" },
+                    { headerName: "City", field: "org_city", filter: "agTextColumnFilter" },
+                    { headerName: "State", field: "org_state", filter: "agTextColumnFilter" },
+                    { headerName: "Postal Code", field: "org_postal_code", filter: "agTextColumnFilter" }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
@@ -58,32 +45,19 @@
                 .withDetailCellRendererParams({// provide the Grid Options to use on the Detail Grid
                     detailGridOptions: {
                         columnDefs: [
+                            { headerName: "QE Name", field: "qe_name", filter: "agTextColumnFilter" },
                             {
                                 headerName: "Patient MRN",
                                 field: "patient_mrn",
-                                filter: "agTextColumnFilter",
-                                cellRenderer: params => {
-                                    const patientMrn = params.value;
-                                    const hubInteractionId = params.data.hub_interaction_id;
-                                    console.log(hubInteractionId);
-                                    const button = document.createElement('button');
-                                    button.innerText = patientMrn;
-                                    button.addEventListener('click', () => {
-                                        if (hubInteractionId) {
-                                            modalAide.showFhirViewer(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${popViewName}/hub_interaction_id/${hubInteractionId}.json`));
-                                        } else {
-                                            console.error('hub_interaction_id is undefined');
-                                        }
-                                    });
-                                    return button;
-                                }
+                                filter: "agTextColumnFilter"
                             },
                             {
-                                headerName: "Date",
+                                headerName: "Survey Date",
                                 field: "survey_date_time",
                                 filter: "agNumberColumnFilter",
                                 valueFormatter: AGGridAide.isoDateTimeValueFormatter()
                             },
+
                             { headerName: "Areas of Interest ", field: "areas_of_interest", filter: "agTextColumnFilter" },
                             { headerName: "Total Safety Score", field: "total_safety_score", filter: "agTextColumnFilter" },
                             {
@@ -99,11 +73,10 @@
                         }
                     },
                     getDetailRowData: params => {
-                        const value = params.data.patient_mrn;
-                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/patient_mrn/${value}.json`))
+                        const value = params.data.org_id;
+                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/org_id/${value}.json`))
                             .then(response => response.json())
                             .then(response => {
-                                console.log(response);
                                 params.successCallback(response);
                             })
                             .catch(error => {
