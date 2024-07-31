@@ -8,8 +8,15 @@
 
 <body>
     <div layout:fragment="content">
+        <p class="mt-[55px] mb-[30px] ">
+            Click here to open 
+            <a href="http://hrsn-registry-swagger-website.s3-website-us-east-1.amazonaws.com" target="_blank" class="text-blue-500  ">
+                HRSN Query OpenAPI UI
+            </a> 
+            in a new tab (once the URL is converted to HTTPS it will appear in IFRAME).
+        </p>
         <iframe src="https://hrsn-registry-swagger-website.s3-website-us-east-1.amazonaws.com"
-            class="w-full min-h-screen"></iframe>
+            class="w-full min-h-screen hidden"></iframe>
     </div>
 </body>
 
