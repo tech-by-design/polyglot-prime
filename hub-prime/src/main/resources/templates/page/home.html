@@ -104,11 +104,15 @@
                         participant QE as QE
                         participant TechBD as TechBD
                         participant ScoringEngine as Scoring Engine
+                        participant SHINNY as SHIN-NY Data Lake
+                        participant MDW as MDW
                                     
                         CrossroadsSCN ->> QE: Send Test JSON
                         QE ->> TechBD: Proxy FHIR JSON
                         TechBD ->> TechBD: Validate and Store FHIR JSON
                         TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
+                        ScoringEngine ->> SHINNY: Submit to Data lake
+                        SHINNY ->> MDW: Submit to MDW
                 </pre>
             </div>
             <div>
@@ -116,14 +120,18 @@
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
                     sequenceDiagram
                         participant SCN as SCN
-                        participant QE
-                        participant TechBD
-                        participant DataLake as Data Lake
-                           
-                        SCN ->> QE: Submit JSON
-                        QE ->> TechBD: Proxy FHIR
+                        participant QE as QE
+                        participant TechBD as TechBD
+                        participant ScoringEngine as Scoring Engine
+                        participant SHINNY as SHIN-NY Data Lake
+                        participant MDW as MDW
+                                    
+                        SCN ->> QE: Send Test JSON
+                        QE ->> TechBD: Proxy FHIR JSON
                         TechBD ->> TechBD: Validate and Store FHIR JSON
-                        TechBD ->> DataLake: Proxy Validated FHIR JSON
+                        TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
+                        ScoringEngine ->> SHINNY: Submit to Data lake
+                        SHINNY ->> MDW: Submit to MDW
                 </pre>
             </div>
         </div>
