@@ -29,8 +29,6 @@ enum StateStatus {
 }
 
 const prependMigrateSPText = "migrate_";
-const appendMigrateUndoSPText = "_undo";
-const appendMigrateStatusFnText = "_status";
 
 const ingressSchema = SQLa.sqlSchemaDefn("techbd_udi_ingress", {
   isIdempotent: true,
@@ -202,65 +200,6 @@ const migrateSP = pgSQLa.storedProcedure(
     END
   `;
 
-const rollbackSP = pgSQLa.storedProcedure(
-  prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
-    migrationInput.description + appendMigrateUndoSPText,
-  {},
-  (name, args, _) =>
-    pgSQLa.typedPlPgSqlBody(name, args, ctx, {
-      autoBeginEnd: false,
-    }),
-  {
-    embeddedStsOptions: SQLa.typicalSqlTextSupplierOptions(),
-    autoBeginEnd: false,
-    isIdempotent: true,
-    sqlNS: infoSchemaLifecycle,
-    headerBodySeparator: "$migrateVersionUSP$",
-  },
-)`
-    BEGIN
-    -- Add any PostgreSQL you need either manually constructed or SQLa.
-    -- Your code will be placed automatically into a ISLM rollback stored procedure.
-    -- DROP table if exists "sample_schema".sample_table1;
-    END
-  `;
-const statusFn = pgSQLa.storedFunction(
-  prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
-    migrationInput.description + appendMigrateStatusFnText,
-  {},
-  "integer",
-  (name, args) =>
-    pgSQLa.typedPlPgSqlBody(name, args, ctx, {
-      autoBeginEnd: false,
-    }),
-  {
-    embeddedStsOptions: SQLa.typicalSqlTextSupplierOptions(),
-    autoBeginEnd: false,
-    isIdempotent: true,
-    sqlNS: infoSchemaLifecycle,
-    headerBodySeparator: "$fnMigrateVersionStatus$",
-  },
-)`
-    DECLARE
-      status INTEGER := 0; -- Initialize status to 0 (not executed)
-    BEGIN
-      -- Add any PostgreSQL you need either manually constructed or SQLa.
-      -- Your code will be placed automatically into a ISLM status stored function.
-      -- All your checks must be idempotent and not have any side effects.
-      -- Use information_schema and other introspection capabilities of PostgreSQL
-      -- instead of manually checking. For example:
-      
-      -- IF EXISTS (
-      --  SELECT FROM information_schema.columns
-      --  WHERE table_name = 'sample_table1'
-      -- ) THEN
-      --  status := 1; -- Set status to 1 (already executed)
-      -- END IF;
-      RETURN status; -- Return the status
-              
-    END;
-  `;
-
 /**
  * Generates SQL Data Definition Language (DDL) for the migrations.
  *
@@ -304,10 +243,6 @@ function sqlDDLGenerateMigration() {
     
     ${migrateSP}
 
-    ${rollbackSP}
-
-    ${statusFn}
-
     `;
 }
 
@@ -343,8 +278,6 @@ export function generated() {
       DROP SCHEMA IF EXISTS ${diagnosticsSchema.sqlNamespace} cascade;
 
       DROP PROCEDURE IF EXISTS "${migrateSP.sqlNS?.sqlNamespace}"."${migrateSP.routineName}" CASCADE;
-      DROP PROCEDURE IF EXISTS "${rollbackSP.sqlNS?.sqlNamespace}"."${rollbackSP.routineName}" CASCADE;
-      DROP FUNCTION IF EXISTS "${statusFn.sqlNS?.sqlNamespace}"."${statusFn.routineName}" CASCADE;
 
 
       `),
