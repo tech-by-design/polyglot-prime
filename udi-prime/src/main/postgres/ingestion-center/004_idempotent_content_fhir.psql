@@ -26,11 +26,25 @@ extracted_data AS (
         END AS last_updated,
 
         -- 2) If entry[] -> resource -> "resourceType" = "Patient", get entry[] -> resource -> id
+         ( select  (entry.value -> 'resource' -> 'identifier' -> 0 ->> 'value'::text) 
+                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text) AS patient_id,
+        ( select  ((((entry.value -> 'resource'::text) -> 'name'::text) -> 0)->> 'text'::text) 
+                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text) AS full_name,
+                  ( select  ((((entry.value -> 'resource') -> 'name') -> 0) ->> 'family') 
+                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text) AS last_name,
+        ( select array_to_string(ARRAY( SELECT jsonb_array_elements_text((((entry.value -> 'resource'::text) -> 'name'::text) -> 0) -> 'given'::text) AS jsonb_array_elements_text), ' '::text) 
+                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text) AS first_name,  
+    
         (SELECT entry -> 'resource' ->> 'id'
          FROM jsonb_array_elements(payload -> 'entry') AS entry
-         WHERE (entry -> 'resource' ->> 'resourceType') = 'Patient'
-        ) AS patient_id,
-
+         WHERE (entry -> 'resource' ->> 'resourceType') = 'Organization'
+        ) AS org_id,
+                  
+                   
         -- 3) If "resourceType" = "Observation", get category[] -> coding -> display element values in comma separated manner
         (SELECT string_agg(DISTINCT coding ->> 'display', ', ')
          FROM jsonb_array_elements(payload -> 'entry') AS entry
@@ -53,8 +67,13 @@ extracted_data AS (
     FROM filtered_data
 )
 SELECT hub_interaction_id, 
+
 		tenant_id AS qe_name,
-        created_at AS submitted_date_time,
+		org_id,
+		last_name,
+		full_name, 
+		first_name,
+    created_at AS submitted_date_time,
 		patient_id AS patient_mrn,
 		last_updated AS survey_date_time,
 		category_display AS areas_of_interest,
@@ -154,3 +173,46 @@ AS WITH filtered_data AS (
   GROUP BY tenant_id, patient_id
   ORDER BY patient_id DESC;
 
+
+/*******************************************************************************************
+ * Comprehensive view of FHIR Content Screening Organization. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_organization CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_organization 
+AS WITH filtered_data AS (
+    SELECT sihr.hub_interaction_id,
+           sihr.nature ->> 'tenant_id' AS tenant_id,
+           sihr.payload::jsonb AS payload,
+           hintr.created_at
+    FROM techbd_udi_ingress.hub_interaction hintr
+    JOIN techbd_udi_ingress.sat_interaction_http_request sihr
+    ON hintr.hub_interaction_id = sihr.hub_interaction_id
+    WHERE hintr.key LIKE '/Bundle%'
+      AND sihr.nature ->> 'nature' = 'Original FHIR Payload'    
+),
+patient_details AS (
+    SELECT tenant_id,
+           (entry -> 'resource') ->> 'id' AS org_id,
+           (entry -> 'resource') ->> 'resourceType' AS org_resource_type,
+           (entry -> 'resource') ->> 'name' AS org_name,
+           (entry -> 'resource') ->> 'active' AS org_active,
+           (entry -> 'resource') ->'address'->0->>'text' AS org_address,
+           (entry -> 'resource') ->'address'->0->>'city' AS org_city,
+           (entry -> 'resource') ->'address'->0->>'state' AS org_state,
+           (entry -> 'resource') ->'address'->0->>'postalCode' AS org_postal_code
+    FROM filtered_data,
+         jsonb_array_elements(payload -> 'entry') AS entry
+    WHERE (entry -> 'resource') ->> 'resourceType' = 'Organization'
+)
+SELECT tenant_id AS qe_name,
+       org_id,
+       MAX(org_resource_type) as org_type,
+       MAX(org_name) as org_name,
+       MAX(org_active) as org_active,
+       MAX(org_address) as org_address,
+       MAX(org_city) as org_city,
+       MAX(org_state) as org_state,
+       MAX(org_postal_code) as org_postal_code
+FROM patient_details
+GROUP BY tenant_id, org_id
+ORDER BY org_id DESC;

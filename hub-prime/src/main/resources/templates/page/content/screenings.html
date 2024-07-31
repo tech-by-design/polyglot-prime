@@ -15,9 +15,9 @@
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
 
-        import { FhirViewer } from '@presentation/shell/fhir-view.js'; 
+        import { FhirViewer } from '@presentation/shell/fhir-view.js';
         customElements.define('fhir-viewer', FhirViewer);
-        
+
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_screening_info';
         const popViewName = 'fhir_screening_detail';
@@ -27,18 +27,27 @@
                 .withColumnDefs([
                     { headerName: "QE Name", field: "qe_name", filter: "agTextColumnFilter" },
                     {
-                        headerName: "Interaction ID",
-                        field: "hub_interaction_id",
-                        filter: "agTextColumnFilter",
-                        cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                           modalAide.showFhirViewer(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${popViewName}/hub_interaction_id/${value}.json`));
-                        }, modalAide)
-                    },
-                    {
-                        headerName: "Patient MRN ID",
+                        headerName: "Patient MRN",
                         field: "patient_mrn",
-                        filter: "agTextColumnFilter"
+                        filter: "agTextColumnFilter",
+                        cellRenderer: params => {
+                            const patientMrn = params.value;
+                            const hubInteractionId = params.data.hub_interaction_id;
+                            console.log(hubInteractionId);
+                            const button = document.createElement('button');
+                            button.innerText = patientMrn;
+                            button.addEventListener('click', () => {
+                                if (hubInteractionId) {
+                                    modalAide.showFhirViewer(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${popViewName}/hub_interaction_id/${hubInteractionId}.json`));
+                                } else {
+                                    console.error('hub_interaction_id is undefined');
+                                }
+                            });
+                            return button;
+                        }
                     },
+                    { headerName: "First Name", field: "first_name", filter: "agTextColumnFilter" },
+                    { headerName: "Last Name ", field: "last_name", filter: "agTextColumnFilter" },
                     {
                         headerName: "Date",
                         field: "survey_date_time",
@@ -71,7 +80,7 @@
 
             agGridInstance.init('serverDataGrid');
         });
-    </script>    
+    </script>
 </head>
 
 <body>
