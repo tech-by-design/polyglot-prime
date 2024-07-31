@@ -50,203 +50,36 @@ export const {
   serial,
   date,
   jsonText,
-  createdAt
+  createdAt,
 } = dvts.domains;
 
-/*
- * The following function, techbd_udi_ingress.hub_fhir_bundle_upserted, is designed to insert a record into the hub_fhir_bundle table
-*/
-const fnHubFhirBundleUpsertBuilder = pgSQLa
-  .storedRoutineBuilder(
-    "hub_fhir_bundle_upserted",
-    {
-      fhir_bundle_key: text(),
-      created_by: textNullable(),
-      provenance: textNullable(),
-      created_at: createdAt(),
-      upsert_behavior: boolean().default(true),
-    },
-  );
-export const fnHubFhirBundleUpsert = pgSQLa.storedFunction(
-  fnHubFhirBundleUpsertBuilder.routineName,
-  fnHubFhirBundleUpsertBuilder.argsDefn,
-  "TEXT",
-  (name, args) => pgSQLa.typedPlPgSqlBody(name, args, ctx),
-  {
-    embeddedStsOptions: tmpl.typicalSqlTextSupplierOptions(),
-    autoBeginEnd: false,
-    isIdempotent: true,
-    sqlNS: ingressSchema,
-    headerBodySeparator: "$fnHubFhirBundleUpsert$",
-  },
-)`
-    declare
-        hub_request_http_client_row techbd_udi_ingress.hub_interaction%ROWTYPE;
-        hub_exception_row 			techbd_udi_ingress.hub_exception;
-        err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
-        err_message_text 			text;	-- Variable to store the message text of the error
-        err_pg_exception_detail 	text;	-- Variable to store the detail of the error
-        err_pg_exception_hint 		text;	-- Variable to store the hint of the error
-        err_pg_exception_context 	text; 	-- Variable to store the context of the error
-        
-        v_error_msg TEXT;
-        v_sqlstate TEXT;
-        v_pg_detail TEXT;
-        v_pg_hint TEXT;
-        v_pg_context TEXT;
-        v_created_at TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
-        v_created_by TEXT := COALESCE(created_by, current_user);
-        v_provenance TEXT := COALESCE(provenance, 'unknown');
-        v_exception_id TEXT; 
-        v_hub_fhir_bundle_id TEXT;
-        
-    BEGIN
-      
-      BEGIN
-        v_hub_fhir_bundle_id := gen_random_uuid()::text;
-      
-            INSERT INTO techbd_udi_ingress.hub_fhir_bundle (hub_fhir_bundle_id, key, created_at, created_by, provenance)
-            VALUES (v_hub_fhir_bundle_id, fhir_bundle_key, v_created_at, v_created_by, v_provenance)
-            ;       
-        EXCEPTION
-            WHEN unique_violation THEN
-            IF NOT hub_upsert_behavior THEN
-                -- Capture exception details
-                GET STACKED DIAGNOSTICS
-                v_error_msg = MESSAGE_TEXT,
-                v_sqlstate = RETURNED_SQLSTATE,
-                v_pg_detail = PG_EXCEPTION_DETAIL,
-                v_pg_hint = PG_EXCEPTION_HINT,
-                v_pg_context = PG_EXCEPTION_CONTEXT;
 
-                -- Call register_issue to log the exception and get the exception ID
-                PERFORM techbd_udi_ingress.register_issue( NULL, fhir_bundle_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance);
-            END IF;
-          v_hub_fhir_bundle_id := NULL;
-        END;
-      RETURN v_hub_fhir_bundle_id;
-    EXCEPTION
-      WHEN OTHERS THEN
-          -- Capture exception details
-        GET STACKED DIAGNOSTICS
-            v_error_msg = MESSAGE_TEXT,
-            v_sqlstate = RETURNED_SQLSTATE,
-            v_pg_detail = PG_EXCEPTION_DETAIL,
-            v_pg_hint = PG_EXCEPTION_HINT,
-            v_pg_context = PG_EXCEPTION_CONTEXT;
+// Function to read SQL from a list of .psql files
+async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
+  const sqlContents = [];
+  for (const filePath of filePaths) {
+    try {
+      const absolutePath = new URL(filePath, import.meta.url).pathname;
+      const data = await Deno.readTextFile(absolutePath);
+      sqlContents.push(data);
+    } catch (err) {
+      console.error(`Error reading file ${filePath}:`, err);
+      throw err;
+    }
+  }
+  return sqlContents;
+}
 
-        -- Log the exception, reusing the previous exception ID if it exists
-        PERFORM techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id, NULL), 
-      fhir_bundle_key, 
-      v_error_msg, 
-      v_sqlstate, 
-      v_pg_detail, 
-      v_pg_hint, 
-      v_pg_context, 
-      v_created_by, 
-      v_provenance);
-      RETURN NULL;     
-    END;
-    `;
-/*
- * This function attempts to insert a new row into the techbd_udi_ingress.hub_uniform_resource table with the given parameters
-*/
-const fnHubUniformResourceUpsertBuilder = pgSQLa
-  .storedRoutineBuilder(
-    "hub_uniform_resource_upserted",
-    {
-      uniform_resource_key: text(),
-      created_by: textNullable(),
-      provenance: textNullable(),
-      created_at: createdAt(),
-      upsert_behavior: boolean().default(true),
-    },
-  );
-export const fnHubUniformResourceUpsert = pgSQLa.storedFunction(
-  fnHubUniformResourceUpsertBuilder.routineName,
-  fnHubUniformResourceUpsertBuilder.argsDefn,
-  "TEXT",
-  (name, args) => pgSQLa.typedPlPgSqlBody(name, args, ctx),
-  {
-    embeddedStsOptions: tmpl.typicalSqlTextSupplierOptions(),
-    autoBeginEnd: false,
-    isIdempotent: true,
-    sqlNS: ingressSchema,
-    headerBodySeparator: "$fnHubUniformResourceUpsert$",
-  },
-)`
-    declare
-        hub_request_http_client_row techbd_udi_ingress.hub_interaction%ROWTYPE;
-        hub_exception_row 			techbd_udi_ingress.hub_exception;
-        err_returned_sqlstate 		text;	-- Variable to store SQLSTATE of the error
-        err_message_text 			text;	-- Variable to store the message text of the error
-        err_pg_exception_detail 	text;	-- Variable to store the detail of the error
-        err_pg_exception_hint 		text;	-- Variable to store the hint of the error
-        err_pg_exception_context 	text; 	-- Variable to store the context of the error
-        
-        v_error_msg TEXT;
-        v_sqlstate TEXT;
-        v_pg_detail TEXT;
-        v_pg_hint TEXT;
-        v_pg_context TEXT;
-        v_created_at TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
-        v_created_by TEXT := COALESCE(created_by, current_user);
-        v_provenance TEXT := COALESCE(provenance, 'unknown');
-        v_exception_id TEXT; 
-        v_hub_uniform_resource_id TEXT;
-        
-    BEGIN
-      
-      BEGIN
-        v_hub_uniform_resource_id := gen_random_uuid()::text;
-      
-            INSERT INTO techbd_udi_ingress.hub_uniform_resource (hub_uniform_resource_id, key, created_at, created_by, provenance)
-            VALUES (v_hub_uniform_resource_id, uniform_resource_key, v_created_at, v_created_by, v_provenance)
-            ;       
-        EXCEPTION
-            WHEN unique_violation THEN
-                IF NOT hub_upsert_behavior THEN
-                    -- Capture exception details
-                    GET STACKED DIAGNOSTICS
-                    v_error_msg = MESSAGE_TEXT,
-                    v_sqlstate = RETURNED_SQLSTATE,
-                    v_pg_detail = PG_EXCEPTION_DETAIL,
-                    v_pg_hint = PG_EXCEPTION_HINT,
-                    v_pg_context = PG_EXCEPTION_CONTEXT;
+// List of dependencies and test dependencies
+const dependencies = [
+  "../005_idempotent_stored_routines.psql",
+] as const;
 
-                    -- Call register_issue to log the exception and get the exception ID
-                    PERFORM techbd_udi_ingress.register_issue( NULL, interaction_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance);
-                END IF;
-              v_hub_uniform_resource_id := NULL;
-        END;
-      RETURN v_hub_uniform_resource_id;
-    EXCEPTION
-      WHEN OTHERS THEN
-          -- Capture exception details
-        GET STACKED DIAGNOSTICS
-            v_error_msg = MESSAGE_TEXT,
-            v_sqlstate = RETURNED_SQLSTATE,
-            v_pg_detail = PG_EXCEPTION_DETAIL,
-            v_pg_hint = PG_EXCEPTION_HINT,
-            v_pg_context = PG_EXCEPTION_CONTEXT;
 
-        -- Log the exception, reusing the previous exception ID if it exists
-        PERFORM techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id, NULL), 
-      uniform_resource_key, 
-      v_error_msg, 
-      v_sqlstate, 
-      v_pg_detail, 
-      v_pg_hint, 
-      v_pg_context, 
-      v_created_by, 
-      v_provenance);
-      RETURN NULL;     
-    END;
-    `;
+
 
 // Read SQL queries from files
+const dependenciesSQL = await readSQLFiles(dependencies);
 const testMigrateDependenciesWithPgtap = [
   "../../../../test/postgres/ingestion-center/004-idempotent-migrate-unit-test.psql",
   "../../../../test/postgres/ingestion-center/suite.pgtap.psql",
@@ -291,11 +124,8 @@ const migrateSP = pgSQLa.storedProcedure(
 )`
     BEGIN
 
+      ${dependenciesSQL}
       
-      ${fnHubFhirBundleUpsert}
-
-      
-      ${fnHubUniformResourceUpsert}
       
 
 
@@ -341,14 +171,7 @@ export function generated() {
   return {
     driverGenerateMigrationSQL,
     pumlERD: dvts.pumlERD(ctx).content,
-    destroySQL: ws.unindentWhitespace(`
-      DROP SCHEMA IF EXISTS public CASCADE;
-
-      DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
-
-      DROP PROCEDURE IF EXISTS "${migrateSP.sqlNS?.sqlNamespace}"."${migrateSP.routineName}" CASCADE;
-
-      `),
+    destroySQL: ws.unindentWhitespace(``),
     testDependencies,
   };
 }

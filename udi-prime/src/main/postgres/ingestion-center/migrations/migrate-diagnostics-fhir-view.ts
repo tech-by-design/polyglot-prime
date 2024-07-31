@@ -160,18 +160,7 @@ export function generated() {
   return {
     driverGenerateMigrationSQL,
     pumlERD: dvts.pumlERD(ctx).content,
-    destroySQL: ws.unindentWhitespace(`
-
-      DROP SCHEMA IF EXISTS public CASCADE;
-
-      DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
-      DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
-      DROP SCHEMA IF EXISTS ${diagnosticsSchema.sqlNamespace} cascade;
-
-      DROP PROCEDURE IF EXISTS "${migrateSP.sqlNS?.sqlNamespace}"."${migrateSP.routineName}" CASCADE;
-
-
-      `),
+    destroySQL: ws.unindentWhitespace(``),
     testDependencies,
   };
 }

@@ -10,7 +10,7 @@
 
 import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/data-vault/mod.ts";
 import { pgSQLa } from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/pgdcp/deps.ts";
-import * as ddlTable from "./ddl-table.ts";
+import * as ddlTable from "./models-dv.ts";
 // import * as migrate from "../../../../../../../../netspective-labs/sql-aide/pattern/postgres/migrate.ts";
 
 // deconstructed modules provide convenient access to internal imports
