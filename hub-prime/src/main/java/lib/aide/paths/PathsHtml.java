@@ -26,16 +26,21 @@ public class PathsHtml<C, P> {
          * @param anchorAttrs  the attributes for the <a> tag
          */
         public HtmlContent {
-            if (labelHtml == null)
+            if (labelHtml == null) {
                 labelHtml = Optional.empty();
-            if (liAttrs == null)
+            }
+            if (liAttrs == null) {
                 liAttrs = Optional.empty();
-            if (detailsAttrs == null)
+            }
+            if (detailsAttrs == null) {
                 detailsAttrs = Optional.empty();
-            if (summaryAttrs == null)
+            }
+            if (summaryAttrs == null) {
                 summaryAttrs = Optional.empty();
-            if (anchorAttrs == null)
+            }
+            if (anchorAttrs == null) {
                 anchorAttrs = Optional.empty();
+            }
         }
     }
 
@@ -100,7 +105,7 @@ public class PathsHtml<C, P> {
                 : parentNodeHtmlContent.flatMap(func -> Optional.ofNullable(func.apply(node)))
                         .orElse(DEFAULT_HTML_CONTENT);
         final var anchorAttrs = content.anchorAttrs().map(this::mapToAttributes).orElse("");
-        final var label = "<a href=\""+ node.absolutePath() +"\"" + anchorAttrs + ">"
+        final var label = "<a href=\"" + node.absolutePath() + "\"" + anchorAttrs + ">"
                 + content.labelHtml().orElse(isLeaf ? "📄 " + getDefaultLabel(node) : getDefaultLabel(node)) + "</a>";
         final var liAttrs = content.liAttrs().map(this::mapToAttributes).orElse("");
         final var detailsAttrs = content.detailsAttrs().map(this::mapToAttributes).orElse("");
@@ -169,8 +174,8 @@ public class PathsHtml<C, P> {
      * Builder class to configure and create an instance of PathsHtml.
      */
     public static class Builder<C, P> {
-        private Function<Paths<C, P>.Node, HtmlContent> leafNodeHtmlContent = null;
-        private Function<Paths<C, P>.Node, HtmlContent> parentNodeHtmlContent = null;
+        private Function<Paths<C, P>.Node, HtmlContent> leafNodeHtmlContent;
+        private Function<Paths<C, P>.Node, HtmlContent> parentNodeHtmlContent;
         private Optional<Function<Paths<C, P>.Node, String>> htmlFriendlyId = Optional.empty();
         private String lineIndent = "";
         private String tagIndent = "  ";

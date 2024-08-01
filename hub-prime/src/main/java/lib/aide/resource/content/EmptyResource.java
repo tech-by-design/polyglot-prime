@@ -8,7 +8,7 @@ import lib.aide.resource.Nature;
 import lib.aide.resource.TextResource;
 
 public class EmptyResource implements TextResource<EmptyNature> {
-    static public final EmptyResource SINGLETON = new EmptyResource();
+    public static final EmptyResource SINGLETON = new EmptyResource();
 
     private final Supplier<String> src;
     private final EmptyNature nature;
@@ -44,12 +44,5 @@ public class EmptyResource implements TextResource<EmptyNature> {
 
     public Optional<PathSuffixes> suffixes() {
         return suffixes;
-    }
-}
-
-class EmptyNature implements Nature {
-    @Override
-    public String mimeType() {
-        return "text/plain";
     }
 }

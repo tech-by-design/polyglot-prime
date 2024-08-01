@@ -40,7 +40,7 @@ public class VfsResources
     private final List<PathElaboration> pathElaboration = new ArrayList<>();
     private final URI identity;
     private final FileObject rootVfsFO;
-    private boolean populateAbsolutePaths = false;
+    private boolean populateAbsolutePaths;
 
     private final AtomicReference<List<ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>> resources = new AtomicReference<>();
     private final AtomicReference<Paths<String, ResourceProvenance<VfsFileObjectProvenance, Resource<? extends Nature, ?>>>> paths = new AtomicReference<>();
