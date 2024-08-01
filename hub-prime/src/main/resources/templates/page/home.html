@@ -96,19 +96,19 @@
             </dl>
         </div>
 
-        <div class="mt-12 w-full grid grid-cols-4 gap-8" id="dashboard-container">
+        <!-- <div class="mt-12 w-full grid grid-cols-4 gap-8" id="dashboard-container">
             <div th:replace="fragments/interactions :: serverTextStat"></div>
         </div>
         <div class="mt-12 w-full grid grid-cols-2 gap-8">
             <div>
                 <h3 class="text-xl font-bold mb-4">FHIR Submission Summary</h3>
                 <pre class=" bg-white p-4 rounded-lg shadow-md">
-                    <dl id="pie-chart" class=" pie-chart-item  "> 
+                    <dl id="pie-chart" class=" pie-chart-item  flex justify-center items-center pt-12"> 
                     </dl>
                 </pre>
 
             </div>
-        </div>
+        </div> -->
 
         <div class="mt-12 w-full grid grid-cols-2 gap-8">
             <div>
@@ -172,24 +172,42 @@
         <script th:inline="javascript">
             /*<![CDATA[*/
             // Optional: Use JavaScript to fetch data dynamically if needed
-            async function fetchRecentData(days) {
+            async function fetchRecentData() {
                 try {
-                    const response = await fetch(`/dashboard/stat/fhir/most-recent-interactions`);
+                    const response = await fetch(`/dashboard/stat/fhir/fhir-submission-summary`);
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);
                     }
                     const data = await response.text();
                     document.getElementById('dashboard-container').innerHTML = data;
+                    const pieChartData = [
+                        {
+                            count: document.getElementById("totalSubmissionsP") ? document.getElementById("totalSubmissionsP").textContent : 0,
+                            label: "Total Submissions"
+                        },
+                        {
+                            count: document.getElementById("pendingSubmissionsP") ? document.getElementById("pendingSubmissionsP").textContent : 0,
+                            label: "Pending Submissions"
+                        },
+                        {
+                            count: document.getElementById("acceptedSubmissionsP") ? document.getElementById("acceptedSubmissionsP").textContent :0,
+                            label: "Accepted Submissions"
+                        },
+                        {
+                            count: document.getElementById("rejectedSubmissionsP") ? document.getElementById("rejectedSubmissionsP").textContent : 0,
+                            label: "Rejected Submissions"
+                        }
+                    ];
+                    createPieChart(pieChartData);
                 } catch (error) {
                     console.error('Error fetching recent data:', error);
                 }
             }
 
             // Example usage on page load or user interaction
-            window.onload = function () {
-                fetchRecentData(7); // Fetch data for the last 7 days
-                fetchPieChartData();
-            }
+            // window.onload = function () {
+            //     fetchRecentData(); // Fetch data for the last 7 days
+            // }
             function createPieChart(interactions) {
                 const width = 500;  // Further increase width
                 const height = 500;  // Further increase height
@@ -208,7 +226,7 @@
 
                 const svg = d3.select("#pie-chart")
                     .append("svg")
-                    .attr("class", "inline-block align-middle w-[70%] mt-[-45px]")  // Add Tailwind classes for width and height
+                    .attr("class", " align-middle w-[70%] mt-[-45px]")  // Add Tailwind classes for width and height
                     .attr("viewBox", `0 0 ${width + 300} ${height}`)  // Further increase width to make room for the legend
                     .append("g")
                     .attr("transform", `translate(${width / 2},${height / 2})`);
@@ -248,19 +266,6 @@
                     .style('font-family', 'sans-serif')  // Optional: set font family
                     .text(d => d.label)
                     .attr('dy', '0.35em');  // Adjust text vertical alignment
-            }
-
-            function fetchPieChartData() {
-                // Fetch data from server-side using Thymeleaf
-                fetch('/dashboard/most-recent-interactions-new')
-                    .then(response => response.json())
-                    .then(data => {
-                        // Call the pie chart creation function once with fetched data
-                        createPieChart(data);
-                    })
-                    .catch(error => {
-                        console.error('Error fetching interactions data:', error);
-                    });
             }
             /*]]>*/
         </script>
