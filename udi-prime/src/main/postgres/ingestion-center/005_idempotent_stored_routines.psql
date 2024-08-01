@@ -1,0 +1,546 @@
+DROP FUNCTION IF EXISTS techbd_udi_ingress.hub_fhir_bundle_upserted;
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_fhir_bundle_upserted(
+fhir_bundle_key text, 
+created_by text, 
+provenance text, 
+created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP, 
+upsert_behavior boolean DEFAULT true)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  declare  
+	v_error_msg TEXT;
+	v_sqlstate TEXT;
+	v_pg_detail TEXT;
+	v_pg_hint TEXT;
+	v_pg_context TEXT;
+	v_created_at TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+	v_created_by TEXT := COALESCE(created_by, current_user);
+	v_provenance TEXT := COALESCE(provenance, 'unknown');
+	v_exception_id TEXT; 
+	v_hub_fhir_bundle_id TEXT;
+BEGIN          
+	BEGIN
+		v_hub_fhir_bundle_id := gen_random_uuid()::text;
+			
+		INSERT INTO techbd_udi_ingress.hub_fhir_bundle (hub_fhir_bundle_id, key, created_at, created_by, provenance)
+		VALUES (gen_random_uuid()::text, fhir_bundle_key, v_created_at, v_created_by, v_provenance)
+		;       
+	EXCEPTION
+		WHEN unique_violation THEN
+		IF NOT hub_upsert_behavior THEN
+			-- Capture exception details
+			GET STACKED DIAGNOSTICS
+			v_error_msg = MESSAGE_TEXT,
+			v_sqlstate = RETURNED_SQLSTATE,
+			v_pg_detail = PG_EXCEPTION_DETAIL,
+			v_pg_hint = PG_EXCEPTION_HINT,
+			v_pg_context = PG_EXCEPTION_CONTEXT;
+			  
+			-- Call register_issue to log the exception and get the exception ID
+			PERFORM techbd_udi_ingress.register_issue( NULL, fhir_bundle_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance);
+		END IF;
+		v_hub_fhir_bundle_id := NULL;
+	 END;
+     
+    RETURN v_hub_fhir_bundle_id;
+   
+  EXCEPTION
+    WHEN OTHERS THEN
+        -- Capture exception details
+      GET STACKED DIAGNOSTICS
+          v_error_msg = MESSAGE_TEXT,
+          v_sqlstate = RETURNED_SQLSTATE,
+          v_pg_detail = PG_EXCEPTION_DETAIL,
+          v_pg_hint = PG_EXCEPTION_HINT,
+          v_pg_context = PG_EXCEPTION_CONTEXT;
+  
+      -- Log the exception, reusing the previous exception ID if it exists
+    PERFORM techbd_udi_ingress.register_issue(
+    NULL, 
+    fhir_bundle_key, 
+    v_error_msg, 
+    v_sqlstate, 
+    v_pg_detail, 
+    v_pg_hint, 
+    v_pg_context, 
+    v_created_by, 
+    v_provenance);
+    RETURN NULL;     
+  END;  
+END;
+$function$
+;
+/*====================================================================================================*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.hub_uniform_resource_upserted;
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.hub_uniform_resource_upserted(
+uniform_resource_key text, 
+created_by text, 
+provenance text, 
+created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP, 
+upsert_behavior boolean DEFAULT true)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  declare      
+      v_error_msg TEXT;
+      v_sqlstate TEXT;
+      v_pg_detail TEXT;
+      v_pg_hint TEXT;
+      v_pg_context TEXT;
+      v_created_at TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+      v_created_by TEXT := COALESCE(created_by, current_user);
+      v_provenance TEXT := COALESCE(provenance, 'unknown');
+      v_hub_uniform_resource_id TEXT;      
+  BEGIN
+    
+    BEGIN    
+		INSERT INTO techbd_udi_ingress.hub_uniform_resource (hub_uniform_resource_id,
+		KEY,
+		created_at,
+		created_by,
+		provenance)
+		VALUES (gen_random_uuid()::TEXT,
+		uniform_resource_key,
+		v_created_at,
+		v_created_by,
+		v_provenance) RETURNING hub_uniform_resource_id INTO v_hub_uniform_resource_id
+	  	;       
+	EXCEPTION
+		WHEN unique_violation THEN
+          IF NOT hub_upsert_behavior THEN
+          -- Capture exception details
+            GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;	  
+            -- Call register_issue to log the exception and get the exception ID
+      		PERFORM techbd_udi_ingress.register_issue( NULL, interaction_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance);
+  		END IF;
+		v_hub_uniform_resource_id := NULL;
+	END;
+     
+    RETURN v_hub_uniform_resource_id;
+   
+  EXCEPTION
+    WHEN OTHERS THEN
+	-- Capture exception details
+	GET STACKED DIAGNOSTICS
+	v_error_msg = MESSAGE_TEXT,
+	v_sqlstate = RETURNED_SQLSTATE,
+	v_pg_detail = PG_EXCEPTION_DETAIL,
+	v_pg_hint = PG_EXCEPTION_HINT,
+	v_pg_context = PG_EXCEPTION_CONTEXT;
+  
+	-- Log the exception, reusing the previous exception ID if it exists
+	PERFORM techbd_udi_ingress.register_issue(
+	NULL, 
+	uniform_resource_key, 
+	v_error_msg, 
+	v_sqlstate, 
+	v_pg_detail, 
+	v_pg_hint, 
+	v_pg_context, 
+	v_created_by, 
+	v_provenance);
+    RETURN NULL;     
+  END;
+END;
+$function$
+;
+/*====================================================================================================*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.fhir_bundle_resource_observation_upserted;
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.fhir_bundle_resource_observation_upserted(hub_fhir_bundle_id text, tenant_id text, bundle_id text, resource_content jsonb, elaboration jsonb DEFAULT NULL::jsonb, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+	v_error_msg 	TEXT;
+    v_sqlstate 		TEXT;
+    v_pg_detail 	TEXT;
+    v_pg_hint 		TEXT;
+    v_pg_context 	TEXT;
+    v_created_at	TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+    v_created_by 	TEXT 		:= COALESCE(created_by, current_user);
+    v_provenance 	TEXT 		:= COALESCE(provenance, 'unknown');
+    v_exception_id 	TEXT;
+   	v_return_value 	TEXT;
+   	v_key 			TEXT;
+   /*=============================================================================================*/
+   	v_id 						TEXT;
+   	v_meta						JSONB;
+    v_status 					TEXT;
+    v_category 					JSONB;
+    v_code 						JSONB;
+    v_subject 					TEXT;
+    v_effective_date_time 		TIMESTAMPTZ;
+    v_issued 					TIMESTAMPTZ;
+    v_value_codeable_concept 	JSONB;
+    v_interpretation 			JSONB;
+BEGIN	
+	/*Verify whether the resource type is Observation*/
+	IF (resource_content IS NOT NULL AND resource_content->>'resourceType' <> 'Observation') THEN
+    	RETURN NULL;
+   	END IF;
+   
+   	SELECT hub_bundle."key" INTO v_key
+   	FROM techbd_udi_ingress.sat_fhir_bundle_info  	sat_bundle
+   	INNER JOIN techbd_udi_ingress.hub_fhir_bundle	hub_bundle
+   	ON sat_bundle.hub_fhir_bundle_id = hub_bundle.hub_fhir_bundle_id
+   	WHERE sat_bundle.hub_fhir_bundle_id = sat_fhir_bundle_resource_patient_upserted.hub_fhir_bundle_id;
+      
+   	IF(v_key IS NULL) THEN
+   		RETURN NULL;
+   	END IF;
+   
+   	--Extract and assign values to variables
+    v_id := resource->'id'::JSONB;
+    v_meta := resource->'meta'::JSONB;
+    v_status := resource->>'status';
+    v_category := resource->'category'::JSONB;
+    v_code := resource->'code'::JSONB;
+   	v_subject := (resource->'subject'->>'reference')::TEXT;   
+    v_effective_date_time := (resource->>'effectiveDateTime')::TIMESTAMPTZ;
+    v_issued := (resource->>'issued')::TIMESTAMPTZ;
+    v_value_codeable_concept := resource->'valueCodeableConcept'::JSONB;
+    v_interpretation := resource->'interpretation'::JSONB;
+	
+	/*Extract patient details from the paremeter resource_content*/	
+	INSERT INTO
+	techbd_udi_ingress.sat_fhir_bundle_resource_observation(
+	sat_fhir_bundle_resource_observation_id,
+	hub_fhir_bundle_id,
+	id,
+	meta,
+	status,
+	category,
+	code,
+	subject,
+	effective_date_time,
+	issued,
+	value_codeable_concept,
+	interpretation,
+	"content",
+	elaboration,
+	created_at,
+	created_by,
+	provenance)
+	VALUES(
+	gen_random_uuid()::TEXT,
+	sat_fhir_bundle_resource_patient_upserted.hub_fhir_bundle_id,		
+	v_id,
+	v_meta,
+	v_status,
+	v_category,
+	v_category,
+	v_subject,
+	v_effective_date_time,
+	v_interpretation,	
+	sat_fhir_bundle_resource_patient_upserted.resource_content,
+	sat_fhir_bundle_resource_patient_upserted.elaboration,
+	v_created_at,
+	v_created_by,
+	v_provenance) RETURNING sat_fhir_bundle_resource_patient_id INTO v_return_value;
+	
+	RETURN v_return_value;
+	EXCEPTION
+	    WHEN OTHERS THEN
+	-- Capture exception details
+	GET STACKED DIAGNOSTICS
+	v_error_msg 	= MESSAGE_TEXT,
+	v_sqlstate 		= RETURNED_SQLSTATE,
+	v_pg_detail 	= PG_EXCEPTION_DETAIL,
+	v_pg_hint 		= PG_EXCEPTION_HINT,
+	v_pg_context 	= PG_EXCEPTION_CONTEXT;
+	
+	-- Log the exception
+	PERFORM techbd_udi_ingress.register_issue(
+	NULL,
+	interaction_key,
+	v_error_msg,
+	v_sqlstate,
+	v_pg_detail,
+	v_pg_hint,
+	v_pg_context,
+	v_created_by,
+	v_provenance);
+
+	RETURN NULL;
+END;
+$function$
+;
+
+/*====================================================================================================*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.fhir_bundle_resource_patient_upserted;
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.fhir_bundle_resource_patient_upserted(hub_fhir_bundle_id text, tenant_id text, bundle_id text, resource_content jsonb, elaboration jsonb DEFAULT NULL::jsonb, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+	v_error_msg 	TEXT;
+    v_sqlstate 		TEXT;
+    v_pg_detail 	TEXT;
+    v_pg_hint 		TEXT;
+    v_pg_context 	TEXT;
+    v_created_at	TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+    v_created_by 	TEXT := COALESCE(created_by, current_user);
+    v_provenance 	TEXT := COALESCE(provenance, 'unknown');
+    v_exception_id 	TEXT;
+   	v_return_value 	TEXT;
+   	v_key 			TEXT;
+   /*=============================================================================================*/
+   	v_id 						TEXT;
+    v_mrn 						TEXT;
+    v_name 						TEXT;
+    v_gender 					TEXT;
+    v_birth_date 				DATE;
+    v_address 					JSONB;
+    v_meta 						JSONB;
+    v_language 					TEXT;
+    v_extension 				JSONB;
+    v_identifier 				JSONB;
+    v_telecom 					JSONB;
+    v_deceased_boolean 			BOOLEAN;
+    v_deceased_date_time		TIMESTAMPTZ;
+    v_marital_status 			TEXT;
+    v_multiple_birth_boolean	BOOLEAN;
+    v_multiple_birth_integer 	INTEGER;
+    v_contact 					TEXT;
+    v_communication 			JSONB;
+    v_general_practitioner 		TEXT;
+BEGIN	
+	/*Verify whether the resource type is patient*/
+	IF (resource_content IS NOT NULL OR  resource_content->>'resourceType' <> 'Patient') THEN
+    	RETURN NULL;
+   	END IF;
+   
+   	SELECT hub_bundle."key" INTO v_key
+   	FROM techbd_udi_ingress.sat_fhir_bundle_info  	sat_bundle
+   	INNER JOIN techbd_udi_ingress.hub_fhir_bundle	hub_bundle
+   	ON sat_bundle.hub_fhir_bundle_id = hub_bundle.hub_fhir_bundle_id
+   	WHERE sat_bundle.hub_fhir_bundle_id = sat_fhir_bundle_resource_patient_upserted.hub_fhir_bundle_id;
+      
+   	IF(v_key IS NULL) THEN
+   		RETURN NULL;
+   	END IF;
+   
+   	--Extract and assign values to variables
+    v_id 						:= resource->>'id';
+    v_mrn 						:= (resource->'identifier'->0->>'value')::TEXT;
+    v_name 						:= (resource->'name'->0->>'text')::TEXT;
+    v_gender 					:= resource->>'gender';
+    v_birth_date 				:= (resource->>'birthDate')::DATE;
+    v_address 					:= resource->'address';
+    v_meta 						:= resource->'meta';
+    v_language 					:= resource->>'language';
+    v_extension 				:= resource->'extension';
+    v_identifier 				:= resource->'identifier';
+    v_telecom 					:= resource->'telecom';
+    v_deceased_boolean 			:= NULL;
+    v_deceased_date_time 		:= NULL;
+    v_marital_status 			:= NULL;
+    v_multiple_birth_boolean 	:= NULL;
+    v_multiple_birth_integer	:= NULL;
+    v_contact 					:= NULL;
+    v_communication 			:= resource->'communication';
+    v_general_practitioner 		:= NULL;
+	
+	/*Extract patient details from the paremeter resource_content*/	
+	INSERT INTO
+	techbd_udi_ingress.sat_fhir_bundle_resource_patient(
+	sat_fhir_bundle_resource_patient_id,
+	hub_fhir_bundle_id,
+	id,
+	mrn,
+	name,
+	gender,
+	birth_date,
+	address,
+	meta,
+	LANGUAGE,
+	EXTENSION,
+	identifier,
+	telecom,
+	deceased_boolean,
+	deceased_date_time,
+	marital_status,
+	multiple_birth_boolean,
+	multiple_birth_integer,
+	contact,
+	communication,
+	general_practitioner,
+	CONTENT,
+	elaboration,
+	created_at,
+	created_by,
+	provenance)
+	VALUES(
+	gen_random_uuid()::TEXT,
+	sat_fhir_bundle_resource_patient_upserted.hub_fhir_bundle_id,		
+	v_id,
+	v_mrn,
+	v_gender,
+	v_birth_date,
+	v_address,
+	v_meta,
+	v_language,
+	v_extension,
+	v_identifier,
+	v_telecom,
+	v_deceased_boolean,
+	v_deceased_date_time, 
+	v_marital_status,
+	v_multiple_birth_boolean,
+	v_multiple_birth_integer,
+	v_contact,
+	v_communication,
+	v_general_practitioner,
+	sat_fhir_bundle_resource_patient_upserted.resource_content,
+	sat_fhir_bundle_resource_patient_upserted.elaboration,
+	v_created_at,
+	v_created_by,
+	v_provenance) RETURNING sat_fhir_bundle_resource_patient_id INTO v_return_value;
+	
+	RETURN v_return_value;
+	EXCEPTION
+	    WHEN OTHERS THEN
+	-- Capture exception details
+	GET STACKED DIAGNOSTICS
+	v_error_msg 	= MESSAGE_TEXT,
+	v_sqlstate 		= RETURNED_SQLSTATE,
+	v_pg_detail 	= PG_EXCEPTION_DETAIL,
+	v_pg_hint 		= PG_EXCEPTION_HINT,
+	v_pg_context 	= PG_EXCEPTION_CONTEXT;
+	
+	-- Log the exception
+	PERFORM techbd_udi_ingress.register_issue(
+	NULL,
+	v_key,
+	v_error_msg,
+	v_sqlstate,
+	v_pg_detail,
+	v_pg_hint,
+	v_pg_context,
+	v_created_by,
+	v_provenance);
+
+	RETURN NULL;
+END;
+$function$
+;
+/*====================================================================================================*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.fhir_bundle_upserted;
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.fhir_bundle_upserted(tenant_id text, bundle_id text, key text, type text, content jsonb, nature jsonb DEFAULT NULL::jsonb, elaboration jsonb DEFAULT NULL::jsonb, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+	v_error_msg TEXT;
+    v_sqlstate TEXT;
+    v_pg_detail TEXT;
+    v_pg_hint TEXT;
+    v_pg_context TEXT;
+    v_created_at TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+    v_created_by TEXT := COALESCE(created_by, current_user);
+    v_provenance TEXT := COALESCE(provenance, 'unknown');
+    v_exception_id TEXT;
+   	v_hub_fhir_bundle_id TEXT;
+BEGIN	
+	
+	/*Verify bundle or not*/
+	IF (UPPER(sat_fhir_bundle_upserted."key") <>  "/BUNDLE") THEN
+    	RETURN NULL;
+   	END IF;
+	
+	BEGIN	
+		INSERT INTO techbd_udi_ingress.hub_fhir_bundle(
+		hub_fhir_bundle_id, 
+		key, 
+		created_at, 
+		created_by, 
+		provenance)
+        VALUES (gen_random_uuid()::text, 
+       			sat_fhir_bundle_upserted."key", 
+       			v_created_at, 
+       			v_created_by, 
+       			v_provenance) RETURNING hub_fhir_bundle_id INTO v_hub_fhir_bundle_id;		       
+    EXCEPTION
+    	WHEN unique_violation THEN
+        IF NOT hub_upsert_behavior THEN
+            -- Capture exception details
+            GET STACKED DIAGNOSTICS
+            v_error_msg 	= MESSAGE_TEXT,
+            v_sqlstate 		= RETURNED_SQLSTATE,
+            v_pg_detail 	= PG_EXCEPTION_DETAIL,
+            v_pg_hint 		= PG_EXCEPTION_HINT,
+            v_pg_context 	= PG_EXCEPTION_CONTEXT;
+
+            -- Call register_issue to log the exception and get the exception ID
+			v_exception_id := techbd_udi_ingress.register_issue(NULL,
+			sat_fhir_bundle_upserted."key",
+			v_error_msg,
+			v_sqlstate,
+			v_pg_detail,
+			v_pg_hint,
+			v_pg_context,
+			v_created_by,
+			v_provenance);
+        END IF;
+       	RETURN NULL;
+    END;
+					   	
+   	INSERT INTO techbd_udi_ingress.sat_fhir_bundle_info(
+	sat_fhir_bundle_info_id,
+	hub_fhir_bundle_id,
+	tenant_id,
+	bundle_id,
+	nature,
+	"type",
+	"content",
+	elaboration,
+	created_at,
+	created_by,
+	provenance) 
+	values(
+	gen_random_uuid()::text,
+	v_hub_fhir_bundle_id,		
+	sat_fhir_bundle_upserted.tenant_id,
+	sat_fhir_bundle_upserted.bundle_id,
+	sat_fhir_bundle_upserted.nature,		
+	sat_fhir_bundle_upserted."type",
+	sat_fhir_bundle_upserted."content",
+	sat_fhir_bundle_upserted.elaboration,
+	v_created_at,
+	v_created_by,
+	v_provenance
+	);
+	RETURN v_hub_fhir_bundle_id;
+EXCEPTION
+    WHEN OTHERS THEN
+    -- Capture exception details
+    GET STACKED DIAGNOSTICS
+    v_error_msg 	= MESSAGE_TEXT,
+    v_sqlstate 		= RETURNED_SQLSTATE,
+    v_pg_detail 	= PG_EXCEPTION_DETAIL,
+    v_pg_hint 		= PG_EXCEPTION_HINT,
+    v_pg_context 	= PG_EXCEPTION_CONTEXT;
+
+    -- Log the exception, reusing the previous exception ID if it exists
+    PERFORM techbd_udi_ingress.register_issue(COALESCE(v_exception_id,NULL),
+	sat_fhir_bundle_upserted."key",
+	v_error_msg,
+	v_sqlstate,
+	v_pg_detail,
+	v_pg_hint,
+	v_pg_context,
+	v_created_by,
+	v_provenance);
+   v_hub_fhir_bundle_id := NULL;
+	RETURN NULL;
+END;
+$function$
+;
