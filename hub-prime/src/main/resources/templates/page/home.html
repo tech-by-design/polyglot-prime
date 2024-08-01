@@ -4,6 +4,7 @@
 
 <head>
     <script src='https://unpkg.com/htmx.org/dist/htmx.min.js'></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <title>Welcome</title>
     <style>
         .hanging-indent {
@@ -95,6 +96,20 @@
             </dl>
         </div>
 
+        <div class="mt-12 w-full grid grid-cols-4 gap-8" id="dashboard-container">
+            <div th:replace="fragments/interactions :: serverTextStat"></div>
+        </div>
+        <div class="mt-12 w-full grid grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-xl font-bold mb-4">FHIR Submission Summary</h3>
+                <pre class=" bg-white p-4 rounded-lg shadow-md">
+                    <dl id="pie-chart" class=" pie-chart-item  "> 
+                    </dl>
+                </pre>
+
+            </div>
+        </div>
+
         <div class="mt-12 w-full grid grid-cols-2 gap-8">
             <div>
                 <h3 class="text-xl font-bold mb-4">Synthetic Testing (FHIR)</h3>
@@ -152,7 +167,105 @@
                 </pre>
             </div>
         </div>
+
+
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            // Optional: Use JavaScript to fetch data dynamically if needed
+            async function fetchRecentData(days) {
+                try {
+                    const response = await fetch(`/dashboard/stat/fhir/most-recent-interactions`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    const data = await response.text();
+                    document.getElementById('dashboard-container').innerHTML = data;
+                } catch (error) {
+                    console.error('Error fetching recent data:', error);
+                }
+            }
+
+            // Example usage on page load or user interaction
+            window.onload = function () {
+                fetchRecentData(7); // Fetch data for the last 7 days
+                fetchPieChartData();
+            }
+            function createPieChart(interactions) {
+                const width = 500;  // Further increase width
+                const height = 500;  // Further increase height
+                const radius = Math.min(width, height) / 2;
+
+                const color = d3.scaleOrdinal()
+                    .domain(interactions.map(d => d.label))
+                    .range(d3.schemeCategory10);
+
+                const pie = d3.pie()
+                    .value(d => d.count);
+
+                const arc = d3.arc()
+                    .innerRadius(0)
+                    .outerRadius(radius);
+
+                const svg = d3.select("#pie-chart")
+                    .append("svg")
+                    .attr("class", "inline-block align-middle w-[70%] mt-[-45px]")  // Add Tailwind classes for width and height
+                    .attr("viewBox", `0 0 ${width + 300} ${height}`)  // Further increase width to make room for the legend
+                    .append("g")
+                    .attr("transform", `translate(${width / 2},${height / 2})`);
+
+                svg.selectAll("path")
+                    .data(pie(interactions))
+                    .enter().append("path")
+                    .attr("fill", d => color(d.data.label))
+                    .attr("d", arc)
+                    .append("title")
+                    .text(d => `${d.data.label}: ${d.data.count}`);
+
+                // Add legend
+                const legend = svg.append("g")
+                    .attr("transform", `translate(${radius + 50}, -${height / 2})`);  // Move legend further to the right
+
+                const legendRectSize = 20;  // Increase legend rectangle size
+                const legendSpacing = 8;    // Increase legend spacing
+
+                const legendItems = legend.selectAll('.legend-item')
+                    .data(interactions)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'legend-item')
+                    .attr('transform', (d, i) => `translate(0, ${i * (legendRectSize + legendSpacing)})`);
+
+                legendItems.append('rect')
+                    .attr('width', legendRectSize)
+                    .attr('height', legendRectSize)
+                    .attr('fill', d => color(d.label))
+                    .attr('stroke', d => color(d.label));
+
+                legendItems.append('text')
+                    .attr('x', legendRectSize + legendSpacing)
+                    .attr('y', legendRectSize - legendSpacing)
+                    .style('font-size', '14px')  // Increase font size
+                    .style('font-family', 'sans-serif')  // Optional: set font family
+                    .text(d => d.label)
+                    .attr('dy', '0.35em');  // Adjust text vertical alignment
+            }
+
+            function fetchPieChartData() {
+                // Fetch data from server-side using Thymeleaf
+                fetch('/dashboard/most-recent-interactions-new')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Call the pie chart creation function once with fetched data
+                        createPieChart(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching interactions data:', error);
+                    });
+            }
+            /*]]>*/
+        </script>
     </div>
+
 </body>
 
 </html>

@@ -5,6 +5,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List; // Ensure this import is present
 import java.util.Map;
 import org.jooq.impl.DSL;
@@ -124,7 +125,7 @@ public class PrimeController {
 
             String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
 
-            String formattedTime = getrecentInteractioString(mre);            
+            String formattedTime = getrecentInteractioString(mre);
 
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
@@ -202,17 +203,124 @@ public class PrimeController {
         return formattedTime;
 
     }
-  
+
     private String convertToEST(String inputTime) {
         // Parse the input time string to a ZonedDateTime
         ZonedDateTime inputDateTime = ZonedDateTime.parse(inputTime, DateTimeFormatter.ISO_ZONED_DATE_TIME);
-    
+
         // Convert the ZonedDateTime to the EST time zone
         ZonedDateTime estDateTime = inputDateTime.withZoneSameInstant(ZoneId.of("America/New_York"));
-    
+
         // Format the ZonedDateTime to a string in the desired format
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return estDateTime.format(formatter);
+    }
+
+    @GetMapping(value = "/dashboard/stat/fhir/most-recent-interactions", produces = "text/html")
+    public String fetchRecentFHIRInteractions(Model model) {
+        String schemaName = "techbd_udi_ingress";
+        String viewName = "fhir_submission_summary";
+        try {
+            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                    viewName);
+
+            List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                    .fetch()
+                    .intoMaps();
+
+            if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
+                Map<String, Object> data = fhirSubmission.get(0);
+                model.addAttribute("totalSubmissions", data.getOrDefault("total_submissions", "0").toString());
+                model.addAttribute("pendingSubmissions", data.getOrDefault("pending_submissions", "0").toString());
+                model.addAttribute("acceptedSubmissions", data.getOrDefault("accepted_submissions", "0").toString());
+                model.addAttribute("rejectedSubmissions", data.getOrDefault("rejected_submissions", "0").toString());
+            } else {
+                model.addAttribute("totalSubmissions", "0");
+                model.addAttribute("pendingSubmissions", "0");
+                model.addAttribute("acceptedSubmissions", "0");
+                model.addAttribute("rejectedSubmissions", "0");
+            }
+        } catch (Exception e) {
+            LOG.error("Error fetching FHIR interactions", e);
+            model.addAttribute("totalSubmissions", "0");
+            model.addAttribute("pendingSubmissions", "0");
+            model.addAttribute("acceptedSubmissions", "0");
+            model.addAttribute("rejectedSubmissions", "0");
+        }
+
+        return "fragments/interactions :: serverTextStat";
+    }
+
+    @GetMapping("/dashboard/most-recent-interactions-new")
+    public ResponseEntity<List<InteractionData>> getMostRecentInteractions() {
+
+        // Define schema and view name
+        String schemaName = "techbd_udi_ingress";
+        String viewName = "fhir_submission_summary";
+
+        // Fetch the typable table
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
+
+        // Query the view and fetch the results
+        List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                .fetch()
+                .intoMaps();
+
+        // Initialize list to hold the results
+        List<InteractionData> interactions = new ArrayList<>();
+
+        // Check if data is available
+        if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
+            Map<String, Object> data = fhirSubmission.get(0);
+
+            // Populate the list with data
+            interactions.add(new InteractionData("Total Submissions",
+                    Integer.parseInt(data.getOrDefault("total_submissions", "0").toString())));
+            interactions.add(new InteractionData("Pending Submissions",
+                    Integer.parseInt(data.getOrDefault("pending_submissions", "0").toString())));
+            interactions.add(new InteractionData("Accepted Submissions",
+                    Integer.parseInt(data.getOrDefault("accepted_submissions", "0").toString())));
+            interactions.add(new InteractionData("Rejected Submissions",
+                    Integer.parseInt(data.getOrDefault("rejected_submissions", "0").toString())));
+        } else {
+            // Default values if no data found
+            interactions.add(new InteractionData("Total Submissions", 0));
+            interactions.add(new InteractionData("Pending Submissions", 0));
+            interactions.add(new InteractionData("Accepted Submissions", 0));
+            interactions.add(new InteractionData("Rejected Submissions", 0));
+        }
+        // Return the data with HTTP status OK
+        return ResponseEntity.ok().body(interactions);
+
+    }
+
+    // Example class representing interaction data
+    public class InteractionData {
+        private String label;
+        private int count;
+
+        // Constructor
+        public InteractionData(String label, int count) {
+            this.label = label;
+            this.count = count;
+        }
+
+        // Getters and Setters
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(String label) {
+            this.label = label;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
     }
 
 }
