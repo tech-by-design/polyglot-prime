@@ -862,3 +862,58 @@ WHERE rn = 1;
     $function$
     ;
 
+/**
+ * View to summarize FHIR submission interactions from the database.
+ * This view provides an aggregated overview of HTTP request interactions based on
+ * different types of nature values recorded in the `sat_interaction_http_request` table.
+ * The view calculates the following metrics over the past 7 days:
+ *
+ * 1. `total_submissions`: Counts submissions where the nature is 'Original FHIR Payload'.
+ * 2. `accepted_submissions`: Counts submissions where the nature is 'Forwarded HTTP Response'.
+ * 3. `rejected_submissions`: Counts submissions where the nature is 'Forwarded HTTP Response Error'.
+ * 4. `pending_submissions`: Counts submissions where the nature is neither 'Forwarded HTTP Response',
+ *    'Forwarded HTTP Response Error', nor 'org.techbd.service.http.Interactions$RequestResponseEncountered'.
+ *
+ * This view aggregates data for all interactions related to FHIR submissions based on the following:
+ * - Interaction metadata including the nature of HTTP requests.
+ * - Filtering interactions that occurred in the last 7 days.
+ * - Using a specific key value (`/Bundle`) to filter interactions.
+ *
+ * The view helps in monitoring and analyzing FHIR interaction statuses, providing insight into:
+ * - Total count of submissions made in the specified period.
+ * - Number of submissions that were accepted or rejected.
+ * - Submissions that are pending or still not categorized as accepted or rejected.
+ *
+ * Usage:
+ * SELECT * FROM techbd_udi_ingress.fhir_submission_summary;
+ *
+ * @return TABLE - A table summarizing total, accepted, rejected, and pending FHIR submissions
+ *         for interactions within the past 7 days.
+ */
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_submission_summary CASCADE;
+
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_submission_summary AS 
+   WITH submission_counts AS (
+    SELECT  
+        --NONE    -> ACCEPT_FHIR_BUNDLE
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Original FHIR Payload' THEN 1 END) AS total_submissions,
+        --FORWARD-> COMPLETE
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS accepted_submissions,
+        --FORWARD-> FAIL
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response Error' THEN 1 END) AS rejected_submissions
+    FROM 
+        techbd_udi_ingress.hub_interaction AS hintr
+        INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
+        ON hintr.hub_interaction_id = sihr.hub_interaction_id
+    WHERE 
+        hintr."key" = '/Bundle'
+        AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
+)
+SELECT  
+    total_submissions,
+    accepted_submissions,
+    rejected_submissions,
+    total_submissions - accepted_submissions - rejected_submissions AS pending_submissions
+FROM 
+    submission_counts;
