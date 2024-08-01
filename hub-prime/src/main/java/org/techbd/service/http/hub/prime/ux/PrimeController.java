@@ -24,6 +24,8 @@ import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
 
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -216,111 +218,35 @@ public class PrimeController {
         return estDateTime.format(formatter);
     }
 
-    @GetMapping(value = "/dashboard/stat/fhir/most-recent-interactions", produces = "text/html")
-    public String fetchRecentFHIRInteractions(Model model) {
+    @GetMapping(value = "/dashboard/stat/fhir/fhir-submission-summary", produces = "text/html")
+    public String fetchFHIRSubmissionSummary(Model model) {
         String schemaName = "techbd_udi_ingress";
         String viewName = "fhir_submission_summary";
+        final String DEFAULT_VALUE="0";
+        String totalSubmissions =DEFAULT_VALUE;
+        String pendingSubmissions =DEFAULT_VALUE;
+        String acceptedSubmissions=DEFAULT_VALUE;
+        String rejectedSubmissions =DEFAULT_VALUE;
         try {
-            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                    viewName);
-
+            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
             List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                    .fetch()
-                    .intoMaps();
-
-            if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
+                .fetch()
+                .intoMaps();     
+            if (CollectionUtils.isNotEmpty(fhirSubmission)) {
                 Map<String, Object> data = fhirSubmission.get(0);
-                model.addAttribute("totalSubmissions", data.getOrDefault("total_submissions", "0").toString());
-                model.addAttribute("pendingSubmissions", data.getOrDefault("pending_submissions", "0").toString());
-                model.addAttribute("acceptedSubmissions", data.getOrDefault("accepted_submissions", "0").toString());
-                model.addAttribute("rejectedSubmissions", data.getOrDefault("rejected_submissions", "0").toString());
-            } else {
-                model.addAttribute("totalSubmissions", "0");
-                model.addAttribute("pendingSubmissions", "0");
-                model.addAttribute("acceptedSubmissions", "0");
-                model.addAttribute("rejectedSubmissions", "0");
-            }
+                totalSubmissions =data.getOrDefault("total_submissions", DEFAULT_VALUE).toString();
+                pendingSubmissions = data.getOrDefault("pending_submissions", DEFAULT_VALUE).toString();
+                acceptedSubmissions = data.getOrDefault("accepted_submissions", DEFAULT_VALUE).toString();
+                rejectedSubmissions = data.getOrDefault("rejected_submissions", DEFAULT_VALUE).toString();
+            } 
         } catch (Exception e) {
             LOG.error("Error fetching FHIR interactions", e);
-            model.addAttribute("totalSubmissions", "0");
-            model.addAttribute("pendingSubmissions", "0");
-            model.addAttribute("acceptedSubmissions", "0");
-            model.addAttribute("rejectedSubmissions", "0");
         }
-
+        model.addAttribute("totalSubmissions", totalSubmissions);
+        model.addAttribute("pendingSubmissions", pendingSubmissions);
+        model.addAttribute("acceptedSubmissions", acceptedSubmissions);
+        model.addAttribute("rejectedSubmissions", rejectedSubmissions);
         return "fragments/interactions :: serverTextStat";
-    }
-
-    @GetMapping("/dashboard/most-recent-interactions-new")
-    public ResponseEntity<List<InteractionData>> getMostRecentInteractions() {
-
-        // Define schema and view name
-        String schemaName = "techbd_udi_ingress";
-        String viewName = "fhir_submission_summary";
-
-        // Fetch the typable table
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
-
-        // Query the view and fetch the results
-        List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .fetch()
-                .intoMaps();
-
-        // Initialize list to hold the results
-        List<InteractionData> interactions = new ArrayList<>();
-
-        // Check if data is available
-        if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
-            Map<String, Object> data = fhirSubmission.get(0);
-
-            // Populate the list with data
-            interactions.add(new InteractionData("Total Submissions",
-                    Integer.parseInt(data.getOrDefault("total_submissions", "0").toString())));
-            interactions.add(new InteractionData("Pending Submissions",
-                    Integer.parseInt(data.getOrDefault("pending_submissions", "0").toString())));
-            interactions.add(new InteractionData("Accepted Submissions",
-                    Integer.parseInt(data.getOrDefault("accepted_submissions", "0").toString())));
-            interactions.add(new InteractionData("Rejected Submissions",
-                    Integer.parseInt(data.getOrDefault("rejected_submissions", "0").toString())));
-        } else {
-            // Default values if no data found
-            interactions.add(new InteractionData("Total Submissions", 0));
-            interactions.add(new InteractionData("Pending Submissions", 0));
-            interactions.add(new InteractionData("Accepted Submissions", 0));
-            interactions.add(new InteractionData("Rejected Submissions", 0));
-        }
-        // Return the data with HTTP status OK
-        return ResponseEntity.ok().body(interactions);
-
-    }
-
-    // Example class representing interaction data
-    public class InteractionData {
-        private String label;
-        private int count;
-
-        // Constructor
-        public InteractionData(String label, int count) {
-            this.label = label;
-            this.count = count;
-        }
-
-        // Getters and Setters
-        public String getLabel() {
-            return label;
-        }
-
-        public void setLabel(String label) {
-            this.label = label;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public void setCount(int count) {
-            this.count = count;
-        }
     }
 
 }
