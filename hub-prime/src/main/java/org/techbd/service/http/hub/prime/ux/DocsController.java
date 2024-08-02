@@ -155,7 +155,7 @@ public class DocsController {
             final var streamFR = (ForwardableResource<?, InputStream>) fr;
             try {
                 final StreamingResponseBody responseBody = outputStream -> {
-                    try (final var inputStream = streamFR.content()) {
+                    try (var inputStream = streamFR.content()) {
                         var buffer = new byte[8192];
                         int bytesRead;
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
@@ -233,5 +233,5 @@ public class DocsController {
     public String islm(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/islm", model, request);
     }
-    
+
 }

@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import lib.aide.paths.PathSuffixes;
-import lib.aide.resource.Nature;
 import lib.aide.resource.TextResource;
 
 public class EmptyResource implements TextResource<EmptyNature> {

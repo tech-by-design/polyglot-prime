@@ -421,7 +421,7 @@ public class ArtifactStore {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> args = (Map<String, Object>) parsedJson;
                     return always != null
-                            ? new AggregatePersistence((List.of(createStrategy(args, strategyJson), always)))
+                            ? new AggregatePersistence(List.of(createStrategy(args, strategyJson), always))
                             : createStrategy(args, strategyJson);
                 } else if (parsedJson instanceof List) {
                     @SuppressWarnings("unchecked")

@@ -182,8 +182,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                 tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 rihr.setInteractionKey(requestURI);
-                rihr.setPayload((Configuration.objectMapper
-                        .readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance))));
+                rihr.setPayload(Configuration.objectMapper
+                        .readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
                 rihr.setCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
@@ -275,9 +275,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
             private static RequestMatcher createRequestMatcher(final List<Object> regexAndMethods, boolean strict) {
                 final var matchers = regexAndMethods == null ? List.of()
-                        : (regexAndMethods.stream()
+                        : regexAndMethods.stream()
                                 .map(item -> createRegexRequestMatcher(item, null))
-                                .collect(Collectors.toList()));
+                                .collect(Collectors.toList());
                 final var matchersArg = matchers.toArray(new RequestMatcher[0]);
                 return strict ? RequestMatchers.allOf(matchersArg) : RequestMatchers.anyOf(matchersArg);
             }
@@ -285,10 +285,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
             private static RequestMatcher createPersistReqPayloadMatcher(final List<Object> regexAndMethods,
                     boolean strict) {
                 final var matchers = regexAndMethods == null ? List.of()
-                        : (regexAndMethods.stream()
+                        : regexAndMethods.stream()
                                 .map(item -> createRegexRequestMatcher(item, "persistReqPayload"))
                                 .filter(matcher -> matcher != null)
-                                .collect(Collectors.toList()));
+                                .collect(Collectors.toList());
                 final var matchersArg = matchers.toArray(new RequestMatcher[0]);
                 return strict ? RequestMatchers.allOf(matchersArg) : RequestMatchers.anyOf(matchersArg);
             }
@@ -296,10 +296,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
             private static RequestMatcher createPersistRespPayloadMatcher(final List<Object> regexAndMethods,
                     boolean strict) {
                 final var matchers = regexAndMethods == null ? List.of()
-                        : (regexAndMethods.stream()
+                        : regexAndMethods.stream()
                                 .map(item -> createRegexRequestMatcher(item, "persistRespPayload"))
                                 .filter(matcher -> matcher != null)
-                                .collect(Collectors.toList()));
+                                .collect(Collectors.toList());
                 final var matchersArg = matchers.toArray(new RequestMatcher[0]);
                 return strict ? RequestMatchers.allOf(matchersArg) : RequestMatchers.anyOf(matchersArg);
             }
