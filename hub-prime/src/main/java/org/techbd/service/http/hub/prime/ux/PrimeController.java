@@ -5,8 +5,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List; // Ensure this import is present
+import java.util.List;
 import java.util.Map;
 import org.jooq.impl.DSL;
 import org.ocpsoft.prettytime.PrettyTime;
@@ -222,23 +221,24 @@ public class PrimeController {
     public String fetchFHIRSubmissionSummary(Model model) {
         String schemaName = "techbd_udi_ingress";
         String viewName = "fhir_submission_summary";
-        final String DEFAULT_VALUE="0";
-        String totalSubmissions =DEFAULT_VALUE;
-        String pendingSubmissions =DEFAULT_VALUE;
-        String acceptedSubmissions=DEFAULT_VALUE;
-        String rejectedSubmissions =DEFAULT_VALUE;
+        final String DEFAULT_VALUE = "0";
+        String totalSubmissions = DEFAULT_VALUE;
+        String pendingSubmissions = DEFAULT_VALUE;
+        String acceptedSubmissions = DEFAULT_VALUE;
+        String rejectedSubmissions = DEFAULT_VALUE;
         try {
-            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
+            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                    viewName);
             List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .fetch()
-                .intoMaps();     
+                    .fetch()
+                    .intoMaps();
             if (CollectionUtils.isNotEmpty(fhirSubmission)) {
                 Map<String, Object> data = fhirSubmission.get(0);
-                totalSubmissions =data.getOrDefault("total_submissions", DEFAULT_VALUE).toString();
+                totalSubmissions = data.getOrDefault("total_submissions", DEFAULT_VALUE).toString();
                 pendingSubmissions = data.getOrDefault("pending_submissions", DEFAULT_VALUE).toString();
                 acceptedSubmissions = data.getOrDefault("accepted_submissions", DEFAULT_VALUE).toString();
                 rejectedSubmissions = data.getOrDefault("rejected_submissions", DEFAULT_VALUE).toString();
-            } 
+            }
         } catch (Exception e) {
             LOG.error("Error fetching FHIR interactions", e);
         }
