@@ -55,10 +55,11 @@ public class ContentController {
         return presentation.populateModel("page/content/patients", model, request);
     }
 
-    @GetMapping("/content/organizations")
-    @RouteMapping(label = "Organizations", title = "Organizations", siblingOrder = 30)
-    public String organizations(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/content/organizations", model, request);
-    }
+    //TODO: Need to update Organization grid contents
+    // @GetMapping("/content/organizations")
+    // @RouteMapping(label = "Organizations", title = "Organizations", siblingOrder = 30)
+    // public String organizations(final Model model, final HttpServletRequest request) {
+    //     return presentation.populateModel("page/content/organizations", model, request);
+    // }
 
 }

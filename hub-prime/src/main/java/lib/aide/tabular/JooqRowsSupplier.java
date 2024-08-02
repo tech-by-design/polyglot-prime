@@ -21,7 +21,7 @@ import jakarta.annotation.Nullable;
 
 public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSupplier.JooqProvenance> {
     public record TypableTable(Table<?> table, boolean stronglyTyped) {
-        static public TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
+        public static TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
                 @Nonnull String tableLikeName) {
 
             // Attempt to find a generated table reference using reflection;
@@ -106,8 +106,9 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
             return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, data, lastRow, null);
         } catch (Exception e) {
-            if (logger != null)
+            if (logger != null) {
                 logger.error("JooqRowsSupplier error", e);
+            }
             return new TabularRowsResponse<>(includeGeneratedSqlInErrorResp ? provenance : null, null, -1,
                     e.getMessage());
         }
