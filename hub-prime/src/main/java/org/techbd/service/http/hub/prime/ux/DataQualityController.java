@@ -59,4 +59,10 @@ public class DataQualityController {
     public String diagnosticsFhirValidationIssues(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/fhir-validation-issues", model, request);
     }
+
+    @GetMapping("/data-quality/needs-attention")
+    @RouteMapping(label = "Needs Attention", title = "Needs Attention", siblingOrder = 40)
+    public String diagnosticsFhirNeedsAttention(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/needs-attention", model, request);
+    }
 }
