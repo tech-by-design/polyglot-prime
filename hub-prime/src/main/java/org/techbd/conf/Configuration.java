@@ -53,7 +53,7 @@ public class Configuration {
         }
     }
 
-    static public List<String> checkProperties(Environment environment, String... propertyExpressions) {
+    public static List<String> checkProperties(Environment environment, String... propertyExpressions) {
         final var missingProperties = new ArrayList<String>();
 
         for (String propertyExpression : propertyExpressions) {
@@ -76,7 +76,7 @@ public class Configuration {
         return missingProperties;
     }
 
-    static public Map<String, String> getEnvVarsAvailable(final String regexPattern) {
+    public static Map<String, String> getEnvVarsAvailable(final String regexPattern) {
         final var matchingVariables = new HashMap<String, String>();
         final var pattern = Pattern.compile(regexPattern);
 

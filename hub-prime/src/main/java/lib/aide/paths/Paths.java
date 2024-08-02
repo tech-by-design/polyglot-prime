@@ -135,8 +135,9 @@ public class Paths<C, P> {
                 ancestor = ancestor.parent;
             }
             // the physical root isn't really an ancestor
-            if (ancestors.size() > 0)
+            if (ancestors.size() > 0) {
                 ancestors.removeLast();
+            }
             return ancestors;
         }
 
@@ -187,8 +188,9 @@ public class Paths<C, P> {
         public void populate(final List<C> components, final Optional<P> payload, final int index,
                 final InterimPayloadSupplier<C, P> ips) {
             final var terminalIndex = components.size() - 1;
-            if (index > terminalIndex)
+            if (index > terminalIndex) {
                 return; // end recursion
+            }
             final var isTerminal = index == terminalIndex;
 
             final var component = components.get(index);
@@ -260,11 +262,13 @@ public class Paths<C, P> {
          * @param depthFirst true to run depth-first
          */
         public void forEach(Consumer<? super Node> action, boolean depthFirst) {
-            if (!depthFirst)
+            if (!depthFirst) {
                 action.accept(this);
+            }
             children.stream().forEach(c -> c.forEach(action, depthFirst));
-            if (depthFirst)
+            if (depthFirst) {
                 action.accept(this);
+            }
         }
     }
 
