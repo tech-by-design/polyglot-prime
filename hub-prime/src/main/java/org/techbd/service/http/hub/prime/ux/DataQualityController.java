@@ -39,7 +39,13 @@ public class DataQualityController {
     @GetMapping("/data-quality")
     @RouteMapping(label = "Data Quality", siblingOrder = 10)
     public String adminDiagnostics() {
-        return "redirect:/data-quality/sftp";
+        return "redirect:/data-quality/needs-attention";
+    }
+
+    @GetMapping("/data-quality/needs-attention")
+    @RouteMapping(label = "Needs Attention", title = "Needs Attention", siblingOrder = 5)
+    public String diagnosticsFhirNeedsAttention(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/needs-attention", model, request);
     }
 
     @GetMapping("/data-quality/sftp")
@@ -60,9 +66,4 @@ public class DataQualityController {
         return presentation.populateModel("page/diagnostics/fhir-validation-issues", model, request);
     }
 
-    @GetMapping("/data-quality/needs-attention")
-    @RouteMapping(label = "Needs Attention", title = "Needs Attention", siblingOrder = 40)
-    public String diagnosticsFhirNeedsAttention(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/diagnostics/needs-attention", model, request);
-    }
 }
