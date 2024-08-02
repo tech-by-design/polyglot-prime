@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <style>
+        .grid-description{
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+        .grid-title{
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style>
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'fhir_needs_attention';
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    { headerName: "CrossRoads SCN", field: "cross_roads_scn",  filter: "agTextColumnFilter"  },
+                    { headerName: "QE", field: "qe_name",  filter: "agTextColumnFilter"  },
+                    { headerName: "QE FHIR File Count", field: "qe_total_submissions", filter: "agTextColumnFilter" },
+                    { headerName: "TechBD", field: "techbd_total_submissions", filter: "agTextColumnFilter" },
+                    { headerName: "Scoring Engines", field: "scoring_engine_submissions", filter: "agTextColumnFilter" }, 
+                    { headerName: "SHIN-NY", field: "shinny", filter: "agTextColumnFilter" },
+                    { headerName: "MDW", field: "mdw", filter: "agTextColumnFilter" } 
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-title">FHIR Submission Overview</div>
+        <div class="grid-description">
+            This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN  to the QE, then to the Scoring Engine, SHIN-NY application, and finally to the MDW. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.</div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>
