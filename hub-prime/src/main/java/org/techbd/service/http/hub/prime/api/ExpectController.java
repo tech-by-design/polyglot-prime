@@ -31,15 +31,14 @@ public class ExpectController {
 
     @PostMapping(value = {"/api/expect/register"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
         AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
-    @Operation(summary = "TODO: prper documentation here")
+    @Operation(summary = "This end point will store the data from the SCN. The same data are expected to be sent by the QEs as well.")
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             final HttpServletRequest request) {
-
         LOG.info("Inside the expectation register end point");
-        //TODO: create hub_expectation table and satellite table and save data here
+        //TODO: create hub_expectation table and satellite table
         return payload;
     }
 }
