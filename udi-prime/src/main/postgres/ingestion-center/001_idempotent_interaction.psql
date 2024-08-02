@@ -980,3 +980,103 @@ SELECT
     '??' as mdw
 FROM 
     submission_counts;
+
+
+/*************************************
+* The stored procedure register_expectation_http_request aims to insert expectation data into two tables: hub_expectation and sat_expectation_http_request. It performs the following steps:
+
+* Input Parameters:
+
+* expectation_id: Unique identifier for the expectation.
+* expectation_key: Key associated with the expectation.
+* payload: JSONB data containing the request payload.
+* content_type (optional): Type of content being registered.
+* created_at (optional): Timestamp when the record was created.
+* created_by (optional): User who created the record.
+* provenance (optional): Source of the record.
+* hub_upsert_behavior (optional): Boolean flag to determine upsert behavior (default is true).
+*
+* Default Values:
+*
+* v_created_at: Defaults to the current timestamp if not provided.
+* v_created_by: Defaults to the current user if not provided.
+* v_provenance: Defaults to 'unknown' if not provided.
+*
+* Insert into hub_expectation:
+*
+* Attempts to insert the expectation data into the hub_expectation table.
+* If a unique constraint violation occurs and hub_upsert_behavior is false, it logs the exception details by calling techbd_udi_ingress.register_issue.
+* Insert into sat_expectation_http_request:
+
+* Attempts to insert the HTTP request details into the sat_expectation_http_request table.
+* If any exception occurs, it logs the exception details and associates it with a previously logged exception if available.
+* Exception Handling:
+
+* Captures various exception details such as error message, SQL state, and additional context.
+* Logs the captured exception details using techbd_udi_ingress.register_issue. 
+****************************************************************************/
+
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_expectation_http_request;
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_expectation_http_request(IN expectation_id text, IN expectation_key text, IN payload jsonb, IN content_type text DEFAULT NULL::text, IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, IN created_by text DEFAULT NULL::text, IN provenance text DEFAULT NULL::text, IN hub_upsert_behavior boolean DEFAULT true)
+ LANGUAGE plpgsql
+AS $procedure$
+DECLARE
+    v_error_msg TEXT;
+    v_sqlstate TEXT;
+    v_pg_detail TEXT;
+    v_pg_hint TEXT;
+    v_pg_context TEXT;
+    v_created_at TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+    v_created_by TEXT := COALESCE(created_by, current_user);
+    v_provenance TEXT := COALESCE(provenance, 'unknown');
+    v_exception_id TEXT;
+BEGIN
+    -- Attempt to insert into hub_expectation
+    BEGIN
+        INSERT INTO techbd_udi_ingress.hub_expectation (hub_expectation_id, key, created_at, created_by, provenance)
+        VALUES (expectation_id, expectation_key, v_created_at, v_created_by, v_provenance);
+
+    EXCEPTION
+        WHEN unique_violation THEN
+            IF NOT hub_upsert_behavior THEN
+                -- Capture exception details
+                GET STACKED DIAGNOSTICS
+                    v_error_msg = MESSAGE_TEXT,
+                    v_sqlstate = RETURNED_SQLSTATE,
+                    v_pg_detail = PG_EXCEPTION_DETAIL,
+                    v_pg_hint = PG_EXCEPTION_HINT,
+                    v_pg_context = PG_EXCEPTION_CONTEXT;
+
+                -- Call register_issue to log the exception and get the exception ID
+                v_exception_id := techbd_udi_ingress.register_issue(
+                    NULL, expectation_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                );
+            END IF;
+    END;
+
+    -- Attempt to insert into sat_expectation_http_request
+    BEGIN
+        INSERT INTO techbd_udi_ingress.sat_expectation_http_request (
+            sat_expectation_http_request_id, hub_expectation_id, content_type, payload, created_at, created_by, provenance
+        )
+        VALUES (
+            gen_random_uuid()::text, expectation_id, content_type, payload, v_created_at, v_created_by, v_provenance);
+
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Capture exception details
+            GET STACKED DIAGNOSTICS
+                v_error_msg = MESSAGE_TEXT,
+                v_sqlstate = RETURNED_SQLSTATE,
+                v_pg_detail = PG_EXCEPTION_DETAIL,
+                v_pg_hint = PG_EXCEPTION_HINT,
+                v_pg_context = PG_EXCEPTION_CONTEXT;
+
+            -- Log the exception, reusing the previous exception ID if it exists
+            v_exception_id := techbd_udi_ingress.register_issue(
+                COALESCE(v_exception_id, NULL), expectation_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+            );
+    END;
+END;
+$procedure$
+;    

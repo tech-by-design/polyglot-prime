@@ -124,6 +124,23 @@ const exceptionDiagnosticSat = hubException.satelliteTable(
   },
 );
 
+const hubExpectation = dvts.hubTable("expectation", {
+  hub_expectation_id: primaryKey(),
+  key: textNullable(),
+  ...dvts.housekeeping.columns,
+});
+
+const expectationHttpRequestSat = hubExpectation.satelliteTable(
+  "http_request",
+  {
+    sat_expectation_http_request_id: primaryKey(),
+    hub_expectation_id: hubExpectation.references.hub_expectation_id(),
+    content_type: textNullable(), // eg: Permission Denied to the file
+    payload: jsonB,
+    ...dvts.housekeeping.columns,
+  },
+);
+
 const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   name: textNullable(),
   jsonb: jsonbNullable(),
@@ -266,6 +283,10 @@ const migrateSP = pgSQLa.storedProcedure(
       ${hubException}
 
       ${exceptionDiagnosticSat}
+
+      ${hubExpectation}
+
+      ${expectationHttpRequestSat}
 
       ${pgTapFixturesJSON}
 
