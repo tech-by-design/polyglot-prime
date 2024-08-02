@@ -917,3 +917,66 @@ SELECT
     total_submissions - accepted_submissions - rejected_submissions AS pending_submissions
 FROM 
     submission_counts;
+
+
+/**
+ * View to summarize FHIR submission interactions and categorize them for further analysis.
+ * This view provides an aggregated overview of HTTP request interactions based on
+ * different types of nature values recorded in the `sat_interaction_http_request` table.
+ * The view calculates the following metrics over the past 7 days:
+ *
+ * 1. `qe_total_submissions`: Counts submissions where the nature is 'Original FHIR Payload'.
+ * 2. `techbd_total_submissions`: Counts submissions where the nature is 'Forward HTTP Request'.
+ * 3. `scoring_engine_submissions`: Counts submissions where the nature is 'Forwarded HTTP Response'.
+ *
+ * In addition to the calculated metrics, the view includes placeholders for custom fields:
+ * - `cross_roads_scn`: Placeholder for additional contextual information or classification.
+ * - `shinny`: Placeholder for additional contextual information or classification.
+ * - `mdw`: Placeholder for additional contextual information or classification.
+ *
+ * This view aggregates data for all interactions related to FHIR submissions based on the following:
+ * - Interaction metadata including the nature of HTTP requests.
+ * - Filtering interactions that occurred in the last 7 days.
+ * - Using a specific key value (`/Bundle`) to filter interactions.
+ *
+ * The view helps in monitoring and analyzing FHIR interaction statuses, providing insight into:
+ * - Total number of submissions made in the specified period.
+ * - Number of submissions that were forwarded for HTTP requests.
+ * - Number of submissions that received a response from the scoring engine.
+ * - Custom fields for additional classification or context.
+ *
+ * Usage:
+ * SELECT * FROM techbd_udi_ingress.fhir_needs_attention;
+ *
+ * @return TABLE - A table summarizing total, forwarded, and scoring engine submissions
+ *         for interactions within the past 7 days, including custom fields for additional classification.
+ */
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention AS  
+WITH submission_counts AS (
+    SELECT  
+        sihr.nature->>'tenant_id' as qe_name,
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Original FHIR Payload' THEN 1 END) AS qe_total_submissions,
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forward HTTP Request' THEN 1 END) AS techbd_total_submissions,
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS scoring_engine_submissions
+    FROM 
+        techbd_udi_ingress.hub_interaction AS hintr
+        INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
+        ON hintr.hub_interaction_id = sihr.hub_interaction_id
+    WHERE 
+        hintr."key" = '/Bundle'
+        AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
+    GROUP BY sihr.nature->>'tenant_id'
+)
+SELECT  
+    '??' as cross_roads_scn,
+    qe_name,
+    qe_total_submissions,
+    techbd_total_submissions,
+    scoring_engine_submissions,
+    '??' as shinny,
+    '??' as mdw
+FROM 
+    submission_counts;
