@@ -39,10 +39,13 @@ extracted_data AS (
                    FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
                   WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text) AS first_name,  
     
-        (SELECT entry -> 'resource' ->> 'id'
-         FROM jsonb_array_elements(payload -> 'entry') AS entry
-         WHERE (entry -> 'resource' ->> 'resourceType') = 'Organization'
-        ) AS org_id,
+        ( SELECT string_agg((entry.value -> 'resource'::text) ->> 'id'::text, ', '::text) AS string_agg
+                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Organization'::text) AS org_id,
+        
+        ( SELECT string_agg((entry.value -> 'resource'::text) ->> 'name'::text, ', '::text) AS string_agg
+                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Organization'::text) AS org_name,
                   
                    
         -- 3) If "resourceType" = "Observation", get category[] -> coding -> display element values in comma separated manner
@@ -70,6 +73,7 @@ SELECT hub_interaction_id,
 
 		tenant_id AS qe_name,
 		org_id,
+    org_name,
 		last_name,
 		full_name, 
 		first_name,
