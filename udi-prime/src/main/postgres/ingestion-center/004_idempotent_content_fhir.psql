@@ -70,7 +70,6 @@ extracted_data AS (
     FROM filtered_data
 )
 SELECT hub_interaction_id, 
-
 		tenant_id AS qe_name,
 		org_id,
     org_name,
