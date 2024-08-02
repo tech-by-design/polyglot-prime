@@ -47,4 +47,29 @@ public class ConsoleController {
     public String hrsnViewerApp(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/console/hrsn-viewer-app", model, request);
     }
+
+    @RouteMapping(label = "Health Information", title = "Health Information", siblingOrder = 30)
+    @GetMapping("/console/health-info")
+    public String healthInformation(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/console/health-info", model, request);
+    }
+
+    @RouteMapping(label = "Project", title = "Project", siblingOrder = 40)
+    @GetMapping("/console/project")
+    public String projects(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/console/project", model, request);
+    }
+
+    @RouteMapping(label = "Schema", title = "Schema", siblingOrder = 50)
+    @GetMapping("/console/schema")
+    public String schemaSpy(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/console/schema", model, request);
+    }
+
+    @RouteMapping(label = "ISLM Migration", title = "ISLM", siblingOrder = 60)
+    @GetMapping("/console/islm")
+    public String islm(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/console/islm", model, request);
+    }
+
 }
