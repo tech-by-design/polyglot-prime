@@ -60,7 +60,7 @@ public class UdiPrimeJpaConfig {
         }
 
         public List<String> expectedConf() {
-            return org.techbd.conf.Configuration.checkProperties(environment, expected);
+            return Configuration.checkProperties(environment, expected);
         }
     }
 
@@ -102,8 +102,8 @@ public class UdiPrimeJpaConfig {
         final var jooqConfiguration = new DefaultConfiguration();
         jooqConfiguration.set(connectionProvider());
         jooqConfiguration.setSQLDialect(SQLDialect.POSTGRES);
-        //jooqConfiguration
-        //  .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
+        // jooqConfiguration
+        // .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
         return jooqConfiguration;
     }
 
