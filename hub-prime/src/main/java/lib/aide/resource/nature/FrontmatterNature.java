@@ -12,8 +12,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public abstract class FrontmatterNature<F> implements Nature {
-    static private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
-    static private final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     public record Components<F>(String original, Optional<F> frontmatter, String content, List<Exception> exceptions) {
     }
