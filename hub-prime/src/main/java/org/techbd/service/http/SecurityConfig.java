@@ -27,6 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @ConfigurationProperties(prefix = "spring.security.oauth2.client.registration.github")
 @Profile("!localopen")
 public class SecurityConfig {
+
     @Autowired
     private GitHubUserAuthorizationFilter authzFilter;
 
@@ -36,20 +37,21 @@ public class SecurityConfig {
         // and turn off CSRF to allow POST methods
         http.authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**", "/metadata",
+                        "/api/expect/**",
                         "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**",
                         "/docs/api/openapi/**",
                         "/error", "/error/**")
                 .permitAll()
                 .anyRequest().authenticated())
                 .oauth2Login(oauth2Login -> oauth2Login
-                        .successHandler(gitHubLoginSuccessHandler())
-                        .defaultSuccessUrl("/home")
-                        .loginPage("/login"))
+                .successHandler(gitHubLoginSuccessHandler())
+                .defaultSuccessUrl("/home")
+                .loginPage("/login"))
                 .logout(logout -> logout
-                        .deleteCookies("JSESSIONID")
-                        .logoutSuccessUrl("/")
-                        .invalidateHttpSession(true)
-                        .permitAll())
+                .deleteCookies("JSESSIONID")
+                .logoutSuccessUrl("/")
+                .invalidateHttpSession(true)
+                .permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
