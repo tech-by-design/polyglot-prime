@@ -12,16 +12,19 @@ import java.util.List;
 public class SftpAccountsOrchctlConfig {
     private List<SftpAccount> orchctlts;
 
-     // Default constructor
-     public SftpAccountsOrchctlConfig() {}
+    // Default constructor
+    public SftpAccountsOrchctlConfig() {
+    }
 
-     // Copy constructor
+    // Copy constructor
     public SftpAccountsOrchctlConfig(SftpAccountsOrchctlConfig other) {
         if (other.orchctlts != null) {
-            // Since this is configuration properties object, we can make unmodifiable field orchctlts.
-             this.orchctlts = Collections.unmodifiableList(other.orchctlts); 
+            // Since this is configuration properties object, we can make unmodifiable field
+            // orchctlts.
+            this.orchctlts = Collections.unmodifiableList(other.orchctlts);
         }
     }
+
     public List<SftpAccount> getOrchctlts() {
         return orchctlts == null ? Collections.emptyList() : Collections.unmodifiableList(orchctlts);
     }
@@ -30,7 +33,7 @@ public class SftpAccountsOrchctlConfig {
         this.orchctlts = orchctlts == null ? null : new ArrayList<>(orchctlts);
     }
 
-    static public class SftpAccount {
+    public static class SftpAccount {
         private String tenantId;
         private String server;
         private Integer port;
