@@ -63,8 +63,9 @@ public class TabularRowsController {
                 // jOOQ-generated types were found, automatic column value mapping will occur
                 final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                                 masterTableNameOrViewName);
+                String columnValueLikePattern = "%" + columnValue + "%";
                 return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                                .where(typableTable.column(columnName).eq(columnValue))
+                                .where(typableTable.column(columnName).like(columnValueLikePattern))
                                 .fetch()
                                 .intoMaps();
         }
