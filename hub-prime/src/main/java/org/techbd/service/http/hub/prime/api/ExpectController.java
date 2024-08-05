@@ -31,7 +31,7 @@ public class ExpectController {
 
     @PostMapping(value = {"/api/expect/register"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
         AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
-    @Operation(summary = "This end point will store the data from the SCN. The same data are expected to be sent by the QEs as well.")
+    @Operation(summary = "This end point will store the data from the SCN. The same data are expected to be sent by the QEs as well. The data will be tracked using the 'id' of the payload JSON. It is assumed that the 'id' will be unique and will not be reused.")
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
