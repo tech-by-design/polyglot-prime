@@ -441,7 +441,7 @@ public class ArtifactStore {
         }
     }
 
-    private final static class JsonArtifact implements Artifact {
+    private static final class JsonArtifact implements Artifact {
         private final String jsonString;
         private final String artifactId;
         private final String namespace;
@@ -452,8 +452,8 @@ public class ArtifactStore {
                 final Map<String, Object> provenance) {
             this.artifactId = artifactId;
             this.namespace = namespace;
-            this.provenance = provenance == null ? Collections.emptyMap() : Collections.unmodifiableMap(provenance); // Ensure
-                                                                                                                     // immutability
+            // Ensure immutability
+            this.provenance = provenance == null ? Collections.emptyMap() : Collections.unmodifiableMap(provenance);
             try {
                 this.jsonString = Configuration.objectMapper.writeValueAsString(object);
             } catch (JsonProcessingException e) {

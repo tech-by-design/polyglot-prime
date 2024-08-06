@@ -49,8 +49,9 @@ public final class DocResourcesService {
             // other resource hooks
             for (final var key : captionKeyNames) {
                 var tryAttr = node.getAttribute(key);
-                if (tryAttr.isPresent())
+                if (tryAttr.isPresent()) {
                     return tryAttr.orElseThrow().toString();
+                }
             }
             return node.basename().orElse("UNKNOWN BASENAME");
         }
@@ -61,8 +62,9 @@ public final class DocResourcesService {
             // other resource hooks
             for (final var key : titleKeyNames) {
                 var tryAttr = node.getAttribute(key);
-                if (tryAttr.isPresent())
+                if (tryAttr.isPresent()) {
                     return tryAttr.orElseThrow().toString();
+                }
             }
             return node.basename().orElse("UNKNOWN BASENAME");
         }
@@ -123,8 +125,9 @@ public final class DocResourcesService {
         public String editableUrlOrBlank(
                 Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
             final var editURI = this.editURI(node);
-            if (editURI.isEmpty())
+            if (editURI.isEmpty()) {
                 return "";
+            }
             final var editableUrl = editURI.orElseThrow();
             if (editableUrl.getScheme().equals("file")) {
                 return sboxHelpers.getEditorUrlFromAbsolutePath(editableUrl.getPath());

@@ -45,13 +45,12 @@ public class SandboxHelpers {
         return url;
     }
 
-    public String getEditorUrlFromAbsolutePath(String absoluteFilePath) {
-        return getEditorUrl(this.vsCodeEditor, absoluteFilePath);
-    }
-
     public String getEditorUrl(URL url) {
         // Assuming the URL is already properly formatted
         return getEditorUrl(this.vsCodeEditor, url.toString());
     }
 
+    public String getEditorUrlFromAbsolutePath(String absoluteFilePath) {
+        return getEditorUrl(this.vsCodeEditor, absoluteFilePath);
+    }
 }
