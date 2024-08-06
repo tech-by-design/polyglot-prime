@@ -960,7 +960,9 @@ WITH submission_counts AS (
         sihr.nature->>'tenant_id' as qe_name,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Original FHIR Payload' THEN 1 END) AS qe_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forward HTTP Request' THEN 1 END) AS techbd_total_submissions,
-        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS scoring_engine_submissions
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS total_scoring_engine_submissions,
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' AND sihr.payload ? 'scoredcardResponse' THEN 1 END) AS scoring_engine_submission_passed
+        
     FROM 
         techbd_udi_ingress.hub_interaction AS hintr
         INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
@@ -975,7 +977,9 @@ SELECT
     qe_name,
     qe_total_submissions,
     techbd_total_submissions,
-    scoring_engine_submissions,
+    total_scoring_engine_submissions,
+    scoring_engine_submission_passed,
+    abs(total_scoring_engine_submissions - scoring_engine_submission_passed) scoring_engine_submissions,
     '??' as shinny,
     '??' as mdw
 FROM 
@@ -1080,3 +1084,29 @@ BEGIN
 END;
 $procedure$
 ;    
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_details CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_details AS  
+SELECT
+	sihr.hub_interaction_id,
+	sihr.sat_interaction_http_request_id,
+    sihr.nature ->> 'tenant_id'::text AS qe_name, 
+    sihr.created_at,
+    (sihr.payload -> 'entry' -> 0 -> 'resource' ->> 'id') AS patient_mrn,
+    (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 ->> 'text') AS patient_full_name,
+    (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 ->> 'family') AS patient_last_name,
+    (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 -> 'given' -> 0) AS patient_first_name ,
+        CASE
+        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' THEN 'parameter_error'
+        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' AND NOT sihr.payload ? 'scorecardResponse' THEN 'bundle_error'
+        ELSE 'no_error'
+    END AS error_type
+FROM techbd_udi_ingress.hub_interaction hintr
+JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
+ON hintr.hub_interaction_id = sihr.hub_interaction_id
+where   hintr.key = '/Bundle' 
+  AND ((sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' OR  (sihr.nature->>'nature' = 'Forwarded HTTP Response' AND not sihr.payload ? 'scoredcardResponse'))
+  AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days' 
+ ORDER BY sihr.hub_interaction_id
+;

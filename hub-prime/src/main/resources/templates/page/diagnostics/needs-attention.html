@@ -14,6 +14,14 @@
             font-size: 18px;
             font-weight: bold;
             margin: 12px 0px 11px 15px;
+        }  
+        li {
+            margin-bottom: 10px;
+        } 
+        h1.assemtion {
+            font-size: 15px;
+            font-weight: bold;
+            margin: 12px 0px 11px 2px;
         }
     </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
@@ -26,17 +34,20 @@
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_needs_attention';
+        const detailTableViewName = 'fhir_needs_attention_details';
+        const popViewName = 'interaction_http_request_forward_fail';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    { headerName: "CrossRoads SCN", field: "cross_roads_scn",  filter: "agTextColumnFilter"  },
+                    { headerName: "CrossRoads SCN", field: "cross_roads_scn",  filter: "agTextColumnFilter",cellRenderer: 'agGroupCellRenderer'  },
                     { headerName: "QE", field: "qe_name",  filter: "agTextColumnFilter"  },
                     { headerName: "QE FHIR File Count", field: "qe_total_submissions", filter: "agTextColumnFilter" },
                     { headerName: "TechBD", field: "techbd_total_submissions", filter: "agTextColumnFilter" },
-                    { headerName: "Scoring Engines", field: "scoring_engine_submissions", filter: "agTextColumnFilter" }, 
+                    { headerName: "Scoring Engines", field: "scoring_engine_submission_passed", filter: "agTextColumnFilter" }, 
                     { headerName: "SHIN-NY", field: "shinny", filter: "agTextColumnFilter" },
-                    { headerName: "MDW", field: "mdw", filter: "agTextColumnFilter" } 
+                    { headerName: "MDW", field: "mdw", filter: "agTextColumnFilter" }, 
+                    // { headerName: "Submission Date", field: "latest_created_at", filter: "agDateColumnFilter" } 
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
@@ -46,7 +57,63 @@
                             field: col.field
                         }));
                     },
-                )
+                ).withDetailCellRendererParams({// provide the Grid Options to use on the Detail Grid
+                    detailGridOptions: {
+                        columnDefs: [
+                            {
+                                headerName: "Interaction Id",
+                                field: "hub_interaction_id",
+                                filter: "agTextColumnFilter",
+                               cellRenderer: params => { 
+                                const hub_interaction_id = params.value;
+                                const error_type = params.data.error_type;
+                                const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
+                                console.log(error_type);
+                                const button = document.createElement('button');
+                                button.innerText = hub_interaction_id;
+                                button.addEventListener('click', () => {
+                                    if (error_type == 'parameter_error') {
+                                        modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                    } else if(error_type == 'bundle_error') {
+                                        modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                    } else {
+                                        console.error('hub_interaction_id is undefined');
+                                    }
+                                });
+                                return button;
+                            } 
+                            },
+                            // {
+                            //     headerName: "Sat Interaction Id",
+                            //     field: "sat_interaction_http_request_id",
+                            //     filter: "agTextColumnFilter",
+                            //     cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
+                            //         modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed/sat_interaction_http_request_id/${value}.json`));
+                            //     }, modalAide)
+                            // },
+                            { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter", valueFormatter: AGGridAide.isoDateTimeValueFormatter() },
+                            { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.isoDateTimeValueFormatter() },
+                            // { headerName: "First Name", field: "patient_first_name", filter: "agTextColumnFilter" },
+                            // { headerName: "Last Name", field: "patient_last_name", filter: "agTextColumnFilter" },                             
+                        ],
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        const value = params.data.qe_name;
+                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/qe_name/${value}.json`))
+                            .then(response => response.json())
+                            .then(response => {
+                                console.log(response);
+                                params.successCallback(response);
+                            })
+                            .catch(error => {
+                                console.error('Error fetching details data' + error);
+                            });
+                    }
+                })
+                .withMasterDetail(true)
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "750px", width: "100%" })
                 .build();
@@ -60,7 +127,17 @@
     <div layout:fragment="content">
         <div class="grid-title">FHIR Submission Overview</div>
         <div class="grid-description">
-            This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN  to the QE, then to the Scoring Engine, SHIN-NY application, and finally to the MDW for last 7 days. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.</div>
+            This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN  to the QE, then to the Scoring Engine, SHIN-NY datalake, and finally to the MDW for last 7 days. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.
+            <h1 class="assemtion">Assumptions</h1>
+            <ul class="list-disc pl-4">
+                <li>  The file count from CrossRoads SCN to QE FHIR File Count should be the same.</li>
+                <li>  The QE FHIR File Count to TechBD should be the same.</li>
+                <li>  The TechBD to Scoring Engines should be the same.</li>
+                <li> When any numbers from one column to another column are not the same, it indicates there is an error.</li>
+                <li> If there are errors or issues, click on the <span class="drill-down">drill down</span> to see the numbers.</li>
+                <li> When you see the numbers, click to be able to see the <span class="popup">popup</span>.</li>
+            </ul>
+        </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
