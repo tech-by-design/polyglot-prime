@@ -91,8 +91,8 @@
                             //         modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed/sat_interaction_http_request_id/${value}.json`));
                             //     }, modalAide)
                             // },
-                            { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter", valueFormatter: AGGridAide.isoDateTimeValueFormatter() },
-                            { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.isoDateTimeValueFormatter() },
+                            { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter" },
+                            { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() },
                             // { headerName: "First Name", field: "patient_first_name", filter: "agTextColumnFilter" },
                             // { headerName: "Last Name", field: "patient_last_name", filter: "agTextColumnFilter" },                             
                         ],
