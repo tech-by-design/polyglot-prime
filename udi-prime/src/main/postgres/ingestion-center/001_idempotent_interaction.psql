@@ -968,7 +968,7 @@ WITH submission_counts AS (
         INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
         ON hintr.hub_interaction_id = sihr.hub_interaction_id
     WHERE 
-        hintr."key" = '/Bundle'
+        hintr."key" IN ('/Bundle/', '/Bundle')
         AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
     GROUP BY sihr.nature->>'tenant_id'
 )
@@ -1112,7 +1112,7 @@ SELECT
 FROM techbd_udi_ingress.hub_interaction hintr
 JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
 ON hintr.hub_interaction_id = sihr.hub_interaction_id
-where   hintr.key = '/Bundle' 
+where   hintr."key" IN ('/Bundle/', '/Bundle')
   AND ((sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' OR  (sihr.nature->>'nature' = 'Forwarded HTTP Response' AND not sihr.payload ? 'scoredcardResponse'))
   AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days' 
  ORDER BY sihr.hub_interaction_id
