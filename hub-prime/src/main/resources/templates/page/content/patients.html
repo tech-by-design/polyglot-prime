@@ -18,7 +18,7 @@
         customElements.define('fhir-viewer', FhirViewer);
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_screening_patient';
-        const detailTableViewName = 'fhir_screening_info';
+        const detailTableViewName = 'fhir_patient_screening_questions_answers';
         const popViewName = 'fhir_screening_detail';
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -39,10 +39,6 @@
                     { headerName: "Last Name ", field: "patient_last_name", filter: "agTextColumnFilter" },
                     { headerName: "Gender", field: "patient_gender", filter: "agTextColumnFilter" },
                     { headerName: "Birth Date", field: "patient_birth_date", filter: "agTextColumnFilter" },
-                    { headerName: "Address", field: "patient_address", filter: "agTextColumnFilter" },
-                    { headerName: "City", field: "patient_city", filter: "agTextColumnFilter" },
-                    { headerName: "State", field: "patient_state", filter: "agTextColumnFilter" },
-                    { headerName: "Postal Code", field: "patient_postal_code", filter: "agTextColumnFilter" },
                     { headerName: "Language", field: "patient_language", filter: "agTextColumnFilter" },
                     { headerName: "SSN", field: "patient_ssn", filter: "agTextColumnFilter" }
                 ])
@@ -59,40 +55,17 @@
                     detailGridOptions: {
                         columnDefs: [
                             {
-                                headerName: "Patient MRN",
-                                field: "patient_mrn",
-                                filter: "agTextColumnFilter",
-                                cellRenderer: params => {
-                                    const patientMrn = params.value;
-                                    const hubInteractionId = params.data.hub_interaction_id;
-                                    console.log(hubInteractionId);
-                                    const button = document.createElement('button');
-                                    button.innerText = patientMrn;
-                                    button.addEventListener('click', () => {
-                                        if (hubInteractionId) {
-                                            modalAide.showFhirViewer(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${popViewName}/hub_interaction_id/${hubInteractionId}.json`));
-                                        } else {
-                                            console.error('hub_interaction_id is undefined');
-                                        }
-                                    });
-                                    return button;
+                                headerName: "Question", field: "question", filter: "agTextColumnFilter",
+                                valueGetter: (params) => {
+                                    return params.data.question ?? "No observation provided";
                                 }
                             },
                             {
-                                headerName: "Date",
-                                field: "survey_date_time",
-                                filter: "agNumberColumnFilter",
-                                valueFormatter: AGGridAide.isoDateTimeValueFormatter()
+                                headerName: "Answer", field: "answer", filter: "agTextColumnFilter",
+                                valueGetter: (params) => {
+                                    return params.data.answer ?? "No value provided";
+                                }
                             },
-                            { headerName: "Areas of Interest ", field: "areas_of_interest", filter: "agTextColumnFilter" },
-                            { headerName: "Total Safety Score", field: "total_safety_score", filter: "agTextColumnFilter" },
-                            {
-                                headerName: "Submission Date",
-                                field: "submitted_date_time",
-                                sort: "desc",
-                                filter: "agNumberColumnFilter",
-                                valueFormatter: AGGridAide.dateTimeValueFormatter()
-                            }
                         ],
                         defaultColDef: {
                             flex: 1
