@@ -1,4 +1,3 @@
-DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat CASCADE;
 CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_screening_info_mat
 TABLESPACE pg_default
 AS WITH filtered_data AS (
