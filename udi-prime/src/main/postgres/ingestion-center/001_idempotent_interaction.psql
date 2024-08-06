@@ -1105,8 +1105,8 @@ SELECT
     (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 ->> 'family') AS patient_last_name,
     (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 -> 'given' -> 0) AS patient_first_name ,
         CASE
-        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' THEN 'parameter_error'
-        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' AND NOT sihr.payload ? 'scorecardResponse' THEN 'bundle_error'
+        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' THEN 'Data Submission Error'
+        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' AND NOT sihr.payload ? 'scorecardResponse' THEN 'Data Validation Error'
         ELSE 'no_error'
     END AS error_type
 FROM techbd_udi_ingress.hub_interaction hintr
