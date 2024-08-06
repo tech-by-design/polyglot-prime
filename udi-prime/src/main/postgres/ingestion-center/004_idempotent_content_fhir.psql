@@ -193,21 +193,19 @@ AS WITH filtered_data AS (
             (entry.value -> 'resource'::text) ->> 'id'::text AS patient_id,
             (entry.value -> 'resource'::text) ->> 'resourceType'::text AS patient_resource_type,
             (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'text'::text AS full_name,
-            (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'family'::text AS last_name, 
-             array_to_string(
-		        ARRAY(
-		            SELECT jsonb_array_elements_text((((entry.value -> 'resource'::text) -> 'name'::text) -> 0) -> 'given')
-		        ), ' '
-		    ) AS first_name,
+            (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'family'::text AS last_name,
+            array_to_string(ARRAY( SELECT jsonb_array_elements_text((((entry.value -> 'resource'::text) -> 'name'::text) -> 0) -> 'given'::text) AS jsonb_array_elements_text), ' '::text) AS first_name,
             (entry.value -> 'resource'::text) ->> 'gender'::text AS gender,
             (entry.value -> 'resource'::text) ->> 'birthDate'::text AS birth_date,
             (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'text'::text AS address,
             (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'city'::text AS city,
             (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'state'::text AS state,
             (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'postalCode'::text AS postal_code,
-            (entry->'resource'->'communication'->0->'language'->'coding'->0->>'code') as language,
+            ((((((entry.value -> 'resource'::text) -> 'communication'::text) -> 0) -> 'language'::text) -> 'coding'::text) -> 0) ->> 'code'::text AS language,
             (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 0) ->> 'value'::text AS medical_record_number,
-            (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 3) ->> 'value'::text AS social_security_number
+            (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 3) ->> 'value'::text AS social_security_number,
+            array_to_string(ARRAY( SELECT replace((jsonb_array_elements((entry.value -> 'resource'::text) -> 'identifier'::text) -> 'assigner'::text) ->> 'reference'::text, 'Organization/'::text, ''::text) AS replace
+                   FROM jsonb_array_elements((entry.value -> 'resource'::text) -> 'identifier'::text) jsonb_array_elements(value)), ', '::text) AS organization_ids
            FROM filtered_data,
             LATERAL jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
           WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text
@@ -226,7 +224,8 @@ AS WITH filtered_data AS (
     max(postal_code) AS patient_postal_code,
     max(language) AS patient_language,
     max(medical_record_number) AS patient_mrn,
-    max(social_security_number) AS patient_ssn
+    max(social_security_number) AS patient_ssn,
+    max(organization_ids) AS org_id
    FROM patient_details
   GROUP BY tenant_id, patient_id
   ORDER BY patient_id DESC;

@@ -18,8 +18,8 @@
         customElements.define('fhir-viewer', FhirViewer);
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_screening_patient';
-        const detailTableViewName = 'fhir_patient_screening_questions_answers';
-        const popViewName = 'fhir_screening_detail';
+        const detailTable1ViewName = 'fhir_screening_info';
+        const detailTable2ViewName = 'fhir_patient_screening_questions_answers';
 
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
@@ -38,7 +38,7 @@
                     },
                     { headerName: "Last Name ", field: "patient_last_name", filter: "agTextColumnFilter" },
                     { headerName: "Gender", field: "patient_gender", filter: "agTextColumnFilter" },
-                    { headerName: "Birth Date", field: "patient_birth_date", filter: "agTextColumnFilter" },
+                    { headerName: "Birth Date", field: "patient_birth_date", filter: "agDateColumnFilter" },
                     { headerName: "Language", field: "patient_language", filter: "agTextColumnFilter" },
                     { headerName: "SSN", field: "patient_ssn", filter: "agTextColumnFilter" }
                 ])
@@ -54,26 +54,62 @@
                 .withDetailCellRendererParams({// provide the Grid Options to use on the Detail Grid
                     detailGridOptions: {
                         columnDefs: [
+                            { headerName: "Hub Interaction Id", field: "hub_interaction_id", filter: "agTextColumnFilter" , cellRenderer: 'agGroupCellRenderer'},
                             {
-                                headerName: "Question", field: "question", filter: "agTextColumnFilter",
-                                valueGetter: (params) => {
-                                    return params.data.question ?? "No observation provided";
-                                }
-                            },
-                            {
-                                headerName: "Answer", field: "answer", filter: "agTextColumnFilter",
-                                valueGetter: (params) => {
-                                    return params.data.answer ?? "No value provided";
-                                }
-                            },
+                                headerName: "Submission Date",
+                                field: "submitted_date_time",
+                                sort: "desc",
+                                filter: "agTextColumnFilter",
+                                valueFormatter: AGGridAide.dateTimeValueFormatter()
+                            }
                         ],
                         defaultColDef: {
                             flex: 1
+                        },
+                        masterDetail: true,
+                        //Level2 - Detail Grid 2 Renderer
+                        detailCellRendererParams: {
+                            detailGridOptions: {
+                                //Level2 - Detail Grid 2 Columns
+                                columnDefs: [
+                                    {
+                                        headerName: "Question", field: "question", filter: "agTextColumnFilter",
+                                        valueGetter: (params) => {
+                                            return params.data.question ?? "No observation provided";
+                                        }
+                                    },
+                                    {
+                                        headerName: "Answer", field: "answer", filter: "agTextColumnFilter",
+                                        valueGetter: (params) => {
+                                            return params.data.answer ?? "No value provided";
+                                        }
+                                    }
+                                ],
+                                defaultColDef: {
+                                    flex: 1
+                                }
+                            },
+                            detailRowHeight: 500,
+                            getDetailRowData: params => {
+                                //Level2 - Detail Grid 2 Row Data
+                                // Show questions and answers specific to organization
+                                const patientMRN = params.data.patient_mrn;
+                                const interactionId = params.data.hub_interaction_id;
+                                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTable2ViewName}/hub_interaction_id/${interactionId}/patient_mrn/${patientMRN}.json`))
+                                    .then(response => response.json())
+                                    .then(response => {
+                                        params.successCallback(response);
+                                    })
+                                    .catch(error => {
+                                        console.error('Error fetching details data' + error);
+                                    });
+                            }
                         }
                     },
                     getDetailRowData: params => {
                         const value = params.data.patient_mrn;
-                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/patient_mrn/${value}.json`))
+                        const qeName = params.data.qe_name
+                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTable1ViewName}/qe_name/${qeName}/patient_mrn/${value}.json`))
                             .then(response => response.json())
                             .then(response => {
                                 console.log(response);
