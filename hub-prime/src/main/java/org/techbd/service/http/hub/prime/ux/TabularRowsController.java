@@ -68,4 +68,25 @@ public class TabularRowsController {
                                 .fetch()
                                 .intoMaps();
         }
+
+        @Operation(summary = "SQL rows from a master table or view for a specific column value")
+        @GetMapping("/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}/{columnName}/{columnValue}/{columnName2}/{columnValue2}.json")
+        @ResponseBody
+        public Object tabularRowsCustomWithMultipleParams(final @PathVariable(required = false) String schemaName,
+                        final @PathVariable String masterTableNameOrViewName, final @PathVariable String columnName,
+                        final @PathVariable String columnValue, final @PathVariable String columnName2,
+                        final @PathVariable String columnValue2) {
+
+                // Fetch the result using the dynamically determined table and column; if
+                // jOOQ-generated types were found, automatic column value mapping will occur
+                String columnValue2LikePattern = "%" + columnValue2 + "%";
+                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                                masterTableNameOrViewName);
+                return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                                .where(typableTable.column(columnName).eq(columnValue)
+                                                .and(typableTable.column(columnName2).like(columnValue2LikePattern)))
+                                .fetch()
+                                .intoMaps();
+        }
+
 }
