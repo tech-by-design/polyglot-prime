@@ -973,7 +973,14 @@ WITH submission_counts AS (
     GROUP BY sihr.nature->>'tenant_id'
 )
 SELECT  
-    '??' as cross_roads_scn,
+    ( SELECT COUNT(*) 
+        FROM techbd_udi_ingress.hub_interaction AS hintr
+        INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
+        ON hintr.hub_interaction_id = sihr.hub_interaction_id
+        WHERE sihr.nature->>'tenant_id' = sc.qe_name
+        AND hintr."key" = '/api/expect/fhir/bundle'
+        AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
+    ) AS cross_roads_scn,
     qe_name,
     qe_total_submissions,
     techbd_total_submissions,
@@ -983,7 +990,7 @@ SELECT
     '??' as shinny,
     '??' as mdw
 FROM 
-    submission_counts;
+    submission_counts AS sc; 
 
 
 /*************************************
@@ -1098,8 +1105,8 @@ SELECT
     (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 ->> 'family') AS patient_last_name,
     (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 -> 'given' -> 0) AS patient_first_name ,
         CASE
-        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' THEN 'parameter_error'
-        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' AND NOT sihr.payload ? 'scorecardResponse' THEN 'bundle_error'
+        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' THEN 'Data Submission Error'
+        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' AND NOT sihr.payload ? 'scorecardResponse' THEN 'Data Validation Error'
         ELSE 'no_error'
     END AS error_type
 FROM techbd_udi_ingress.hub_interaction hintr

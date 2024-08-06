@@ -125,7 +125,7 @@ public class SftpManager {
     }
 
     @Cacheable(TENANT_EGRESS_SESSIONS_CACHE_KEY)
-    public Optional<IndividualTenantSftpEgressSession> getTenantEgressSession(String tenantId, String InteractionId,
+    public Optional<IndividualTenantSftpEgressSession> getTenantEgressSession(String tenantId, String interactionId,
             int limitMostRecent) {
         final var configuredAccounts = configuredTenants.getOrchctlts();
         if (configuredAccounts != null) {
@@ -136,7 +136,7 @@ public class SftpManager {
                     if (tec.tenantId.equals(tenantId)) {
                         try {
                             for (var egressSessionDir : tec.directories()) {
-                                if (egressSessionDir.getName().getPath().contains(InteractionId)) {
+                                if (egressSessionDir.getName().getPath().contains(interactionId)) {
                                     FileObject sessionJsonFile;
                                     try {
                                         sessionJsonFile = egressSessionDir.resolveFile("session.json");

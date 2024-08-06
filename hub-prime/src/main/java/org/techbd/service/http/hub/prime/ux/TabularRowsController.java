@@ -23,7 +23,7 @@ import lib.aide.tabular.TabularRowsResponse;
 @Controller
 @Tag(name = "TechBD Hub Tabular Row API Endpoints for AG Grid")
 public class TabularRowsController {
-        static private final Logger LOG = LoggerFactory.getLogger(TabularRowsController.class);
+        private static final Logger LOG = LoggerFactory.getLogger(TabularRowsController.class);
 
         private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
