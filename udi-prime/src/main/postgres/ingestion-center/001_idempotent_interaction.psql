@@ -978,7 +978,7 @@ SELECT
         INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
         ON hintr.hub_interaction_id = sihr.hub_interaction_id
         WHERE sihr.nature->>'tenant_id' = sc.qe_name
-        AND hintr."key" = '/Bundle'
+        AND hintr."key" = '/api/expect/fhir/bundle'
         AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
     ) AS cross_roads_scn,
     qe_name,
