@@ -973,7 +973,14 @@ WITH submission_counts AS (
     GROUP BY sihr.nature->>'tenant_id'
 )
 SELECT  
-    '??' as cross_roads_scn,
+    ( SELECT COUNT(*) 
+        FROM techbd_udi_ingress.hub_interaction AS hintr
+        INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
+        ON hintr.hub_interaction_id = sihr.hub_interaction_id
+        WHERE sihr.nature->>'tenant_id' = sc.qe_name
+        AND hintr."key" = '/Bundle'
+        AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
+    ) AS cross_roads_scn,
     qe_name,
     qe_total_submissions,
     techbd_total_submissions,
@@ -983,7 +990,7 @@ SELECT
     '??' as shinny,
     '??' as mdw
 FROM 
-    submission_counts;
+    submission_counts AS sc; 
 
 
 /*************************************
