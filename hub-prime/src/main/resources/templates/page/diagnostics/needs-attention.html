@@ -6,18 +6,21 @@
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
     <style>
-        .grid-description{
+        .grid-description {
             font-size: 14px;
             margin: 5px 0px 8px 15px;
         }
-        .grid-title{
+
+        .grid-title {
             font-size: 18px;
             font-weight: bold;
             margin: 12px 0px 11px 15px;
-        }  
+        }
+
         li {
             margin-bottom: 10px;
-        } 
+        }
+
         h1.assemtion {
             font-size: 15px;
             font-weight: bold;
@@ -40,13 +43,34 @@
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    { headerName: "CrossRoads SCN", field: "cross_roads_scn",  filter: "agTextColumnFilter",cellRenderer: 'agGroupCellRenderer'  },
-                    { headerName: "QE", field: "qe_name",  filter: "agTextColumnFilter"  },
-                    { headerName: "QE FHIR File Count", field: "qe_total_submissions", filter: "agTextColumnFilter" },
-                    { headerName: "TechBD", field: "techbd_total_submissions", filter: "agTextColumnFilter" },
-                    { headerName: "Scoring Engines", field: "scoring_engine_submission_passed", filter: "agTextColumnFilter" }, 
+                    { headerName: "CrossRoads SCN", field: "cross_roads_scn", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' },
+                    { headerName: "QE", field: "qe_name", filter: "agTextColumnFilter" },
+                    {
+                        headerName: "QE FHIR File Count", field: "qe_total_submissions", filter: "agTextColumnFilter", cellStyle: function (params) {
+                            if (params.data.cross_roads_scn !== params.data.qe_total_submissions) {
+                                return { color: 'red' };
+                            }
+                            return null;
+                        }
+                    },
+                    {
+                        headerName: "TechBD", field: "techbd_total_submissions", filter: "agTextColumnFilter", cellStyle: function (params) {
+                            if (params.data.qe_total_submissions !== params.data.techbd_total_submissions) {
+                                return { color: 'red' };
+                            }
+                            return null;
+                        }
+                    },
+                    {
+                        headerName: "Scoring Engines", field: "scoring_engine_submission_passed", filter: "agTextColumnFilter", cellStyle: function (params) {
+                            if (params.data.techbd_total_submissions !== params.data.scoring_engine_submission_passed) {
+                                return { color: 'red' };
+                            }
+                            return null;
+                        }
+                    },
                     { headerName: "SHIN-NY", field: "shinny", filter: "agTextColumnFilter" },
-                    { headerName: "MDW", field: "mdw", filter: "agTextColumnFilter" }, 
+                    { headerName: "MDW", field: "mdw", filter: "agTextColumnFilter" },
                     // { headerName: "Submission Date", field: "latest_created_at", filter: "agDateColumnFilter" } 
                 ])
                 .withServerSideDatasource(
@@ -64,33 +88,25 @@
                                 headerName: "Interaction Id",
                                 field: "hub_interaction_id",
                                 filter: "agTextColumnFilter",
-                               cellRenderer: params => { 
-                                const hub_interaction_id = params.value;
-                                const error_type = params.data.error_type;
-                                const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
-                                console.log(error_type);
-                                const button = document.createElement('button');
-                                button.innerText = hub_interaction_id;
-                                button.addEventListener('click', () => {
-                                    if (error_type == 'Data Submission Error') {
-                                        modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
-                                    } else if(error_type == 'Data Validation Error') {
-                                        modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
-                                    } else {
-                                        console.error('hub_interaction_id is undefined');
-                                    }
-                                });
-                                return button;
-                            } 
-                            },
-                            // {
-                            //     headerName: "Sat Interaction Id",
-                            //     field: "sat_interaction_http_request_id",
-                            //     filter: "agTextColumnFilter",
-                            //     cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            //         modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed/sat_interaction_http_request_id/${value}.json`));
-                            //     }, modalAide)
-                            // },
+                                cellRenderer: params => {
+                                    const hub_interaction_id = params.value;
+                                    const error_type = params.data.error_type;
+                                    const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
+                                    console.log(error_type);
+                                    const button = document.createElement('button');
+                                    button.innerText = hub_interaction_id;
+                                    button.addEventListener('click', () => {
+                                        if (error_type == 'Data Submission Error') {
+                                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                        } else if (error_type == 'Data Validation Error') {
+                                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                        } else {
+                                            console.error('hub_interaction_id is undefined');
+                                        }
+                                    });
+                                    return button;
+                                }
+                            }, 
                             { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter" },
                             { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() },
                             // { headerName: "First Name", field: "patient_first_name", filter: "agTextColumnFilter" },
@@ -127,14 +143,20 @@
     <div layout:fragment="content">
         <div class="grid-title">FHIR Submission Overview</div>
         <div class="grid-description">
-            This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN  to the QE, then to the Scoring Engine, SHIN-NY Data Lake, and finally to the MDW for last 7 days. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.
+            This widget compares the count of incoming synthetic files at each stage in the data processing pipeline,
+            from the SCN to the QE, then to the Scoring Engine, SHIN-NY Data Lake, and finally to the MDW for last 7
+            days. It provides a clear view of data movement and processing consistency, highlighting discrepancies or
+            drop-offs in the number of files between stages. This comparison helps in identifying potential issues and
+            ensures the integrity of the data flow across the system.
             <h1 class="assemtion">Assumptions</h1>
             <ul class="list-disc pl-4">
-                <li>  The file count from CrossRoads SCN to QE FHIR File Count should be the same.</li>
-                <li>  The QE FHIR File Count to TechBD should be the same.</li>
-                <li>  The TechBD to Scoring Engines should be the same.</li>
-                <li> When any numbers from one column to another column are not the same, it indicates there is an error.</li>
-                <li> If there are errors or issues, click on the <span class="drill-down">drill down</span> to see the numbers.</li>
+                <li> The file count from CrossRoads SCN to QE FHIR File Count should be the same.</li>
+                <li> The QE FHIR File Count to TechBD should be the same.</li>
+                <li> The TechBD to Scoring Engines should be the same.</li>
+                <li> When any numbers from one column to another column are not the same, it indicates there is an
+                    error.</li>
+                <li> If there are errors or issues, click on the <span class="drill-down">drill down</span> to see the
+                    numbers.</li>
                 <li> When you see the numbers, click to be able to see the <span class="popup">popup</span>.</li>
             </ul>
         </div>
