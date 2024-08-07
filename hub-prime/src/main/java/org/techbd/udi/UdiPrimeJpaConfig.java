@@ -66,7 +66,8 @@ public class UdiPrimeJpaConfig {
 
     public DataSourceHealthCheckResult udiPrimaryDataSrcHealth() {
         final var ds = udiPrimaryDataSource();
-        try (Connection connection = ds.getConnection()) {
+        try (@SuppressWarnings("PMD.UnusedLocalVariable")
+        Connection connection = ds.getConnection()) {
             return new DataSourceHealthCheckResult(ds, null, environment,
                     "${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}");
         } catch (Exception e) {
