@@ -20,29 +20,89 @@
         const viewName = 'fhir_screening_patient';
         const detailTable1ViewName = 'fhir_screening_info';
         const detailTable2ViewName = 'fhir_patient_screening_questions_answers';
-
+        const totalMasterGridRowCount = 0;
+        const masterColumnDefs = [
+            { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' },
+            { headerName: "QE Name", field: "qe_name", filter: "agTextColumnFilter" },
+            { headerName: "Full Name", field: "patient_full_name", filter: "agTextColumnFilter" },
+            { headerName: "First Name", field: "patient_first_name", filter: "agTextColumnFilter" },
+            { headerName: "Last Name ", field: "patient_last_name", filter: "agTextColumnFilter" },
+            { headerName: "Gender", field: "patient_gender", filter: "agTextColumnFilter" },
+            { headerName: "Birth Date", field: "patient_birth_date", filter: "agDateColumnFilter" },
+            { headerName: "Language", field: "patient_language", filter: "agTextColumnFilter" },
+            { headerName: "SSN", field: "patient_ssn", filter: "agTextColumnFilter" }
+        ];
+        const screeningColumnDefs = [
+            { headerName: "Interaction Id", field: "hub_interaction_id", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' },
+            { headerName: "Submission Date", field: "submitted_date_time", sort: "desc", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() }
+        ];
+        const questionAnswersColumnDefs = [
+            {
+                headerName: "Question", field: "question", filter: "agTextColumnFilter",
+                valueGetter: (params) => {
+                    return params.data.question ?? "No observation provided";
+                }
+            },
+            {
+                headerName: "Answer", field: "answer", filter: "agTextColumnFilter",
+                valueGetter: (params) => {
+                    return params.data.answer ?? "No value provided";
+                }
+            }
+        ];
+        const questionAndAnswerCellRenderer = {
+            detailGridOptions: {
+                //Level2 - Detail Grid 2 Columns
+                columnDefs: questionAnswersColumnDefs,
+                defaultColDef: {
+                    flex: 1
+                }
+            },
+            detailRowHeight: 500,
+            onFirstDataRendered: function (params) {
+                const rowCount = params.api.getDisplayedRowCount();
+                const firstRowNode = params.api.getDisplayedRowAtIndex(0);
+                if (rowCount == 1 && firstRowNode) {                    
+                    firstRowNode.setExpanded(true);
+                }
+            },
+            getDetailRowData: params => {
+                //Level3 - Detail Grid 3 Row Data
+                // Show questions and answers specific to organization
+                loadQuestionAndAnswerGrid(params);
+            }
+        };
+        function loadScreeningGrid(params) {
+            debugger;
+            const value = params.data.patient_mrn;
+            const qeName = params.data.qe_name
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTable1ViewName}/qe_name/${qeName}/patient_mrn/${value}.json`))
+                .then(response => response.json())
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
+        function loadQuestionAndAnswerGrid(params) {
+            const patientMRN = params.data.patient_mrn;
+            const interactionId = params.data.hub_interaction_id;
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTable2ViewName}/hub_interaction_id/${interactionId}/patient_mrn/${patientMRN}.json`))
+                .then(response => response.json())
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
-                .withColumnDefs([
-                    {
-                        headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter"
-                        , cellRenderer: 'agGroupCellRenderer'
-                    },
-                    { headerName: "QE Name", field: "qe_name", filter: "agTextColumnFilter" },
-                    { headerName: "Full Name", field: "patient_full_name", filter: "agTextColumnFilter" },
-                    {
-                        headerName: "First Name",
-                        field: "patient_first_name",
-                        filter: "agTextColumnFilter"
-                    },
-                    { headerName: "Last Name ", field: "patient_last_name", filter: "agTextColumnFilter" },
-                    { headerName: "Gender", field: "patient_gender", filter: "agTextColumnFilter" },
-                    { headerName: "Birth Date", field: "patient_birth_date", filter: "agDateColumnFilter" },
-                    { headerName: "Language", field: "patient_language", filter: "agTextColumnFilter" },
-                    { headerName: "SSN", field: "patient_ssn", filter: "agTextColumnFilter" }
-                ])
+                .withColumnDefs(masterColumnDefs)
                 .withServerSideDatasource(
+                    //Master Grid Row Data
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
@@ -53,71 +113,25 @@
                 )
                 .withDetailCellRendererParams({// provide the Grid Options to use on the Detail Grid
                     detailGridOptions: {
-                        columnDefs: [
-                            { headerName: "Hub Interaction Id", field: "hub_interaction_id", filter: "agTextColumnFilter" , cellRenderer: 'agGroupCellRenderer'},
-                            {
-                                headerName: "Submission Date",
-                                field: "submitted_date_time",
-                                sort: "desc",
-                                filter: "agTextColumnFilter",
-                                valueFormatter: AGGridAide.dateTimeValueFormatter()
-                            }
-                        ],
+                        columnDefs: screeningColumnDefs,
                         defaultColDef: {
                             flex: 1
                         },
                         masterDetail: true,
-                        //Level2 - Detail Grid 2 Renderer
-                        detailCellRendererParams: {
-                            detailGridOptions: {
-                                //Level2 - Detail Grid 2 Columns
-                                columnDefs: [
-                                    {
-                                        headerName: "Question", field: "question", filter: "agTextColumnFilter",
-                                        valueGetter: (params) => {
-                                            return params.data.question ?? "No observation provided";
-                                        }
-                                    },
-                                    {
-                                        headerName: "Answer", field: "answer", filter: "agTextColumnFilter",
-                                        valueGetter: (params) => {
-                                            return params.data.answer ?? "No value provided";
-                                        }
-                                    }
-                                ],
-                                defaultColDef: {
-                                    flex: 1
-                                }
-                            },
-                            detailRowHeight: 500,
-                            getDetailRowData: params => {
-                                //Level2 - Detail Grid 2 Row Data
-                                // Show questions and answers specific to organization
-                                const patientMRN = params.data.patient_mrn;
-                                const interactionId = params.data.hub_interaction_id;
-                                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTable2ViewName}/hub_interaction_id/${interactionId}/patient_mrn/${patientMRN}.json`))
-                                    .then(response => response.json())
-                                    .then(response => {
-                                        params.successCallback(response);
-                                    })
-                                    .catch(error => {
-                                        console.error('Error fetching details data' + error);
-                                    });
+                        onFirstDataRendered: function (params) {
+                            const rowCount = params.api.getDisplayedRowCount();
+                            const firstRowNode = params.api.getDisplayedRowAtIndex(0);
+                            if (rowCount ==1  && firstRowNode) {
+                                firstRowNode.setExpanded(true);
                             }
-                        }
+                        },
+                        //Level2 - Detail Grid 2 Renderer
+                        detailCellRendererParams: questionAndAnswerCellRenderer
                     },
                     getDetailRowData: params => {
-                        const value = params.data.patient_mrn;
-                        const qeName = params.data.qe_name
-                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTable1ViewName}/qe_name/${qeName}/patient_mrn/${value}.json`))
-                            .then(response => response.json())
-                            .then(response => {
-                                console.log(response);
-                                params.successCallback(response);
-                            })
-                            .catch(error => {
-                                console.error('Error fetching details data' + error);
-                            });
+                        //Level2 - Detail Grid 2 Row Data
+                        // Show screening information of patients
+                        loadScreeningGrid(params);
                     }
                 })
                 .withMasterDetail(true)
