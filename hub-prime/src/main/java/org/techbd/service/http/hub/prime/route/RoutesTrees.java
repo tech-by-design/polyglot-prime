@@ -17,7 +17,7 @@ import lib.aide.paths.PathsJson;
 
 @Service
 public class RoutesTrees extends HashMap<String, RoutesTree> {
-    public RoutesTrees(ApplicationContext applicationContext,
+    public RoutesTrees(@SuppressWarnings("PMD.UnusedFormalParameter") ApplicationContext applicationContext,
             @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping) {
         final var handlerMethods = handlerMapping.getHandlerMethods();
 
