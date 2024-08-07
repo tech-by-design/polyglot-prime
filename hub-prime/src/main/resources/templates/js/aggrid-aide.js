@@ -157,7 +157,8 @@ export class AGGridAideBuilder {
             serverSideDatasource: null,
             tooltipShowDelay: 500,
             masterDetail: false,
-            detailCellRendererParams: null
+            detailCellRendererParams: null,
+            detailRowAutoHeight:true
         };
         this.gridDivStyles = { height: "750px" };
     }

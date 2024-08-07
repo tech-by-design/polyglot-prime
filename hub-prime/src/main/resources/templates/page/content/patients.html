@@ -59,13 +59,6 @@
                 }
             },
             detailRowHeight: 500,
-            onFirstDataRendered: function (params) {
-                const rowCount = params.api.getDisplayedRowCount();
-                const firstRowNode = params.api.getDisplayedRowAtIndex(0);
-                if (rowCount == 1 && firstRowNode) {                    
-                    firstRowNode.setExpanded(true);
-                }
-            },
             getDetailRowData: params => {
                 //Level3 - Detail Grid 3 Row Data
                 // Show questions and answers specific to organization
@@ -73,7 +66,6 @@
             }
         };
         function loadScreeningGrid(params) {
-            debugger;
             const value = params.data.patient_mrn;
             const qeName = params.data.qe_name
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTable1ViewName}/qe_name/${qeName}/patient_mrn/${value}.json`))
