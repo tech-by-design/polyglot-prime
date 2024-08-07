@@ -110,7 +110,7 @@
             </div>
         </div> -->
 
-        <div class="mt-12 w-full grid grid-cols-2 gap-8">
+        <div class="mt-12 w-full grid grid-cols-1 gap-8">
             <div>
                 <h3 class="text-xl font-bold mb-4">Synthetic Testing (FHIR)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
@@ -127,6 +127,25 @@
                         TechBD ->> TechBD: Validate and Store FHIR JSON
                         TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
                         ScoringEngine ->> SHINNY: Submit to Data lake
+                        SHINNY ->> MDW: Submit to MDW
+                </pre>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold mb-4">Synthetic Testing with forced error August 6, 2024 (FHIR)</h3>
+                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
+                    sequenceDiagram
+                        participant CrossroadsSCN as Crossroads SCN
+                        participant QE as QE
+                        participant TechBD as TechBD
+                        participant ScoringEngine as Scoring Engine
+                        participant SHINNY as SHIN-NY Data Lake
+                        participant MDW as MDW
+                                    
+                        CrossroadsSCN ->> QE: Send Test JSON
+                        QE ->> TechBD: Proxy FHIR JSON
+                        TechBD ->> TechBD: Validate and Store FHIR JSON
+                        TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
+                        ScoringEngine ->> SHINNY: Submit only 50% to Data lake
                         SHINNY ->> MDW: Submit to MDW
                 </pre>
             </div>
