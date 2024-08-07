@@ -25,9 +25,9 @@ public class DataQualityController {
     private final Presentation presentation;
 
     public DataQualityController(final Presentation presentation,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig,
-            final SftpManager sftpManager,
-            final SandboxHelpers sboxHelpers) {
+            @SuppressWarnings("PMD.UnusedFormalParameter") final UdiPrimeJpaConfig udiPrimeJpaConfig,
+            @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
+            @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
         this.presentation = presentation;
     }
 

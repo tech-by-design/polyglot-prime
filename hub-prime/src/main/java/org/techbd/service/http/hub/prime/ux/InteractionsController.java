@@ -28,7 +28,7 @@ public class InteractionsController {
     private final SftpManager sftpManager;
 
     public InteractionsController(final Presentation presentation,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig,
+            @SuppressWarnings("PMD.UnusedFormalParameter") final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager) {
         this.presentation = presentation;
         this.sftpManager = sftpManager;

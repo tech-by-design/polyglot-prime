@@ -62,6 +62,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
     // TODO: figure out why this is not being read from application.yml (NULL is
     // being called, though)
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     @Value("${org.techbd.service.http.interactions.persist.db.uri-matcher.regex:#{null}}")
     private void setPersistInDbMatchers(final List<Object> regexAndMethods) {
         LOG.info("setPersistInDbMatchers %s".formatted(regexAndMethods == null ? "NULL" : regexAndMethods.toString()));

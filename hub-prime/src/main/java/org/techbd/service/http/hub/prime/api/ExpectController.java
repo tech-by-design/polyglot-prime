@@ -29,7 +29,8 @@ public class ExpectController {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExpectController.class.getName());
 
-    public ExpectController(final Environment environment, final AppConfig appConfig) {
+    public ExpectController(@SuppressWarnings("PMD.UnusedFormalParameter") final Environment environment,
+            @SuppressWarnings("PMD.UnusedFormalParameter") final AppConfig appConfig) {
     }
 
     @SuppressWarnings("unchecked")
