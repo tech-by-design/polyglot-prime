@@ -33,6 +33,7 @@ import org.techbd.conf.Configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nonnull;
 import jakarta.mail.MessagingException;
 import jakarta.validation.constraints.NotNull;
@@ -332,7 +333,7 @@ public class ArtifactStore {
         private Map<String, Object> provenance;
         private PersistenceStrategy always;
         private JavaMailSender mailSender;
-        @SuppressWarnings("unused")
+        @SuppressFBWarnings("URF_UNREAD_FIELD")
         private ApplicationContext appCtx;
 
         public Builder strategyJson(String strategyJson) {
