@@ -218,14 +218,14 @@ public class PrimeController {
     }
 
     @GetMapping(value = "/dashboard/stat/fhir/fhir-submission-summary", produces = "text/html")
-    public String fetchFHIRSubmissionSummary(Model model) {
+    public String fetchFHIRsubmissionSummary(Model model) {
         String schemaName = "techbd_udi_ingress";
         String viewName = "fhir_submission_summary";
-        final String DEFAULT_VALUE = "0";
-        String totalSubmissions = DEFAULT_VALUE;
-        String pendingSubmissions = DEFAULT_VALUE;
-        String acceptedSubmissions = DEFAULT_VALUE;
-        String rejectedSubmissions = DEFAULT_VALUE;
+        final String defaultValue = "0";
+        String totalSubmissions = defaultValue;
+        String pendingSubmissions = defaultValue;
+        String acceptedSubmissions = defaultValue;
+        String rejectedSubmissions = defaultValue;
         try {
             final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                     viewName);
@@ -234,10 +234,10 @@ public class PrimeController {
                     .intoMaps();
             if (CollectionUtils.isNotEmpty(fhirSubmission)) {
                 Map<String, Object> data = fhirSubmission.get(0);
-                totalSubmissions = data.getOrDefault("total_submissions", DEFAULT_VALUE).toString();
-                pendingSubmissions = data.getOrDefault("pending_submissions", DEFAULT_VALUE).toString();
-                acceptedSubmissions = data.getOrDefault("accepted_submissions", DEFAULT_VALUE).toString();
-                rejectedSubmissions = data.getOrDefault("rejected_submissions", DEFAULT_VALUE).toString();
+                totalSubmissions = data.getOrDefault("total_submissions", defaultValue).toString();
+                pendingSubmissions = data.getOrDefault("pending_submissions", defaultValue).toString();
+                acceptedSubmissions = data.getOrDefault("accepted_submissions", defaultValue).toString();
+                rejectedSubmissions = data.getOrDefault("rejected_submissions", defaultValue).toString();
             }
         } catch (Exception e) {
             LOG.error("Error fetching FHIR interactions", e);
