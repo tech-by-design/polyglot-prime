@@ -91,8 +91,7 @@
                                 cellRenderer: params => {
                                     const hub_interaction_id = params.value;
                                     const error_type = params.data.error_type;
-                                    const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
-                                    console.log(error_type);
+                                    const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;                                    
                                     const button = document.createElement('button');
                                     button.innerText = hub_interaction_id;
                                     button.addEventListener('click', () => {
