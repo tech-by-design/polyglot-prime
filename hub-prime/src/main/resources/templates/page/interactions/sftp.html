@@ -171,14 +171,21 @@
                                         // Handle JSON parsing error if needed
                                         return;
                                     }
-
                                     if (!response?.scoredcardResponse?.includes('TestResult: PASS')) {
                                         publishedFhirFailedCount++;
-                                        publishedFhirFailedResponse.push({
-                                            "File": r.fhirFileName,
-                                            "Response": response.scoredcardResponse,
-                                            "BundleID": response.bundleID
-                                        });
+                                        if(response.bundleID){
+                                            publishedFhirFailedResponse.push({
+                                                "File": r.fhirFileName,
+                                                "Response": response.scoredcardResponse,
+                                                "BundleID": response.bundleID
+                                            });
+                                        }else{
+                                            publishedFhirFailedResponse.push({
+                                                "File": r.fhirFileName,
+                                                "Error":response.error
+                                            });
+                                        }
+                                            
                                     } else {
                                         publishedFhirSuccessCount++;
                                     }
