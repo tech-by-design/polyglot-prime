@@ -958,7 +958,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention AS
 WITH submission_counts AS (
     SELECT  
         sihr.nature->>'tenant_id' as qe_name,
-        COUNT(CASE WHEN sihr.nature->>'nature' = 'Original FHIR Payload' THEN 1 END) AS qe_total_submissions,
+        COUNT(CASE WHEN sihr.from_state = 'NONE' THEN 1 END) AS qe_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forward HTTP Request' THEN 1 END) AS techbd_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS total_scoring_engine_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' AND sihr.payload ? 'scoredcardResponse' THEN 1 END) AS scoring_engine_submission_passed
@@ -1124,7 +1124,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_dashbaord AS
 WITH submission_counts AS (
     SELECT  
         sihr.nature->>'tenant_id' AS qe_name,
-        COUNT(CASE WHEN sihr.nature->>'nature' = 'Original FHIR Payload' THEN 1 END) AS qe_total_submissions,
+        COUNT(CASE WHEN sihr.from_state = 'NONE' THEN 1 END) AS qe_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forward HTTP Request' THEN 1 END) AS techbd_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS total_scoring_engine_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' AND sihr.payload ? 'scoredcardResponse' THEN 1 END) AS scoring_engine_submission_passed
