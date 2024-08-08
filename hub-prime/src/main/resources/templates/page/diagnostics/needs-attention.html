@@ -91,7 +91,7 @@
                                 cellRenderer: params => {
                                     const hub_interaction_id = params.value;
                                     const error_type = params.data.error_type;
-                                    const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;                                    
+                                    const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
                                     const button = document.createElement('button');
                                     button.innerText = hub_interaction_id;
                                     button.addEventListener('click', () => {
@@ -105,7 +105,7 @@
                                     });
                                     return button;
                                 }
-                            }, 
+                            },
                             { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter" },
                             { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() },
                             // { headerName: "First Name", field: "patient_first_name", filter: "agTextColumnFilter" },
@@ -134,7 +134,33 @@
                 .build();
 
             agGridInstance.init('serverDataGrid');
+
+
+            // Add date-range text
+            // Function to format date as DD-MM-YYYY
+            function formatDate(date) {
+                let day = String(date.getDate()).padStart(2, '0');
+                let month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+                let year = date.getFullYear();
+
+                return `${day}-${month}-${year}`;
+            }
+
+            // Get today's date
+            let today = new Date();
+
+            // Calculate the date 7 days before today
+            let sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 7);
+
+            // Format both dates
+            let todayFormatted = formatDate(today);
+            let sevenDaysAgoFormatted = formatDate(sevenDaysAgo);
+
+            // Inject the date range into the HTML
+            document.getElementById('date-range').innerHTML = `This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN to the QE, then to the Scoring Engine, SHIN-NY Data Lake, and finally to the MDW from <b>${sevenDaysAgoFormatted}</b> to <b>${todayFormatted}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.`;
         });
+ 
     </script>
 </head>
 
@@ -142,11 +168,9 @@
     <div layout:fragment="content">
         <div class="grid-title">FHIR Submission Overview</div>
         <div class="grid-description">
-            This widget compares the count of incoming synthetic files at each stage in the data processing pipeline,
-            from the SCN to the QE, then to the Scoring Engine, SHIN-NY Data Lake, and finally to the MDW for last 7
-            days. It provides a clear view of data movement and processing consistency, highlighting discrepancies or
-            drop-offs in the number of files between stages. This comparison helps in identifying potential issues and
-            ensures the integrity of the data flow across the system.
+            <div id="date-range">
+                <!-- The date range will be injected here -->
+            </div>
             <h1 class="assemtion">Assumptions</h1>
             <ul class="list-disc pl-4">
                 <li> The file count from CrossRoads SCN to QE FHIR File Count should be the same.</li>
@@ -161,6 +185,7 @@
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
+
 </body>
 
 </html>
