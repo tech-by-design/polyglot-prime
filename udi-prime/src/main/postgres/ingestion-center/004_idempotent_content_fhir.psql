@@ -89,6 +89,7 @@ AS SELECT hub_interaction_id,
  * View of FHIR Screening Questions and Answers. * 
  ******************************************************************************************/
 
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_patient_screening_questions_answers CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_patient_screening_questions_answers
 AS WITH filtered_resources AS (
          SELECT sihr.hub_interaction_id,
