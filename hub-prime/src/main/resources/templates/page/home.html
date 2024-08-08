@@ -112,23 +112,10 @@
 
         <div class="mt-12 w-full grid grid-cols-1 gap-8">
             <div>
-                <h3 class="text-xl font-bold mb-4">Synthetic Testing (FHIR)</h3>
-                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
-                    sequenceDiagram
-                        participant CrossroadsSCN as Crossroads SCN
-                        participant QE as QE
-                        participant TechBD as TechBD
-                        participant ScoringEngine as Scoring Engine
-                        participant SHINNY as SHIN-NY Data Lake
-                        participant MDW as MDW
-                                    
-                        CrossroadsSCN ->> QE: Send Test JSON
-                        QE ->> TechBD: Proxy FHIR JSON
-                        TechBD ->> TechBD: Validate and Store FHIR JSON
-                        TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
-                        ScoringEngine ->> SHINNY: Submit to Data lake
-                        SHINNY ->> MDW: Submit to MDW
-                </pre>
+                <h3 class="text-xl font-bold mb-4">Synthetic Testing Last 7 Days (FHIR)</h3>
+                
+                <div id="loader" style="display: none;" class="mx-auto w-fit">Loading...</div>
+                <div id="mermaid-diagram"></div>
             </div>
             <div>
                 <h3 class="text-xl font-bold mb-4">Synthetic Testing with forced error August 6, 2024 (FHIR)</h3>
@@ -190,6 +177,79 @@
 
         <script th:inline="javascript">
             /*<![CDATA[*/
+            document.addEventListener('DOMContentLoaded', async function () {
+                const loader = document.getElementById('loader');
+                const mermaidDiagram = document.getElementById('mermaid-diagram');
+
+                try {
+                    // Show loader
+                    loader.style.display = 'block';
+                    mermaidDiagram.style.display = 'none';
+
+                    const response = await fetch('/dashboard/stat/fhir/mermaid');
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const data = await response.json();
+                    // console.log('Fetched data:', data);
+
+                    // Helper function to safely find a count by label
+                    const getCountByLabel = (label) => {
+                        const item = data.find(item => item.label === label);
+                        if (item) {
+                            return item.count;
+                        } else {
+                            console.warn(`Label "${label}" not found in data`);
+                            return 0; // or any default value you prefer
+                        }
+                    };
+
+                    // Extract counts using the helper function
+                    const crossRoadsScn = getCountByLabel('total_cross_roads_scn');
+                    const qeTotalSubmissions = getCountByLabel('total_techbd_total_submissions');
+                    const techbdTotalSubmissions = getCountByLabel('total_total_scoring_engine_submissions');
+                    const scoringEngineSubmissionPassed = getCountByLabel('total_scoring_engine_submission_passed');
+                    const healthelink = getCountByLabel('healthelink_total_submissions');
+                    const healtheconnections = getCountByLabel('healtheconnections_total_submissions');
+                    const healthix = getCountByLabel('healthix_total_submissions');
+                    const grrhio = getCountByLabel('grrhio_total_submissions');
+                    const hixny = getCountByLabel('hixny_total_submissions');
+
+                    // Construct Mermaid diagram code with fetched data
+                    const mermaidCode = `
+            sequenceDiagram
+                participant CrossroadsSCN as Crossroads SCN
+                participant QE as QE
+                participant TechBD as TechBD
+                participant ScoringEngine as Scoring Engine
+                participant SHINNY as SHIN-NY Data Lake
+                participant MDW as MDW
+
+                CrossroadsSCN ->> QE: Send Test JSON (${crossRoadsScn})
+                QE ->> TechBD: HEALTHeLINK Proxy FHIR JSON (${healthelink})
+                QE ->> TechBD: Healtheconnections Proxy FHIR JSON (${healtheconnections})
+                QE ->> TechBD: Healthix Proxy FHIR JSON (${healthix})
+                QE ->> TechBD: Rochester Proxy FHIR JSON (${grrhio})
+                QE ->> TechBD: HixNY Proxy FHIR JSON (${hixny})
+                TechBD ->> TechBD: Validate and Store FHIR JSON (${qeTotalSubmissions})
+                TechBD ->> ScoringEngine: Proxy Validated FHIR JSON (${scoringEngineSubmissionPassed})
+                ScoringEngine ->> SHINNY: Submit to Data lake
+                SHINNY ->> MDW: Submit to MDW
+        `;
+
+                    // Inject the Mermaid code into the HTML
+                    mermaidDiagram.innerHTML = `<pre class="mermaid bg-white p-4 rounded-lg shadow-md">${mermaidCode}</pre>`;
+
+                    // Initialize Mermaid after setting the diagram code
+                    mermaid.contentLoaded();
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                } finally {
+                    // Hide loader and show diagram
+                    loader.style.display = 'none';
+                    mermaidDiagram.style.display = 'block';
+                }
+            });
             // Optional: Use JavaScript to fetch data dynamically if needed
             async function fetchRecentData() {
                 try {
@@ -209,7 +269,7 @@
                             label: "Pending Submissions"
                         },
                         {
-                            count: document.getElementById("acceptedSubmissionsP") ? document.getElementById("acceptedSubmissionsP").textContent :0,
+                            count: document.getElementById("acceptedSubmissionsP") ? document.getElementById("acceptedSubmissionsP").textContent : 0,
                             label: "Accepted Submissions"
                         },
                         {
