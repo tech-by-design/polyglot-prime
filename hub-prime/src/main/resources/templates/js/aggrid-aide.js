@@ -158,11 +158,19 @@ export class AGGridAideBuilder {
             tooltipShowDelay: 500,
             masterDetail: false,
             detailCellRendererParams: null,
-            detailRowAutoHeight:true
+            detailRowAutoHeight:false
         };
         this.gridDivStyles = { height: "750px" };
     }
-
+    /**
+     * Sets the detailRowAutoHeight for the AG Grid.
+     * @param {Array} detailRowAutoHeight - The detailRowAutoHeight
+     * @returns {AGGridAideBuilder} The builder instance.
+     */
+    withDetailRowAutoHeight(detailRowAutoHeight) {
+        this.gridOptions.detailRowAutoHeight = detailRowAutoHeight;
+        return this;
+    }
     /**
      * Sets the column definitions for the AG Grid.
      * @param {Array} columnDefs - The column definitions.
