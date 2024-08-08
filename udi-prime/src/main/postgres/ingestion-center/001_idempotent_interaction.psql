@@ -1135,13 +1135,13 @@ WITH combined_counts AS (
         ON hintr.hub_interaction_id = sihr.hub_interaction_id
     WHERE 
         sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
-        AND LOWER(sihr.nature->>'tenant_id') IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny')
+        AND LOWER(sihr.nature->>'tenant_id') IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny')
     GROUP BY LOWER(sihr.nature->>'tenant_id')
 )
 SELECT
     SUM(cross_roads_scn) AS total_cross_roads_scn,
     SUM(CASE WHEN qe_name = 'healthelink' THEN qe_total_submissions ELSE 0 END) AS healthelink_total_submissions,
-    SUM(CASE WHEN qe_name = 'healtheconnections' THEN qe_total_submissions ELSE 0 END) AS healtheconnections_total_submissions,
+    SUM(CASE WHEN qe_name = 'healtheconn' THEN qe_total_submissions ELSE 0 END) AS healtheconnections_total_submissions,
     SUM(CASE WHEN qe_name = 'healthix' THEN qe_total_submissions ELSE 0 END) AS healthix_total_submissions,
     SUM(CASE WHEN qe_name = 'grrhio' THEN qe_total_submissions ELSE 0 END) AS grrhio_total_submissions,
     SUM(CASE WHEN qe_name = 'hixny' THEN qe_total_submissions ELSE 0 END) AS hixny_total_submissions,
@@ -1151,4 +1151,4 @@ SELECT
 FROM
     combined_counts
 WHERE
-    qe_name IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny');
+    qe_name IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny');
