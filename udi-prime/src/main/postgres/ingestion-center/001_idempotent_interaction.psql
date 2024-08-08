@@ -1121,47 +1121,34 @@ where   hintr."key" IN ('/Bundle/', '/Bundle')
 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_dashbaord CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_dashbaord AS     
-WITH submission_counts AS (
+WITH combined_counts AS (
     SELECT  
-        sihr.nature->>'tenant_id' AS qe_name,
+        LOWER(sihr.nature->>'tenant_id') AS qe_name,
         COUNT(CASE WHEN sihr.from_state = 'NONE' THEN 1 END) AS qe_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forward HTTP Request' THEN 1 END) AS techbd_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS total_scoring_engine_submissions,
-        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' AND sihr.payload ? 'scoredcardResponse' THEN 1 END) AS scoring_engine_submission_passed
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' AND sihr.payload ? 'scoredcardResponse' THEN 1 END) AS scoring_engine_submission_passed,
+        COUNT(CASE WHEN hintr."key" = '/api/expect/fhir/bundle' THEN 1 END) AS cross_roads_scn
     FROM 
         techbd_udi_ingress.hub_interaction AS hintr
         INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
         ON hintr.hub_interaction_id = sihr.hub_interaction_id
     WHERE 
-        hintr."key" IN ('/Bundle/', '/Bundle')
-        AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
-        and  sihr.nature->>'tenant_id' IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny')
-    GROUP BY sihr.nature->>'tenant_id'
-),
-cross_roads_counts AS (
-    SELECT
-        sihr.nature->>'tenant_id' AS qe_name,
-        COUNT(*) AS cross_roads_scn
-    FROM
-        techbd_udi_ingress.hub_interaction AS hintr
-        INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
-        ON hintr.hub_interaction_id = sihr.hub_interaction_id
-    WHERE
-        hintr."key" = '/api/expect/fhir/bundle'
-        AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
-    GROUP BY sihr.nature->>'tenant_id'
+        sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
+        AND LOWER(sihr.nature->>'tenant_id') IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny')
+    GROUP BY LOWER(sihr.nature->>'tenant_id')
 )
 SELECT
-    (SELECT SUM(cross_roads_scn) FROM cross_roads_counts WHERE qe_name IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny')) AS total_cross_roads_scn,
-    SUM(CASE WHEN sc.qe_name = 'healthelink' THEN sc.qe_total_submissions ELSE 0 END) AS healthelink_total_submissions,
-    SUM(CASE WHEN sc.qe_name = 'healtheconnections' THEN sc.qe_total_submissions ELSE 0 END) AS healtheconnections_total_submissions,
-    SUM(CASE WHEN sc.qe_name = 'healthix' THEN sc.qe_total_submissions ELSE 0 END) AS healthix_total_submissions,
-    SUM(CASE WHEN sc.qe_name = 'grrhio' THEN sc.qe_total_submissions ELSE 0 END) AS grrhio_total_submissions,
-    SUM(CASE WHEN sc.qe_name = 'hixny' THEN sc.qe_total_submissions ELSE 0 END) AS hixny_total_submissions,
-    (SELECT SUM(techbd_total_submissions) FROM submission_counts WHERE qe_name IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny')) AS total_techbd_total_submissions,
-    (SELECT SUM(total_scoring_engine_submissions) FROM submission_counts WHERE qe_name IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny')) AS total_total_scoring_engine_submissions,
-    (SELECT SUM(scoring_engine_submission_passed) FROM submission_counts WHERE qe_name IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny')) AS total_scoring_engine_submission_passed
+    SUM(cross_roads_scn) AS total_cross_roads_scn,
+    SUM(CASE WHEN qe_name = 'healthelink' THEN qe_total_submissions ELSE 0 END) AS healthelink_total_submissions,
+    SUM(CASE WHEN qe_name = 'healtheconnections' THEN qe_total_submissions ELSE 0 END) AS healtheconnections_total_submissions,
+    SUM(CASE WHEN qe_name = 'healthix' THEN qe_total_submissions ELSE 0 END) AS healthix_total_submissions,
+    SUM(CASE WHEN qe_name = 'grrhio' THEN qe_total_submissions ELSE 0 END) AS grrhio_total_submissions,
+    SUM(CASE WHEN qe_name = 'hixny' THEN qe_total_submissions ELSE 0 END) AS hixny_total_submissions,
+    SUM(techbd_total_submissions) AS total_techbd_total_submissions,
+    SUM(total_scoring_engine_submissions) AS total_total_scoring_engine_submissions,
+    SUM(scoring_engine_submission_passed) AS total_scoring_engine_submission_passed
 FROM
-    submission_counts AS sc
+    combined_counts
 WHERE
-    sc.qe_name IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny');
+    qe_name IN ('healthelink', 'healtheconnections', 'healthix', 'grrhio', 'hixny');
