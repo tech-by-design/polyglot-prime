@@ -5,6 +5,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jooq.impl.DSL;
@@ -247,6 +248,102 @@ public class PrimeController {
         model.addAttribute("acceptedSubmissions", acceptedSubmissions);
         model.addAttribute("rejectedSubmissions", rejectedSubmissions);
         return "fragments/interactions :: serverTextStat";
+    }
+
+    @GetMapping(value = "/dashboard/stat/fhir/mermaid")
+    public ResponseEntity<List<InteractionData>> fetchFHIRSMermaidDiagram(Model model) {
+        String schemaName = "techbd_udi_ingress";
+        String viewName = "fhir_needs_attention_dashbaord";
+
+        // Initialize list to hold the results
+        List<InteractionData> interactions = new ArrayList<>();
+
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
+
+        // Query the view and fetch the results
+        List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                .fetch()
+                .intoMaps(); 
+        // Check if data is available
+        if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
+            Map<String, Object> data = fhirSubmission.get(0);
+            //LOG.info("data------------" + data);
+
+            // Populate the list with data
+            interactions.add(new InteractionData("total_cross_roads_scn",
+                    getSafeIntegerValue(data.get("total_cross_roads_scn"))));
+            interactions.add(new InteractionData("total_techbd_total_submissions",
+                    getSafeIntegerValue(data.get("total_techbd_total_submissions"))));
+            interactions.add(new InteractionData("total_total_scoring_engine_submissions",
+                    getSafeIntegerValue(data.get("total_total_scoring_engine_submissions"))));
+            interactions.add(new InteractionData("total_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("total_scoring_engine_submission_passed"))));
+            interactions.add(new InteractionData("healthelink_total_submissions",
+                    getSafeIntegerValue(data.get("healthelink_total_submissions"))));
+            interactions.add(new InteractionData("healtheconnections_total_submissions",
+                    getSafeIntegerValue(data.get("healtheconnections_total_submissions"))));
+            interactions.add(new InteractionData("healthix_total_submissions",
+                    getSafeIntegerValue(data.get("healthix_total_submissions"))));
+            interactions.add(new InteractionData("grrhio_total_submissions",
+                    getSafeIntegerValue(data.get("grrhio_total_submissions"))));
+            interactions.add(new InteractionData("hixny_total_submissions",
+                    getSafeIntegerValue(data.get("hixny_total_submissions"))));
+        } else {
+            // Default values if no data found
+            interactions.add(new InteractionData("total_cross_roads_scn", 0));
+            interactions.add(new InteractionData("total_techbd_total_submissions", 0));
+            interactions.add(new InteractionData("total_total_scoring_engine_submissions", 0));
+            interactions.add(new InteractionData("total_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("healthelink_total_submissions", 0));
+            interactions.add(new InteractionData("healtheconnections_total_submissions", 0));
+            interactions.add(new InteractionData("healthix_total_submissions", 0));
+            interactions.add(new InteractionData("grrhio_total_submissions", 0));
+            interactions.add(new InteractionData("hixny_total_submissions", 0));
+
+        }
+
+        // Return the data with HTTP status OK
+        return ResponseEntity.ok().body(interactions);
+    }
+
+    public class InteractionData {
+        private String label;
+        private int count;
+
+        // Constructor
+        public InteractionData(String label, int count) {
+            this.label = label;
+            this.count = count;
+        }
+
+        // Getters and Setters
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(String label) {
+            this.label = label;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
+    }
+
+    private int getSafeIntegerValue(Object value) {
+        if (value == null || value.toString().isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            LOG.error("Error parsing integer from value: {}", value, e);
+            return 0;
+        }
     }
 
 }
