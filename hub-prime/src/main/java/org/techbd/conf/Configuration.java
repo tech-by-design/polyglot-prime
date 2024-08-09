@@ -38,16 +38,16 @@ public class Configuration {
 
     public static final Map<String, String> ownEnvVars = getEnvVarsAvailable(".*TECHBD.*");
 
-    public class Servlet {
-        public class HeaderName {
+    public static class Servlet {
+        public static class HeaderName {
             public static final String PREFIX = "X-TechBD-";
 
-            public class Request {
+            public static class Request {
                 public static final String TENANT_ID = PREFIX + "Tenant-ID";
                 public static final String TENANT_NAME = PREFIX + "Tenant-Name";
             }
 
-            public class Response {
+            public static class Response {
                 // in case they're necessary
             }
         }
