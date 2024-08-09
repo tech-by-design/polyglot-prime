@@ -2,6 +2,7 @@ package archunit;
 
 import java.util.regex.Pattern;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Controller;
 
@@ -34,8 +35,9 @@ public class NamingArchRulesTest {
     //ArchRule serviceNaming = classes()
     //        .that().areAnnotatedWith(Service.class)
     //        .should().haveSimpleNameEndingWith("Service");
-
+    
     @Test
+    @DisplayName("ArchUnit test to ensure that the methods should follow camelCase convention")
     public void methodsShouldFollowCamelCaseConvention() {
         ArchRule rule = classes()
                 .should(new ArchCondition<JavaClass>("have methods following camelCase convention") {
@@ -62,6 +64,7 @@ public class NamingArchRulesTest {
     }
 
     @Test
+    @DisplayName("ArchUnit test to ensure that the fields should follow camelCase convention")
     public void fieldsShouldFollowCamelCaseConvention() {
         ArchRule rule = classes()
                 .should(new ArchCondition<JavaClass>("have fields following camelCase convention") {
