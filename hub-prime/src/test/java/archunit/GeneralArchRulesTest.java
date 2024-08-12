@@ -1,5 +1,6 @@
 package archunit;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
@@ -20,6 +21,7 @@ public class GeneralArchRulesTest {
             .importPackages("org.techbd.service.http.hub.prime");
 
     @Test
+    @DisplayName("ArchUnit test to ensure loggers should be private static final")
     public void loggersShouldBePrivateStaticFinal() {
         fields().that().haveRawType(Logger.class)
                 .should().bePrivate()
@@ -30,6 +32,7 @@ public class GeneralArchRulesTest {
     }
 
     @Test
+    @DisplayName("ArchUnit test to ensure that the classes should not use JavaUtil logging")
     public void classesShouldNotUseJavaUtilLogging() {
         NO_CLASSES_SHOULD_USE_JAVA_UTIL_LOGGING.check(classes);
     }
@@ -39,13 +42,14 @@ public class GeneralArchRulesTest {
     // public void classesShouldNotAccessStandardStreamsDefinedByHand() {
     //     noClasses().should(ACCESS_STANDARD_STREAMS).check(classes);
     // }
-
     @Test
+    @DisplayName("ArchUnit test to ensure that the classes should not use Joda time")
     public void classesShouldNotUseJodaTime() {
         NO_CLASSES_SHOULD_USE_JODATIME.check(classes);
     }
 
     @Test
+    @DisplayName("ArchUnit test to ensure that the classes should not use field injection except tests")
     public void classesShouldNotUseFieldInjectionExceptTests() {
         NO_CLASSES_SHOULD_USE_FIELD_INJECTION.check(classes);
     }
