@@ -283,6 +283,34 @@ export class ModalAide {
                     text-align: left;
                     border-bottom: 1px solid #ddd;
                 }
+                     .${this.closeClass}:hover,
+            .${this.closeClass}:focus {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+            .level-0 {
+                font-weight: bold;
+            }
+
+            .level-1 {
+                margin-left: 20px;
+                color: #333;
+            }
+
+            .level-2 {
+                margin-left: 40px;
+                color: #666;
+            }
+
+            .level-3 {
+                margin-left: 60px;
+                color: #999;
+            }
+               .level-0 {
+                     display: none;  
+                }
             `;
             document.head.appendChild(style);
     
@@ -324,28 +352,66 @@ export class ModalAide {
      * @param {Object} json - The JSON object to convert.
      * @return {string} The HTML string of rows.
      */
-    convertJsonToHtmlRowsCustom(json) {
-        let html = '<div class="resource observation"><div class="header">Interaction Details</div><table class="table"><tbody>';
-    
-        function parseObject(obj) {
+    formatStringCamel(input) {
+        return input
+            .replace(/_/g, ' ')  // Replace underscores with spaces
+            .replace(/\b\w/g, char => char.toUpperCase());  // Capitalize the first letter of each word
+    }
+
+    convertJsonToHtmlRowsCustom(json, level = 0) {
+        let html = '<div class="resource observation"><div class="header">Error Information</div><table class="table"><tbody>';
+        
+        // Use an arrow function to maintain the 'this' context
+        const parseObject = (obj, level) => {
+            const levelClass = `level-${level}`;
             for (const [key, value] of Object.entries(obj)) {
+                let displayValue = value;
+
+                // Check if the key is 'request_created_at' and value is a number
+                if (key === 'date' && typeof value === 'number') {
+                    // Convert Unix timestamp to a readable date
+                    let milliseconds = value * 1000; // Convert seconds to milliseconds
+                    let date = new Date(milliseconds);
+
+                    // Format options
+                    let options = {
+                        timeZone: 'America/New_York',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    };
+
+                    // Create a formatter
+                    let formatter = new Intl.DateTimeFormat('en-US', options);
+                    displayValue = formatter.format(date);
+                }
+
+                // Use the formatStringCamel method
+                let key_val = this.formatStringCamel(key);
+
+                // Check if the value is an object      
                 if (typeof value === 'object' && value !== null) {
-                    html += `<tr><th>${key}</th><td>`;
-                    parseObject(value);
+                    html += `<tr class="${levelClass}"><th><b>${key_val}</b></th><td>`;
+                    parseObject(value, level + 1);
                     html += `</td></tr>`;
                 } else {
-                    html += `<tr><th>${key}</th><td>${value}</td></tr>`;
+                    if(key == "sat_interaction_http_request_id"){
+                        html += ``;      
+                    }else{
+                        html += `<tr class="${levelClass}"><th>${key_val}</th><td>${displayValue}</td></tr>`;
+                    }
                 }
             }
-        }
+        };
     
-        parseObject(json);
+        parseObject(json, level);
         html += '</tbody></table></div>';
         return html;
     }
-    
-    
-    
     
     /**
      * Fetches JSON data from a specified URL and displays it within the modal.
@@ -356,10 +422,13 @@ export class ModalAide {
             .then(response => response.json())
             .then(data => this.viewJsonValueCustom(data))
             .catch(error => console.error(`Error fetching data from ${url}`, error));
+    }     
+
+    formatStringCamel(str) {
+        return str
+            .replace(/_/g, ' ')  // Replace underscores with spaces
+            .replace(/\b\w/g, char => char.toUpperCase());  // Capitalize the first letter of each word
     }
-    
-   
-     
     
 }
 

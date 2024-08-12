@@ -12,6 +12,14 @@
             text-indent: -1.5rem;
         }
     </style>
+        <script type="module"> 
+            import { Helpers } from '@presentation/shell/helpers.js';
+            document.addEventListener('DOMContentLoaded', async function () {
+                const helpers = new Helpers();
+                // Inject the date range into the HTML
+                helpers.injectDateRangeText('dashboard-date-range', 'Synthetic Testing from {startDate} to {endDate} (FHIR)');
+            });
+        </script>
 </head>
 
 <body class="bg-gray-100">
@@ -112,8 +120,8 @@
 
         <div class="mt-12 w-full grid grid-cols-1 gap-8">
             <div>
-                <h3 class="text-xl font-bold mb-4">Synthetic Testing Last 7 Days (FHIR)</h3>
-                
+                <h3 class="text-xl font-bold mb-4" id="dashboard-date-range"></h3>
+
                 <div id="loader" style="display: none;" class="mx-auto w-fit">Loading...</div>
                 <div id="mermaid-diagram"></div>
             </div>
@@ -177,7 +185,8 @@
 
         <script th:inline="javascript">
             /*<![CDATA[*/
-            document.addEventListener('DOMContentLoaded', async function () {
+            document.addEventListener('DOMContentLoaded', async function () { 
+
                 const loader = document.getElementById('loader');
                 const mermaidDiagram = document.getElementById('mermaid-diagram');
 
@@ -248,7 +257,8 @@
                     // Hide loader and show diagram
                     loader.style.display = 'none';
                     mermaidDiagram.style.display = 'block';
-                }
+                }                
+
             });
             // Optional: Use JavaScript to fetch data dynamically if needed
             async function fetchRecentData() {

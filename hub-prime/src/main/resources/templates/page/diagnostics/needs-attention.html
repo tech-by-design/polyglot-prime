@@ -34,12 +34,14 @@
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_needs_attention';
         const detailTableViewName = 'fhir_needs_attention_details';
         const popViewName = 'interaction_http_request_forward_fail';
         document.addEventListener('DOMContentLoaded', function () {
+            const helpers = new Helpers();
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
@@ -96,9 +98,9 @@
                                     button.innerText = hub_interaction_id;
                                     button.addEventListener('click', () => {
                                         if (error_type == 'Data Submission Error') {
-                                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                            modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
                                         } else if (error_type == 'Data Validation Error') {
-                                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                            modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
                                         } else {
                                             console.error('hub_interaction_id is undefined');
                                         }
@@ -107,10 +109,9 @@
                                 }
                             },
                             { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter" },
-                            { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() },
-                            // { headerName: "First Name", field: "patient_first_name", filter: "agTextColumnFilter" },
-                            // { headerName: "Last Name", field: "patient_last_name", filter: "agTextColumnFilter" },                             
+                            { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() },                          
                         ],
+                        detailRowHeight : 280,
                         defaultColDef: {
                             flex: 1
                         }
@@ -136,29 +137,9 @@
             agGridInstance.init('serverDataGrid');
 
 
-            // Add date-range text
-            // Function to format date as DD-MM-YYYY
-            function formatDate(date) {
-                let day = String(date.getDate()).padStart(2, '0');
-                let month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-                let year = date.getFullYear();
-
-                return `${day}-${month}-${year}`;
-            }
-
-            // Get today's date
-            let today = new Date();
-
-            // Calculate the date 7 days before today
-            let sevenDaysAgo = new Date(today);
-            sevenDaysAgo.setDate(today.getDate() - 7);
-
-            // Format both dates
-            let todayFormatted = formatDate(today);
-            let sevenDaysAgoFormatted = formatDate(sevenDaysAgo);
-
+            // Add date-range text 
             // Inject the date range into the HTML
-            document.getElementById('date-range').innerHTML = `This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN to the QE, then to the Scoring Engine, SHIN-NY Data Lake, and finally to the MDW from <b>${sevenDaysAgoFormatted}</b> to <b>${todayFormatted}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.`;
+            helpers.injectDateRangeText('date-range', 'This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN to the QE, then to the Scoring Engine, SHIN-NY Data Lake, and finally to the MDW from <b>{startDate}</b> to <b>{endDate}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.');
         });
  
     </script>

@@ -26,16 +26,16 @@ import jakarta.validation.constraints.NotNull;
 
 @Component
 public class Interactions {
-    public class Servlet {
-        public class HeaderName {
+    public static class Servlet {
+        public static class HeaderName {
             public static final String PREFIX = Configuration.Servlet.HeaderName.PREFIX + "Interaction-";
 
-            public class Request {
+            public static class Request {
                 public static final String PERSISTENCE_STRATEGY = PREFIX + "Persistence-Strategy";
                 public static final String PROVENANCE = PREFIX + "Provenance";
             }
 
-            public class Response {
+            public static class Response {
                 public static final String PERSISTENCE_STRATEGY_ARGS = PREFIX + "Persistence-Strategy-Args";
                 public static final String PERSISTENCE_STRATEGY_FACTORY = PREFIX + "Persistence-Strategy-Factory";
                 public static final String PERSISTENCE_STRATEGY_INSTANCE = PREFIX + "Persistence-Strategy-Instance";
