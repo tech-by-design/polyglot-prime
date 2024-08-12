@@ -98,9 +98,9 @@
                                     button.innerText = hub_interaction_id;
                                     button.addEventListener('click', () => {
                                         if (error_type == 'Data Submission Error') {
-                                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                            modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
                                         } else if (error_type == 'Data Validation Error') {
-                                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                            modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
                                         } else {
                                             console.error('hub_interaction_id is undefined');
                                         }
