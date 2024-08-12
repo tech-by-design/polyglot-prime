@@ -1152,3 +1152,30 @@ FROM
     combined_counts
 WHERE
     qe_name IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny');
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed_needs_attention CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_failed_needs_attention
+AS SELECT  
+    htt_req.nature AS error_type,
+    htt_req.payload ->> 'error' AS error_message,
+    htt_req.request_created_at AS date,
+    htt_req.sat_interaction_http_request_id
+   FROM techbd_udi_ingress.interaction_http_request_mat htt_req
+     LEFT JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
+     LEFT JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
+  WHERE upper(htt_req.to_state) = 'FAIL'::text;
+ 
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_needs_attention CASCADE; 
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request_needs_attention
+AS SELECT  
+    htt_req.nature AS error_type,  
+    htt_req.payload ->> 'insertScreeningsResponse' AS error_message,
+    htt_req.request_created_at AS date,
+    htt_req.sat_interaction_http_request_id    
+   FROM techbd_udi_ingress.interaction_http_request_mat htt_req
+     LEFT JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
+     LEFT JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
+  WHERE htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]);
+      
