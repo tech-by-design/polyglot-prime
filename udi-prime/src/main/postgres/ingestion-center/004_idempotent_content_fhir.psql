@@ -1,3 +1,4 @@
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_screening_info_mat
 TABLESPACE pg_default
 AS WITH filtered_data AS (
