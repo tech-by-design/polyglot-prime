@@ -189,7 +189,12 @@ export class AGGridAideBuilder {
         this.gridOptions.masterDetail = masterDetail;
         return this;
     }
-
+    // New method: withGridOptions
+    withGridOptions(options) {
+        // Merge the provided options into this.gridOptions
+        Object.assign(this.gridOptions, options);
+        return this;
+    }
 
     /**
       * Sets the default cell renderer definitions for the AG Grid.
