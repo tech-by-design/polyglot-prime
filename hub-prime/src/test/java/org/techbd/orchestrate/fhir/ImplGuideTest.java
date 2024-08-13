@@ -1,86 +1,119 @@
 package org.techbd.orchestrate.fhir;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.StructureDefinition;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.DataFormatException;
+import ca.uhn.fhir.parser.IParser;
+import ca.uhn.fhir.validation.FhirValidator;
+import ca.uhn.fhir.validation.ValidationOptions;
 
 public class ImplGuideTest {
 
-    private JSONObject igJsonObject;
-    private JSONObject rhettJsonObject;
+    private static final String IG_PROFILE_URL = "https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json";
+    private FhirContext fhirContext;
+    private FhirValidator validator;
+    private StructureDefinition profile;
 
-    @Before
-    public void setup() throws Exception {
-        // Load ig.json from resources
-        igJsonObject = loadJsonFromResource("ig.json");
+    @BeforeEach
+    void setup() throws URISyntaxException, IOException {
+        fhirContext = FhirContext.forR4();
+        validator = fhirContext.newValidator();
+        validator.setValidateAgainstStandardSchema(true);
+        validator.setValidateAgainstStandardSchematron(false);
 
-        // Load Rhett.json from resources
-        rhettJsonObject = loadJsonFromResource("Rhett.json");
+        URL url = new URI(IG_PROFILE_URL).toURL();
+        IParser parser = fhirContext.newJsonParser();
+        profile = parser.parseResource(StructureDefinition.class, url.openStream());
     }
 
-    private JSONObject loadJsonFromResource(String fileName) throws Exception {
-        InputStream is = getClass().getClassLoader().getResourceAsStream("data/" + fileName);
-        if (is == null) {
-            System.err.println("File not found in resources: " + fileName);
-            throw new IllegalArgumentException("File not found: " + fileName);
+    @ParameterizedTest
+    @MethodSource("provideHappyPathFixtures")
+    void testHappyPathStructureDefinitionValidationFixture(String fixtureFileName) throws IOException {
+        String input = loadFixture(fixtureFileName);
+        if (input == null) {
+            return;
         }
-        String jsonData = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        System.out.println("Successfully loaded JSON from resource: " + fileName);
-        return new JSONObject(jsonData);
+
+        Bundle bundle = fhirContext.newJsonParser().parseResource(Bundle.class, input);
+        ValidationOptions options = new ValidationOptions().addProfile(profile.getUrl());
+        var result = validator.validateWithResult(bundle, options);
+
+        String encoded = fhirContext.newJsonParser().setPrettyPrint(true).encodeResourceToString(result.toOperationOutcome());
+        String expectedResult = """
+                                {
+                                  "resourceType": "OperationOutcome",
+                                  "issue": [ {
+                                    "severity": "information",
+                                    "code": "informational",
+                                    "diagnostics": "No issues detected during validation"
+                                  } ]
+                                }""";
+        assertThat(encoded).isEqualTo(expectedResult);
     }
 
-    @Test
-    public void testStructureDefinitionValidationFixture() {
-        try {
-            // Validate mandatory elements
-            igJsonObject = loadJsonFromResource("ig.json");
-            assertNotNull("igJsonObject should not be null", igJsonObject);
-            assertEquals("SHINNYBundleProfile", igJsonObject.getString("id"));
-            assertEquals("http://shinny.org/StructureDefinition/SHINNYBundleProfile", igJsonObject.getString("url"));
-            assertEquals("4.0.1", igJsonObject.getString("fhirVersion"));
-
-            // Validate constraints
-            JSONArray constraints = igJsonObject.getJSONObject("snapshot").getJSONArray("element").getJSONObject(0).getJSONArray("constraint");
-            assertEquals("bdl-1", constraints.getJSONObject(0).getString("key"));
-            assertEquals("bdl-2", constraints.getJSONObject(1).getString("key"));
-        } catch (Exception e) {
+    @ParameterizedTest
+    @MethodSource("provideUnHappyPathFixtures")
+    void testUnHappyPathStructureDefinitionNoResourceTypeValidationFixture(String fixtureFileName) throws IOException {
+        String input = loadFixture(fixtureFileName);
+        if (input == null) {
+            return;
         }
+
+        assertThrows(DataFormatException.class, () -> {
+            Bundle bundle = fhirContext.newJsonParser().parseResource(Bundle.class, input);
+            ValidationOptions options = new ValidationOptions().addProfile(profile.getUrl());
+            validator.validateWithResult(bundle, options);
+        });
     }
 
-    @Test
-    public void testHRSNDataValidationFixture() {
-        try {
-            JSONArray entries = rhettJsonObject.getJSONArray("entry");
-
-            // Validate fullUrl uniqueness
-            Set<String> fullUrls = new HashSet<>();
-            for (int i = 0; i < entries.length(); i++) {
-                String fullUrl = entries.getJSONObject(i).getString("fullUrl");
-                assertTrue("Duplicate fullUrl found", fullUrls.add(fullUrl));
+    private String loadFixture(String filename) {
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filename)) {
+            if (inputStream == null) {
+                System.err.println("Failed to load the fixture: " + filename);
+                return null;
             }
-
-            // Validate Patient references Organization and Encounter
-            for (int i = 0; i < entries.length(); i++) {
-                JSONObject resource = entries.getJSONObject(i).getJSONObject("resource");
-                if (resource.getString("resourceType").equals("Patient")) {
-                    // Example validation for Patient-Organization reference
-                    String orgReference = resource.getJSONArray("identifier")
-                            .getJSONObject(0)
-                            .getJSONObject("assigner")
-                            .getString("reference");
-                    assertTrue("Invalid Organization reference", orgReference.contains("Organization"));
-                }
-            }
-        } catch (Exception e) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            System.err.println("Failed to read JSON input from file: " + e.getMessage());
+            return null;
         }
+    }
+
+    static Stream<String> provideHappyPathFixtures() throws IOException, URISyntaxException {
+        return loadFilesFromDirectory("org/techbd/fixtures/happy-path");
+    }
+
+    static Stream<String> provideUnHappyPathFixtures() throws IOException, URISyntaxException {
+        return loadFilesFromDirectory("org/techbd/fixtures/unhappy-path");
+    }
+
+    private static Stream<String> loadFilesFromDirectory(String directory) throws IOException, URISyntaxException {
+        URL url = ImplGuideTest.class.getClassLoader().getResource(directory);
+        if (url == null) {
+            throw new IOException("Directory not found: " + directory);
+        }
+        Path path = Paths.get(url.toURI());
+        return Files.walk(path)
+                .filter(Files::isRegularFile)
+                .map(Path::toString)
+                .map(p -> directory + "/" + path.relativize(Paths.get(p)).toString().replace("\\", "/"));
     }
 }
