@@ -288,6 +288,17 @@ public class PrimeController {
                     getSafeIntegerValue(data.get("grrhio_total_submissions"))));
             interactions.add(new InteractionData("hixny_total_submissions",
                     getSafeIntegerValue(data.get("hixny_total_submissions"))));
+
+            interactions.add(new InteractionData("healthelink_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("healthelink_scoring_engine_submission_passed"))));
+            interactions.add(new InteractionData("healtheconnections_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("healtheconnections_scoring_engine_submission_passed"))));                    
+            interactions.add(new InteractionData("healthix_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("healthix_scoring_engine_submission_passed"))));
+            interactions.add(new InteractionData("grrhio_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("grrhio_scoring_engine_submission_passed"))));
+            interactions.add(new InteractionData("hixny_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("hixny_scoring_engine_submission_passed"))));        
         } else {
             // Default values if no data found
             interactions.add(new InteractionData("total_cross_roads_scn", 0));
@@ -299,6 +310,12 @@ public class PrimeController {
             interactions.add(new InteractionData("healthix_total_submissions", 0));
             interactions.add(new InteractionData("grrhio_total_submissions", 0));
             interactions.add(new InteractionData("hixny_total_submissions", 0));
+
+            interactions.add(new InteractionData("healthelink_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("healtheconnections_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("healthix_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("grrhio_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("hixny_scoring_engine_submission_passed", 0));
 
         }
 

@@ -1147,6 +1147,11 @@ SELECT
     SUM(CASE WHEN qe_name = 'hixny' THEN qe_total_submissions ELSE 0 END) AS hixny_total_submissions,
     SUM(techbd_total_submissions) AS total_techbd_total_submissions,
     SUM(total_scoring_engine_submissions) AS total_total_scoring_engine_submissions,
+    SUM(CASE WHEN qe_name = 'healthelink' THEN scoring_engine_submission_passed ELSE 0 END) AS healthelink_scoring_engine_submission_passed,
+    SUM(CASE WHEN qe_name = 'healtheconn' THEN scoring_engine_submission_passed ELSE 0 END) AS healtheconnections_scoring_engine_submission_passed,
+    SUM(CASE WHEN qe_name = 'healthix' THEN scoring_engine_submission_passed ELSE 0 END) AS healthix_scoring_engine_submission_passed,
+    SUM(CASE WHEN qe_name = 'grrhio' THEN scoring_engine_submission_passed ELSE 0 END) AS grrhio_scoring_engine_submission_passed,
+    SUM(CASE WHEN qe_name = 'hixny' THEN scoring_engine_submission_passed ELSE 0 END) AS hixny_scoring_engine_submission_passed,
     SUM(scoring_engine_submission_passed) AS total_scoring_engine_submission_passed
 FROM
     combined_counts
