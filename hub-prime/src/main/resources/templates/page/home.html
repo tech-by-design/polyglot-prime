@@ -223,6 +223,11 @@
                     const healthix = getCountByLabel('healthix_total_submissions');
                     const grrhio = getCountByLabel('grrhio_total_submissions');
                     const hixny = getCountByLabel('hixny_total_submissions');
+                    const healthelink_scoring_engine_submission_passed = getCountByLabel('healthelink_scoring_engine_submission_passed');
+                    const healtheconnections_scoring_engine_submission_passed = getCountByLabel('healtheconnections_scoring_engine_submission_passed');
+                    const healthix_scoring_engine_submission_passed = getCountByLabel('healthix_scoring_engine_submission_passed');
+                    const grrhio_scoring_engine_submission_passed = getCountByLabel('grrhio_scoring_engine_submission_passed');
+                    const hixny_scoring_engine_submission_passed = getCountByLabel('hixny_scoring_engine_submission_passed');
 
                     // Construct Mermaid diagram code with fetched data
                     const mermaidCode = `
@@ -241,7 +246,11 @@
                 QE ->> TechBD: Rochester Proxy FHIR JSON (${grrhio})
                 QE ->> TechBD: HixNY Proxy FHIR JSON (${hixny})
                 TechBD ->> TechBD: Validate and Store FHIR JSON (${qeTotalSubmissions})
-                TechBD ->> ScoringEngine: Proxy Validated FHIR JSON (${scoringEngineSubmissionPassed})
+                TechBD ->> ScoringEngine: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_scoring_engine_submission_passed})
+                TechBD ->> ScoringEngine: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_scoring_engine_submission_passed})
+                TechBD ->> ScoringEngine: Healthix Proxy Validated FHIR JSON (${healthix_scoring_engine_submission_passed})
+                TechBD ->> ScoringEngine: Rochester Proxy Validated FHIR JSON (${grrhio_scoring_engine_submission_passed})
+                TechBD ->> ScoringEngine: HixNY Proxy Validated FHIR JSON (${hixny_scoring_engine_submission_passed})
                 ScoringEngine ->> SHINNY: Submit to Data lake
                 SHINNY ->> MDW: Submit to MDW
         `;
