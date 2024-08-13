@@ -4,7 +4,7 @@
 
 <head>
     <script src='https://unpkg.com/htmx.org/dist/htmx.min.js'></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script> 
     <title>Welcome</title>
     <style>
         .hanging-indent {
@@ -153,7 +153,7 @@
                         participant TechBD as TechBD
                         participant ScoringEngine as Scoring Engine
                         participant SHINNY as SHIN-NY Data Lake
-                        participant MDW as MDW
+                        participant MDW as MDW 
                                     
                         SCN ->> QE: Send Test JSON
                         QE ->> TechBD: Proxy FHIR JSON
@@ -251,8 +251,16 @@
                 TechBD ->> ScoringEngine: Healthix Proxy Validated FHIR JSON (${healthix_scoring_engine_submission_passed})
                 TechBD ->> ScoringEngine: Rochester Proxy Validated FHIR JSON (${grrhio_scoring_engine_submission_passed})
                 TechBD ->> ScoringEngine: HixNY Proxy Validated FHIR JSON (${hixny_scoring_engine_submission_passed})
-                ScoringEngine ->> SHINNY: Submit to Data lake
-                SHINNY ->> MDW: Submit to MDW
+                ScoringEngine ->> SHINNY: HEALTHeLINK Proxy Submit to Data lake (?)
+                ScoringEngine ->> SHINNY: Healtheconnections Proxy Submit to Data lake (?)
+                ScoringEngine ->> SHINNY: Healthix Proxy Submit to Data lake (?)
+                ScoringEngine ->> SHINNY: Rochester Proxy Submit to Data lake (?)
+                ScoringEngine ->> SHINNY: HixNY Proxy Submit to Data lake (?)
+                SHINNY ->> MDW: HEALTHeLINK Proxy Submit to MDW (?)
+                SHINNY ->> MDW: Healtheconnections Proxy Submit to MDW (?)
+                SHINNY ->> MDW: Healthix Proxy Submit to MDW (?)
+                SHINNY ->> MDW: Rochester Proxy Submit to MDW (?)
+                SHINNY ->> MDW: HixNY Proxy Submit to MDW (?)
         `;
 
                     // Inject the Mermaid code into the HTML
