@@ -42,13 +42,110 @@
         const popViewName = 'interaction_http_request_forward_fail';
         document.addEventListener('DOMContentLoaded', function () {
             const helpers = new Helpers();
-            const modalAide = new ModalAide();
-            const agGridInstance = new AGGridAideBuilder()
-                .withColumnDefs([
-                    { headerName: "CrossRoads SCN", field: "cross_roads_scn", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' },
+            const modalAide = new ModalAide(); 
+            // Define cellRenderer1 for cross_roads_scn
+            function cellRenderer1(params) {
+                const container = document.createElement('div');
+                const arrow = document.createElement('span');
+                const button = document.createElement('button');
+
+                arrow.innerText = params.node.expanded ? '▼' : '▶';
+                arrow.style.cursor = 'pointer';
+                arrow.style.marginRight = '5px';
+
+                button.innerText = params.data.cross_roads_scn;
+                button.style.marginLeft = '5px';
+
+                container.appendChild(arrow);
+                container.appendChild(button);
+
+                container.addEventListener('click', () => {
+                    // Set buttonPressed before expanding
+                    params.node.data.buttonPressed = 'qe_total_submissions';
+                    params.node.setExpanded(!params.node.expanded);
+                    arrow.innerText = params.node.expanded ? '▼' : '▶';
+                });
+
+                return container;
+            }
+
+            function cellRenderer2(params) {
+                const container = document.createElement('div');
+                const arrow = document.createElement('span');
+                const button = document.createElement('button');
+
+                arrow.innerText = params.node.expanded ? '▼' : '▶';
+                arrow.style.cursor = 'pointer';
+                arrow.style.marginRight = '5px';
+
+                button.innerText = params.data.qe_total_submissions;
+                button.style.marginLeft = '5px';
+
+                container.appendChild(arrow);
+                container.appendChild(button);
+
+                container.addEventListener('click', () => {
+                    // Set buttonPressed before expanding
+                    params.node.data.buttonPressed = 'scoring_engine_submission_passed';
+                    params.node.setExpanded(!params.node.expanded);
+                    arrow.innerText = params.node.expanded ? '▼' : '▶';
+                });
+
+                return container;
+            }
+
+
+            const detailGridOptions1 = {
+                columnDefs: [
+                    { headerName: "Screening Info", field: "error_type2", filter: "agTextColumnFilter" },                    
+                    { headerName: "Date", field: "date2", filter: "agDateColumnFilter" }
+                ],
+                defaultColDef: {
+                    flex: 1,
+                    filter: true,
+                }
+            };
+
+            const detailGridOptions2 = {
+                columnDefs: [
+                    {
+                        headerName: "Interaction Id",
+                        field: "hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        cellRenderer: params => {
+                            const hub_interaction_id = params.value;
+                            const error_type = params.data.error_type;
+                            const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
+                            const button = document.createElement('button');
+                            button.innerText = hub_interaction_id;
+                            button.addEventListener('click', () => {
+                                if (error_type == 'Data Submission Error') {
+                                    modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                } else if (error_type == 'Data Validation Error') {
+                                    modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                } else {
+                                    console.error('hub_interaction_id is undefined');
+                                }
+                            });
+                            return button;
+                        }
+                    },
+                    { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter" },
+                    { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() },
+                ],
+                detailRowHeight: 280,
+                defaultColDef: {
+                    flex: 1
+                }
+            };
+
+
+            const gridOptions = {
+                columnDefs: [
+                    { headerName: "CrossRoads SCN", field: "cross_roads_scn", filter: "agTextColumnFilter" },
                     { headerName: "QE", field: "qe_name", filter: "agTextColumnFilter" },
                     {
-                        headerName: "QE FHIR File Count", field: "qe_total_submissions", filter: "agTextColumnFilter", cellStyle: function (params) {
+                        headerName: "QE FHIR File Count", field: "qe_total_submissions", filter: "agTextColumnFilter", cellRenderer: cellRenderer1, cellStyle: function (params) {
                             if (params.data.cross_roads_scn !== params.data.qe_total_submissions) {
                                 return { color: 'red' };
                             }
@@ -64,7 +161,7 @@
                         }
                     },
                     {
-                        headerName: "Scoring Engines", field: "scoring_engine_submission_passed", filter: "agTextColumnFilter", cellStyle: function (params) {
+                        headerName: "Scoring Engines", field: "scoring_engine_submission_passed", filter: "agTextColumnFilter", cellRenderer: cellRenderer2, cellStyle: function (params) {
                             if (params.data.techbd_total_submissions !== params.data.scoring_engine_submission_passed) {
                                 return { color: 'red' };
                             }
@@ -74,7 +171,51 @@
                     { headerName: "SHIN-NY", field: "shinny", filter: "agTextColumnFilter" },
                     { headerName: "MDW", field: "mdw", filter: "agTextColumnFilter" },
                     // { headerName: "Submission Date", field: "latest_created_at", filter: "agDateColumnFilter" } 
-                ])
+                ],
+                masterDetail: true,
+                detailCellRendererParams: (params) => {
+
+                    if (params.data.buttonPressed === 'qe_total_submissions') {
+
+                        console.log("ddd");
+                        return {
+                            detailGridOptions: detailGridOptions1,
+                            getDetailRowData: function (params) {
+                                const value = params.data.qe_name;
+                                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/qe_name/test_test_qe_test.json`))
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        params.successCallback(data);
+                                    });
+                            }, defaultColDef: {
+                                flex: 1,
+                                filter: true,
+                            },
+                        };
+
+                    } else if (params.data.buttonPressed === 'scoring_engine_submission_passed') {
+                        console.log("bbbb");
+                        return {
+                            detailGridOptions: detailGridOptions2,
+                            getDetailRowData: function (params) {
+                                const value = params.data.qe_name;
+                                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/qe_name/${value}.json`))
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        params.successCallback(data);
+                                    });
+                            }, defaultColDef: {
+                                flex: 1,
+                                filter: true,
+                            },
+                        };
+                    }
+
+                }
+            };
+
+            const agGridInstance = new AGGridAideBuilder()
+                .withGridOptions(gridOptions)
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
                     (data, valueCols) => {
@@ -83,52 +224,8 @@
                             field: col.field
                         }));
                     },
-                ).withDetailCellRendererParams({// provide the Grid Options to use on the Detail Grid
-                    detailGridOptions: {
-                        columnDefs: [
-                            {
-                                headerName: "Interaction Id",
-                                field: "hub_interaction_id",
-                                filter: "agTextColumnFilter",
-                                cellRenderer: params => {
-                                    const hub_interaction_id = params.value;
-                                    const error_type = params.data.error_type;
-                                    const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
-                                    const button = document.createElement('button');
-                                    button.innerText = hub_interaction_id;
-                                    button.addEventListener('click', () => {
-                                        if (error_type == 'Data Submission Error') {
-                                            modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
-                                        } else if (error_type == 'Data Validation Error') {
-                                            modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
-                                        } else {
-                                            console.error('hub_interaction_id is undefined');
-                                        }
-                                    });
-                                    return button;
-                                }
-                            },
-                            { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter" },
-                            { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() },                          
-                        ],
-                        detailRowHeight : 280,
-                        defaultColDef: {
-                            flex: 1
-                        }
-                    },
-                    getDetailRowData: params => {
-                        const value = params.data.qe_name;
-                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/qe_name/${value}.json`))
-                            .then(response => response.json())
-                            .then(response => {
-                                console.log(response);
-                                params.successCallback(response);
-                            })
-                            .catch(error => {
-                                console.error('Error fetching details data' + error);
-                            });
-                    }
-                })
+                )
+                .withDetailCellRendererParams(gridOptions.detailCellRendererParams)
                 .withMasterDetail(true)
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "750px", width: "100%" })
@@ -141,7 +238,7 @@
             // Inject the date range into the HTML
             helpers.injectDateRangeText('date-range', 'This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN to the QE, then to the Scoring Engine, SHIN-NY Data Lake, and finally to the MDW from <b>{startDate}</b> to <b>{endDate}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.');
         });
- 
+
     </script>
 </head>
 
