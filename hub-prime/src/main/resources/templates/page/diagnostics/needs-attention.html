@@ -56,15 +56,15 @@
                 button.innerText = params.data.qe_total_submissions;
                 button.style.marginLeft = '5px';
 
-                container.appendChild(arrow);
-                container.appendChild(button);
+                // container.appendChild(arrow);
+                  container.appendChild(button);
 
-                container.addEventListener('click', () => {
-                    // Set buttonPressed before expanding
-                    params.node.data.buttonPressed = 'qe_total_submissions';
-                    params.node.setExpanded(!params.node.expanded);
-                    arrow.innerText = params.node.expanded ? '▼' : '▶';
-                });
+                // container.addEventListener('click', () => {
+                //     // Set buttonPressed before expanding
+                //     params.node.data.buttonPressed = 'qe_total_submissions';
+                //     params.node.setExpanded(!params.node.expanded);
+                //     arrow.innerText = params.node.expanded ? '▼' : '▶';
+                // });
 
                 return container;
             }
@@ -96,7 +96,7 @@
 
             function qeNameCellRenderer(params) {
                 const qeName = params.data.qe_name;
-                const link = `/data-quality/needs-attention-details?qeName=${qeName}`;
+                const link = `/data-quality/needs-attention?qeName=${qeName}`;
                 //return `<a href="${link}">${qeName}</a>`;
                 return `${qeName}`;
             }
