@@ -314,17 +314,19 @@ const CLI = new Command()
     .command("migrate", "Use psql to generate migration scripts based on current state")
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .option("-l, --is-linted <id:string>", "migrate lint", { required: true, default: "true" })
       .action(async (options) => {
         const psqlCreds = pgpassPsqlArgs(options.connId);
-        console.log((await $.raw`${options.psql} ${psqlCreds} -q -t -A -P border=0 -X -c "CALL info_schema_lifecycle.islm_migrate('info_schema_lifecycle',true,true);"`.captureCombined().lines()).join("\n"));
+        console.log((await $.raw`${options.psql} ${psqlCreds} -q -t -A -P border=0 -X -c "CALL info_schema_lifecycle.islm_migrate('info_schema_lifecycle',true,${options.isLinted});"`.captureCombined().lines()).join("\n"));
       })      
     .command("omnibus-fresh", "Freshen the given connection ID")
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .option("-l, --is-linted <id:string>", "migrate lint", { required: true, default: "true" })
       .action(async (options) => {
         await CLI.parse(["ic", "generate", "sql"]);
         await CLI.parse(["ic", "load-sql", "--destroy-first", "--conn-id", options.connId]);
         await CLI.parse(["ic", "test", "--conn-id", options.connId]);
-        await CLI.parse(["ic", "migrate", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "migrate", "--conn-id", options.connId, "--is-linted", options.isLinted]);
         await CLI.parse(["ic", "generate", "java", "jooq", "--conn-id", options.connId]);
       })
     );
