@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.163.0</version>
+	<version>0.164.0</version>
 	<packaging>war</packaging>
 	<name>TechBD Hub (Prime)</name>
 	<description>TechBD Hub (Primary)</description>
@@ -151,6 +151,16 @@
 			<version>7.2.0</version>
 		</dependency>
 		<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-validation</artifactId>
+			<version>7.2.0</version> 
+		</dependency>
+			<dependency>
+			<groupId>ca.uhn.hapi.fhir</groupId>
+			<artifactId>hapi-fhir-caching-caffeine</artifactId>
+			<version>7.2.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<version>42.7.3</version>
@@ -188,11 +198,6 @@
 			<groupId>com.vladsch.flexmark</groupId>
 			<artifactId>flexmark-all</artifactId>
 			<version>0.64.8</version>
-		</dependency>
-		<dependency>
-			<groupId>ca.uhn.hapi.fhir</groupId>
-			<artifactId>org.hl7.fhir.validation</artifactId>
-			<version>6.3.6</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.xml.bind</groupId>
