@@ -35,7 +35,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
-import ca.uhn.fhir.validation.FhirValidator;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -243,16 +242,16 @@ public class OrchestrationEngine {
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
-                FhirInstanceValidator instanceValidator = new FhirInstanceValidator(fhirContext);
+                final var instanceValidator = new FhirInstanceValidator(fhirContext);
 
-                DefaultProfileValidationSupport validationSupport = new DefaultProfileValidationSupport(fhirContext);
+                final var validationSupport = new DefaultProfileValidationSupport(fhirContext);
                 validationSupport.fetchStructureDefinition(fhirProfileUrl);
-                ValidationSupportChain validationSupportChain = new ValidationSupportChain(validationSupport,
+                final var validationSupportChain = new ValidationSupportChain(validationSupport,
                         new PrePopulatedValidationSupport(fhirContext));
                 instanceValidator.setValidationSupport(validationSupportChain);
-                FhirValidator validator = fhirContext.newValidator();
+                final var validator = fhirContext.newValidator();
                 validator.registerValidatorModule(instanceValidator);
-                Bundle bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
+                final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
 
                 final var hapiVR = validator.validateWithResult(bundle);
                 final var completedAt = Instant.now();
