@@ -70,7 +70,7 @@ jobs:
       - name: Run UDI Migrations
         run: |
           cd polyglot-prime/udi-prime
-          ./udictl.ts ic migrate --conn-id DEVL_TECHBD_UDI_DS
+          ./udictl.ts ic migrate --conn-id DEVL_TECHBD_UDI_DS --is-linted false
 
       - name: Display UDI Test log
         run: |
