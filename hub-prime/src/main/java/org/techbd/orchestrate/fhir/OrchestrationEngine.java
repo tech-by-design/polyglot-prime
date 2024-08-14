@@ -226,12 +226,10 @@ public class OrchestrationEngine {
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
         private final FhirContext fhirContext;
-        private final FhirValidator validator;
 
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.fhirContext = FhirContext.forR4();
-            this.validator = fhirContext.newValidator();
             engineConstructedAt = Instant.now();
             observability = new Observability(HapiValidationEngine.class.getName(),
                     "HAPI version %s (FHIR version %s)"
@@ -252,6 +250,7 @@ public class OrchestrationEngine {
                 ValidationSupportChain validationSupportChain = new ValidationSupportChain(validationSupport,
                         new PrePopulatedValidationSupport(fhirContext));
                 instanceValidator.setValidationSupport(validationSupportChain);
+                FhirValidator validator = fhirContext.newValidator();
                 validator.registerValidatorModule(instanceValidator);
                 Bundle bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
 
