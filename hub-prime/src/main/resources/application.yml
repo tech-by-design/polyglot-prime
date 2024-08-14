@@ -74,7 +74,7 @@ org:
           prime:
             version: @project.version@
             defaultSdohFhirProfileUrl: https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json
-            defaultDatalakeApiUrl: https://40lafnwsw7.execute-api.us-east-1.amazonaws.com/dev
+            defaultDatalakeApiUrl: https://qo5beg39c8.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:
