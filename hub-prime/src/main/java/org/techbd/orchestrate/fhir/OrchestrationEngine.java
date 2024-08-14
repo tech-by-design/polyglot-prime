@@ -36,7 +36,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
 import ca.uhn.fhir.validation.FhirValidator;
-import ca.uhn.fhir.validation.ValidationOptions;
 import jakarta.validation.constraints.NotNull;
 
 /**
