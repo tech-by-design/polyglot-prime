@@ -38,22 +38,22 @@ public class Configuration {
 
     public static final Map<String, String> ownEnvVars = getEnvVarsAvailable(".*TECHBD.*");
 
-    public class Servlet {
-        public class HeaderName {
+    public static class Servlet {
+        public static class HeaderName {
             public static final String PREFIX = "X-TechBD-";
 
-            public class Request {
+            public static class Request {
                 public static final String TENANT_ID = PREFIX + "Tenant-ID";
                 public static final String TENANT_NAME = PREFIX + "Tenant-Name";
             }
 
-            public class Response {
+            public static class Response {
                 // in case they're necessary
             }
         }
     }
 
-    static public List<String> checkProperties(Environment environment, String... propertyExpressions) {
+    public static List<String> checkProperties(Environment environment, String... propertyExpressions) {
         final var missingProperties = new ArrayList<String>();
 
         for (String propertyExpression : propertyExpressions) {
@@ -76,7 +76,7 @@ public class Configuration {
         return missingProperties;
     }
 
-    static public Map<String, String> getEnvVarsAvailable(final String regexPattern) {
+    public static Map<String, String> getEnvVarsAvailable(final String regexPattern) {
         final var matchingVariables = new HashMap<String, String>();
         final var pattern = Pattern.compile(regexPattern);
 

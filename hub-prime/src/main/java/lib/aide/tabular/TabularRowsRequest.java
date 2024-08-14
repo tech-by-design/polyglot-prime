@@ -42,7 +42,7 @@ public record TabularRowsRequest(
      * @param field        The field name of the column.
      * @param aggFunc      The aggregation function for the column.
      */
-    public static record ColumnVO(String id, String displayName, String field, String aggFunc) {}
+    public record ColumnVO(String id, String displayName, String field, String aggFunc) {}
 
     /**
      * Record representing a filter model.
@@ -50,7 +50,7 @@ public record TabularRowsRequest(
      * @param filterType The type of the filter.
      * @param filter     The filter value.
      */
-    public static record FilterModel(String filterType,String type, Object filter) {}
+    public record FilterModel(String filterType,String type, Object filter) {}
 
     /**
      * Record representing a sort model.
@@ -58,7 +58,7 @@ public record TabularRowsRequest(
      * @param colId The ID of the column to sort.
      * @param sort  The sort direction (asc or desc).
      */
-    public static record SortModel(String colId, String sort) {}
+    public record SortModel(String colId, String sort) {}
 
     /**
      * Record representing a range selection.
@@ -66,7 +66,7 @@ public record TabularRowsRequest(
      * @param startRow The starting row of the selection.
      * @param endRow   The ending row of the selection.
      */
-    public static record RangeSelection(int startRow, int endRow) {}
+    public record RangeSelection(int startRow, int endRow) {}
 
     /**
      * Record representing an aggregation function.
@@ -74,5 +74,5 @@ public record TabularRowsRequest(
      * @param functionName The name of the aggregation function.
      * @param columns      The columns to which the aggregation function applies.
      */
-    public static record AggregationFunction(String functionName, List<String> columns) {}
+    public record AggregationFunction(String functionName, List<String> columns) {}
 }

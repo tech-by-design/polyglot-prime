@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        h1.assemtion {
+            font-size: 15px;
+            font-weight: bold;
+            margin: 12px 0px 11px 2px;
+        }
+        a:hover { 
+            text-decoration: underline;
+        }
+    </style>
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'fhir_needs_attention';
+        const detailTableViewName = 'fhir_needs_attention_details';
+        const popViewName = 'interaction_http_request_forward_fail';
+        document.addEventListener('DOMContentLoaded', function () {
+            const helpers = new Helpers();
+            const modalAide = new ModalAide();
+            // Define cellRenderer1 for cross_roads_scn
+            function cellRenderer1(params) {
+                const container = document.createElement('div');
+                const arrow = document.createElement('span');
+                const button = document.createElement('button');
+
+                arrow.innerText = params.node.expanded ? '▼' : '▶';
+                arrow.style.cursor = 'pointer';
+                arrow.style.marginRight = '5px';
+
+                button.innerText = params.data.qe_total_submissions;
+                button.style.marginLeft = '5px';
+
+                // container.appendChild(arrow);
+                container.appendChild(button);
+
+                // container.addEventListener('click', () => {
+                //     // Set buttonPressed before expanding
+                //     params.node.data.buttonPressed = 'qe_total_submissions';
+                //     params.node.setExpanded(!params.node.expanded);
+                //     arrow.innerText = params.node.expanded ? '▼' : '▶';
+                // });
+
+                return container;
+            }
+
+            function cellRenderer2(params) {
+                const container = document.createElement('div');
+                const arrow = document.createElement('span');
+                const button = document.createElement('button');
+
+                arrow.innerText = params.node.expanded ? '▼' : '▶';
+                arrow.style.cursor = 'pointer';
+                arrow.style.marginRight = '5px';
+
+                button.innerText = params.data.scoring_engine_submission_passed;
+                button.style.marginLeft = '5px';
+
+                container.appendChild(arrow);
+                container.appendChild(button);
+
+                container.addEventListener('click', () => {
+                    // Set buttonPressed before expanding
+                    params.node.data.buttonPressed = 'scoring_engine_submission_passed';
+                    params.node.setExpanded(!params.node.expanded);
+                    arrow.innerText = params.node.expanded ? '▼' : '▶';
+                });
+
+                return container;
+            }
+
+            function qeNameCellRenderer(params) {
+                const qeName = params.data.qe_name;
+                const link = `/data-quality/needs-attention?qeName=${qeName}`;
+                //return `<a href="${link}">${qeName}</a>`;
+                 return `${qeName}`;
+            }
+
+
+
+            const detailGridOptions1 = {
+                columnDefs: [
+                    { headerName: "Screening Info", field: "error_type2", filter: "agTextColumnFilter" },
+                    { headerName: "Date", field: "date2", filter: "agDateColumnFilter" }
+                ],
+                defaultColDef: {
+                    flex: 1,
+                    filter: true,
+                }
+            };
+
+            const detailGridOptions2 = {
+                columnDefs: [
+                    {
+                        headerName: "Interaction Id",
+                        field: "hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        cellRenderer: params => {
+                            const hub_interaction_id = params.value;
+                            const error_type = params.data.error_type;
+                            const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
+                            const button = document.createElement('button');
+                            button.innerText = hub_interaction_id;
+                            button.addEventListener('click', () => {
+                                if (error_type == 'Data Submission Error') {
+                                    modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                } else if (error_type == 'Data Validation Error') {
+                                    modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                } else {
+                                    console.error('hub_interaction_id is undefined');
+                                }
+                            });
+                            return button;
+                        }
+                    },
+                    { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter" },
+                    { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() },
+                ],
+                detailRowHeight: 280,
+                defaultColDef: {
+                    flex: 1
+                }
+            };
+
+
+            const gridOptions = {
+                columnDefs: [
+                    {
+                        headerName: "CrossRoads SCN",
+                        field: "cross_roads_scn",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "FHIR file count from CrossRoads SCN"
+                    },
+                    {
+                        headerName: "QE Name",
+                        field: "qe_name",
+                        filter: "agTextColumnFilter",
+                        cellRenderer: qeNameCellRenderer,
+                        headerTooltip: "Name of the Qualified Entity"
+                    },
+                    {
+                        headerName: "SCN to QE",
+                        field: "qe_total_submissions",
+                        filter: "agTextColumnFilter",
+                        cellRenderer: cellRenderer1,
+                        cellStyle: function (params) {
+                            if (params.data.cross_roads_scn !== params.data.qe_total_submissions) {
+                                return { color: 'red' };
+                            }
+                            return null;
+                        },
+                        headerTooltip: "FHIR File count from CrossRoads SCN to QE"
+                    },
+                    {
+                        headerName: "QE to TechBD",
+                        field: "techbd_total_submissions",
+                        filter: "agTextColumnFilter",
+                        cellStyle: function (params) {
+                            if (params.data.qe_total_submissions !== params.data.techbd_total_submissions) {
+                                return { color: 'red' };
+                            }
+                            return null;
+                        },
+                        headerTooltip: "FHIR File count from QE to TechBD"
+                    },
+                    {
+                        headerName: "TechBD to Scoring Engine",
+                        field: "scoring_engine_submission_passed",
+                        filter: "agTextColumnFilter",
+                        cellRenderer: cellRenderer2,
+                        cellStyle: function (params) {
+                            if (params.data.techbd_total_submissions !== params.data.scoring_engine_submission_passed) {
+                                return { color: 'red' };
+                            }
+                            return null;
+                        },
+                        headerTooltip: "FHIR File count from TechBD to Scoring Engine"
+                    },
+                    {
+                        headerName: "Scoring Engine to SHIN-NY",
+                        field: "shinny",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "FHIR File count from Scoring Engine to SHIN-NY"
+                    },
+                    {
+                        headerName: "SHIN-NY to MDW",
+                        field: "mdw",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "FHIR File count from SHIN-NY to MDW"
+                    }
+                ],
+                masterDetail: true,
+                detailCellRendererParams: (params) => {
+
+                    if (params.data.buttonPressed === 'qe_total_submissions') {
+
+                        return {
+                            detailGridOptions: detailGridOptions1,
+                            getDetailRowData: function (params) {
+                                const value = params.data.qe_name;
+                                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/qe_name/test_test_qe_test.json`))
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        params.successCallback(data);
+                                    });
+                            }, defaultColDef: {
+                                flex: 1,
+                                filter: true,
+                            },
+                        };
+
+                    } else if (params.data.buttonPressed === 'scoring_engine_submission_passed') {
+                        return {
+                            detailGridOptions: detailGridOptions2,
+                            getDetailRowData: function (params) {
+                                const value = params.data.qe_name;
+                                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/qe_name/${value}.json`))
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        params.successCallback(data);
+                                    });
+                            }, defaultColDef: {
+                                flex: 1,
+                                filter: true,
+                            },
+                        };
+                    }
+
+                }
+            };
+
+            const agGridInstance = new AGGridAideBuilder()
+                .withGridOptions(gridOptions)
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withDetailCellRendererParams(gridOptions.detailCellRendererParams)
+                .withMasterDetail(true)
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+
+
+            // Add date-range text 
+            // Inject the date range into the HTML
+            helpers.injectDateRangeText('date-range', 'This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the SCN to the QE, then to the Scoring Engine, SHIN-NY Data Lake, and finally to the MDW from <b>{startDate}</b> to <b>{endDate}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.');
+        });
+
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-title">FHIR Submission Overview</div>
+        <div class="grid-description">
+            <div id="date-range">
+                <!-- The date range will be injected here -->
+            </div>
+            <h1 class="assemtion">Assumptions</h1>
+            <ul class="list-disc pl-4">
+                <li>The file count from CrossRoads SCN to QE FHIR should match.</li>
+                <li>The file count from QE FHIR to TechBD should match.</li>
+                <li>The file count from TechBD to the Scoring Engines should match.</li>
+                <li>If any of the numbers in one column do not match the corresponding numbers in another column, it
+                    indicates an error, and the mismatched numbers are highlighted in red.</li>
+                <li>If there are errors or issues, clicking on the red arrow before the count text allows for a
+                    drill-down to see the detailed numbers.</li>
+                <li>When viewing the numbers, clicking on them will open a popup containing the error details.</li>
+            </ul>
+
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+
+</body>
+
+</html>

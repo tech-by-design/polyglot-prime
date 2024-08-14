@@ -60,13 +60,14 @@ public class UdiPrimeJpaConfig {
         }
 
         public List<String> expectedConf() {
-            return org.techbd.conf.Configuration.checkProperties(environment, expected);
+            return Configuration.checkProperties(environment, expected);
         }
     }
 
     public DataSourceHealthCheckResult udiPrimaryDataSrcHealth() {
         final var ds = udiPrimaryDataSource();
-        try (Connection connection = ds.getConnection()) {
+        try (@SuppressWarnings("PMD.UnusedLocalVariable")
+        Connection connection = ds.getConnection()) {
             return new DataSourceHealthCheckResult(ds, null, environment,
                     "${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}");
         } catch (Exception e) {
@@ -102,8 +103,8 @@ public class UdiPrimeJpaConfig {
         final var jooqConfiguration = new DefaultConfiguration();
         jooqConfiguration.set(connectionProvider());
         jooqConfiguration.setSQLDialect(SQLDialect.POSTGRES);
-        //jooqConfiguration
-        //  .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
+        // jooqConfiguration
+        // .set(new DefaultExecuteListenerProvider(exceptionTransformer()));
         return jooqConfiguration;
     }
 

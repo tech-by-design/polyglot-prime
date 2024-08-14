@@ -43,7 +43,7 @@ public class GitHubUsersService {
     public Optional<AuthorizedUser> isAuthorizedUser(final String gitHubUserID) {
       return users.stream().filter(u -> u.gitHubId().equals(gitHubUserID)).findFirst();
     }
-  };
+  }
 
   private String gitHubApiAuthnToken = System.getenv("ORG_TECHBD_SERVICE_HTTP_GITHUB_API_AUTHN_TOKEN");
   private String authzUsersYamlUrl = System.getenv("ORG_TECHBD_SERVICE_HTTP_GITHUB_AUTHZ_USERS_YAML_URL");

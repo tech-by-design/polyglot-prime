@@ -39,7 +39,7 @@ public class GitHubRepoResources
     private final URI identity;
     private final GHRepository repo;
     private String rootPath = "";
-    private boolean populateAbsolutePaths = false;
+    private boolean populateAbsolutePaths;
 
     private final AtomicReference<List<ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>> resources = new AtomicReference<>();
     private final AtomicReference<Paths<String, ResourceProvenance<GitHubFileProvenance, Resource<? extends Nature, ?>>>> paths = new AtomicReference<>();
@@ -152,8 +152,9 @@ public class GitHubRepoResources
             } else {
                 if (suppliedPath.startsWith(rootPath)) {
                     computedPath = suppliedPath.substring(rootPath.length());
-                    if (computedPath.startsWith("/"))
+                    if (computedPath.startsWith("/")) {
                         computedPath = computedPath.substring(1);
+                    }
                 } else {
                     computedPath = suppliedPath;
                 }

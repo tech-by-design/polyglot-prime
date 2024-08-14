@@ -124,6 +124,23 @@ const exceptionDiagnosticSat = hubException.satelliteTable(
   },
 );
 
+const hubExpectation = dvts.hubTable("expectation", {
+  hub_expectation_id: primaryKey(),
+  key: textNullable(),
+  ...dvts.housekeeping.columns,
+});
+
+const expectationHttpRequestSat = hubExpectation.satelliteTable(
+  "http_request",
+  {
+    sat_expectation_http_request_id: primaryKey(),
+    hub_expectation_id: hubExpectation.references.hub_expectation_id(),
+    content_type: textNullable(), // eg: Permission Denied to the file
+    payload: jsonB,
+    ...dvts.housekeeping.columns,
+  },
+);
+
 const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   name: textNullable(),
   jsonb: jsonbNullable(),
@@ -267,9 +284,29 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${exceptionDiagnosticSat}
 
+      ${hubExpectation}
+
+      ${expectationHttpRequestSat}
+
       ${pgTapFixturesJSON}
 
       ${pgTapTestResult}
+
+       -- Check and add 'nature_type' column if it does not exist
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                    WHERE table_name='sat_interaction_http_request' 
+                    AND column_name='nature_type') THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+          ADD COLUMN nature_type TEXT DEFAULT null;
+      END IF;
+
+      -- Check and add 'tenant_id' column if it does not exist
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                    WHERE table_name='sat_interaction_http_request' 
+                    AND column_name='tenant_id') THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+          ADD COLUMN tenant_id TEXT DEFAULT null;
+      END IF;
 
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 
       ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id);

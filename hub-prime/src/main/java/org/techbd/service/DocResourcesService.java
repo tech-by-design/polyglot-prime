@@ -18,6 +18,7 @@ import org.springframework.expression.spel.support.ReflectivePropertyAccessor;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
 import org.techbd.service.http.SandboxHelpers;
+import org.techbd.util.NoOpUtils;
 
 import lib.aide.paths.Paths;
 import lib.aide.resource.Editable;
@@ -48,8 +49,9 @@ public final class DocResourcesService {
             // other resource hooks
             for (final var key : captionKeyNames) {
                 var tryAttr = node.getAttribute(key);
-                if (tryAttr.isPresent())
+                if (tryAttr.isPresent()) {
                     return tryAttr.orElseThrow().toString();
+                }
             }
             return node.basename().orElse("UNKNOWN BASENAME");
         }
@@ -60,8 +62,9 @@ public final class DocResourcesService {
             // other resource hooks
             for (final var key : titleKeyNames) {
                 var tryAttr = node.getAttribute(key);
-                if (tryAttr.isPresent())
+                if (tryAttr.isPresent()) {
                     return tryAttr.orElseThrow().toString();
+                }
             }
             return node.basename().orElse("UNKNOWN BASENAME");
         }
@@ -109,19 +112,22 @@ public final class DocResourcesService {
 
         public Optional<URI> editURI(
                 Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
-            if (node.payload().isPresent()) {
-                if (node.payload().orElseThrow().provenance() instanceof Editable provenance) {
-                    return provenance.editURI();
-                }
-            }
-            return Optional.empty();
+            return node.payload()
+                    .flatMap(payload -> {
+                        if (payload.provenance() instanceof Editable provenance) {
+                            return provenance.editURI();
+                        } else {
+                            return Optional.empty();
+                        }
+                    });
         }
 
         public String editableUrlOrBlank(
                 Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
             final var editURI = this.editURI(node);
-            if (editURI.isEmpty())
+            if (editURI.isEmpty()) {
                 return "";
+            }
             final var editableUrl = editURI.orElseThrow();
             if (editableUrl.getScheme().equals("file")) {
                 return sboxHelpers.getEditorUrlFromAbsolutePath(editableUrl.getPath());
@@ -141,9 +147,8 @@ public final class DocResourcesService {
                 Paths<String, ? extends ResourceProvenance<? extends Provenance, Resource<? extends Nature, ?>>>.Node node) {
 
             return node.children().stream()
-                    .filter(child -> child.payload().isPresent()
-                            ? child.payload().orElseThrow().resource() instanceof TextResource ? true : false
-                            : true)
+                    .filter(child -> child.payload().map(payload -> payload.resource() instanceof TextResource)
+                            .orElse(true))
                     .sorted(Comparator.comparingInt(child -> {
                         final var attributes = child.attributes();
                         final var navVal = attributes.get("nav");
@@ -158,6 +163,7 @@ public final class DocResourcesService {
                                         return Integer.parseInt(weightVal.toString());
                                     } catch (NumberFormatException e) {
                                         // Ignore and fall through to default value
+                                        NoOpUtils.ignore(e);
                                     }
                                 }
                             }

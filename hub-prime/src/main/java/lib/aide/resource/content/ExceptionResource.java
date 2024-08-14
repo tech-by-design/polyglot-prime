@@ -4,11 +4,10 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import lib.aide.paths.PathSuffixes;
-import lib.aide.resource.Nature;
 import lib.aide.resource.TextResource;
 
 public class ExceptionResource implements TextResource<ExceptionNature> {
-    static public final EmptyResource SINGLETON = new EmptyResource();
+    public static final EmptyResource SINGLETON = new EmptyResource();
 
     private final Supplier<String> src;
     private final ExceptionNature nature;
@@ -44,12 +43,5 @@ public class ExceptionResource implements TextResource<ExceptionNature> {
 
     public Optional<PathSuffixes> suffixes() {
         return suffixes;
-    }
-}
-
-class ExceptionNature implements Nature {
-    @Override
-    public String mimeType() {
-        return "text/plain";
     }
 }

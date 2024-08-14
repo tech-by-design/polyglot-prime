@@ -62,10 +62,11 @@ public class FhirController {
     private final AppConfig appConfig;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
-    public FhirController(final Environment environment, final AppConfig appConfig,
+    public FhirController(@SuppressWarnings("PMD.UnusedFormalParameter") final Environment environment,
+            final AppConfig appConfig,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
-            final SftpManager sftpManager,
-            final SandboxHelpers sboxHelpers) {
+            @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
+            @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
         this.appConfig = appConfig;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }

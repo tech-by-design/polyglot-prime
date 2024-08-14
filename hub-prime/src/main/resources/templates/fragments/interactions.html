@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Fragment</title>
+</head>
+<body th:fragment="serverTextStat">
+       
+                   <!-- Total Submissions Widget -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-2">Total Submissions</h2>
+                    <p id="totalSubmissionsP" class="text-4xl font-bold" th:text="${totalSubmissions}">0</p>
+                </div>
+    
+                <!-- Pending Submissions Widget -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-2">Pending Submissions</h2>
+                    <p id="pendingSubmissionsP" class="text-4xl font-bold" th:text="${pendingSubmissions}">0</p>
+                </div>
+    
+                <!-- Accepted Submissions Widget -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-2">Accepted Submissions</h2>
+                    <p id="acceptedSubmissionsP" class="text-4xl font-bold" th:text="${acceptedSubmissions}">0</p>
+                </div>
+    
+                <!-- Rejected Submissions Widget -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-2">Rejected Submissions</h2>
+                    <p id="rejectedSubmissionsP" class="text-4xl font-bold" th:text="${rejectedSubmissions}">0</p>
+                </div>
+         
+</body>
+</html>

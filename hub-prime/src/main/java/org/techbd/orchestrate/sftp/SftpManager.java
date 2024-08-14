@@ -25,9 +25,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SftpManager {
-    static private final Logger LOG = LoggerFactory.getLogger(SftpManager.class);
-    static public final String TENANT_EGRESS_CONTENT_CACHE_KEY = "tenant-sftp-egress-content";
-    static public final String TENANT_EGRESS_SESSIONS_CACHE_KEY = "tenant-sftp-egress-sessions";
+    private static final Logger LOG = LoggerFactory.getLogger(SftpManager.class);
+    public static final String TENANT_EGRESS_CONTENT_CACHE_KEY = "tenant-sftp-egress-content";
+    public static final String TENANT_EGRESS_SESSIONS_CACHE_KEY = "tenant-sftp-egress-sessions";
 
     private final SftpAccountsOrchctlConfig configuredTenants;
 
@@ -73,7 +73,7 @@ public class SftpManager {
             FileObject[] directories,
             Exception error) {
 
-        static private final Logger LOG = LoggerFactory.getLogger(TenantSftpEgressContent.class);
+        private static final Logger LOG = LoggerFactory.getLogger(TenantSftpEgressContent.class);
 
         public Optional<ZonedDateTime> mostRecentEgress() {
             if (error != null) {
@@ -125,7 +125,7 @@ public class SftpManager {
     }
 
     @Cacheable(TENANT_EGRESS_SESSIONS_CACHE_KEY)
-    public Optional<IndividualTenantSftpEgressSession> getTenantEgressSession(String tenantId, String InteractionId,
+    public Optional<IndividualTenantSftpEgressSession> getTenantEgressSession(String tenantId, String interactionId,
             int limitMostRecent) {
         final var configuredAccounts = configuredTenants.getOrchctlts();
         if (configuredAccounts != null) {
@@ -136,7 +136,7 @@ public class SftpManager {
                     if (tec.tenantId.equals(tenantId)) {
                         try {
                             for (var egressSessionDir : tec.directories()) {
-                                if (egressSessionDir.getName().getPath().contains(InteractionId)) {
+                                if (egressSessionDir.getName().getPath().contains(interactionId)) {
                                     FileObject sessionJsonFile;
                                     try {
                                         sessionJsonFile = egressSessionDir.resolveFile("session.json");

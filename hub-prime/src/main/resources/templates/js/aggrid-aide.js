@@ -97,7 +97,7 @@ export class AGGridAide {
             return '';
         }
     }
-    
+
     /**
      * Creates a value formatter for displaying timestamps with timezone
      * information in 'MM/DD/YYYY, HH:MM:SS' format
@@ -107,6 +107,10 @@ export class AGGridAide {
         return function (params) {
             if (params.value) {
                 let date = new Date(params.value);
+                if (isNaN(date)) {
+                    // Handle invalid date
+                    return params.value;
+                }
                 let options = {
                     timeZone: 'America/New_York',
                     year: 'numeric',
@@ -151,11 +155,22 @@ export class AGGridAideBuilder {
             autoSizeStrategy: { type: "fitCellContents" },
             rowModelType: 'serverSide',
             serverSideDatasource: null,
-            tooltipShowDelay: 500
+            tooltipShowDelay: 500,
+            masterDetail: false,
+            detailCellRendererParams: null,
+            detailRowAutoHeight:false
         };
         this.gridDivStyles = { height: "750px" };
     }
-
+    /**
+     * Sets the detailRowAutoHeight for the AG Grid.
+     * @param {Array} detailRowAutoHeight - The detailRowAutoHeight
+     * @returns {AGGridAideBuilder} The builder instance.
+     */
+    withDetailRowAutoHeight(detailRowAutoHeight) {
+        this.gridOptions.detailRowAutoHeight = detailRowAutoHeight;
+        return this;
+    }
     /**
      * Sets the column definitions for the AG Grid.
      * @param {Array} columnDefs - The column definitions.
@@ -165,7 +180,31 @@ export class AGGridAideBuilder {
         this.gridOptions.columnDefs = columnDefs;
         return this;
     }
+    /**
+ * Sets the master details definitions for the AG Grid.
+ * @param {Array} masterDetail - The master detail definitions.
+ * @returns {AGGridAideBuilder} The builder instance.
+ */
+    withMasterDetail(masterDetail) {
+        this.gridOptions.masterDetail = masterDetail;
+        return this;
+    }
+    // New method: withGridOptions
+    withGridOptions(options) {
+        // Merge the provided options into this.gridOptions
+        Object.assign(this.gridOptions, options);
+        return this;
+    }
 
+    /**
+      * Sets the default cell renderer definitions for the AG Grid.
+      * @param {Array} columnDefs - The Default cell renderer definitions.
+      * @returns {AGGridAideBuilder} The builder instance.
+      */
+    withDetailCellRendererParams(detailCellRendererParams) {
+        this.gridOptions.detailCellRendererParams = detailCellRendererParams;
+        return this;
+    }
     /**
      * Sets the default column definitions for the AG Grid.
      * @param {Object} defaultColDef - The default column definitions.

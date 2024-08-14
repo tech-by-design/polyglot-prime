@@ -33,6 +33,7 @@ import org.techbd.conf.Configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nonnull;
 import jakarta.mail.MessagingException;
 import jakarta.validation.constraints.NotNull;
@@ -332,7 +333,7 @@ public class ArtifactStore {
         private Map<String, Object> provenance;
         private PersistenceStrategy always;
         private JavaMailSender mailSender;
-        @SuppressWarnings("unused")
+        @SuppressFBWarnings("URF_UNREAD_FIELD")
         private ApplicationContext appCtx;
 
         public Builder strategyJson(String strategyJson) {
@@ -421,7 +422,7 @@ public class ArtifactStore {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> args = (Map<String, Object>) parsedJson;
                     return always != null
-                            ? new AggregatePersistence((List.of(createStrategy(args, strategyJson), always)))
+                            ? new AggregatePersistence(List.of(createStrategy(args, strategyJson), always))
                             : createStrategy(args, strategyJson);
                 } else if (parsedJson instanceof List) {
                     @SuppressWarnings("unchecked")
@@ -441,7 +442,7 @@ public class ArtifactStore {
         }
     }
 
-    private final static class JsonArtifact implements Artifact {
+    private static final class JsonArtifact implements Artifact {
         private final String jsonString;
         private final String artifactId;
         private final String namespace;
@@ -452,8 +453,8 @@ public class ArtifactStore {
                 final Map<String, Object> provenance) {
             this.artifactId = artifactId;
             this.namespace = namespace;
-            this.provenance = provenance == null ? Collections.emptyMap() : Collections.unmodifiableMap(provenance); // Ensure
-                                                                                                                     // immutability
+            // Ensure immutability
+            this.provenance = provenance == null ? Collections.emptyMap() : Collections.unmodifiableMap(provenance);
             try {
                 this.jsonString = Configuration.objectMapper.writeValueAsString(object);
             } catch (JsonProcessingException e) {

@@ -155,7 +155,7 @@ public class DocsController {
             final var streamFR = (ForwardableResource<?, InputStream>) fr;
             try {
                 final StreamingResponseBody responseBody = outputStream -> {
-                    try (final var inputStream = streamFR.content()) {
+                    try (var inputStream = streamFR.content()) {
                         var buffer = new byte[8192];
                         int bytesRead;
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
@@ -204,34 +204,10 @@ public class DocsController {
         return presentation.populateModel("page/docs/swagger-ui/query-api", model, request);
     }
 
-    @RouteMapping(label = "Health Information", title = "Health Information", siblingOrder = 20)
-    @GetMapping("/docs/health-info")
-    public String healthInformation(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/health-info", model, request);
-    }
-
     @RouteMapping(label = "Announcements", title = "Announcements", siblingOrder = 30)
     @GetMapping("/docs/announcements")
     public String announcements(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/announcements", model, request);
     }
 
-    @RouteMapping(label = "Project", title = "Project", siblingOrder = 40)
-    @GetMapping("/docs/project")
-    public String projects(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/project", model, request);
-    }
-
-    @RouteMapping(label = "Schema", title = "Schema", siblingOrder = 50)
-    @GetMapping("/docs/schema")
-    public String schemaSpy(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/schema", model, request);
-    }
-
-    @RouteMapping(label = "ISLM Migration", title = "ISLM", siblingOrder = 60)
-    @GetMapping("/docs/islm")
-    public String islm(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/islm", model, request);
-    }
-    
 }

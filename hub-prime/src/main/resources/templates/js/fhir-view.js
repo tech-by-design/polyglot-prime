@@ -38,6 +38,7 @@ export class FhirViewer extends HTMLElement {
                     background-color: #f1f1f1;
                 }
             </style>
+            <div id="loading-indicator" style="display: none;">Loading...</div>
             <div id="rendered-content"></div>
         `;
 
@@ -73,8 +74,14 @@ export class FhirViewer extends HTMLElement {
                     <table class="table">
                         <tbody>
                             <tr>
-                                <th>Observation</th>
-                                <td>{{:code?.text || 'N/A'}}</td>
+                                <th>Observation</th>                              
+                                <td> 
+                                {{if code?.coding[0]}}
+                                        {{:code?.coding[0]?.display || 'N/A'}}  
+                                    {{else}}
+                                        No observation provided
+                                {{/if}}
+                                </td>
                             </tr>
                             <tr>
                                 <th>ID</th>
@@ -86,9 +93,9 @@ export class FhirViewer extends HTMLElement {
                             </tr>
                             <tr>
                                 <th>Value</th>
-                                <td>
-                                    {{if valueQuantity}}
-                                        {{:valueQuantity?.value || 'N/A'}} {{:valueQuantity?.unit || ''}}
+                                <td> 
+                                    {{if valueCodeableConcept?.coding[0]}}
+                                        {{:valueCodeableConcept?.coding[0]?.display || 'N/A'}}  
                                     {{else}}
                                         No value provided
                                     {{/if}}
@@ -136,7 +143,7 @@ export class FhirViewer extends HTMLElement {
                                 <th>Address</th>
                                 <td>
                                     {{if address && address.length > 0}}
-                                        {{:address[0]?.line?.[0] || ''}}, {{:address[0]?.city || ''}}, {{:address[0]?.state || ''}} {{:address[0]?.postalCode || ''}}
+                                        {{:address[0]?.text || ''}}, {{:address[0]?.city || ''}}, {{:address[0]?.state || ''}} {{:address[0]?.postalCode || ''}}
                                     {{else}}
                                         No address provided
                                     {{/if}}
@@ -233,6 +240,11 @@ export class FhirViewer extends HTMLElement {
 
     async render(fhirUrl) {
         const renderIn = this.shadowRoot.getElementById("rendered-content");
+        const loadingIndicator = this.shadowRoot.getElementById("loading-indicator");
+
+        loadingIndicator.style.display = 'block';
+        renderIn.innerHTML = ''; // Clear previous content
+
         try {
             const response = await fetch(fhirUrl);
             if (!response.ok) {
@@ -240,7 +252,7 @@ export class FhirViewer extends HTMLElement {
             }
             const data = await response.json();
             renderIn.innerHTML = ''; // Clear previous content
-            data.entry.forEach(entry => {
+            data.forEach(entry => {
                 const resource = entry.resource;
                 const resourceType = resource.resourceType.toLowerCase();
                 if (this.templates[resourceType]) {
@@ -260,6 +272,9 @@ export class FhirViewer extends HTMLElement {
         } catch (error) {
             renderIn.innerHTML += `<p>Error fetching ${fhirUrl}: ${error} (see console)<p>`;
             console.error('Error fetching FHIR data:', error);
+        }finally {
+            // Hide the loading indicator
+            loadingIndicator.style.display = 'none';
         }
     }
 }

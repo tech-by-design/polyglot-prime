@@ -4,6 +4,7 @@
 
 <head>
     <script src='https://unpkg.com/htmx.org/dist/htmx.min.js'></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script> 
     <title>Welcome</title>
     <style>
         .hanging-indent {
@@ -11,6 +12,14 @@
             text-indent: -1.5rem;
         }
     </style>
+        <script type="module"> 
+            import { Helpers } from '@presentation/shell/helpers.js';
+            document.addEventListener('DOMContentLoaded', async function () {
+                const helpers = new Helpers();
+                // Inject the date range into the HTML
+                helpers.injectDateRangeText('dashboard-date-range', 'Synthetic Testing from {startDate} to {endDate} (FHIR)');
+            });
+        </script>
 </head>
 
 <body class="bg-gray-100">
@@ -95,20 +104,44 @@
             </dl>
         </div>
 
+        <!-- <div class="mt-12 w-full grid grid-cols-4 gap-8" id="dashboard-container">
+            <div th:replace="fragments/interactions :: serverTextStat"></div>
+        </div>
         <div class="mt-12 w-full grid grid-cols-2 gap-8">
             <div>
-                <h3 class="text-xl font-bold mb-4">Synthetic Testing (FHIR)</h3>
+                <h3 class="text-xl font-bold mb-4">FHIR Submission Summary</h3>
+                <pre class=" bg-white p-4 rounded-lg shadow-md">
+                    <dl id="pie-chart" class=" pie-chart-item  flex justify-center items-center pt-12"> 
+                    </dl>
+                </pre>
+
+            </div>
+        </div> -->
+
+        <div class="mt-12 w-full grid grid-cols-1 gap-8">
+            <div>
+                <h3 class="text-xl font-bold mb-4" id="dashboard-date-range"></h3>
+
+                <div id="loader" style="display: none;" class="mx-auto w-fit">Loading...</div>
+                <div id="mermaid-diagram"></div>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold mb-4">Synthetic Testing with forced error August 6, 2024 (FHIR)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
                     sequenceDiagram
                         participant CrossroadsSCN as Crossroads SCN
                         participant QE as QE
                         participant TechBD as TechBD
                         participant ScoringEngine as Scoring Engine
+                        participant SHINNY as SHIN-NY Data Lake
+                        participant MDW as MDW
                                     
                         CrossroadsSCN ->> QE: Send Test JSON
                         QE ->> TechBD: Proxy FHIR JSON
                         TechBD ->> TechBD: Validate and Store FHIR JSON
                         TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
+                        ScoringEngine ->> SHINNY: Submit only 50% to Data lake
+                        SHINNY ->> MDW: Submit to MDW
                 </pre>
             </div>
             <div>
@@ -116,14 +149,18 @@
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
                     sequenceDiagram
                         participant SCN as SCN
-                        participant QE
-                        participant TechBD
-                        participant DataLake as Data Lake
-                           
-                        SCN ->> QE: Submit JSON
-                        QE ->> TechBD: Proxy FHIR
+                        participant QE as QE
+                        participant TechBD as TechBD
+                        participant ScoringEngine as Scoring Engine
+                        participant SHINNY as SHIN-NY Data Lake
+                        participant MDW as MDW 
+                                    
+                        SCN ->> QE: Send Test JSON
+                        QE ->> TechBD: Proxy FHIR JSON
                         TechBD ->> TechBD: Validate and Store FHIR JSON
-                        TechBD ->> DataLake: Proxy Validated FHIR JSON
+                        TechBD ->> ScoringEngine: Proxy Validated FHIR JSON
+                        ScoringEngine ->> SHINNY: Submit to Data lake
+                        SHINNY ->> MDW: Submit to MDW
                 </pre>
             </div>
         </div>
@@ -144,7 +181,202 @@
                 </pre>
             </div>
         </div>
+
+
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            document.addEventListener('DOMContentLoaded', async function () { 
+
+                const loader = document.getElementById('loader');
+                const mermaidDiagram = document.getElementById('mermaid-diagram');
+
+                try {
+                    // Show loader
+                    loader.style.display = 'block';
+                    mermaidDiagram.style.display = 'none';
+
+                    const response = await fetch('/dashboard/stat/fhir/mermaid');
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const data = await response.json();
+                    // console.log('Fetched data:', data);
+
+                    // Helper function to safely find a count by label
+                    const getCountByLabel = (label) => {
+                        const item = data.find(item => item.label === label);
+                        if (item) {
+                            return item.count;
+                        } else {
+                            console.warn(`Label "${label}" not found in data`);
+                            return 0; // or any default value you prefer
+                        }
+                    };
+
+                    // Extract counts using the helper function
+                    const crossRoadsScn = getCountByLabel('total_cross_roads_scn');
+                    const qeTotalSubmissions = getCountByLabel('total_techbd_total_submissions');
+                    const techbdTotalSubmissions = getCountByLabel('total_total_scoring_engine_submissions');
+                    const scoringEngineSubmissionPassed = getCountByLabel('total_scoring_engine_submission_passed');
+                    const healthelink = getCountByLabel('healthelink_total_submissions');
+                    const healtheconnections = getCountByLabel('healtheconnections_total_submissions');
+                    const healthix = getCountByLabel('healthix_total_submissions');
+                    const grrhio = getCountByLabel('grrhio_total_submissions');
+                    const hixny = getCountByLabel('hixny_total_submissions');
+                    const healthelink_scoring_engine_submission_passed = getCountByLabel('healthelink_scoring_engine_submission_passed');
+                    const healtheconnections_scoring_engine_submission_passed = getCountByLabel('healtheconnections_scoring_engine_submission_passed');
+                    const healthix_scoring_engine_submission_passed = getCountByLabel('healthix_scoring_engine_submission_passed');
+                    const grrhio_scoring_engine_submission_passed = getCountByLabel('grrhio_scoring_engine_submission_passed');
+                    const hixny_scoring_engine_submission_passed = getCountByLabel('hixny_scoring_engine_submission_passed');
+
+                    // Construct Mermaid diagram code with fetched data
+                    const mermaidCode = `
+            sequenceDiagram
+                participant CrossroadsSCN as Crossroads SCN
+                participant QE as QE
+                participant TechBD as TechBD
+                participant ScoringEngine as Scoring Engine
+                participant SHINNY as SHIN-NY Data Lake
+                participant MDW as MDW
+
+                CrossroadsSCN ->> QE: Send Test JSON (${crossRoadsScn})
+                QE ->> TechBD: HEALTHeLINK Proxy FHIR JSON (${healthelink})
+                QE ->> TechBD: Healtheconnections Proxy FHIR JSON (${healtheconnections})
+                QE ->> TechBD: Healthix Proxy FHIR JSON (${healthix})
+                QE ->> TechBD: Rochester Proxy FHIR JSON (${grrhio})
+                QE ->> TechBD: HixNY Proxy FHIR JSON (${hixny})
+                TechBD ->> TechBD: Validate and Store FHIR JSON (${qeTotalSubmissions})
+                TechBD ->> ScoringEngine: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_scoring_engine_submission_passed})
+                TechBD ->> ScoringEngine: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_scoring_engine_submission_passed})
+                TechBD ->> ScoringEngine: Healthix Proxy Validated FHIR JSON (${healthix_scoring_engine_submission_passed})
+                TechBD ->> ScoringEngine: Rochester Proxy Validated FHIR JSON (${grrhio_scoring_engine_submission_passed})
+                TechBD ->> ScoringEngine: HixNY Proxy Validated FHIR JSON (${hixny_scoring_engine_submission_passed})
+                ScoringEngine ->> SHINNY: HEALTHeLINK Proxy Submit to Data lake (?)
+                ScoringEngine ->> SHINNY: Healtheconnections Proxy Submit to Data lake (?)
+                ScoringEngine ->> SHINNY: Healthix Proxy Submit to Data lake (?)
+                ScoringEngine ->> SHINNY: Rochester Proxy Submit to Data lake (?)
+                ScoringEngine ->> SHINNY: HixNY Proxy Submit to Data lake (?)
+                SHINNY ->> MDW: HEALTHeLINK Proxy Submit to MDW (?)
+                SHINNY ->> MDW: Healtheconnections Proxy Submit to MDW (?)
+                SHINNY ->> MDW: Healthix Proxy Submit to MDW (?)
+                SHINNY ->> MDW: Rochester Proxy Submit to MDW (?)
+                SHINNY ->> MDW: HixNY Proxy Submit to MDW (?)
+        `;
+
+                    // Inject the Mermaid code into the HTML
+                    mermaidDiagram.innerHTML = `<pre class="mermaid bg-white p-4 rounded-lg shadow-md">${mermaidCode}</pre>`;
+
+                    // Initialize Mermaid after setting the diagram code
+                    mermaid.contentLoaded();
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                } finally {
+                    // Hide loader and show diagram
+                    loader.style.display = 'none';
+                    mermaidDiagram.style.display = 'block';
+                }                
+
+            });
+            // Optional: Use JavaScript to fetch data dynamically if needed
+            async function fetchRecentData() {
+                try {
+                    const response = await fetch(`/dashboard/stat/fhir/fhir-submission-summary`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    const data = await response.text();
+                    document.getElementById('dashboard-container').innerHTML = data;
+                    const pieChartData = [
+                        {
+                            count: document.getElementById("totalSubmissionsP") ? document.getElementById("totalSubmissionsP").textContent : 0,
+                            label: "Total Submissions"
+                        },
+                        {
+                            count: document.getElementById("pendingSubmissionsP") ? document.getElementById("pendingSubmissionsP").textContent : 0,
+                            label: "Pending Submissions"
+                        },
+                        {
+                            count: document.getElementById("acceptedSubmissionsP") ? document.getElementById("acceptedSubmissionsP").textContent : 0,
+                            label: "Accepted Submissions"
+                        },
+                        {
+                            count: document.getElementById("rejectedSubmissionsP") ? document.getElementById("rejectedSubmissionsP").textContent : 0,
+                            label: "Rejected Submissions"
+                        }
+                    ];
+                    createPieChart(pieChartData);
+                } catch (error) {
+                    console.error('Error fetching recent data:', error);
+                }
+            }
+
+            // Example usage on page load or user interaction
+            // window.onload = function () {
+            //     fetchRecentData(); // Fetch data for the last 7 days
+            // }
+            function createPieChart(interactions) {
+                const width = 500;  // Further increase width
+                const height = 500;  // Further increase height
+                const radius = Math.min(width, height) / 2;
+
+                const color = d3.scaleOrdinal()
+                    .domain(interactions.map(d => d.label))
+                    .range(d3.schemeCategory10);
+
+                const pie = d3.pie()
+                    .value(d => d.count);
+
+                const arc = d3.arc()
+                    .innerRadius(0)
+                    .outerRadius(radius);
+
+                const svg = d3.select("#pie-chart")
+                    .append("svg")
+                    .attr("class", " align-middle w-[70%] mt-[-45px]")  // Add Tailwind classes for width and height
+                    .attr("viewBox", `0 0 ${width + 300} ${height}`)  // Further increase width to make room for the legend
+                    .append("g")
+                    .attr("transform", `translate(${width / 2},${height / 2})`);
+
+                svg.selectAll("path")
+                    .data(pie(interactions))
+                    .enter().append("path")
+                    .attr("fill", d => color(d.data.label))
+                    .attr("d", arc)
+                    .append("title")
+                    .text(d => `${d.data.label}: ${d.data.count}`);
+
+                // Add legend
+                const legend = svg.append("g")
+                    .attr("transform", `translate(${radius + 50}, -${height / 2})`);  // Move legend further to the right
+
+                const legendRectSize = 20;  // Increase legend rectangle size
+                const legendSpacing = 8;    // Increase legend spacing
+
+                const legendItems = legend.selectAll('.legend-item')
+                    .data(interactions)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'legend-item')
+                    .attr('transform', (d, i) => `translate(0, ${i * (legendRectSize + legendSpacing)})`);
+
+                legendItems.append('rect')
+                    .attr('width', legendRectSize)
+                    .attr('height', legendRectSize)
+                    .attr('fill', d => color(d.label))
+                    .attr('stroke', d => color(d.label));
+
+                legendItems.append('text')
+                    .attr('x', legendRectSize + legendSpacing)
+                    .attr('y', legendRectSize - legendSpacing)
+                    .style('font-size', '14px')  // Increase font size
+                    .style('font-family', 'sans-serif')  // Optional: set font family
+                    .text(d => d.label)
+                    .attr('dy', '0.35em');  // Adjust text vertical alignment
+            }
+            /*]]>*/
+        </script>
     </div>
+
 </body>
 
 </html>

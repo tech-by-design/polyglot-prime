@@ -14,6 +14,7 @@ import {
 import * as dax from "https://deno.land/x/dax@0.39.2/mod.ts";
 import * as pgpass from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.27/lib/postgres/pgpass/pgpass-parse.ts";
 import * as migrateIc from "./src/main/postgres/ingestion-center/migrations/migrations.ts";
+import * as ddlTable from "./src/main/postgres/ingestion-center/migrations/models-dv.ts";
 
 const $ = dax.build$({
   commandBuilder: new dax.CommandBuilder().noThrow(),
@@ -199,7 +200,7 @@ const CLI = new Command()
         .option("--serve <port:number>", "Serve generated documentation at port")
         .action(async (options) => {
           const schemaSpyCreds = schemaSpyArgs(options.connId);
-          await $.raw`java -jar ./lib/schemaspy-6.2.4.jar -t pgsql11 -dp ./lib/postgresql-42.7.3.jar -schemas techbd_udi_ingress ${schemaSpyCreds} -debug -o ${options.schemaspyDest} -vizjs`;
+          await $.raw`java -jar ./lib/schemaspy-6.2.4.jar -t pgsql11 -dp ./lib/postgresql-42.7.3.jar -schemas techbd_udi_ingress,info_schema_lifecycle ${schemaSpyCreds} -debug -o ${options.schemaspyDest} -vizjs`;
           if(options.serve) {
               Deno.serve({ port: options.serve }, (req) => {
                 return serveDir(req, {
@@ -208,6 +209,21 @@ const CLI = new Command()
               });
             }
         })
+      .command("prepare-diagram", "Generate puml diagram")
+        .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: cleanableTarget("/postgres/ingestion-center") })
+        .option("--puml-fname <file-name:string>", "Filename of the generated destroy script in target", { default: "ddl-table.auto.puml" })
+        .option("--overwrite", "Don't remove existing target file first, overwrite instead")
+        .action((options) => {
+          if(!options.overwrite) {
+            try {
+                Deno.removeSync(options.target+'/'+options.pumlFname, { recursive: true });
+            } catch (_notFound) {
+                // directory doesn't exist, it's OK
+            }
+          }
+          Deno.mkdirSync(options.target, { recursive: true });
+          Deno.writeTextFileSync(`${options.target}/${options.pumlFname}`, ddlTable.generated().pumlERD);
+        })        
     )
     .command("load-sql", "Use psql to execute generated migration scripts")
       .option("-t, --target <path:string>", "Target location for generated artifacts", { required: true, default: cleanableTarget("/postgres/ingestion-center") })
@@ -298,17 +314,19 @@ const CLI = new Command()
     .command("migrate", "Use psql to generate migration scripts based on current state")
       .option("--psql <path:string>", "`psql` command", { required: true, default: "psql" })
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .option("-l, --is-linted <id:string>", "migrate lint", { required: true, default: "true" })
       .action(async (options) => {
         const psqlCreds = pgpassPsqlArgs(options.connId);
-        console.log((await $.raw`${options.psql} ${psqlCreds} -q -t -A -P border=0 -X -c "CALL info_schema_lifecycle.islm_migrate('info_schema_lifecycle',true);"`.captureCombined().lines()).join("\n"));
+        console.log((await $.raw`${options.psql} ${psqlCreds} -q -t -A -P border=0 -X -c "CALL info_schema_lifecycle.islm_migrate('info_schema_lifecycle',true,${options.isLinted});"`.captureCombined().lines()).join("\n"));
       })      
     .command("omnibus-fresh", "Freshen the given connection ID")
       .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .option("-l, --is-linted <id:string>", "migrate lint", { required: true, default: "true" })
       .action(async (options) => {
         await CLI.parse(["ic", "generate", "sql"]);
         await CLI.parse(["ic", "load-sql", "--destroy-first", "--conn-id", options.connId]);
         await CLI.parse(["ic", "test", "--conn-id", options.connId]);
-        await CLI.parse(["ic", "migrate", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "migrate", "--conn-id", options.connId, "--is-linted", options.isLinted]);
         await CLI.parse(["ic", "generate", "java", "jooq", "--conn-id", options.connId]);
       })
     );

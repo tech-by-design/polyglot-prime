@@ -9,10 +9,11 @@ import org.techbd.conf.Configuration;
 @ConfigurationPropertiesScan
 public class AppConfig {
 
-    public class Servlet {
+    public static class Servlet {
         public static final String FHIR_CONTENT_TYPE_HEADER_VALUE = "application/fhir+json";
-        public class HeaderName {
-            public class Request {
+        
+        public static class HeaderName {
+            public static class Request {
                 public static final String FHIR_STRUCT_DEFN_PROFILE_URI = Configuration.Servlet.HeaderName.PREFIX
                         + "FHIR-Profile-URI";
                 public static final String FHIR_VALIDATION_STRATEGY = Configuration.Servlet.HeaderName.PREFIX
@@ -23,7 +24,7 @@ public class AppConfig {
                         + "DataLake-API-Content-Type";
             }
 
-            public class Response {
+            public static class Response {
                 // in case they're necessary
             }
         }

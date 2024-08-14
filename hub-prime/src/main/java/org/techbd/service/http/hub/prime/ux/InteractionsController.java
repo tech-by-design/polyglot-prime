@@ -28,7 +28,7 @@ public class InteractionsController {
     private final SftpManager sftpManager;
 
     public InteractionsController(final Presentation presentation,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig,
+            @SuppressWarnings("PMD.UnusedFormalParameter") final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final SftpManager sftpManager) {
         this.presentation = presentation;
         this.sftpManager = sftpManager;
@@ -48,7 +48,7 @@ public class InteractionsController {
 
     @GetMapping("/interactions/httpsfailed")
     @RouteMapping(label = "FHIR via HTTPs FAILED", title = "FHIR Interactions via HTTPs (POST to SHIN-NY Failures)", siblingOrder = 30)
-    public String https_failed(final Model model, final HttpServletRequest request) {
+    public String httpsFailed(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpsfailed", model, request);
     }
 

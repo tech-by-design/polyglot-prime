@@ -5,7 +5,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.List; // Ensure this import is present
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.jooq.impl.DSL;
 import org.ocpsoft.prettytime.PrettyTime;
@@ -22,6 +23,8 @@ import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
+
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -124,7 +127,7 @@ public class PrimeController {
 
             String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
 
-            String formattedTime = getrecentInteractioString(mre);            
+            String formattedTime = getrecentInteractioString(mre);
 
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
@@ -202,17 +205,162 @@ public class PrimeController {
         return formattedTime;
 
     }
-  
+
     private String convertToEST(String inputTime) {
         // Parse the input time string to a ZonedDateTime
         ZonedDateTime inputDateTime = ZonedDateTime.parse(inputTime, DateTimeFormatter.ISO_ZONED_DATE_TIME);
-    
+
         // Convert the ZonedDateTime to the EST time zone
         ZonedDateTime estDateTime = inputDateTime.withZoneSameInstant(ZoneId.of("America/New_York"));
-    
+
         // Format the ZonedDateTime to a string in the desired format
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return estDateTime.format(formatter);
+    }
+
+    @GetMapping(value = "/dashboard/stat/fhir/fhir-submission-summary", produces = "text/html")
+    public String fetchFHIRsubmissionSummary(Model model) {
+        String schemaName = "techbd_udi_ingress";
+        String viewName = "fhir_submission_summary";
+        final String defaultValue = "0";
+        String totalSubmissions = defaultValue;
+        String pendingSubmissions = defaultValue;
+        String acceptedSubmissions = defaultValue;
+        String rejectedSubmissions = defaultValue;
+        try {
+            final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                    viewName);
+            List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                    .fetch()
+                    .intoMaps();
+            if (CollectionUtils.isNotEmpty(fhirSubmission)) {
+                Map<String, Object> data = fhirSubmission.get(0);
+                totalSubmissions = data.getOrDefault("total_submissions", defaultValue).toString();
+                pendingSubmissions = data.getOrDefault("pending_submissions", defaultValue).toString();
+                acceptedSubmissions = data.getOrDefault("accepted_submissions", defaultValue).toString();
+                rejectedSubmissions = data.getOrDefault("rejected_submissions", defaultValue).toString();
+            }
+        } catch (Exception e) {
+            LOG.error("Error fetching FHIR interactions", e);
+        }
+        model.addAttribute("totalSubmissions", totalSubmissions);
+        model.addAttribute("pendingSubmissions", pendingSubmissions);
+        model.addAttribute("acceptedSubmissions", acceptedSubmissions);
+        model.addAttribute("rejectedSubmissions", rejectedSubmissions);
+        return "fragments/interactions :: serverTextStat";
+    }
+
+    @GetMapping(value = "/dashboard/stat/fhir/mermaid")
+    public ResponseEntity<List<InteractionData>> fetchFHIRSMermaidDiagram(Model model) {
+        String schemaName = "techbd_udi_ingress";
+        String viewName = "fhir_needs_attention_dashbaord";
+
+        // Initialize list to hold the results
+        List<InteractionData> interactions = new ArrayList<>();
+
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, viewName);
+
+        // Query the view and fetch the results
+        List<Map<String, Object>> fhirSubmission = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                .fetch()
+                .intoMaps(); 
+        // Check if data is available
+        if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
+            Map<String, Object> data = fhirSubmission.get(0);
+            //LOG.info("data------------" + data);
+
+            // Populate the list with data
+            interactions.add(new InteractionData("total_cross_roads_scn",
+                    getSafeIntegerValue(data.get("total_cross_roads_scn"))));
+            interactions.add(new InteractionData("total_techbd_total_submissions",
+                    getSafeIntegerValue(data.get("total_techbd_total_submissions"))));
+            interactions.add(new InteractionData("total_total_scoring_engine_submissions",
+                    getSafeIntegerValue(data.get("total_total_scoring_engine_submissions"))));
+            interactions.add(new InteractionData("total_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("total_scoring_engine_submission_passed"))));
+            interactions.add(new InteractionData("healthelink_total_submissions",
+                    getSafeIntegerValue(data.get("healthelink_total_submissions"))));
+            interactions.add(new InteractionData("healtheconnections_total_submissions",
+                    getSafeIntegerValue(data.get("healtheconnections_total_submissions"))));
+            interactions.add(new InteractionData("healthix_total_submissions",
+                    getSafeIntegerValue(data.get("healthix_total_submissions"))));
+            interactions.add(new InteractionData("grrhio_total_submissions",
+                    getSafeIntegerValue(data.get("grrhio_total_submissions"))));
+            interactions.add(new InteractionData("hixny_total_submissions",
+                    getSafeIntegerValue(data.get("hixny_total_submissions"))));
+
+            interactions.add(new InteractionData("healthelink_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("healthelink_scoring_engine_submission_passed"))));
+            interactions.add(new InteractionData("healtheconnections_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("healtheconnections_scoring_engine_submission_passed"))));                    
+            interactions.add(new InteractionData("healthix_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("healthix_scoring_engine_submission_passed"))));
+            interactions.add(new InteractionData("grrhio_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("grrhio_scoring_engine_submission_passed"))));
+            interactions.add(new InteractionData("hixny_scoring_engine_submission_passed",
+                    getSafeIntegerValue(data.get("hixny_scoring_engine_submission_passed"))));        
+        } else {
+            // Default values if no data found
+            interactions.add(new InteractionData("total_cross_roads_scn", 0));
+            interactions.add(new InteractionData("total_techbd_total_submissions", 0));
+            interactions.add(new InteractionData("total_total_scoring_engine_submissions", 0));
+            interactions.add(new InteractionData("total_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("healthelink_total_submissions", 0));
+            interactions.add(new InteractionData("healtheconnections_total_submissions", 0));
+            interactions.add(new InteractionData("healthix_total_submissions", 0));
+            interactions.add(new InteractionData("grrhio_total_submissions", 0));
+            interactions.add(new InteractionData("hixny_total_submissions", 0));
+
+            interactions.add(new InteractionData("healthelink_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("healtheconnections_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("healthix_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("grrhio_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("hixny_scoring_engine_submission_passed", 0));
+
+        }
+
+        // Return the data with HTTP status OK
+        return ResponseEntity.ok().body(interactions);
+    }
+
+    public class InteractionData {
+        private String label;
+        private int count;
+
+        // Constructor
+        public InteractionData(String label, int count) {
+            this.label = label;
+            this.count = count;
+        }
+
+        // Getters and Setters
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(String label) {
+            this.label = label;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
+    }
+
+    private int getSafeIntegerValue(Object value) {
+        if (value == null || value.toString().isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            LOG.error("Error parsing integer from value: {}", value, e);
+            return 0;
+        }
     }
 
 }

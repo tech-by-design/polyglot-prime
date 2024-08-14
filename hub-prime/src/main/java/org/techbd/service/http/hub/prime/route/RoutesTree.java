@@ -26,8 +26,9 @@ public class RoutesTree extends Paths<String, RoutesTree.Route> {
         public Map<String, String> intoMap() {
             final var result = new HashMap<String, String>();
             result.put("text", text);
-            if (href.isPresent())
+            if (href.isPresent()) {
                 result.put("href", href.orElseThrow());
+            }
             return result;
         }
 

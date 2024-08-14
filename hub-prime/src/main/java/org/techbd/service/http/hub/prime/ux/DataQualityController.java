@@ -25,9 +25,9 @@ public class DataQualityController {
     private final Presentation presentation;
 
     public DataQualityController(final Presentation presentation,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig,
-            final SftpManager sftpManager,
-            final SandboxHelpers sboxHelpers) {
+            @SuppressWarnings("PMD.UnusedFormalParameter") final UdiPrimeJpaConfig udiPrimeJpaConfig,
+            @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
+            @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
         this.presentation = presentation;
     }
 
@@ -39,7 +39,13 @@ public class DataQualityController {
     @GetMapping("/data-quality")
     @RouteMapping(label = "Data Quality", siblingOrder = 10)
     public String adminDiagnostics() {
-        return "redirect:/data-quality/sftp";
+        return "redirect:/data-quality/needs-attention";
+    }
+
+    @GetMapping("/data-quality/needs-attention")
+    @RouteMapping(label = "Needs Attention", title = "Needs Attention", siblingOrder = 5)
+    public String diagnosticsFhirNeedsAttention(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/needs-attention", model, request);
     }
 
     @GetMapping("/data-quality/sftp")
@@ -59,4 +65,5 @@ public class DataQualityController {
     public String diagnosticsFhirValidationIssues(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/fhir-validation-issues", model, request);
     }
+
 }
