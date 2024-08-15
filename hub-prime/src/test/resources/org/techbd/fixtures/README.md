@@ -13,9 +13,11 @@ TODO
 
 #### How to generate _Happy Path_ fixtures...
 
-Contains FHIR JSON Bundles that should deterministically generate validation errors based on "broken" content.
+TODO
 
 ### "Unhappy Path" fixtures
+
+Contains FHIR JSON Bundles that should deterministically generate validation errors based on "broken" content.
 
 #### _Unhappy Path_ fixture naming conventions
 
