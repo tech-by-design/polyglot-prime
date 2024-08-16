@@ -24,6 +24,28 @@ compliance with the SHIN-NY FHIR Implementation Guide (IG). The primary test
 class for this purpose is located in
 [org/techbd/orchestrate/fhir/ImplGuideTest.java](org/techbd/orchestrate/fhir/ImplGuideTest.java);
 
+#### More about the Implementation Guide
+The FHIR v4 Implementation Guide you provided primarily defines the "SHINNY Bundle Profile," which is an extension of the base FHIR Bundle. This profile introduces additional constraints and rules for working with bundles in specific healthcare contexts. Here’s a summary of its key contents:
+
+**StructureDefinition:**
+The SHINNY Bundle Profile extends the base FHIR Bundle resource, imposing additional constraints to ensure interoperability and adherence to specific healthcare use cases.
+The profile is in the draft stage and is identified by the URL http://localhost:8000/ImplementationGuide/HRSN.
+
+**Constraints:**
+The profile defines several constraints on the Bundle resource, such as ensuring that the total element is only present when the bundle is a search set or history, and specific constraints on the use of entry.request and entry.response elements depending on the type of bundle.
+The profile also includes custom constraints like ensuring a relationship exists between a Patient and an Encounter or Location within the bundle.
+
+**Mappings:**
+The SHINNY Bundle Profile includes mappings to HL7 v2, HL7 v3 (RIM), CDA (R2), and the FiveWs pattern.
+Additional Extensions and Elements:
+
+The profile introduces elements like Bundle.meta, which includes metadata about the resource, and Bundle.link, which provides links related to the bundle.
+The profile also supports extensions and modifier extensions that can represent additional implementation-specific information.
+
+**Usage:**
+This guide is aimed at ensuring that the resources within the bundle adhere to specific rules and relationships, particularly in environments where specific organizational or encounter-related relationships must be maintained.
+The guide is detailed and provides explicit rules for managing and structuring healthcare data within bundles, making it crucial for developers and implementers working with FHIR in healthcare applications.
+
 ### IG Source
 
 The Implementation Guide being tested is in
@@ -111,3 +133,29 @@ machine or within a CI/CD pipeline, follow these steps:
      ```
      This generates an HTML report of the test results in the
      `target/site/surefire-report.html`.
+
+
+### Unhappy path test fixtures:
+Details of the generated unhappy path fixture files and a summary of the new errors introduced:
+1. **Modified_FHIR_with_10_errors.json**
+   1. **Invalid Resource Type**: Changed one of the resource types to an invalid type.
+   2. **Missing Required Element**: Removed a required element from one of the resources.
+   3. **Incorrect Data Type**: Changed the data type of a specific element to an incompatible type.
+   4. **Invalid Code in Coding System**: Replaced a valid code with an invalid code in a coding system.
+   5. **Incorrect Reference Format**: Modified a reference URL to an incorrect format.
+   6. **Duplicate Identifier**: Added a duplicate identifier within a resource that should have unique identifiers.
+   7. **Inconsistent Profile Reference**: Changed a profile reference to an incorrect or non-existent profile.
+   8. **Invalid Date Format**: Modified a date to an invalid format that does not conform to the expected pattern.
+   9. **Conflicting Data in Extension**: Introduced conflicting data within an extension.
+   10. **Missing Profile Declaration**: Removed the profile declaration from one of the resources.
+2. **Modified_FHIR_with_10_different_errors.json**
+   1. **Missing Resource ID**: Removed the id element from one of the resources.
+   2. **Invalid System URL**: Changed a valid system URL to an invalid one.
+   3. **Incorrect Value Type in Extension**: Changed a valueDecimal to an incorrect valueString.
+   4. **Invalid Period Format**: Altered the period format in an Encounter resource to an invalid format.
+   5. **Missing Coding System**: Removed the system field from a coding entry.
+   6. **Incorrect Full URL Format**: Modified the fullUrl to an invalid format.
+   7. **Duplicate Resource Entry**: Duplicated a resource entry in the Bundle.
+   8. **Missing Reference in Condition**: Removed the reference field from the Condition subject.
+   9. **Invalid Coding Display Text**: Changed the display text in a coding system to an invalid value.
+   10. **Incorrect Resource Method in Request**: Changed the request method from POST to an invalid value.
