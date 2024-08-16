@@ -45,7 +45,12 @@ public class DataQualityController {
     @GetMapping("/data-quality/needs-attention")
     @RouteMapping(label = "Needs Attention", title = "Needs Attention", siblingOrder = 5)
     public String diagnosticsFhirNeedsAttention(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/diagnostics/needs-attention", model, request);
+        String templateName = "page/diagnostics/needs-attention";
+        if (null != request.getParameter("qeName")) {
+            model.addAttribute("qeName", request.getParameter("qeName"));
+            templateName = "page/diagnostics/techbd-to-scoring-engine";
+        }
+        return presentation.populateModel(templateName, model, request);
     }
 
     @GetMapping("/data-quality/sftp")

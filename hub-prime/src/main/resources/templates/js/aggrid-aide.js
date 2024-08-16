@@ -324,6 +324,136 @@ export class AGGridAideBuilder {
         };
         return this;
     }
+    withServerSideDatasourceGET(dataSourceUrl, withSecondaryColumns = null, inspect = {}) {
+        this.gridOptions.serverSideDatasource = {
+            getRows: async (params) => {
+                let dataAvailable = false; // Flag to track data availability
+    
+                const {
+                    includeGeneratedSqlInResp = true,
+                    includeGeneratedSqlInErrorResp = true,
+    
+                    secondaryColsError = async (dataSourceUrl, serverRespPayload, error, respMetrics) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, result: serverRespPayload, error, respMetrics }),
+                    resultServerError = async (dataSourceUrl, serverRespPayload, respMetrics) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, result: serverRespPayload, respMetrics }),
+                    fetchRespNotOK = async (dataSourceUrl, response, respMetrics) => console.error(`[ServerDatasource] Fetched response not OK: ${response.statusText}`, { dataSourceUrl, response, respMetrics }),
+                    fetchError = async (dataSourceUrl, error) => console.error(`[ServerDatasource] Fetch error: ${error}`, { dataSourceUrl, error }),
+    
+                    beforeRequest = async (dataSourceUrl) => { },
+                    beforeSuccess = async (serverRespPayload, respMetrics, dataSourceUrl) => {
+                        console.log('Full Server Response:', serverRespPayload);  // Log the full response
+    
+                        // Check if serverRespPayload is an array
+                        if (!Array.isArray(serverRespPayload)) {
+                            console.error('Error: serverRespPayload is not an array.');
+                            params.fail();
+                            return;
+                        }
+    
+                        const data = serverRespPayload; // Assuming the response is an array of data
+    
+                        console.log('Extracted data:', data); // Log the extracted data
+    
+                        if (data.length === 0) {
+                            console.warn('Warning: Data array is empty.');
+                        }
+    
+                        // Automatically generate column definitions based on the keys in the first object
+                        const valueCols = data.length > 0 ? Object.keys(data[0]).map(key => ({
+                            headerName: key.replace(/_/g, ' ').toUpperCase(),  // Convert key to uppercase for header name
+                            field: key
+                        })) : [];
+    
+                        console.log('Generated valueCols:', valueCols);
+    
+                        // Validate that valueCols is now correctly generated
+                        if (valueCols.length === 0) {
+                         //   console.error('Error: Failed to generate valueCols from data.');
+                          //  params.fail();
+                          //  return;
+                        }
+                    },
+    
+                    customizedContent = async (success, serverRespPayload, respMetrics, dataSourceUrl) => success,
+                } = inspect;
+    
+                try {
+                    await beforeRequest?.(dataSourceUrl);
+    
+                    // Construct the full GET URL with query parameters from params.request
+                    const queryString = new URLSearchParams(params.request).toString();
+                    const fullUrl = `${dataSourceUrl}?${queryString}`;
+    
+                    const response = await fetch(fullUrl, {
+                        method: 'GET',
+                        headers: {
+                            'X-Include-Generated-SQL-In-Response': includeGeneratedSqlInResp,
+                            'X-Include-Generated-SQL-In-Error-Response': includeGeneratedSqlInErrorResp,
+                        }
+                    });
+    
+                    const respMetrics = response.headers ? {
+                        startTime: response.headers.get("X-Observability-Metric-Interaction-Start-Time"),
+                        finishTime: response.headers.get("X-Observability-Metric-Interaction-Finish-Time"),
+                        durationMillisecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Nanosecs"),
+                        durationNanosecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Millisecs"),
+                    } : {};
+    
+                    if (respMetrics && window.layout?.observability?.metricsCollection) {
+                        window.layout.addIdentifiableMetrics(`fetch-${dataSourceUrl}`, respMetrics);
+                    }
+    
+                    if (response.ok) {  
+                        const serverRespPayload = await response.json();
+    
+                        // Call beforeSuccess to log and check the response structure
+                        await beforeSuccess?.(serverRespPayload, respMetrics, dataSourceUrl);
+    
+                        // Since we already extracted data and generated columns in beforeSuccess, reuse them
+                        const data = Array.isArray(serverRespPayload) ? serverRespPayload : [];
+                        const valueCols = data.length > 0 ? Object.keys(data[0]).map(key => ({
+                            headerName: key.replace(/_/g, ' ').toUpperCase(),
+                            field: key
+                        })) : [];
+    
+                        // Check if data is available
+                        if (data.length > 0) {
+                            dataAvailable = true; // Data found
+                        }
+    
+                        // Check for UX reportable errors
+                        if (serverRespPayload.uxReportableError) {
+                            await resultServerError?.(dataSourceUrl, serverRespPayload, respMetrics);
+                        }
+    
+                        // Call success or fail based on data availability
+                        if (dataAvailable) {
+                            params.success({
+                                rowData: data,
+                                columnDefs: valueCols
+                            });
+                        } else { 
+                            
+                            params.success({ rowData: [] });
+                            params.api.showNoRowsOverlay();
+                            // Save the flag in gridOptions so it can be accessed in the gridReady event
+                            this.gridOptions.dataAvailable = dataAvailable;
+                        }
+                    } else {
+                        await fetchRespNotOK?.(dataSourceUrl, response, respMetrics);
+                        params.fail();
+                    }
+                } catch (error) {
+                    await fetchError?.(dataSourceUrl, error);
+                    params.fail();
+                }
+            }
+        };
+        return this;
+    }
+    
+    
+    
+    
 
     /**
      * Sets the ModalAide instance to be used for rendering modal popups.
