@@ -1,5 +1,5 @@
 {
-  "resourceType123": "Bundle",
+  "resourceType": "Bundle",
   "type": "transaction",
   "entry": [ {
     "fullUrl": "urn:uuid:d239ea20-265f-6d15-1640-9aefe3c579f1",
