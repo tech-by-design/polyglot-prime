@@ -3,28 +3,6 @@
 - `happy-path` directory contains FHIR JSON Bundles that should "run clean" and generate no validation warnings or errors from the FHIR validation engines
 - `unhappy-path` directory contains FHIR JSON Bundles that should deterministically generate validation errors based on "broken" content 
 
-#### A note about the Implementation Guide
-The FHIR v4 Implementation Guide you provided primarily defines the "SHINNY Bundle Profile," which is an extension of the base FHIR Bundle. This profile introduces additional constraints and rules for working with bundles in specific healthcare contexts. Here’s a summary of its key contents:
-
-**StructureDefinition:**
-The SHINNY Bundle Profile extends the base FHIR Bundle resource, imposing additional constraints to ensure interoperability and adherence to specific healthcare use cases.
-The profile is in the draft stage and is identified by the URL http://localhost:8000/ImplementationGuide/HRSN.
-
-**Constraints:**
-The profile defines several constraints on the Bundle resource, such as ensuring that the total element is only present when the bundle is a search set or history, and specific constraints on the use of entry.request and entry.response elements depending on the type of bundle.
-The profile also includes custom constraints like ensuring a relationship exists between a Patient and an Encounter or Location within the bundle.
-
-**Mappings:**
-The SHINNY Bundle Profile includes mappings to HL7 v2, HL7 v3 (RIM), CDA (R2), and the FiveWs pattern.
-Additional Extensions and Elements:
-
-The profile introduces elements like Bundle.meta, which includes metadata about the resource, and Bundle.link, which provides links related to the bundle.
-The profile also supports extensions and modifier extensions that can represent additional implementation-specific information.
-
-**Usage:**
-This guide is aimed at ensuring that the resources within the bundle adhere to specific rules and relationships, particularly in environments where specific organizational or encounter-related relationships must be maintained.
-The guide is detailed and provides explicit rules for managing and structuring healthcare data within bundles, making it crucial for developers and implementers working with FHIR in healthcare applications.
-
 ### "Happy Path" fixtures
 
 Contains FHIR JSON Bundles that should "run clean" and generate no validation warnings or errors from the FHIR validation engines.
