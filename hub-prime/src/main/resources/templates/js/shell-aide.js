@@ -409,6 +409,7 @@ export class LayoutAide {
 
         this.#shellAide = shellAide;
         this.#layoutOptions = layoutOptions;
+        this.hideNeedsAttentionLink();
     }
 
     get shellAide() { return this.#shellAide; }
@@ -420,6 +421,25 @@ export class LayoutAide {
     get activeRouteOptions() { return this.#activeRouteOptions; }
     get windowPropertyName() { return this.#windowPropertyName; }
     get breadcrumbs() { return this.#breadcrumbs; }
+
+    /**
+     * Hides the "Needs Attention" link on the page by setting its display property to 'none'.
+     *
+     * This function adds an event listener to the 'DOMContentLoaded' event, which waits for the
+     * page to finish loading before executing the code inside the event listener. It then selects
+     * the first 'a' element with a 'href' attribute value of '/needs-attention' and sets its
+     * display property to 'none' if it exists.
+     *
+     * @return {void} This function does not return anything.
+     */
+    hideNeedsAttentionLink() {
+        document.addEventListener("DOMContentLoaded", () => {
+            const link = document.querySelector('a[href="/needs-attention"]');
+            if (link) {
+                link.style.display = 'none';
+            }
+        });
+    }
 
     debugLog(...data) {
         if (this.layoutOptions.logLevel == "debug") {
