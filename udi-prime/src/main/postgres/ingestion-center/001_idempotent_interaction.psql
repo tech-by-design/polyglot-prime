@@ -504,36 +504,37 @@ FROM cte_interaction_diagnostics intr_diagno
  *                                      If TRUE, unique violation is not treated as an error.
  *                                      If FALSE, unique violation is treated as an error.
  *******************************************************************************************************************************/
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, jsonb, jsonb, text, text, text, text, timestamptz, text, text, bool);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_interaction_http_request(
-    IN interaction_id TEXT,
-    IN interaction_key TEXT,
-    IN payload JSONB,
-    IN elaboration JSONB DEFAULT NULL,
-    IN nature JSONB DEFAULT NULL,
-    IN content_type TEXT DEFAULT NULL,
-    IN from_state TEXT DEFAULT NULL,
-    IN to_state TEXT DEFAULT NULL,
-    IN state_transition_reason TEXT DEFAULT NULL,
-    IN created_at TIMESTAMPTZ DEFAULT NULL,
-    IN created_by TEXT DEFAULT NULL,
-    IN provenance TEXT DEFAULT NULL,
-    IN hub_upsert_behavior BOOLEAN DEFAULT TRUE
-)
-LANGUAGE plpgsql
-AS $$
+IN interaction_id text, 
+IN interaction_key text, 
+IN payload jsonb, 
+IN elaboration jsonb DEFAULT NULL::jsonb, 
+IN nature jsonb DEFAULT NULL::jsonb, 
+IN content_type text DEFAULT NULL::text, 
+IN from_state text DEFAULT NULL::text, 
+IN to_state text DEFAULT NULL::text, 
+IN state_transition_reason text DEFAULT NULL::text, 
+IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
+IN created_by text DEFAULT NULL::text, IN provenance text DEFAULT NULL::text, 
+IN hub_upsert_behavior boolean DEFAULT true)
+ LANGUAGE plpgsql
+AS $procedure$
 DECLARE
-    v_error_msg TEXT;
-    v_sqlstate TEXT;
-    v_pg_detail TEXT;
-    v_pg_hint TEXT;
-    v_pg_context TEXT;
-    v_created_at TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
-    v_created_by TEXT := COALESCE(created_by, current_user);
-    v_provenance TEXT := COALESCE(provenance, 'unknown');
-    v_exception_id TEXT;
+    v_error_msg 	TEXT;
+    v_sqlstate 		TEXT;
+    v_pg_detail 	TEXT;
+    v_pg_hint 		TEXT;
+    v_pg_context 	TEXT;
+    v_created_at 	TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+    v_created_by 	TEXT := COALESCE(created_by, current_user);
+    v_provenance 	TEXT := COALESCE(provenance, 'unknown');
+    v_exception_id 	TEXT;
+   	v_nature_type 	TEXT;
+   	v_tenant_id 	TEXT;
 BEGIN
     -- Attempt to insert into hub_interaction
-    BEGIN
+    BEGIN	   	    
         INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
         VALUES (interaction_id, interaction_key, v_created_at, v_created_by, v_provenance);
 
@@ -557,11 +558,16 @@ BEGIN
 
     -- Attempt to insert into sat_interaction_http_request
     BEGIN
+	    v_nature_type = nature->>'nature';
+	   	v_tenant_id = nature->>'tenant_id';
+	   
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
-            sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, to_state, state_transition_reason, elaboration, created_at, created_by, provenance
+            sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, 
+            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_type, tenant_id
         )
         VALUES (
-            gen_random_uuid()::text, interaction_id, nature, content_type, payload, from_state, to_state, state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance
+            gen_random_uuid()::text, interaction_id, nature, content_type, payload, from_state, to_state, 
+            state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_type, v_tenant_id
         );
 
     EXCEPTION
@@ -580,7 +586,8 @@ BEGIN
             );
     END;
 END;
-$$;
+$procedure$
+;
 
 /*******************************************************************************************
  * Comprehensive view of Orchctl issue classification. * 

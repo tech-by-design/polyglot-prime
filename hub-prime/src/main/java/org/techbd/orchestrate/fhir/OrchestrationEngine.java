@@ -22,6 +22,10 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.hl7.fhir.common.hapi.validation.support.PrePopulatedValidationSupport;
+import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
+import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
+import org.hl7.fhir.r4.model.Bundle;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,9 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.parser.StrictErrorHandler;
-import ca.uhn.fhir.validation.FhirValidator;
-import ca.uhn.fhir.validation.ValidationOptions;
+import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -223,17 +225,10 @@ public class OrchestrationEngine {
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
         private final FhirContext fhirContext;
-        private final FhirValidator validator;
-        private final ValidationOptions options;
 
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.fhirContext = FhirContext.forR4();
-            this.options = new ValidationOptions();
-            if (this.fhirProfileUrl != null) {
-                this.options.addProfile(this.fhirProfileUrl);
-            }
-            this.validator = fhirContext.newValidator();
             engineConstructedAt = Instant.now();
             observability = new Observability(HapiValidationEngine.class.getName(),
                     "HAPI version %s (FHIR version %s)"
@@ -247,10 +242,18 @@ public class OrchestrationEngine {
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
-                final var strictParser = fhirContext.newJsonParser();
-                strictParser.setParserErrorHandler(new StrictErrorHandler());
-                final var parsedResource = strictParser.parseResource(payload);
-                final var hapiVR = validator.validateWithResult(parsedResource, this.options);
+                final var instanceValidator = new FhirInstanceValidator(fhirContext);
+
+                final var validationSupport = new DefaultProfileValidationSupport(fhirContext);
+                validationSupport.fetchStructureDefinition(fhirProfileUrl);
+                final var validationSupportChain = new ValidationSupportChain(validationSupport,
+                        new PrePopulatedValidationSupport(fhirContext));
+                instanceValidator.setValidationSupport(validationSupportChain);
+                final var validator = fhirContext.newValidator();
+                validator.registerValidatorModule(instanceValidator);
+                final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
+
+                final var hapiVR = validator.validateWithResult(bundle);
                 final var completedAt = Instant.now();
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
@@ -495,24 +498,24 @@ public class OrchestrationEngine {
                     .connectTimeout(Duration.ofSeconds(120))
                     .build();
 
-                    final var fileContent = String.format("""
+            final var fileContent = String.format("""
+                    {
+                      "cliContext": {
+                        "sv": "%s",
+                        "ig": [
+                          "%s"
+                        ],
+                        "locale": "%s"
+                      },
+                      "filesToValidate": [
                         {
-                          "cliContext": {
-                            "sv": "%s",
-                            "ig": [
-                              "%s"
-                            ],
-                            "locale": "%s"
-                          },
-                          "filesToValidate": [
-                            {
-                              "fileName": "%s",
-                              "fileContent": "%s",
-                              "fileType": "%s"
-                            }
-                          ]
+                          "fileName": "%s",
+                          "fileContent": "%s",
+                          "fileType": "%s"
                         }
-                        """.replace("\n", "%n"), fhirContext, fhirProfileUrl, locale, fileName, result, fileType);
+                      ]
+                    }
+                    """.replace("\n", "%n"), fhirContext, fhirProfileUrl, locale, fileName, result, fileType);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://validator.fhir.org/validate"))
