@@ -516,7 +516,8 @@ IN from_state text DEFAULT NULL::text,
 IN to_state text DEFAULT NULL::text, 
 IN state_transition_reason text DEFAULT NULL::text, 
 IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
-IN created_by text DEFAULT NULL::text, IN provenance text DEFAULT NULL::text, 
+IN created_by text DEFAULT NULL::text, 
+IN provenance text DEFAULT NULL::text, 
 IN hub_upsert_behavior boolean DEFAULT true)
  LANGUAGE plpgsql
 AS $procedure$
@@ -530,8 +531,8 @@ DECLARE
     v_created_by 	TEXT := COALESCE(created_by, current_user);
     v_provenance 	TEXT := COALESCE(provenance, 'unknown');
     v_exception_id 	TEXT;
-   	v_nature_type 	TEXT;
-   	v_tenant_id 	TEXT;
+   	v_nature_denorm 	TEXT;
+   	v_tenant_id_denorm 	TEXT;
 BEGIN
     -- Attempt to insert into hub_interaction
     BEGIN	   	    
@@ -558,16 +559,16 @@ BEGIN
 
     -- Attempt to insert into sat_interaction_http_request
     BEGIN
-	    v_nature_type = nature->>'nature';
-	   	v_tenant_id = nature->>'tenant_id';
+	    v_nature_denorm = nature->>'nature';
+	   	v_tenant_id_denorm = nature->>'tenant_id';
 	   
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, 
-            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_type, tenant_id
+            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm
         )
         VALUES (
             gen_random_uuid()::text, interaction_id, nature, content_type, payload, from_state, to_state, 
-            state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_type, v_tenant_id
+            state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
 
     EXCEPTION
@@ -588,7 +589,6 @@ BEGIN
 END;
 $procedure$
 ;
-
 /*******************************************************************************************
  * Comprehensive view of Orchctl issue classification. * 
  ******************************************************************************************/
@@ -1172,7 +1172,8 @@ AS SELECT
     htt_req.nature AS error_type,
     htt_req.payload ->> 'error' AS error_message,
     htt_req.request_created_at AS date,
-    htt_req.sat_interaction_http_request_id
+    htt_req.sat_interaction_http_request_id,
+    'This error occurs when the server cannot process the request due to invalid syntax. Ensure the request format, headers, and endpoint are correct.' AS failure_reason
    FROM techbd_udi_ingress.interaction_http_request_mat htt_req
      LEFT JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
      LEFT JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
@@ -1185,7 +1186,8 @@ AS SELECT
     htt_req.nature AS error_type,  
     htt_req.payload ->> 'insertScreeningsResponse' AS error_message,
     htt_req.request_created_at AS date,
-    htt_req.sat_interaction_http_request_id    
+    htt_req.sat_interaction_http_request_id,
+    'Ensure that the data matches the required format and includes all mandatory fields as specified, to prevent errors related to invalid or incomplete submissions.' AS failure_reason    
    FROM techbd_udi_ingress.interaction_http_request_mat htt_req
      LEFT JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
      LEFT JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
