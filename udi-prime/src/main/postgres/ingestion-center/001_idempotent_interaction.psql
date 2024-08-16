@@ -516,7 +516,8 @@ IN from_state text DEFAULT NULL::text,
 IN to_state text DEFAULT NULL::text, 
 IN state_transition_reason text DEFAULT NULL::text, 
 IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
-IN created_by text DEFAULT NULL::text, IN provenance text DEFAULT NULL::text, 
+IN created_by text DEFAULT NULL::text, 
+IN provenance text DEFAULT NULL::text, 
 IN hub_upsert_behavior boolean DEFAULT true)
  LANGUAGE plpgsql
 AS $procedure$
@@ -530,8 +531,8 @@ DECLARE
     v_created_by 	TEXT := COALESCE(created_by, current_user);
     v_provenance 	TEXT := COALESCE(provenance, 'unknown');
     v_exception_id 	TEXT;
-   	v_nature_type 	TEXT;
-   	v_tenant_id 	TEXT;
+   	v_nature_denorm 	TEXT;
+   	v_tenant_id_denorm 	TEXT;
 BEGIN
     -- Attempt to insert into hub_interaction
     BEGIN	   	    
@@ -558,16 +559,16 @@ BEGIN
 
     -- Attempt to insert into sat_interaction_http_request
     BEGIN
-	    v_nature_type = nature->>'nature';
-	   	v_tenant_id = nature->>'tenant_id';
+	    v_nature_denorm = nature->>'nature';
+	   	v_tenant_id_denorm = nature->>'tenant_id';
 	   
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, 
-            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_type, tenant_id
+            to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm
         )
         VALUES (
             gen_random_uuid()::text, interaction_id, nature, content_type, payload, from_state, to_state, 
-            state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_type, v_tenant_id
+            state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
 
     EXCEPTION
@@ -588,7 +589,6 @@ BEGIN
 END;
 $procedure$
 ;
-
 /*******************************************************************************************
  * Comprehensive view of Orchctl issue classification. * 
  ******************************************************************************************/
