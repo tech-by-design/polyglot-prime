@@ -45,7 +45,7 @@ public class NeedAttentionController {
     } 
 
     @GetMapping("/needs-attention/scn-to-qe")
-    @RouteMapping(label = "CrossRoads SCN to QE", title = "Needs Attention", siblingOrder = 5)
+    @RouteMapping(label = "CrossRoads SCN to (QE)", title = "Needs Attention -", siblingOrder = 5)
     public String diagnosticsFhirNeedsAttentionScnToQe(final Model model, final HttpServletRequest request) {
  
     model.addAttribute("qeName", request.getParameter("qeName"));
@@ -55,7 +55,7 @@ public class NeedAttentionController {
     }
 
     @GetMapping("/needs-attention/qe-to-techbd")
-    @RouteMapping(label = "QE to TechBD", title = "Needs Attention", siblingOrder = 6)
+    @RouteMapping(label = "(QE) to TechBD", title = "Needs Attention -", siblingOrder = 6)
     public String diagnosticsFhirNeedsAttentionQeToTechbd(final Model model, final HttpServletRequest request) {
  
     model.addAttribute("qeName", request.getParameter("qeName"));
@@ -66,7 +66,7 @@ public class NeedAttentionController {
 
 
     @GetMapping("/needs-attention/techbd-to-scoring-engine")
-    @RouteMapping(label = "TechBD to Scoring Engine", title = "Needs Attention", siblingOrder = 7)
+    @RouteMapping(label = "TechBD to Scoring Engine", title = "Needs Attention -", siblingOrder = 7)
     public String diagnosticsFhirNeedsAttentionTechbdToScoringEngine(final Model model, final HttpServletRequest request) {
  
     model.addAttribute("qeName", request.getParameter("qeName"));

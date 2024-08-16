@@ -1122,7 +1122,7 @@ ON hintr.hub_interaction_id = sihr.hub_interaction_id
 where   hintr."key" IN ('/Bundle/', '/Bundle')
   AND ((sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' OR  (sihr.nature->>'nature' = 'Forwarded HTTP Response' AND not sihr.payload ? 'scoredcardResponse'))
   AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days' 
- ORDER BY sihr.hub_interaction_id
+ ORDER BY sihr.created_at DESC
 ;
 
 
