@@ -17,9 +17,7 @@ import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
 import org.hl7.fhir.r4.model.Bundle;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
@@ -27,8 +25,6 @@ import ca.uhn.fhir.validation.FhirValidator;
 import ca.uhn.fhir.validation.ResultSeverityEnum;
 
 public class ImplGuideTest {
-
-    private static final String IG_PROFILE_URL = "https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json";
 
     FhirContext ctx;
     FhirValidator validator;
@@ -42,7 +38,7 @@ public class ImplGuideTest {
 
         final var terminologyService = new CommonCodeSystemsTerminologyService(ctx);
         final var validationSupport = new PrePopulatedValidationSupport(ctx);
-        validationSupport.fetchStructureDefinition(IG_PROFILE_URL);
+        //validationSupport.fetchStructureDefinition(IG_PROFILE_URL);
 
         final var defaultValidationSupport = new DefaultProfileValidationSupport(ctx);
         final var validationSupportChain = new ValidationSupportChain(
@@ -53,10 +49,22 @@ public class ImplGuideTest {
         validator.registerValidatorModule(instanceValidator);
     }
 
-    @ParameterizedTest(name = "{index}: Test Unhappy Path Invalid Encounter Status: {0}")
-    @MethodSource("getUnHappyPathFixtures")
-    @DisplayName("Test for Invalid Encounter Status in Unhappy Path Scenario")
-    void testUnHappyPathInvalidEncounterStatus(String fixtureFileName) throws IOException {
+    @Test
+    void testUnHappyPath_Angele108_Keitha498_Kihn564() throws IOException {
+        assertUnHappyPathInvalidEncounterStatus("org/techbd/fixtures/unhappy-path/Angele108_Keitha498_Kihn564_4d678b50-d57b-97cd-d8f5-97209d6b2e6d.json");
+    }
+
+    @Test
+    void testUnHappyPath_Anika194_Ashlee14_Daniel959() throws IOException {
+        assertUnHappyPathInvalidEncounterStatus("org/techbd/fixtures/unhappy-path/Anika194_Ashlee14_Daniel959_47f5bba7-e8fb-f59e-36be-4097a0d27214.json");
+    }
+
+    @Test
+    void testUnHappyPath_Niesha86_Powlowski563() throws IOException {
+        assertUnHappyPathInvalidEncounterStatus("org/techbd/fixtures/unhappy-path/Niesha86_Powlowski563_with_errors.json");
+    }
+
+    void assertUnHappyPathInvalidEncounterStatus(String fixtureFileName) throws IOException {
         String input = loadFixture(fixtureFileName);
         assertThat(input)
                 .as("Fixture file '%s' should not be null or empty", fixtureFileName)
@@ -72,10 +80,12 @@ public class ImplGuideTest {
                 .withFailMessage("Fixture file %s do not have valid encounter status.The value provided ('finished') is not in the value set 'EncounterStatus' (http://hl7.org/fhir/ValueSet/encounter-status|4.0.1)", fixtureFileName);
     }
 
-    @ParameterizedTest(name = "{index}: Test Unhappy Path Invalid Observation Category Codes: {0}")
-    @MethodSource("getUnHappyPathFixtures")
-    @DisplayName("Test for Invalid Observation Status in Unhappy Path Scenario")
-    void testUnHappyPathInvalidObservationStatus(String fixtureFileName) throws IOException {
+    @Test
+    void testUnHappyPathInvalidObservationStatus_Niesha86_Powlowski563() throws IOException {
+        assertUnHappyPathInvalidObservationStatus("org/techbd/fixtures/unhappy-path/Niesha86_Powlowski563_with_errors.json");
+    }
+
+    void assertUnHappyPathInvalidObservationStatus(String fixtureFileName) throws IOException {
         String input = loadFixture(fixtureFileName);
         assertThat(input)
                 .as("Fixture file '%s' should not be null or empty", fixtureFileName)
@@ -91,10 +101,12 @@ public class ImplGuideTest {
                 .withFailMessage("The value provided ('final') is not in the value set 'ObservationStatus' (http://hl7.org/fhir/ValueSet/observation-status|4.0.1), and a code is required from this value set  (error message = Validation failed)", fixtureFileName);
     }
 
-    @ParameterizedTest(name = "{index}: Test Unhappy Path Invalid Event Status : {0}")
-    @MethodSource("getUnHappyPathFixtures")
-    @DisplayName("Test for Invalid Event Status in Unhappy Path Scenario")
-    void testUnHappyPathInvalidEventStatus(String fixtureFileName) throws IOException {
+    @Test
+    void testUnHappyPathInvalidEventStatus_Niesha86_Powlowski563() throws IOException {
+        assertUnHappyPathInvalidEventStatus("org/techbd/fixtures/unhappy-path/Niesha86_Powlowski563_with_errors.json");
+    }
+
+    void assertUnHappyPathInvalidEventStatus(String fixtureFileName) throws IOException {
         String input = loadFixture(fixtureFileName);
         assertThat(input)
                 .as("Fixture file '%s' should not be null or empty", fixtureFileName)
