@@ -135,27 +135,3 @@ machine or within a CI/CD pipeline, follow these steps:
      `target/site/surefire-report.html`.
 
 
-### Unhappy path test fixtures:
-Details of the generated unhappy path fixture files and a summary of the new errors introduced:
-1. **Modified_FHIR_with_10_errors.json**
-   1. **Invalid Resource Type**: Changed one of the resource types to an invalid type.
-   2. **Missing Required Element**: Removed a required element from one of the resources.
-   3. **Incorrect Data Type**: Changed the data type of a specific element to an incompatible type.
-   4. **Invalid Code in Coding System**: Replaced a valid code with an invalid code in a coding system.
-   5. **Incorrect Reference Format**: Modified a reference URL to an incorrect format.
-   6. **Duplicate Identifier**: Added a duplicate identifier within a resource that should have unique identifiers.
-   7. **Inconsistent Profile Reference**: Changed a profile reference to an incorrect or non-existent profile.
-   8. **Invalid Date Format**: Modified a date to an invalid format that does not conform to the expected pattern.
-   9. **Conflicting Data in Extension**: Introduced conflicting data within an extension.
-   10. **Missing Profile Declaration**: Removed the profile declaration from one of the resources.
-2. **Modified_FHIR_with_10_different_errors.json**
-   1. **Missing Resource ID**: Removed the id element from one of the resources.
-   2. **Invalid System URL**: Changed a valid system URL to an invalid one.
-   3. **Incorrect Value Type in Extension**: Changed a valueDecimal to an incorrect valueString.
-   4. **Invalid Period Format**: Altered the period format in an Encounter resource to an invalid format.
-   5. **Missing Coding System**: Removed the system field from a coding entry.
-   6. **Incorrect Full URL Format**: Modified the fullUrl to an invalid format.
-   7. **Duplicate Resource Entry**: Duplicated a resource entry in the Bundle.
-   8. **Missing Reference in Condition**: Removed the reference field from the Condition subject.
-   9. **Invalid Coding Display Text**: Changed the display text in a coding system to an invalid value.
-   10. **Incorrect Resource Method in Request**: Changed the request method from POST to an invalid value.
