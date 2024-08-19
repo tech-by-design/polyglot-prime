@@ -11,7 +11,7 @@ CREATE OR REPLACE PROCEDURE cron.schedule_cron_job() AS $scheduleCronJobFn$
         END IF;
         IF NOT EXISTS(SELECT 1 from cron.job WHERE jobname = 'refresh-fhir-screening-info-mat') THEN 
             INSERT INTO cron.job(schedule, command, nodename, nodeport, database, username,active,jobname)
-            VALUES ('10,25,40,55 * * * *', format($$ REFRESH MATERIALIZED view CONCURRENTLY techbd_udi_ingress.fhir_screening_info_mat;$$), 'localhost', '5432', 'techbd_udi', 'postgres',true,'refresh-interaction-http-request-observe-mat');
+            VALUES ('10,25,40,55 * * * *', format($$ REFRESH MATERIALIZED view CONCURRENTLY techbd_udi_ingress.fhir_screening_info_mat;$$), 'localhost', '5432', 'techbd_udi', 'postgres',true,'refresh-fhir-screening-info-mat');
         END IF;
     END; 
 $scheduleCronJobFn$ LANGUAGE PLPGSQL;
