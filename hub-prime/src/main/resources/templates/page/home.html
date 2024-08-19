@@ -4,7 +4,7 @@
 
 <head>
     <script src='https://unpkg.com/htmx.org/dist/htmx.min.js'></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script> 
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <title>Welcome</title>
     <style>
         .hanging-indent {
@@ -12,14 +12,14 @@
             text-indent: -1.5rem;
         }
     </style>
-        <script type="module"> 
-            import { Helpers } from '@presentation/shell/helpers.js';
-            document.addEventListener('DOMContentLoaded', async function () {
-                const helpers = new Helpers();
-                // Inject the date range into the HTML
-                helpers.injectDateRangeText('dashboard-date-range', 'Synthetic Testing from {startDate} to {endDate} (FHIR)');
-            });
-        </script>
+    <script type="module">
+        import { Helpers } from '@presentation/shell/helpers.js';
+        document.addEventListener('DOMContentLoaded', async function () {
+            const helpers = new Helpers();
+            // Inject the date range into the HTML
+            helpers.injectDateRangeText('dashboard-date-range', 'Synthetic Testing from {startDate} to {endDate} (FHIR)');
+        });
+    </script>
 </head>
 
 <body class="bg-gray-100">
@@ -185,7 +185,7 @@
 
         <script th:inline="javascript">
             /*<![CDATA[*/
-            document.addEventListener('DOMContentLoaded', async function () { 
+            document.addEventListener('DOMContentLoaded', async function () {
 
                 const loader = document.getElementById('loader');
                 const mermaidDiagram = document.getElementById('mermaid-diagram');
@@ -268,13 +268,23 @@
 
                     // Initialize Mermaid after setting the diagram code
                     mermaid.contentLoaded();
+
+                    // Wait for Mermaid to render and then add click event listeners
+                    setTimeout(function () {
+                        addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink');
+                        addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn');
+                        addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix');
+                        addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio');
+                        addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny');
+                    }, 500);
+
                 } catch (error) {
                     console.error('Error fetching data:', error);
                 } finally {
                     // Hide loader and show diagram
                     loader.style.display = 'none';
                     mermaidDiagram.style.display = 'block';
-                }                
+                }
 
             });
             // Optional: Use JavaScript to fetch data dynamically if needed
@@ -308,6 +318,27 @@
                 } catch (error) {
                     console.error('Error fetching recent data:', error);
                 }
+            }
+
+
+            // Function to replace text with a link
+            // Function to add a click event to specific text elements in the diagram
+            function addClickEvent(text, url) {
+                const elements = document.querySelectorAll('text');
+                elements.forEach(el => {
+                    if (el.innerHTML.includes(text)) {
+                        el.style.cursor = 'pointer';
+                        el.addEventListener('mouseover', () => {
+                            el.style.fill = 'blue'; // Change the color on hover
+                        });
+                        el.addEventListener('mouseout', () => {
+                            el.style.fill = ''; // Revert back to the original color
+                        });
+                        el.addEventListener('click', () => {
+                            window.location.href = url;  // Redirect to the URL in the same window
+                        });
+                    }
+                });
             }
 
             // Example usage on page load or user interaction
