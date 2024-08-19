@@ -328,12 +328,8 @@
                 elements.forEach(el => {
                     if (el.innerHTML.includes(text)) {
                         el.style.cursor = 'pointer';
-                        el.addEventListener('mouseover', () => {
-                            el.style.fill = 'blue'; // Change the color on hover
-                        });
-                        el.addEventListener('mouseout', () => {
-                            el.style.fill = ''; // Revert back to the original color
-                        });
+                        el.style.fill = 'blue';
+                        el.style.textDecoration = 'underline';
                         el.addEventListener('click', () => {
                             window.location.href = url;  // Redirect to the URL in the same window
                         });

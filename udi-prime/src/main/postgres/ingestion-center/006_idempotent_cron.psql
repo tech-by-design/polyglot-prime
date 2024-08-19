@@ -1,0 +1,39 @@
+DROP FUNCTION IF EXISTS cron.schedule_cron_job();
+CREATE OR REPLACE PROCEDURE cron.schedule_cron_job() AS $scheduleCronJobFn$
+    BEGIN
+        IF NOT EXISTS(SELECT 1 from cron.job WHERE jobname = 'refresh-interaction-http-request-mat') THEN 
+            INSERT INTO cron.job(schedule, command, nodename, nodeport, database, username,active,jobname)
+            VALUES ('0,15,30,45 * * * *', format($$ REFRESH MATERIALIZED view CONCURRENTLY techbd_udi_ingress.interaction_http_request_mat;$$), 'localhost', '5432', 'techbd_udi', 'postgres',true,'refresh-interaction-http-request-mat');
+        END IF;
+        IF NOT EXISTS(SELECT 1 from cron.job WHERE jobname = 'refresh-interaction-http-request-observe-mat') THEN 
+            INSERT INTO cron.job(schedule, command, nodename, nodeport, database, username,active,jobname)
+            VALUES ('5,20,35,50 * * * *', format($$ REFRESH MATERIALIZED view CONCURRENTLY techbd_udi_ingress.interaction_http_request_observe_mat;$$), 'localhost', '5432', 'techbd_udi', 'postgres',true,'refresh-interaction-http-request-observe-mat');
+        END IF;
+        IF NOT EXISTS(SELECT 1 from cron.job WHERE jobname = 'refresh-fhir-screening-info-mat') THEN 
+            INSERT INTO cron.job(schedule, command, nodename, nodeport, database, username,active,jobname)
+            VALUES ('10,25,40,55 * * * *', format($$ REFRESH MATERIALIZED view CONCURRENTLY techbd_udi_ingress.fhir_screening_info_mat;$$), 'localhost', '5432', 'techbd_udi', 'postgres',true,'refresh-fhir-screening-info-mat');
+        END IF;
+    END; 
+$scheduleCronJobFn$ LANGUAGE PLPGSQL;
+
+
+/*******************************************************************************************
+ * Comprehensive view of Cron Job. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.cron_job_details CASCADE;
+CREATE or REPLACE
+view techbd_udi_ingress.cron_job_details AS
+SELECT
+    jrd.jobid,
+    j.jobname,
+    jrd.status,
+    jrd.start_time,
+    jrd.end_time
+FROM
+    cron.job_run_details jrd
+JOIN
+    cron.job j
+ON
+    j.jobid = jrd.jobid
+ORDER BY jrd.start_time DESC;
+
