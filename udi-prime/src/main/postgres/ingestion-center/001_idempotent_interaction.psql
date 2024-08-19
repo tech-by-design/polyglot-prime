@@ -1294,11 +1294,12 @@ AS SELECT
         <li><strong>4. Review Endpoint:</strong>
             <ol>
                 <li>Verify that the endpoint URL is correct and matches the API''s documentation.</li>
-                <li>Check if there have been any updates or changes to the API that could affect the request.</li> 
+                <li>Check if there have been any updates or changes to the API that could affect the request.</li>
+                <li>Use tools like Postman or cURL to manually test the endpoint and compare results.</li>
             </ol>
         </li> 
         <li>
-        - If these steps do not resolve the issue, consider reaching out to the support.
+         If these steps do not resolve the issue, consider reaching out to the support.
         </li>
     </ol>' AS resolution_steps
 FROM 
