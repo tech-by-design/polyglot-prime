@@ -327,8 +327,6 @@ export class AGGridAideBuilder {
     withServerSideDatasourceGET(dataSourceUrl, withSecondaryColumns = null, inspect = {}) {
         this.gridOptions.serverSideDatasource = {
             getRows: async (params) => {
-                let dataAvailable = false; // Flag to track data availability
-    
                 const {
                     includeGeneratedSqlInResp = true,
                     includeGeneratedSqlInErrorResp = true,
@@ -340,37 +338,24 @@ export class AGGridAideBuilder {
     
                     beforeRequest = async (dataSourceUrl) => { },
                     beforeSuccess = async (serverRespPayload, respMetrics, dataSourceUrl) => {
-                        console.log('Full Server Response:', serverRespPayload);  // Log the full response
+                        console.log('Full Server Response:', serverRespPayload);
     
-                        // Check if serverRespPayload is an array
-                        if (!Array.isArray(serverRespPayload)) {
+                        const data = serverRespPayload;
+    
+                        if (!Array.isArray(data)) {
                             console.error('Error: serverRespPayload is not an array.');
                             params.fail();
                             return;
                         }
     
-                        const data = serverRespPayload; // Assuming the response is an array of data
+                        console.log('Extracted data:', data);
     
-                        console.log('Extracted data:', data); // Log the extracted data
-    
-                        if (data.length === 0) {
-                            console.warn('Warning: Data array is empty.');
-                        }
-    
-                        // Automatically generate column definitions based on the keys in the first object
                         const valueCols = data.length > 0 ? Object.keys(data[0]).map(key => ({
-                            headerName: key.replace(/_/g, ' ').toUpperCase(),  // Convert key to uppercase for header name
+                            headerName: key.replace(/_/g, ' ').toUpperCase(),
                             field: key
                         })) : [];
     
                         console.log('Generated valueCols:', valueCols);
-    
-                        // Validate that valueCols is now correctly generated
-                        if (valueCols.length === 0) {
-                         //   console.error('Error: Failed to generate valueCols from data.');
-                          //  params.fail();
-                          //  return;
-                        }
                     },
     
                     customizedContent = async (success, serverRespPayload, respMetrics, dataSourceUrl) => success,
@@ -379,11 +364,8 @@ export class AGGridAideBuilder {
                 try {
                     await beforeRequest?.(dataSourceUrl);
     
-                    // Construct the full GET URL with query parameters from params.request
-                    const queryString = new URLSearchParams(params.request).toString();
-                    const fullUrl = `${dataSourceUrl}?${queryString}`;
-    
-                    const response = await fetch(fullUrl, {
+                    // Directly fetch data from the provided URL without adding parameters
+                    const response = await fetch(dataSourceUrl, {
                         method: 'GET',
                         headers: {
                             'X-Include-Generated-SQL-In-Response': includeGeneratedSqlInResp,
@@ -402,41 +384,25 @@ export class AGGridAideBuilder {
                         window.layout.addIdentifiableMetrics(`fetch-${dataSourceUrl}`, respMetrics);
                     }
     
-                    if (response.ok) {  
+                    if (response.ok) {
                         const serverRespPayload = await response.json();
     
-                        // Call beforeSuccess to log and check the response structure
                         await beforeSuccess?.(serverRespPayload, respMetrics, dataSourceUrl);
     
-                        // Since we already extracted data and generated columns in beforeSuccess, reuse them
                         const data = Array.isArray(serverRespPayload) ? serverRespPayload : [];
                         const valueCols = data.length > 0 ? Object.keys(data[0]).map(key => ({
                             headerName: key.replace(/_/g, ' ').toUpperCase(),
                             field: key
                         })) : [];
     
-                        // Check if data is available
                         if (data.length > 0) {
-                            dataAvailable = true; // Data found
-                        }
-    
-                        // Check for UX reportable errors
-                        if (serverRespPayload.uxReportableError) {
-                            await resultServerError?.(dataSourceUrl, serverRespPayload, respMetrics);
-                        }
-    
-                        // Call success or fail based on data availability
-                        if (dataAvailable) {
                             params.success({
                                 rowData: data,
                                 columnDefs: valueCols
                             });
-                        } else { 
-                            
+                        } else {
                             params.success({ rowData: [] });
                             params.api.showNoRowsOverlay();
-                            // Save the flag in gridOptions so it can be accessed in the gridReady event
-                            this.gridOptions.dataAvailable = dataAvailable;
                         }
                     } else {
                         await fetchRespNotOK?.(dataSourceUrl, response, respMetrics);
@@ -450,8 +416,6 @@ export class AGGridAideBuilder {
         };
         return this;
     }
-    
-    
     
     
 
