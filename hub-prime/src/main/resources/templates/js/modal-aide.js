@@ -409,7 +409,7 @@ export class ModalAide {
         };
     
         parseObject(json, level);
-        html += '</tbody></table></div>';
+        html += '</tbody></table><div style="text-align: right; margin-top: 10px;"><a href="https://github.com/tech-by-design/polyglot-prime/issues" target="_blank" style="margin-right: 58px;"><button type="button" style="background-color: #2296dd; color: white; border: none; padding: 10px 20px; border-radius: 5px;">Send to Support </button></a></div></div>';
         return html;
     }
     
