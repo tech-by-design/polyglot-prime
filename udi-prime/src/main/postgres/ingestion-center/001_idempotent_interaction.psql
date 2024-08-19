@@ -964,12 +964,11 @@ DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention AS  
 WITH submission_counts AS (
     SELECT  
-        sihr.nature->>'tenant_id' as qe_name,
+        LOWER(sihr.nature->>'tenant_id') AS qe_name,
         COUNT(CASE WHEN sihr.from_state = 'NONE' THEN 1 END) AS qe_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forward HTTP Request' THEN 1 END) AS techbd_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS total_scoring_engine_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' AND sihr.payload ? 'scoredcardResponse' THEN 1 END) AS scoring_engine_submission_passed
-        
     FROM 
         techbd_udi_ingress.hub_interaction AS hintr
         INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
@@ -977,14 +976,14 @@ WITH submission_counts AS (
     WHERE 
         hintr."key" IN ('/Bundle/', '/Bundle')
         AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
-    GROUP BY sihr.nature->>'tenant_id'
+    GROUP BY LOWER(sihr.nature->>'tenant_id')
 )
 SELECT  
     ( SELECT COUNT(*) 
         FROM techbd_udi_ingress.hub_interaction AS hintr
         INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
         ON hintr.hub_interaction_id = sihr.hub_interaction_id
-        WHERE sihr.nature->>'tenant_id' = sc.qe_name
+        WHERE LOWER(sihr.nature->>'tenant_id') = sc.qe_name
         AND hintr."key" = '/api/expect/fhir/bundle'
         AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
     ) AS cross_roads_scn,
@@ -993,11 +992,11 @@ SELECT
     techbd_total_submissions,
     total_scoring_engine_submissions,
     scoring_engine_submission_passed,
-    abs(total_scoring_engine_submissions - scoring_engine_submission_passed) scoring_engine_submissions,
-    '??' as shinny,
-    '??' as mdw
+    ABS(total_scoring_engine_submissions - scoring_engine_submission_passed) AS scoring_engine_submissions,
+    '??' AS shinny,
+    '??' AS mdw
 FROM 
-    submission_counts AS sc; 
+    submission_counts AS sc;
 
 
 /*************************************
@@ -1099,19 +1098,53 @@ END;
 $procedure$
 ;    
 
+/**
+ * View to identify and analyze FHIR-related HTTP request interactions that need attention,
+ * specifically focusing on issues with Bundle submissions. This view captures detailed
+ * information about each interaction, including patient data and error types, allowing
+ * for better troubleshooting and resolution of data submission and validation errors.
+ *
+ * The view performs the following:
+ * 1. Extracts relevant interaction data from the `sat_interaction_http_request` table, 
+ *    including:
+ *    - `hub_interaction_id`: The unique identifier for the interaction.
+ *    - `sat_interaction_http_request_id`: The unique ID for the HTTP request.
+ *    - `qe_name`: The tenant ID associated with the request.
+ *    - `created_at`: The timestamp when the request was created.
+ *    - `patient_mrn`: The Medical Record Number (MRN) of the patient involved.
+ *    - `patient_full_name`: The full name of the patient as provided in the request.
+ *    - `patient_last_name`: The last name of the patient.
+ *    - `patient_first_name`: The first name of the patient.
+ * 2. Uses a `CASE` statement to classify the type of error encountered:
+ *    - `Data Submission Error`: Indicates an error due to a 'Forwarded HTTP Response Error'.
+ *    - `Data Validation Error`: Indicates an error where the 'scorecardResponse' is missing.
+ *    - `no_error`: Indicates no recognized error was found.
+ * 3. Filters the interactions to include only those that target the `/Bundle` endpoint and have 
+ *    encountered either a 'Forwarded HTTP Response Error' or a 'Forwarded HTTP Response' 
+ *    without a 'scorecardResponse'.
+ * 4. Limits the results to interactions that occurred within the last 7 days to focus on recent issues.
+ *
+ * The result set includes:
+ * - Detailed metadata and patient information related to the interaction.
+ * - A classification of the error type for each interaction.
+ *
+ * @return VIEW - A view named `fhir_needs_attention_details`, providing detailed insights 
+ * into FHIR-related HTTP requests that failed or need attention, helping identify and resolve
+ * issues with data submissions.
+ */
 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_details CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_details AS  
 SELECT
-	sihr.hub_interaction_id,
-	sihr.sat_interaction_http_request_id,
-    sihr.nature ->> 'tenant_id'::text AS qe_name, 
+    sihr.hub_interaction_id,
+    sihr.sat_interaction_http_request_id,
+    LOWER(sihr.nature ->> 'tenant_id') AS qe_name, 
     sihr.created_at,
     (sihr.payload -> 'entry' -> 0 -> 'resource' ->> 'id') AS patient_mrn,
     (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 ->> 'text') AS patient_full_name,
     (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 ->> 'family') AS patient_last_name,
-    (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 -> 'given' -> 0) AS patient_first_name ,
-        CASE
+    (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 -> 'given' -> 0) AS patient_first_name,
+    CASE
         WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' THEN 'Data Submission Error'
         WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' AND NOT sihr.payload ? 'scorecardResponse' THEN 'Data Validation Error'
         ELSE 'no_error'
@@ -1119,11 +1152,47 @@ SELECT
 FROM techbd_udi_ingress.hub_interaction hintr
 JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
 ON hintr.hub_interaction_id = sihr.hub_interaction_id
-where   hintr."key" IN ('/Bundle/', '/Bundle')
-  AND ((sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' OR  (sihr.nature->>'nature' = 'Forwarded HTTP Response' AND not sihr.payload ? 'scoredcardResponse'))
-  AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days' 
- ORDER BY sihr.created_at DESC
-;
+WHERE hintr."key" IN ('/Bundle/', '/Bundle')
+  AND ((sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' 
+       OR (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' 
+       AND NOT sihr.payload ? 'scorecardResponse')
+  AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
+ORDER BY sihr.created_at DESC;
+
+
+/**
+ * View to generate a dashboard overview of FHIR (Fast Healthcare Interoperability Resources)
+ * interactions that need attention, focusing on key performance metrics across different tenants.
+ * The dashboard aggregates counts of submissions and responses related to FHIR Bundle transactions,
+ * specifically targeting organizations such as HealtheLink, HealtheConnections, Healthix, GRRHIO, 
+ * and HIXNY. This view provides a summarized view of submissions, forwarding actions, and the 
+ * success of scoring engine responses.
+ *
+ * The view performs the following steps:
+ * 1. A Common Table Expression (CTE) named `combined_counts` is used to calculate the following 
+ *    metrics for each tenant (qe_name):
+ *    - `qe_total_submissions`: Count of total submissions from the tenants.
+ *    - `techbd_total_submissions`: Count of total forward HTTP requests made to TechBD.
+ *    - `total_scoring_engine_submissions`: Count of total forwarded HTTP responses that were processed
+ *      by the scoring engine.
+ *    - `scoring_engine_submission_passed`: Count of scoring engine responses that included a scorecard 
+ *      response, indicating successful validation.
+ *    - `cross_roads_scn`: Count of interactions involving the Cross Roads SCN API endpoint.
+ * 2. The main SELECT query aggregates the counts across all tenants to generate the following metrics:
+ *    - `total_cross_roads_scn`: Total count of Cross Roads SCN interactions across all tenants.
+ *    - `total_techbd_total_submissions`: Total count of TechBD submissions across all tenants.
+ *    - `total_total_scoring_engine_submissions`: Total count of scoring engine submissions across all tenants.
+ *    - `total_scoring_engine_submission_passed`: Total count of successful scoring engine submissions 
+ *      across all tenants.
+ *    - Additionally, the query provides individual tenant metrics for HealtheLink, HealtheConnections, 
+ *      Healthix, GRRHIO, and HIXNY, including total submissions and successful scoring engine submissions.
+ *
+ * The view is designed to be queried by the dashboard for a quick and comprehensive summary of the 
+ * performance and issues related to FHIR Bundle submissions over the past 7 days.
+ *
+ * @return VIEW - A view named `fhir_needs_attention_dashbaord`, providing aggregated metrics 
+ * for FHIR interactions that require attention, across specific tenants.
+ */
 
 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_dashbaord CASCADE;
@@ -1165,7 +1234,36 @@ FROM
 WHERE
     qe_name IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny');
 
-
+/**
+ * View to identify and analyze failed HTTP request interactions that need attention.
+ * This view aggregates details of HTTP requests that transitioned to a 'FAIL' state,
+ * providing insights into the nature of the errors encountered, the associated error
+ * messages, and the potential reasons for failure.
+ *
+ * The view performs the following:
+ * 1. Extracts core information from the `interaction_http_request_mat` table, 
+ *    including the error type (`nature`), error message (`payload ->> 'error'`), 
+ *    and the timestamp when the request was created (`request_created_at`).
+ * 2. Joins with `interaction_http_request_resource_type_mat` to include resource 
+ *    type data related to the failed request.
+ * 3. Joins with `interaction_http_request_observe_mat` to incorporate observability 
+ *    metrics if available.
+ *
+ * The result set includes:
+ * - `error_type`: The nature of the failure.
+ * - `error_message`: The specific error message extracted from the request payload.
+ * - `date`: The timestamp when the HTTP request was created.
+ * - `sat_interaction_http_request_id`: The unique identifier for the HTTP request.
+ * - `failure_reason`: A predefined explanation for the failure, guiding troubleshooting.
+ *
+ * The view filters requests that have transitioned to the 'FAIL' state, indicating
+ * that they failed during processing. The included `failure_reason` provides context
+ * and potential solutions to address the error.
+ *
+ * @return VIEW - A view named `interaction_http_request_failed_needs_attention`, 
+ * providing details of HTTP requests that failed and require attention.
+ */
+ 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed_needs_attention CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_failed_needs_attention
 AS SELECT  
@@ -1173,12 +1271,80 @@ AS SELECT
     htt_req.payload ->> 'error' AS error_message,
     htt_req.request_created_at AS date,
     htt_req.sat_interaction_http_request_id,
-    'This error occurs when the server cannot process the request due to invalid syntax. Ensure the request format, headers, and endpoint are correct.' AS failure_reason
-   FROM techbd_udi_ingress.interaction_http_request_mat htt_req
-     LEFT JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
-     LEFT JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
-  WHERE upper(htt_req.to_state) = 'FAIL'::text;
+    'This error occurs when the server cannot process the request due to invalid syntax. Ensure the request format, headers, and endpoint are correct.' AS failure_reason,
+    '<ol>
+        <li><strong>Resolution Steps:</strong></li>
+        <li><strong>1. Verify Request Format:</strong>
+            <ol>
+                <li>Ensure that the request payload (body) is correctly formatted according to the API documentation.</li>
+                <li>Check that all required parameters are included and correctly formatted.</li>
+            </ol>
+        </li>
+        <li><strong>2. Validate Data:</strong>
+            <ol>
+                <li>Double-check the data being sent in the request to ensure it adheres to the API''s expectations (e.g., data types, mandatory fields).</li>
+            </ol>
+        </li>
+        <li><strong>3. Check Headers:</strong>
+            <ol>
+                <li>Ensure that the correct Content-Type header is set (e.g., <code>application/json</code> for JSON payloads).</li>
+                <li>Confirm that any other required headers are present and correctly set.</li>
+            </ol>
+        </li>
+        <li><strong>4. Review Endpoint:</strong>
+            <ol>
+                <li>Verify that the endpoint URL is correct and matches the API''s documentation.</li>
+                <li>Check if there have been any updates or changes to the API that could affect the request.</li> 
+            </ol>
+        </li> 
+        <li>
+        - If these steps do not resolve the issue, consider reaching out to the support.
+        </li>
+    </ol>' AS resolution_steps
+FROM 
+    techbd_udi_ingress.interaction_http_request_mat htt_req
+    LEFT JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp 
+        ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
+        AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
+    LEFT JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe 
+        ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
+        AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
+WHERE 
+    upper(htt_req.to_state) = 'FAIL'::text;
+
  
+/**
+ * View to identify and analyze failed FHIR-related HTTP request interactions that need attention.
+ * This view focuses on HTTP requests that involve FHIR (Fast Healthcare Interoperability Resources)
+ * interactions, specifically those targeting the `/Bundle` endpoint, which may have encountered issues 
+ * related to invalid or incomplete data submissions.
+ *
+ * The view performs the following:
+ * 1. Extracts key information from the `interaction_http_request_mat` table, including:
+ *    - The nature of the error (`nature`).
+ *    - The specific error message from the 'insertScreeningsResponse' field in the payload.
+ *    - The timestamp of the request (`request_created_at`).
+ *    - The unique identifier of the HTTP request (`sat_interaction_http_request_id`).
+ * 2. Joins with `interaction_http_request_resource_type_mat` to include relevant resource 
+ *    type information for the failed request.
+ * 3. Joins with `interaction_http_request_observe_mat` to incorporate observability metrics if available.
+ *
+ * The result set includes:
+ * - `error_type`: The nature or category of the error encountered.
+ * - `error_message`: The specific error message extracted from the request's payload.
+ * - `date`: The timestamp when the HTTP request was created.
+ * - `sat_interaction_http_request_id`: The unique identifier for the HTTP request.
+ * - `failure_reason`: A predefined explanation for the failure, guiding troubleshooting.
+ *
+ * The view filters for requests directed to the `/Bundle` endpoint, indicating interactions
+ * related to FHIR Bundle submissions that need attention due to potential issues with data format or completeness.
+ * 
+ * The `failure_reason` provides context and recommendations, ensuring that the data aligns with 
+ * the required format and includes all necessary fields to avoid such errors in future submissions.
+ *
+ * @return VIEW - A view named `interaction_http_fhir_request_needs_attention`, 
+ * providing details of FHIR-related HTTP requests that failed and require attention.
+ */
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_needs_attention CASCADE; 
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request_needs_attention
