@@ -1354,9 +1354,40 @@ AS SELECT
     htt_req.payload ->> 'insertScreeningsResponse' AS error_message,
     htt_req.request_created_at AS date,
     htt_req.sat_interaction_http_request_id,
-    'Ensure that the data matches the required format and includes all mandatory fields as specified, to prevent errors related to invalid or incomplete submissions.' AS failure_reason    
-   FROM techbd_udi_ingress.interaction_http_request_mat htt_req
-     LEFT JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
-     LEFT JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
-  WHERE htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]);
-      
+    'Ensure that the data matches the required format and includes all mandatory fields as specified, to prevent errors related to invalid or incomplete submissions.' AS failure_reason,
+    '<ol>
+        <li><strong>Resolution Steps:</strong></li>
+        <li><strong>1. Check the Data Format:</strong> 
+        <ol>Ensure that the data in the request is correctly formatted as per the API documentation (e.g., correct date formats, string lengths, numeric values).</ol>
+        </li>
+        <li><strong>2. Verify Required Fields:</strong> 
+        <ol>Confirm that all mandatory fields are included in the request. Missing fields can cause the request to be rejected by the server.</ol>
+        </li>
+        <li><strong>3. Validate Data Types:</strong>
+         <ol>Make sure that the data types of the fields match the expected types (e.g., integers, strings, booleans).</ol>
+         </li>
+        <li><strong>4. Review API Documentation:</strong>
+         <ol>Cross-check the request data with the API documentation to ensure compliance with all requirements.</ol>
+         </li>
+        <li><strong>5. Use Validation Tools:</strong>
+         <ol>Consider using tools or libraries that validate data before sending the request to catch issues early.</ol>
+         </li>
+        <li><strong>6. Test and Debug:</strong> 
+        <ol>Test the request with a tool like Postman or a similar API testing tool to validate the request against the API. Use detailed error logging to troubleshoot any issues that arise.</ol>
+        </li>
+        <li>
+         If these steps do not resolve the issue, consider reaching out to the support.
+        </li>
+    </ol>' AS resolution_steps
+FROM 
+    techbd_udi_ingress.interaction_http_request_mat htt_req
+LEFT JOIN 
+    techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp 
+    ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
+    AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
+LEFT JOIN 
+    techbd_udi_ingress.interaction_http_request_observe_mat intr_observe 
+    ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
+    AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
+WHERE 
+    htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]);
