@@ -53,7 +53,7 @@
             // Get the 'page' parameter and use it to find the routine
             var param = getUrlParameter('page'); // Replace 'page' with your parameter name
             if (param) {
-                fetchRoutineUrl(param);
+                fetchRoutineUrl(param+'()');
             } else {
                 setIframeSrc('/maven-site/schemaSpy/index.html'); // Default src if no parameter is present
             }
