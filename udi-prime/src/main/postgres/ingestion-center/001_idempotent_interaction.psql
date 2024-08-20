@@ -1117,11 +1117,11 @@ $procedure$
  *    - `patient_first_name`: The first name of the patient.
  * 2. Uses a `CASE` statement to classify the type of error encountered:
  *    - `Data Submission Error`: Indicates an error due to a 'Forwarded HTTP Response Error'.
- *    - `Data Validation Error`: Indicates an error where the 'scorecardResponse' is missing.
+ *    - `Data Validation Error`: Indicates an error where the 'scoredcardResponse' is missing.
  *    - `no_error`: Indicates no recognized error was found.
  * 3. Filters the interactions to include only those that target the `/Bundle` endpoint and have 
  *    encountered either a 'Forwarded HTTP Response Error' or a 'Forwarded HTTP Response' 
- *    without a 'scorecardResponse'.
+ *    without a 'scoredcardResponse'.
  * 4. Limits the results to interactions that occurred within the last 7 days to focus on recent issues.
  *
  * The result set includes:
@@ -1146,7 +1146,7 @@ SELECT
     (sihr.payload -> 'entry' -> 0 -> 'resource' -> 'name' -> 0 -> 'given' -> 0) AS patient_first_name,
     CASE
         WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' THEN 'Data Submission Error'
-        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' AND NOT sihr.payload ? 'scorecardResponse' THEN 'Data Validation Error'
+        WHEN (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' AND NOT sihr.payload ? 'scoredcardResponse' THEN 'Data Validation Error'
         ELSE 'no_error'
     END AS error_type
 FROM techbd_udi_ingress.hub_interaction hintr
@@ -1155,7 +1155,7 @@ ON hintr.hub_interaction_id = sihr.hub_interaction_id
 WHERE hintr."key" IN ('/Bundle/', '/Bundle')
   AND ((sihr.nature ->> 'nature') = 'Forwarded HTTP Response Error' 
        OR (sihr.nature ->> 'nature') = 'Forwarded HTTP Response' 
-       AND NOT sihr.payload ? 'scorecardResponse')
+       AND NOT sihr.payload ? 'scoredcardResponse')
   AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
 ORDER BY sihr.created_at DESC;
 
