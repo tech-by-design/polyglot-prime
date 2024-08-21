@@ -83,4 +83,10 @@ public class InteractionsController {
     public String osberve(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/observe", model, request);
     }
+
+    @GetMapping("/interactions/provenance")
+    @RouteMapping(label = "Provenance", title = "Provenance", siblingOrder = 80)
+    public String provenance(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/provenance", model, request);
+    }
 }
