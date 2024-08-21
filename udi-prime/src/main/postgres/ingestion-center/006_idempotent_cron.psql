@@ -27,6 +27,7 @@ SELECT
     jrd.jobid,
     j.jobname,
     jrd.status,
+    jrd.return_message,
     jrd.start_time,
     jrd.end_time
 FROM
