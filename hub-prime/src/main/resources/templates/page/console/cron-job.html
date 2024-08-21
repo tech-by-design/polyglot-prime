@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/sundry-single-level}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'cron_job_details';
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    { headerName: "Job Name", field: "job_name", filter: "agTextColumnFilter",headerTooltip: "Name of the cron job"  },
+                    { headerName: "Job Run Status", field: "job_run_status", filter: "agTextColumnFilter",headerTooltip: "Status of the job run"  },
+                    { headerName: "Job Run Result", field: "return_message", filter: "agTextColumnFilter",headerTooltip: " Result of the job run"  },
+                    { headerName: "Start Time", field: "start_time", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the cron run started in EST" },
+                    { headerName: "End Time", field: "end_time", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the cron run ended in EST" }
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>    
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>
