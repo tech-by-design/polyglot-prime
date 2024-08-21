@@ -3,6 +3,7 @@ This view aggregates data from two tables: 'hub_interaction' and 'sat_interactio
 The view includes various fields related to interactions and HTTP requests, extracting relevant 
 details from JSON fields and providing computed columns.
 ******************************************************************************************/
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_mat AS
 SELECT hi.hub_interaction_id AS hub_interaction_id,
 	sihr.sat_interaction_http_request_id,
@@ -23,11 +24,23 @@ SELECT hi.hub_interaction_id AS hub_interaction_id,
     sihr.created_by AS request_created_by,
     sihr.provenance AS request_provenance,
     jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count,
-    sihr.payload
+    sihr.payload,
+    LOWER(COALESCE(sihr.tenant_id_denorm,sihr.nature ->> 'tenant_id')) AS tenant_id_lower,
+    sihr.bundle_id,
+    CURRENT_USER AS materialized_by,
+    CURRENT_TIMESTAMP AS materialized_at,
+    CASE 
+    WHEN sihr.nature ->> 'nature' = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+    THEN (
+        SELECT h->>'value' 
+        FROM jsonb_array_elements((sihr.payload -> 'request') -> 'headers') AS h
+        WHERE h ->> 'name' = 'x-forwarded-for'
+    )
+    ELSE NULL END AS client_ip_address_forwarded
    	FROM techbd_udi_ingress.hub_interaction hi
    	INNER JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
    	ON hi.hub_interaction_id = sihr.hub_interaction_id
-   	WITH DATA;
+   	WITH NO DATA;
   
    
 /*******************************************************************************************
