@@ -22,10 +22,14 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
+import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
+import org.hl7.fhir.common.hapi.validation.support.InMemoryTerminologyServerValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.PrePopulatedValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.StructureDefinition;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -238,21 +242,36 @@ public class OrchestrationEngine {
                     engineConstructedAt);
         }
 
+        private static String readJsonFromUrl(String fhirProfileUrl) throws IOException, InterruptedException {
+            final var client = HttpClient.newHttpClient();
+            final var request = HttpRequest.newBuilder()
+                    .uri(URI.create(fhirProfileUrl))
+                    .build();
+            String bundleJson = "";
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            bundleJson = response.body();
+            return bundleJson;
+        }
+
         @Override
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
-                final var instanceValidator = new FhirInstanceValidator(fhirContext);
-
-                final var validationSupport = new DefaultProfileValidationSupport(fhirContext);
-                validationSupport.fetchStructureDefinition(fhirProfileUrl);
-                final var validationSupportChain = new ValidationSupportChain(validationSupport,
-                        new PrePopulatedValidationSupport(fhirContext));
-                instanceValidator.setValidationSupport(validationSupportChain);
-                final var validator = fhirContext.newValidator();
-                validator.registerValidatorModule(instanceValidator);
+                final var supportChain = new ValidationSupportChain();
+                final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
+                supportChain.addValidationSupport(defaultSupport);
+                supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
+                supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
+                final var prePopulatedSupport = new PrePopulatedValidationSupport(fhirContext);
+                final var jsonContent = readJsonFromUrl(fhirProfileUrl);
+                final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
+                        jsonContent);
+                prePopulatedSupport.addStructureDefinition(structureDefinition);
+                supportChain.addValidationSupport(prePopulatedSupport);
+                final var cache = new CachingValidationSupport(supportChain);
+                final var instanceValidator = new FhirInstanceValidator(cache);
+                final var validator = fhirContext.newValidator().registerValidatorModule(instanceValidator);
                 final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
-
                 final var hapiVR = validator.validateWithResult(bundle);
                 final var completedAt = Instant.now();
                 return new OrchestrationEngine.ValidationResult() {

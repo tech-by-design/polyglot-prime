@@ -19,7 +19,7 @@
         <mode value="server"></mode>
         <resource>
             <type value="Bundle"></type>
-            <profile value="https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json"></profile>
+            <profile value="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json"></profile>
             <interaction>
                 <code value="create"></code>
             </interaction>
