@@ -25,8 +25,9 @@ CREATE or REPLACE
 view techbd_udi_ingress.cron_job_details AS
 SELECT
     jrd.jobid,
-    j.jobname,
-    jrd.status,
+    j.jobname as job_name,
+    jrd.status as job_run_status,
+    case when j.active is true then 'Active' else 'Inactive' end as current_job_status,
     jrd.return_message,
     jrd.start_time,
     jrd.end_time

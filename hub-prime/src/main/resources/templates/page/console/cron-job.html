@@ -21,6 +21,7 @@
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     { headerName: "Job Name", field: "job_name", filter: "agTextColumnFilter",headerTooltip: "Name of the cron job"  },
+                    { headerName: "Current Job Status", field: "current_job_status", filter: "agTextColumnFilter",headerTooltip: "Current status of the job. If its active/inactive"  },
                     { headerName: "Job Run Status", field: "job_run_status", filter: "agTextColumnFilter",headerTooltip: "Status of the job run"  },
                     { headerName: "Job Run Result", field: "return_message", filter: "agTextColumnFilter",headerTooltip: " Result of the job run"  },
                     { headerName: "Start Time", field: "start_time", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the cron run started in EST" },
