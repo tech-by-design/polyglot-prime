@@ -82,3 +82,214 @@ SELECT
 FROM techbd_udi_ingress.orch_session_diagnostics 
 WHERE disposition = 'REJECTION';
 
+/*******************************************************************************************************************************
+ * Procedure to insert diagnostic logs into the Data Vault structure, specifically handling hub and satellite tables.
+ * This procedure ensures that logs are captured with proper attribution and linked to the corresponding hub record.
+ * It handles potential unique constraint violations in the hub table by ignoring duplicate inserts.
+ *
+ * @param hub_diagnostics_id TEXT - The unique identifier for the diagnostic hub record. This ID is used to link 
+ *                                  the hub and satellite records.
+ * @param key TEXT - A unique business key or identifier, typically representing a specific job or process being logged.
+ * @param created_by TEXT - The user or system responsible for creating the hub record.
+ * @param provenance TEXT - The origin or source of the hub record (e.g., system name, application name).
+ * @param diagnostic_type TEXT - The type of diagnostic event being logged (e.g., error, info, warning).
+ * @param diagnostic_detail JSONB - A JSON object containing detailed information about the diagnostic event.
+ * @param status TEXT - The status of the diagnostic event (e.g., success, failure).
+ * @param start_time TIMESTAMPTZ - The timestamp indicating when the diagnostic event started.
+ * @param end_time TIMESTAMPTZ (nullable) - The timestamp indicating when the diagnostic event ended. Can be NULL if not applicable.
+ * @param sat_created_by TEXT - The user or system responsible for creating the satellite record.
+ * @param sat_provenance TEXT - The origin or source of the satellite record (e.g., system name, application name).
+ *******************************************************************************************************************************
+ * Procedure Logic:
+ *
+ * 1. Insert the provided information into the `hub_diagnostics` table:
+ *    - This represents a unique hub record for the diagnostic event, with the `hub_diagnostics_id` as the primary key.
+ *    - If a record with the same `hub_diagnostics_id` already exists, the insert is ignored (`ON CONFLICT DO NOTHING`).
+ *
+ * 2. Insert the diagnostic details into the `sat_diagnostics_log` table:
+ *    - A new satellite record is created and linked to the corresponding hub record via the `hub_diagnostics_id`.
+ *    - The satellite record contains detailed information about the diagnostic event, including type, details, status, 
+ *      and timestamps.
+ *    - The `sat_diagnostics_log_id` is generated using `gen_random_uuid()` to ensure uniqueness.
+ *
+ * 3. Error Handling:
+ *    - This procedure assumes that no additional error handling is needed for unique constraint violations on the hub table,
+ *      as these are handled by the `ON CONFLICT DO NOTHING` clause.
+ *
+ * Usage Example:
+ * ---------------
+ * CALL techbd_udi_ingress.insert_diagnostics_log(
+ *     'unique_hub_id_123',
+ *     'job_key_123',
+ *     'user1',
+ *     'system1',
+ *     'error',
+ *     '{"error_message": "Job failed due to timeout"}'::jsonb,
+ *     'failure',
+ *     '2024-08-22 00:00:00',
+ *     '2024-08-22 00:05:00',
+ *     'user1',
+ *     'system1'
+ * );
+ *******************************************************************************************************************************/
+
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_diagnostics_log(
+    hub_diagnostics_id TEXT,
+    key TEXT,
+    created_by TEXT,
+    provenance TEXT,
+    diagnostic_type TEXT,
+    diagnostic_detail JSONB,
+    status TEXT,
+    start_time TIMESTAMPTZ,
+    end_time TIMESTAMPTZ,
+    sat_created_by TEXT,
+    sat_provenance TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Insert into hub_diagnostics table
+    INSERT INTO techbd_udi_ingress.hub_diagnostics (
+        hub_diagnostics_id,
+        "key",
+        created_by,
+        provenance
+    ) VALUES (
+        hub_diagnostics_id,
+        key,
+        created_by,
+        provenance
+    )
+    ON CONFLICT (hub_diagnostics_id) DO NOTHING;  -- Avoids duplicate inserts into the hub
+
+    -- Insert into sat_diagnostics_log table
+    INSERT INTO techbd_udi_ingress.sat_diagnostics_log (
+        sat_diagnostics_log_id,
+        hub_diagnostics_id,
+        diagnostic_type,
+        diagnostic_details,
+        status,
+        start_time,
+        end_time,
+        created_by,
+        provenance
+    ) VALUES (
+        gen_random_uuid()::text,
+        hub_diagnostics_id,
+        diagnostic_type,
+        diagnostic_detail,
+        status,
+        start_time,
+        end_time,
+        sat_created_by,
+        sat_provenance
+    );
+END $$;
+
+/*******************************************************************************************************************************
+ * Procedure to insert exception logs into the Data Vault structure, specifically handling hub and satellite tables.
+ * This procedure ensures that exceptions and their diagnostic details are properly captured and linked to the 
+ * corresponding hub record. It handles potential unique constraint violations in the hub table by ignoring duplicate inserts.
+ *
+ * @param hub_exception_id TEXT - The unique identifier for the exception hub record. This ID is used to link 
+ *                                  the hub and satellite records.
+ * @param key TEXT - A unique business key or identifier, typically representing a specific exception or process 
+ *                     being logged.
+ * @param created_by TEXT - The user or system responsible for creating the hub record.
+ * @param provenance TEXT - The origin or source of the hub record (e.g., system name, application name).
+ * @param message TEXT - The error message associated with the exception.
+ * @param err_returned_sqlstate TEXT - The SQLSTATE error code returned by PostgreSQL during the exception.
+ * @param err_pg_exception_detail TEXT - Detailed information about the exception as provided by PostgreSQL.
+ * @param err_pg_exception_hint TEXT - Any hint provided by PostgreSQL to resolve the exception.
+ * @param err_pg_exception_context TEXT - Contextual information regarding where the exception occurred.
+ * @param sat_created_by TEXT - The user or system responsible for creating the satellite record.
+ * @param sat_provenance TEXT - The origin or source of the satellite record (e.g., system name, application name).
+ *******************************************************************************************************************************
+ * Procedure Logic:
+ *
+ * 1. Insert the provided information into the `hub_exception` table:
+ *    - This represents a unique hub record for the exception event, with the `hub_exception_id` as the primary key.
+ *    - If a record with the same `hub_exception_id` already exists, the insert is ignored (`ON CONFLICT DO NOTHING`).
+ *
+ * 2. Insert the exception details into the `sat_exception_diagnostics` table:
+ *    - A new satellite record is created and linked to the corresponding hub record via the `hub_exception_id`.
+ *    - The satellite record contains detailed information about the exception event, including error messages, 
+ *      SQLSTATE codes, and context information.
+ *    - The `sat_exception_diagnostics_id` is generated using `gen_random_uuid()` to ensure uniqueness.
+ *
+ * 3. Error Handling:
+ *    - This procedure assumes that no additional error handling is needed for unique constraint violations on the hub table,
+ *      as these are handled by the `ON CONFLICT DO NOTHING` clause.
+ *
+ * Usage Example:
+ * ---------------
+ * CALL techbd_udi_ingress.insert_exception_log(
+ *     'unique_exception_id_123',
+ *     'job_key_123',
+ *     'user1',
+ *     'system1',
+ *     'Error occurred during processing',
+ *     '23505',
+ *     'Detail information about the exception',
+ *     'Consider re-running the transaction',
+ *     'Occurred in function XYZ at line 42',
+ *     'user1',
+ *     'system1'
+ * );
+ *******************************************************************************************************************************/
+
+
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_exception_log(
+    hub_exception_id TEXT,
+    key TEXT,
+    created_by TEXT,
+    provenance TEXT,
+    message TEXT,
+    err_returned_sqlstate TEXT,
+    err_pg_exception_detail TEXT,
+    err_pg_exception_hint TEXT,
+    err_pg_exception_context TEXT,
+    sat_created_by TEXT,
+    sat_provenance TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Insert into hub_exception table
+    INSERT INTO techbd_udi_ingress.hub_exception (
+        hub_exception_id,
+        "key",
+        created_by,
+        provenance
+    ) VALUES (
+        hub_exception_id,
+        key,
+        created_by,
+        provenance
+    )
+    ON CONFLICT (hub_exception_id) DO NOTHING;  -- Avoids duplicate inserts into the hub
+
+    -- Insert into sat_exception_diagnostics table
+    INSERT INTO techbd_udi_ingress.sat_exception_diagnostics (
+        sat_exception_diagnostics_id,
+        hub_exception_id,
+        message,
+        err_returned_sqlstate,
+        err_pg_exception_detail,
+        err_pg_exception_hint,
+        err_pg_exception_context,
+        created_by,
+        provenance
+    ) VALUES (
+        gen_random_uuid()::text,  
+        hub_exception_id,
+        message,
+        err_returned_sqlstate,
+        err_pg_exception_detail,
+        err_pg_exception_hint,
+        err_pg_exception_context,
+        sat_created_by,
+        sat_provenance
+    );
+END $$;

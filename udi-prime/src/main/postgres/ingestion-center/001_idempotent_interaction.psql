@@ -1553,3 +1553,7 @@ SELECT tenant_id_lower,
        request_created_at
 FROM cte
 ORDER BY request_created_at DESC;
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_mat_sat_interaction_http_request_i_idx 
+ON techbd_udi_ingress.interaction_http_request_mat (sat_interaction_http_request_id);
