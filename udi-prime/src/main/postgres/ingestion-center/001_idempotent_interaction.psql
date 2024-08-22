@@ -987,6 +987,7 @@ WITH submission_counts AS (
     WHERE 
         hintr."key" IN ('/Bundle/', '/Bundle')
         AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
+        AND sihr.nature->>'tenant_id' <> 'N/A'
     GROUP BY LOWER(sihr.nature->>'tenant_id')
 )
 SELECT  
@@ -1463,7 +1464,7 @@ WITH cte AS (
     FROM techbd_udi_ingress.interaction_http_request_mat
     WHERE uri = ANY (ARRAY['/Bundle', '/Bundle/'])
       AND nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
-      AND user_agent <> 'httpyac'
+      AND user_agent <> 'httpyac' AND tenant_id_lower <> 'n/a'
       AND request_created_at >= CURRENT_DATE - INTERVAL '7 days' 
 )
 SELECT tenant_id_lower,

@@ -31,7 +31,7 @@
             const client_ip_address = params.data.client_ip_address;
             const user_agent = params.data.user_agent;
             const tenant_id_lower = params.data.tenant_id_lower;
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/multiparam/${schemaName}/${provenanceDetView}/tenant_id_lower/${tenant_id_lower}/client_ip_address/${client_ip_address}/user_agent/${user_agent}.json`))
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${provenanceDetView}/tenant_id_lower/${tenant_id_lower}/client_ip_address/${client_ip_address}.json`))
                 .then(response => response.json())
                 .then(response => {
                     params.successCallback(response);
