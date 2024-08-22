@@ -107,10 +107,12 @@ public class FhirController {
         final var bundleAsyncInteractionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
+        final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
         final var sessionBuilder = engine.session()
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
+                .withFhirStructureDefinitionUrls(structureDefintionUrls)
                 .addHapiValidationEngine() // by default
                 // clearExisting is set to true so engines can be fully supplied through header
                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);

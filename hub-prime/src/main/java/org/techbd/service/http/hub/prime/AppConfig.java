@@ -3,6 +3,7 @@ package org.techbd.service.http.hub.prime;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.techbd.conf.Configuration;
+import java.util.Map;
 
 @org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "org.techbd.service.http.hub.prime")
@@ -11,7 +12,7 @@ public class AppConfig {
 
     public static class Servlet {
         public static final String FHIR_CONTENT_TYPE_HEADER_VALUE = "application/fhir+json";
-        
+
         public static class HeaderName {
             public static class Request {
                 public static final String FHIR_STRUCT_DEFN_PROFILE_URI = Configuration.Servlet.HeaderName.PREFIX
@@ -33,6 +34,7 @@ public class AppConfig {
     private String version;
     private String defaultSdohFhirProfileUrl;
     private String defaultDatalakeApiUrl;
+    private Map<String, String> structureDefinitionsUrls;
 
     public String getVersion() {
         return version;
@@ -63,4 +65,13 @@ public class AppConfig {
     public void setDefaultDatalakeApiUrl(String defaultDatalakeApiUrl) {
         this.defaultDatalakeApiUrl = defaultDatalakeApiUrl;
     }
+
+    public void setStructureDefinitionsUrls(Map<String, String> structureDefinitionsUrls) {
+        this.structureDefinitionsUrls = structureDefinitionsUrls;
+    }
+
+    public Map<String, String> getStructureDefinitionsUrls() {
+        return structureDefinitionsUrls;
+    }
+
 }

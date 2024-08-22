@@ -53,5 +53,110 @@
     "name": "org.techbd.service.http.interactions.persist.db.uri-matcher.regex",
     "type": "java.util.List<java.util.List<Object>>",
     "description": "Matching rules for persisting HTTP interactions to the database"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinny-encounter",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinny-encounter'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyConsent",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyConsent'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyOrganization",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyOrganization'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyPatient",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyPatient'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyPractitioner",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyPractitioner'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyObservationScreeningResponse",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyObservationScreeningResponse'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyQuestionaire",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyQuestionaire'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyQuestionaireResponse",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyQuestionaireResponse'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyObservationAssessment",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyObservationAssessment'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHProcedure",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHProcedure'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHServiceRequest",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHServiceRequest'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHTaskForReferralManagement",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHTaskForReferralManagement'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyObservationSexualOrientation",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyObservationSexualOrientation'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHCCGoal",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHCCGoal'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHCCCondition",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnySDOHCCCondition'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyMetaData",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyMetaData'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyCountry",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyCountry'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyMiddleName",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyMiddleName'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyPersonalPronouns",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyPersonalPronouns'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyGenderIdentity",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.shinnyGenderIdentity'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7ObservationScreeningResponse",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7ObservationScreeningResponse'"
   }
 ]}
