@@ -89,4 +89,25 @@ public class TabularRowsController {
                                 .intoMaps();
         }
 
+        @Operation(summary = "SQL rows from a master table or view for a multiple column value checkig")
+        @GetMapping("/api/ux/tabular/jooq/multiparam/{schemaName}/{masterTableNameOrViewName}/{columnName1}/{columnValue1}/{columnName2}/{columnValue2}/{columnName3}/{columnValue3}.json")
+        @ResponseBody
+        public Object tabularRowsCustomWithMultipleParamsChecks(final @PathVariable(required = false) String schemaName,
+                        final @PathVariable String masterTableNameOrViewName, final @PathVariable String columnName1,
+                        final @PathVariable String columnValue1, final @PathVariable String columnName2,
+                        final @PathVariable String columnValue2, final @PathVariable String columnName3,
+                        final @PathVariable String columnValue3) {
+
+                // Fetch the result using the dynamically determined table and column; if
+                // jOOQ-generated types were found, automatic column value mapping will occur 
+                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                                masterTableNameOrViewName);
+                return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                                .where(typableTable.column(columnName1).eq(columnValue1)
+                                                .and(typableTable.column(columnName2).eq(columnValue2))
+                                                .and(typableTable.column(columnName3).eq(columnValue3)))
+                                .fetch()
+                                .intoMaps();
+        }        
+
 }

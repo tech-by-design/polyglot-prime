@@ -79,7 +79,7 @@ public class InteractionsController {
     }
 
     @GetMapping("/interactions/observe")
-    @RouteMapping(label = "Observe", title = "Observe", siblingOrder = 70)
+    @RouteMapping(label = "Performance Overview", title = "Performance Overview", siblingOrder = 70)
     public String osberve(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/observe", model, request);
     }

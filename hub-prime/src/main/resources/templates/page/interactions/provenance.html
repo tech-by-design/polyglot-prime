@@ -30,8 +30,8 @@
         function getProveanceGridData(params) {
             const client_ip_address = params.data.client_ip_address;
             const user_agent = params.data.user_agent;
-            const tenant_id = params.data.tenant_id;
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${provenanceDetView}/tenant_id/${tenant_id}/client_ip_address/${client_ip_address}.json`))
+            const tenant_id_lower = params.data.tenant_id_lower;
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/multiparam/${schemaName}/${provenanceDetView}/tenant_id_lower/${tenant_id_lower}/client_ip_address/${client_ip_address}/user_agent/${user_agent}.json`))
                 .then(response => response.json())
                 .then(response => {
                     params.successCallback(response);
@@ -47,7 +47,7 @@
                 .withColumnDefs([
                     {
                         headerName: "Tenant ID",
-                        field: "tenant_id",
+                        field: "tenant_id_lower",
                         filter: "agTextColumnFilter",
                         headerTooltip: "Unique identifier assigned to a tenant, representing the organization or client making the HTTP requests.",
                         cellRenderer: 'agGroupCellRenderer'
@@ -58,18 +58,18 @@
                         sort: "desc",
                         filter: "agTextColumnFilter",
                         headerTooltip: "IP address from which the request originated, indicating the source of the interaction."
-                    },
-                    {
-                        headerName: "User Agent",
-                        field: "user_agent",
-                        filter: "agTextColumnFilter",
-                        headerTooltip: "Information about the user's browser or application that made the request, including details about the device and operating system." 
                     }, 
                     {
                         headerName: "Request Count",
                         field: "request_count",
                         filter: "agTextColumnFilter",
                         headerTooltip: "Total number of HTTP requests received from the same tenant, client IP address, and user agent during the specified date range" 
+                    },
+                    {
+                        headerName: "User Agent",
+                        field: "user_agent",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Information about the user's browser or application that made the request, including details about the device and operating system." 
                     }
                     
                 ])
@@ -81,7 +81,7 @@
                             field: col.field
                         }));
                     },
-                ).withMasterDetail(false)
+                ).withMasterDetail(true)
                 .withDetailCellRendererParams({
                     detailGridOptions: {
                         columnDefs: proveanceColumnDefs,
@@ -102,7 +102,7 @@
 
             // Add date-range text 
             // Inject the date range into the HTML
-            helpers.injectDateRangeText('date-range', 'This widget displays details about data requested by different tenants from <b>{startDate}</b> to <b>{endDate}</b>. It captures the tenant ID, client IP address, and user agent information, with the data grouped by tenant and client details. The request count is calculated to provide insights into the volume of HTTP requests encountered by the service during this period. This overview helps in understanding the provenance of these interactions and the distribution of request traffic across different tenants. ');
+            helpers.injectDateRangeText('date-range', 'This widget displays details about data requested by different tenants from <b>{startDate}</b> to <b>{endDate}</b>. It captures the tenant ID, client IP address, and user agent information, with the data grouped by tenant and client details. The request count is calculated to provide insights into the volume of HTTP requests encountered by the service during this period. This overview helps in understanding the provenance of these interactions and the distribution of request traffic across different tenants.</br>Cicking on the arrow before the Tenant ID allows you to drill down and view detailed information for that tenant.');
         });
     </script>    
 </head>
