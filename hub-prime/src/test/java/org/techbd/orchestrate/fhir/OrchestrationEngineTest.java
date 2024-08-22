@@ -4,9 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
+import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
-
+import java.util.HashMap;
 class OrchestrationEngineTest {
 
     private OrchestrationEngine engine;
@@ -84,9 +84,11 @@ class OrchestrationEngineTest {
             .build();
 
         engine.orchestrate(session1, session2);
-
+        Map<String,String> structureDefintionMap = new HashMap<>();
+        structureDefintionMap.put("shinnyPatient","http://example.com/shinnyPatient");
+        structureDefintionMap.put("shinnyOrganization","http://example.com/shinnyOrganization");
         assertThat(engine.getSessions()).hasSize(2);
-        assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI, "http://example.com/fhirProfile"))
-            .isSameAs(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI, "http://example.com/fhirProfile"));
+        assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI, "http://example.com/fhirProfile",structureDefintionMap))
+            .isSameAs(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI, "http://example.com/fhirProfile",structureDefintionMap));
     }
 }

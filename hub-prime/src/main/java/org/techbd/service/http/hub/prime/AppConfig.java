@@ -3,7 +3,7 @@ package org.techbd.service.http.hub.prime;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.techbd.conf.Configuration;
-
+import java.util.Map;
 @org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "org.techbd.service.http.hub.prime")
 @ConfigurationPropertiesScan
@@ -33,7 +33,8 @@ public class AppConfig {
     private String version;
     private String defaultSdohFhirProfileUrl;
     private String defaultDatalakeApiUrl;
-
+    private Map<String,String> structureDefinitionsUrls;
+    
     public String getVersion() {
         return version;
     }
@@ -63,4 +64,12 @@ public class AppConfig {
     public void setDefaultDatalakeApiUrl(String defaultDatalakeApiUrl) {
         this.defaultDatalakeApiUrl = defaultDatalakeApiUrl;
     }
+    public void setStructureDefinitionsUrls(Map<String, String> structureDefinitionsUrls) {
+        this.structureDefinitionsUrls = structureDefinitionsUrls;
+    }
+
+    public Map<String, String> getStructureDefinitionsUrls() {
+        return structureDefinitionsUrls;
+    }
+    
 }

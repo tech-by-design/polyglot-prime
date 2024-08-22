@@ -30,6 +30,8 @@ import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.StructureDefinition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -116,7 +118,8 @@ import jakarta.validation.constraints.NotNull;
 public class OrchestrationEngine {
     private final List<OrchestrationSession> sessions;
     private final Map<ValidationEngineKey, ValidationEngine> validationEngineCache;
-
+    private static final Logger LOG = LoggerFactory.getLogger(OrchestrationEngine.class);
+    
     public OrchestrationEngine() {
         this.sessions = new ArrayList<>();
         this.validationEngineCache = new HashMap<>();
@@ -134,12 +137,12 @@ public class OrchestrationEngine {
     }
 
     public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
-            @NotNull final String fhirProfileUrl) {
+            @NotNull final String fhirProfileUrl,Map<String,String> structureDefinitionUrls) {
         ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
         return validationEngineCache.computeIfAbsent(key, k -> {
             switch (type) {
                 case HAPI:
-                    return new HapiValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl).build();
+                    return new HapiValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl).withStructureDefinitionUrls(structureDefinitionUrls).build();
                 case HL7_EMBEDDED:
                     return new Hl7ValidationEngineEmbedded.Builder().withFhirProfileUrl(fhirProfileUrl).build();
                 case HL7_API:
@@ -229,6 +232,7 @@ public class OrchestrationEngine {
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
         private final FhirContext fhirContext;
+        private final Map<String,String> structureDefinitionUrls;
 
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
@@ -240,17 +244,33 @@ public class OrchestrationEngine {
                                     fhirContext.getVersion().getVersion().getFhirVersionString()),
                     engineInitAt,
                     engineConstructedAt);
+            this.structureDefinitionUrls = builder.structureDefinitionUrls;
         }
 
-        private static String readJsonFromUrl(String fhirProfileUrl) throws IOException, InterruptedException {
+        private static String readJsonFromUrl(String url)  {
             final var client = HttpClient.newHttpClient();
             final var request = HttpRequest.newBuilder()
-                    .uri(URI.create(fhirProfileUrl))
+                    .uri(URI.create(url))
                     .build();
             String bundleJson = "";
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            bundleJson = response.body();
+            HttpResponse<String> response;
+            try {
+                response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                bundleJson = response.body();
+            } catch (IOException | InterruptedException e) {
+                LOG.error("Failed to parse structure definition url ", url,e);
+            }
             return bundleJson;
+        }
+        private void addStructureDefinitions(PrePopulatedValidationSupport prePopulatedValidationSupport) {
+                if(null != structureDefinitionUrls) {
+                    structureDefinitionUrls.values().stream().forEach(structureDefintionUrl ->{
+                            final var jsonContent= readJsonFromUrl(structureDefintionUrl);
+                            final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
+                            jsonContent);
+                            prePopulatedValidationSupport.addStructureDefinition(structureDefinition);
+                    });
+                }
         }
 
         @Override
@@ -263,33 +283,13 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
                 supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
                 final var prePopulatedSupport = new PrePopulatedValidationSupport(fhirContext);
-
                 final var jsonContent = readJsonFromUrl(fhirProfileUrl);
-                final var jsonContentPatient = readJsonFromUrl(
-                        "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-patient.json");
-                final var jsonContentObsResp = readJsonFromUrl(
-                        "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire-response.json");
-
-                final var jsonContentQuest = readJsonFromUrl(
-                        "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire.json");
-
                 final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
                         jsonContent);
-                final var structureDefinitionPatient = fhirContext.newJsonParser().parseResource(
-                        StructureDefinition.class,
-                        jsonContentPatient);
-                final var structureDefinitionOsRes = fhirContext.newJsonParser().parseResource(
-                        StructureDefinition.class,
-                        jsonContentObsResp);
-                final var structureDefinitionQuest = fhirContext.newJsonParser().parseResource(
-                        StructureDefinition.class,
-                        jsonContentQuest);
-
+                //Add Shinny Bundle Profile structure definitions Url        
                 prePopulatedSupport.addStructureDefinition(structureDefinition);
-                prePopulatedSupport.addStructureDefinition(structureDefinitionPatient);
-                prePopulatedSupport.addStructureDefinition(structureDefinitionOsRes);
-                prePopulatedSupport.addStructureDefinition(structureDefinitionQuest);
-
+                //Add all resource profile structure definitions
+                addStructureDefinitions(prePopulatedSupport);
                 supportChain.addValidationSupport(prePopulatedSupport);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
@@ -414,9 +414,14 @@ public class OrchestrationEngine {
 
         public static class Builder {
             private String fhirProfileUrl;
+            private Map<String,String> structureDefinitionUrls;
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
+                return this;
+            }
+            public Builder withStructureDefinitionUrls(@NotNull final Map<String,String> structureDefinitionUrls) {
+                this.structureDefinitionUrls = structureDefinitionUrls;
                 return this;
             }
 
@@ -698,6 +703,11 @@ public class OrchestrationEngine {
         private final List<ValidationEngine> validationEngines;
         private final List<ValidationResult> validationResults;
         private final String fhirProfileUrl;
+        private final Map<String,String> structureDefinitionUrls;
+   
+        public Map<String, String> getStructureDefinitionUrls() {
+            return structureDefinitionUrls;
+        }
 
         private OrchestrationSession(final Builder builder) {
             this.payloads = Collections.unmodifiableList(builder.payloads);
@@ -705,6 +715,7 @@ public class OrchestrationEngine {
             this.validationResults = new ArrayList<>();
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.device = builder.device;
+            this.structureDefinitionUrls =builder.structureDefinitionUrls;
         }
 
         public List<String> getPayloads() {
@@ -743,6 +754,7 @@ public class OrchestrationEngine {
             private Device device = Device.INSTANCE;
             private String fhirProfileUrl;
             private List<String> uaStrategyJsonIssues = new ArrayList<>();
+            private Map<String,String> structureDefinitionUrls;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
@@ -764,6 +776,10 @@ public class OrchestrationEngine {
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
+                return this;
+            }
+            public Builder withFhirStructureDefinitionUrls(@NotNull final Map<String,String> structureDefinitionUrls) {
+                this.structureDefinitionUrls = structureDefinitionUrls;
                 return this;
             }
 
@@ -821,19 +837,19 @@ public class OrchestrationEngine {
 
             public Builder addHapiValidationEngine() {
                 this.validationEngines
-                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl));
+                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,this.structureDefinitionUrls));
                 return this;
             }
 
             public Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
-                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl));
+                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,null));
                 return this;
             }
 
             public Builder addHl7ValidationApiEngine() {
                 this.validationEngines
-                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl));
+                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl,null));
                 return this;
             }
 
