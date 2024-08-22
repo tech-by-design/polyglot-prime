@@ -10,6 +10,12 @@
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 8px 0px 10px 15px;
+        }
+    </style>
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
@@ -70,6 +76,9 @@
 
 <body>
     <div layout:fragment="content">
+        <div class="grid-description" id="date-range"> 
+            This widget displays detailed interaction metrics for HTTP requests, including the interaction ID, URI, start time, finish time, duration in milliseconds, and the interaction HTTP request ID. The data is extracted from request and response headers to calculate the duration of each interaction. This overview helps in analyzing the performance and timing of HTTP interactions, sorted by the longest duration first, providing insights into the efficiency of service handling.
+        </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
