@@ -2,6 +2,7 @@ package org.techbd.service.http;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +33,13 @@ public class GitHubUsersService {
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record AuthorizedUser(String name, String emailPrimary, String profilePicUrl, String gitHubId,
       String tenantId, Map<String, Resource> resources) {
+    public boolean isUserHasActuatorAccess() {
+      return Optional.ofNullable(resources().get("actuator"))
+          .map(actuator -> actuator.roles)
+          .orElseGet(Collections::emptyList)
+          .stream()
+          .anyMatch(role -> role.contains("ADMIN"));
+    }
   }
 
   public record Resource(List<String> roles) {

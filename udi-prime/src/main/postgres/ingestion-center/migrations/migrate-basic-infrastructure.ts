@@ -54,7 +54,8 @@ const {
   jsonB,
   boolean,
   textNullable,
-  serial,
+  dateTime,
+  dateTimeNullable,
 } = dvts.domains;
 const { ulidPrimaryKey: primaryKey } = dvts.keys;
 
@@ -140,6 +141,27 @@ const expectationHttpRequestSat = hubExpectation.satelliteTable(
     ...dvts.housekeeping.columns,
   },
 );
+
+const hubDiagnostics = dvts.hubTable("diagnostics", {
+  hub_diagnostics_id: primaryKey(),
+  key: textNullable(),
+  ...dvts.housekeeping.columns,
+});
+
+const diagnosticsSat = hubDiagnostics.satelliteTable(
+  "log",
+  {
+    sat_diagnostics_log_id: primaryKey(),
+    hub_diagnostics_id: hubDiagnostics.references.hub_diagnostics_id(),
+    diagnostic_type: text(), 
+    diagnostic_detail: jsonB,
+    status: text(),
+    start_time: dateTime(),
+    end_time: dateTimeNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
 
 const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   name: textNullable(),
@@ -284,6 +306,10 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${exceptionDiagnosticSat}
 
+      ${hubDiagnostics}
+
+      ${diagnosticsSat}
+
       ${hubExpectation}
 
       ${expectationHttpRequestSat}
@@ -306,13 +332,6 @@ const migrateSP = pgSQLa.storedProcedure(
                       AND column_name='tenant_id_denorm') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
             ADD COLUMN tenant_id_denorm TEXT DEFAULT null;
-        END IF;
-
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='sat_interaction_http_request' 
-                      AND column_name='bundle_id') THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
-            ADD COLUMN bundle_id TEXT DEFAULT NULL;
         END IF;
 
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 

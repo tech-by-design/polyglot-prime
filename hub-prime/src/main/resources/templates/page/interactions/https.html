@@ -10,6 +10,12 @@
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 8px 0px 10px 15px;
+        }
+    </style>
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
@@ -65,6 +71,9 @@
 
 <body>
     <div layout:fragment="content">
+        <div class="grid-description" id="date-range"> 
+        This widget offers a detailed analysis of HTTP interactions, focusing on key aspects such as the request time, interaction ID, tenant ID, URI, and the nature of the interaction. It also tracks the state transitions from the initial state to the final state, along with any validation issues encountered during the process. The widget includes information about associated FHIR resources, the client's IP address, and the user agent. By providing a sortable and filterable grid, this tool enables users to efficiently explore and identify patterns, issues, or anomalies in the interactions, supporting deeper insights into the system's performance and behavior.
+    </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>

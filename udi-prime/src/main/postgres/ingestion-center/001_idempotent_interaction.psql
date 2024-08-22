@@ -26,7 +26,6 @@ SELECT hi.hub_interaction_id AS hub_interaction_id,
     jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count,
     sihr.payload,
     LOWER(COALESCE(sihr.tenant_id_denorm,sihr.nature ->> 'tenant_id')) AS tenant_id_lower,
-    sihr.bundle_id,
     CURRENT_USER AS materialized_by,
     CURRENT_TIMESTAMP AS materialized_at,
     CASE 
@@ -39,8 +38,7 @@ SELECT hi.hub_interaction_id AS hub_interaction_id,
     ELSE NULL END AS client_ip_address_forwarded
    	FROM techbd_udi_ingress.hub_interaction hi
    	INNER JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
-   	ON hi.hub_interaction_id = sihr.hub_interaction_id
-   	WITH NO DATA;
+   	ON hi.hub_interaction_id = sihr.hub_interaction_id;
   
    
 /*******************************************************************************************
@@ -989,6 +987,7 @@ WITH submission_counts AS (
     WHERE 
         hintr."key" IN ('/Bundle/', '/Bundle')
         AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
+        AND sihr.nature->>'tenant_id' <> 'N/A'
     GROUP BY LOWER(sihr.nature->>'tenant_id')
 )
 SELECT  
@@ -1407,105 +1406,154 @@ WHERE
 
 
 /**
- * View to summarize HTTP request interactions per tenant.
+ * View to summarize HTTP request interactions with client IP and user agent filtering.
  * 
- * This view aggregates HTTP request interactions within the system, focusing on key metadata 
- * such as tenant ID, client IP address, and user agent. It provides a summarized view of the 
- * interaction counts for each combination of tenant, client IP, and user agent, offering insights 
- * into the distribution and volume of requests received by the system.
- *
+ * This view aggregates and summarizes recent HTTP request interactions within the system,
+ * focusing on the past 7 days. It extracts key details such as tenant ID, client IP address, 
+ * user agent, and the total count of requests per combination of these elements. 
+ * This summary is particularly useful for identifying patterns of interaction across 
+ * different tenants, IP addresses, and user agents, allowing for efficient monitoring and analysis.
+ * 
  * Key components:
- * - tenant_id: Identifies the tenant associated with the HTTP request.
- * - client_ip_address: Captures the IP address from which the request originated.
- * - user_agent: Records the user agent string from the request headers, indicating the client software used.
- * - request_count: Counts the number of HTTP request interactions matching the specified criteria.
- *
- * The view filters interactions based on the request URI and nature, ensuring that only relevant 
- * requests are included. Specifically, it focuses on interactions with the URI '/Bundle' or '/Bundle/' 
- * and those categorized under 'org.techbd.service.http.Interactions$RequestResponseEncountered'.
- *
- * The data is grouped by tenant_id, client_ip_address, and user_agent, providing a clear breakdown 
- * of the number of requests per tenant and client combination.
- *
- * The results are ordered by tenant_id, client_ip_address, and user_agent to facilitate easier analysis 
- * and querying.
- *
- * This view is particularly useful for monitoring and auditing the volume and origin of HTTP requests 
- * within the system, enabling administrators to track client behavior and identify potential issues 
- * or patterns in request distribution.
- *
- * @return VIEW - A summarized view of HTTP request interactions, grouped by tenant, client IP, and user agent.
+ * - tenant_id: Identifies the tenant responsible for each HTTP request.
+ * - client_ip_address: Extracted from the 'x-forwarded-for' header within the request's payload,
+ *   representing the IP address from which the request originated.
+ * - user_agent: Captures the user agent string from the request headers, identifying the 
+ *   client software or device making the request.
+ * - request_count: The total number of requests for each unique combination of tenant ID, 
+ *   client IP address, and user agent, providing insight into interaction volume.
+ * 
+ * CTE (Common Table Expression):
+ * - The CTE (`cte`) is used to extract the client IP address from the 'x-forwarded-for' header 
+ *   if available, falling back to NULL if not. It also filters out requests with a user agent of 
+ *   'httpyac' to ensure that only relevant requests are included in the summary.
+ * 
+ * Filtering:
+ * - URI: The view includes only interactions with the URIs '/Bundle' or '/Bundle/'.
+ * - Nature: It specifically targets interactions categorized as 'org.techbd.service.http.Interactions$RequestResponseEncountered'.
+ * - User Agent: Requests with a user agent of 'httpyac' are excluded to focus on interactions from other sources.
+ * - Time Frame: The view is restricted to interactions that occurred within the last 7 days, ensuring the summary is recent and relevant.
+ * 
+ * Grouping and Ordering:
+ * - The results are grouped by tenant_id, client_ip_address, and user_agent to provide a breakdown 
+ *   of request counts for each combination.
+ * - The final output is ordered by tenant_id, client_ip_address, and user_agent to facilitate 
+ *   easy identification of patterns across tenants and clients.
+ * 
+ * Utility:
+ * - This view is useful for system administrators and security analysts who need to monitor and 
+ *   analyze HTTP request patterns. By summarizing interaction data based on key factors like 
+ *   client IP and user agent, it helps in identifying trends, potential issues, or unauthorized access attempts.
+ * 
+ * @return VIEW - A summarized view of HTTP request interactions with counts of requests per tenant ID, client IP address, and user agent.
  */
+
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_summary CASCADE; 
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_summary
 AS 
-SELECT 	htt_req.tenant_id			AS tenant_id,
-		htt_req.client_ip_address	AS client_ip_address,
-		htt_req.user_agent			AS user_agent, 
-		count(htt_req.*) 			AS request_count
-FROM techbd_udi_ingress.interaction_http_request_mat AS htt_req
-WHERE 1 = 1 
-AND htt_req.uri IN('/Bundle','/Bundle/')
-AND  htt_req.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
-AND htt_req.request_created_at >= CURRENT_DATE - INTERVAL '7 days'
-GROUP BY htt_req.tenant_id,htt_req.client_ip_address,htt_req.user_agent
-ORDER BY htt_req.tenant_id, htt_req.client_ip_address, htt_req.user_agent;
+WITH cte AS (
+    SELECT tenant_id_lower,
+           COALESCE(
+               (SELECT h ->> 'value'
+                FROM jsonb_array_elements((payload -> 'request') -> 'headers') AS h
+                WHERE h ->> 'name' = 'x-forwarded-for'),
+               NULL
+           ) AS client_ip_address,
+           user_agent
+    FROM techbd_udi_ingress.interaction_http_request_mat
+    WHERE uri = ANY (ARRAY['/Bundle', '/Bundle/'])
+      AND nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+      AND user_agent <> 'httpyac' AND tenant_id_lower <> 'n/a'
+      AND request_created_at >= CURRENT_DATE - INTERVAL '7 days' 
+)
+SELECT tenant_id_lower,
+       client_ip_address,
+       user_agent,
+       COUNT(*) AS request_count
+FROM cte
+GROUP BY tenant_id_lower, client_ip_address, user_agent
+ORDER BY tenant_id_lower, client_ip_address, user_agent;
   
 
 /**
- * View to retrieve detailed HTTP request interaction summaries for the past 7 days.
+ * View to summarize detailed HTTP request interactions including tenant, client IP, and user agent.
+ *
+ * This view provides a detailed summary of HTTP request interactions over the past 7 days,
+ * capturing essential information such as tenant ID, client IP address, user agent, 
+ * hub interaction ID, and the request creation timestamp. This detailed view is valuable 
+ * for tracking individual requests and their origins, which can be used for troubleshooting, 
+ * auditing, and monitoring purposes.
  * 
- * This view provides a detailed summary of HTTP request interactions within the system 
- * over the past 7 days, focusing on key metadata such as tenant ID, hub interaction ID, 
- * client IP address, user agent, and the request creation timestamp. It is designed 
- * to help monitor and analyze recent interactions that involve specific URIs and request 
- * types, ensuring that administrators can track and understand system behavior.
- *
  * Key components:
- * - tenant_id: Identifies the tenant associated with each HTTP request.
- * - hub_interaction_id: A unique identifier for the interaction, allowing for traceability 
- *   and cross-referencing with other data points.
- * - client_ip_address: Captures the IP address from which the request originated, 
- *   enabling geographical or network-based analysis.
- * - user_agent: Records the user agent string from the request headers, indicating the 
- *   client software or device used to make the request.
- * - request_created_at: The timestamp when the request was created, crucial for temporal 
- *   analysis and understanding request patterns over time.
+ * - tenant_id: Identifies the tenant responsible for each HTTP request.
+ * - client_ip_address: Extracted from the 'x-forwarded-for' header within the request's payload,
+ *   representing the IP address from which the request originated. If the header is not present, 
+ *   this field will be NULL.
+ * - user_agent: Captures the user agent string from the request headers, identifying the 
+ *   client software or device making the request.
+ * - hub_interaction_id: A unique identifier for each hub interaction, allowing for precise 
+ *   tracking and correlation of requests.
+ * - request_created_at: The timestamp of when the request was created, providing chronological 
+ *   context for the interactions.
  *
+ * CTE (Common Table Expression):
+ * - The CTE (`cte`) is used to extract and filter the relevant data from the 
+ *   `interaction_http_request_mat` table. It includes logic to extract the client IP 
+ *   address from the 'x-forwarded-for' header, filter out requests with a user agent 
+ *   of 'httpyac', and limit the data to interactions that occurred in the past 7 days.
+ * 
  * Filtering:
- * The view filters interactions based on the following criteria:
- * - URI: Only interactions with the URI '/Bundle' or '/Bundle/' are included.
- * - Nature: Only interactions categorized under 
- *   'org.techbd.service.http.Interactions$RequestResponseEncountered' are considered.
- * - Time Frame: Only interactions created within the last 7 days are selected, ensuring 
- *   the focus is on recent activity.
- *
+ * - URI: The view includes only interactions with the URIs '/Bundle' or '/Bundle/'.
+ * - Nature: It specifically targets interactions categorized as 
+ *   'org.techbd.service.http.Interactions$RequestResponseEncountered'.
+ * - User Agent: Requests with a user agent of 'httpyac' are excluded to focus on interactions 
+ *   from other sources.
+ * - Time Frame: The view is restricted to interactions that occurred within the last 7 days, 
+ *   ensuring the summary is recent and relevant.
+ * 
  * Ordering:
- * The results are ordered by request_created_at in descending order, allowing for 
- * the most recent interactions to be viewed first, making it easier to analyze 
- * the latest activity.
+ * - The results are ordered by the `request_created_at` field in descending order, 
+ *   ensuring that the most recent interactions are displayed first.
  *
  * Utility:
- * This view is particularly useful for administrators and developers who need to 
- * audit or troubleshoot recent HTTP request interactions within the system, 
- * providing detailed and actionable insights into how requests are being processed 
- * and where potential issues may arise.
+ * - This view is particularly useful for administrators and security analysts who need to 
+ *   monitor detailed HTTP request interactions. By capturing and organizing data based on 
+ *   key factors like tenant ID, client IP, and user agent, it helps in identifying patterns, 
+ *   diagnosing issues, and ensuring compliance with security and operational standards.
  *
- * @return VIEW - A detailed summary of recent HTTP request interactions, including key 
- * metadata for monitoring and analysis purposes.
+ * @return VIEW - A detailed summary of HTTP request interactions including tenant, client IP, user agent, hub interaction ID, and request timestamp.
  */
+
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_summary_details CASCADE; 
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_summary_details
 AS 
-SELECT 	htt_req.tenant_id			AS tenant_id,
-        htt_req.hub_interaction_id	AS hub_interaction_id,
-		htt_req.client_ip_address	AS client_ip_address,
-		htt_req.user_agent			AS user_agent,
-		htt_req.request_created_at as request_created_at 
-FROM techbd_udi_ingress.interaction_http_request_mat AS htt_req
-WHERE  htt_req.uri IN('/Bundle','/Bundle/')
-AND  htt_req.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
-AND htt_req.request_created_at >= CURRENT_DATE - INTERVAL '7 days'  
-ORDER BY htt_req.request_created_at DESC;
+WITH cte AS (
+    SELECT tenant_id_lower,
+           COALESCE(
+               (SELECT h ->> 'value'
+                FROM jsonb_array_elements((payload -> 'request') -> 'headers') AS h
+                WHERE h ->> 'name' = 'x-forwarded-for'),
+               NULL
+           )  AS client_ip_address,
+           user_agent,
+          hub_interaction_id,  
+          request_created_at         
+    FROM techbd_udi_ingress.interaction_http_request_mat
+    WHERE uri = ANY (ARRAY['/Bundle', '/Bundle/'])
+      AND nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+      AND user_agent <> 'httpyac'
+      AND request_created_at >= CURRENT_DATE - INTERVAL '7 days'  
+)
+SELECT tenant_id_lower,
+       client_ip_address,
+       user_agent,
+       hub_interaction_id,
+       request_created_at
+FROM cte
+ORDER BY request_created_at DESC;
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_mat_sat_interaction_http_request_i_idx 
+ON techbd_udi_ingress.interaction_http_request_mat (sat_interaction_http_request_id);

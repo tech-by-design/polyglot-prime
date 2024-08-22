@@ -73,13 +73,13 @@ public class InteractionsController {
     }
 
     @GetMapping("/interactions/https")
-    @RouteMapping(label = "HTTP", title = "Interactions via HTTPs", siblingOrder = 60)
+    @RouteMapping(label = "HTTP Interactions", title = "Interactions via HTTPs", siblingOrder = 60)
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }
 
     @GetMapping("/interactions/observe")
-    @RouteMapping(label = "Observe", title = "Observe", siblingOrder = 70)
+    @RouteMapping(label = "Performance Overview", title = "Performance Overview", siblingOrder = 70)
     public String osberve(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/observe", model, request);
     }
