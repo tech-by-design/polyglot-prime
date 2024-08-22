@@ -236,7 +236,7 @@ public class OrchestrationEngine {
             engineConstructedAt = Instant.now();
             observability = new Observability(HapiValidationEngine.class.getName(),
                     "HAPI version %s (FHIR version %s)"
-                            .formatted("7.2.0 (TODO:get from API instead of hard coding)",
+                            .formatted("7.2.0",
                                     fhirContext.getVersion().getVersion().getFhirVersionString()),
                     engineInitAt,
                     engineConstructedAt);
@@ -263,10 +263,33 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
                 supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
                 final var prePopulatedSupport = new PrePopulatedValidationSupport(fhirContext);
+
                 final var jsonContent = readJsonFromUrl(fhirProfileUrl);
+                final var jsonContentPatient = readJsonFromUrl(
+                        "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-patient.json");
+                final var jsonContentObsResp = readJsonFromUrl(
+                        "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire-response.json");
+
+                final var jsonContentQuest = readJsonFromUrl(
+                        "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire.json");
+
                 final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
                         jsonContent);
+                final var structureDefinitionPatient = fhirContext.newJsonParser().parseResource(
+                        StructureDefinition.class,
+                        jsonContentPatient);
+                final var structureDefinitionOsRes = fhirContext.newJsonParser().parseResource(
+                        StructureDefinition.class,
+                        jsonContentObsResp);
+                final var structureDefinitionQuest = fhirContext.newJsonParser().parseResource(
+                        StructureDefinition.class,
+                        jsonContentQuest);
+
                 prePopulatedSupport.addStructureDefinition(structureDefinition);
+                prePopulatedSupport.addStructureDefinition(structureDefinitionPatient);
+                prePopulatedSupport.addStructureDefinition(structureDefinitionOsRes);
+                prePopulatedSupport.addStructureDefinition(structureDefinitionQuest);
+
                 supportChain.addValidationSupport(prePopulatedSupport);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
