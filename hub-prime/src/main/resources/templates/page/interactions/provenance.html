@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 8px 0px 10px 15px;
+        }
+    </style>
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'interaction_http_request_summary'; 
+        const provenanceDetView = 'interaction_http_request_summary_details';
+        const proveanceColumnDefs = [
+            { headerName: "Interaction Id", field: "hub_interaction_id", filter: "agTextColumnFilter" }, 
+            { headerName: "Submission Date", field: "request_created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter() } 
+        ];
+        function getProveanceGridData(params) {
+            const client_ip_address = params.data.client_ip_address;
+            const user_agent = params.data.user_agent;
+            const tenant_id = params.data.tenant_id;
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${provenanceDetView}/tenant_id/${tenant_id}/client_ip_address/${client_ip_address}.json`))
+                .then(response => response.json())
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const helpers = new Helpers();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "Tenant ID",
+                        field: "tenant_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Unique identifier assigned to a tenant, representing the organization or client making the HTTP requests.",
+                        cellRenderer: 'agGroupCellRenderer'
+                    }, 
+                    {
+                        headerName: "Client IP Address",
+                        field: "client_ip_address",
+                        sort: "desc",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "IP address from which the request originated, indicating the source of the interaction."
+                    },
+                    {
+                        headerName: "User Agent",
+                        field: "user_agent",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Information about the user's browser or application that made the request, including details about the device and operating system." 
+                    }, 
+                    {
+                        headerName: "Request Count",
+                        field: "request_count",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Total number of HTTP requests received from the same tenant, client IP address, and user agent during the specified date range" 
+                    }
+                    
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                ).withMasterDetail(false)
+                .withDetailCellRendererParams({
+                    detailGridOptions: {
+                        columnDefs: proveanceColumnDefs,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getProveanceGridData(params);
+                    }
+                })
+                .withDetailRowAutoHeight(false)
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+
+            // Add date-range text 
+            // Inject the date range into the HTML
+            helpers.injectDateRangeText('date-range', 'This widget displays details about data requested by different tenants from <b>{startDate}</b> to <b>{endDate}</b>. It captures the tenant ID, client IP address, and user agent information, with the data grouped by tenant and client details. The request count is calculated to provide insights into the volume of HTTP requests encountered by the service during this period. This overview helps in understanding the provenance of these interactions and the distribution of request traffic across different tenants. ');
+        });
+    </script>    
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description" id="date-range"> 
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

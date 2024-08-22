@@ -324,6 +324,100 @@ export class AGGridAideBuilder {
         };
         return this;
     }
+    withServerSideDatasourceGET(dataSourceUrl, withSecondaryColumns = null, inspect = {}) {
+        this.gridOptions.serverSideDatasource = {
+            getRows: async (params) => {
+                const {
+                    includeGeneratedSqlInResp = true,
+                    includeGeneratedSqlInErrorResp = true,
+    
+                    secondaryColsError = async (dataSourceUrl, serverRespPayload, error, respMetrics) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, result: serverRespPayload, error, respMetrics }),
+                    resultServerError = async (dataSourceUrl, serverRespPayload, respMetrics) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, result: serverRespPayload, respMetrics }),
+                    fetchRespNotOK = async (dataSourceUrl, response, respMetrics) => console.error(`[ServerDatasource] Fetched response not OK: ${response.statusText}`, { dataSourceUrl, response, respMetrics }),
+                    fetchError = async (dataSourceUrl, error) => console.error(`[ServerDatasource] Fetch error: ${error}`, { dataSourceUrl, error }),
+    
+                    beforeRequest = async (dataSourceUrl) => { },
+                    beforeSuccess = async (serverRespPayload, respMetrics, dataSourceUrl) => {
+                        console.log('Full Server Response:', serverRespPayload);
+    
+                        const data = serverRespPayload;
+    
+                        if (!Array.isArray(data)) {
+                            console.error('Error: serverRespPayload is not an array.');
+                            params.fail();
+                            return;
+                        }
+    
+                        console.log('Extracted data:', data);
+    
+                        const valueCols = data.length > 0 ? Object.keys(data[0]).map(key => ({
+                            headerName: key.replace(/_/g, ' ').toUpperCase(),
+                            field: key
+                        })) : [];
+    
+                        console.log('Generated valueCols:', valueCols);
+                    },
+    
+                    customizedContent = async (success, serverRespPayload, respMetrics, dataSourceUrl) => success,
+                } = inspect;
+    
+                try {
+                    await beforeRequest?.(dataSourceUrl);
+    
+                    // Directly fetch data from the provided URL without adding parameters
+                    const response = await fetch(dataSourceUrl, {
+                        method: 'GET',
+                        headers: {
+                            'X-Include-Generated-SQL-In-Response': includeGeneratedSqlInResp,
+                            'X-Include-Generated-SQL-In-Error-Response': includeGeneratedSqlInErrorResp,
+                        }
+                    });
+    
+                    const respMetrics = response.headers ? {
+                        startTime: response.headers.get("X-Observability-Metric-Interaction-Start-Time"),
+                        finishTime: response.headers.get("X-Observability-Metric-Interaction-Finish-Time"),
+                        durationMillisecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Nanosecs"),
+                        durationNanosecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Millisecs"),
+                    } : {};
+    
+                    if (respMetrics && window.layout?.observability?.metricsCollection) {
+                        window.layout.addIdentifiableMetrics(`fetch-${dataSourceUrl}`, respMetrics);
+                    }
+    
+                    if (response.ok) {
+                        const serverRespPayload = await response.json();
+    
+                        await beforeSuccess?.(serverRespPayload, respMetrics, dataSourceUrl);
+    
+                        const data = Array.isArray(serverRespPayload) ? serverRespPayload : [];
+                        const valueCols = data.length > 0 ? Object.keys(data[0]).map(key => ({
+                            headerName: key.replace(/_/g, ' ').toUpperCase(),
+                            field: key
+                        })) : [];
+    
+                        if (data.length > 0) {
+                            params.success({
+                                rowData: data,
+                                columnDefs: valueCols
+                            });
+                        } else {
+                            params.success({ rowData: [] });
+                            params.api.showNoRowsOverlay();
+                        }
+                    } else {
+                        await fetchRespNotOK?.(dataSourceUrl, response, respMetrics);
+                        params.fail();
+                    }
+                } catch (error) {
+                    await fetchError?.(dataSourceUrl, error);
+                    params.fail();
+                }
+            }
+        };
+        return this;
+    }
+    
+    
 
     /**
      * Sets the ModalAide instance to be used for rendering modal popups.

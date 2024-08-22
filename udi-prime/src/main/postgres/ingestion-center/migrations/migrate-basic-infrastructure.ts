@@ -292,21 +292,28 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${pgTapTestResult}
 
-       -- Check and add 'nature_type' column if it does not exist
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                    WHERE table_name='sat_interaction_http_request' 
-                    AND column_name='nature_type') THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
-          ADD COLUMN nature_type TEXT DEFAULT null;
-      END IF;
+        -- Check and add 'nature_denorm' column if it does not exist
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='sat_interaction_http_request' 
+                      AND column_name='nature_denorm') THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+            ADD COLUMN nature_denorm TEXT DEFAULT null;
+        END IF;
 
-      -- Check and add 'tenant_id' column if it does not exist
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                    WHERE table_name='sat_interaction_http_request' 
-                    AND column_name='tenant_id') THEN
-          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
-          ADD COLUMN tenant_id TEXT DEFAULT null;
-      END IF;
+        -- Check and add 'tenant_id_denorm' column if it does not exist
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='sat_interaction_http_request' 
+                      AND column_name='tenant_id_denorm') THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+            ADD COLUMN tenant_id_denorm TEXT DEFAULT null;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='sat_interaction_http_request' 
+                      AND column_name='bundle_id') THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+            ADD COLUMN bundle_id TEXT DEFAULT NULL;
+        END IF;
 
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 
       ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id);

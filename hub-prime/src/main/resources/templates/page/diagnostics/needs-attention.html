@@ -99,9 +99,9 @@
 
             function qeNameCellRenderer(params) {
                 const qeName = params.data.qe_name;
-                const link = `/data-quality/needs-attention?qeName=${qeName}`;
-                //return `<a href="${link}">${qeName}</a>`;
-                 return `${qeName}`;
+                const link = `/needs-attention/techbd-to-scoring-engine?qeName=${qeName}`;
+                return `<a href="${link}">${qeName}</a>`;
+                // return `${qeName}`;
             }
 
 
@@ -123,6 +123,7 @@
                         headerName: "Interaction Id",
                         field: "hub_interaction_id",
                         filter: "agTextColumnFilter",
+                         headerTooltip: "Unique Id For Identify The Record",
                         cellRenderer: params => {
                             const hub_interaction_id = params.value;
                             const error_type = params.data.error_type;

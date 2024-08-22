@@ -1,6 +1,6 @@
 {
-  "resourceType123": "Bundle",
-  "type123": "transaction",
+  "resourceType": "Bundle",
+  "type": "transaction",
   "entry": [ {
     "fullUrl": "urn:uuid:0e6188b7-ee8b-592a-5b46-85d322b5c973",
     "resource": {

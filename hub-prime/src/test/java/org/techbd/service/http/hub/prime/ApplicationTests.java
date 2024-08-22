@@ -112,7 +112,7 @@ class ApplicationTests {
 
 		// Check details of the first validation result
 		assertValidationResult(validationResults.get(0),
-				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
+				"https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
 				"HAPI-1821: [element=\"gender\"] Invalid attribute value \"UN\": Unknown AdministrativeGender code 'UN'",
 				"FATAL");
 	}
@@ -161,7 +161,7 @@ class ApplicationTests {
 
 		// Check details of the first validation result
 		assertValidationResult(validationResults.get(0),
-				"https://djq7jdt8kb490.cloudfront.net/1115/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
+				"https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json", "HAPI", false,
 				"HAPI-1821: [element=\"gender\"] Invalid attribute value \"UN\": Unknown AdministrativeGender code 'UN'",
 				"FATAL");
 	}
