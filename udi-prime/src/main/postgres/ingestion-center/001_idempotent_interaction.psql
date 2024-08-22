@@ -26,7 +26,6 @@ SELECT hi.hub_interaction_id AS hub_interaction_id,
     jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count,
     sihr.payload,
     LOWER(COALESCE(sihr.tenant_id_denorm,sihr.nature ->> 'tenant_id')) AS tenant_id_lower,
-    sihr.bundle_id,
     CURRENT_USER AS materialized_by,
     CURRENT_TIMESTAMP AS materialized_at,
     CASE 
@@ -39,8 +38,7 @@ SELECT hi.hub_interaction_id AS hub_interaction_id,
     ELSE NULL END AS client_ip_address_forwarded
    	FROM techbd_udi_ingress.hub_interaction hi
    	INNER JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
-   	ON hi.hub_interaction_id = sihr.hub_interaction_id
-   	WITH NO DATA;
+   	ON hi.hub_interaction_id = sihr.hub_interaction_id;
   
    
 /*******************************************************************************************
