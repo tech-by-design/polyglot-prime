@@ -131,6 +131,7 @@ public class TabularRowsController {
                                 .groupBy(typableTable.column("hub_interaction_id"),
                                                 typableTable.column("validation_engine"),
                                                 typableTable.column("date_time"))
+                                .orderBy(typableTable.column("date_time").desc()) // Order by date_time descending                
                                 .fetch()
                                 .intoMaps(); // Convert the result to a map or any other desired format
         }
