@@ -4,8 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
+import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.HashMap;
 
 class OrchestrationEngineTest {
 
@@ -19,10 +20,10 @@ class OrchestrationEngineTest {
     @Test
     void testOrchestrateSingleSession() {
         OrchestrationEngine.OrchestrationSession session = engine.session()
-            .withPayloads(List.of("not a valid payload"))
-            .withFhirProfileUrl("http://example.com/fhirProfile")
-            .addHapiValidationEngine()
-            .build();
+                .withPayloads(List.of("not a valid payload"))
+                .withFhirProfileUrl("http://example.com/fhirProfile")
+                .addHapiValidationEngine()
+                .build();
 
         engine.orchestrate(session);
 
@@ -33,22 +34,23 @@ class OrchestrationEngineTest {
         List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0).getValidationResults();
         assertThat(results).hasSize(1);
         assertThat(results.get(0).isValid()).isFalse();
-        assertThat(results.get(0).getIssues()).extracting("message").containsExactly("HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: '<' (must be '{')");
+        assertThat(results.get(0).getIssues()).extracting("message").containsExactly(
+                "HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: '<' (must be '{')");
     }
 
     @Test
     void testOrchestrateMultipleSessions() {
         OrchestrationEngine.OrchestrationSession session1 = engine.session()
-            .withPayloads(List.of("payload1"))
-            .withFhirProfileUrl("http://example.com/fhirProfile")
-            .addHapiValidationEngine()
-            .build();
+                .withPayloads(List.of("payload1"))
+                .withFhirProfileUrl("http://example.com/fhirProfile")
+                .addHapiValidationEngine()
+                .build();
 
         OrchestrationEngine.OrchestrationSession session2 = engine.session()
-            .withPayloads(List.of("payload2"))
-            .withFhirProfileUrl("http://example.com/fhirProfile")
-            .addHl7ValidationApiEngine()
-            .build();
+                .withPayloads(List.of("payload2"))
+                .withFhirProfileUrl("http://example.com/fhirProfile")
+                .addHl7ValidationApiEngine()
+                .build();
 
         engine.orchestrate(session1, session2);
 
@@ -60,7 +62,8 @@ class OrchestrationEngineTest {
         assertThat(retrievedSession1.getValidationResults()).hasSize(1);
         assertThat(retrievedSession1.getValidationResults().get(0).isValid()).isFalse();
         assertThat(retrievedSession1.getValidationResults().get(0).getIssues()).extracting("message")
-            .containsExactly("HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: '<' (must be '{')");
+                .containsExactly(
+                        "HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: '<' (must be '{')");
 
         OrchestrationEngine.OrchestrationSession retrievedSession2 = engine.getSessions().get(1);
         assertThat(retrievedSession2.getPayloads()).containsExactly("payload2");
@@ -72,21 +75,25 @@ class OrchestrationEngineTest {
     @Test
     void testValidationEngineCaching() {
         OrchestrationEngine.OrchestrationSession session1 = engine.session()
-            .withPayloads(List.of("payload1"))
-            .withFhirProfileUrl("http://example.com/fhirProfile")
-            .addHapiValidationEngine()
-            .build();
+                .withPayloads(List.of("payload1"))
+                .withFhirProfileUrl("http://example.com/fhirProfile")
+                .addHapiValidationEngine()
+                .build();
 
         OrchestrationEngine.OrchestrationSession session2 = engine.session()
-            .withPayloads(List.of("payload2"))
-            .withFhirProfileUrl("http://example.com/fhirProfile")
-            .addHapiValidationEngine()
-            .build();
+                .withPayloads(List.of("payload2"))
+                .withFhirProfileUrl("http://example.com/fhirProfile")
+                .addHapiValidationEngine()
+                .build();
 
         engine.orchestrate(session1, session2);
-
+        Map<String, String> structureDefintionMap = new HashMap<>();
+        structureDefintionMap.put("shinnyPatient", "http://example.com/shinnyPatient");
+        structureDefintionMap.put("shinnyOrganization", "http://example.com/shinnyOrganization");
         assertThat(engine.getSessions()).hasSize(2);
-        assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI, "http://example.com/fhirProfile"))
-            .isSameAs(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI, "http://example.com/fhirProfile"));
+        assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI,
+                "http://example.com/fhirProfile", structureDefintionMap))
+                .isSameAs(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI,
+                        "http://example.com/fhirProfile", structureDefintionMap));
     }
 }
