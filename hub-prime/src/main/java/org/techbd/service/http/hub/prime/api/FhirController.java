@@ -294,10 +294,14 @@ public class FhirController {
 
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
+        LOG.info("Getting structure definition Urls from config - Before: ");
+        final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
+        LOG.info("Getting structure definition Urls from config - After : ", structureDefintionUrls);
         final var sessionBuilder = engine.session()
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
+                .withFhirStructureDefinitionUrls(structureDefintionUrls)
                 .addHapiValidationEngine() // by default
                 // clearExisting is set to true so engines can be fully supplied through header
                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
