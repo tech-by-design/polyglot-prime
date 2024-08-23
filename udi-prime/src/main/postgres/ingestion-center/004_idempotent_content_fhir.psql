@@ -297,7 +297,8 @@ AS WITH validation_results AS (
     CURRENT_USER AS materialized_by,
     CURRENT_TIMESTAMP AS materialized_at
    FROM issues
-  WHERE (issue ->> 'message'::text) LIKE '%has not been checked because it is unknown%'::text OR (issue ->> 'message'::text) LIKE '%Unknown profile%'::text OR (issue ->> 'message'::text) LIKE '%Unknown extension%'::text OR (issue ->> 'message'::text) LIKE '%Unknown Code SYSTEM%'::text
+  WHERE (issue ->> 'message'::text) LIKE '%has not been checked because it is unknown%'::text 
+  OR (issue ->> 'message'::text) LIKE '%Unknown profile%'::text OR (issue ->> 'message'::text) LIKE '%Unknown extension%'::text OR (issue ->> 'message'::text) LIKE '%Unknown Code System%'::text
 WITH DATA;
 
 -- View indexes:
