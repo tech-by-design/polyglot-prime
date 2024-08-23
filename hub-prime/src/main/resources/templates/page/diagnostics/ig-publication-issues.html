@@ -44,7 +44,7 @@
  
                     { headerName: "Interaction ID", field: "hub_interaction_id", filter: "agTextColumnFilter",cellRenderer: 'agGroupCellRenderer' },  
                     { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter"  },                    
-                    { headerName: "Completed Date", field: "date_time", filter: "agTextColumnFilter",    valueFormatter: AGGridAide.dateTimeValueFormatter() }
+                    { headerName: "Completed Date", field: "date_time", filter: "agTextColumnFilter",    valueFormatter: AGGridAide.isoDateTimeValueFormatter(true) }
                 ]) 
                 .withMasterDetail(true)
                 .withDetailCellRendererParams({
