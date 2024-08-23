@@ -109,7 +109,7 @@ public class FhirController {
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
         LOG.info("Getting structure definition Urls from config - Before: ");
         final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
-        LOG.info("Getting structure definition Urls from config - After : ",structureDefintionUrls);
+        LOG.info("Getting structure definition Urls from config - After : ", structureDefintionUrls);
         final var sessionBuilder = engine.session()
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))

@@ -267,14 +267,17 @@ public class OrchestrationEngine {
         private void addStructureDefinitions(PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions Begin:");
             if (null != structureDefinitionUrls) {
-                LOG.info("OrchestrationEngine ::  addStructureDefinitions Begin: No of structure defintions to be added : " +structureDefinitionUrls.size());
+                LOG.info(
+                        "OrchestrationEngine ::  addStructureDefinitions Begin: No of structure defintions to be added : "
+                                + structureDefinitionUrls.size());
                 structureDefinitionUrls.values().stream().forEach(structureDefintionUrl -> {
-                    LOG.info("Adding  Structure Definition URL Begin: ",structureDefintionUrl);
+                    LOG.info("Adding  Structure Definition URL Begin: ", structureDefintionUrl);
                     final var jsonContent = readJsonFromUrl(structureDefintionUrl);
                     final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
                             jsonContent);
                     prePopulatedValidationSupport.addStructureDefinition(structureDefinition);
-                    LOG.info("Structure Defintion URL {} added to prePopulatedValidationSupport: ",structureDefintionUrl);
+                    LOG.info("Structure Defintion URL {} added to prePopulatedValidationSupport: ",
+                            structureDefintionUrl);
                 });
             }
             LOG.info("OrchestrationEngine ::  addStructureDefinitions End : ");
