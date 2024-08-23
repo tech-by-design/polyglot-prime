@@ -23,8 +23,8 @@
 </head>
 
 <body class="bg-gray-100">
-    <div layout:fragment="content" class="flex flex-col items-center justify-center p-4">
-        <img src="/techbd-hub.svg" class="mb-8" />
+    <div layout:fragment="content" class="flex flex-col items-center justify-center p-4 w-full max-w-9xl">
+        <img src="/tech-by-design_full-color.svg" class="mb-4 h-auto max-w-xs" />
         <div class="prose bg-white p-8 w-full max-w-6xl">
             <h1 class="text-3xl font-bold mb-4 text-center">Welcome to Technology-by-Design's Collaboration Hub</h1>
             <p class="mb-4 text-center">The central place where New York's finest healthcare institutions can
@@ -61,9 +61,9 @@
             <div>You're not logged in so you only have guest privileges.</div>
         </div>
 
-        <div class="mt-8 flex flex-col items-center justify-center p-4">
+        <div class="mt-8 flex flex-col justify-center pb-4 w-full max-w-9xl">
             <div class="text-center">Most Recent FHIR Interactions</div>
-            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                 <div
                     th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/fhir/most-recent/healthelink.html})}">
                 </div>
@@ -82,10 +82,10 @@
             </dl>
         </div>
 
-        <div class="mt-8 flex flex-col items-center justify-center p-4">
+        <div class="mt-8 flex flex-col items-center justify-center pb-4 w-full max-w-9xl">
             <div class="text-center">Most Recent Flat Files SFTP <code>egress</code> Interactions (hover to see details)
             </div>
-            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                 <div
                     th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/sftp/most-recent-egress/healthelink.html})}">
                 </div>
