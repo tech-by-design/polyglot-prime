@@ -71,4 +71,10 @@ public class DataQualityController {
         return presentation.populateModel("page/diagnostics/fhir-validation-issues", model, request);
     }
 
+    @GetMapping("/data-quality/ig-publication-issues")
+    @RouteMapping(label = "IG Publication Issues", title = "IG Publication Issues", siblingOrder = 40)
+    public String igPublicationIssues(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/ig-publication-issues", model, request);
+    }
+
 }
