@@ -265,14 +265,22 @@ public class OrchestrationEngine {
         }
 
         private void addStructureDefinitions(PrePopulatedValidationSupport prePopulatedValidationSupport) {
+            LOG.info("OrchestrationEngine ::  addStructureDefinitions Begin:");
             if (null != structureDefinitionUrls) {
+                LOG.info(
+                        "OrchestrationEngine ::  addStructureDefinitions Begin: No of structure defintions to be added : "
+                                + structureDefinitionUrls.size());
                 structureDefinitionUrls.values().stream().forEach(structureDefintionUrl -> {
+                    LOG.info("Adding  Structure Definition URL Begin: ", structureDefintionUrl);
                     final var jsonContent = readJsonFromUrl(structureDefintionUrl);
                     final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
                             jsonContent);
                     prePopulatedValidationSupport.addStructureDefinition(structureDefinition);
+                    LOG.info("Structure Defintion URL {} added to prePopulatedValidationSupport: ",
+                            structureDefintionUrl);
                 });
             }
+            LOG.info("OrchestrationEngine ::  addStructureDefinitions End : ");
         }
 
         @Override
@@ -291,7 +299,9 @@ public class OrchestrationEngine {
                 // Add Shinny Bundle Profile structure definitions Url
                 prePopulatedSupport.addStructureDefinition(structureDefinition);
                 // Add all resource profile structure definitions
+                LOG.info("Add structure definition of shinny IG -BEGIN");
                 addStructureDefinitions(prePopulatedSupport);
+                LOG.info("Add structure definition of shinny IG -END");
                 supportChain.addValidationSupport(prePopulatedSupport);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);

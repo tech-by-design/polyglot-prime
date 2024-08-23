@@ -107,7 +107,9 @@ public class FhirController {
         final var bundleAsyncInteractionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
+        LOG.info("Getting structure definition Urls from config - Before: ");
         final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
+        LOG.info("Getting structure definition Urls from config - After : ", structureDefintionUrls);
         final var sessionBuilder = engine.session()
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
