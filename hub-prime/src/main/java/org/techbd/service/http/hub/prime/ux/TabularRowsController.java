@@ -99,7 +99,7 @@ public class TabularRowsController {
                         final @PathVariable String columnValue3) {
 
                 // Fetch the result using the dynamically determined table and column; if
-                // jOOQ-generated types were found, automatic column value mapping will occur 
+                // jOOQ-generated types were found, automatic column value mapping will occur
                 final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                                 masterTableNameOrViewName);
                 return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
@@ -108,6 +108,31 @@ public class TabularRowsController {
                                                 .and(typableTable.column(columnName3).eq(columnValue3)))
                                 .fetch()
                                 .intoMaps();
-        }        
+        }
+
+        @Operation(summary = "Get distinct hub_interaction_id with associated data")
+        @GetMapping("/api/ux/tabular/jooq/{schemaName}/{viewName}/distinct-hub-interactions.json")
+        @ResponseBody
+        public Object getDistinctHubInteractions(
+                        final @PathVariable(required = false) String schemaName,
+                        final @PathVariable String viewName) {
+
+                // Define the table from which you want to fetch the data
+                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                                viewName);
+
+                // Execute the query using jOOQ
+                return udiPrimeJpaConfig.dsl()
+                                .select(
+                                                typableTable.column("hub_interaction_id"),
+                                                typableTable.column("validation_engine"),
+                                                typableTable.column("date_time"))
+                                .from(typableTable.table())
+                                .groupBy(typableTable.column("hub_interaction_id"),
+                                                typableTable.column("validation_engine"),
+                                                typableTable.column("date_time"))
+                                .fetch()
+                                .intoMaps(); // Convert the result to a map or any other desired format
+        }
 
 }
