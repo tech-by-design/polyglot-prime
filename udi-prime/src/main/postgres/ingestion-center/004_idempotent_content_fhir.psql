@@ -317,9 +317,11 @@ CREATE INDEX fhir_validation_issue_mat_sat_id_idx ON techbd_udi_ingress.fhir_val
 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
-AS SELECT hub_interaction_id,
-    sat_interaction_http_request_id,
-    issue,
-    date_time,
-    validation_engine
-   FROM techbd_udi_ingress.fhir_validation_issue_mat;
+AS SELECT 
+'HAPI version 7.2.0' AS validation_engine,
+   issue,
+   count(*) as issue_count,
+   Max(date_time) AS most_recent_date       
+   FROM techbd_udi_ingress.fhir_validation_issue_mat 
+   GROUP BY issue
+   ORDER BY most_recent_date DESC ;

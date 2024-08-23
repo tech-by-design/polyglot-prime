@@ -39,12 +39,12 @@
         }
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
-            const agGridInstance = new AGGridAideBuilder()
-                .withColumnDefs([
- 
-                    { headerName: "Interaction ID", field: "hub_interaction_id", filter: "agTextColumnFilter",cellRenderer: 'agGroupCellRenderer' },  
-                    { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter"  },                    
-                    { headerName: "Completed Date", field: "date_time", filter: "agTextColumnFilter",    valueFormatter: AGGridAide.isoDateTimeValueFormatter(true) }
+            const agGridInstance = new AGGridAideBuilder()  
+                .withColumnDefs([ 
+                    { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter"  },
+                    { headerName: "Issues", field: "issue", filter: "agTextColumnFilter"  } ,                    
+                    { headerName: "Most Recent Date", field: "most_recent_date", filter: "agTextColumnFilter",    valueFormatter: AGGridAide.dateTimeValueFormatter(true) },
+                    { headerName: "Count Of Interactions", field: "issue_count", filter: "agNumberColumnFilter"  } 
                 ]) 
                 .withMasterDetail(true)
                 .withDetailCellRendererParams({
@@ -60,30 +60,16 @@
                         getIgPublicationGridData(params);
                     }
                 })
-                .withGridOptions({
-                    overlayNoRowsTemplate: '<span class="ag-overlay-no-rows-center">No Data Found</span>',
-                    rowModelType: 'clientSide', // Set to clientSide row model
-                    onGridReady: (params) => {
-                        // Fetch the data once the grid is ready
-                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/distinct-hub-interactions.json`))
-                            .then(response => response.json())
-                            .then(data => {
-                                if (Array.isArray(data) && data.length > 0) {
-                                    // Load data into the grid using client-side row model
-                                    params.api.applyTransaction({ add: data });
-                                    //params.api.setRowData(data);
-                                    console.log('Data loaded and switched to client-side row model');
-                                } else {
-                                    params.api.showNoRowsOverlay();
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error fetching data:', error);
-                                params.api.showNoRowsOverlay();
-                            });
-                    }
-                })
-                .withMasterDetail(true)
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withMasterDetail(false)
                 .withDetailCellRendererParams({
                     detailGridOptions: {
                         columnDefs: igPublicationColumnDefs,
@@ -107,7 +93,7 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description" id="date-range"> 
-            This widget provides an overview of IG (Implementation Guide) publication issues by focusing on HTTP interactions that encountered validation problems. The data is organized by interaction ID, validation engine, and completed date. Users can click on the arrow next to the interaction ID to expand and view detailed information about the issues, such as unknown profiles, extensions, and code systems. This setup allows for quick identification and resolution of validation errors, ensuring that IG publications comply with the required standards and that any discrepancies are promptly addressed.
+            This widget provides a summary of IG (Implementation Guide) publication issues by displaying HTTP interactions that encountered validation problems. It shows the validation engine used, lists the specific issues detected—such as unknown profile references or unrecognized extensions, indicates the most recent validation date, and displays the count of interactions associated with each issue. Common issues include profiles that haven't been checked due to being unknown, and extensions or code systems that are not recognized. This information helps users quickly identify and resolve validation errors, ensuring that IG publications meet required standards and maintain data integrity.
         </div>       
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>

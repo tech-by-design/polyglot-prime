@@ -110,30 +110,4 @@ public class TabularRowsController {
                                 .intoMaps();
         }
 
-        @Operation(summary = "Get distinct hub_interaction_id with associated data")
-        @GetMapping("/api/ux/tabular/jooq/{schemaName}/{viewName}/distinct-hub-interactions.json")
-        @ResponseBody
-        public Object getDistinctHubInteractions(
-                        final @PathVariable(required = false) String schemaName,
-                        final @PathVariable String viewName) {
-
-                // Define the table from which you want to fetch the data
-                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                                viewName);
-
-                // Execute the query using jOOQ
-                return udiPrimeJpaConfig.dsl()
-                                .select(
-                                                typableTable.column("hub_interaction_id"),
-                                                typableTable.column("validation_engine"),
-                                                typableTable.column("date_time"))
-                                .from(typableTable.table())
-                                .groupBy(typableTable.column("hub_interaction_id"),
-                                                typableTable.column("validation_engine"),
-                                                typableTable.column("date_time"))
-                                .orderBy(typableTable.column("date_time").desc()) // Order by date_time descending                
-                                .fetch()
-                                .intoMaps(); // Convert the result to a map or any other desired format
-        }
-
 }
