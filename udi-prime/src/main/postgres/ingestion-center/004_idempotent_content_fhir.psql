@@ -1,4 +1,4 @@
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat CASCADE;
+-- DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_screening_info_mat
 TABLESPACE pg_default
 AS WITH filtered_data AS (
@@ -270,7 +270,7 @@ ORDER BY org_id DESC;
  * after creation. To populate it, use the REFRESH MATERIALIZED VIEW command.
 ****************************************************************************************/
 
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_mat CASCADE;
+--DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_validation_issue_mat 
 TABLESPACE pg_default
 AS WITH validation_results AS (

@@ -3,7 +3,7 @@ This view aggregates data from two tables: 'hub_interaction' and 'sat_interactio
 The view includes various fields related to interactions and HTTP requests, extracting relevant 
 details from JSON fields and providing computed columns.
 ******************************************************************************************/
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_mat CASCADE;
+--DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_mat AS
 SELECT hi.hub_interaction_id AS hub_interaction_id,
 	sihr.sat_interaction_http_request_id,
