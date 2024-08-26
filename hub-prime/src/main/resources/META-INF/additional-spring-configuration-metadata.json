@@ -193,5 +193,35 @@
     "name": "org.techbd.service.http.hub.prime.codeSystemUrls.nyHRSNQuestionnaire",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.codeSystemUrls.nyHRSNQuestionnaire'"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.maximumPoolSize",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.udi.prime.jdbc.maximumPoolSize'"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.minimumIdle",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.udi.prime.jdbc.minimumIdle'"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.idleTimeout",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.udi.prime.jdbc.idleTimeout'"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.connectionTimeout",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.udi.prime.jdbc.connectionTimeout'"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.maxLifetime",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.udi.prime.jdbc.maxLifetime'"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.threshold",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.udi.prime.jdbc.threshold'"
   }
 ]}
