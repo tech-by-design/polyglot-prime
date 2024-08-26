@@ -110,11 +110,17 @@ public class FhirController {
         LOG.info("Getting structure definition Urls from config - Before: ");
         final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
         LOG.info("Getting structure definition Urls from config - After : ", structureDefintionUrls);
+        final var valueSetUrls = appConfig.getValueSetUrls();
+        LOG.info(" Total value system URLS  in config: ", null != valueSetUrls ? valueSetUrls.size() : 0);
+        final var codeSystemUrls = appConfig.getCodeSystemUrls();
+        LOG.info(" Total code system URLS  in config: ", null != codeSystemUrls ? codeSystemUrls.size() : 0);
         final var sessionBuilder = engine.session()
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
                 .withFhirStructureDefinitionUrls(structureDefintionUrls)
+                .withFhirCodeSystemUrls(codeSystemUrls)
+                .withFhirValueSetUrls(valueSetUrls)
                 .addHapiValidationEngine() // by default
                 // clearExisting is set to true so engines can be fully supplied through header
                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
@@ -294,14 +300,21 @@ public class FhirController {
 
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
-        LOG.info("Getting structure definition Urls from config - Before: ");
+        LOG.info("Getting shinny Urls from config - Before: ");
         final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
-        LOG.info("Getting structure definition Urls from config - After : ", structureDefintionUrls);
+        LOG.info(" Total structure definition URLS  in config: ",
+                null != structureDefintionUrls ? structureDefintionUrls.size() : 0);
+        final var valueSetUrls = appConfig.getValueSetUrls();
+        LOG.info(" Total value system URLS  in config: ", null != valueSetUrls ? valueSetUrls.size() : 0);
+        final var codeSystemUrls = appConfig.getCodeSystemUrls();
+        LOG.info(" Total code system URLS  in config: ", null != codeSystemUrls ? codeSystemUrls.size() : 0);
         final var sessionBuilder = engine.session()
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
                 .withFhirStructureDefinitionUrls(structureDefintionUrls)
+                .withFhirValueSetUrls(valueSetUrls)
+                .withFhirCodeSystemUrls(codeSystemUrls)
                 .addHapiValidationEngine() // by default
                 // clearExisting is set to true so engines can be fully supplied through header
                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
