@@ -42,9 +42,10 @@
             const agGridInstance = new AGGridAideBuilder()  
                 .withColumnDefs([ 
                     { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter"  },
-                    { headerName: "Issues", field: "issue", filter: "agTextColumnFilter"  } ,                    
+                    { headerName: "Issues", field: "issue", filter: "agTextColumnFilter"  },                    
                     { headerName: "Most Recent Date", field: "most_recent_date", filter: "agTextColumnFilter",    valueFormatter: AGGridAide.dateTimeValueFormatter(true) },
-                    { headerName: "Count Of Interactions", field: "issue_count", filter: "agNumberColumnFilter"  } 
+                    { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter"  },
+                    { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter"  } 
                 ]) 
                 .withMasterDetail(true)
                 .withDetailCellRendererParams({
