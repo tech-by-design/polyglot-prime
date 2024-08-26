@@ -203,7 +203,7 @@ public class OrchestrationEngine {
 
         String getProfileUrl();
 
-        String getIGVersion();
+        String getIgVersion();
 
         ValidationEngine.Observability getObservability();
 
@@ -415,7 +415,7 @@ public class OrchestrationEngine {
                     }
 
                     @Override
-                    public String getIGVersion() {
+                    public String getIgVersion() {
                         return igVersion;
                     }
 
@@ -474,7 +474,7 @@ public class OrchestrationEngine {
                     }
 
                     @Override
-                    public String getIGVersion() {
+                    public String getIgVersion() {
                         return igVersion;
                     }
 
@@ -575,7 +575,7 @@ public class OrchestrationEngine {
                 }
 
                 @Override
-                public String getIGVersion() {
+                public String getIgVersion() {
                     return igVersion;
                 }
 
@@ -751,7 +751,7 @@ public class OrchestrationEngine {
                             }
 
                             @Override
-                            public String getIGVersion() {
+                            public String getIgVersion() {
                                 return igVersion;
                             }
 
@@ -861,7 +861,7 @@ public class OrchestrationEngine {
             return fhirProfileUrl;
         }
 
-        public String getIGVersion() {
+        public String getIgVersion() {
             return igVersion;
         }
 
