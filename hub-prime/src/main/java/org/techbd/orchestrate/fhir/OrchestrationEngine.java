@@ -319,7 +319,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addValueSets Begin:");
             if (null != valueSetUrls) {
                 LOG.info(
-                        "OrchestrationEngine ::  addValueSets Begin: No of structure defintions to be added : "
+                        "OrchestrationEngine ::  addValueSets Begin: No of value sets to be added : "
                                 + valueSetUrls.size());
                 valueSetUrls.values().stream().forEach(valueSetUrl -> {
                     LOG.info("Adding  Value System URL Begin: ", valueSetUrl);
