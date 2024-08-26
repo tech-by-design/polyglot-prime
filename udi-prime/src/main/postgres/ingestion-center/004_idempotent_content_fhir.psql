@@ -304,10 +304,10 @@ AS WITH validation_results AS (
 WITH DATA;
 
 -- View indexes:
-CREATE INDEX fhir_validation_issue_mat_date_time_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (date_time DESC);
-CREATE INDEX fhir_validation_issue_mat_hub_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (hub_interaction_id);
-CREATE UNIQUE INDEX fhir_validation_issue_mat_row_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (row_id);
-CREATE INDEX fhir_validation_issue_mat_sat_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (sat_interaction_http_request_id);
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_date_time_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (date_time DESC);
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_hub_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (hub_interaction_id);
+CREATE UNIQUE INDEX IF NOT EXISTS fhir_validation_issue_mat_row_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (row_id);
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_sat_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (sat_interaction_http_request_id);
 
 
 
