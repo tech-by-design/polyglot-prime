@@ -979,7 +979,8 @@ WITH submission_counts AS (
         COUNT(CASE WHEN sihr.from_state = 'NONE' THEN 1 END) AS qe_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forward HTTP Request' THEN 1 END) AS techbd_total_submissions,
         COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS total_scoring_engine_submissions,
-        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' AND sihr.payload ->> 'insertScreeningsResponse' = 'Record Successfully Added to DB' THEN 1 END) AS scoring_engine_submission_passed
+        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' AND sihr.payload ->> 'insertScreeningsResponse' = 'Record Successfully Added to DB' THEN 1 END) AS scoring_engine_submission_passed,
+        MAX(sihr.created_at) AS recently_created_at
     FROM 
         techbd_udi_ingress.hub_interaction AS hintr
         INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
@@ -1005,10 +1006,12 @@ SELECT
     total_scoring_engine_submissions,
     scoring_engine_submission_passed,
     ABS(total_scoring_engine_submissions - scoring_engine_submission_passed) AS scoring_engine_submissions,
+    recently_created_at,
     '??' AS shinny,
     '??' AS mdw
 FROM 
-    submission_counts AS sc;
+    submission_counts AS sc
+order by recently_created_at DESC;
 
 
 /*************************************
