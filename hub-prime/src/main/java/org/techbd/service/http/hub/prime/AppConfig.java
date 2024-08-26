@@ -35,6 +35,8 @@ public class AppConfig {
     private String defaultSdohFhirProfileUrl;
     private String defaultDatalakeApiUrl;
     private Map<String, String> structureDefinitionsUrls;
+    private Map<String, String> codeSystemUrls;
+    private Map<String, String> valueSetUrls;
 
     public String getVersion() {
         return version;
@@ -72,6 +74,22 @@ public class AppConfig {
 
     public Map<String, String> getStructureDefinitionsUrls() {
         return structureDefinitionsUrls;
+    }
+
+    public void setCodeSystemUrls(Map<String, String> codeSystemUrls) {
+        this.codeSystemUrls = codeSystemUrls;
+    }
+
+    public void setValueSetUrls(Map<String, String> valueSetUrls) {
+        this.valueSetUrls = valueSetUrls;
+    }
+
+    public Map<String, String> getCodeSystemUrls() {
+        return codeSystemUrls;
+    }
+
+    public Map<String, String> getValueSetUrls() {
+        return valueSetUrls;
     }
 
 }

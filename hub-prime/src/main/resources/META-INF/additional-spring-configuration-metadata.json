@@ -158,5 +158,40 @@
     "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7ObservationScreeningResponse",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7ObservationScreeningResponse'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.shinny-consent-provision-types-vS",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.shinny-consent-provision-types-vS'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.shinnyHttpVerbsVS",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.shinnyHttpVerbsVS'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.shinnyCountyVS",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.shinnyCountyVS'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.shinnyPersonalPronounsVS",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.shinnyPersonalPronounsVS'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.shinnyScreeningVS",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.shinnyScreeningVS'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.codeSystemUrls.ny-county-codes",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.codeSystemUrls.ny-county-codes'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.codeSystemUrls.nyHRSNQuestionnaire",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.codeSystemUrls.nyHRSNQuestionnaire'"
   }
 ]}

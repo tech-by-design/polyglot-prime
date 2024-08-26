@@ -29,9 +29,12 @@ import org.hl7.fhir.common.hapi.validation.support.PrePopulatedValidationSupport
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CodeSystem;
 import org.hl7.fhir.r4.model.StructureDefinition;
+import org.hl7.fhir.r4.model.ValueSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -41,6 +44,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
+import ca.uhn.fhir.parser.LenientErrorHandler;
+import ca.uhn.fhir.parser.StrictErrorHandler;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -137,13 +142,17 @@ public class OrchestrationEngine {
     }
 
     public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
-            @NotNull final String fhirProfileUrl, Map<String, String> structureDefinitionUrls) {
+            @NotNull final String fhirProfileUrl, Map<String, String> structureDefinitionUrls,
+            Map<String, String> codeSystemUrls, Map<String, String> valueSetUrls) {
         ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
         return validationEngineCache.computeIfAbsent(key, k -> {
             switch (type) {
                 case HAPI:
                     return new HapiValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl)
-                            .withStructureDefinitionUrls(structureDefinitionUrls).build();
+                            .withStructureDefinitionUrls(structureDefinitionUrls)
+                            .withCodeSystemUrls(codeSystemUrls)
+                            .withValueSetUrls(valueSetUrls)
+                            .build();
                 case HL7_EMBEDDED:
                     return new Hl7ValidationEngineEmbedded.Builder().withFhirProfileUrl(fhirProfileUrl).build();
                 case HL7_API:
@@ -234,6 +243,8 @@ public class OrchestrationEngine {
         private final String fhirProfileUrl;
         private final FhirContext fhirContext;
         private final Map<String, String> structureDefinitionUrls;
+        private final Map<String, String> codeSystemUrls;
+        private final Map<String, String> valueSetUrls;
 
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
@@ -246,6 +257,8 @@ public class OrchestrationEngine {
                     engineInitAt,
                     engineConstructedAt);
             this.structureDefinitionUrls = builder.structureDefinitionUrls;
+            this.codeSystemUrls = builder.codeSystemUrls;
+            this.valueSetUrls = builder.valueSetUrls;
         }
 
         private static String readJsonFromUrl(String url) {
@@ -283,10 +296,49 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions End : ");
         }
 
+        private void addCodeSystems(PrePopulatedValidationSupport prePopulatedValidationSupport) {
+            LOG.info("OrchestrationEngine ::  addCodeSystems Begin:");
+            if (null != codeSystemUrls) {
+                LOG.info(
+                        "OrchestrationEngine ::  addCodeSystems Begin: No of code systems to be added : "
+                                + codeSystemUrls.size());
+                codeSystemUrls.values().stream().forEach(codeSystemUrl -> {
+                    LOG.info("Adding  Code System URL Begin: ", codeSystemUrl);
+                    final var jsonContent = readJsonFromUrl(codeSystemUrl);
+                    final var codeSystem = fhirContext.newJsonParser().parseResource(CodeSystem.class,
+                            jsonContent);
+                    prePopulatedValidationSupport.addCodeSystem(codeSystem);
+                    LOG.info("Code System URL {} added to prePopulatedValidationSupport: ",
+                            codeSystemUrl);
+                });
+            }
+            LOG.info("OrchestrationEngine ::  addCodeSystems End : ");
+        }
+
+        private void addValueSets(PrePopulatedValidationSupport prePopulatedValidationSupport) {
+            LOG.info("OrchestrationEngine ::  addValueSets Begin:");
+            if (null != valueSetUrls) {
+                LOG.info(
+                        "OrchestrationEngine ::  addValueSets Begin: No of structure defintions to be added : "
+                                + valueSetUrls.size());
+                valueSetUrls.values().stream().forEach(valueSetUrl -> {
+                    LOG.info("Adding  Value System URL Begin: ", valueSetUrl);
+                    final var jsonContent = readJsonFromUrl(valueSetUrl);
+                    final var valueSet = fhirContext.newJsonParser().parseResource(ValueSet.class,
+                            jsonContent);
+                    prePopulatedValidationSupport.addValueSet(valueSet);
+                    LOG.info("Value Set URL {} added to prePopulatedValidationSupport: ",
+                            valueSetUrl);
+                });
+            }
+            LOG.info("OrchestrationEngine ::  addValueSets End : ");
+        }
+
         @Override
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
+                fhirContext.setParserErrorHandler(new LenientErrorHandler());
                 final var supportChain = new ValidationSupportChain();
                 final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
                 supportChain.addValidationSupport(defaultSupport);
@@ -302,6 +354,15 @@ public class OrchestrationEngine {
                 LOG.info("Add structure definition of shinny IG -BEGIN");
                 addStructureDefinitions(prePopulatedSupport);
                 LOG.info("Add structure definition of shinny IG -END");
+                // Add all resource profile structure definitions
+                LOG.info("Add code systems of shinny IG -BEGIN");
+                addCodeSystems(prePopulatedSupport);
+                LOG.info("Add code systems of shinny IG -END");
+                // Add all resource profile structure definitions
+                LOG.info("Add value sets of shinny IG -BEGIN");
+                addValueSets(prePopulatedSupport);
+                LOG.info("Add value sets of shinny IG -END");
+
                 supportChain.addValidationSupport(prePopulatedSupport);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
@@ -427,6 +488,8 @@ public class OrchestrationEngine {
         public static class Builder {
             private String fhirProfileUrl;
             private Map<String, String> structureDefinitionUrls;
+            private Map<String, String> codeSystemUrls;
+            private Map<String, String> valueSetUrls;
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
@@ -435,6 +498,16 @@ public class OrchestrationEngine {
 
             public Builder withStructureDefinitionUrls(@NotNull final Map<String, String> structureDefinitionUrls) {
                 this.structureDefinitionUrls = structureDefinitionUrls;
+                return this;
+            }
+
+            public Builder withCodeSystemUrls(@NotNull final Map<String, String> codeSystemUrls) {
+                this.codeSystemUrls = codeSystemUrls;
+                return this;
+            }
+
+            public Builder withValueSetUrls(@NotNull final Map<String, String> valueSetUrls) {
+                this.valueSetUrls = valueSetUrls;
                 return this;
             }
 
@@ -717,10 +790,8 @@ public class OrchestrationEngine {
         private final List<ValidationResult> validationResults;
         private final String fhirProfileUrl;
         private final Map<String, String> structureDefinitionUrls;
-
-        public Map<String, String> getStructureDefinitionUrls() {
-            return structureDefinitionUrls;
-        }
+        private final Map<String, String> codeSystemUrls;
+        private final Map<String, String> valueSetUrls;
 
         private OrchestrationSession(final Builder builder) {
             this.payloads = Collections.unmodifiableList(builder.payloads);
@@ -729,6 +800,20 @@ public class OrchestrationEngine {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.device = builder.device;
             this.structureDefinitionUrls = builder.structureDefinitionUrls;
+            this.codeSystemUrls = builder.codeSystemUrls;
+            this.valueSetUrls = builder.valueSetUrls;
+        }
+
+        public Map<String, String> getCodeSystemUrls() {
+            return codeSystemUrls;
+        }
+
+        public Map<String, String> getStructureDefinitionUrls() {
+            return structureDefinitionUrls;
+        }
+
+        public Map<String, String> getValueSetUrls() {
+            return valueSetUrls;
         }
 
         public List<String> getPayloads() {
@@ -768,6 +853,8 @@ public class OrchestrationEngine {
             private String fhirProfileUrl;
             private List<String> uaStrategyJsonIssues = new ArrayList<>();
             private Map<String, String> structureDefinitionUrls;
+            private Map<String, String> codeSystemUrls;
+            private Map<String, String> valueSetUrls;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
@@ -794,6 +881,16 @@ public class OrchestrationEngine {
 
             public Builder withFhirStructureDefinitionUrls(@NotNull final Map<String, String> structureDefinitionUrls) {
                 this.structureDefinitionUrls = structureDefinitionUrls;
+                return this;
+            }
+
+            public Builder withFhirCodeSystemUrls(@NotNull final Map<String, String> codeSystemUrls) {
+                this.codeSystemUrls = codeSystemUrls;
+                return this;
+            }
+
+            public Builder withFhirValueSetUrls(@NotNull final Map<String, String> valueSetUrls) {
+                this.valueSetUrls = valueSetUrls;
                 return this;
             }
 
@@ -852,20 +949,21 @@ public class OrchestrationEngine {
             public Builder addHapiValidationEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,
-                                this.structureDefinitionUrls));
+                                this.structureDefinitionUrls, this.codeSystemUrls, this.valueSetUrls));
                 return this;
             }
 
             public Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,
-                                null));
+                                null, null, null));
                 return this;
             }
 
             public Builder addHl7ValidationApiEngine() {
                 this.validationEngines
-                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null));
+                        .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null,
+                                null, null));
                 return this;
             }
 

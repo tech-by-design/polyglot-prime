@@ -97,6 +97,15 @@ org:
               shinnyPersonalPronouns: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-personal-pronouns.json
               shinnyGenderIdentity: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-gender-identity.json
               hl7ObservationScreeningResponse: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationScreeningResponse.json
+            codeSystemUrls:
+              nyCountyCodes: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-nys-county-codes.json
+              nyHRSNQuestionnaire: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-NYS-HRSN-Questionnaire.json
+            valueSetUrls:
+              shinnyConsentProvisionTypesVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json
+              shinnyCountyVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYCountyVS.json
+              shinnyHttpVerbsVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHTTPVerbsVS.json
+              shinnyPersonalPronounsVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYPersonalPronounsVS.json
+              shinnyScreeningVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYScreeningVS.json
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:
