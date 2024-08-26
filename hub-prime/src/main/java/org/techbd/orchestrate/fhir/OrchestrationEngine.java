@@ -34,7 +34,6 @@ import org.hl7.fhir.r4.model.StructureDefinition;
 import org.hl7.fhir.r4.model.ValueSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -45,7 +44,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
 import ca.uhn.fhir.parser.LenientErrorHandler;
-import ca.uhn.fhir.parser.StrictErrorHandler;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -205,6 +203,8 @@ public class OrchestrationEngine {
 
         String getProfileUrl();
 
+        String getIGVersion();
+
         ValidationEngine.Observability getObservability();
 
         boolean isValid();
@@ -241,6 +241,7 @@ public class OrchestrationEngine {
         private final Instant engineInitAt = Instant.now();
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
+        private String igVersion;
         private final FhirContext fhirContext;
         private final Map<String, String> structureDefinitionUrls;
         private final Map<String, String> codeSystemUrls;
@@ -348,6 +349,7 @@ public class OrchestrationEngine {
                 final var jsonContent = readJsonFromUrl(fhirProfileUrl);
                 final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
                         jsonContent);
+                igVersion = structureDefinition.getVersion();
                 // Add Shinny Bundle Profile structure definitions Url
                 prePopulatedSupport.addStructureDefinition(structureDefinition);
                 // Add all resource profile structure definitions
@@ -413,6 +415,11 @@ public class OrchestrationEngine {
                     }
 
                     @Override
+                    public String getIGVersion() {
+                        return igVersion;
+                    }
+
+                    @Override
                     public ValidationEngine.Observability getObservability() {
                         return observability;
                     }
@@ -464,6 +471,11 @@ public class OrchestrationEngine {
                     @Override
                     public String getProfileUrl() {
                         return HapiValidationEngine.this.fhirProfileUrl;
+                    }
+
+                    @Override
+                    public String getIGVersion() {
+                        return igVersion;
                     }
 
                     @Override
@@ -527,6 +539,7 @@ public class OrchestrationEngine {
         private final Instant engineInitAt = Instant.now();
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
+        private String igVersion;
 
         private Hl7ValidationEngineEmbedded(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
@@ -559,6 +572,11 @@ public class OrchestrationEngine {
                 @Override
                 public String getProfileUrl() {
                     return Hl7ValidationEngineEmbedded.this.fhirProfileUrl;
+                }
+
+                @Override
+                public String getIGVersion() {
+                    return igVersion;
                 }
 
                 @Override
@@ -602,6 +620,7 @@ public class OrchestrationEngine {
         private final Instant engineInitAt = Instant.now();
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
+        private String igVersion;
         private final String fhirContext;
         private final String locale;
         private final String fileType;
@@ -732,6 +751,11 @@ public class OrchestrationEngine {
                             }
 
                             @Override
+                            public String getIGVersion() {
+                                return igVersion;
+                            }
+
+                            @Override
                             public ValidationEngine.Observability getObservability() {
                                 return observability;
                             }
@@ -789,6 +813,7 @@ public class OrchestrationEngine {
         private final List<ValidationEngine> validationEngines;
         private final List<ValidationResult> validationResults;
         private final String fhirProfileUrl;
+        private String igVersion;
         private final Map<String, String> structureDefinitionUrls;
         private final Map<String, String> codeSystemUrls;
         private final Map<String, String> valueSetUrls;
@@ -834,6 +859,10 @@ public class OrchestrationEngine {
 
         public String getFhirProfileUrl() {
             return fhirProfileUrl;
+        }
+
+        public String getIGVersion() {
+            return igVersion;
         }
 
         public void validate() {
