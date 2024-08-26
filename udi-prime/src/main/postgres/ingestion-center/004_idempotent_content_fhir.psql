@@ -64,7 +64,7 @@ AS WITH filtered_data AS (
   ORDER BY created_at DESC
 WITH DATA;
 
-CREATE UNIQUE INDEX fhir_screening_info_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_mat USING btree (hub_interaction_id, submitted_date_time);
+CREATE OR REPLACE UNIQUE INDEX fhir_screening_info_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_mat USING btree (hub_interaction_id, submitted_date_time);
 
 
 /*******************************************************************************************
