@@ -64,7 +64,7 @@ AS WITH filtered_data AS (
   ORDER BY created_at DESC
 WITH DATA;
 
-CREATE OR REPLACE UNIQUE INDEX fhir_screening_info_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_mat USING btree (hub_interaction_id, submitted_date_time);
+CREATE UNIQUE INDEX IF NOT EXISTS fhir_screening_info_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_mat USING btree (hub_interaction_id, submitted_date_time);
 
 
 /*******************************************************************************************
@@ -270,7 +270,7 @@ ORDER BY org_id DESC;
  * after creation. To populate it, use the REFRESH MATERIALIZED VIEW command.
 ****************************************************************************************/
 
---DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_mat CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_validation_issue_mat 
 TABLESPACE pg_default
 AS WITH validation_results AS (
@@ -285,7 +285,7 @@ AS WITH validation_results AS (
             validation_results.sat_interaction_http_request_id,
             jsonb_array_elements(validation_results.validation_result -> 'issues'::text) AS issue,
             to_timestamp(((validation_results.validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
-            validation_results.validation_result ->> 'igversion' AS ig_version,
+            validation_results.validation_result ->> 'igVersion'::text AS ig_version,
             TRIM(BOTH FROM regexp_replace((validation_results.validation_result -> 'observability'::text) ->> 'name'::text, '\(TODO:get from API instead of hard coding\) \(FHIR version 4.0.1\)\s*$'::text, ''::text)) AS validation_engine
            FROM validation_results
         )
@@ -300,7 +300,9 @@ AS WITH validation_results AS (
     CURRENT_TIMESTAMP AS materialized_at
    FROM issues
   WHERE (issue ->> 'message'::text) LIKE '%has not been checked because it is unknown%'::text 
-  OR (issue ->> 'message'::text) LIKE '%Unknown profile%'::text OR (issue ->> 'message'::text) LIKE '%Unknown extension%'::text OR (issue ->> 'message'::text) LIKE '%Unknown Code System%'::text
+  OR (issue ->> 'message'::text) LIKE '%Unknown profile%'::text 
+  OR (issue ->> 'message'::text) LIKE '%Unknown extension%'::text 
+  OR (issue ->> 'message'::text) LIKE '%Unknown Code System%'::text
 WITH DATA;
 
 -- View indexes:
@@ -320,12 +322,11 @@ CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_sat_id_idx ON techbd_udi_in
 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
-AS SELECT
- 'HAPI version 7.2.0'::text AS validation_engine,
+AS SELECT validation_engine,
     issue,
     count(*) AS issue_count,
     max(date_time) AS most_recent_date,
     ig_version
    FROM techbd_udi_ingress.fhir_validation_issue_mat
-  GROUP BY issue, ig_version
-  ORDER BY most_recent_date DESC;
+  GROUP BY validation_engine, issue, ig_version, date(date_time)
+  ORDER BY max(date_time) DESC;
