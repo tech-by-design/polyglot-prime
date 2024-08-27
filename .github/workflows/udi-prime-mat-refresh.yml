@@ -44,8 +44,8 @@ jobs:
                -U ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }} \
                -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
                -c "REFRESH MATERIALIZED VIEW CONCURRENTLY techbd_udi_ingress.fhir_screening_info_mat;"
-          psql -h ${{ secrets.DEVL_TECHBD_UDI_DS_HOST }} \
-               -p ${{ secrets.DEVL_TECHBD_UDI_DS_PORT }} \
-               -U ${{ secrets.DEVL_TECHBD_UDI_DS_USER }} \
-               -d ${{ secrets.DEVL_TECHBD_UDI_DS_NAME }} \
-               -c "REFRESH MATERIALIZED VIEW CONCURRENTLY techbd_udi_ingress.fhir_validation_issue_mat;"
+          #psql -h ${{ secrets.DEVL_TECHBD_UDI_DS_HOST }} \
+          #     -p ${{ secrets.DEVL_TECHBD_UDI_DS_PORT }} \
+          #     -U ${{ secrets.DEVL_TECHBD_UDI_DS_USER }} \
+          #     -d ${{ secrets.DEVL_TECHBD_UDI_DS_NAME }} \
+          #     -c "REFRESH MATERIALIZED VIEW CONCURRENTLY techbd_udi_ingress.fhir_validation_issue_mat;"
