@@ -223,5 +223,55 @@
     "name": "org.techbd.udi.prime.jdbc.threshold",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.udi.prime.jdbc.threshold'"
+  },
+  {
+    "name": "org.techbd.udi.prime.jdbc.leakDetectionThreshold",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.udi.prime.jdbc.leakDetectionThreshold'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCoreBirthSex",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCoreBirthSex'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCoreRace",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCoreRace'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCoreEthnicity",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCoreEthnicity'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCorePractitioner",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCorePractitioner'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsSDOHCCObservationAssessment",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsSDOHCCObservationAssessment'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7USECRDisabilityStatus",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7USECRDisabilityStatus'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.codeSystemUrls.hl7SDOHCCCodeSystemTemporaryCodes",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.codeSystemUrls.hl7SDOHCCCodeSystemTemporaryCodes'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7SDOHCCProcedure",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7SDOHCCProcedure'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.codeSystemUrls.hl7CodeSystemConditionCategory",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.codeSystemUrls.hl7CodeSystemConditionCategory'"
   }
 ]}
