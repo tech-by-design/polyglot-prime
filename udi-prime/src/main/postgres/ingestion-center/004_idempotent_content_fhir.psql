@@ -303,6 +303,7 @@ AS WITH validation_results AS (
   OR (issue ->> 'message'::text) LIKE '%Unknown profile%'::text 
   OR (issue ->> 'message'::text) LIKE '%Unknown extension%'::text 
   OR (issue ->> 'message'::text) LIKE '%Unknown Code System%'::text
+  OR (issue ->> 'message'::text) LIKE '%not found%'::text
 WITH NO DATA;
 
 -- View indexes:
