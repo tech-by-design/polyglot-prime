@@ -41,11 +41,11 @@
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()  
                 .withColumnDefs([ 
+                    { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation." },
+                    { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter", headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions."  },                                                                        
+                    { headerName: "Most Recent Date", field: "most_recent_date", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true), headerTooltip: "The most recent date when the validation was completed for the interaction." },                    
                     { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)."  },
-                    { headerName: "Issues", field: "issue", filter: "agTextColumnFilter", headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions."  },                    
-                    { headerName: "Most Recent Date", field: "most_recent_date", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true), headerTooltip: "The most recent date when the validation was completed for the interaction." },
-                    { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version."  },
-                    { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation."  } 
+                    { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version."  }        
                 ]) 
                 .withMasterDetail(true)
                 .withDetailCellRendererParams({
