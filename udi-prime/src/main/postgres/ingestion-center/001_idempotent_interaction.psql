@@ -3,7 +3,7 @@ This view aggregates data from two tables: 'hub_interaction' and 'sat_interactio
 The view includes various fields related to interactions and HTTP requests, extracting relevant 
 details from JSON fields and providing computed columns.
 ******************************************************************************************/
---DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_mat CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_mat AS
 SELECT hi.hub_interaction_id AS hub_interaction_id,
 	sihr.sat_interaction_http_request_id,
@@ -38,13 +38,15 @@ SELECT hi.hub_interaction_id AS hub_interaction_id,
     ELSE NULL END AS client_ip_address_forwarded
    	FROM techbd_udi_ingress.hub_interaction hi
    	INNER JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
-   	ON hi.hub_interaction_id = sihr.hub_interaction_id;
+   	ON hi.hub_interaction_id = sihr.hub_interaction_id
+WITH NO DATA;
   
    
 /*******************************************************************************************
 This view aggregates resource types from HTTP request payloads associated with interactions 
 that match specific criteria.
 ******************************************************************************************/
+  DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat CASCADE;
   CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat AS
   SELECT 
   sihr.sat_interaction_http_request_id,
@@ -61,12 +63,13 @@ that match specific criteria.
   GROUP BY 
   sihr.sat_interaction_http_request_id,
   sihr.hub_interaction_id
-  WITH DATA;
+  WITH NO DATA;
 
 /*******************************************************************************************
 This view extracts and computes observability metrics related to HTTP requests and their 
 interactions.
 ******************************************************************************************/
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_observe_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_observe_mat AS
 SELECT sihr.sat_interaction_http_request_id AS sat_interaction_http_request_id,
 sihr.hub_interaction_id AS hub_interaction_id,
@@ -88,7 +91,7 @@ EXTRACT(epoch FROM headers.finish_time::timestamp without time zone - headers.st
        FROM jsonb_array_elements((sihr.payload -> 'response'::text) -> 'headers'::text) header(value)) headers ON true
  WHERE 1 = 1 
  AND (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::TEXT
- WITH DATA;
+ WITH NO DATA;
  
 /****************************************************************************************
  * Comprehensive view of HTTP interactions and their associated requests.

@@ -1,4 +1,4 @@
--- DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_screening_info_mat
 TABLESPACE pg_default
 AS WITH filtered_data AS (
@@ -62,7 +62,7 @@ AS WITH filtered_data AS (
    FROM extracted_data
   WHERE patient_id IS NOT NULL
   ORDER BY created_at DESC
-WITH DATA;
+WITH NO DATA;
 
 CREATE UNIQUE INDEX IF NOT EXISTS fhir_screening_info_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_mat USING btree (hub_interaction_id, submitted_date_time);
 
@@ -303,7 +303,7 @@ AS WITH validation_results AS (
   OR (issue ->> 'message'::text) LIKE '%Unknown profile%'::text 
   OR (issue ->> 'message'::text) LIKE '%Unknown extension%'::text 
   OR (issue ->> 'message'::text) LIKE '%Unknown Code System%'::text
-WITH DATA;
+WITH NO DATA;
 
 -- View indexes:
 CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_date_time_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (date_time DESC);
