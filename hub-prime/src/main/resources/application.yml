@@ -103,9 +103,12 @@ org:
               hl7UsCorePractitioner: http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-practitioner.json
               hl7UsSDOHCCObservationAssessment: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationAssessment.json
               hl7USECRDisabilityStatus: https://hl7.org/fhir/us/ecr/2021Jan/StructureDefinition-disability-status.json
+              hl7SDOHCCProcedure: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-Procedure.json
             codeSystemUrls:
               nyCountyCodes: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-nys-county-codes.json
               nyHRSNQuestionnaire: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-NYS-HRSN-Questionnaire.json
+              hl7SDOHCCCodeSystemTemporaryCodes: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/CodeSystem-SDOHCC-CodeSystemTemporaryCodes.json
+              hl7CodeSystemConditionCategory: http://hl7.org/fhir/us/core/STU7/CodeSystem-condition-category.json
             valueSetUrls:
               shinnyConsentProvisionTypesVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json
               shinnyCountyVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYCountyVS.json
