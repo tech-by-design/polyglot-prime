@@ -315,25 +315,65 @@ CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_sat_id_idx ON techbd_udi_in
 
 
 /****************************************************************************************
- * This view provides a straightforward way to access the validation issues consolidated 
- * in the materialized view fhir_validation_issue_mat. It presents the essential fields 
- * related to FHIR validation issues, including interaction IDs, issue details, timestamps, 
- * and validation engine information.
+ * This view, fhir_validation_issue_details, provides detailed insights into FHIR validation 
+ * issues from the materialized view fhir_validation_issue_mat. It aggregates the data by 
+ * validation engine, specific issue, IG (Implementation Guide) version, and issue date. 
+ * The view includes the following key fields:
+ * 
+ * - validation_engine: The name of the validation engine that processed the interaction.
+ * - issue: The specific validation issue encountered.
+ * - issue_count: The number of times each issue was encountered within the given period.
+ * - most_recent_date: The most recent timestamp when the issue was recorded.
+ * - ig_version: The IG version associated with the issue, or 'Unknown' if not available.
+ * - issue_date: The date (formatted as MM-DD-YYYY) when the issue occurred.
+ * 
+ * This view helps users analyze and understand the frequency and recency of validation 
+ * issues over the past 7 days, allowing for more effective troubleshooting and resolution.
+ * The results are ordered by the most recent occurrence of each issue.
 ****************************************************************************************/
 
-DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
-AS SELECT validation_engine,
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_details CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue_details
+AS  SELECT validation_engine,
    issue,
    count(*)
  AS issue_count,
    max(date_time) AS most_recent_date,
-  COALESCE(ig_version, 'Unknown') AS ig_version
+  COALESCE(ig_version, 'Unknown') AS ig_version,
+  TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY') AS issue_date
   FROM techbd_udi_ingress.fhir_validation_issue_mat
+  WHERE date_time >= CURRENT_DATE - INTERVAL '7 days'
   GROUP BY validation_engine, issue, 
   COALESCE(ig_version, 'Unknown'), 
-  (date(date_time))
+  (date(date_time)),TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY')
   ORDER BY (max(date_time)) DESC;
+
+
+/****************************************************************************************
+ * This view provides a straightforward way to access consolidated validation issues from 
+ * the materialized view fhir_validation_issue_mat. It includes key fields related to FHIR 
+ * validation issues, such as the validation engine, formatted issue date, most recent 
+ * timestamp of the issue, IG (Implementation Guide) version, and the count of distinct 
+ * issues. This view helps in quickly identifying and analyzing validation issues over the 
+ * past 7 days, sorted by the most recent issue date.
+****************************************************************************************/
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
+AS SELECT
+  validation_engine,
+  TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY') AS issue_date,  -- Format date as month, day, year
+  MAX(date_time) AS most_recent_date,
+  COALESCE(ig_version, 'Unknown') AS ig_version,
+  COUNT(DISTINCT issue) AS distinct_issue_count
+FROM techbd_udi_ingress.fhir_validation_issue_mat
+WHERE date_time >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY validation_engine, TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY'), COALESCE(ig_version, 'Unknown')
+ORDER BY issue_date DESC;
+
+
 
 
 /*============================================================================================================
