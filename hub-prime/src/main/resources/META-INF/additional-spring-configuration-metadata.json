@@ -273,5 +273,60 @@
     "name": "org.techbd.service.http.hub.prime.codeSystemUrls.hl7CodeSystemConditionCategory",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.codeSystemUrls.hl7CodeSystemConditionCategory'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.usCoreOmbRaceCategory",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.usCoreOmbRaceCategory'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.usCoreEthnicityCategoty",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.usCoreEthnicityCategoty'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.usCoreUsPsState",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.usCoreUsPsState'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.usCoreSimpleLanguage",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.usCoreSimpleLanguage'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.usCoreEncounterType",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.usCoreEncounterType'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.usCoreValueSetObservationStatus",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.usCoreValueSetObservationStatus'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.sdohValueSetObservationStatus",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.sdohValueSetObservationStatus'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.sdohValueSetLoincSnomedct",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.sdohValueSetLoincSnomedct'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.usCoreConditionCode",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.usCoreConditionCode'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.usCoreProcedureCode",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.usCoreProcedureCode'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.valueSetUrls.sdohValueSetReferralStatus",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.sdohValueSetReferralStatus'"
   }
 ]}
