@@ -115,6 +115,17 @@ org:
               shinnyHttpVerbsVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHTTPVerbsVS.json
               shinnyPersonalPronounsVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYPersonalPronounsVS.json
               shinnyScreeningVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYScreeningVS.json
+              usCoreOmbRaceCategory: http://hl7.org/fhir/us/core/STU7/ValueSet-omb-race-category.json
+              usCoreEthnicityCategoty: http://hl7.org/fhir/us/core/STU7/ValueSet-omb-ethnicity-category.json
+              usCoreUsPsState: http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-usps-state.json
+              usCoreSimpleLanguage: http://hl7.org/fhir/us/core/STU7/ValueSet-simple-language.json
+              usCoreEncounterType: http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-encounter-type.json
+              usCoreValueSetObservationStatus: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json
+              usCoreConditionCode: http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-condition-code.json
+              usCoreProcedureCode: http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-procedure-code.json
+              sdohValueSetObservationStatus: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json
+              sdohValueSetLoincSnomedct: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetLOINCSNOMEDCT.json
+              sdohValueSetReferralStatus: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetReferralTaskStatus.json
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:
