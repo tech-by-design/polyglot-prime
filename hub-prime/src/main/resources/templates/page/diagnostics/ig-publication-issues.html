@@ -19,17 +19,18 @@
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_validation_issue';
         const igPublication = 'fhir_validation_issue_details';
         const igPublicationColumnDefs = [
-            { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter",headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions." },
-            { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter",headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version." }
+            { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter", headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions." },
+            { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version." }
         ];
         function getIgPublicationGridData(params) {
             const ig_version = encodeURIComponent(params.data.ig_version) || params.data.ig_version;
-            const validation_engine = encodeURIComponent(  params.data.validation_engine) || params.data.validation_engine;
+            const validation_engine = encodeURIComponent(params.data.validation_engine) || params.data.validation_engine;
             const issue_date = encodeURIComponent(params.data.issue_date) || params.data.issue_date;
 
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/multiparam/${schemaName}/${igPublication}/ig_version/${ig_version}/validation_engine/${validation_engine}/issue_date/${issue_date}.json`))
@@ -43,6 +44,7 @@
         }
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
+            const helpers = new Helpers();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation.", cellRenderer: 'agGroupCellRenderer' },
@@ -90,18 +92,17 @@
                 .build();
 
             agGridInstance.init('serverDataGrid');
+            // Add date-range text 
+            // Inject the date range into the HTML
+            helpers.injectDateRangeText('date-range', 'This widget provides a comprehensive overview of IG (Implementation Guide) publication issues by           displaying HTTP interactions that encountered validation problems. The grid includes columns such as IG Version, Issue Identified On, Validation Engine, and Count, with the ability to filter records based on a selected date range from <b>{startDate}</b> to <b>{endDate}</b>.');
         });
     </script>
 </head>
 
 <body>
     <div layout:fragment="content">
-        <div class="grid-description" id="date-range">
-            <p>This widget provides a comprehensive overview of IG (Implementation Guide) publication issues by
-                displaying HTTP interactions that encountered validation problems. The grid includes columns such as
-                IG Version, Issue Identified On, Validation Engine,
-                and Count.</p>
-
+        <div class="grid-description"  >
+            <p  id="date-range"></p>
             <ul>
                 <li>IG Version: Displays the version of the Implementation Guide associated with each
                     interaction. This column features a collapsible arrow on the left side; clicking this arrow expands
@@ -111,7 +112,8 @@
                     helping users track the timeline of validation problems.</li>
                 <li>Validation Engine: Shows the name of the validation engine used to detect the
                     issues, providing context about the tool or system involved in the validation process.</li>
-                <li>Count of URL's with issues: Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue.</li>
+                <li>Count of URL's with issues: Represents the number of URLs with issues found on the selected date,
+                    allowing users to understand the frequency and impact of each issue.</li>
             </ul>
 
             <p>The widget lists specific issues detected, such as unknown profile references or unrecognized extensions.
