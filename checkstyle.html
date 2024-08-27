@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-08-27<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.186.0</li>
+          <li id="projectVersion">Version: 0.187.0</li>
         <li class="pull-right"><a href="./">TechBD Hub (Prime)</a></li>
           </ul>
         </div>
@@ -73,9 +73,9 @@
 <th><img src="images/icon_warning_sml.gif" />&#160;Warnings</th>
 <th><img src="images/icon_error_sml.gif" />&#160;Errors</th></tr>
 <tr class="b">
-<td style="text-align: left;">2</td>
+<td style="text-align: left;">3</td>
 <td>0</td>
-<td>3</td>
+<td>6</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -93,6 +93,11 @@
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FPrimeController.java">org/techbd/service/http/hub/prime/ux/PrimeController.java</a></td>
 <td>0</td>
 <td>1</td>
+<td>0</td></tr>
+<tr class="b">
+<td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FTabularRowsController.java">org/techbd/service/http/hub/prime/ux/TabularRowsController.java</a></td>
+<td>0</td>
+<td>3</td>
 <td>0</td></tr></table></section><section>
 <h2>Rules</h2><a id="Rules"></a>
 <table class="table table-striped">
@@ -102,11 +107,23 @@
 <th>Violations</th>
 <th>Severity</th></tr>
 <tr class="b">
+<td style="text-align: left;">indentation</td>
+<td><a class="externalLink" href="https://checkstyle.org/config_indentation.html#CommentsIndentation">CommentsIndentation</a></td>
+<td>2</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
 <td style="text-align: left;">naming</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_naming.html#AbbreviationAsWordInName">AbbreviationAsWordInName</a>
 <ul>
 <li>ignoreFinal: <code>&quot;false&quot;</code></li>
 <li>allowedAbbreviationLength: <code>&quot;3&quot;</code></li></ul></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="b">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_naming.html#ParameterName">ParameterName</a>
+<ul>
+<li>format: <code>&quot;^[a-z]([a-z0-9][a-zA-Z0-9]*)?$&quot;</code></li></ul></td>
 <td>1</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
@@ -152,7 +169,33 @@
 <td>naming</td>
 <td>AbbreviationAsWordInName</td>
 <td>Abbreviation in name 'fetchFHIRSMermaidDiagram' must contain no more than '4' consecutive capital letters.</td>
-<td>254</td></tr></table></section></section></section>
+<td>254</td></tr></table></section><section>
+<h3>org/techbd/service/http/hub/prime/ux/TabularRowsController.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FTabularRowsController.java"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>Severity</th>
+<th>Category</th>
+<th>Rule</th>
+<th>Message</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'recently_created_at' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>131</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>indentation</td>
+<td>CommentsIndentation</td>
+<td>Comment has incorrect indentation level 105, expected is 16, indentation should be the same level as line 142.</td>
+<td>141</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>indentation</td>
+<td>CommentsIndentation</td>
+<td>Comment has incorrect indentation level 105, expected is 16, indentation should be the same level as line 146.</td>
+<td>143</td></tr></table></section></section></section>
         </main>
       </div>
     </div>
