@@ -1,5 +1,6 @@
 package org.techbd.service.http.hub.prime.ux;
 
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -12,6 +13,12 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
+
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -98,16 +105,48 @@ public class TabularRowsController {
                         final @PathVariable String columnValue2, final @PathVariable String columnName3,
                         final @PathVariable String columnValue3) {
 
+                // Decode URL-encoded values
+                String decodedColumnValue1 = URLDecoder.decode(columnValue1, StandardCharsets.UTF_8);
+                String decodedColumnValue2 = URLDecoder.decode(columnValue2, StandardCharsets.UTF_8);
+                String decodedColumnValue3 = URLDecoder.decode(columnValue3, StandardCharsets.UTF_8);
+
                 // Fetch the result using the dynamically determined table and column; if
                 // jOOQ-generated types were found, automatic column value mapping will occur
                 final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                                 masterTableNameOrViewName);
                 return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                                .where(typableTable.column(columnName1).eq(columnValue1)
-                                                .and(typableTable.column(columnName2).eq(columnValue2))
-                                                .and(typableTable.column(columnName3).eq(columnValue3)))
+                                .where(typableTable.column(columnName1).eq(decodedColumnValue1)
+                                                .and(typableTable.column(columnName2).eq(decodedColumnValue2))
+                                                .and(typableTable.column(columnName3).eq(decodedColumnValue3)))
                                 .fetch()
                                 .intoMaps();
+        }
+
+        @Operation(summary = "Get submission counts between startDate and endDate")
+        @GetMapping("/api/ux/tabular/jooq/{schemaName}/{viewName}/{recently_created_at}/{startDateValue}/{endDateValue}.json")
+        @ResponseBody
+        public Object getSubmissionCountsBetweenDates(
+                        final @PathVariable(required = false) String schemaName,
+                        final @PathVariable String viewName,
+                        final @PathVariable String recently_created_at, final @PathVariable String startDateValue,
+                        final @PathVariable String endDateValue) {
+
+                // Define the table from which you want to fetch the data
+                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                                viewName);
+
+                // Parse the startDateValue and endDateValue into LocalDateTime
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+                LocalDateTime startDateTime = LocalDate.parse(startDateValue, formatter).atStartOfDay(); // Start of the
+                                                                                                         // day
+                LocalDateTime endDateTime = LocalDate.parse(endDateValue, formatter).atTime(23, 59, 59); // End of the
+                                                                                                         // day
+
+                // Execute the query using jOOQ
+                return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                                .where(typableTable.column(recently_created_at).between(startDateTime, endDateTime))
+                                .fetch()
+                                .intoMaps(); // Convert the result to a map or any other desired format
         }
 
 }

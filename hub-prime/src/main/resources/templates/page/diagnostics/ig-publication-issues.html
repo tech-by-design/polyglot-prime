@@ -20,15 +20,19 @@
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
 
-        const schemaName    = 'techbd_udi_ingress';
-        const viewName      = 'fhir_validation_issue';
-        const igPublication = 'fhir_session_diagnostics';
-        const igPublicationColumnDefs = [ 
-            { headerName: "Issues", field: "issue", filter: "agTextColumnFilter"  } 
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'fhir_validation_issue';
+        const igPublication = 'fhir_validation_issue_details';
+        const igPublicationColumnDefs = [
+            { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter",headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions." },
+            { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter",headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version." }
         ];
         function getIgPublicationGridData(params) {
-            const hub_interaction_id = params.data.hub_interaction_id; 
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/hub_interaction_id/${hub_interaction_id}.json`))
+            const ig_version = encodeURIComponent(params.data.ig_version) || params.data.ig_version;
+            const validation_engine = encodeURIComponent(  params.data.validation_engine) || params.data.validation_engine;
+            const issue_date = encodeURIComponent(params.data.issue_date) || params.data.issue_date;
+
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/multiparam/${schemaName}/${igPublication}/ig_version/${ig_version}/validation_engine/${validation_engine}/issue_date/${issue_date}.json`))
                 .then(response => response.json())
                 .then(response => {
                     params.successCallback(response);
@@ -39,25 +43,24 @@
         }
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
-            const agGridInstance = new AGGridAideBuilder()  
-                .withColumnDefs([ 
-                    { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation." },
-                    { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter", headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions."  },                                                                        
-                    { headerName: "Most Recent Date", field: "most_recent_date", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true), headerTooltip: "The most recent date when the validation was completed for the interaction." },                    
-                    { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)."  },
-                    { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version."  }        
-                ]) 
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation.", cellRenderer: 'agGroupCellRenderer' },
+                    { headerName: "Issue Identified On", field: "issue_date", filter: "agTextColumnFilter", headerTooltip: "Indicates the most recent date when the issue was detected, helping users track the timeline of validation problems." },
+                    { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
+                    { headerName: "Count of URL's with issues", field: "distinct_issue_count", filter: "agNumberColumnFilter", headerTooltip: "Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue." }
+                ])
                 .withMasterDetail(true)
                 .withDetailCellRendererParams({
-                   
-                    
+
+
                     detailGridOptions: {
                         columnDefs: igPublicationColumnDefs,
                         defaultColDef: {
                             flex: 1
                         }
                     },
-                    getDetailRowData: params => { 
+                    getDetailRowData: params => {
                         getIgPublicationGridData(params);
                     }
                 })
@@ -70,7 +73,7 @@
                         }));
                     },
                 )
-                .withMasterDetail(false)
+                .withMasterDetail(true)
                 .withDetailCellRendererParams({
                     detailGridOptions: {
                         columnDefs: igPublicationColumnDefs,
@@ -93,9 +96,33 @@
 
 <body>
     <div layout:fragment="content">
-        <div class="grid-description" id="date-range"> 
-            This widget provides a summary of IG (Implementation Guide) publication issues by displaying HTTP interactions that encountered validation problems. It shows the validation engine used, lists the specific issues detected—such as unknown profile references or unrecognized extensions, indicates the most recent validation date, and displays the count of each issue. The count represents the number of times a specific issue has been encountered across different interactions within a particular IG version. Common issues include profiles that haven't been checked due to being unknown, and extensions or code systems that are not recognized. This information helps users quickly identify and resolve validation errors, ensuring that IG publications meet required standards and maintain data integrity.
-        </div>       
+        <div class="grid-description" id="date-range">
+            <p>This widget provides a comprehensive overview of IG (Implementation Guide) publication issues by
+                displaying HTTP interactions that encountered validation problems. The grid includes columns such as
+                IG Version, Issue Identified On, Validation Engine,
+                and Count.</p>
+
+            <ul>
+                <li>IG Version: Displays the version of the Implementation Guide associated with each
+                    interaction. This column features a collapsible arrow on the left side; clicking this arrow expands
+                    a drill-down view, allowing users to see a detailed list of issues detected for that specific IG
+                    version.</li>
+                <li>Issue Identified On: Indicates the most recent date when the issue was detected,
+                    helping users track the timeline of validation problems.</li>
+                <li>Validation Engine: Shows the name of the validation engine used to detect the
+                    issues, providing context about the tool or system involved in the validation process.</li>
+                <li>Count of URL's with issues: Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue.</li>
+            </ul>
+
+            <p>The widget lists specific issues detected, such as unknown profile references or unrecognized extensions.
+                Common problems include profiles that haven't been checked due to being unknown, and extensions or code
+                systems that are not recognized. This information helps users quickly identify and resolve validation
+                errors, ensuring that IG publications meet the required standards and maintain data integrity. The
+                drill-down feature in the IG Version column further enhances usability by allowing
+                users to explore the details of each issue and its frequency, making it easier to pinpoint and address
+                validation errors.</p>
+
+        </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
