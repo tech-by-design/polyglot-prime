@@ -13,6 +13,7 @@
     <style>
         .grid-description {
             font-size: 14px;
+            line-height: 1.5rem;
             margin: 8px 0px 10px 15px;
         }
     </style>
@@ -103,16 +104,16 @@
     <div layout:fragment="content">
         <div class="grid-description"  >
             <p  id="date-range"></p>
-            <ul>
-                <li>IG Version: Displays the version of the Implementation Guide associated with each
+            <ul class="list-disc pl-4">
+                <li><strong>IG Version:</strong> Displays the version of the Implementation Guide associated with each
                     interaction. This column features a collapsible arrow on the left side; clicking this arrow expands
                     a drill-down view, allowing users to see a detailed list of issues detected for that specific IG
                     version.</li>
-                <li>Issue Identified On: Indicates the most recent date when the issue was detected,
+                <li><strong>Issue Identified On:</strong> Indicates the most recent date when the issue was detected,
                     helping users track the timeline of validation problems.</li>
-                <li>Validation Engine: Shows the name of the validation engine used to detect the
+                <li><strong>Validation Engine:</strong> Shows the name of the validation engine used to detect the
                     issues, providing context about the tool or system involved in the validation process.</li>
-                <li>Count of URL's with issues: Represents the number of URLs with issues found on the selected date,
+                <li><strong>Count of URL's with issues:</strong> Represents the number of URLs with issues found on the selected date,
                     allowing users to understand the frequency and impact of each issue.</li>
             </ul>
 
@@ -122,7 +123,73 @@
                 errors, ensuring that IG publications meet the required standards and maintain data integrity. The
                 drill-down feature in the IG Version column further enhances usability by allowing
                 users to explore the details of each issue and its frequency, making it easier to pinpoint and address
-                validation errors.</p>
+                validation errors.</br>
+                Click below to see SHIN-NY IG Profile URL's Used For Validation.
+            </p>
+
+                <details class="mt-[10px] mb-[10px] ml-[8px]">
+                    <summary><strong>SHIN-NY IG Profile URL's Used For Validation</strong></summary>
+                  <p> 
+                    <ul class="list-disc pl-4">
+                        <li><strong>Default profile URL:</strong> 
+                            <ul class="list-square pl-4">
+                                <li>
+                            <a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json</a></li>
+                            </ul></li>
+                        
+                        <li><strong>Structure Definitions URLs:</strong>
+                          <ul class="list-square pl-4">
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-encounter.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-encounter.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-Consent.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-Consent.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-organization.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-organization.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-patient.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-patient.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-practitioner.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-practitioner.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-observation-screening-response.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-observation-screening-response.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire-response.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire-response.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-observation-assessment.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-observation-assessment.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-sdoh-procedure.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-sdoh-procedure.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYSDOHServiceRequest.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYSDOHServiceRequest.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYSDOHTaskForReferralManagement.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYSDOHTaskForReferralManagement.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNY-SDOHCC-Condition.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNY-SDOHCC-Condition.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-SDOHCCGoal.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-SDOHCCGoal.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-observation-sexual-orientation.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-observation-sexual-orientation.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYMeta.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYMeta.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-county.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-county.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-middle-name.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-middle-name.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-personal-pronouns.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-personal-pronouns.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-gender-identity.json">https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-gender-identity.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationScreeningResponse.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationScreeningResponse.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-birthsex.json">http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-birthsex.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-race.json">http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-race.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-ethnicity.json">http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-ethnicity.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-practitioner.json">http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-practitioner.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationAssessment.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationAssessment.json</a></li>
+                            <li><a href="https://hl7.org/fhir/us/ecr/2021Jan/StructureDefinition-disability-status.json">https://hl7.org/fhir/us/ecr/2021Jan/StructureDefinition-disability-status.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-Procedure.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-Procedure.json</a></li>
+                          </ul>
+                        </li>
+                      
+                        <li><strong>Code System URLs:</strong>
+                          <ul class="list-square pl-4">
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/CodeSystem-nys-county-codes.json">https://shinny.org/ImplementationGuide/HRSN/CodeSystem-nys-county-codes.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/CodeSystem-NYS-HRSN-Questionnaire.json">https://shinny.org/ImplementationGuide/HRSN/CodeSystem-NYS-HRSN-Questionnaire.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/CodeSystem-SDOHCC-CodeSystemTemporaryCodes.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/CodeSystem-SDOHCC-CodeSystemTemporaryCodes.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/CodeSystem-condition-category.json">http://hl7.org/fhir/us/core/STU7/CodeSystem-condition-category.json</a></li>
+                          </ul>
+                        </li>
+                      
+                        <li><strong>Value Set URLs:</strong>
+                          <ul class="list-square pl-4">
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json">https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHRSNTypeVS.json">https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHRSNTypeVS.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetTemporaryCodes.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetTemporaryCodes.json</a></li>
+                          </ul>
+                        </li>
+                      </ul>
+                      
+              </p>
+                  </details>
 
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
