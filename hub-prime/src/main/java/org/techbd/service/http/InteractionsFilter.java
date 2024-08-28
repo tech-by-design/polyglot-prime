@@ -43,6 +43,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebFilter(urlPatterns = "/*")
 @Order(-999)
 public class InteractionsFilter extends OncePerRequestFilter {
+
     private static final Logger LOG = LoggerFactory.getLogger(InteractionsFilter.class.getName());
     public static final Interactions interactions = new Interactions();
 
@@ -69,9 +70,20 @@ public class InteractionsFilter extends OncePerRequestFilter {
         this.iprDB = new InteractionPersistRules.Builder()
                 .withMatchers(
                         regexAndMethods == null
-                                ? List.of(".*",
-                                        List.of("^/Bundle/.*", "POST", "persistReqPayload persistRespPayload"))
-                                : regexAndMethods)
+                                ? List.of(
+                                        "^/",
+                                        "^/home",
+                                        "^/docs",
+                                        "^/console*", "^/console/.*",
+                                        "^/content*", "^/content/.*",
+                                        "^/data-quality*", "^/data-quality/.*",
+                                        "^/needs-attention*", "^/needs-attention/.*",
+                                        "^/interactions*", "^/interactions/.*",
+                                        "^/dashboard*", "^/dashboard/.*",
+                                        "^/api/expect/.*",
+                                        "^/metadata",
+                                        List.of("^/Bundle/.*", "POST", "persistReqPayload persistRespPayload")
+                                ) : regexAndMethods)
                 .build();
         LOG.info("setPersistInDbMatchers %s".formatted(this.iprDB.toString()));
     }
@@ -229,6 +241,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
     }
 
     public static class InteractionPersistRules {
+
         private final RequestMatcher requestMatcher;
         private final RequestMatcher persistReqPayloadMatcher;
         private final RequestMatcher persistRespPayloadMatcher;
@@ -254,6 +267,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         }
 
         public static class Builder {
+
             private List<Object> regexAndMethods;
             private boolean strict;
 
