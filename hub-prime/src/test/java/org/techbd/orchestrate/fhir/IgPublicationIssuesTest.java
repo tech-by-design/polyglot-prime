@@ -2,20 +2,41 @@ package org.techbd.orchestrate.fhir;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationIssue;
+
 import java.util.Map;
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.function.Predicate;
+
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
 import java.io.BufferedReader;
 import java.io.IOException;
+import org.assertj.core.api.SoftAssertions;
 
 public class IgPublicationIssuesTest {
         private OrchestrationEngine engine;
-
-        private static final Logger LOG = LoggerFactory.getLogger(IgPublicationIssuesTest.class);
+        private static final String FHIR_PROFILE_URL = "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json";
+        private static final Predicate<ValidationIssue> IS_UNEXPECTED_IG_ISSUE = issue -> issue.getMessage()
+                        .contains("has not been checked because it is unknown") ||
+                        issue.getMessage().contains("Unknown profile") ||
+                        issue.getMessage().contains("Unknown extension") ||
+                        issue.getMessage().contains("Unknown Code System") ||
+                        issue.getMessage().contains("not found");
+        private static final String ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS = "Unknown extension http://shinny.org/StructureDefinition/shinny-personal-pronouns";
+        private static final String ERROR_MESSAGE_CTS_VALUE_SET = "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.24 not found";
+        private static final String ERROR_MESSAGE_SHINNY_MIDDLE_NAME = "http://shinny.org/StructureDefinition/middle-name";
+        private static final String ERROR_MESSAGE_SHNNY_COUNTY = "http://shinny.org/StructureDefinition/county";
+        private static final String ERROR_MESSAGE_SHNNY_PATIENT = "http://shinny.org/StructureDefinition/shinny-patient";
+        private static final String ERROR_MESSAGE_SHNNY_ENCOUNTER = "http://shinny.org/StructureDefinition/shin-ny-encounter";
+        private static final String ERROR_MESSAGE_SHNNY_CONSENT = "http://shinny.org/StructureDefinition/shinny-consent";
+        private static final String ERROR_MESSAGE_SHNNY_ORGANIZATION = "http://shinny.org/StructureDefinition/shin-ny-organization";
+        private static final String ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE = "http://shinny.org/StructureDefinition/shinny-questionnaire-response";
+        private static final String ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE = "http://shinny.org/StructureDefinition/SHINNYBundleProfile";
+        private static final String ERROR_MESSAGE_SHINNY_DIAGNOSIS = "Profile reference 'http://shinny.org/StructureDefinition/shinny-diagnosis' has not been checked because it is unknown";
+        private static final String ERROR_MESSAGE_SHINNY_US_CORE_CONDITION_CATEGORY = "ValueSet http://hl7.org/fhir/us/core/ValueSet/us-core-condition-category not found";
+        private static final String ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST = "Profile reference 'http://shinny.org/StructureDefinition/SHINNYSDOHServiceRequest' has not been checked because it is unknown";
+        private static final String ERROR_MESSAGE_SHINNY_SDOH_REFERAL_MANAGEMENT = "Profile reference 'http://shinny.org/StructureDefinition//SHINNYSDOHTaskForReferralManagement' has not been checked because it is unknown";
 
         @BeforeEach
         void setUp() {
@@ -23,63 +44,241 @@ public class IgPublicationIssuesTest {
         }
 
         @Test
-        void testBundleAHCHRSNQuestionnaireResponseExample() throws IOException {
-                final var bundleAHCHRSNQuestionnaireResponseExample = loadFile(
-                                "org/techbd/ig-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
-                final var bundleAHCHRSNScreeningResponseExample = loadFile(
+        void testBundle_AHCHRSNScreeningResponseExample() throws IOException {
+                final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
                                 "org/techbd/ig-examples/Bundle-AHCHRSNScreeningResponseExample.json");
-                final var bundleNYScreeningResponseExample = loadFile(
-                                "org/techbd/ig-examples/Bundle-NYScreeningResponseExample.json");
-                final var bundleObservationAssessmentFoodInsecurityExample = loadFile(
+                final long unexpectedIgIssues = results.stream()
+                                .flatMap(result -> result.getIssues().stream())
+                                .filter(message -> IS_UNEXPECTED_IG_ISSUE.test(message))
+                                .distinct()
+                                .count();
+                final var softly = new SoftAssertions();
+                softly.assertThat(results).hasSize(1);
+                softly.assertThat(unexpectedIgIssues).isZero();
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_CTS_VALUE_SET);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHNNY_COUNTY);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHNNY_PATIENT);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHNNY_ENCOUNTER);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHNNY_CONSENT);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHNNY_ORGANIZATION);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+                assertUnexpectedIgError(softly, results,
+                                ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                softly.assertAll();
+        }
+
+        @Test
+        void testBundle_AHCHRSNQuestionnaireResponseExample() throws IOException {
+                final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+                                "org/techbd/ig-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
+                final long unexpectedIgIssues = results.stream()
+                                .flatMap(result -> result.getIssues().stream())
+                                .filter(message -> IS_UNEXPECTED_IG_ISSUE.test(message))
+                                .distinct()
+                                .count();
+                final var softly = new SoftAssertions();
+                softly.assertThat(results).hasSize(1);
+                softly.assertThat(unexpectedIgIssues).isZero();
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                softly.assertAll();
+        }
+
+        @Test
+        void testBundle_ObservationAssessmentFoodInsecurityExample() throws IOException {
+                final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
                                 "org/techbd/ig-examples/Bundle-ObservationAssessmentFoodInsecurityExample.json");
-                final var bundleServiceRequestExample = loadFile(
+                final long unexpectedIgIssues = results.stream()
+                                .flatMap(result -> result.getIssues().stream())
+                                .filter(message -> IS_UNEXPECTED_IG_ISSUE.test(message))
+                                .distinct()
+                                .count();
+                final var softly = new SoftAssertions();
+                softly.assertThat(results).hasSize(1);
+                softly.assertThat(unexpectedIgIssues).isZero();
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_DIAGNOSIS);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_US_CORE_CONDITION_CATEGORY);
+                softly.assertAll();
+        }
+
+        @Test
+        void testBundle_ServiceRequestExample() throws IOException {
+                final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
                                 "org/techbd/ig-examples/Bundle-ServiceRequestExample.json");
-                final var bundleTaskCompletedExample = loadFile(
+                final long unexpectedIgIssues = results.stream()
+                                .flatMap(result -> result.getIssues().stream())
+                                .filter(message -> IS_UNEXPECTED_IG_ISSUE.test(message))
+                                .distinct()
+                                .count();
+                final var softly = new SoftAssertions();
+                softly.assertThat(results).hasSize(1);
+                softly.assertThat(unexpectedIgIssues).isZero();
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST);
+                softly.assertAll();
+        }
+
+        @Test
+        void testBundle_TaskCompletedExample() throws IOException {
+                final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
                                 "org/techbd/ig-examples/Bundle-TaskCompletedExample.json");
-                final var bundleTaskExample = loadFile("org/techbd/ig-examples/Bundle-TaskExample.json");
-                final var bundleTaskOutputProcedureExample = loadFile(
+                final long unexpectedIgIssues = results.stream()
+                                .flatMap(result -> result.getIssues().stream())
+                                .filter(message -> IS_UNEXPECTED_IG_ISSUE.test(message))
+                                .distinct()
+                                .count();
+                final var softly = new SoftAssertions();
+                softly.assertThat(results).hasSize(1);
+                softly.assertThat(unexpectedIgIssues).isZero();
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                softly.assertAll();
+        }
+
+        @Test
+        void testBundle_TaskExample() throws IOException {
+                final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+                                "org/techbd/ig-examples/Bundle-TaskExample.json");
+                final long unexpectedIgIssues = results.stream()
+                                .flatMap(result -> result.getIssues().stream())
+                                .filter(message -> IS_UNEXPECTED_IG_ISSUE.test(message))
+                                .distinct()
+                                .count();
+                final var softly = new SoftAssertions();
+                softly.assertThat(results).hasSize(1);
+                softly.assertThat(unexpectedIgIssues).isZero();
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_REFERAL_MANAGEMENT);
+                softly.assertAll();
+        }
+
+        @Test
+        void testBundle_TaskOutputProcedureExample() throws IOException {
+                final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
                                 "org/techbd/ig-examples/Bundle-TaskOutputProcedureExample.json");
-                // Construct the orchestration engine using Builder pattern
-                OrchestrationEngine.OrchestrationSession session = engine.session()
-                                .withPayloads(List.of(bundleAHCHRSNQuestionnaireResponseExample,
-                                                bundleAHCHRSNScreeningResponseExample,
-                                                bundleNYScreeningResponseExample,
-                                                bundleObservationAssessmentFoodInsecurityExample,
-                                                bundleServiceRequestExample,
-                                                bundleTaskCompletedExample,
-                                                bundleTaskExample,
-                                                bundleTaskOutputProcedureExample))
-                                .withFhirProfileUrl(
-                                                "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json")
+                final long unexpectedIgIssues = results.stream()
+                                .flatMap(result -> result.getIssues().stream())
+                                .filter(message -> IS_UNEXPECTED_IG_ISSUE.test(message))
+                                .distinct()
+                                .count();
+                final var softly = new SoftAssertions();
+                softly.assertThat(results).hasSize(1);
+                softly.assertThat(unexpectedIgIssues).isZero();
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                softly.assertAll();
+        }
+
+        @Test
+        void testBundle_NYScreeningResponseExample() throws IOException {
+                final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+                                "org/techbd/ig-examples/Bundle-NYScreeningResponseExample.json");
+                final long unexpectedIgIssues = results.stream()
+                                .flatMap(result -> result.getIssues().stream())
+                                .filter(message -> IS_UNEXPECTED_IG_ISSUE.test(message))
+                                .distinct()
+                                .count();
+                final var softly = new SoftAssertions();
+                softly.assertThat(results).hasSize(1);
+                softly.assertThat(unexpectedIgIssues).isZero();
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                softly.assertAll();
+        }
+
+        private void assertUnexpectedIgError(final SoftAssertions softly,
+                        final List<OrchestrationEngine.ValidationResult> results,
+                        final String unexpectedIgErrorMessage) {
+                final boolean containsTest = results.get(0).getIssues().stream()
+                                .anyMatch(message -> message.getMessage().contains("test"));
+                softly.assertThat(containsTest)
+                                .as(unexpectedIgErrorMessage)
+                                .isTrue();
+        }
+
+        private List<OrchestrationEngine.ValidationResult> getValidationErrors(final String payload)
+                        throws IOException {
+                final var bundleAHCHRSNQuestionnaireResponseExample = loadFile(payload);
+                final OrchestrationEngine.OrchestrationSession session = engine.session()
+                                .withPayloads(List.of(bundleAHCHRSNQuestionnaireResponseExample))
+                                .withFhirProfileUrl(FHIR_PROFILE_URL)
                                 .withFhirStructureDefinitionUrls(getStructureDefinitionUrls())
                                 .withFhirValueSetUrls(getValueSetUrls())
                                 .withFhirCodeSystemUrls(getCodeSystemUrls())
                                 .addHapiValidationEngine()
                                 .build();
                 engine.orchestrate(session);
-                List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0).getValidationResults();
-                assertThat(results).hasSize(8);
-                long igIssuesCount = results.stream()
-                                .flatMap(result -> result.getIssues().stream())
-                                .filter(m -> m.getMessage().contains("has not been checked because it is unknown")
-                                                || m.getMessage().contains("Unknown profile")
-                                                || m.getMessage().contains("Unknown extension")
-                                                || m.getMessage().contains("Unknown Code System")
-                                                || m.getMessage().contains("not found"))
-                                .distinct()
-                                .peek(m -> LOG.warn("IG Issue: Severity: {} Message: {}", m.getSeverity(),
-                                                m.getMessage()))
-                                .count();
-                LOG.warn("Total count of IG publication issues: {}", igIssuesCount);
-                // TODO - when the IG publication issues are resolved change the assertion to
-                // verify for zero errors
-                assertThat(igIssuesCount)
-                                .as("There should be exactly 80 IG publication issues.")
-                                .isEqualTo(92);
+                return engine.getSessions().get(0).getValidationResults();
         }
 
         private Map<String, String> getStructureDefinitionUrls() {
-                Map<String, String> structureDefUrls = new HashMap<>();
+                final Map<String, String> structureDefUrls = new HashMap<>();
                 structureDefUrls.put("shinnyEncounter",
                                 "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-encounter.json");
                 structureDefUrls.put("shinnyConsent",
@@ -140,7 +339,7 @@ public class IgPublicationIssuesTest {
         }
 
         private Map<String, String> getCodeSystemUrls() {
-                Map<String, String> codeSystemUrls = new HashMap<>();
+                final Map<String, String> codeSystemUrls = new HashMap<>();
                 codeSystemUrls.put("nyCountyCodes",
                                 "https://shinny.org/ImplementationGuide/HRSN/CodeSystem-nys-county-codes.json");
                 codeSystemUrls.put("nyHRSNQuestionnaire",
@@ -153,7 +352,7 @@ public class IgPublicationIssuesTest {
         }
 
         private Map<String, String> getValueSetUrls() {
-                Map<String, String> valueSetUrls = new HashMap<>();
+                final Map<String, String> valueSetUrls = new HashMap<>();
                 valueSetUrls.put("shinnyConsentProvisionTypesVS",
                                 "https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json");
                 valueSetUrls.put("shinnyCountyVS",
@@ -189,7 +388,7 @@ public class IgPublicationIssuesTest {
                 return valueSetUrls;
         }
 
-        private String loadFile(String filename) throws IOException {
+        private String loadFile(final String filename) throws IOException {
                 final var inputStream = getClass().getClassLoader().getResourceAsStream(filename);
                 if (inputStream == null) {
                         throw new IOException("Failed to load the file: " + filename);
