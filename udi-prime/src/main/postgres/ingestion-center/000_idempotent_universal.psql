@@ -38,18 +38,18 @@ DECLARE
     v_provenance TEXT := COALESCE(provenance, 'unknown');
 BEGIN
     -- Insert into hub_diagnostic, ignore conflicts
-    INSERT INTO techbd_udi_ingress.hub_diagnostic (hub_diagnostic_id, key, created_by, provenance)
-    VALUES (v_exception_id, exception_key, v_created_by, v_provenance)
+    INSERT INTO techbd_udi_ingress.hub_diagnostic (hub_diagnostic_id, key, created_at, created_by, provenance)
+    VALUES (v_exception_id, exception_key, clock_timestamp(), v_created_by, v_provenance)
     ON CONFLICT (hub_diagnostic_id) DO NOTHING;
 
     -- Insert into sat_diagnostic_exception
     INSERT INTO techbd_udi_ingress.sat_diagnostic_exception (
         sat_diagnostic_exception_id, hub_diagnostic_id, exception_type, message, err_returned_sqlstate,
-        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, elaboration, created_by, provenance
+        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, elaboration, created_at, created_by, provenance
     )
     VALUES (
         gen_random_uuid()::text, v_exception_id, exception_type, error_msg, sqlstate,
-        pg_detail, pg_hint, pg_context, elaboration, v_created_by, v_provenance
+        pg_detail, pg_hint, pg_context, elaboration, clock_timestamp(), v_created_by, v_provenance
     );
 
     -- Return the exception ID

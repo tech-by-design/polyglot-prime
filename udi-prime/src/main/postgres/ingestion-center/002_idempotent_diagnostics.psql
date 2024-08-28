@@ -154,11 +154,13 @@ BEGIN
     INSERT INTO techbd_udi_ingress.hub_diagnostic (
         hub_diagnostic_id,
         "key",
+		created_at,
         created_by,
         provenance
     ) VALUES (
         diagnostic_id,
         key,
+        clock_timestamp(),
         created_by,
         provenance
     )
@@ -175,6 +177,7 @@ BEGIN
         parent_diagnostic_log_id,
         hierarchy_level,
         elaboration,
+		created_at,
         created_by,
         provenance
     ) VALUES (
@@ -187,6 +190,7 @@ BEGIN
         parent_diagnostic_log_id,
         hierarchy_level,
         elaboration,
+        clock_timestamp(),
         created_by,
         provenance
     );

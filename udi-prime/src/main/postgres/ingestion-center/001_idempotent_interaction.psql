@@ -65,6 +65,10 @@ that match specific criteria.
   sihr.hub_interaction_id
   WITH NO DATA;
 
+
+CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_resource_type_mat_sat_interaction_http_request_i_idx 
+ON techbd_udi_ingress.interaction_http_request_resource_type_mat (sat_interaction_http_request_id);  
+
 /*******************************************************************************************
 This view extracts and computes observability metrics related to HTTP requests and their 
 interactions.
@@ -92,6 +96,9 @@ EXTRACT(epoch FROM headers.finish_time::timestamp without time zone - headers.st
  WHERE 1 = 1 
  AND (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::TEXT
  WITH NO DATA;
+
+CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_observe_mat_sat_interaction_http_request_i_idx 
+ON techbd_udi_ingress.interaction_http_request_observe_mat (sat_interaction_http_request_id);
  
 /****************************************************************************************
  * Comprehensive view of HTTP interactions and their associated requests.
