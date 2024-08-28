@@ -69,6 +69,23 @@ export class AGGridAide {
     }
 
     /**
+     * Creates a value formatter for displaying date in the MM/DD/YYYY 
+     * format.
+     * @returns {Function} The value formatter function.
+     */
+    static dateFormatter() {
+        return function (params) {
+            if (params.value) {
+                let date = new Date(params.value);
+                let month = date.getMonth()+1;
+                let formattedDate = month+'/'+date.getDate()+'/'+date.getFullYear();
+                return formattedDate;
+            }
+            return '';
+        }
+    }
+
+    /**
      * Creates a value formatter for displaying Unix timestamp values as formatted
      * date and time strings.
      * @returns {Function} The value formatter function.

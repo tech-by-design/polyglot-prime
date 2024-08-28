@@ -49,7 +49,7 @@
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation.", cellRenderer: 'agGroupCellRenderer' },
-                    { headerName: "Issue Identified On", field: "issue_date", filter: "agTextColumnFilter", headerTooltip: "Indicates the most recent date when the issue was detected, helping users track the timeline of validation problems." },
+                    { headerName: "Issue Identified On", field: "issue_date", filter: "agTextColumnFilter", headerTooltip: "Indicates the most recent date when the issue was detected, helping users track the timeline of validation problems.", valueFormatter: AGGridAide.dateFormatter() },
                     { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
                     { headerName: "Count of URL's with issues", field: "distinct_issue_count", filter: "agNumberColumnFilter", headerTooltip: "Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue." }
                 ])
@@ -182,8 +182,22 @@
                         <li><strong>Value Set URLs:</strong>
                           <ul class="list-square pl-4">
                             <li><a href="https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json">https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json</a></li>
-                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHRSNTypeVS.json">https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHRSNTypeVS.json</a></li>
-                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetTemporaryCodes.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetTemporaryCodes.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYCountyVS.json">https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYCountyVS.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHTTPVerbsVS.json">https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHTTPVerbsVS.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYPersonalPronounsVS.json">https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYPersonalPronounsVS.json</a></li>
+                            <li><a href="https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYScreeningVS.json">https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYScreeningVS.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/ValueSet-omb-race-category.json">http://hl7.org/fhir/us/core/STU7/ValueSet-omb-race-category.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/ValueSet-omb-ethnicity-category.json">http://hl7.org/fhir/us/core/STU7/ValueSet-omb-ethnicity-category.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-usps-state.json">http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-usps-state.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/ValueSet-simple-language.json">http://hl7.org/fhir/us/core/STU7/ValueSet-simple-language.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-encounter-type.json">http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-encounter-type.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-condition-code.json">http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-condition-code.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-procedure-code.json">http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-procedure-code.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetLOINCSNOMEDCT.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetLOINCSNOMEDCT.json</a></li>
+                            <li><a href="http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetReferralTaskStatus.json">http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetReferralTaskStatus.json</a></li>
+
                           </ul>
                         </li>
                       </ul>
