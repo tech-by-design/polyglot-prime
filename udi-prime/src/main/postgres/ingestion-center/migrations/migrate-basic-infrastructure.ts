@@ -56,6 +56,7 @@ const {
   textNullable,
   dateTime,
   dateTimeNullable,
+  integer
 } = dvts.domains;
 const { ulidPrimaryKey: primaryKey } = dvts.keys;
 
@@ -105,25 +106,6 @@ const interactionfileExchangeSat = interactionHub.satelliteTable(
   },
 );
 
-const hubException = dvts.hubTable("exception", {
-  hub_exception_id: primaryKey(),
-  key: textNullable(),
-  ...dvts.housekeeping.columns,
-});
-
-const exceptionDiagnosticSat = hubException.satelliteTable(
-  "diagnostics",
-  {
-    sat_exception_diagnostics_id: primaryKey(),
-    hub_exception_id: hubException.references.hub_exception_id(),
-    message: text(), // eg: Permission Denied to the file
-    err_returned_sqlstate: text(),
-    err_pg_exception_detail: text(),
-    err_pg_exception_hint: text(),
-    err_pg_exception_context: text(),
-    ...dvts.housekeeping.columns,
-  },
-);
 
 const hubExpectation = dvts.hubTable("expectation", {
   hub_expectation_id: primaryKey(),
@@ -142,8 +124,8 @@ const expectationHttpRequestSat = hubExpectation.satelliteTable(
   },
 );
 
-const hubDiagnostics = dvts.hubTable("diagnostics", {
-  hub_diagnostics_id: primaryKey(),
+const hubDiagnostics = dvts.hubTable("diagnostic", {
+  hub_diagnostic_id: primaryKey(),
   key: textNullable(),
   ...dvts.housekeeping.columns,
 });
@@ -151,13 +133,32 @@ const hubDiagnostics = dvts.hubTable("diagnostics", {
 const diagnosticsSat = hubDiagnostics.satelliteTable(
   "log",
   {
-    sat_diagnostics_log_id: primaryKey(),
-    hub_diagnostics_id: hubDiagnostics.references.hub_diagnostics_id(),
-    diagnostic_type: text(), 
-    diagnostic_detail: jsonB,
+    sat_diagnostic_log_id: primaryKey(),
+    hub_diagnostic_id: hubDiagnostics.references.hub_diagnostic_id(),
+    diagnostic_log_level: text(), 
+    diagnostic_log_message: text(),
+    user_id: text(),
     status: text(),
-    start_time: dateTime(),
-    end_time: dateTimeNullable(),
+    parent_diagnostic_log_id: textNullable(),
+    hierarchy_level: integer().default(0),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const exceptionDiagnosticSat = hubDiagnostics.satelliteTable(
+  "exception",
+  {
+    sat_diagnostic_exception_id: primaryKey(),
+    hub_diagnostic_id: hubDiagnostics.references.hub_diagnostic_id(),
+    exception_type: text(),
+    message: text(), // eg: Permission Denied to the file
+    err_returned_sqlstate: textNullable(),
+    err_pg_exception_detail: textNullable(),
+    err_pg_exception_hint: textNullable(),
+    err_pg_exception_context: textNullable(),
+    elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },
 );
@@ -287,6 +288,12 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${diagnosticsSchema}
 
+      ${hubDiagnostics}
+
+      ${diagnosticsSat}
+
+      ${exceptionDiagnosticSat}
+
       ${interactionHub}
 
       ${interactionHttpRequestSat}
@@ -301,14 +308,6 @@ const migrateSP = pgSQLa.storedProcedure(
       END;
 
       ${interactionfileExchangeSat}
-
-      ${hubException}
-
-      ${exceptionDiagnosticSat}
-
-      ${hubDiagnostics}
-
-      ${diagnosticsSat}
 
       ${hubExpectation}
 

@@ -82,7 +82,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                         "^/dashboard*", "^/dashboard/.*",
                                         "^/api/expect/.*",
                                         "^/metadata",
-                                        List.of("^/Bundle/.*", "POST", "persistReqPayload persistRespPayload")
+                                        List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload")
                                 ) : regexAndMethods)
                 .build();
         LOG.info("setPersistInDbMatchers %s".formatted(this.iprDB.toString()));

@@ -75,8 +75,8 @@ const infoSchemaLifecycle = SQLa.sqlSchemaDefn("info_schema_lifecycle", {
 
 
 export const migrationInput: MigrationVersion = {
-  description: "pg-cron",
-  dateTime: new Date(2024, 8, 19, 16, 16),
+  description: "cron",
+  dateTime: new Date(2024, 8, 26, 16, 16),
 };
 function formatDateToCustomString(date: Date): string {
   const year = date.getFullYear();
@@ -107,19 +107,7 @@ const migrateSP = pgSQLa.storedProcedure(
   },
 )`
     BEGIN
-      BEGIN
-        CREATE EXTENSION IF NOT EXISTS pg_cron;
-        BEGIN        
-          ${dependenciesSQL}      
-          CALL cron.schedule_cron_job();
-        EXCEPTION
-          WHEN others THEN
-            RAISE NOTICE 'Could not set the Cron Job.';
-        END;
-      EXCEPTION
-        WHEN others THEN
-          RAISE NOTICE 'Extension pg_cron not available.';
-      END;
+      ${dependenciesSQL}
       
 
       

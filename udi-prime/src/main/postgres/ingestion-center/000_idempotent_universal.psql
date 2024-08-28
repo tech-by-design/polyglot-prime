@@ -15,16 +15,19 @@
  * @param provenance TEXT (nullable) - The provenance of the record. Defaults to 'unknown' if NULL.
  * @return TEXT - The ID of the registered exception.
  */
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_issue(
     IN exception_id TEXT,
     IN exception_key TEXT,
     IN error_msg TEXT,
+    IN exception_type TEXT,
     IN sqlstate TEXT,
     IN pg_detail TEXT,
     IN pg_hint TEXT,
     IN pg_context TEXT,
     IN created_by TEXT DEFAULT NULL,
-    IN provenance TEXT DEFAULT NULL
+    IN provenance TEXT DEFAULT NULL,
+    IN elaboration JSONB DEFAULT NULL
 )
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -34,19 +37,19 @@ DECLARE
     v_created_by TEXT := COALESCE(created_by, current_user);
     v_provenance TEXT := COALESCE(provenance, 'unknown');
 BEGIN
-    -- Insert into hub_exception, ignore conflicts
-    INSERT INTO techbd_udi_ingress.hub_exception (hub_exception_id, key, created_by, provenance)
+    -- Insert into hub_diagnostic, ignore conflicts
+    INSERT INTO techbd_udi_ingress.hub_diagnostic (hub_diagnostic_id, key, created_by, provenance)
     VALUES (v_exception_id, exception_key, v_created_by, v_provenance)
-    ON CONFLICT (hub_exception_id) DO NOTHING;
+    ON CONFLICT (hub_diagnostic_id) DO NOTHING;
 
-    -- Insert into sat_exception_diagnostics
-    INSERT INTO techbd_udi_ingress.sat_exception_diagnostics (
-        sat_exception_diagnostics_id, hub_exception_id, message, err_returned_sqlstate,
-        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, created_by, provenance
+    -- Insert into sat_diagnostic_exception
+    INSERT INTO techbd_udi_ingress.sat_diagnostic_exception (
+        sat_diagnostic_exception_id, hub_diagnostic_id, exception_type, message, err_returned_sqlstate,
+        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, elaboration, created_by, provenance
     )
     VALUES (
-        gen_random_uuid()::text, v_exception_id, error_msg, sqlstate,
-        pg_detail, pg_hint, pg_context, v_created_by, v_provenance
+        gen_random_uuid()::text, v_exception_id, exception_type, error_msg, sqlstate,
+        pg_detail, pg_hint, pg_context, elaboration, v_created_by, v_provenance
     );
 
     -- Return the exception ID
