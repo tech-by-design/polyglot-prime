@@ -537,6 +537,7 @@ IN hub_upsert_behavior boolean DEFAULT true)
 AS $procedure$
 DECLARE
     v_error_msg 	TEXT;
+    v_error_type 	TEXT;
     v_sqlstate 		TEXT;
     v_pg_detail 	TEXT;
     v_pg_hint 		TEXT;
@@ -563,10 +564,11 @@ BEGIN
                     v_pg_detail = PG_EXCEPTION_DETAIL,
                     v_pg_hint = PG_EXCEPTION_HINT,
                     v_pg_context = PG_EXCEPTION_CONTEXT;
+                    v_error_type = 'SQL';
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    NULL, interaction_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                    NULL, interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
                 );
             END IF;
     END;
@@ -594,10 +596,11 @@ BEGIN
                 v_pg_detail = PG_EXCEPTION_DETAIL,
                 v_pg_hint = PG_EXCEPTION_HINT,
                 v_pg_context = PG_EXCEPTION_CONTEXT;
+                v_error_type = 'SQL';
 
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
             );
     END;
 END;
@@ -1057,6 +1060,7 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_expectation_http_request
 AS $procedure$
 DECLARE
     v_error_msg TEXT;
+    v_error_type TEXT;
     v_sqlstate TEXT;
     v_pg_detail TEXT;
     v_pg_hint TEXT;
@@ -1081,10 +1085,11 @@ BEGIN
                     v_pg_detail = PG_EXCEPTION_DETAIL,
                     v_pg_hint = PG_EXCEPTION_HINT,
                     v_pg_context = PG_EXCEPTION_CONTEXT;
+                    v_error_type = 'SQL';
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    NULL, expectation_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                    NULL, expectation_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
                 );
             END IF;
     END;
@@ -1106,10 +1111,11 @@ BEGIN
                 v_pg_detail = PG_EXCEPTION_DETAIL,
                 v_pg_hint = PG_EXCEPTION_HINT,
                 v_pg_context = PG_EXCEPTION_CONTEXT;
+                v_error_type= 'SQL';
 
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                COALESCE(v_exception_id, NULL), expectation_key, v_error_msg, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                COALESCE(v_exception_id, NULL), expectation_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
             );
     END;
 END;
