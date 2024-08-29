@@ -51,7 +51,7 @@
                     { headerName: "IG version", field: "ig_version", filter: "agTextColumnFilter", headerTooltip: "The version of the Implementation Guide associated with the FHIR data and its validation.", cellRenderer: 'agGroupCellRenderer' },
                     { headerName: "Issue Identified On", field: "issue_date", filter: "agTextColumnFilter", headerTooltip: "Indicates the most recent date when the issue was detected, helping users track the timeline of validation problems.", valueFormatter: AGGridAide.dateFormatter() },
                     { headerName: "Validation Engine", field: "validation_engine", filter: "agTextColumnFilter", headerTooltip: "The validation engine used to validate the FHIR data against the Implementation Guide (IG)." },
-                    { headerName: "Count of URL's with issues", field: "distinct_issue_count", filter: "agNumberColumnFilter", headerTooltip: "Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue." }
+                    { headerName: "Count Of URLs With Issues", field: "distinct_issue_count", filter: "agNumberColumnFilter", headerTooltip: "Represents the number of URLs with issues found on the selected date, allowing users to understand the frequency and impact of each issue." }
                 ])
                 .withMasterDetail(true)
                 .withDetailCellRendererParams({
