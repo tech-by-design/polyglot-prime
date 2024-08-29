@@ -54,7 +54,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import reactor.core.publisher.Mono;
 
 @Controller
-@Tag(name = "TechBD Hub FHIR Endpoints")
+@Tag(name = "Tech by Design Hub FHIR Endpoints")
 public class FhirController {
     private static final Logger LOG = LoggerFactory.getLogger(FhirController.class.getName());
 

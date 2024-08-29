@@ -1,13 +1,13 @@
-# TechBD Polyglot Monorepo
+# Tech by Design Polyglot Monorepo
 
-Welcome to the **TechBD Polyglot Prime** repository! This repository is the
-central hub for all bespoke code managed by **Technology By Design (TechBD)**.
+Welcome to the **Tech by Design Polyglot Prime** repository! This repository is the
+central hub for all bespoke code managed by **Technology By Design (Tech by Design)**.
 Our goal is to maintain a well-organized, scalable, and efficient monorepo that
 supports our diverse range of projects and technologies.
 
 ## Primary Languages and Frameworks
 
-At TechBD, we focus on the following primary languages and frameworks for our
+At Tech by Design, we focus on the following primary languages and frameworks for our
 enterprise and utility projects:
 
 - Modern Java 21 LTS and above with Spring Boot 3.3 and above for all API and
@@ -53,7 +53,7 @@ maintainability, and scalability. Here are the key aspects of our strategy:
 │   │   ├── main
 │   │   │   ├── java
 │   │   │   │   └── org
-│   │   │   │       └── techbd
+│   │   │   │       └── Tech by Design
 │   │   │   │           ├── conf
 │   │   │   │           ├── orchestrate
 │   │   │   │           │   ├── fhir
@@ -81,7 +81,7 @@ maintainability, and scalability. Here are the key aspects of our strategy:
 │   │   └── test
 │   │       └── java
 │   │           └── org
-│   │               └── techbd
+│   │               └── Tech by Design
 │   │                   ├── orchestrate
 │   │                   │   └── fhir
 │   │                   ├── service
@@ -105,14 +105,14 @@ maintainability, and scalability. Here are the key aspects of our strategy:
     └── target
 ```
 
-### Project: TechBD Primary Hub
+### Project: Tech by Design Primary Hub
 
 The `hub-prime` project is a Java Spring Boot application which serves FHIR API
 endpoints.
 
 #### Project Setup
 
-To set up the `TechBD Hub` project, follow these steps:
+To set up the `Tech by Design Hub` project, follow these steps:
 
 1. **Clone the Repository**:
    ```bash

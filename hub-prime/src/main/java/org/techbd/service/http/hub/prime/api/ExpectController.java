@@ -24,7 +24,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@Tag(name = "TechBD Hub Expectations Endpoints")
+@Tag(name = "Tech by Design Hub Expectations Endpoints")
 public class ExpectController {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExpectController.class.getName());
