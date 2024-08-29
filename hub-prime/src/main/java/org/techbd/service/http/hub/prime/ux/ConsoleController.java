@@ -78,10 +78,10 @@ public class ConsoleController {
         return presentation.populateModel("page/console/cron-job", model, request);
     }
 
-    @RouteMapping(label = "CloudWatch Dashoard", title = "CloudWatch Dashoard", siblingOrder = 80)
-    @GetMapping("/console/cloudwatch-dashoard")
-    public String cloudwatchDashoard(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/console/cloudwatch-dashoard", model, request);
-    }
+    // @RouteMapping(label = "CloudWatch Dashoard", title = "CloudWatch Dashoard", siblingOrder = 80)
+    // @GetMapping("/console/cloudwatch-dashoard")
+    // public String cloudwatchDashoard(final Model model, final HttpServletRequest request) {
+    //     return presentation.populateModel("page/console/cloudwatch-dashoard", model, request);
+    // }
 
 }
