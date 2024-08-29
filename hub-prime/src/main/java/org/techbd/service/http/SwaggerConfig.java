@@ -26,11 +26,11 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI springOpenAPI() {
         return new OpenAPI()
-                .info(new Info().title("TechBD FHIR Server")
+                .info(new Info().title("Tech by Design FHIR Server")
                         .description("Public REST API Endpoints").version(appConfig.getVersion())
                         .license(new License().name("GitHub Repository")
                                 .url("https://github.com/tech-by-design/polyglot-prime")))
-                .externalDocs(new ExternalDocumentation().description("TechBD Technical Documents Microsite")
+                .externalDocs(new ExternalDocumentation().description("Tech by Design Technical Documents Microsite")
                         .url("https://tech-by-design.github.io/docs.techbd.org/"));
     }
 

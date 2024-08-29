@@ -181,7 +181,7 @@
                         headerTooltip: "FHIR File count from CrossRoads SCN to QE"
                     },
                     {
-                        headerName: "QE to TechBD",
+                        headerName: "QE to Tech by Design",
                         field: "techbd_total_submissions",
                         filter: "agTextColumnFilter",
                         cellStyle: function (params) {
@@ -190,10 +190,10 @@
                             }
                             return null;
                         },
-                        headerTooltip: "FHIR File count from QE to TechBD"
+                        headerTooltip: "FHIR File count from QE to Tech by Design"
                     },
                     {
-                        headerName: "TechBD to Scoring Engine",
+                        headerName: "Tech by Design to Scoring Engine",
                         field: "scoring_engine_submission_passed",
                         filter: "agTextColumnFilter",
                         cellRenderer: cellRenderer2,
@@ -203,7 +203,7 @@
                             }
                             return null;
                         },
-                        headerTooltip: "FHIR File count from TechBD to Scoring Engine"
+                        headerTooltip: "FHIR File count from Tech by Design to Scoring Engine"
                     },
                     {
                         headerName: "Scoring Engine to SHIN-NY",
@@ -296,8 +296,8 @@
             <h1 class="assemtion">Assumptions</h1>
             <ul class="list-disc pl-4">
                 <li>The file count from CrossRoads SCN to QE FHIR should match.</li>
-                <li>The file count from QE FHIR to TechBD should match.</li>
-                <li>The file count from TechBD to the Scoring Engines should match.</li>
+                <li>The file count from QE FHIR to Tech by Design should match.</li>
+                <li>The file count from Tech by Design to the Scoring Engines should match.</li>
                 <li>If any of the numbers in one column do not match the corresponding numbers in another column, it
                     indicates an error, and the mismatched numbers are highlighted in red.</li>
                 <li>If there are errors or issues, clicking on the red arrow before the count text allows for a

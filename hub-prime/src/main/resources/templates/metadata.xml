@@ -2,10 +2,10 @@
 <CapabilityStatement xmlns="http://hl7.org/fhir" xmlns:th="http://www.thymeleaf.org">
     <status value="active"></status>
     <date th:attr="value=${#dates.format(#dates.createNow(), 'dd MMM yyyy HH:mm')}"></date>
-    <publisher value="TechBD"></publisher>
+    <publisher value="Tech by Design"></publisher>
     <kind value="instance"></kind>
     <software>
-        <name value="TechBD FHIR Server"></name>
+        <name value="Tech by Design FHIR Server"></name>
         <version th:attr="value=${version}"></version>
     </software>
     <implementation>
