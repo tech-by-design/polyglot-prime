@@ -25,14 +25,14 @@ public class IgPublicationIssuesTest {
                         issue.getMessage().contains("not found");
         private static final String ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS = "Unknown extension http://shinny.org/StructureDefinition/shinny-personal-pronouns";
         private static final String ERROR_MESSAGE_CTS_VALUE_SET = "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.24 not found";
-        private static final String ERROR_MESSAGE_SHINNY_MIDDLE_NAME = "http://shinny.org/StructureDefinition/middle-name";
-        private static final String ERROR_MESSAGE_SHNNY_COUNTY = "http://shinny.org/StructureDefinition/county";
-        private static final String ERROR_MESSAGE_SHNNY_PATIENT = "http://shinny.org/StructureDefinition/shinny-patient";
-        private static final String ERROR_MESSAGE_SHNNY_ENCOUNTER = "http://shinny.org/StructureDefinition/shin-ny-encounter";
-        private static final String ERROR_MESSAGE_SHNNY_CONSENT = "http://shinny.org/StructureDefinition/shinny-consent";
-        private static final String ERROR_MESSAGE_SHNNY_ORGANIZATION = "http://shinny.org/StructureDefinition/shin-ny-organization";
-        private static final String ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE = "http://shinny.org/StructureDefinition/shinny-questionnaire-response";
-        private static final String ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE = "http://shinny.org/StructureDefinition/SHINNYBundleProfile";
+        private static final String ERROR_MESSAGE_SHINNY_MIDDLE_NAME = "Unknown extension http://shinny.org/StructureDefinition/middle-name";
+        private static final String ERROR_MESSAGE_SHNNY_COUNTY = "Unknown extension http://shinny.org/StructureDefinition/county";
+        private static final String ERROR_MESSAGE_SHNNY_PATIENT = "Unknown extension http://shinny.org/StructureDefinition/shinny-patient";
+        private static final String ERROR_MESSAGE_SHNNY_ENCOUNTER = "Unknown extension http://shinny.org/StructureDefinition/shin-ny-encounter";
+        private static final String ERROR_MESSAGE_SHNNY_CONSENT = "Unknown extension http://shinny.org/StructureDefinition/shinny-consent";
+        private static final String ERROR_MESSAGE_SHNNY_ORGANIZATION = "Unknown extension http://shinny.org/StructureDefinition/shin-ny-organization";
+        private static final String ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE = "Unknown extension http://shinny.org/StructureDefinition/shinny-questionnaire-response";
+        private static final String ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE = "Unknown extension http://shinny.org/StructureDefinition/SHINNYBundleProfile";
         private static final String ERROR_MESSAGE_SHINNY_DIAGNOSIS = "Profile reference 'http://shinny.org/StructureDefinition/shinny-diagnosis' has not been checked because it is unknown";
         private static final String ERROR_MESSAGE_SHINNY_US_CORE_CONDITION_CATEGORY = "ValueSet http://hl7.org/fhir/us/core/ValueSet/us-core-condition-category not found";
         private static final String ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST = "Profile reference 'http://shinny.org/StructureDefinition/SHINNYSDOHServiceRequest' has not been checked because it is unknown";
@@ -258,7 +258,7 @@ public class IgPublicationIssuesTest {
                 final boolean containsTest = results.get(0).getIssues().stream()
                                 .anyMatch(message -> message.getMessage().contains("test"));
                 softly.assertThat(containsTest)
-                                .as(unexpectedIgErrorMessage)
+                                .as("\n\n\n\n"+unexpectedIgErrorMessage+"\n\n\n\n")
                                 .isTrue();
         }
 
