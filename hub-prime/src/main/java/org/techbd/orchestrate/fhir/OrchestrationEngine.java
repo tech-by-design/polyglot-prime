@@ -133,16 +133,16 @@ public class OrchestrationEngine {
     }
 
     public void orchestrate(@NotNull final OrchestrationSession... sessions) {
-        for (OrchestrationSession session : sessions) {
+        for (final OrchestrationSession session : sessions) {
             session.validate();
             this.sessions.add(session);
         }
     }
 
     public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
-            @NotNull final String fhirProfileUrl, Map<String, String> structureDefinitionUrls,
-            Map<String, String> codeSystemUrls, Map<String, String> valueSetUrls) {
-        ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
+            @NotNull final String fhirProfileUrl, final Map<String, String> structureDefinitionUrls,
+            final Map<String, String> codeSystemUrls, final Map<String, String> valueSetUrls) {
+        final ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
         return validationEngineCache.computeIfAbsent(key, k -> {
             switch (type) {
                 case HAPI:
@@ -173,20 +173,21 @@ public class OrchestrationEngine {
         private final ValidationEngineIdentifier type;
         private final String fhirProfileUrl;
 
-        public ValidationEngineKey(@NotNull ValidationEngineIdentifier type, @NotNull String fhirProfileUrl) {
+        public ValidationEngineKey(@NotNull final ValidationEngineIdentifier type,
+                @NotNull final String fhirProfileUrl) {
             this.type = type;
             this.fhirProfileUrl = fhirProfileUrl;
         }
 
         @Override
-        public boolean equals(Object o) {
+        public boolean equals(final Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            ValidationEngineKey that = (ValidationEngineKey) o;
+            final ValidationEngineKey that = (ValidationEngineKey) o;
             return type == that.type && Objects.equals(fhirProfileUrl, that.fhirProfileUrl);
         }
 
@@ -262,7 +263,7 @@ public class OrchestrationEngine {
             this.valueSetUrls = builder.valueSetUrls;
         }
 
-        private static String readJsonFromUrl(String url) {
+        private static String readJsonFromUrl(final String url) {
             final var client = HttpClient.newHttpClient();
             final var request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -278,7 +279,7 @@ public class OrchestrationEngine {
             return bundleJson;
         }
 
-        private void addStructureDefinitions(PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private void addStructureDefinitions(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions Begin:");
             if (null != structureDefinitionUrls) {
                 LOG.info(
@@ -297,7 +298,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions End : ");
         }
 
-        private void addCodeSystems(PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private void addCodeSystems(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addCodeSystems Begin:");
             if (null != codeSystemUrls) {
                 LOG.info(
@@ -316,7 +317,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addCodeSystems End : ");
         }
 
-        private void addValueSets(PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private void addValueSets(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addValueSets Begin:");
             if (null != valueSetUrls) {
                 LOG.info(
@@ -339,7 +340,9 @@ public class OrchestrationEngine {
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
-                fhirContext.setParserErrorHandler(new LenientErrorHandler());
+                final var lenientErrorHandler = new LenientErrorHandler();
+                // Do not throw FATAL error during parsing.Only log the error
+                lenientErrorHandler.setErrorOnInvalidValue(false);
                 final var supportChain = new ValidationSupportChain();
                 final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
                 supportChain.addValidationSupport(defaultSupport);
@@ -435,7 +438,7 @@ public class OrchestrationEngine {
                     }
                 };
 
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 final var completedAt = Instant.now();
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
@@ -642,10 +645,10 @@ public class OrchestrationEngine {
         public ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
 
-            String escapedPayload = StringEscapeUtils.escapeJson(payload);
-            String result = escapedPayload.replace("\\n", "\\r\\n");
+            final String escapedPayload = StringEscapeUtils.escapeJson(payload);
+            final String result = escapedPayload.replace("\\n", "\\r\\n");
 
-            HttpClient client = HttpClient.newBuilder()
+            final HttpClient client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_2)
                     .connectTimeout(Duration.ofSeconds(120))
                     .build();
@@ -669,7 +672,7 @@ public class OrchestrationEngine {
                     }
                     """.replace("\n", "%n"), fhirContext, fhirProfileUrl, locale, fileName, result, fileType);
 
-            HttpRequest request = HttpRequest.newBuilder()
+            final HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://validator.fhir.org/validate"))
                     .POST(BodyPublishers.ofString(fileContent))
                     .timeout(Duration.ofSeconds(120))
@@ -677,7 +680,7 @@ public class OrchestrationEngine {
                     .header("Accept", "application/json")
                     .build();
 
-            CompletableFuture<HttpResponse<String>> response = client.sendAsync(request, BodyHandlers.ofString());
+            final CompletableFuture<HttpResponse<String>> response = client.sendAsync(request, BodyHandlers.ofString());
 
             return response.thenApply(HttpResponse::body)
                     .thenApply(responseBody -> {
@@ -694,7 +697,7 @@ public class OrchestrationEngine {
                             }
 
                             public List<OrchestrationEngine.ValidationIssue> getIssues() {
-                                List<OrchestrationEngine.ValidationIssue> issuesList = new ArrayList<>();
+                                final List<OrchestrationEngine.ValidationIssue> issuesList = new ArrayList<>();
 
                                 try {
                                     final var mapper = new ObjectMapper();
@@ -709,14 +712,14 @@ public class OrchestrationEngine {
                                             }
                                         }
                                     }
-                                } catch (IOException e) {
+                                } catch (final IOException e) {
                                     e.printStackTrace();
                                 }
 
                                 return issuesList;
                             }
 
-                            private List<OrchestrationEngine.ValidationIssue> extractIssues(JsonNode issues) {
+                            private List<OrchestrationEngine.ValidationIssue> extractIssues(final JsonNode issues) {
                                 return StreamSupport.stream(issues.spliterator(), false)
                                         .map(issue -> new OrchestrationEngine.ValidationIssue() {
                                             @Override
@@ -726,13 +729,13 @@ public class OrchestrationEngine {
 
                                             @Override
                                             public OrchestrationEngine.SourceLocation getLocation() {
-                                                Integer line = issue.path("line").isInt()
+                                                final Integer line = issue.path("line").isInt()
                                                         ? issue.path("line").intValue()
                                                         : null;
-                                                Integer column = issue.path("col").isInt()
+                                                final Integer column = issue.path("col").isInt()
                                                         ? issue.path("col").intValue()
                                                         : null;
-                                                String diagnostics = "ca.uhn.fhir.parser.DataFormatException";
+                                                final String diagnostics = "ca.uhn.fhir.parser.DataFormatException";
                                                 return new OrchestrationEngine.SourceLocation(line, column,
                                                         diagnostics);
                                             }
@@ -797,11 +800,11 @@ public class OrchestrationEngine {
 
         public static Device createDefault() {
             try {
-                InetAddress localHost = InetAddress.getLocalHost();
-                String ipAddress = localHost.getHostAddress();
-                String hostName = localHost.getHostName();
+                final InetAddress localHost = InetAddress.getLocalHost();
+                final String ipAddress = localHost.getHostAddress();
+                final String hostName = localHost.getHostName();
                 return new Device(ipAddress, hostName);
-            } catch (UnknownHostException e) {
+            } catch (final UnknownHostException e) {
                 return new Device("Unable to retrieve the localhost information", e.toString());
             }
         }
@@ -866,9 +869,9 @@ public class OrchestrationEngine {
         }
 
         public void validate() {
-            for (String payload : payloads) {
-                for (ValidationEngine engine : validationEngines) {
-                    ValidationResult result = engine.validate(payload);
+            for (final String payload : payloads) {
+                for (final ValidationEngine engine : validationEngines) {
+                    final ValidationResult result = engine.validate(payload);
                     validationResults.add(result);
                 }
             }
@@ -880,7 +883,7 @@ public class OrchestrationEngine {
             private final List<ValidationEngine> validationEngines = new ArrayList<>();
             private Device device = Device.INSTANCE;
             private String fhirProfileUrl;
-            private List<String> uaStrategyJsonIssues = new ArrayList<>();
+            private final List<String> uaStrategyJsonIssues = new ArrayList<>();
             private Map<String, String> structureDefinitionUrls;
             private Map<String, String> codeSystemUrls;
             private Map<String, String> valueSetUrls;
@@ -926,13 +929,14 @@ public class OrchestrationEngine {
             public Builder withUserAgentValidationStrategy(final String uaStrategyJson, final boolean clearExisting) {
                 if (uaStrategyJson != null) {
                     try {
-                        if (new ObjectMapper().readValue(uaStrategyJson, Object.class) instanceof Map uaStrategy) {
-                            if (uaStrategy.get("engines") instanceof List engines) {
+                        if (new ObjectMapper().readValue(uaStrategyJson,
+                                Object.class) instanceof final Map uaStrategy) {
+                            if (uaStrategy.get("engines") instanceof final List engines) {
                                 if (clearExisting) {
                                     validationEngines.clear();
                                 }
-                                for (var engineItem : engines) {
-                                    if (engineItem instanceof String engine) {
+                                for (final var engineItem : engines) {
+                                    if (engineItem instanceof final String engine) {
                                         switch (engine) {
                                             case "HAPI":
                                                 addHapiValidationEngine();
@@ -960,7 +964,7 @@ public class OrchestrationEngine {
                                     .add("uaStrategyJson `%s` in withUserAgentValidationStrategy is not a Map"
                                             .formatted(uaStrategyJson));
                         }
-                    } catch (JsonProcessingException e) {
+                    } catch (final JsonProcessingException e) {
                         uaStrategyJsonIssues
                                 .add("Error parsing uaStrategyJson `%s` in withUserAgentValidationStrategy: %s"
                                         .formatted(uaStrategyJson, e));
