@@ -20,12 +20,12 @@
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    { headerName: "Job Name", field: "job_name", filter: "agTextColumnFilter",headerTooltip: "Name of the cron job"  },
-                    { headerName: "Current Job Status", field: "current_job_status", filter: "agTextColumnFilter",headerTooltip: "Current status of the job. If its active/inactive"  },
-                    { headerName: "Job Run Status", field: "job_run_status", filter: "agTextColumnFilter",headerTooltip: "Status of the job run"  },
-                    { headerName: "Job Run Result", field: "return_message", filter: "agTextColumnFilter",headerTooltip: " Result of the job run"  },
+                    { headerName: "Job", field: "diagnostic_log_message", filter: "agTextColumnFilter",headerTooltip: "Name of the cron job"  },
+                    { headerName: "Status", field: "final_status", filter: "agTextColumnFilter",headerTooltip: "Status of the cron job run"  },
                     { headerName: "Start Time", field: "start_time", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the cron run started in EST" },
-                    { headerName: "End Time", field: "end_time", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the cron run ended in EST" }
+                    { headerName: "End Time", field: "end_time", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the cron run ended in EST" },
+                    { headerName: "Error", field: "error", filter: "agTextColumnFilter",headerTooltip: "Error from the cron job run"  },
+                    { headerName: "Remediation", field: "remediation", filter: "agTextColumnFilter",headerTooltip: "Error from the cron job run"  }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),

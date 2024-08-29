@@ -334,22 +334,31 @@ $function$;
 /*******************************************************************************************
  * Comprehensive view of Cron Job. * 
  ******************************************************************************************/
--- DROP VIEW IF EXISTS techbd_udi_ingress.cron_job_details CASCADE;
--- CREATE or REPLACE
--- view techbd_udi_ingress.cron_job_details AS
--- SELECT
---     jrd.jobid,
---     j.jobname as job_name,
---     jrd.status as job_run_status,
---     case when j.active is true then 'Active' else 'Inactive' end as current_job_status,
---     jrd.return_message,
---     jrd.start_time,
---     jrd.end_time
--- FROM
---     cron.job_run_details jrd
--- JOIN
---     cron.job j
--- ON
---     j.jobid = jrd.jobid
--- ORDER BY jrd.start_time DESC;
+DROP VIEW IF EXISTS techbd_udi_ingress.cron_job_details CASCADE;
+CREATE or REPLACE
+view techbd_udi_ingress.cron_job_details AS
+SELECT 
+    hd.hub_diagnostic_id,
+    hd."key",
+    MAX(sdl.diagnostic_log_message) AS diagnostic_log_message,
+    MIN(CASE WHEN sdl.status = 'started' THEN sdl.created_at END) AS start_time,
+    MAX(CASE WHEN sdl.status = 'success' THEN sdl.created_at else sde.created_at END) AS end_time,
+    MAX(CASE WHEN sdl.status = 'success' THEN sdl.status else 'failed' END) AS final_status,
+    MAX(CASE WHEN sde.message is not NULL THEN sde.message else '' END) AS error,
+    MAX(CASE WHEN sde.err_pg_exception_hint is not NULL THEN sde.err_pg_exception_hint else '' END) AS remediation
+FROM 
+    techbd_udi_ingress.hub_diagnostic hd
+JOIN 
+    techbd_udi_ingress.sat_diagnostic_log sdl 
+    ON hd.hub_diagnostic_id = sdl.hub_diagnostic_id
+LEFT JOIN 
+    techbd_udi_ingress.sat_diagnostic_exception sde  
+    ON hd.hub_diagnostic_id = sde.hub_diagnostic_id    
+WHERE 
+    sdl.provenance = 'cron_job' 
+GROUP BY 
+    hd.hub_diagnostic_id, 
+    hd."key"
+ORDER BY 
+    end_time DESC;
 
