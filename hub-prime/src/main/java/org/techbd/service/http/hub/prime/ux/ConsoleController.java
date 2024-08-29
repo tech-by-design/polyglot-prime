@@ -72,10 +72,10 @@ public class ConsoleController {
         return presentation.populateModel("page/console/islm", model, request);
     }
 
-    // @RouteMapping(label = "Cron Jobs", title = "Cron Jobs", siblingOrder = 70)
-    // @GetMapping("/console/cron-job")
-    // public String cronjob(final Model model, final HttpServletRequest request) {
-    //     return presentation.populateModel("page/console/cron-job", model, request);
-    // }
+    @RouteMapping(label = "Cron Jobs", title = "Cron Jobs", siblingOrder = 70)
+    @GetMapping("/console/cron-job")
+    public String cronjob(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/console/cron-job", model, request);
+    }
 
 }
