@@ -17,19 +17,19 @@ Java 21 or above is required to run these tests. If you're setting up a local
 development environment, you can easily install Java 21 using
 [SDKMAN!](https://sdkman.io/).
 
-## SHIN-NY FHIR Implementation Guide Assurance
+## SHIN-NY FHIR Implementation Guide Publication Issues
 
 Within this directory, you will find specific tests aimed at verifying
 compliance with the SHIN-NY FHIR Implementation Guide (IG). The primary test
 class for this purpose is located in
-[org/techbd/orchestrate/fhir/ImplGuideTest.java](org/techbd/orchestrate/fhir/ImplGuideTest.java);
+[org/techbd/orchestrate/fhir/IgPublicationIssuesTest.java](org/techbd/orchestrate/fhir/IgPublicationIssuesTest.java);
 
 #### More about the Implementation Guide
 The FHIR v4 Implementation Guide you provided primarily defines the "SHINNY Bundle Profile," which is an extension of the base FHIR Bundle. This profile introduces additional constraints and rules for working with bundles in specific healthcare contexts. Here’s a summary of its key contents:
 
 **StructureDefinition:**
 The SHINNY Bundle Profile extends the base FHIR Bundle resource, imposing additional constraints to ensure interoperability and adherence to specific healthcare use cases.
-The profile is in the draft stage and is identified by the URL http://localhost:8000/ImplementationGuide/HRSN.
+The profile is in the draft stage and is identified by the URL `https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json`
 
 **Constraints:**
 The profile defines several constraints on the Bundle resource, such as ensuring that the total element is only present when the bundle is a search set or history, and specific constraints on the use of entry.request and entry.response elements depending on the type of bundle.
@@ -48,9 +48,8 @@ The guide is detailed and provides explicit rules for managing and structuring h
 
 ### IG Source
 
-The Implementation Guide being tested is in
-[test/resources/org/techbd/fixtures](test/resources/org/techbd/fixtures)
-directory called `ImplementationGuide.json`.
+The Implementation Guide being tested is defined as a constant `FHIR_PROFILE_URL` within class
+[org/techbd/orchestrate/fhir/IgPublicationIssuesTest.java](org/techbd/orchestrate/fhir/IgPublicationIssuesTest.java);
 
 If you want to test a different version, update it there before running the
 tests.
@@ -88,21 +87,29 @@ Guide (IG) as if it were published at the canonical location
      3. Ensure that your local web server serves the IG over HTTPS to mimic the
         canonical setup.
 
-### IG Source and Test Fixtures
+### IG Test Fixtures
 
-We use Synthea to generate non-scenario-based JSON test fixtures that rigorously
-test various parts of the implementation guide. These test fixtures include both
-"happy" (successful) and "unhappy" (failure) paths and can be found in
-[test/resources/org/techbd/fixtures](test/resources/org/techbd/fixtures)
-directory.
+We use the examples of the SHINNYBundleProfile from the URL `https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile-examples.html` to test various parts of the implementation guide. The examples from above
+url can be found at the directory [test/resources/org/techbd/ig-examples](test/resources/org/techbd/ig-examples).
 
-The `README.md` file in that directory provides detailed explanations of the
-fixtures and their intended usage.
+   **The current tests validate the below examples**:
+   1. `AHCHRSNQuestionnaireResponseExample` (URL to download this example : `https://shinny.org/ImplementationGuide/HRSN/Bundle-AHCHRSNQuestionnaireResponseExample.html`) .
+   2. `AHCHRSNScreeningResponseExample` (URL to download this example : `https://shinny.org/ImplementationGuide/HRSN/Bundle-AHCHRSNScreeningResponseExample.html`)
+   3. `NYScreeningResponseExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-NYScreeningResponseExample.html`)
+   4. ObservationAssessmentFoodInsecurityExample (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-ObservationAssessmentFoodInsecurityExample.html`)
+   5. `ServiceRequestExample` (URL to download this example : `https://shinny.org/ImplementationGuide/HRSN/Bundle-ServiceRequestExample.html`)
+   6. `TaskCompletedExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskCompletedExample.html`)
+   7. `TaskExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskExample.html`)
+   8. `TaskOutputProcedureExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskOutputProcedureExample.html`)
+    
+   
+ If you want to  know the latest errors replace the files in the folder [test/resources/org/techbd/ig-examples](test/resources/org/techbd/ig-examples)
+ with the latest samples from the URL given above.
 
 ### Testing on Your Local Machine or CI/CD
 
-To run the SHIN-NY FHIR Implementation Guide Assurance tests on your local
-machine or within a CI/CD pipeline, follow these steps:
+To run the SHIN-NY FHIR Implementation Guide Publication Issues tests on your local
+machine , follow these steps:
 
 1. **Clone the Main Repository**:
    ```bash
@@ -114,10 +121,10 @@ machine or within a CI/CD pipeline, follow these steps:
    cd hub-prime
    ```
 
-3. **Run the `ImplGuideTest` Specific Test Case**: To run just the
-   `ImplGuideTest.java` test case, use the following Maven command:
+3. **Run the `IgPublicationIssuesTest` Specific Test Case**: To run just the
+   `IgPublicationIssuesTest.java` test case, use the following Maven command:
    ```bash
-   mvn -Dtest=org.techbd.orchestrate.fhir.ImplGuideTest test
+   mvn -Dtest=org.techbd.orchestrate.fhir.IgPublicationIssuesTest test
    ```
 
 4. **Output Locations**: By default, the output will be stored in the
