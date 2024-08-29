@@ -254,7 +254,7 @@ public class OrchestrationEngine {
             engineConstructedAt = Instant.now();
             observability = new Observability(HapiValidationEngine.class.getName(),
                     "HAPI version %s (FHIR version %s)"
-                            .formatted("7.2.0",
+                            .formatted("7.4.0",
                                     fhirContext.getVersion().getVersion().getFhirVersionString()),
                     engineInitAt,
                     engineConstructedAt);
