@@ -100,6 +100,95 @@ EXTRACT(epoch FROM headers.finish_time::timestamp without time zone - headers.st
 CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_observe_mat_sat_interaction_http_request_i_idx 
 ON techbd_udi_ingress.interaction_http_request_observe_mat (sat_interaction_http_request_id);
  
+
+ 
+/*============================================================================================================
+This view aggregates data from the hub_interaction and sat_interaction_http_request tables, extracting and 
+transforming relevant fields from JSONB payloads. The view includes information about interaction IDs, 
+bundle details, and patient resources. It generates unique row identifiers and timestamps for tracking. 
+After creation, the view is indexed on several columns to optimize query performance. 
+The view is refreshed to include up-to-date data, and indexing ensures efficient access to key fields.
+============================================================================================================*/
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_request_mat CASCADE;
+CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_request_mat
+TABLESPACE pg_default
+AS
+WITH extracted AS (
+    SELECT 
+        sat.hub_interaction_id,
+        sat.sat_interaction_http_request_id,
+        sat.payload->>'id' AS bundle_id,
+        hub."key" AS uri,
+        sat.nature ->> 'nature' AS nature,
+        sat.nature ->> 'tenant_id' AS tenant_id,
+        sat.payload->'meta'->>'lastUpdated' AS bundle_last_updated,
+        sat.from_state,
+        sat.to_state,
+        sat.payload,
+        sat.created_at
+    FROM techbd_udi_ingress.hub_interaction hub
+    INNER JOIN techbd_udi_ingress.sat_interaction_http_request sat
+        ON hub.hub_interaction_id = sat.hub_interaction_id        
+    WHERE 1 = 1      
+        AND hub.key LIKE '/Bundle%'
+),
+patient_resources AS (
+    SELECT
+    	hub_interaction_id,
+    	sat_interaction_http_request_id,
+    	jsonb_path_query(payload, '$.entry[*].resource ? (@.resourceType == "Patient")') AS patient_resource
+    FROM 
+        extracted
+),
+patient_details AS (
+    SELECT
+    	hub_interaction_id,
+    	sat_interaction_http_request_id,
+        patient_resource->>'id' AS patient_id,
+        (SELECT identifier->>'value'
+         FROM jsonb_array_elements(patient_resource->'identifier') AS identifier
+         WHERE identifier->'type'->'coding' @> '[{"code": "MR"}]' LIMIT 1) AS patient_mrn,
+        jsonb_array_elements(patient_resource->'name') AS patient_name
+    FROM 
+        patient_resources
+)
+SELECT 
+	gen_random_uuid() AS row_id,
+    e.hub_interaction_id,
+    e.sat_interaction_http_request_id,
+    e.bundle_id,
+    e.bundle_last_updated,
+    e.uri,
+    nature,
+    tenant_id,
+    pd.patient_id,
+    pd.patient_mrn,
+    e.payload,
+    e.from_state,
+    e.to_state,
+    e.created_at,
+    CURRENT_USER AS materialized_by,
+    CURRENT_TIMESTAMP AS materialized_at
+FROM 
+    extracted e
+LEFT OUTER JOIN 
+    patient_details pd
+ON e.sat_interaction_http_request_id = pd.sat_interaction_http_request_id -- Example: Adjust this based on the actual relationship
+AND e.hub_interaction_id = pd.hub_interaction_id
+WITH NO DATA; 
+ 
+ 
+CREATE UNIQUE INDEX IF NOT EXISTS fhir_request_mat_row_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (row_id);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_created_at_idx ON techbd_udi_ingress.fhir_request_mat USING btree (created_at DESC);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_hub_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (hub_interaction_id);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_sat_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (sat_interaction_http_request_id);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_patient_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (patient_id);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_nature_idx ON techbd_udi_ingress.fhir_request_mat USING btree (nature);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_tenant_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (tenant_id);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_from_state_idx ON techbd_udi_ingress.fhir_request_mat USING btree (from_state);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_to_state_idx ON techbd_udi_ingress.fhir_request_mat USING btree (to_state);
+
+
 /****************************************************************************************
  * Comprehensive view of HTTP interactions and their associated requests.
  * 
@@ -391,11 +480,12 @@ interaction details, request attributes, and validation issues.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request
-AS SELECT htt_req.hub_interaction_id AS interaction_id,
+AS SELECT
+    htt_req.hub_interaction_id AS interaction_id,
     htt_req.uri,
-    htt_req.interaction_created_at AS interaction_created_at,
-    htt_req.interaction_created_by AS interaction_created_by,
-    htt_req.interaction_provenance AS interaction_provenance,
+    htt_req.interaction_created_at,
+    htt_req.interaction_created_by,
+    htt_req.interaction_provenance,
     htt_req.sat_interaction_http_request_id,
     htt_req.nature,
     htt_req.tenant_id,
@@ -414,15 +504,26 @@ AS SELECT htt_req.hub_interaction_id AS interaction_id,
     rtyp.resource_types,
     intr_observe.start_time,
     intr_observe.finish_time,
-    intr_observe.duration_millisecs
-   FROM techbd_udi_ingress.interaction_http_request_mat htt_req
-   LEFT OUTER JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp  
-   ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id
-   AND rtyp.hub_interaction_id  = htt_req.hub_interaction_id
-   LEFT OUTER JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe
-   ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id
-   AND intr_observe.hub_interaction_id  = htt_req.hub_interaction_id 
-   WHERE htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text]);
+    intr_observe.duration_millisecs,
+    MAX(fhir_req_mat.patient_id) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_id,
+    MAX(fhir_req_mat.patient_mrn) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_mrn
+FROM 
+    techbd_udi_ingress.interaction_http_request_mat htt_req
+LEFT JOIN 
+    techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp 
+    ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
+    AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
+LEFT JOIN 
+    techbd_udi_ingress.interaction_http_request_observe_mat intr_observe 
+    ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
+    AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
+LEFT OUTER JOIN 
+    techbd_udi_ingress.fhir_request_mat fhir_req_mat
+    ON fhir_req_mat.hub_interaction_id = htt_req.hub_interaction_id 
+    AND fhir_req_mat.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
+    AND fhir_req_mat.tenant_id = htt_req.tenant_id
+WHERE 
+    htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text]);
    
 
 
