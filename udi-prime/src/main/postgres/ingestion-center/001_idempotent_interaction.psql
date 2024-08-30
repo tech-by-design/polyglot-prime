@@ -188,7 +188,32 @@ CREATE INDEX IF NOT EXISTS fhir_request_mat_tenant_id_idx ON techbd_udi_ingress.
 CREATE INDEX IF NOT EXISTS fhir_request_mat_from_state_idx ON techbd_udi_ingress.fhir_request_mat USING btree (from_state);
 CREATE INDEX IF NOT EXISTS fhir_request_mat_to_state_idx ON techbd_udi_ingress.fhir_request_mat USING btree (to_state);
 
+/*============================================================================================================
+This view selects data from the techbd_udi_ingress.fhir_request_mat materialized view and adds a 
+unique identifier (row_id) and timestamps for tracking. It includes key fields such as hub_interaction_id, 
+sat_interaction_http_request_id, bundle_id, patient details, and payload information
+============================================================================================================*/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_request;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_request
+AS SELECT gen_random_uuid() AS row_id,
+    hub_interaction_id,
+   	sat_interaction_http_request_id,
+    bundle_id,
+    bundle_last_updated,
+    uri,
+    nature,
+    tenant_id,
+    patient_id,
+    patient_mrn,
+    payload,
+    from_state,
+    to_state,
+    created_at,
+    CURRENT_USER AS materialized_by,
+    CURRENT_TIMESTAMP AS materialized_at
+    FROM techbd_udi_ingress.fhir_request_mat;
 
+    
 /****************************************************************************************
  * Comprehensive view of HTTP interactions and their associated requests.
  * 
@@ -505,8 +530,8 @@ AS SELECT
     intr_observe.start_time,
     intr_observe.finish_time,
     intr_observe.duration_millisecs,
-    MAX(fhir_req_mat.patient_id) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_id,
-    MAX(fhir_req_mat.patient_mrn) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_mrn
+    MAX(fhir_req.patient_id) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_id,
+    MAX(fhir_req.patient_mrn) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_mrn
 FROM 
     techbd_udi_ingress.interaction_http_request_mat htt_req
 LEFT JOIN 
@@ -518,10 +543,10 @@ LEFT JOIN
     ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
     AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
 LEFT OUTER JOIN 
-    techbd_udi_ingress.fhir_request_mat fhir_req_mat
-    ON fhir_req_mat.hub_interaction_id = htt_req.hub_interaction_id 
-    AND fhir_req_mat.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
-    AND fhir_req_mat.tenant_id = htt_req.tenant_id
+    techbd_udi_ingress.fhir_request fhir_req
+    ON fhir_req.hub_interaction_id = htt_req.hub_interaction_id 
+    AND fhir_req.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
+    AND fhir_req.tenant_id = htt_req.tenant_id
 WHERE 
     htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text]);
    

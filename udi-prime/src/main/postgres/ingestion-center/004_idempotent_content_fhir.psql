@@ -372,30 +372,3 @@ FROM techbd_udi_ingress.fhir_validation_issue_mat
 WHERE date_time >= CURRENT_DATE - INTERVAL '7 days'
 GROUP BY validation_engine, TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY'), COALESCE(ig_version, 'Unknown')
 ORDER BY issue_date DESC;
-
-
-
-/*============================================================================================================
-This view selects data from the techbd_udi_ingress.fhir_request_mat materialized view and adds a 
-unique identifier (row_id) and timestamps for tracking. It includes key fields such as hub_interaction_id, 
-sat_interaction_http_request_id, bundle_id, patient details, and payload information
-============================================================================================================*/
-DROP VIEW IF EXISTS techbd_udi_ingress.fhir_request;
-CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_request
-AS SELECT gen_random_uuid() AS row_id,
-    hub_interaction_id,
-   	sat_interaction_http_request_id,
-    bundle_id,
-    bundle_last_updated,
-    uri,
-    nature,
-    tenant_id,
-    patient_id,
-    patient_mrn,
-    payload,
-    from_state,
-    to_state,
-    created_at,
-    CURRENT_USER AS materialized_by,
-    CURRENT_TIMESTAMP AS materialized_at
-    FROM techbd_udi_ingress.fhir_request_mat;
