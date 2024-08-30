@@ -49,7 +49,7 @@ BEGIN
    RETURN NEXT has_function(
         schema_name,
         'register_interaction_http_request',
-        ARRAY['text', 'text', 'jsonb', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean'],
+        ARRAY['text', 'text', 'jsonb', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean'],
         'Procedure register_interaction_http_request exists'
     );
    

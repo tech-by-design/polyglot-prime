@@ -513,11 +513,15 @@ FROM cte_interaction_diagnostics intr_diagno
  * @param interaction_key TEXT - A key to identify the interaction.
  * @param payload JSONB - The JSON payload associated with the interaction.
  * @param elaboration JSONB (nullable) - Additional JSON data elaborating the interaction. Default is NULL.
- * @param nature JSONB (nullable) - The nature of the HTTP interaction (including tenant, etc.).
- * @param content_type TEXT (nullable) - The content type of the HTTP interaction.
- * @param from_state TEXT (nullable) - The initial state before the HTTP interaction.
- * @param to_state TEXT (nullable) - The state after the HTTP interaction.
- * @param state_transition_reason TEXT (nullable) - The reason for the state transition.
+ * @param nature JSONB (nullable) - The nature of the HTTP interaction (including tenant, etc.). Default is NULL.
+ * @param content_type TEXT (nullable) - The content type of the HTTP interaction. Default is NULL.
+ * @param from_state TEXT (nullable) - The initial state before the HTTP interaction. Default is NULL.
+ * @param to_state TEXT (nullable) - The state after the HTTP interaction. Default is NULL.
+ * @param state_transition_reason TEXT (nullable) - The reason for the state transition. Default is NULL.
+ * @param user_id TEXT (nullable) - The ID of the user involved in the interaction. Default is NULL.
+ * @param user_name TEXT (nullable) - The name of the user involved in the interaction. Default is NULL.
+ * @param user_session TEXT (nullable) - The session identifier of the user involved in the interaction. Default is NULL.
+ * @param user_role TEXT (nullable) - The role of the user involved in the interaction. Default is NULL.
  * @param created_at TIMESTAMPTZ (nullable) - The creation timestamp of the record. Defaults to the current timestamp if NULL.
  * @param created_by TEXT (nullable) - The user who created the record. Defaults to the current user if NULL.
  * @param provenance TEXT (nullable) - The provenance of the record. Defaults to 'unknown' if NULL.
@@ -536,6 +540,10 @@ IN content_type text DEFAULT NULL::text,
 IN from_state text DEFAULT NULL::text, 
 IN to_state text DEFAULT NULL::text, 
 IN state_transition_reason text DEFAULT NULL::text, 
+IN user_id text DEFAULT NULL::text, 
+IN user_name text DEFAULT NULL::text, 
+IN user_session text DEFAULT NULL::text, 
+IN user_role text DEFAULT NULL::text, 
 IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
 IN created_by text DEFAULT NULL::text, 
 IN provenance text DEFAULT NULL::text, 
@@ -543,16 +551,16 @@ IN hub_upsert_behavior boolean DEFAULT true)
  LANGUAGE plpgsql
 AS $procedure$
 DECLARE
-    v_error_msg 	TEXT;
-    v_error_type 	TEXT;
-    v_sqlstate 		TEXT;
-    v_pg_detail 	TEXT;
-    v_pg_hint 		TEXT;
-    v_pg_context 	TEXT;
-    v_created_at 	TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
-    v_created_by 	TEXT := COALESCE(created_by, current_user);
-    v_provenance 	TEXT := COALESCE(provenance, 'unknown');
-    v_exception_id 	TEXT;
+    v_error_msg 		TEXT;
+    v_error_type 		TEXT;
+    v_sqlstate 			TEXT;
+    v_pg_detail 		TEXT;
+    v_pg_hint 			TEXT;
+    v_pg_context 		TEXT;
+    v_created_at 		TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+    v_created_by 		TEXT := COALESCE(created_by, current_user);
+    v_provenance 		TEXT := COALESCE(provenance, 'unknown');
+    v_exception_id 		TEXT;
    	v_nature_denorm 	TEXT;
    	v_tenant_id_denorm 	TEXT;
 BEGIN
@@ -593,7 +601,20 @@ BEGIN
             gen_random_uuid()::text, interaction_id, nature, content_type, payload, from_state, to_state, 
             state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
-
+       	--1) Call the function with the defined parameters to upsert user info
+	    PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
+	        register_interaction_http_request.interaction_id, 
+	        register_interaction_http_request.interaction_key, 
+	        register_interaction_http_request.user_id, 
+	        register_interaction_http_request.user_name, 
+	        register_interaction_http_request.user_session, 
+	        register_interaction_http_request.user_role,
+	        v_tenant_id_denorm,
+	        register_interaction_http_request.elaboration,
+	        v_created_at, 
+	        v_created_by, 
+	        v_provenance
+	       );	      	  
     EXCEPTION
         WHEN OTHERS THEN
             -- Capture exception details
@@ -604,7 +625,7 @@ BEGIN
                 v_pg_hint = PG_EXCEPTION_HINT,
                 v_pg_context = PG_EXCEPTION_CONTEXT;
                 v_error_type = 'SQL';
-
+               
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
                 COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
@@ -613,6 +634,8 @@ BEGIN
 END;
 $procedure$
 ;
+
+
 /*******************************************************************************************
  * Comprehensive view of Orchctl issue classification. * 
  ******************************************************************************************/
@@ -1638,3 +1661,130 @@ ORDER BY request_created_at DESC;
 
 CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_mat_sat_interaction_http_request_i_idx 
 ON techbd_udi_ingress.interaction_http_request_mat (sat_interaction_http_request_id);
+
+/*******************************************************************************************************************************
+ * Function to upsert user details related to an HTTP interaction, ensuring the associated hub interaction record exists and 
+ * handling exceptions by logging them when necessary.
+ *
+ * @param hub_interaction_id TEXT - The unique ID for the associated hub interaction.
+ * @param hub_interaction_key TEXT - A key to identify the associated hub interaction.
+ * @param user_id TEXT - The ID of the user involved in the interaction.
+ * @param user_name TEXT - The name of the user involved in the interaction.
+ * @param user_session TEXT - The session identifier of the user involved in the interaction.
+ * @param user_role TEXT - The role of the user involved in the interaction.
+ * @param tenant_id TEXT (nullable) - The tenant ID associated with the interaction. Default is NULL.
+ * @param elaboration JSONB (nullable) - Additional JSON data elaborating the user interaction. Default is NULL.
+ * @param created_at TIMESTAMPTZ (nullable) - The creation timestamp of the record. Defaults to the current timestamp if NULL.
+ * @param created_by TEXT (nullable) - The user who created the record. Defaults to the current user if NULL.
+ * @param provenance TEXT (nullable) - The provenance of the record. Defaults to 'unknown' if NULL.
+ * 
+ * @returns TEXT - Returns the unique ID of the newly inserted or upserted user interaction record.
+ *
+ * The function performs the following actions:
+ * 1. Verifies the existence of the hub interaction record associated with the provided `hub_interaction_id` and `hub_interaction_key`.
+ *    If the record does not exist, the function returns NULL.
+ * 2. Inserts a new record into the `sat_interaction_user` table, capturing user details along with the associated tenant and
+ *    elaboration information.
+ * 3. Handles any exceptions that occur during the process by logging the details of the error using the `register_issue` function.
+ *    In the event of an error, the function returns NULL.
+ *******************************************************************************************************************************/
+
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_user_upserted(
+IN hub_interaction_id text, 
+IN hub_interaction_key text, 
+IN user_id text, 
+IN user_name text, 
+IN user_session text, 
+IN user_role text, 
+IN tenant_id text DEFAULT NULL::text, 
+IN elaboration jsonb DEFAULT NULL::jsonb, 
+IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
+IN created_by text DEFAULT NULL::text, 
+IN provenance text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_error_msg 			TEXT;
+    v_error_type 			TEXT;
+    v_sqlstate 				TEXT;
+    v_pg_detail 			TEXT;
+    v_pg_hint 				TEXT;
+    v_pg_context 			TEXT;
+    v_created_at 			TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
+    v_created_by 			TEXT := COALESCE(created_by, current_user);
+    v_provenance 			TEXT := COALESCE(provenance, 'unknown');
+    v_exception_id 			TEXT;
+   	v_hub_interaction_key 	TEXT;
+   	v_return				TEXT;
+
+BEGIN
+    -- Verify hub_interaction details
+	
+   	SELECT t."key" INTO v_hub_interaction_key
+  	FROM techbd_udi_ingress.hub_interaction t
+  	WHERE t.hub_interaction_id = sat_interaction_user_upserted.hub_interaction_id 
+  	AND t."key" = sat_interaction_user_upserted.hub_interaction_key;
+
+  	IF(v_hub_interaction_key IS NULL) THEN
+  		RETURN NULL;	
+  	END IF;
+
+    INSERT INTO techbd_udi_ingress.sat_interaction_user (
+	sat_interaction_user_id
+	,hub_interaction_id
+	,tenant_id
+	,user_id
+	,user_name
+	,user_session
+	,user_role
+	,elaboration
+	,created_at
+	,created_by
+	,provenance
+    )
+    VALUES (
+    gen_random_uuid()::text, 
+    sat_interaction_user_upserted.hub_interaction_id,
+    sat_interaction_user_upserted.tenant_id,
+    sat_interaction_user_upserted.user_id,
+    sat_interaction_user_upserted.user_name,
+    sat_interaction_user_upserted.user_session,
+    sat_interaction_user_upserted.user_role,        
+    sat_interaction_user_upserted.elaboration, 
+    v_created_at, 
+    v_created_by, 
+    v_provenance
+    ) RETURNING sat_interaction_user_id INTO v_return;
+ 
+	RETURN v_return;
+EXCEPTION
+	WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		v_hub_interaction_key,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+	RETURN NULL;
+END;
+$function$
+;
+
+
