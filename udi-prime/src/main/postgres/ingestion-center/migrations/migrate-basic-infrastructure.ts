@@ -83,6 +83,59 @@ const interactionHttpRequestSat = interactionHub.satelliteTable(
   },
 );
 
+const interactionFhirRequestSat = interactionHub.satelliteTable(
+  "fhir_request",
+  {
+    sat_interaction_fhir_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: textNullable(),
+    nature: textNullable(),
+    payload: jsonB,
+    client_ip_address: textNullable(),
+    user_agent: text(),
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    outbound_http_message: textNullable(),
+    error_message: textNullable(),
+    issues_count: integer().default(0),
+    bundle_id: textNullable(),
+    bundle_session_Id: textNullable(),
+    bundle_last_updated: dateTime(),
+    organization_id: textNullable(),
+    organization_name: textNullable(),
+    patient_id: textNullable(),
+    patient_mrn: textNullable(),
+    resource_type_set: textNullable(),
+    validation_initiated_at: dateTime(),
+    validation_completed_at: dateTime(),
+    validation_engine: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const interactionUserRequestSat = interactionHub.satelliteTable(
+  "user",
+  {
+    sat_interaction_user_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: textNullable(),
+    user_id: textNullable(),
+    user_name: textNullable(),
+    user_session: textNullable(),
+    user_role: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
 enum EnumFileExchangeProtocol {
   SFTP = "SFTP",
   S3 = "S3",
@@ -297,6 +350,13 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionHub}
 
       ${interactionHttpRequestSat}
+
+      ${interactionFhirRequestSat}
+
+      CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
+      ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
+
+      ${interactionUserRequestSat}
 
       ${fileExchangeProtocol}
 
