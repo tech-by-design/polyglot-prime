@@ -1,7 +1,11 @@
 name: UDI devl RDS Materialized Refresh
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
+  workflow_run:
+    workflows: ["UDI Devl RDS schema generator"]
+    types:
+      - completed
 
 jobs:
   build:
