@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@Tag(name = "TechBD Hub Experiments API")
+@Tag(name = "Tech by Design Hub Experiments API")
 public class ExperimentsController {
     private final Presentation presentation;
 

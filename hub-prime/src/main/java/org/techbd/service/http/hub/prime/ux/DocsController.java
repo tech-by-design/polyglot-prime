@@ -36,7 +36,7 @@ import lib.aide.resource.Resource;
 import lib.aide.resource.ResourceProvenance;
 
 @Controller
-@Tag(name = "TechBD Hub Docs API")
+@Tag(name = "Tech by Design Hub Docs API")
 public class DocsController {
     private static final Logger LOG = LoggerFactory.getLogger(DocsController.class.getName());
     public static final ObjectMapper headersOM = JsonMapper.builder()
@@ -58,7 +58,7 @@ public class DocsController {
         return "redirect:/docs/swagger-ui/techbd-api";
     }
 
-    @RouteMapping(label = "TechBD Hub", title = "Business and Technology Documentation", siblingOrder = 0)
+    @RouteMapping(label = "Tech by Design Hub", title = "Business and Technology Documentation", siblingOrder = 0)
     @GetMapping("/docs/techbd-hub")
     public String techbdHub(final Model model, final HttpServletRequest request) {
         model.addAttribute("sidebarNS", drs.getNamingStrategy());
@@ -106,7 +106,7 @@ public class DocsController {
                         .filter(n -> !n.absolutePath().equals("docs")) // we don't want the relative "root"
                         .map(n -> Map.of("text", ns.caption(n)))
                         .collect(Collectors.toList());
-                breadcrumbs.add(Map.of("href", "/docs/techbd-hub", "text", "TechBD Hub"));
+                breadcrumbs.add(Map.of("href", "/docs/techbd-hub", "text", "Tech by Design Hub"));
 
                 return ResponseEntity.ok()
                         .header("Resource-Breadcrumbs", headersOM.writeValueAsString(breadcrumbs))
@@ -192,7 +192,7 @@ public class DocsController {
         return "redirect:/docs/swagger-ui/techbd-api";
     }
 
-    @RouteMapping(label = "TechBD OpenAPI UI", title = "TechBD OpenAPI Documentation", siblingOrder = 10)
+    @RouteMapping(label = "Tech by Design OpenAPI UI", title = "TechBD OpenAPI Documentation", siblingOrder = 10)
     @GetMapping("/docs/swagger-ui/techbd-api")
     public String techBdSwaggerUI(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/swagger-ui/techbd-api", model, request);

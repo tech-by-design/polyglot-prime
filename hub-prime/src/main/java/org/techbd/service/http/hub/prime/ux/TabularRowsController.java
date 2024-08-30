@@ -28,7 +28,7 @@ import lib.aide.tabular.TabularRowsRequest;
 import lib.aide.tabular.TabularRowsResponse;
 
 @Controller
-@Tag(name = "TechBD Hub Tabular Row API Endpoints for AG Grid")
+@Tag(name = "Tech by Design Hub Tabular Row API Endpoints for AG Grid")
 public class TabularRowsController {
         private static final Logger LOG = LoggerFactory.getLogger(TabularRowsController.class);
 

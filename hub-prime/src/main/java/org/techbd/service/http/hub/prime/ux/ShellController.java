@@ -20,7 +20,7 @@ import lib.aide.paths.PathsHtml;
 import lib.aide.paths.PathsVisuals;
 
 @Controller
-@Tag(name = "TechBD Hub UX Presentation Shell")
+@Tag(name = "Tech by Design Hub UX Presentation Shell")
 public class ShellController {
     private final ResourceLoader resourceLoader;
     private final Presentation presentation;
