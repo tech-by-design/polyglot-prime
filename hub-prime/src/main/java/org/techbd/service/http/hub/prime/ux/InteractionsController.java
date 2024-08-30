@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@Tag(name = "TechBD Hub Interactions UX API")
+@Tag(name = "Tech by Design Hub Interactions UX API")
 public class InteractionsController {
 
     @SuppressWarnings("unused")

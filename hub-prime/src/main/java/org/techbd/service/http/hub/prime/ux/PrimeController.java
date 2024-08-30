@@ -32,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lib.aide.tabular.JooqRowsSupplier;
 
 @Controller
-@Tag(name = "TechBD Hub UX API")
+@Tag(name = "Tech by Design Hub UX API")
 public class PrimeController {
     private static final Logger LOG = LoggerFactory.getLogger(PrimeController.class.getName());
 

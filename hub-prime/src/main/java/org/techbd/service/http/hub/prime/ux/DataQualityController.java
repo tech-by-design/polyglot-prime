@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@Tag(name = "TechBD Hub Data Quality UX API")
+@Tag(name = "Tech by Design Hub Data Quality UX API")
 public class DataQualityController {
     @SuppressWarnings("unused")
     private static final Logger LOG = LoggerFactory.getLogger(DataQualityController.class.getName());
