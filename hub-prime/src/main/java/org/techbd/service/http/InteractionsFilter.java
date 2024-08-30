@@ -200,6 +200,25 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
+
+                // User details
+                final var sessionId = origRequest.getRequestedSessionId();
+                final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
+                if (null != curUser) {
+                    final var curUserName = Optional.ofNullable(curUser.get().principal().getAttribute("name")).orElse("NO_DATA");
+                    final var gitHubLoginId = Optional.ofNullable(curUser.get().principal().getAttribute("login")).orElse("NO_DATA");
+
+                    rihr.setUserName(curUserName.toString());
+                    rihr.setUserId(gitHubLoginId.toString());
+                    rihr.setUserSession(sessionId);
+                    rihr.setUserRole("DEFAULT_ROLE");
+                } else {
+                    rihr.setUserName(null);
+                    rihr.setUserId(null);
+                    rihr.setUserSession(sessionId);
+                    rihr.setUserRole("API_ROLE");
+                }
+
                 rihr.execute(dsl.configuration());
             } catch (Exception e) {
                 LOG.error("CALL " + rihr.getName() + " error", e);
