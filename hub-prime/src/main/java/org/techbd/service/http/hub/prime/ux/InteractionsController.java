@@ -89,4 +89,10 @@ public class InteractionsController {
     public String provenance(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/provenance", model, request);
     }
+
+    @GetMapping("/interactions/user")
+    @RouteMapping(label = "User Sessions", title = "User", siblingOrder = 90)
+    public String user(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/user", model, request);
+    }
 }
