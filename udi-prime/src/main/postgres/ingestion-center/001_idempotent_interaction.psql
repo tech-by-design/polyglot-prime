@@ -731,6 +731,8 @@ BEGIN
 	    PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 	        register_interaction_http_request.interaction_id, 
 	        register_interaction_http_request.interaction_key, 
+            v_nature_denorm,
+	        register_interaction_http_request.payload, 
 	        register_interaction_http_request.user_id, 
 	        register_interaction_http_request.user_name, 
 	        register_interaction_http_request.user_session, 
@@ -1819,6 +1821,8 @@ ON techbd_udi_ingress.interaction_http_request_mat (sat_interaction_http_request
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_user_upserted(
 IN hub_interaction_id text, 
 IN hub_interaction_key text, 
+IN nature text, 
+IN user_payload JSONB,
 IN user_id text, 
 IN user_name text, 
 IN user_session text, 
@@ -1844,6 +1848,8 @@ DECLARE
     v_exception_id 			TEXT;
    	v_hub_interaction_key 	TEXT;
    	v_return				TEXT;
+   	v_client_ip_address		TEXT;
+   	v_user_agent		    TEXT;
 
 BEGIN
     -- Verify hub_interaction details
@@ -1857,14 +1863,22 @@ BEGIN
   		RETURN NULL;	
   	END IF;
 
+    SELECT h.value ->> 'value'::text INTO v_client_ip_address
+    FROM jsonb_array_elements((sat_interaction_user_upserted.user_payload -> 'request'::text) -> 'headers'::text) h(value)
+    WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text;    
+
     INSERT INTO techbd_udi_ingress.sat_interaction_user (
 	sat_interaction_user_id
 	,hub_interaction_id
+	,uri
+	,nature
 	,tenant_id
 	,user_id
 	,user_name
 	,user_session
 	,user_role
+	,client_ip_address
+	,user_agent
 	,elaboration
 	,created_at
 	,created_by
@@ -1873,11 +1887,15 @@ BEGIN
     VALUES (
     gen_random_uuid()::text, 
     sat_interaction_user_upserted.hub_interaction_id,
+    v_hub_interaction_key,
+    sat_interaction_user_upserted.nature,
     sat_interaction_user_upserted.tenant_id,
     sat_interaction_user_upserted.user_id,
     sat_interaction_user_upserted.user_name,
     sat_interaction_user_upserted.user_session,
     sat_interaction_user_upserted.user_role,        
+    v_client_ip_address,        
+    (sat_interaction_user_upserted.user_payload -> 'request'::text) ->> 'userAgent'::text,      
     sat_interaction_user_upserted.elaboration, 
     v_created_at, 
     v_created_by, 
@@ -1913,4 +1931,30 @@ END;
 $function$
 ;
 
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_user_details CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_user_details
+AS SELECT sai.created_at,
+    sai.hub_interaction_id,
+    sai.uri,
+    sai.sat_interaction_user_id,
+    sai.user_id,
+    sai.user_name,
+    sai.user_session,
+    sai.user_role,
+    sai.client_ip_address,
+    sai.user_agent
+   FROM techbd_udi_ingress.sat_interaction_user sai
+  ORDER BY sai.created_at DESC;
 
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_user_list CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_user_list
+AS SELECT min(created_at) AS created_at,
+    min(user_id) AS user_id,
+    min(user_name) AS user_name,
+    min(user_role) AS user_role,
+    user_session
+   FROM techbd_udi_ingress.interaction_user_details
+  WHERE user_session IS NOT NULL
+  GROUP BY user_session
+  ORDER BY (min(created_at)) DESC;  
