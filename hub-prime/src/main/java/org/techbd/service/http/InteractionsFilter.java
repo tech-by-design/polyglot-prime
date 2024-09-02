@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -205,18 +206,20 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 final var sessionId = origRequest.getRequestedSessionId();
                 final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
                 if (null != curUser) {
-                    final var curUserName = Optional.ofNullable(curUser.get().principal().getAttribute("name")).orElse("NO_DATA");
-                    final var gitHubLoginId = Optional.ofNullable(curUser.get().principal().getAttribute("login")).orElse("NO_DATA");
+                    try {
+                        final var curUserName = Optional.ofNullable(curUser.get().principal().getAttribute("name")).orElse("NO_DATA");
+                        final var gitHubLoginId = Optional.ofNullable(curUser.get().principal().getAttribute("login")).orElse("NO_DATA");
 
-                    rihr.setUserName(curUserName.toString());
-                    rihr.setUserId(gitHubLoginId.toString());
-                    rihr.setUserSession(sessionId);
-                    rihr.setUserRole("DEFAULT_ROLE");
-                } else {
-                    rihr.setUserName(null);
-                    rihr.setUserId(null);
-                    rihr.setUserSession(sessionId);
-                    rihr.setUserRole("API_ROLE");
+                        rihr.setUserName(curUserName.toString());
+                        rihr.setUserId(gitHubLoginId.toString());
+                        rihr.setUserSession(sessionId);
+                        rihr.setUserRole("DEFAULT_ROLE");
+                    } catch (NoSuchElementException nsee) {
+                        rihr.setUserName(null);
+                        rihr.setUserId(null);
+                        rihr.setUserSession(sessionId);
+                        rihr.setUserRole("API_ROLE");
+                    }
                 }
 
                 rihr.execute(dsl.configuration());
