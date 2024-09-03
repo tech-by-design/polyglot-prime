@@ -1864,8 +1864,14 @@ BEGIN
   	END IF;
 
     SELECT h.value ->> 'value'::text INTO v_client_ip_address
-    FROM jsonb_array_elements((sat_interaction_user_upserted.user_payload -> 'request'::text) -> 'headers'::text) h(value)
-    WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text;    
+    FROM jsonb_array_elements((sat_interaction_user_upserted.user_payload -> 'request'::text) -> 'cookies'::text) h(value)
+    WHERE (h.value ->> 'name'::text) = 'clientIp'::text; 
+
+    IF(v_client_ip_address IS NULL) THEN
+        SELECT h.value ->> 'value'::text INTO v_client_ip_address
+        FROM jsonb_array_elements((sat_interaction_user_upserted.user_payload -> 'request'::text) -> 'headers'::text) h(value)
+        WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text;   
+    END IF; 
 
     INSERT INTO techbd_udi_ingress.sat_interaction_user (
 	sat_interaction_user_id
