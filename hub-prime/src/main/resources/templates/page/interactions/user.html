@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            line-height: 1.5rem;
+            margin: 8px 0px 10px 15px;
+        }
+    </style>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'interaction_user_list';
+        const viewDetailsName = 'interaction_user_details';
+        const userInteractionColumnDefs = [
+            { headerName: "Recorded Time", field: "created_at", filter: "agTextColumnFilter", headerTooltip: "Time at which the user interaction is recorded", valueFormatter: AGGridAide.dateTimeValueFormatter() },
+            { headerName: "Interaction ID", field: "sat_interaction_user_id", filter: "agTextColumnFilter", headerTooltip: "Interaction ID" },
+            { headerName: "URI Accessed", field: "uri", filter: "agTextColumnFilter", headerTooltip: "URI Accessed" },
+            { headerName: "User Role", field: "user_role", filter: "agTextColumnFilter", headerTooltip: "User Role" },
+            { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", headerTooltip: "IP address of the user client" },
+            { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User Agent of the user" },
+        ];
+        function getUserInteractionsDetail(params) {
+            const user_session = encodeURIComponent(params.data.user_session) || params.data.user_session;
+
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewDetailsName}/user_session/${user_session}.json`))
+                .then(response => response.json())
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                  { headerName: "Session Start Time", field: "created_at", filter: "agTextColumnFilter", headerTooltip: "Time at which the user interaction is recorded", cellRenderer: 'agGroupCellRenderer', valueFormatter: AGGridAide.dateTimeValueFormatter() },
+                  { headerName: "Session ID", field: "user_session", filter: "agTextColumnFilter", headerTooltip: "SessionID of the session" },
+                  { headerName: "User ID", field: "user_id", filter: "agTextColumnFilter", headerTooltip: "User ID of the user" },
+                  { headerName: "Username", field: "user_name", filter: "agTextColumnFilter", headerTooltip: "User name of the user" },
+                  ])
+                .withMasterDetail(true)
+                .withDetailCellRendererParams({
+
+
+                    detailGridOptions: {
+                        columnDefs: userInteractionColumnDefs,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getUserInteractionsDetail(params);
+                    }
+                })
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withMasterDetail(true)
+                .withDetailCellRendererParams({
+                    detailGridOptions: {
+                        columnDefs: userInteractionColumnDefs,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getUserInteractionsDetail(params);
+                    }
+                })
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+            // Add date-range text 
+            // Inject the date range into the HTML
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>
