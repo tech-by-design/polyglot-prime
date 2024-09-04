@@ -657,22 +657,22 @@ FROM cte_interaction_diagnostics intr_diagno
  *******************************************************************************************************************************/
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, jsonb, jsonb, text, text, text, text, timestamptz, text, text, bool);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_interaction_http_request(
-IN interaction_id text, 
-IN interaction_key text, 
+IN interaction_id TEXT, 
+IN interaction_key TEXT, 
 IN payload jsonb, 
 IN elaboration jsonb DEFAULT NULL::jsonb, 
 IN nature jsonb DEFAULT NULL::jsonb, 
-IN content_type text DEFAULT NULL::text, 
-IN from_state text DEFAULT NULL::text, 
-IN to_state text DEFAULT NULL::text, 
-IN state_transition_reason text DEFAULT NULL::text, 
-IN user_id text DEFAULT NULL::text, 
-IN user_name text DEFAULT NULL::text, 
-IN user_session text DEFAULT NULL::text, 
-IN user_role text DEFAULT NULL::text, 
+IN content_type text DEFAULT NULL::TEXT, 
+IN from_state text DEFAULT NULL::TEXT, 
+IN to_state text DEFAULT NULL::TEXT, 
+IN state_transition_reason text DEFAULT NULL::TEXT, 
+IN user_id text DEFAULT NULL::TEXT, 
+IN user_name text DEFAULT NULL::TEXT, 
+IN user_session text DEFAULT NULL::TEXT, 
+IN user_role text DEFAULT NULL::TEXT, 
 IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
-IN created_by text DEFAULT NULL::text, 
-IN provenance text DEFAULT NULL::text, 
+IN created_by text DEFAULT NULL::TEXT, 
+IN provenance text DEFAULT NULL::TEXT, 
 IN hub_upsert_behavior boolean DEFAULT true)
  LANGUAGE plpgsql
 AS $procedure$
@@ -727,7 +727,8 @@ BEGIN
             gen_random_uuid()::text, interaction_id, nature, content_type, payload, from_state, to_state, 
             state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
-       	--1) Call the function with the defined parameters to upsert user info
+       
+       	--1) Calls the function with the defined parameters to upsert user info
 	    PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 	        register_interaction_http_request.interaction_id, 
 	        register_interaction_http_request.interaction_key, 
@@ -742,7 +743,26 @@ BEGIN
 	        v_created_at, 
 	        v_created_by, 
 	        v_provenance
-	       );	      	  
+	       );	    
+	   	
+	     --2) Calls the function with the defined parameters to upsert interaction FHIR request info.
+	   	IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate') THEN
+	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
+	        register_interaction_http_request.interaction_id,
+	        v_tenant_id_denorm,
+	        register_interaction_http_request.interaction_key,
+	        v_nature_denorm,
+	        register_interaction_http_request.from_state,
+	        register_interaction_http_request.to_state,
+	        register_interaction_http_request.payload,
+	        register_interaction_http_request.state_transition_reason,
+	        v_created_at,
+	        v_created_by,
+	        v_provenance,
+	      	register_interaction_http_request.elaboration
+	       );	    
+		END IF;
+	    	    
     EXCEPTION
         WHEN OTHERS THEN
             -- Capture exception details
@@ -1964,3 +1984,253 @@ AS SELECT min(created_at) AS created_at,
   WHERE user_session IS NOT NULL
   GROUP BY user_session
   ORDER BY (min(created_at)) DESC;  
+
+/*******************************************************************************************************************************
+Procedure to handle the insertion or update of FHIR interaction data, managing default values and error handling.
+
+@param hub_interaction_id TEXT - The unique identifier for the interaction in the hub.
+@param tenant_id TEXT - The identifier for the tenant or client.
+@param uri TEXT - The URI associated with the FHIR request.
+@param nature TEXT - The nature or type of the HTTP interaction.
+@param from_state TEXT - The state before the interaction occurred.
+@param to_state TEXT - The state after the interaction.
+@param payload JSONB - The JSON payload containing the details of the interaction.
+@param state_transition_reason TEXT (nullable) - The reason for the state transition. Default is NULL.
+@param created_at TIMESTAMP WITH TIME ZONE (nullable) - The timestamp of record creation. Defaults to the current timestamp if NULL.
+@param created_by TEXT (nullable) - The user who created the record. Defaults to the current user if NULL.
+@param provenance TEXT (nullable) - The provenance or source of the record. Defaults to 'unknown' if NULL.
+@param elaboration JSONB (nullable) - Additional elaborative JSON data related to the interaction. Default is NULL.
+@returns TEXT - A textual representation of the result of the operation, typically used to convey success or error messages. 
+ *******************************************************************************************************************************/
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_fhir_request_upserted(
+hub_interaction_id 		TEXT, 
+tenant_id 				TEXT, 
+uri 					TEXT, 
+nature 					TEXT, 
+from_state 				TEXT, 
+to_state 				TEXT, 
+payload 				JSONB, 
+state_transition_reason TEXT DEFAULT NULL::TEXT, 
+created_at  			TIMESTAMP with TIME zone DEFAULT NULL::TIMESTAMP with TIME zone, 
+created_by 				TEXT DEFAULT NULL::TEXT, 
+provenance 				TEXT DEFAULT NULL::TEXT, 
+elaboration 			JSONB DEFAULT NULL::JSONB)
+ RETURNS TEXT
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    -- Declare variables to hold error and extracted data
+	v_error_msg 				TEXT;
+    v_error_type 				TEXT;
+    v_sqlstate 					TEXT;
+    v_pg_detail 				TEXT;
+    v_pg_hint 					TEXT;
+    v_pg_context 				TEXT;
+    v_created_at 				TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
+    v_created_by 				TEXT := COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 				TEXT := COALESCE(provenance, 'unknown');  -- Set default provenance
+    v_exception_id 				TEXT;
+    
+    -- Additional variables for extracting and holding data from the payload JSONB
+    v_client_ip_address 			TEXT := NULL;
+   	v_client_ip_address_forwarded	TEXT := NULL;
+    v_user_agent 					TEXT := NULL;
+    v_outbound_http_message 		TEXT := NULL;
+    v_error_message 				TEXT := NULL;
+    v_issues_count 					INTEGER;
+    v_bundle_id 					TEXT := NULL;
+    v_bundle_session_id 			TEXT := NULL;
+    v_bundle_last_updated 			TEXT := NULL;
+    v_organization_id 				TEXT := NULL;
+    v_organization_name 			TEXT := NULL;
+    v_patient_id 					TEXT := NULL;
+    v_patient_mrn 					TEXT := NULL;
+   	v_medicaid_cin 					TEXT := NULL;
+    v_resource_type_set 			TEXT := NULL;
+    v_validation_initiated_at 		TEXT := NULL;
+    v_validation_completed_at 		TEXT := NULL;
+    v_validation_engine 			TEXT := NULL;
+   	v_ig_version 					TEXT := NULL;
+   	v_profile_url 					TEXT := NULL;
+   	v_return 						TEXT := NULL;
+
+BEGIN
+
+   	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
+  		WHERE t.hub_interaction_id = sat_interaction_fhir_request_upserted.hub_interaction_id 
+  		AND t."key" = sat_interaction_fhir_request_upserted.uri) THEN
+  		RETURN NULL;	
+  	END IF;      	
+
+	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = 'original fhir payload') THEN
+		v_patient_id := (
+	    SELECT entry->'resource'->>'id'
+	    FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry
+	    WHERE entry->'resource'->>'resourceType' = 'Patient'
+	    LIMIT 1);
+	   
+	    SELECT 
+	    identifier_element->>'value', 
+	    regexp_replace(identifier_element->'assigner'->>'reference','^Organization/', '') 
+	    INTO v_patient_mrn, v_organization_id
+	    FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry,
+	    jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
+	    WHERE entry->'resource'->>'resourceType' = 'Patient'
+	    AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
+	    LIMIT 1;	  
+	  
+	  	SELECT entry.value->'resource'->>'name' INTO v_organization_name
+    	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry(value)
+   	 	WHERE 
+        entry.value->'resource'->>'resourceType' = 'Organization' 
+        AND entry.value->'resource'->>'id' = v_organization_id;
+   	   
+	    v_medicaid_cin := (
+	    SELECT identifier_element->>'value'
+	   	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry,
+		jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
+		WHERE entry->'resource'->>'resourceType' = 'Patient'
+		AND identifier_element #>> '{type, coding, 0, code}' = 'MA'
+		LIMIT 1
+	    );		  
+		
+		SELECT 
+		sat_interaction_fhir_request_upserted.payload->>'id', 
+		sat_interaction_fhir_request_upserted.payload->'meta'->>'lastUpdated'::TEXT 
+		INTO v_bundle_id, v_bundle_last_updated
+		WHERE sat_interaction_fhir_request_upserted.payload->>'resourceType' = 'Bundle'
+		LIMIT 1;		
+		
+		SELECT STRING_AGG(DISTINCT entry->'resource'->>'resourceType', ', ') INTO v_resource_type_set
+		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry
+		WHERE entry ? 'resource';
+	END IF;
+
+	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('org.techbd.service.http.Interactions$RequestResponseEncountered')) THEN		
+		v_client_ip_address_forwarded := (
+		SELECT hdrs->>'value'
+    	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'headers') AS hdrs
+    	WHERE hdrs->>'name' = 'x-forwarded-for'
+    	);
+    
+    	v_user_agent 				:= sat_interaction_fhir_request_upserted.payload->'request'->>'userAgent';    
+    	v_client_ip_address 		:= sat_interaction_fhir_request_upserted.payload->'request'->>'clientIpAddress';    
+    	v_issues_count 				:= jsonb_array_length((((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text);	
+		v_outbound_http_message 	:= "substring"((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);   	
+		v_bundle_session_id 		:= sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->>'bundleSessionId';	
+		v_outbound_http_message		:= "substring"((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text); 		
+		v_validation_initiated_at 	:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'initiatedAt');	
+    	v_validation_completed_at 	:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'completedAt' );    
+    	v_validation_engine 		:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
+    	v_ig_version				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'igVersion');        
+    	v_profile_url				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'profileUrl');     	
+	END IF;	
+	
+	IF(LOWER(sat_interaction_fhir_request_upserted.nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response')) ) THEN
+		v_error_message := SUBSTRING(payload ->> 'error'::text FROM POSITION((':'::text) IN (payload ->> 'error'::text)) + 2);
+	END IF;
+	
+    -- Perform an upsert into the table
+    -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
+    -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
+    -- If the operation succeeds, the generated UUID is returned.
+    INSERT INTO techbd_udi_ingress.sat_interaction_fhir_request (
+        sat_interaction_fhir_request_id,
+        hub_interaction_id,
+        tenant_id,
+        tenant_id_lower,
+        uri,
+        nature,
+        payload,
+        client_ip_address,
+        user_agent,
+        from_state,
+        to_state,
+        state_transition_reason,
+        outbound_http_message,
+        error_message,
+        issues_count,
+        bundle_id,
+        bundle_session_id,
+        bundle_last_updated,
+        organization_id,
+        organization_name,
+        patient_id,
+        patient_mrn,
+        resource_type_set,
+        validation_initiated_at,
+        validation_completed_at,
+        validation_engine,
+        elaboration,
+        created_at,
+        created_by,
+        provenance,
+        ig_version,
+        profile_url
+    )
+    VALUES (
+        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+        hub_interaction_id,
+        tenant_id,
+        LOWER(tenant_id),  -- Store the tenant ID in lowercase for consistency
+        uri,
+        nature,
+        payload,
+        v_client_ip_address,
+        v_user_agent,
+        from_state,
+        to_state,
+        state_transition_reason,
+        v_outbound_http_message,
+        v_error_message,
+        COALESCE(v_issues_count,0),
+        v_bundle_id,
+        v_bundle_session_id,
+        COALESCE(v_bundle_last_updated::TIMESTAMPTZ,NULL),
+        v_organization_id,
+        v_organization_name,
+        v_patient_id,
+        v_patient_mrn,
+        v_resource_type_set,
+        COALESCE(TO_TIMESTAMP(v_validation_initiated_at::FLOAT),NULL),
+        COALESCE(TO_TIMESTAMP(v_validation_completed_at::FLOAT),NULL),
+        v_validation_engine,
+        sat_interaction_fhir_request_upserted.elaboration,
+        created_at,
+        created_by,
+        provenance,
+        v_ig_version,
+        v_profile_url
+    ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
+
+    RETURN v_return;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    --RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		sat_interaction_fhir_request_upserted.uri,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+		RETURN NULL;
+END;
+$function$
+;
