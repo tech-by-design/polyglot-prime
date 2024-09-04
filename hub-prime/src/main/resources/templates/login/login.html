@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+    <script>
+        fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            // Once you have the IP address, pass it to the server
+            document.cookie = "clientIp=" + data.ip;            
+        })
+        .catch(error => console.error('Error fetching client IP:', error));
+    </script>
 </head>
 <body class="h-full">
 <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
