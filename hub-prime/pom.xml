@@ -11,10 +11,10 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.207.0</version>
+	<version>0.208.0</version>
 	<packaging>war</packaging>
-	<name>TechBD Hub (Prime)</name>
-	<description>TechBD Hub (Primary)</description>
+	<name>Tech by Design Hub (Prime)</name>
+	<description>Tech by Design Hub (Primary)</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>
