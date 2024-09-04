@@ -101,6 +101,7 @@ org:
               hl7UsCoreRace: http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-race.json
               hl7UsCoreEthnicity: http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-ethnicity.json
               hl7UsCorePractitioner: http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-practitioner.json
+              hl7UsCoreGenderIdentity: https://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-genderIdentity.json
               hl7UsSDOHCCObservationAssessment: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationAssessment.json
               hl7USECRDisabilityStatus: https://hl7.org/fhir/us/ecr/2021Jan/StructureDefinition-disability-status.json
               hl7SDOHCCProcedure: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-Procedure.json
@@ -109,6 +110,7 @@ org:
               nyHRSNQuestionnaire: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-NYS-HRSN-Questionnaire.json
               hl7SDOHCCCodeSystemTemporaryCodes: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/CodeSystem-SDOHCC-CodeSystemTemporaryCodes.json
               hl7CodeSystemConditionCategory: http://hl7.org/fhir/us/core/STU7/CodeSystem-condition-category.json
+              hl7CodeSystemItemType: https://hl7.org/fhir/codesystem-item-type.json
             valueSetUrls:
               shinnyConsentProvisionTypesVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json
               shinnyCountyVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYCountyVS.json

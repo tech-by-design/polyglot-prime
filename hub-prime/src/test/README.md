@@ -89,23 +89,18 @@ Guide (IG) as if it were published at the canonical location
 
 ### IG Test Fixtures
 
-We use the examples of the SHINNYBundleProfile from the URL `https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile-examples.html` to test various parts of the implementation guide. The examples from above
-url can be found at the directory [test/resources/org/techbd/ig-examples](test/resources/org/techbd/ig-examples).
+We use the examples of the SHINNYBundleProfile from the URL `https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile-examples.html` to test various parts of the implementation guide. 
 
    **The current tests validate the below examples**:
    1. `AHCHRSNQuestionnaireResponseExample` (URL to download this example : `https://shinny.org/ImplementationGuide/HRSN/Bundle-AHCHRSNQuestionnaireResponseExample.html`) .
    2. `AHCHRSNScreeningResponseExample` (URL to download this example : `https://shinny.org/ImplementationGuide/HRSN/Bundle-AHCHRSNScreeningResponseExample.html`)
    3. `NYScreeningResponseExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-NYScreeningResponseExample.html`)
-   4. ObservationAssessmentFoodInsecurityExample (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-ObservationAssessmentFoodInsecurityExample.html`)
+   4. `ObservationAssessmentFoodInsecurityExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-ObservationAssessmentFoodInsecurityExample.html`)
    5. `ServiceRequestExample` (URL to download this example : `https://shinny.org/ImplementationGuide/HRSN/Bundle-ServiceRequestExample.html`)
    6. `TaskCompletedExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskCompletedExample.html`)
    7. `TaskExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskExample.html`)
    8. `TaskOutputProcedureExample` (URL to download this example: `https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskOutputProcedureExample.html`)
     
-   
- If you want to  know the latest errors replace the files in the folder [test/resources/org/techbd/ig-examples](test/resources/org/techbd/ig-examples)
- with the latest samples from the URL given above.
-
 ### Testing on Your Local Machine or CI/CD
 
 To run the SHIN-NY FHIR Implementation Guide Publication Issues tests on your local
