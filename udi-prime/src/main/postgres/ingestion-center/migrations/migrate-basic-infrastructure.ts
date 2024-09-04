@@ -8,8 +8,8 @@
  */
 
 import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/data-vault/mod.ts";
-import { pgSQLa } from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/pgdcp/deps.ts";
-// import * as migrate from "../../../../../../../../netspective-labs/sql-aide/pattern/postgres/migrate.ts";
+// import { pgSQLa } from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/pgdcp/deps.ts";
+import { pgSQLa } from "../../../../../../../../netspective-labs/sql-aide/pattern/pgdcp/deps.ts";
 
 // deconstructed modules provide convenient access to internal imports
 const { typical: typ, typical: { SQLa, ws } } = dvp;
@@ -54,6 +54,7 @@ const {
   jsonbNullable,
   jsonB,
   boolean,
+  booleanNullable,
   textNullable,
   dateTime,
   dateTimeNullable,
@@ -595,6 +596,8 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionHttpRequestSat}
 
       ${interactionFhirRequestSat}
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN passed DROP NOT NULL;
 
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
       ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
