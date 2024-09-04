@@ -146,21 +146,41 @@
             </div>
             <div>
                 <h3 class="text-xl font-bold mb-4">Production (FHIR)</h3>
-                <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
-                    sequenceDiagram
-                        participant SCN as SCN
-                        participant QE as QE
-                        participant Tech by Design as Tech by Design
-                        participant ScoringEngine as Scoring Engine
-                        participant SHINNY as SHIN-NY Data Lake
-                        participant MDW as MDW 
-                                    
+                <pre class="mermaid bg-white p-4 rounded-lg shadow-md"> 
+                sequenceDiagram
+                    participant RC as RC
+                    participant SCN as SCN
+                    participant QE as QE
+                    participant RHHIO as RHHIO
+                    participant Tech by Design as Tech by Design
+                    participant SHINNY as SHIN-NY Data Lake
+                    participant MDW as MDW
+                    participant MCO as MCO 
+                
+                    critical Quasi-synchronous submission
+                        RC ->> SCN: Ready prepares "Happy Path"<br>test case (easy to understand)
                         SCN ->> QE: Send Test JSON
                         QE ->> Tech by Design: Proxy FHIR JSON
                         Tech by Design ->> Tech by Design: Validate and Store FHIR JSON
-                        Tech by Design ->> ScoringEngine: Proxy Validated FHIR JSON
-                        ScoringEngine ->> SHINNY: Submit to Data lake
-                        SHINNY ->> MDW: Submit to MDW
+                        Tech by Design ->> SHINNY: Proxy Validated FHIR<br>JSON to to Data lake
+                        SHINNY ->> MDW: Submit HRSN to MDW
+                        SHINNY ->> QE: Screening Files (daily)
+                        QE ->> SCN: Screening Files (daily)
+                    end
+                
+                    critical MDW prepares and sends content
+                        MDW ->> SHINNY: Medicaid Eligibility File (MEF)
+                        SHINNY ->> QE: MEF
+                        SCN ->> QE: SCN Picks it<br>up asynchronously
+                    end
+                
+                    critical MCO prepares and sends content
+                        MCO ->> RHHIO: Enhanced Services<br>Member File (ESMF)
+                        RHHIO ->> SHINNY: ESMF
+                        SHINNY ->> MDW: ESMF
+                        SHINNY ->> QE: ESMF
+                        SCN ->> QE: SCN Picks it<br>up asynchronously
+                    end
                 </pre>
             </div>
         </div>
