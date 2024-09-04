@@ -73,7 +73,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         regexAndMethods == null
                                 ? List.of(
                                         "^/home",
-                                        "^/docs",
+                                        "^/docs", "^/docs/.*",
                                         "^/console*", "^/console/.*",
                                         "^/content*", "^/content/.*",
                                         "^/data-quality*", "^/data-quality/.*",
