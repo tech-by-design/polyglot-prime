@@ -1837,7 +1837,7 @@ ON techbd_udi_ingress.interaction_http_request_mat (sat_interaction_http_request
  *    In the event of an error, the function returns NULL.
  *******************************************************************************************************************************/
 
-
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_user_upserted(text, text, text, jsonb, text, text, text, text, text, jsonb, timestamptz, text, text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_user_upserted(
 IN hub_interaction_id text, 
 IN hub_interaction_key text, 
@@ -2002,7 +2002,7 @@ Procedure to handle the insertion or update of FHIR interaction data, managing d
 @param elaboration JSONB (nullable) - Additional elaborative JSON data related to the interaction. Default is NULL.
 @returns TEXT - A textual representation of the result of the operation, typically used to convey success or error messages. 
  *******************************************************************************************************************************/
-
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_fhir_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_fhir_request_upserted(
 hub_interaction_id 		TEXT, 
 tenant_id 				TEXT, 
@@ -2178,7 +2178,7 @@ BEGIN
         nature,
         payload,
         v_client_ip_address,
-        v_user_agent,
+        COALESCE(v_user_agent,'unknown'),
         from_state,
         to_state,
         state_transition_reason,
