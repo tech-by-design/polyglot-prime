@@ -333,6 +333,7 @@ const interactionFhirRequestSat = interactionHub.satelliteTable(
     validation_engine: textNullable(),
     ig_version: textNullable(),
     profile_url : textNullable(),
+    passed: boolean().default(false),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },
