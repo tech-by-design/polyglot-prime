@@ -8,8 +8,8 @@
  */
 
 import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/data-vault/mod.ts";
-// import { pgSQLa } from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/pgdcp/deps.ts";
-import { pgSQLa } from "../../../../../../../../netspective-labs/sql-aide/pattern/pgdcp/deps.ts";
+import { pgSQLa } from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/pgdcp/deps.ts";
+// import { pgSQLa } from "../../../../../../../../netspective-labs/sql-aide/pattern/pgdcp/deps.ts";
 
 // deconstructed modules provide convenient access to internal imports
 const { typical: typ, typical: { SQLa, ws } } = dvp;
