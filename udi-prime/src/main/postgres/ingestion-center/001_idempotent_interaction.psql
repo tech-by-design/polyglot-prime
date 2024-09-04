@@ -2003,20 +2003,8 @@ Procedure to handle the insertion or update of FHIR interaction data, managing d
 @returns TEXT - A textual representation of the result of the operation, typically used to convey success or error messages. 
  *******************************************************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_fhir_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_fhir_request_upserted(
-hub_interaction_id 		TEXT, 
-tenant_id 				TEXT, 
-uri 					TEXT, 
-nature 					TEXT, 
-from_state 				TEXT, 
-to_state 				TEXT, 
-payload 				JSONB, 
-state_transition_reason TEXT DEFAULT NULL::TEXT, 
-created_at  			TIMESTAMP with TIME zone DEFAULT NULL::TIMESTAMP with TIME zone, 
-created_by 				TEXT DEFAULT NULL::TEXT, 
-provenance 				TEXT DEFAULT NULL::TEXT, 
-elaboration 			JSONB DEFAULT NULL::JSONB)
- RETURNS TEXT
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_fhir_request_upserted(hub_interaction_id text, tenant_id text, uri text, nature text, from_state text, to_state text, payload jsonb, state_transition_reason text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb)
+ RETURNS text
  LANGUAGE plpgsql
 AS $function$
 DECLARE
@@ -2039,6 +2027,7 @@ DECLARE
     v_outbound_http_message 		TEXT := NULL;
     v_error_message 				TEXT := NULL;
     v_issues_count 					INTEGER;
+   	v_passed 						BOOLEAN;
     v_bundle_id 					TEXT := NULL;
     v_bundle_session_id 			TEXT := NULL;
     v_bundle_last_updated 			TEXT := NULL;
@@ -2053,6 +2042,7 @@ DECLARE
     v_validation_engine 			TEXT := NULL;
    	v_ig_version 					TEXT := NULL;
    	v_profile_url 					TEXT := NULL;
+   	v_interaction_start_time 					TEXT := NULL;
    	v_return 						TEXT := NULL;
 
 BEGIN
@@ -2116,21 +2106,28 @@ BEGIN
     
     	v_user_agent 				:= sat_interaction_fhir_request_upserted.payload->'request'->>'userAgent';    
     	v_client_ip_address 		:= sat_interaction_fhir_request_upserted.payload->'request'->>'clientIpAddress';    
-    	v_issues_count 				:= jsonb_array_length((((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text);	
-		v_outbound_http_message 	:= "substring"((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);   	
+    	v_issues_count 				:= jsonb_array_length((((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text);			
+    	v_outbound_http_message 	:= "substring"((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);   	
 		v_bundle_session_id 		:= sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->>'bundleSessionId';	
 		v_outbound_http_message		:= "substring"((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text); 		
 		v_validation_initiated_at 	:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'initiatedAt');	
     	v_validation_completed_at 	:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'completedAt' );    
     	v_validation_engine 		:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
     	v_ig_version				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'igVersion');        
-    	v_profile_url				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'profileUrl');     	
+    	v_profile_url				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'profileUrl');  
 	END IF;	
-	
+
 	IF(LOWER(sat_interaction_fhir_request_upserted.nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response')) ) THEN
-		v_error_message := SUBSTRING(payload ->> 'error'::text FROM POSITION((':'::text) IN (payload ->> 'error'::text)) + 2);
-	END IF;
+		v_error_message := SUBSTRING(payload ->> 'error'::text FROM POSITION((':'::text) IN (sat_interaction_fhir_request_upserted.payload ->> 'error'::text)) + 2);
 	
+		IF(LOWER(sat_interaction_fhir_request_upserted.nature) = lower('Forwarded HTTP Response')) THEN			
+			v_passed := COALESCE(sat_interaction_fhir_request_upserted.payload->>'insert_screeningsResponse',
+						sat_interaction_fhir_request_upserted.payload->>'insertScreeningsResponse') = 'Record Successfully Added to DB';
+		ELSE
+			v_passed := FALSE;
+		END IF;
+	END IF;
+
     -- Perform an upsert into the table
     -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
     -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
@@ -2167,7 +2164,8 @@ BEGIN
         created_by,
         provenance,
         ig_version,
-        profile_url
+        profile_url,
+        passed
     )
     VALUES (
         gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
@@ -2201,7 +2199,8 @@ BEGIN
         created_by,
         provenance,
         v_ig_version,
-        v_profile_url
+        v_profile_url,
+        v_passed
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     RETURN v_return;
