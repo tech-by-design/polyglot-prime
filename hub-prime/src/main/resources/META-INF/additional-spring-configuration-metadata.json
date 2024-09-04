@@ -328,5 +328,15 @@
     "name": "org.techbd.service.http.hub.prime.valueSetUrls.sdohValueSetReferralStatus",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.valueSetUrls.sdohValueSetReferralStatus'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCoreGenderIdentity",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.hl7UsCoreGenderIdentity'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.codeSystemUrls.hl7CodeSystemItemType",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.codeSystemUrls.hl7CodeSystemItemType'"
   }
 ]}
