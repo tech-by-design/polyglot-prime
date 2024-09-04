@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -17,6 +16,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatchers;
@@ -72,7 +72,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 .withMatchers(
                         regexAndMethods == null
                                 ? List.of(
-                                        "^/",
                                         "^/home",
                                         "^/docs",
                                         "^/console*", "^/console/.*",
@@ -202,25 +201,29 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
 
-                // User details
+                // User details 
+                var curUserName = "API_USER";
+                var gitHubLoginId = "N/A";
                 final var sessionId = origRequest.getRequestedSessionId();
-                final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
-                if (null != curUser) {
-                    try {
-                        final var curUserName = Optional.ofNullable(curUser.get().principal().getAttribute("name")).orElse("NO_DATA");
-                        final var gitHubLoginId = Optional.ofNullable(curUser.get().principal().getAttribute("login")).orElse("NO_DATA");
+                var userRole = "API_ROLE";
 
-                        rihr.setUserName(curUserName.toString());
-                        rihr.setUserId(gitHubLoginId.toString());
-                        rihr.setUserSession(sessionId);
-                        rihr.setUserRole("DEFAULT_ROLE");
-                    } catch (NoSuchElementException nsee) {
-                        rihr.setUserName(null);
-                        rihr.setUserId(null);
-                        rihr.setUserSession(sessionId);
-                        rihr.setUserRole("API_ROLE");
+                final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
+                if (curUser.isPresent()) {
+                    final var ghUser = curUser.get().ghUser();
+                    if (null != ghUser) {
+                        curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
+                        gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
+                        userRole = curUser.get().principal().getAuthorities().stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .collect(Collectors.joining(","));
+                        LOG.info("userRole: " + userRole);
+                        userRole = "DEFAULT_ROLE"; //TODO: Remove this when role is implemented as part of Auth
                     }
                 }
+                rihr.setUserName(curUserName);
+                rihr.setUserId(gitHubLoginId);
+                rihr.setUserSession(sessionId);
+                rihr.setUserRole(userRole);
 
                 rihr.execute(dsl.configuration());
             } catch (Exception e) {
