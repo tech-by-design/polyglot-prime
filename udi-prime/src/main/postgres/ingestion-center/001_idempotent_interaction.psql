@@ -2233,3 +2233,31 @@ EXCEPTION
 END;
 $function$
 ;
+/*******************************************************************************************
+  This view provides a consolidated view of failed HTTP requests and associated interactions.
+******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_forward_failure;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_failure
+AS
+ SELECT 
+ 	intr_hreq.sat_interaction_fhir_request_id,
+ 	intr_hreq.hub_interaction_id AS interaction_id,
+    intr_hreq.tenant_id,
+    intr_hreq.uri,
+    intr_hreq.nature,
+    intr_hreq.created_at AS interaction_created_at,
+    intr_hreq.created_by AS interaction_created_by,
+    intr_hreq.provenance AS interaction_provenance,
+    intr_hreq.client_ip_address,
+    intr_hreq.user_agent,
+    intr_hreq.from_state,
+    intr_hreq.to_state,
+    intr_hreq.outbound_http_message,
+    intr_hreq.error_message AS error,
+    intr_hreq.issues_count,
+    intr_hreq.resource_type_set AS resource_types,
+    intr_hreq.patient_id,
+    intr_hreq.patient_mrn
+   FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
+   WHERE (to_state = 'FAIL' OR to_state = 'COMPLETE') AND intr_hreq.passed = FALSE
+   ;
