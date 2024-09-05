@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>208</td>
-<td>3</td>
+<td>210</td>
+<td>4</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -93,7 +93,7 @@
 <td>1</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.http.InteractionsFilter">org.techbd.service.http.InteractionsFilter</a></td>
-<td>1</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
+<td>2</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -114,7 +114,7 @@
 <td>Unwritten field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession.igVersion</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UWF_UNWRITTEN_FIELD">UWF_UNWRITTEN_FIELD</a></td>
-<td>868</td>
+<td>865</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.InteractionsFilter"></a><section>
 <h2>org.techbd.service.http.InteractionsFilter</h2>
 <table class="table table-striped">
@@ -128,7 +128,13 @@
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.InteractionsFilter.doFilterInternal(HttpServletRequest, HttpServletResponse, FilterChain)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>229</td>
+<td>232</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>Method org.techbd.service.http.InteractionsFilter.setActiveRequestEnc(HttpServletRequest, Interactions$RequestEncountered) seems to be useless</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UC_USELESS_VOID_METHOD">UC_USELESS_VOID_METHOD</a></td>
+<td>113</td>
 <td>Medium</td></tr></table></section>
         </main>
       </div>
