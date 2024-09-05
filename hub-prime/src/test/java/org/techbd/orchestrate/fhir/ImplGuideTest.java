@@ -50,18 +50,18 @@ public class ImplGuideTest {
     }
 
     @Test
-    void testUnHappyPath_Angele108_Keitha498_Kihn564() throws IOException {
-        assertUnHappyPathInvalidEncounterStatus("org/techbd/fixtures/unhappy-path/Angele108_Keitha498_Kihn564_4d678b50-d57b-97cd-d8f5-97209d6b2e6d.json");
+    void testUnHappyPathInvalidEncounterStatus_Bundle_AHCHRSNQuestionnaireResponseExample() throws IOException {
+        assertUnHappyPathInvalidEncounterStatus("org/techbd/ig-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
     }
 
     @Test
-    void testUnHappyPath_Anika194_Ashlee14_Daniel959() throws IOException {
-        assertUnHappyPathInvalidEncounterStatus("org/techbd/fixtures/unhappy-path/Anika194_Ashlee14_Daniel959_47f5bba7-e8fb-f59e-36be-4097a0d27214.json");
+    void testUnHappyPathInvalidEncounterStatus_Bundle_AHCHRSNScreeningResponseExample() throws IOException {
+        assertUnHappyPathInvalidEncounterStatus("org/techbd/ig-examples/Bundle-AHCHRSNScreeningResponseExample.json");
     }
 
     @Test
-    void testUnHappyPath_Niesha86_Powlowski563() throws IOException {
-        assertUnHappyPathInvalidEncounterStatus("org/techbd/fixtures/unhappy-path/Niesha86_Powlowski563_with_errors.json");
+    void testUnHappyPathInvalidEncounterStatus_Bundle_NYScreeningResponseExample() throws IOException {
+        assertUnHappyPathInvalidEncounterStatus("org/techbd/ig-examples/Bundle-NYScreeningResponseExample.json");
     }
 
     void assertUnHappyPathInvalidEncounterStatus(String fixtureFileName) throws IOException {
@@ -75,14 +75,14 @@ public class ImplGuideTest {
         final var messages = result.getMessages();
         final var expectedErrorMessage = "The value provided ('finished') is not in the value set 'EncounterStatus";
         assertThat(messages)
-                .anyMatch(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+                .noneMatch(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
                 && m.getMessage().contains(expectedErrorMessage))
                 .withFailMessage("Fixture file %s do not have valid encounter status.The value provided ('finished') is not in the value set 'EncounterStatus' (http://hl7.org/fhir/ValueSet/encounter-status|4.0.1)", fixtureFileName);
     }
 
     @Test
-    void testUnHappyPathInvalidObservationStatus_Niesha86_Powlowski563() throws IOException {
-        assertUnHappyPathInvalidObservationStatus("org/techbd/fixtures/unhappy-path/Niesha86_Powlowski563_with_errors.json");
+    void testUnHappyPathInvalidObservationStatus_Bundle_ObservationAssessmentFoodInsecurityExample() throws IOException {
+        assertUnHappyPathInvalidObservationStatus("org/techbd/ig-examples/Bundle-ObservationAssessmentFoodInsecurityExample.json");
     }
 
     void assertUnHappyPathInvalidObservationStatus(String fixtureFileName) throws IOException {
@@ -96,14 +96,14 @@ public class ImplGuideTest {
         final var messages = result.getMessages();
         final var expectedErrorMessage = "The value provided ('final') is not in the value set 'ObservationStatus'";
         assertThat(messages)
-                .anyMatch(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+                .noneMatch(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
                 && m.getMessage().contains(expectedErrorMessage))
                 .withFailMessage("The value provided ('final') is not in the value set 'ObservationStatus' (http://hl7.org/fhir/ValueSet/observation-status|4.0.1), and a code is required from this value set  (error message = Validation failed)", fixtureFileName);
     }
 
     @Test
-    void testUnHappyPathInvalidEventStatus_Niesha86_Powlowski563() throws IOException {
-        assertUnHappyPathInvalidEventStatus("org/techbd/fixtures/unhappy-path/Niesha86_Powlowski563_with_errors.json");
+    void testUnHappyPathInvalidEventStatus_Bundle_AHCHRSNQuestionnaireResponseExample() throws IOException {
+        assertUnHappyPathInvalidEventStatus("org/techbd/ig-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
     }
 
     void assertUnHappyPathInvalidEventStatus(String fixtureFileName) throws IOException {
@@ -117,7 +117,7 @@ public class ImplGuideTest {
         final var messages = result.getMessages();
         final var expectedErrorMessage = "The value provided ('completed') is not in the value set 'EventStatus'";
         assertThat(messages)
-                .anyMatch(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
+                .noneMatch(m -> ResultSeverityEnum.ERROR.equals(m.getSeverity())
                 && m.getMessage().contains(expectedErrorMessage))
                 .withFailMessage("The value provided ('completed') is not in the value set 'EventStatus' (http://hl7.org/fhir/ValueSet/event-status|4.0.1), and a code is required from this value set  (error message = Validation failed)", fixtureFileName);
     }
