@@ -340,9 +340,6 @@ public class OrchestrationEngine {
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
-                final var lenientErrorHandler = new LenientErrorHandler();
-                // Do not throw FATAL error during parsing.Only log the error
-                lenientErrorHandler.setErrorOnInvalidValue(false);
                 final var supportChain = new ValidationSupportChain();
                 final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
                 supportChain.addValidationSupport(defaultSupport);
