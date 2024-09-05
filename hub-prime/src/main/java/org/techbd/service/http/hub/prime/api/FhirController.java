@@ -41,6 +41,7 @@ import org.techbd.orchestrate.sftp.SftpManager;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.SandboxHelpers;
+import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
@@ -99,11 +100,12 @@ public class FhirController {
             @RequestParam(value = "immediate", required = false) boolean isSync,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
-            final HttpServletRequest request) throws SQLException {
+            HttpServletRequest request) throws SQLException {
 
         final var requestURI = request.getRequestURI();
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
+        request = new CustomRequestWrapper(request, payload);
         final var bundleAsyncInteractionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
@@ -296,8 +298,8 @@ public class FhirController {
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
-            final HttpServletRequest request) {
-
+            HttpServletRequest request) {
+        request = new CustomRequestWrapper(request, payload);
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
         LOG.info("Getting shinny Urls from config - Before: ");

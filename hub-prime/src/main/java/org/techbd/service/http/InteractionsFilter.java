@@ -138,8 +138,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var persistRespPayloadDB = iprDB.persistRespPayloadMatcher().matches(origRequest);
 
         final var mutatableReq = new ContentCachingRequestWrapper(origRequest);
-        final var requestBody = persistReqPayloadDB ? mutatableReq.getContentAsByteArray()
-                : "persistPayloads = false".getBytes(StandardCharset.UTF_8);
 
         LOG.info("InteractionsFilter Persist DB %s %s (req body %s, resp body %s)".formatted(requestURI,
                 persistInteractionDB, persistReqPayloadDB, persistRespPayloadDB));
@@ -147,12 +145,17 @@ public class InteractionsFilter extends OncePerRequestFilter {
         // Prepare a serializable RequestEncountered as early as possible in
         // request cycle and store it as an attribute so that other filters
         // and controllers can use the common "active request" instance.
-        final var requestEncountered = new Interactions.RequestEncountered(mutatableReq, requestBody);
+        var requestEncountered = new Interactions.RequestEncountered(mutatableReq, null);
         setActiveRequestEnc(origRequest, requestEncountered);
 
         final var mutatableResp = new ContentCachingResponseWrapper(origResponse);
 
         chain.doFilter(mutatableReq, mutatableResp);
+
+        final var requestBody = persistReqPayloadDB ? mutatableReq.getContentAsByteArray()
+                : "persistPayloads = false".getBytes(StandardCharset.UTF_8);
+        requestEncountered = new Interactions.RequestEncountered(mutatableReq, requestBody);
+        setActiveRequestEnc(origRequest, requestEncountered);
 
         RequestResponseEncountered rre = null;
         if (!persistRespPayloadDB) {
@@ -201,7 +204,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
 
-                // User details 
+                // User details
                 var curUserName = "API_USER";
                 var gitHubLoginId = "N/A";
                 final var sessionId = origRequest.getRequestedSessionId();
