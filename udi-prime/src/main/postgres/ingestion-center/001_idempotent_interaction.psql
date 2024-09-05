@@ -2042,7 +2042,9 @@ DECLARE
     v_validation_engine 			TEXT := NULL;
    	v_ig_version 					TEXT := NULL;
    	v_profile_url 					TEXT := NULL;
-   	v_interaction_start_time 					TEXT := NULL;
+   	v_interaction_start_time 		TEXT := NULL;
+   	v_interaction_end_time 			TEXT := NULL;
+   	v_duration_millisecs 			TEXT := NULL;
    	v_return 						TEXT := NULL;
 
 BEGIN
@@ -2084,7 +2086,8 @@ BEGIN
 		AND identifier_element #>> '{type, coding, 0, code}' = 'MA'
 		LIMIT 1
 	    );		  
-		
+		  	   
+	   	
 		SELECT 
 		sat_interaction_fhir_request_upserted.payload->>'id', 
 		sat_interaction_fhir_request_upserted.payload->'meta'->>'lastUpdated'::TEXT 
@@ -2094,10 +2097,12 @@ BEGIN
 		
 		SELECT STRING_AGG(DISTINCT entry->'resource'->>'resourceType', ', ') INTO v_resource_type_set
 		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry
-		WHERE entry ? 'resource';
+		WHERE entry ? 'resource';		
+	
 	END IF;
 
 	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('org.techbd.service.http.Interactions$RequestResponseEncountered')) THEN		
+		
 		v_client_ip_address_forwarded := (
 		SELECT hdrs->>'value'
     	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'headers') AS hdrs
@@ -2115,7 +2120,18 @@ BEGIN
     	v_validation_engine 		:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
     	v_ig_version				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'igVersion');        
     	v_profile_url				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'profileUrl');  
-	END IF;	
+
+    	-- Extract the value of X-Observability-Metric-Interaction-Start-Time
+		SELECT header->>'value' INTO v_interaction_start_time
+		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'response'->'headers') AS header
+		WHERE header->>'name' = 'X-Observability-Metric-Interaction-Start-Time';
+	
+		-- Extract the value of X-Observability-Metric-Interaction-Finish-Time
+		SELECT header->>'value' INTO v_interaction_end_time
+		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'response'->'headers') AS header
+		WHERE header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time';
+			
+	END IF;
 
 	IF(LOWER(sat_interaction_fhir_request_upserted.nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response')) ) THEN
 		v_error_message := SUBSTRING(payload ->> 'error'::text FROM POSITION((':'::text) IN (sat_interaction_fhir_request_upserted.payload ->> 'error'::text)) + 2);
@@ -2127,7 +2143,7 @@ BEGIN
 			v_passed := FALSE;
 		END IF;
 	END IF;
-
+	
     -- Perform an upsert into the table
     -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
     -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
@@ -2165,7 +2181,10 @@ BEGIN
         provenance,
         ig_version,
         profile_url,
-        passed
+        passed,
+        medicaid_cin,
+        interaction_start_time,
+        interaction_end_time
     )
     VALUES (
         gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
@@ -2200,7 +2219,10 @@ BEGIN
         provenance,
         v_ig_version,
         v_profile_url,
-        v_passed
+        v_passed,
+        v_medicaid_cin,
+        COALESCE(v_interaction_start_time::TIMESTAMPTZ,NULL),
+        COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL)
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     RETURN v_return;
@@ -2257,6 +2279,7 @@ AS
     intr_hreq.issues_count,
     intr_hreq.resource_type_set AS resource_types,
     intr_hreq.patient_id,
+    intr_hreq.payload,
     intr_hreq.patient_mrn
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
    WHERE (to_state = 'FAIL' OR to_state = 'COMPLETE') AND intr_hreq.passed = FALSE
