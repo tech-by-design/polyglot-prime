@@ -5,6 +5,8 @@
 <head>
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <!-- Include Font Awesome in your HTML -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
@@ -15,9 +17,70 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'interaction_http_request_forward_fail';
+        //const viewName = 'interaction_http_request_forward_fail';
+        const viewName = 'interaction_http_request_forward_failure';
         const popViewName = 'interaction_http_request';
+
+
+        // Define downloadPayload globally
+        window.downloadPayload = async function (apiUrl) {
+            try {
+                // Fetch data from the API
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                // Get the JSON data
+                const data = await response.json();
+
+                // Extract only the payload from the response
+                const payload = data[0]?.payload;
+                console.log('Payload:', payload);
+
+                // Convert the payload to a JSON string
+                const jsonString = JSON.stringify(payload, null, 2);
+
+                // Create a Blob from the JSON string
+                const blob = new Blob([jsonString], { type: "application/json" });
+
+                // Create a URL for the Blob
+                const url = URL.createObjectURL(blob);
+
+                // Create a temporary link to trigger the download
+                const tempLink = document.createElement('a');
+                tempLink.href = url;
+                tempLink.download = 'payload.json';
+                document.body.appendChild(tempLink);
+                tempLink.click();
+
+                // Clean up
+                document.body.removeChild(tempLink);
+                URL.revokeObjectURL(url);
+
+            } catch (error) {
+                console.error('Error downloading payload:', error);
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', function () {
+
+            function downloadCellRenderer(params) {
+                const contentType = params.data.content_type;
+                const payload = params.data.payload;
+                const sat_interaction_fhir_request_id = params.data.sat_interaction_fhir_request_id; // Assuming you need interaction_id
+
+                // Create the URL for the API call
+                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_interaction_fhir_request_id/${sat_interaction_fhir_request_id}.json`;
+
+                // Create a download link placeholder
+                const downloadLink = `<a href="#" onclick="window.downloadPayload('${apiUrl}'); return false;" style="text-decoration: none; color: #007bff;">
+        <i class="fas fa-download"></i>
+    </a>`;
+
+                return downloadLink;
+            }
+
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
@@ -27,7 +90,10 @@
                         sort: "desc",
                         filter: "agNumberColumnFilter",
                         valueFormatter: AGGridAide.dateTimeValueFormatter()
+                   
                     },
+                    // { headerName: "Source MRN", field: "patient_mrn", filter: "agTextColumnFilter" },
+                    // { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" },
                     {
                         headerName: "Interaction ID",
                         field: "interaction_id",
@@ -41,12 +107,16 @@
                     { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
                     { headerName: "From State", field: "from_state", filter: "agTextColumnFilter" },
                     { headerName: "To State", field: "to_state", filter: "agTextColumnFilter" },
-                    { headerName: "Outbound Http Message", field: "outbound_http_message" , filter: "agTextColumnFilter" },
-                    { headerName: "Error Message", field: "error" , filter: "agTextColumnFilter" },
+                    { headerName: "Outbound Http Message", field: "outbound_http_message", filter: "agTextColumnFilter" },
+                    { headerName: "Error Message", field: "error", filter: "agTextColumnFilter" },
                     { headerName: "Validation Issues", field: "issues_count", filter: "agTextColumnFilter" },
                     { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter" },
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter" },
-                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter" }
+                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter" },
+                    {
+                        headerName: "Download Payload", field: "user_agent", filter: "agTextColumnFilter",cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                        headerTooltip: "Download FHIR Payload"
+                    }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
