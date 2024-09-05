@@ -2036,7 +2036,6 @@ DECLARE
     v_patient_id 					TEXT := NULL;
     v_patient_mrn 					TEXT := NULL;
    	v_medicaid_cin 					TEXT := NULL;
-   	v_ssn 							TEXT := NULL;
     v_resource_type_set 			TEXT := NULL;
     v_validation_initiated_at 		TEXT := NULL;
     v_validation_completed_at 		TEXT := NULL;
@@ -2087,16 +2086,7 @@ BEGIN
 		AND identifier_element #>> '{type, coding, 0, code}' = 'MA'
 		LIMIT 1
 	    );		  
-		
-	   	
-	    SELECT identifier_element->>'value'
-	    INTO v_ssn
-	   	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry,
-		jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
-		WHERE entry->'resource'->>'resourceType' = 'Patient'
-		AND identifier_element #>> '{type, coding, 0, code}' = 'SS'
-		LIMIT 1
-	    ;			   	   
+		  	   
 	   	
 		SELECT 
 		sat_interaction_fhir_request_upserted.payload->>'id', 
@@ -2154,9 +2144,6 @@ BEGIN
 		END IF;
 	END IF;
 	
-	--RAISE NOTICE 'v_medicaid_cin - %', v_medicaid_cin;
-	--RAISE NOTICE 'Social Security Number - %', v_social_sec_number;
-	--RETURN NULL;
     -- Perform an upsert into the table
     -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
     -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
