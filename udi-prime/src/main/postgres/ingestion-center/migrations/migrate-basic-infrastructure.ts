@@ -335,6 +335,7 @@ const interactionFhirRequestSat = interactionHub.satelliteTable(
     ig_version: textNullable(),
     profile_url : textNullable(),
     passed: boolean().default(false),
+    medicaid_cin: textNullable(),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },

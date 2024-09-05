@@ -2042,7 +2042,7 @@ DECLARE
     v_validation_engine 			TEXT := NULL;
    	v_ig_version 					TEXT := NULL;
    	v_profile_url 					TEXT := NULL;
-   	v_interaction_start_time 					TEXT := NULL;
+   	v_interaction_start_time 		TEXT := NULL;
    	v_return 						TEXT := NULL;
 
 BEGIN
@@ -2165,7 +2165,8 @@ BEGIN
         provenance,
         ig_version,
         profile_url,
-        passed
+        passed,
+        medicaid_cin
     )
     VALUES (
         gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
@@ -2200,7 +2201,8 @@ BEGIN
         provenance,
         v_ig_version,
         v_profile_url,
-        v_passed
+        v_passed,
+        v_medicaid_cin
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     RETURN v_return;
@@ -2257,6 +2259,7 @@ AS
     intr_hreq.issues_count,
     intr_hreq.resource_type_set AS resource_types,
     intr_hreq.patient_id,
+    intr_hreq.payload,
     intr_hreq.patient_mrn
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
    WHERE (to_state = 'FAIL' OR to_state = 'COMPLETE') AND intr_hreq.passed = FALSE
