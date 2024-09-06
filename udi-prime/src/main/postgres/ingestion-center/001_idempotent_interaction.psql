@@ -593,43 +593,72 @@ FROM cte_interaction_observe intr_observe
 WHERE intr_observe.start_time IS NOT NULL AND intr_observe.finish_time IS NOT NULL
 ORDER BY intr_observe.duration_millisecs DESC;
 
-/*******************************************************************************************
-This view extracts diagnostic information from JSON payloads of HTTP requests stored in 
+/*****************************************
+This materialized view extracts diagnostic information from JSON payloads of HTTP requests stored in 
 'sat_interaction_http_request'. It transforms and presents fields such as 'tenant_id', 'uri', 
 'session_id', 'severity', 'message', 'line', 'column', 'diagnostics', 'encounteredAt', 
 and 'elaboration' for further analysis or reporting.
+**************************************************/
+-- techbd_udi_ingress.fhir_session_diagnostics_mat source
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_session_diagnostics_mat CASCADE;
+CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_session_diagnostics_mat
+TABLESPACE pg_default
+AS WITH cte_interaction_diagnostics AS (
+         SELECT intr_hreq.hub_interaction_id,
+            intr_hreq.nature ->> 'tenant_id'::text AS tenant_id,
+            hub_intr.key AS uri,
+            intr_hreq.hub_interaction_id AS session_id,
+            issue.value ->> 'severity'::text AS severity,
+            issue.value ->> 'message'::text AS message,
+            (issue.value -> 'location'::text) ->> 'line'::text AS line,
+            (issue.value -> 'location'::text) ->> 'column'::text AS "column",
+            (issue.value -> 'location'::text) ->> 'diagnostics'::text AS diagnostics,
+            (intr_hreq.payload -> 'response'::text) ->> 'encounteredAt'::text AS encounteredat,
+            intr_hreq.elaboration
+           FROM techbd_udi_ingress.hub_interaction hub_intr
+             JOIN techbd_udi_ingress.sat_interaction_http_request intr_hreq ON hub_intr.hub_interaction_id = intr_hreq.hub_interaction_id,
+            LATERAL jsonb_array_elements((((intr_hreq.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) validationresult(value),
+            LATERAL jsonb_array_elements(validationresult.value -> 'issues'::text) issue(value)
+          WHERE hub_intr.key = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text])
+        )
+ SELECT gen_random_uuid() AS row_id,
+    hub_interaction_id,
+    tenant_id,
+    uri,
+    session_id,
+    severity,
+    message,
+    line,
+    "column",
+    diagnostics,
+    encounteredat,
+    elaboration
+   FROM cte_interaction_diagnostics intr_diagno
+WITH NO DATA;
+
+-- View indexes:
+CREATE INDEX IF NOT EXISTS fhir_session_diagnostics_mat_encounteredat_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (encounteredat);
+CREATE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_hub_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (hub_interaction_id);
+CREATE UNIQUE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_row_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (row_id);
+CREATE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_tenant_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (tenant_id);
+
+
+/*******************************************************************************************
+This view extracts diagnostic information from materialized view fhir_session_diagnostics_mat.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_session_diagnostics CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_session_diagnostics AS
-WITH cte_interaction_diagnostics As(
-SELECT	
-    intr_hreq.payload->'request'->'tenant'->>'tenantId' AS tenant_id,
-    intr_hreq.payload->'request'::TEXT ->> 'requestUri'::TEXT AS uri,
-    intr_hreq.hub_interaction_id AS session_id,
-    issue->>'severity' AS severity,
-    issue->>'message' AS message,
-    issue->'location'->>'line' AS line,
-    issue->'location'->>'column' AS "column",
-    issue->'location'->>'diagnostics' AS "diagnostics",
-    intr_hreq.payload->'response'->>'encounteredAt'::text AS encounteredAt,
-    intr_hreq.elaboration AS elaboration
-FROM techbd_udi_ingress.sat_interaction_http_request intr_hreq,
-LATERAL jsonb_array_elements(intr_hreq.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults') AS validationResult,
-LATERAL jsonb_array_elements(validationResult->'issues') AS issue
-)
-SELECT
-intr_diagno.tenant_id,
-intr_diagno.uri,
-intr_diagno.session_id,
-intr_diagno.severity,
-intr_diagno.message,
-intr_diagno.line,
-intr_diagno."column",
-intr_diagno."diagnostics",
-intr_diagno.encounteredAt,
-intr_diagno.elaboration
-FROM cte_interaction_diagnostics intr_diagno
-;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_session_diagnostics
+AS SELECT tenant_id,
+    uri,
+    session_id,
+    severity,
+    message,
+    line,
+    "column",
+    diagnostics,
+    encounteredat,
+    elaboration
+   FROM techbd_udi_ingress.fhir_session_diagnostics_mat intr_diagno;
 
 /*******************************************************************************************************************************
  * Procedure to register an HTTP interaction, handling potential unique constraint violations
