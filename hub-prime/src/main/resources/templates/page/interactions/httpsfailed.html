@@ -114,8 +114,8 @@
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter" },
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter" },
                     {
-                        headerName: "Download Payload", field: "user_agent", filter: "agTextColumnFilter",cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download FHIR Payload"
+                        headerName: "Download Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                        headerTooltip: "Download FHIR Payload", filter: false,  suppressFilter: true 
                     }
                 ])
                 .withServerSideDatasource(
