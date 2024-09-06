@@ -10,9 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
@@ -34,6 +36,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
@@ -47,6 +50,7 @@ import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -257,6 +261,8 @@ public class FhirController {
                             LOG.error("CALL " + forwardRIHR.getName() + " forwardRIHR error", e);
                         }
                     }, (Throwable error) -> { // Explicitly specify the type Throwable
+                        LOG.error("Exception while sending FHIR payload to datalake URL {} for interaction id {}",
+                                dataLakeApiBaseURL, bundleAsyncInteractionId, error);
                         final var errorRIHR = new RegisterInteractionHttpRequest();
                         try {
                             errorRIHR.setInteractionId(bundleAsyncInteractionId);
@@ -264,9 +270,42 @@ public class FhirController {
                             errorRIHR.setNature(Configuration.objectMapper.valueToTree(
                                     Map.of("nature", "Forwarded HTTP Response Error", "tenant_id", tenantId)));
                             errorRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                            errorRIHR.setPayload(Configuration.objectMapper.valueToTree(
-                                    Map.of("dataLakeApiBaseURL", dataLakeApiBaseURL, "error", error.toString(),
-                                            "tenantId", tenantId)));
+                            final var rootCauseThrowable = NestedExceptionUtils.getRootCause(error);
+                            final var rootCause = rootCauseThrowable != null ? rootCauseThrowable.toString() : "null";
+                            final var mostSpecificCause = NestedExceptionUtils.getMostSpecificCause(error).toString();
+                            final var errorMap = new HashMap<String, Object>() {
+                                {
+                                    put("dataLakeApiBaseURL", dataLakeApiBaseURL);
+                                    put("error", error.toString());
+                                    put("message", error.getMessage());
+                                    put("rootCause", rootCause);
+                                    put("mostSpecificCause", mostSpecificCause);
+                                    put("tenantId", tenantId);
+                                }
+                            };
+                            if (error instanceof final WebClientResponseException webClientResponseException) {
+                                String responseBody = webClientResponseException.getResponseBodyAsString();
+                                errorMap.put("responseBody", responseBody);
+                                String bundleId = "";
+                                JsonNode rootNode = Configuration.objectMapper.readTree(responseBody);
+                                JsonNode bundleIdNode = rootNode.path("bundle_id"); // Adjust this path based on actual
+                                if (!bundleIdNode.isMissingNode()) {
+                                    bundleId = bundleIdNode.asText();
+                                }
+                                LOG.error(
+                                        "Exception while sending FHIR payload to datalake URL {} for interaction id {} bundle id {} response from datalake {}",
+                                        dataLakeApiBaseURL, bundleAsyncInteractionId, bundleId, responseBody);
+                                errorMap.put("statusCode", webClientResponseException.getStatusCode().value());
+                                final var responseHeaders = webClientResponseException.getHeaders()
+                                        .entrySet()
+                                        .stream()
+                                        .collect(Collectors.toMap(Map.Entry::getKey,
+                                                entry -> String.join(",", entry.getValue())));
+                                errorMap.put("headers", responseHeaders);
+                                errorMap.put("statusText", webClientResponseException.getStatusText());
+                            }
+
+                            errorRIHR.setPayload(Configuration.objectMapper.valueToTree(errorMap));
                             errorRIHR.setFromState("FORWARD");
                             errorRIHR.setToState("FAIL");
                             errorRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
