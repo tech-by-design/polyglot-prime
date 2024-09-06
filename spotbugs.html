@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-09-06<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.212.0</li>
+          <li id="projectVersion">Version: 0.213.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>210</td>
-<td>4</td>
+<td>211</td>
+<td>5</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -93,7 +93,10 @@
 <td>1</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.http.InteractionsFilter">org.techbd.service.http.InteractionsFilter</a></td>
-<td>2</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
+<td>2</td></tr>
+<tr class="a">
+<td><a href="#org.techbd.service.http.hub.prime.api.FhirController">org.techbd.service.http.hub.prime.api.FhirController</a></td>
+<td>1</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -128,13 +131,27 @@
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.InteractionsFilter.doFilterInternal(HttpServletRequest, HttpServletResponse, FilterChain)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>240</td>
+<td>242</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Method org.techbd.service.http.InteractionsFilter.setActiveRequestEnc(HttpServletRequest, Interactions$RequestEncountered) seems to be useless</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UC_USELESS_VOID_METHOD">UC_USELESS_VOID_METHOD</a></td>
-<td>117</td>
+<td>119</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.api.FhirController"></a><section>
+<h2>org.techbd.service.http.hub.prime.api.FhirController</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FhirController.lambda$validateBundleAndForward$5(String, String, String, String, String, Configuration, Throwable)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
+<td>316</td>
 <td>Medium</td></tr></table></section>
         </main>
       </div>
