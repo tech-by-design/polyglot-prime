@@ -59,3 +59,8 @@ jobs:
                -U ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }} \
                -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
                -c "REFRESH MATERIALIZED VIEW techbd_udi_ingress.fhir_session_diagnostics_mat;"
+          psql -h ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }} \
+               -p ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }} \
+               -U ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }} \
+               -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
+               -c "REFRESH MATERIALIZED VIEW techbd_udi_ingress.interaction_observe_mat;"
