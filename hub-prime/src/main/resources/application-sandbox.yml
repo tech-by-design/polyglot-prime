@@ -4,6 +4,7 @@ org:
       http:
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
+          saveUserDataToInteractions: true
 
 management:
   endpoints:
