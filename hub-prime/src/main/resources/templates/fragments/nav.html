@@ -24,16 +24,19 @@
                         <!-- <div class="text-gray-300 text-sm font-medium py-2 w-40">Tech by Design Hub</div> -->
                         <!-- <img class="h-8 w-8" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
                             alt="Technology by Design"> -->
-                    </div>
+                    </div> 
                     <div id="nav-prime" class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
-                            <span><a th:each="navItem: ${navPrime}" th:attr="href=@{${navItem.href.orElse('?')}}"
-                                th:text="${navItem.text}"
-                                class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Label</a>
+                            <span th:each="navItem: ${navPrime}" 
+                                  th:if="${navItem.text} != 'Needs Attention'"
+                                  th:attr="href=@{${navItem.href.orElse('?')}}"
+                                  th:text="${navItem.text}"
+                                  class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">
+                                Label
                             </span>
                         </div>
-
                     </div>
+                    
                 </div>
                 <div class="hidden md:block">
                     <div class="ml-4 mt-2 flex items-center md:ml-6">
