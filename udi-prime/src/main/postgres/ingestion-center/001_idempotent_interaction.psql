@@ -553,45 +553,70 @@ WHERE
 
 
 /*******************************************************************************************
-This view is to extract observability metrics from HTTP request interactions.This view joins 
+This materialized view is to extract observability metrics from HTTP request interactions.This view joins 
 data from sat_interaction_http_request with JSONB headers to retrieve specific observability 
 metrics. Metrics extracted include start time, finish time, duration in nanoseconds, and 
 duration in milliseconds. To optimize the query, use a LATERAL join to extract the JSONB 
 values more efficiently. This approach avoids multiple jsonb_array_elements function calls 
 for each row and reduces repeated scanning of the JSONB arrays.
 ******************************************************************************************/
+
+-- techbd_udi_ingress.interaction_observe_mat source
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_observe_mat CASCADE;
+CREATE MATERIALIZED VIEW techbd_udi_ingress.interaction_observe_mat
+TABLESPACE pg_default
+AS WITH cte_interaction_observe AS (
+         SELECT sihr.sat_interaction_http_request_id AS interaction_http_request_id,
+            sihr.hub_interaction_id AS interaction_id,
+            headers.start_time,
+            headers.finish_time,
+            EXTRACT(epoch FROM headers.finish_time::timestamp without time zone - headers.start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
+            (sihr.payload -> 'request'::text) ->> 'requestUri'::text AS uri
+           FROM techbd_udi_ingress.sat_interaction_http_request sihr
+             JOIN LATERAL ( SELECT max(
+                        CASE
+                            WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Start-Time'::text THEN header.value ->> 'value'::text
+                            ELSE NULL::text
+                        END) AS start_time,
+                    max(
+                        CASE
+                            WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Finish-Time'::text THEN header.value ->> 'value'::text
+                            ELSE NULL::text
+                        END) AS finish_time
+                   FROM jsonb_array_elements((sihr.payload -> 'response'::text) -> 'headers'::text) header(value)) headers ON true
+          WHERE 1 = 1 AND (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text
+        )
+ SELECT gen_random_uuid() AS row_id,
+    interaction_id,
+    uri,
+    start_time,
+    finish_time,
+    duration_millisecs,
+    interaction_http_request_id
+   FROM cte_interaction_observe intr_observe
+  WHERE start_time IS NOT NULL AND finish_time IS NOT NULL
+  ORDER BY duration_millisecs DESC
+WITH NO DATA;
+
+-- View indexes:
+CREATE INDEX interaction_observe_mat_hub_id_idx ON techbd_udi_ingress.interaction_observe_mat USING btree (interaction_id);
+CREATE INDEX interaction_observe_mat_request_id_idx ON techbd_udi_ingress.interaction_observe_mat USING btree (interaction_http_request_id);
+CREATE UNIQUE INDEX interaction_observe_mat_row_id_idx ON techbd_udi_ingress.interaction_observe_mat USING btree (row_id);
+CREATE INDEX interaction_observe_mat_start_time_idx ON techbd_udi_ingress.interaction_observe_mat USING btree (start_time);
+
+/*******************************************************************************************
+This materialized view is to extract observability metrics from interaction_observe_mat
+******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_observe CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_observe
-AS WITH cte_interaction_observe AS (			
-SELECT sihr.sat_interaction_http_request_id AS interaction_http_request_id,
-    sihr.hub_interaction_id AS interaction_id,
-    headers.start_time,
-    headers.finish_time,
-    EXTRACT(EPOCH FROM (headers.finish_time::timestamp without time zone - headers.start_time::timestamp without time zone)) * 1000 AS duration_millisecs,
-    (sihr.payload -> 'request'::text) ->> 'requestUri'::text AS uri
-   FROM techbd_udi_ingress.sat_interaction_http_request sihr
-     JOIN LATERAL ( SELECT max(
-                CASE
-                    WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Start-Time'::text THEN header.value ->> 'value'::text
-                    ELSE NULL::text
-                END) AS start_time,
-            max(
-                CASE
-                    WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Finish-Time'::text THEN header.value ->> 'value'::text
-                    ELSE NULL::text
-                END) AS finish_time
-           FROM jsonb_array_elements((sihr.payload -> 'response'::text) -> 'headers'::text) header(value)) headers ON true
-  WHERE 1 = 1 AND (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text
-)
+AS 
 SELECT 	intr_observe.interaction_id,
 		intr_observe.uri,
 		intr_observe.start_time,
 		intr_observe.finish_time,   
 		intr_observe.duration_millisecs,
 		intr_observe.interaction_http_request_id
-FROM cte_interaction_observe intr_observe
-WHERE intr_observe.start_time IS NOT NULL AND intr_observe.finish_time IS NOT NULL
-ORDER BY intr_observe.duration_millisecs DESC;
+FROM techbd_udi_ingress.interaction_observe_mat intr_observe;
 
 /*****************************************
 This materialized view extracts diagnostic information from JSON payloads of HTTP requests stored in 
