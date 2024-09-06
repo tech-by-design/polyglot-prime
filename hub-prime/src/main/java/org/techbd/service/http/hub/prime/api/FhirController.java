@@ -50,6 +50,7 @@ import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -260,7 +261,8 @@ public class FhirController {
                             LOG.error("CALL " + forwardRIHR.getName() + " forwardRIHR error", e);
                         }
                     }, (Throwable error) -> { // Explicitly specify the type Throwable
-                        LOG.error("Exception while sending FHIR payload to datalake ", error);
+                        LOG.error("Exception while sending FHIR payload to datalake URL {} for interaction id {}",
+                                dataLakeApiBaseURL, bundleAsyncInteractionId, error);
                         final var errorRIHR = new RegisterInteractionHttpRequest();
                         try {
                             errorRIHR.setInteractionId(bundleAsyncInteractionId);
@@ -282,7 +284,17 @@ public class FhirController {
                                 }
                             };
                             if (error instanceof final WebClientResponseException webClientResponseException) {
-                                errorMap.put("responseBody", webClientResponseException.getResponseBodyAsString());
+                                String responseBody = webClientResponseException.getResponseBodyAsString();
+                                errorMap.put("responseBody", responseBody);
+                                String bundleId = "";
+                                JsonNode rootNode = Configuration.objectMapper.readTree(responseBody);
+                                JsonNode bundleIdNode = rootNode.path("bundle_id"); // Adjust this path based on actual
+                                if (!bundleIdNode.isMissingNode()) {
+                                    bundleId = bundleIdNode.asText();
+                                }
+                                LOG.error(
+                                        "Exception while sending FHIR payload to datalake URL {} for interaction id {} bundle id {} response from datalake {}",
+                                        dataLakeApiBaseURL, bundleAsyncInteractionId, bundleId, responseBody);
                                 errorMap.put("statusCode", webClientResponseException.getStatusCode().value());
                                 final var responseHeaders = webClientResponseException.getHeaders()
                                         .entrySet()
