@@ -338,5 +338,10 @@
     "name": "org.techbd.service.http.hub.prime.codeSystemUrls.hl7CodeSystemItemType",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.codeSystemUrls.hl7CodeSystemItemType'"
+  },
+  {
+    "name": "org.techbd.service.http.interactions.saveUserDataToInteractions",
+    "type": "java.lang.Boolean",
+    "description": "Set 'org.techbd.service.http.interactions.saveUserDataToInteractions' to true or false. If set to true, the logged-in user details will be saved for interactions."
   }
 ]}

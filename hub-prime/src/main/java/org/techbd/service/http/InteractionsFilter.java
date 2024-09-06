@@ -51,6 +51,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
     @Value("${org.techbd.service.http.interactions.default-persist-strategy:#{null}}")
     private String defaultPersistStrategy;
 
+    @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
+    private boolean saveUserDataToInteractions;
+
     @Autowired
     private JavaMailSender mailSender;
 
@@ -72,8 +75,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 .withMatchers(
                         regexAndMethods == null
                                 ? List.of(
+                                        "^/login",
                                         "^/home",
-                                        "^/docs", "^/docs/techbd-hub", "^/docs/shinny-fhir-ig", "^/docs/swagger-ui", "^/docs/announcements",
+                                        "^/docs", "^/docs/techbd-hub", "^/docs/shinny-fhir-ig", "^/docs/swagger-ui", "^/docs/swagger-ui/techbd-api", "^/docs/swagger-ui/query-api", "^/docs/announcements",
                                         "^/console*", "^/console/.*",
                                         "^/content*", "^/content/.*",
                                         "^/data-quality*", "^/data-quality/.*",
@@ -205,28 +209,32 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setProvenance(provenance);
 
                 // User details
-                var curUserName = "API_USER";
-                var gitHubLoginId = "N/A";
-                final var sessionId = origRequest.getRequestedSessionId();
-                var userRole = "API_ROLE";
+                if (saveUserDataToInteractions) {
+                    var curUserName = "API_USER";
+                    var gitHubLoginId = "N/A";
+                    final var sessionId = origRequest.getRequestedSessionId();
+                    var userRole = "API_ROLE";
 
-                final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
-                if (curUser.isPresent()) {
-                    final var ghUser = curUser.get().ghUser();
-                    if (null != ghUser) {
-                        curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
-                        gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
-                        userRole = curUser.get().principal().getAuthorities().stream()
-                                .map(GrantedAuthority::getAuthority)
-                                .collect(Collectors.joining(","));
-                        LOG.info("userRole: " + userRole);
-                        userRole = "DEFAULT_ROLE"; //TODO: Remove this when role is implemented as part of Auth
+                    final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(origRequest);
+                    if (curUser.isPresent()) {
+                        final var ghUser = curUser.get().ghUser();
+                        if (null != ghUser) {
+                            curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
+                            gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
+                            userRole = curUser.get().principal().getAuthorities().stream()
+                                    .map(GrantedAuthority::getAuthority)
+                                    .collect(Collectors.joining(","));
+                            LOG.info("userRole: " + userRole);
+                            userRole = "DEFAULT_ROLE"; //TODO: Remove this when role is implemented as part of Auth
+                        }
                     }
+                    rihr.setUserName(curUserName);
+                    rihr.setUserId(gitHubLoginId);
+                    rihr.setUserSession(sessionId);
+                    rihr.setUserRole(userRole);
+                } else {
+                    LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: " + saveUserDataToInteractions);
                 }
-                rihr.setUserName(curUserName);
-                rihr.setUserId(gitHubLoginId);
-                rihr.setUserSession(sessionId);
-                rihr.setUserRole(userRole);
 
                 rihr.execute(dsl.configuration());
             } catch (Exception e) {
