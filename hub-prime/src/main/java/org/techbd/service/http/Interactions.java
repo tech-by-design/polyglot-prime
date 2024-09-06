@@ -121,6 +121,28 @@ public class Interactions {
                     body // Request body
             );
         }
+
+    public RequestEncountered withRequestBody(byte[] newRequestBody) {
+        return new RequestEncountered(
+                this.requestId,
+                this.tenant,
+                this.method,
+                this.requestUrl,
+                this.absoluteUrl,
+                this.requestUri,
+                this.clientIpAddress,
+                this.userAgent,
+                this.encounteredAt,
+                this.headers,
+                this.parameters,
+                this.contentType,
+                this.queryString,
+                this.protocol,
+                this.session,
+                this.cookies,
+                newRequestBody // Updated request body
+        );
+    }
     }
 
     public record ResponseEncountered(

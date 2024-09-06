@@ -77,7 +77,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                 ? List.of(
                                         "^/login",
                                         "^/home",
-                                        "^/docs", "^/docs/techbd-hub", "^/docs/shinny-fhir-ig", "^/docs/swagger-ui", "^/docs/swagger-ui/techbd-api", "^/docs/swagger-ui/query-api", "^/docs/announcements",
+                                        "^/docs", "^/docs/techbd-hub", "^/docs/shinny-fhir-ig", "^/docs/swagger-ui",
+                                        "^/docs/swagger-ui/techbd-api", "^/docs/swagger-ui/query-api",
+                                        "^/docs/announcements",
                                         "^/console*", "^/console/.*",
                                         "^/content*", "^/content/.*",
                                         "^/data-quality*", "^/data-quality/.*",
@@ -86,8 +88,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                         "^/dashboard*", "^/dashboard/.*",
                                         "^/api/expect/.*",
                                         "^/metadata",
-                                        List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload")
-                                ) : regexAndMethods)
+                                        List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload"))
+                                : regexAndMethods)
                 .build();
         LOG.info("setPersistInDbMatchers %s".formatted(this.iprDB.toString()));
     }
@@ -158,9 +160,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
         final var requestBody = persistReqPayloadDB ? mutatableReq.getContentAsByteArray()
                 : "persistPayloads = false".getBytes(StandardCharset.UTF_8);
-        requestEncountered = new Interactions.RequestEncountered(mutatableReq, requestBody);
+        requestEncountered = requestEncountered.withRequestBody(requestBody);
         setActiveRequestEnc(origRequest, requestEncountered);
-
         RequestResponseEncountered rre = null;
         if (!persistRespPayloadDB) {
             rre = new Interactions.RequestResponseEncountered(requestEncountered,
@@ -225,7 +226,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                     .map(GrantedAuthority::getAuthority)
                                     .collect(Collectors.joining(","));
                             LOG.info("userRole: " + userRole);
-                            userRole = "DEFAULT_ROLE"; //TODO: Remove this when role is implemented as part of Auth
+                            userRole = "DEFAULT_ROLE"; // TODO: Remove this when role is implemented as part of Auth
                         }
                     }
                     rihr.setUserName(curUserName);
@@ -233,7 +234,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
                     rihr.setUserSession(sessionId);
                     rihr.setUserRole(userRole);
                 } else {
-                    LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: " + saveUserDataToInteractions);
+                    LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
+                            + saveUserDataToInteractions);
                 }
 
                 rihr.execute(dsl.configuration());
