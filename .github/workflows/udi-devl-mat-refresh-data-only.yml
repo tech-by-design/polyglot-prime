@@ -4,7 +4,6 @@ on:
   schedule:
     # Run every 2 hours
     - cron: "0 */2 * * *"
-  workflow_dispatch: # Enables manual trigger temporarily
 
 jobs:
   build:
