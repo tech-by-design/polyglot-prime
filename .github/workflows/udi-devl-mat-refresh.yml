@@ -3,7 +3,7 @@ name: Devl UDI Mat Refresh
 on:
   workflow_dispatch: {}
   workflow_run:
-    workflows: ["UDI Devl RDS schema generator"]
+    workflows: ["Devl UDI schema generator"]
     types:
       - completed
 
