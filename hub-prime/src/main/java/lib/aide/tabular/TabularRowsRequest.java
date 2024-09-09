@@ -43,14 +43,63 @@ public record TabularRowsRequest(
      * @param aggFunc      The aggregation function for the column.
      */
     public record ColumnVO(String id, String displayName, String field, String aggFunc) {}
-
+  
     /**
      * Record representing a filter model.
      *
      * @param filterType The type of the filter.
+     * @param type       The comparison type (e.g., equals, contains).
      * @param filter     The filter value.
+     * 
      */
-    public record FilterModel(String filterType,String type, Object filter) {}
+    public record ConditionsFilterModel(
+            String filterType, // Type of the filter (text, number, etc.)
+            String type, // Type of comparison (equals, contains, etc.)
+            Object filter,
+            Object secondFilter // Filter value for between filters
+            ){
+                public ConditionsFilterModel(String filterType, String type, Object filter) {
+                    this(filterType, type, filter, null);
+                }
+            }
+
+    /**
+     * Record representing a filter model.
+     *
+     */
+    public record FilterModel(
+            String filterType, // Type of the filter (text, number, etc.)
+            String type, // Type of comparison (equals, contains, etc.)
+            Object filter, // Filter value for simple filters
+            String operator, // Logical operator (AND/OR) for complex filters
+            List<ConditionsFilterModel> conditions, // Nested conditions for complex filters
+            Object secondFilter // Filter value for between filters
+    ) {
+        // Constructors to handle both simple and complex filter cases
+
+        /**
+         * Constructor for simple filters (no conditions, just filter type and value).
+         *
+         * @param filterType The type of the filter.
+         * @param type       The comparison type (e.g., equals, contains).
+         * @param filter     The filter value.
+         */
+        public FilterModel(String filterType, String type, Object filter) {
+            this(filterType, type, filter, null, null, null); // No operator or conditions for simple filters
+        }
+
+        /**
+         * Constructor for complex filters with conditions and operators.
+         *
+         * @param filterType The type of the filter.
+         * @param operator   The logical operator (e.g., AND/OR).
+         * @param conditions The list of conditions.
+         */
+        public FilterModel(String filterType, String operator, List<ConditionsFilterModel> conditions) {
+            this(filterType, null, null, operator, conditions, null); // No type or filter for complex filters
+        }
+    }
+
 
     /**
      * Record representing a sort model.
