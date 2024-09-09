@@ -112,55 +112,45 @@ The view is refreshed to include up-to-date data, and indexing ensures efficient
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_request_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_request_mat
 TABLESPACE pg_default
-AS
-WITH extracted AS (
-    SELECT 
-        sat.hub_interaction_id,
-        sat.sat_interaction_http_request_id,
-        sat.payload->>'id' AS bundle_id,
-        hub."key" AS uri,
-        sat.nature ->> 'nature' AS nature,
-        sat.nature ->> 'tenant_id' AS tenant_id,
-        sat.payload->'meta'->>'lastUpdated' AS bundle_last_updated,
-        sat.from_state,
-        sat.to_state,
-        sat.payload,
-        sat.created_at
-    FROM techbd_udi_ingress.hub_interaction hub
-    INNER JOIN techbd_udi_ingress.sat_interaction_http_request sat
-        ON hub.hub_interaction_id = sat.hub_interaction_id        
-    WHERE 1 = 1      
-        AND hub.key LIKE '/Bundle%'
-),
-patient_resources AS (
-    SELECT
-    	hub_interaction_id,
-    	sat_interaction_http_request_id,
-    	jsonb_path_query(payload, '$.entry[*].resource ? (@.resourceType == "Patient")') AS patient_resource
-    FROM 
-        extracted
-),
-patient_details AS (
-    SELECT
-    	hub_interaction_id,
-    	sat_interaction_http_request_id,
-        patient_resource->>'id' AS patient_id,
-        (SELECT identifier->>'value'
-         FROM jsonb_array_elements(patient_resource->'identifier') AS identifier
-         WHERE identifier->'type'->'coding' @> '[{"code": "MR"}]' LIMIT 1) AS patient_mrn,
-        jsonb_array_elements(patient_resource->'name') AS patient_name
-    FROM 
-        patient_resources
-)
-SELECT 
-	gen_random_uuid() AS row_id,
+AS WITH extracted AS (
+         SELECT sat.hub_interaction_id,
+            sat.sat_interaction_http_request_id,
+            sat.payload ->> 'id'::text AS bundle_id,
+            hub.key AS uri,
+            sat.nature ->> 'nature'::text AS nature,
+            sat.nature ->> 'tenant_id'::text AS tenant_id,
+            (sat.payload -> 'meta'::text) ->> 'lastUpdated'::text AS bundle_last_updated,
+            sat.from_state,
+            sat.to_state,
+            sat.payload,
+            sat.created_at
+           FROM techbd_udi_ingress.hub_interaction hub
+             JOIN techbd_udi_ingress.sat_interaction_http_request sat ON hub.hub_interaction_id = sat.hub_interaction_id
+          WHERE 1 = 1 AND hub.key ~~ '/Bundle%'::text
+        ), patient_resources AS (
+         SELECT extracted.hub_interaction_id,
+            extracted.sat_interaction_http_request_id,
+            jsonb_path_query(extracted.payload->'requestBody', '$."entry"[*]."resource"?(@."resourceType" == "Patient")'::jsonpath) AS patient_resource
+           FROM extracted
+        ), patient_details AS (
+         SELECT patient_resources.hub_interaction_id,
+            patient_resources.sat_interaction_http_request_id,
+            patient_resources.patient_resource ->> 'id'::text AS patient_id,
+            ( SELECT identifier.value ->> 'value'::text
+                   FROM jsonb_array_elements(patient_resources.patient_resource -> 'identifier'::text) identifier(value)
+                  WHERE ((identifier.value -> 'type'::text) -> 'coding'::text) @> '[{"code": "MR"}]'::jsonb
+                 LIMIT 1) AS patient_mrn,
+            jsonb_array_elements(patient_resources.patient_resource -> 'name'::text) AS patient_name
+           FROM patient_resources
+        )
+ SELECT gen_random_uuid() AS row_id,
     e.hub_interaction_id,
     e.sat_interaction_http_request_id,
     e.bundle_id,
     e.bundle_last_updated,
     e.uri,
-    nature,
-    tenant_id,
+    e.nature,
+    e.tenant_id,
     pd.patient_id,
     pd.patient_mrn,
     e.payload,
@@ -169,24 +159,21 @@ SELECT
     e.created_at,
     CURRENT_USER AS materialized_by,
     CURRENT_TIMESTAMP AS materialized_at
-FROM 
-    extracted e
-LEFT OUTER JOIN 
-    patient_details pd
-ON e.sat_interaction_http_request_id = pd.sat_interaction_http_request_id -- Example: Adjust this based on the actual relationship
-AND e.hub_interaction_id = pd.hub_interaction_id
-WITH NO DATA; 
- 
- 
-CREATE UNIQUE INDEX IF NOT EXISTS fhir_request_mat_row_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (row_id);
+   FROM extracted e
+     LEFT JOIN patient_details pd ON e.sat_interaction_http_request_id = pd.sat_interaction_http_request_id AND e.hub_interaction_id = pd.hub_interaction_id     
+WITH NO DATA;
+
+-- View indexes:
 CREATE INDEX IF NOT EXISTS fhir_request_mat_created_at_idx ON techbd_udi_ingress.fhir_request_mat USING btree (created_at DESC);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_hub_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (hub_interaction_id);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_sat_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (sat_interaction_http_request_id);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_patient_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (patient_id);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_nature_idx ON techbd_udi_ingress.fhir_request_mat USING btree (nature);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_tenant_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (tenant_id);
 CREATE INDEX IF NOT EXISTS fhir_request_mat_from_state_idx ON techbd_udi_ingress.fhir_request_mat USING btree (from_state);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_hub_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (hub_interaction_id);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_nature_idx ON techbd_udi_ingress.fhir_request_mat USING btree (nature);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_patient_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (patient_id);
+CREATE UNIQUE INDEX IF NOT EXISTS fhir_request_mat_row_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (row_id);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_sat_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (sat_interaction_http_request_id);
+CREATE INDEX IF NOT EXISTS fhir_request_mat_tenant_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (tenant_id);
 CREATE INDEX IF NOT EXISTS fhir_request_mat_to_state_idx ON techbd_udi_ingress.fhir_request_mat USING btree (to_state);
+
 
 /*============================================================================================================
 This view selects data from the techbd_udi_ingress.fhir_request_mat materialized view and adds a 
