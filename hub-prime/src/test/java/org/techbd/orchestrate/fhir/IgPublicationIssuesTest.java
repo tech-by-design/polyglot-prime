@@ -24,9 +24,12 @@ public class IgPublicationIssuesTest {
                         issue.getMessage().contains("Unknown extension") ||
                         issue.getMessage().contains("Unknown Code System") ||
                         (issue.getMessage().startsWith("ValueSet") && issue.getMessage().endsWith("not found")) ||
+
                         issue.getMessage().endsWith(" not found");
         private static final String ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS = "Unknown extension http://shinny.org/StructureDefinition/shinny-personal-pronouns";
         private static final String ERROR_MESSAGE_CTS_VALUE_SET = "ValueSet 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.24' not found";
+        private static final String ERROR_MESSAGE_CTM_CTS_VALUE_SET = "ValueSet 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.32' not found";
+        private static final String ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET = "ValueSet 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1240.11' not found";
         private static final String ERROR_MESSAGE_SHINNY_MIDDLE_NAME = "Unknown extension http://shinny.org/StructureDefinition/middle-name";
         private static final String ERROR_MESSAGE_SHNNY_COUNTY = "Unknown extension http://shinny.org/StructureDefinition/county";
         private static final String ERROR_MESSAGE_SHNNY_PATIENT = "Unknown extension http://shinny.org/StructureDefinition/shinny-patient";
@@ -75,6 +78,8 @@ public class IgPublicationIssuesTest {
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
                 softly.assertThat(unexpectedIgIssues).isZero()
                                 .withFailMessage("There should be no IG publication issues");
                 throwEachAssertionError(softly);
@@ -103,6 +108,8 @@ public class IgPublicationIssuesTest {
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);                
                 softly.assertThat(unexpectedIgIssues).isZero()
                                 .withFailMessage("There should be no IG publication issues");
                 throwEachAssertionError(softly);
@@ -132,6 +139,8 @@ public class IgPublicationIssuesTest {
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_DIAGNOSIS);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_US_CORE_CONDITION_CATEGORY);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);                
                 softly.assertThat(unexpectedIgIssues).isZero()
                                 .withFailMessage("There should be no IG publication issues");
                 throwEachAssertionError(softly);
@@ -159,6 +168,8 @@ public class IgPublicationIssuesTest {
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);                
                 softly.assertThat(unexpectedIgIssues).isZero()
                                 .withFailMessage("There should be no IG publication issues");
                 throwEachAssertionError(softly);
@@ -185,6 +196,8 @@ public class IgPublicationIssuesTest {
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);                
                 softly.assertThat(unexpectedIgIssues).isZero()
                                 .withFailMessage("There should be no IG publication issues");
                 throwEachAssertionError(softly);
@@ -210,6 +223,8 @@ public class IgPublicationIssuesTest {
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_REFERAL_MANAGEMENT);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);                
                 softly.assertThat(unexpectedIgIssues).isZero()
                                 .withFailMessage("There should be no IG publication issues");
                 throwEachAssertionError(softly);
@@ -236,6 +251,8 @@ public class IgPublicationIssuesTest {
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);                
                 softly.assertThat(unexpectedIgIssues).isZero()
                                 .withFailMessage("There should be no IG publication issues");
                 throwEachAssertionError(softly);
@@ -263,6 +280,8 @@ public class IgPublicationIssuesTest {
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
                 assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+                assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);                
                 softly.assertThat(unexpectedIgIssues).isZero()
                                 .withFailMessage("There should be no IG publication issues");
                 throwEachAssertionError(softly);
