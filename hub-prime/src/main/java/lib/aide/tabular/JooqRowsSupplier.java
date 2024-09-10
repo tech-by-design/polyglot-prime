@@ -35,13 +35,10 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             // generated jOOQ assistance may treat certain columns incorrectly).
             try {
                 // looking for Tables.TABLISH_NAME ("tablish" means table or view)
-                if (schemaName != null) {
-                    return new TypableTable(DSL.table(DSL.name(schemaName.toLowerCase(), tableLikeName)), false);
-                }
-                final var field = tablesRegistry.getField(tableLikeName.toUpperCase());
+                                final var field = tablesRegistry.getField(tableLikeName.toUpperCase());
                 return new TypableTable((Table<?>) field.get(null), true);
             } catch (NoSuchFieldException | IllegalAccessException e) {
-                return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName.toLowerCase(), tableLikeName)
+                return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName, tableLikeName)
                         : DSL.name(tableLikeName)), false);
             }
         }
@@ -135,10 +132,38 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var groupByFields = new ArrayList<Field<?>>();
         
         finalCondition = null;
-        // Adding columns to select
-        if (request.valueCols() != null)
-            request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
+
+
+        // // Adding columns to select
+        // if (request.valueCols() != null)
+        //     request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
+                // Check if groupKeys are available
+                if (request.groupKeys() != null && !request.groupKeys().isEmpty()) {
+                    // Adding the select field '*'
+                    selectFields.add(DSL.field("*"));
+                    // Adding where conditions based on groupKeys and rowGroupCols
+                    for (int i = 0; i < request.rowGroupCols().size(); i++) {
+                        final var col = request.rowGroupCols().get(i);
+                        final var value = request.groupKeys().get(i);
+                        final var condition = typableTable.column(col.field()).eq(value);
+                        whereConditions.add(condition);
+                        bindValues.add(value);
+                    }
+                } else {
+                    // Adding grouping
+                    if (request.rowGroupCols() != null) {
+                        request.rowGroupCols().forEach(col -> {
+                            final var field = typableTable.column(col.field());
+                            groupByFields.add(field);
+                            selectFields.add(field);
+                        });
+                    }
         
+                    // Adding columns to select if no grouping
+                    if (groupByFields.isEmpty() && request.valueCols() != null) {
+                        request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
+                    }
+                }
         // Adding filters
         if (request.filterModel() != null)
             request.filterModel().forEach((field, filter) -> {
@@ -254,11 +279,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var limit = request.endRow() - request.startRow();
         if (customQuery != null) {
             LOG.info("Custom Query for Single Schema {} :", customQuery);
-            // if(whereConditions.size()>0){
-            //     bindValues.clear();
-            // }
-            // final var select =((SelectLimitStep<Record>) customQuery)
-            // .limit(request.startRow(), limit);
+ 
             final var select = groupByFields.isEmpty()
                     ? ((SelectLimitStep<Record>) customQuery)
                             .limit(request.startRow(), limit)

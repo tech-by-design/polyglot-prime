@@ -137,7 +137,7 @@ patient_resources AS (
     	sat_interaction_http_request_id,
     	jsonb_path_query(payload, '$.entry[*].resource ? (@.resourceType == "Patient")') AS patient_resource
     FROM 
-        extracted
+        extracted LIMIT 1
 ),
 patient_details AS (
     SELECT
