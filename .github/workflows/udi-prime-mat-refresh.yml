@@ -1,7 +1,11 @@
-name: UDI Prime RDS Materialized Refresh
+name: Prime UDI Mat Refresh
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
+  workflow_run:
+    workflows: ["Prime UDI schema generator"]
+    types:
+      - completed
 
 jobs:
   build:

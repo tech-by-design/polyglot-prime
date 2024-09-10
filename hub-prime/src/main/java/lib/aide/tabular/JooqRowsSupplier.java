@@ -7,6 +7,9 @@ import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Query;
+import org.jooq.Record;
+import org.jooq.SelectGroupByStep;
+import org.jooq.SelectLimitStep;
 import org.jooq.SortField;
 import org.jooq.Table;
 import org.jooq.conf.RenderKeywordCase;
@@ -14,26 +17,31 @@ import org.jooq.conf.RenderQuotedNames;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.techbd.util.NoOpUtils;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
 public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSupplier.JooqProvenance> {
-    public record TypableTable(Table<?> table, boolean stronglyTyped) {
-        public static TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
-                @Nonnull String tableLikeName) {
+    static private final Logger LOG = LoggerFactory.getLogger(JooqRowsSupplier.class);
 
+    public record TypableTable(Table<?> table, boolean stronglyTyped) {
+        static public TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
+                @Nonnull String tableLikeName) {
             // Attempt to find a generated table reference using reflection;
             // when we can use a jOOQ-generated class it means that special
             // column types like JSON will work (otherwise pure dynamic without
             // generated jOOQ assistance may treat certain columns incorrectly).
             try {
                 // looking for Tables.TABLISH_NAME ("tablish" means table or view)
+                if (schemaName != null) {
+                    return new TypableTable(DSL.table(DSL.name(schemaName.toLowerCase(), tableLikeName)), false);
+                }
                 final var field = tablesRegistry.getField(tableLikeName.toUpperCase());
                 return new TypableTable((Table<?>) field.get(null), true);
             } catch (NoSuchFieldException | IllegalAccessException e) {
-                return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName, tableLikeName)
+                return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName.toLowerCase(), tableLikeName)
                         : DSL.name(tableLikeName)), false);
             }
         }
@@ -68,6 +76,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     private final boolean includeGeneratedSqlInResp;
     private final boolean includeGeneratedSqlInErrorResp;
     private final Logger logger;
+    private final Query customQuery;
+    private final List<Object> customBindValues;
 
     private JooqRowsSupplier(final Builder builder) {
         this.request = builder.request;
@@ -76,6 +86,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         this.includeGeneratedSqlInResp = builder.includeGeneratedSqlInResp;
         this.includeGeneratedSqlInErrorResp = builder.includeGeneratedSqlInErrorResp;
         this.logger = builder.logger;
+        this.customQuery = builder.customQuery;
+        this.customBindValues = builder.customBindValues;
     }
 
     public TabularRowsRequest request() {
@@ -106,73 +118,123 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
             return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, data, lastRow, null);
         } catch (Exception e) {
-            if (logger != null) {
+            if (logger != null)
                 logger.error("JooqRowsSupplier error", e);
-            }
             return new TabularRowsResponse<>(includeGeneratedSqlInErrorResp ? provenance : null, null, -1,
                     e.getMessage());
         }
     }
 
+    private Condition finalCondition;
+    @SuppressWarnings("unchecked")
     public JooqQuery query() {
         final var selectFields = new ArrayList<Field<?>>();
         final var whereConditions = new ArrayList<Condition>();
         final var bindValues = new ArrayList<Object>();
         final var sortFields = new ArrayList<SortField<?>>();
         final var groupByFields = new ArrayList<Field<?>>();
-
-        // Check if groupKeys are available
-        if (request.groupKeys() != null && !request.groupKeys().isEmpty()) {
-            // Adding the select field '*'
-            selectFields.add(DSL.field("*"));
-            // Adding where conditions based on groupKeys and rowGroupCols
-            for (int i = 0; i < request.rowGroupCols().size(); i++) {
-                final var col = request.rowGroupCols().get(i);
-                final var value = request.groupKeys().get(i);
-                final var condition = typableTable.column(col.field()).eq(value);
-                whereConditions.add(condition);
-                bindValues.add(value);
-            }
-        } else {
-            // Adding grouping
-            if (request.rowGroupCols() != null) {
-                request.rowGroupCols().forEach(col -> {
-                    final var field = typableTable.column(col.field());
-                    groupByFields.add(field);
-                    selectFields.add(field);
-                });
-            }
-
-            // Adding columns to select if no grouping
-            if (groupByFields.isEmpty() && request.valueCols() != null) {
-                request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
-            }
-        }
-
+        
+        finalCondition = null;
+        // Adding columns to select
+        if (request.valueCols() != null)
+            request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
+        
         // Adding filters
-        if (request.filterModel() != null) {
+        if (request.filterModel() != null)
             request.filterModel().forEach((field, filter) -> {
-                final var condition = createCondition(field, filter);
-                whereConditions.add(condition);
-                bindValues.add(filter.filter());
+                
+                if (filter.operator() == null) {
+                    final var singleWhereConditions = new ArrayList<Condition>();
+                    final var condition = createCondition(field, filter);
+                    LOG.info("filter.operator() : {}",filter.operator());
+                    whereConditions.add(condition);
+                    singleWhereConditions.add(condition);
+                    if (finalCondition == null) {
+                        finalCondition=DSL.and(singleWhereConditions);
+                    }
+                    else{
+                        finalCondition=DSL.and(finalCondition, DSL.and(singleWhereConditions));
+                    }
+                    if (filter.type().equals("like") || filter.type().equals("contains")) {
+                        bindValues.add("%" + filter.filter() + "%");
+                    } else {
+                        bindValues.add(filter.filter());
+                    }
+                    if (filter.type().equals("between")) {
+                        bindValues.add(filter.secondFilter());
+                    }
+                } else {
+                    final var multipleWhereConditions = new ArrayList<Condition>();
+                    LOG.info("filter.conditions() exist");
+                    filter.conditions().forEach((filterModel) -> {
+
+                        LOG.info("filter.operator() exist");
+                        // ******** */
+                        final var condition = createConditionSub(field, filterModel.type(), filterModel.filter(), filterModel.secondFilter());
+                        LOG.info("filter.operator() : {}", filter.operator());
+                        whereConditions.add(condition);    
+                                if ("OR".equalsIgnoreCase(filter.operator())) {
+                                    LOG.info("OR Filter");
+                                    multipleWhereConditions.add(DSL.or(condition));
+                                }
+                                if ("AND".equalsIgnoreCase(filter.operator())) {
+                                    LOG.info("AND Filter");
+                                    multipleWhereConditions.add(DSL.and(condition));
+                                }
+                            
+                            LOG.info("filter.where condition :{}",multipleWhereConditions.get(multipleWhereConditions.size()-1));
+                            if (filterModel.type().equals("like") || filterModel.type().equals("contains")) {
+                                bindValues.add("%" + filterModel.filter() + "%");
+                            } else {
+                                bindValues.add(filterModel.filter());
+                            }
+                            if (filterModel.type().equals("between")) {
+                                bindValues.add(filterModel.secondFilter());
+                            }
+
+                    });
+                    if (finalCondition != null) {
+                        
+                        if ("OR".equalsIgnoreCase(filter.operator())) {
+                            finalCondition=DSL.and(finalCondition, DSL.or(multipleWhereConditions));
+                        }
+                        if ("AND".equalsIgnoreCase(filter.operator())) {
+                            finalCondition=DSL.and(finalCondition, DSL.and(multipleWhereConditions));
+                        }
+                    }
+                    else{
+                        if ("OR".equalsIgnoreCase(filter.operator())) {
+                            finalCondition=DSL.or(multipleWhereConditions);
+                        }
+                        if ("AND".equalsIgnoreCase(filter.operator())) {
+                            finalCondition=DSL.and(multipleWhereConditions);
+                        }
+                    }
+                    
+
+                }
             });
-        }
 
         // Adding sorting
-        if (request.sortModel() != null) {
+        if (request.sortModel() != null)
             for (final var sort : request.sortModel()) {
                 final var sortField = typableTable.column(sort.colId());
                 switch (sort.sort()) {
                     case "asc" -> sortFields.add(sortField.asc());
                     case "desc" -> sortFields.add(sortField.desc());
-                    default -> throw new IllegalArgumentException(
-                        "Unknown sort order: Please specify a sort order.");
                 }
             }
-        }
+
+        // Adding grouping
+        if (request.rowGroupCols() != null)
+            request.rowGroupCols().forEach(col -> {
+                final var field = typableTable.column(col.field());
+                groupByFields.add(field);
+                selectFields.add(field);
+            });
 
         // Adding aggregations
-        if (request.aggregationFunctions() != null) {
+        if (request.aggregationFunctions() != null)
             request.aggregationFunctions().forEach(aggFunc -> {
                 aggFunc.columns().forEach(col -> {
                     final var field = typableTable.column(col);
@@ -180,49 +242,111 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                         case "sum" -> DSL.sum(field.cast(Double.class));
                         case "avg" -> DSL.avg(field.cast(Double.class));
                         case "count" -> DSL.count(field);
-                        default -> throw new IllegalArgumentException(
-                                "Unknown aggregation function: " + aggFunc.functionName());
+                        default ->
+                            throw new IllegalArgumentException(
+                                    "Unknown aggregation function: " + aggFunc.functionName());
                     };
                     selectFields.add(aggregationField);
                 });
             });
-        }
 
         // Creating the base query
         final var limit = request.endRow() - request.startRow();
-        final var select = !groupByFields.isEmpty()
-                ? this.dsl.select(selectFields).from(typableTable.table()).where(whereConditions).groupBy(groupByFields)
-                        .orderBy(sortFields).limit(request.startRow(), limit)
-                : this.dsl.select(selectFields).from(typableTable.table()).where(whereConditions).orderBy(sortFields)
-                        .limit(request.startRow(), limit);
+        if (customQuery != null) {
+            LOG.info("Custom Query for Single Schema {} :", customQuery);
+            // if(whereConditions.size()>0){
+            //     bindValues.clear();
+            // }
+            // final var select =((SelectLimitStep<Record>) customQuery)
+            // .limit(request.startRow(), limit);
+            final var select = groupByFields.isEmpty()
+                    ? ((SelectLimitStep<Record>) customQuery)
+                            .limit(request.startRow(), limit)
+                    : ((SelectGroupByStep<Record>) customQuery)
+                            .groupBy(groupByFields)
+                            // .orderBy(sortFields)
+                            .limit(request.startRow(), limit);
+            LOG.info("Select Query : {}", select);
+            if (customBindValues != null && customBindValues.size() > 0) {
+                for (Object customBind : customBindValues) {
+                    bindValues.add(customBind);
+                }
+            }
 
-        bindValues.add(request.startRow());
-        bindValues.add(limit);
+            
+            bindValues.add(request.startRow());
+            bindValues.add(limit);
+            LOG.info("Prepared Select Statement : {}", select);
+            return new JooqQuery(select, bindValues, typableTable.stronglyTyped);
+        }
 
-        return new JooqQuery(select, bindValues, typableTable.stronglyTyped());
+        LOG.info("Query for Single Schema {} :", typableTable.table);
+        if (finalCondition == null) {
+            final var select = groupByFields.isEmpty()
+                    ? this.dsl.select(selectFields).from(typableTable.table).where(whereConditions).orderBy(sortFields)
+                            .limit(request.startRow(), limit)
+                    : this.dsl.select(selectFields).from(typableTable.table).where(whereConditions)
+                            .groupBy(groupByFields)
+                            .orderBy(sortFields)
+                            .limit(request.startRow(), limit);
+            LOG.info("Select Query : {}", select);
+            bindValues.add(request.startRow());
+            bindValues.add(limit);
+            LOG.info("Prepared Select Statement : {}", select);
+            return new JooqQuery(select, bindValues, typableTable.stronglyTyped);
+        } else {
+            final var select = groupByFields.isEmpty()
+                    ? this.dsl.select(selectFields).from(typableTable.table).where(finalCondition).orderBy(sortFields)
+                            .limit(request.startRow(), limit)
+                    : this.dsl.select(selectFields).from(typableTable.table).where(finalCondition)
+                            .groupBy(groupByFields)
+                            .orderBy(sortFields)
+                            .limit(request.startRow(), limit);
+            LOG.info("Select Query : {}", select);
+            bindValues.add(request.startRow());
+            bindValues.add(limit);
+            LOG.info("Prepared Select Statement : {}", select);
+            return new JooqQuery(select, bindValues, typableTable.stronglyTyped);
+        }
+
     }
 
     private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {
+        return createConditionSub(field,filter.type(),filter.filter(),filter.secondFilter());
+    }
+    private Condition createConditionSub(final String field, String type, Object filter, Object secondfilter) {
         final var dslField = typableTable.column(field);
-        return switch (filter.type()) {
-            case "like" -> dslField.likeIgnoreCase("%" + filter.filter() + "%");
-            case "contains" -> dslField.likeIgnoreCase("%" + filter.filter() + "%");
-            case "equals" -> dslField.eq(DSL.param(field, filter.filter()));
-            case "number" -> dslField.eq(DSL.param(field, filter.filter()));
-            case "date" -> dslField.eq(DSL.param(field, filter.filter()));
+        return switch (type) {
+            case "like" -> dslField.likeIgnoreCase("%" + filter + "%");
+            case "equals" -> dslField.eq(DSL.param(field, filter));
+            case "notEqual" -> dslField.notEqual(DSL.param(field, filter));
+            case "number" -> dslField.eq(DSL.param(field, filter));
+            case "date" -> dslField.eq(DSL.param(field, filter));
+            case "contains" -> dslField.likeIgnoreCase("%" + filter + "%");
+            case "notContains" -> dslField.notLikeIgnoreCase("%" + filter + "%");
+            case "startsWith" -> dslField.startsWith(filter);
+            case "endsWith" -> dslField.endsWith(filter);     
+            case "lessOrEqual" -> dslField.lessOrEqual(filter);      
+            case "greatersOrEqual" -> dslField.greaterOrEqual(filter);      
+            case "greaterThan" -> dslField.greaterThan(filter);      
+            case "lessThan" -> dslField.lessThan(filter);   
+            case "between" -> dslField.between(filter, secondfilter);   
             default -> throw new IllegalArgumentException(
-                    "Unknown filter type '" + filter.filterType() + "' in filter for field '" + field
+                    "Unknown filter type '" + type + "' in filter for field '" + field
                             + "' see JooqRowsSupplier::createCondition");
         };
     }
+    
 
     public static final class Builder {
         private TabularRowsRequest request;
-        private TypableTable table;
+        private TypableTable table;       
         private DSLContext dsl;
         private boolean includeGeneratedSqlInResp;
         private boolean includeGeneratedSqlInErrorResp;
         private Logger logger;
+        private Query customQuery;
+        private List<Object> customBindValues;
 
         public Builder withRequest(final TabularRowsRequest request) {
             this.request = request;
@@ -262,8 +386,21 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             return this;
         }
 
+
+        public Builder withQuery(Class<?> tablesClass, String schema, String tableLikeName, Query customQuery,
+                ArrayList<Object> bindValues) {
+            TypableTable table = TypableTable.fromTablesRegistry(tablesClass, schema, tableLikeName);
+            this.table = table;
+            this.customQuery = customQuery;
+            if (bindValues.size() > 0)
+                this.customBindValues = bindValues;
+            LOG.info("Custom Query prepared {}:", this.customQuery);
+            return this;
+        }
+
         public JooqRowsSupplier build() {
             return new JooqRowsSupplier(this);
         }
     }
+
 }
