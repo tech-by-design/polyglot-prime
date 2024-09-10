@@ -1,13 +1,43 @@
-name: UDI Devl RDS schema generator
+name: Devl UDI schema generator
 
 on:
-  workflow_dispatch:
-
+  workflow_dispatch: # Manual trigger
+  
 jobs:
-  build:
-    runs-on: devl-techbd-sql
+  check-mat-refresh-action-status:
+    runs-on: ubuntu-latest
+    outputs:
+      action-running: ${{ steps.check-action.outputs.action-running }}
 
     steps:
+      - name: Check if another workflow is running
+        id: check-action
+        run: |
+          # Replace with the actual workflow ID or filename (e.g., main.yml)
+          WORKFLOW_ID="udi-devl-mat-refresh-data-only.yml"
+          REPO_OWNER="${{ github.repository_owner }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          # Get the running workflow runs for the same repo and the specific workflow
+          RUNNING=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/workflows/$WORKFLOW_ID/runs?status=in_progress&per_page=1" \
+          | jq '.workflow_runs | length')
+
+          if [ "$RUNNING" -gt 0 ]; then
+            echo "Action is already running"
+            echo "::set-output name=action-running::true"
+          else
+            echo "No action is running"
+            echo "::set-output name=action-running::false"
+          fi
+
+  schema-generation:
+    runs-on: devl-techbd-sql
+    needs: check-mat-refresh-action-status
+    if: needs.check-mat-refresh-action-status.outputs.action-running == 'false'
+    steps:
+      - name: Running schema generation since UDI Mat Refresh (data-only) is not running
+        run: echo "Running schema generation since UDI Mat Refresh (data-only) is not running."
+
       - name: Checkout repository
         uses: actions/checkout@v2
 
