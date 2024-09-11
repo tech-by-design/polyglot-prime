@@ -74,7 +74,7 @@ org:
           prime:
             version: @project.version@
             defaultSdohFhirProfileUrl: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json
-            defaultDatalakeApiUrl: https://qo5beg39c8.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
+            defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
             structureDefinitionsUrls:
               shinnyEncounter: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-encounter.json
               shinnyConsent: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-Consent.json
