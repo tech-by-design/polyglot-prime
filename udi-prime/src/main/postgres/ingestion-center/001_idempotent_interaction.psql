@@ -5,8 +5,8 @@ details from JSON fields and providing computed columns.
 ******************************************************************************************/
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_mat AS
-SELECT hi.hub_interaction_id AS hub_interaction_id,
-	sihr.sat_interaction_http_request_id,
+SELECT hi.hub_interaction_id,
+    sihr.sat_interaction_http_request_id,
     hi.key AS uri,
     hi.created_at AS interaction_created_at,
     hi.created_by AS interaction_created_by,
@@ -25,20 +25,41 @@ SELECT hi.hub_interaction_id AS hub_interaction_id,
     sihr.provenance AS request_provenance,
     jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count,
     sihr.payload,
-    LOWER(COALESCE(sihr.tenant_id_denorm,sihr.nature ->> 'tenant_id')) AS tenant_id_lower,
+    lower(COALESCE(sihr.tenant_id_denorm, sihr.nature ->> 'tenant_id'::text)) AS tenant_id_lower,
     CURRENT_USER AS materialized_by,
     CURRENT_TIMESTAMP AS materialized_at,
-    CASE 
-    WHEN sihr.nature ->> 'nature' = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
-    THEN (
-        SELECT h->>'value' 
-        FROM jsonb_array_elements((sihr.payload -> 'request') -> 'headers') AS h
-        WHERE h ->> 'name' = 'x-forwarded-for'
-    )
-    ELSE NULL END AS client_ip_address_forwarded
-   	FROM techbd_udi_ingress.hub_interaction hi
-   	INNER JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
-   	ON hi.hub_interaction_id = sihr.hub_interaction_id
+        CASE
+            WHEN (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN ( SELECT h.value ->> 'value'::text
+               FROM jsonb_array_elements((sihr.payload -> 'request'::text) -> 'headers'::text) h(value)
+              WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text)
+            ELSE NULL::text
+        END AS client_ip_address_forwarded,
+        (	SELECT regexp_replace(identifier_element->'assigner'->>'reference', '^Organization/', '') 
+	        FROM 
+	        jsonb_array_elements(COALESCE(sihr.payload->'entry', sihr.payload->'request'->'requestBody'->'entry')) AS entry
+	        CROSS JOIN jsonb_array_elements(entry.value->'resource'->'identifier') AS identifier_element
+	        WHERE entry.value->'resource'->>'resourceType' = 'Patient'
+	        AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
+	        LIMIT 1
+    	) AS organization_id,
+    	(
+	        SELECT entry.value->'resource'->>'name'
+	        FROM 
+	        jsonb_array_elements(COALESCE(sihr.payload->'entry', sihr.payload->'request'->'requestBody'->'entry')) AS entry
+	        WHERE entry.value->'resource'->>'resourceType' = 'Organization'
+	        AND entry.value->'resource'->>'id' = (
+	            SELECT regexp_replace(identifier_element->'assigner'->>'reference', '^Organization/', '') 
+	            FROM 
+	            jsonb_array_elements(COALESCE(sihr.payload->'entry', sihr.payload->'request'->'requestBody'->'entry')) AS entry
+	            CROSS JOIN jsonb_array_elements(entry.value->'resource'->'identifier') AS identifier_element
+	            WHERE entry.value->'resource'->>'resourceType' = 'Patient'
+	            AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
+	            LIMIT 1
+        )
+    ) AS organization_name                
+   FROM techbd_udi_ingress.hub_interaction hi
+     JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
+     ON hi.hub_interaction_id = sihr.hub_interaction_id
 WITH NO DATA;
   
    
@@ -506,7 +527,8 @@ interaction details, request attributes, and validation issues.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request
-AS SELECT
+AS with cte_http_fhir_req as (
+   SELECT
     htt_req.hub_interaction_id AS interaction_id,
     htt_req.uri,
     htt_req.interaction_created_at,
@@ -532,7 +554,9 @@ AS SELECT
     intr_observe.finish_time,
     intr_observe.duration_millisecs,
     MAX(fhir_req.patient_id) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_id,
-    MAX(fhir_req.patient_mrn) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_mrn
+    MAX(fhir_req.patient_mrn) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_mrn,
+    max(htt_req.organization_id) OVER (PARTITION BY htt_req.hub_interaction_id) AS organization_id,
+	max(htt_req.organization_name) OVER (PARTITION BY htt_req.hub_interaction_id) AS organization_name
 FROM 
     techbd_udi_ingress.interaction_http_request_mat htt_req
 LEFT JOIN 
@@ -549,9 +573,38 @@ LEFT OUTER JOIN
     AND fhir_req.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
     AND fhir_req.tenant_id = htt_req.tenant_id
 WHERE 
-    htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text]);
-   
-
+    htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text]))
+SELECT 
+  htt_req.interaction_id,
+    htt_req.uri,
+    htt_req.interaction_created_at,
+    htt_req.interaction_created_by,
+    htt_req.interaction_provenance,
+    htt_req.sat_interaction_http_request_id,
+    htt_req.nature,
+    htt_req.tenant_id,
+    htt_req.user_agent,
+    htt_req.client_ip_address,
+    htt_req.content_type,
+    htt_req.payload,
+    htt_req.elaboration,
+    htt_req.from_state,
+    htt_req.to_state,
+    htt_req.state_transition_reason,
+    htt_req.request_created_at,
+    htt_req.request_created_by,
+    htt_req.request_provenance,
+    htt_req.issues_count,
+    htt_req.resource_types,
+    htt_req.start_time,
+    htt_req.finish_time,
+    htt_req.duration_millisecs,
+    htt_req.patient_id,
+    htt_req.patient_mrn,
+    htt_req.organization_id,
+    htt_req.organization_name,
+   CONCAT_WS('-', htt_req.tenant_id, htt_req.organization_id, htt_req.patient_mrn) AS source_mrn  
+   from cte_http_fhir_req as htt_req; 
 
 /*******************************************************************************************
 This materialized view is to extract observability metrics from HTTP request interactions.This view joins 
@@ -2404,27 +2457,26 @@ $function$
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_forward_failure;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_failure
-AS
- SELECT 
- 	intr_hreq.sat_interaction_fhir_request_id,
- 	intr_hreq.hub_interaction_id AS interaction_id,
-    intr_hreq.tenant_id,
-    intr_hreq.uri,
-    intr_hreq.nature,
-    intr_hreq.created_at AS interaction_created_at,
-    intr_hreq.created_by AS interaction_created_by,
-    intr_hreq.provenance AS interaction_provenance,
-    intr_hreq.client_ip_address,
-    intr_hreq.user_agent,
-    intr_hreq.from_state,
-    intr_hreq.to_state,
-    intr_hreq.outbound_http_message,
-    intr_hreq.error_message AS error,
-    intr_hreq.issues_count,
-    intr_hreq.resource_type_set AS resource_types,
-    intr_hreq.patient_id,
-    intr_hreq.payload,
-    intr_hreq.patient_mrn
-   FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
-   WHERE (to_state = 'FAIL' OR to_state = 'COMPLETE') AND intr_hreq.passed = FALSE
-   ;
+AS SELECT sat_interaction_fhir_request_id,
+    hub_interaction_id AS interaction_id,
+    tenant_id,
+    uri,
+    nature,
+    created_at AS interaction_created_at,
+    created_by AS interaction_created_by,
+    provenance AS interaction_provenance,
+    client_ip_address,
+    user_agent,
+    from_state,
+    to_state,
+    outbound_http_message,
+    error_message AS error,
+    issues_count,
+    resource_type_set AS resource_types,
+    patient_id,
+    payload,
+    patient_mrn,
+    CONCAT_WS('-', tenant_id, organization_id, patient_mrn) AS source_mrn
+   	FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
+  	WHERE (to_state = 'FAIL'::text OR to_state = 'COMPLETE'::text) AND passed = FALSE
+  	;
