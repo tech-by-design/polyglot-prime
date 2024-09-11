@@ -51,7 +51,9 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
+import ca.uhn.fhir.validation.ResultSeverityEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
@@ -159,9 +161,42 @@ public class FhirController {
         if (includeRequestInOutcome) {
             immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
         }
-
         final var DSL = udiPrimeJpaConfig.dsl();
         final var jooqCfg = DSL.configuration();
+        // Check if the validation results has last updated date missing error.If so ,
+        // do not forward to scoring engine.
+       var hasLastUpdatedMissingError = session.getValidationResults().stream()
+                .map(OrchestrationEngine.ValidationResult::getIssues)
+                .filter(CollectionUtils::isNotEmpty)
+                .flatMap(List::stream)
+                .toList().stream()
+                .anyMatch(issue -> (ResultSeverityEnum.ERROR.getCode().equalsIgnoreCase(issue.getSeverity()) &&
+                         issue.getMessage().contains("Meta.lastUpdated")) ||
+                         (ResultSeverityEnum.FATAL.getCode().equalsIgnoreCase(issue.getSeverity()) &&
+                         issue.getMessage().contains("lastUpdated")));
+        if (hasLastUpdatedMissingError) {
+            LOG.info("PAYLOAD NOT FORWARDED TO SCORING ENGINE : Meta.lastUpdated field has validation errors for interaction id {} and tenant id {} ",bundleAsyncInteractionId,tenantId);
+            final var payloadRIHR = new RegisterInteractionHttpRequest();
+            try {
+                payloadRIHR.setInteractionId(bundleAsyncInteractionId);
+                payloadRIHR.setInteractionKey(requestURI);
+                payloadRIHR.setNature(Configuration.objectMapper.valueToTree(
+                        Map.of("nature", "Validation Failed", "tenant_id", tenantId)));
+                payloadRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                payloadRIHR.setPayload(Configuration.objectMapper.valueToTree(immediateResult));
+                payloadRIHR.setFromState("NONE");
+                payloadRIHR.setToState("VALIDATION_FAILED");
+                payloadRIHR.setCreatedAt(OffsetDateTime.now());
+                payloadRIHR.setCreatedBy(FhirController.class.getName());
+                payloadRIHR.setProvenance(provenance);
+                final var execResult = payloadRIHR.execute(jooqCfg);
+                LOG.info("Validation Failed state persisted." + execResult);
+            } catch (Exception e) {
+                LOG.error("CALL " + payloadRIHR.getName() + " payloadRIHR error", e);
+            }
+            return result;
+        }
+
         final var dataLakeApiBaseURL = customDataLakeApi != null && !customDataLakeApi.isEmpty() ? customDataLakeApi
                 : appConfig.getDefaultDatalakeApiUrl();
         final var webClient = WebClient.builder().baseUrl(dataLakeApiBaseURL)
