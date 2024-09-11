@@ -165,17 +165,19 @@ public class FhirController {
         final var jooqCfg = DSL.configuration();
         // Check if the validation results has last updated date missing error.If so ,
         // do not forward to scoring engine.
-       var hasLastUpdatedMissingError = session.getValidationResults().stream()
+        var hasLastUpdatedMissingError = session.getValidationResults().stream()
                 .map(OrchestrationEngine.ValidationResult::getIssues)
                 .filter(CollectionUtils::isNotEmpty)
                 .flatMap(List::stream)
                 .toList().stream()
                 .anyMatch(issue -> (ResultSeverityEnum.ERROR.getCode().equalsIgnoreCase(issue.getSeverity()) &&
-                         issue.getMessage().contains("Meta.lastUpdated")) ||
-                         (ResultSeverityEnum.FATAL.getCode().equalsIgnoreCase(issue.getSeverity()) &&
-                         issue.getMessage().contains("lastUpdated")));
+                        issue.getMessage().contains("Meta.lastUpdated")) ||
+                        (ResultSeverityEnum.FATAL.getCode().equalsIgnoreCase(issue.getSeverity()) &&
+                                issue.getMessage().contains("lastUpdated")));
         if (hasLastUpdatedMissingError) {
-            LOG.info("PAYLOAD NOT FORWARDED TO SCORING ENGINE : Meta.lastUpdated field has validation errors for interaction id {} and tenant id {} ",bundleAsyncInteractionId,tenantId);
+            LOG.info(
+                    "PAYLOAD NOT FORWARDED TO SCORING ENGINE : Meta.lastUpdated field has validation errors for interaction id {} and tenant id {} ",
+                    bundleAsyncInteractionId, tenantId);
             final var payloadRIHR = new RegisterInteractionHttpRequest();
             try {
                 payloadRIHR.setInteractionId(bundleAsyncInteractionId);
