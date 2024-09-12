@@ -43,3 +43,6 @@ export UPI_WS_EDITOR=vscode-wsl
 export UPI_WS_EDITOR_VSCODE_REMOTE_DISTRO=Debian
 # Variable to store the application log file. '.log' will be automatically added, so it does not need to be specified.
 export ORG_TECHBD_HUB_PRIME_LOG_FILE= #Path to the log file with file name (${HOME}/log/techbd/hub-prime/hub-prime-application)
+
+## Set the base URL
+export TECHBD_HUB_PRIME_BASE_URL=http://localhost:8080
