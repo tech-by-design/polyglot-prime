@@ -10,6 +10,8 @@ logging:
     org:
       springframework: INFO
       hibernate: ERROR
+    ca:
+      uhn: DEBUG
 
 spring:
   profiles:
