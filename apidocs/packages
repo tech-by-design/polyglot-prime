@@ -3,6 +3,7 @@ lib.aide.resource
 lib.aide.resource.collection
 lib.aide.resource.nature
 lib.aide.resource.content
+lib.aide
 lib.aide.vfs
 lib.aide.tabular
 org.techbd.orchestrate.sftp
