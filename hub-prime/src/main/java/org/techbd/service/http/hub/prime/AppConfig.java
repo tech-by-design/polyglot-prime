@@ -1,9 +1,10 @@
 package org.techbd.service.http.hub.prime;
 
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.techbd.conf.Configuration;
-import java.util.Map;
 
 @org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "org.techbd.service.http.hub.prime")
@@ -11,10 +12,13 @@ import java.util.Map;
 public class AppConfig {
 
     public static class Servlet {
+
         public static final String FHIR_CONTENT_TYPE_HEADER_VALUE = "application/fhir+json";
 
         public static class HeaderName {
+
             public static class Request {
+
                 public static final String FHIR_STRUCT_DEFN_PROFILE_URI = Configuration.Servlet.HeaderName.PREFIX
                         + "FHIR-Profile-URI";
                 public static final String FHIR_VALIDATION_STRATEGY = Configuration.Servlet.HeaderName.PREFIX
@@ -23,6 +27,8 @@ public class AppConfig {
                         + "DataLake-API-URL";
                 public static final String DATALAKE_API_CONTENT_TYPE = Configuration.Servlet.HeaderName.PREFIX
                         + "DataLake-API-Content-Type";
+                public static final String HEALTH_CHECK_HEADER = Configuration.Servlet.HeaderName.PREFIX
+                        + "HealthCheck";
             }
 
             public static class Response {
@@ -45,7 +51,7 @@ public class AppConfig {
     /**
      * Spring Boot will retrieve required value from properties file which is
      * injected from pom.xml.
-     * 
+     *
      * @param version the version of the application
      */
     public void setVersion(String version) {
