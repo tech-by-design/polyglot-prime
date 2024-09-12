@@ -53,6 +53,7 @@ public class JsonContentActionTest {
         assertThat(appliedJson.get("severity")).isEqualTo("error");
         assertThat(appendedJson.get("severity")).isEqualTo("error");
 
+        // TODO: replace with assertions
         System.out.println(appliedJson);
         System.out.println(appendedJson);
     }
