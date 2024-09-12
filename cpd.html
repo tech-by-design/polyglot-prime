@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-09-12<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.217.0</li>
+          <li id="projectVersion">Version: 0.219.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -66,6 +66,35 @@
 <h1>CPD Results</h1><a id="CPD_Results"></a>
 <p>The following document contains the results of PMD's  <a class="externalLink" href="https://pmd.github.io/latest/pmd_userdocs_cpd.html">CPD</a> 7.0.0.</p><section>
 <h2>Duplications</h2><a id="Duplications"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/health/BundleHealthIndicator.java</td>
+<td>34</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/health/BundleValidateHealthIndicator.java</td>
+<td>34</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add(Configuration.Servlet.HeaderName.Request.TENANT_ID, &quot;unit-test&quot;);
+            headers.add(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, &quot;true&quot;);
+
+            HttpEntity&lt;String&gt; requestEntity = new HttpEntity&lt;&gt;(fixtureContent(&quot;TestCase301.json&quot;), headers);
+            ResponseEntity&lt;String&gt; response = restTemplate.postForEntity(url, requestEntity, String.class);
+            if (response.getStatusCode().equals(HttpStatus.OK) &amp;&amp; null != response.getBody()) {
+                return Health.up().build();
+            } else {
+                return Health.down().withDetail(&quot;Error&quot;,
+                        String.format(&quot;Validation service is not returning status code %d , response body %s&quot;,
+                                response.getStatusCode(), response.getBody()))
+                        .build();
+            }
+        } catch (final Exception e) {
+            return Health.down(e).withDetail(&quot;Error&quot;, &quot;Bundle endpoint is not responding correctly&quot;).build();</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
