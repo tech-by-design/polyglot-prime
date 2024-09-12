@@ -21,7 +21,7 @@ public class BundleValidateHealthIndicator implements HealthIndicator {
 
     private RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${${SPRING_PROFILES_ACTIVE}_TECHBD_HUB_PRIME_BASE_URL:#{null}}")
+    @Value("${TECHBD_HUB_PRIME_BASE_URL:#{null}}")
     private String baseUrl;
 
     @Override
