@@ -43,7 +43,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
-import ca.uhn.fhir.parser.LenientErrorHandler;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -347,8 +346,10 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
                 final var prePopulatedSupport = new PrePopulatedValidationSupport(fhirContext);
                 final var jsonContent = readJsonFromUrl(fhirProfileUrl);
+                LOG.info("Bundle profile Json parse -BEGIN");
                 final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
                         jsonContent);
+                LOG.info("Bundle profile Json parse -END");
                 igVersion = structureDefinition.getVersion();
                 // Add Shinny Bundle Profile structure definitions Url
                 prePopulatedSupport.addStructureDefinition(structureDefinition);
@@ -369,8 +370,12 @@ public class OrchestrationEngine {
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
                 final var validator = fhirContext.newValidator().registerValidatorModule(instanceValidator);
+                LOG.info("BUNDLE PAYLOAD parse -BEGIN");
                 final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
+                LOG.info("BUNDLE PAYLOAD parse -END");
+                LOG.info("VALIDATOR -BEGIN");      
                 final var hapiVR = validator.validateWithResult(bundle);
+                LOG.info("VALIDATOR -END");      
                 final var completedAt = Instant.now();
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
