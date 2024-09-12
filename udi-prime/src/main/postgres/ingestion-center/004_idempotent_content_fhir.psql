@@ -66,6 +66,61 @@ WITH NO DATA;
 
 CREATE UNIQUE INDEX IF NOT EXISTS fhir_screening_info_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_mat USING btree (hub_interaction_id, submitted_date_time);
 
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_new_mat CASCADE;
+-- techbd_udi_ingress.fhir_screening_info_new_mat source
+
+CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_screening_info_new_mat
+TABLESPACE pg_default
+AS SELECT hub_interaction_id,
+    tenant_id AS qe_name,
+    created_at AS submitted_date_time,
+        CASE
+            WHEN (payload ->> 'resourceType'::text) = 'Bundle'::text THEN (payload -> 'meta'::text) ->> 'lastUpdated'::text
+            ELSE NULL::text
+        END AS survey_date_time,
+    ( SELECT (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 0) ->> 'value'::text
+           FROM jsonb_array_elements(sihr.payload -> 'entry'::text) entry(value)
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text
+         LIMIT 1) AS patient_mrn,
+    ( SELECT (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'text'::text
+           FROM jsonb_array_elements(sihr.payload -> 'entry'::text) entry(value)
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text
+         LIMIT 1) AS full_name,
+    ( SELECT (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'family'::text
+           FROM jsonb_array_elements(sihr.payload -> 'entry'::text) entry(value)
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text
+         LIMIT 1) AS last_name,
+    ( SELECT array_to_string(ARRAY( SELECT jsonb_array_elements_text((((entry.value -> 'resource'::text) -> 'name'::text) -> 0) -> 'given'::text) AS jsonb_array_elements_text), ' '::text) AS array_to_string
+           FROM jsonb_array_elements(sihr.payload -> 'entry'::text) entry(value)
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text
+         LIMIT 1) AS first_name,
+    ( SELECT string_agg((entry.value -> 'resource'::text) ->> 'id'::text, ', '::text) AS string_agg
+           FROM jsonb_array_elements(sihr.payload -> 'entry'::text) entry(value)
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Organization'::text
+         LIMIT 1) AS org_id,
+    ( SELECT string_agg((entry.value -> 'resource'::text) ->> 'name'::text, ', '::text) AS string_agg
+           FROM jsonb_array_elements(sihr.payload -> 'entry'::text) entry(value)
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Organization'::text
+         LIMIT 1) AS org_name,
+    ( SELECT string_agg(DISTINCT coding.value ->> 'display'::text, ', '::text) AS string_agg
+           FROM jsonb_array_elements(sihr.payload -> 'entry'::text) entry(value)
+             JOIN LATERAL jsonb_array_elements((entry.value -> 'resource'::text) -> 'category'::text) category(value) ON true
+             JOIN LATERAL jsonb_array_elements(category.value -> 'coding'::text) coding(value) ON true
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Observation'::text AND (coding.value ->> 'system'::text) = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes'::text
+         LIMIT 1) AS areas_of_interest,
+    ( SELECT value_coding.value ->> 'display'::text
+           FROM jsonb_array_elements(sihr.payload -> 'entry'::text) entry(value)
+             JOIN LATERAL jsonb_array_elements(((entry.value -> 'resource'::text) -> 'code'::text) -> 'coding'::text) code_coding(value) ON true
+             JOIN LATERAL jsonb_array_elements(((entry.value -> 'resource'::text) -> 'valueCodeableConcept'::text) -> 'coding'::text) value_coding(value) ON true
+          WHERE (code_coding.value ->> 'display'::text) = 'Total Safety Score'::text AND (value_coding.value ->> 'code'::text) = '{score}'::text
+         LIMIT 1) AS total_safety_score
+   FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+  WHERE uri ~~ '/Bundle%'::text AND nature = 'Original FHIR Payload'::text AND patient_mrn IS NOT NULL
+  ORDER BY created_at DESC
+WITH NO DATA;
+
+CREATE UNIQUE INDEX IF NOT EXISTS fhir_screening_info_new_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_new_mat USING btree (hub_interaction_id, submitted_date_time);
+
 
 /*******************************************************************************************
  * Comprehensive view of FHIR Content Screening. * 
@@ -112,6 +167,40 @@ AS WITH filtered_resources AS (
                      JOIN techbd_udi_ingress.sat_interaction_http_request sihr_inner ON hintr_inner.hub_interaction_id = sihr_inner.hub_interaction_id
                      CROSS JOIN LATERAL jsonb_array_elements(sihr_inner.payload -> 'entry'::text) entry_inner(value)
                   WHERE ((entry_inner.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text AND hintr_inner.hub_interaction_id = filtered_resources.hub_interaction_id
+                 LIMIT 1) AS patient_mrn
+           FROM filtered_resources
+        )
+ SELECT hub_interaction_id,
+    tenant_id,
+    resource,
+    resource_type,
+    patient_mrn,
+    (((resource -> 'code'::text) -> 'coding'::text) -> 0) ->> 'display'::text AS question,
+    (((resource -> 'code'::text) -> 'coding'::text) -> 0) ->> 'code'::text AS question_code,
+    (((resource -> 'valueCodeableConcept'::text) -> 'coding'::text) -> 0) ->> 'display'::text AS answer,
+    (((resource -> 'valueCodeableConcept'::text) -> 'coding'::text) -> 0) ->> 'code'::text AS answer_code
+   FROM filtered_data
+  WHERE resource_type = 'Observation'::text;
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_patient_screening_questions_answers_new CASCADE;
+-- techbd_udi_ingress.fhir_patient_screening_questions_answers_new source
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_patient_screening_questions_answers_new
+AS WITH filtered_resources AS (
+         SELECT sihr.hub_interaction_id,
+            sihr.tenant_id,
+            jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry
+           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+          WHERE sihr.uri ~~ '/Bundle%'::text AND sihr.nature = 'Original FHIR Payload'::text
+        ), filtered_data AS (
+         SELECT filtered_resources.hub_interaction_id,
+            filtered_resources.tenant_id,
+            filtered_resources.entry -> 'resource'::text AS resource,
+            (filtered_resources.entry -> 'resource'::text) ->> 'resourceType'::text AS resource_type,
+            ( SELECT (((entry_inner.value -> 'resource'::text) -> 'identifier'::text) -> 0) ->> 'value'::text AS id
+                   FROM techbd_udi_ingress.sat_interaction_fhir_request sihr_inner
+                     CROSS JOIN LATERAL jsonb_array_elements(sihr_inner.payload -> 'entry'::text) entry_inner(value)
+                  WHERE ((entry_inner.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text AND sihr_inner.hub_interaction_id = filtered_resources.hub_interaction_id
                  LIMIT 1) AS patient_mrn
            FROM filtered_resources
         )
@@ -217,6 +306,57 @@ AS WITH filtered_data AS (
   GROUP BY tenant_id, patient_id
   ORDER BY patient_id DESC;
 
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_patient_new CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_patient_new
+AS WITH filtered_data AS (
+         SELECT sihr.hub_interaction_id,
+            sihr.tenant_id,
+            sihr.payload,
+            sihr.created_at
+           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+          WHERE sihr.uri ~~ '/Bundle%'::text AND sihr.nature = 'Original FHIR Payload'::text
+        ), patient_details AS (
+         SELECT filtered_data.tenant_id,
+            (entry.value -> 'resource'::text) ->> 'id'::text AS patient_id,
+            (entry.value -> 'resource'::text) ->> 'resourceType'::text AS patient_resource_type,
+            (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'text'::text AS full_name,
+            (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'family'::text AS last_name,
+            array_to_string(ARRAY( SELECT jsonb_array_elements_text((((entry.value -> 'resource'::text) -> 'name'::text) -> 0) -> 'given'::text) AS jsonb_array_elements_text), ' '::text) AS first_name,
+            (entry.value -> 'resource'::text) ->> 'gender'::text AS gender,
+            (entry.value -> 'resource'::text) ->> 'birthDate'::text AS birth_date,
+            (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'text'::text AS address,
+            (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'city'::text AS city,
+            (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'state'::text AS state,
+            (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'postalCode'::text AS postal_code,
+            ((((((entry.value -> 'resource'::text) -> 'communication'::text) -> 0) -> 'language'::text) -> 'coding'::text) -> 0) ->> 'code'::text AS language,
+            (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 0) ->> 'value'::text AS medical_record_number,
+            (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 3) ->> 'value'::text AS social_security_number,
+            array_to_string(ARRAY( SELECT replace((jsonb_array_elements((entry.value -> 'resource'::text) -> 'identifier'::text) -> 'assigner'::text) ->> 'reference'::text, 'Organization/'::text, ''::text) AS replace
+                   FROM jsonb_array_elements((entry.value -> 'resource'::text) -> 'identifier'::text) jsonb_array_elements(value)), ', '::text) AS organization_ids
+           FROM filtered_data,
+            LATERAL jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text
+        )
+ SELECT tenant_id AS qe_name,
+    patient_id,
+    max(patient_resource_type) AS patient_type,
+    max(full_name) AS patient_full_name,
+    max(first_name) AS patient_first_name,
+    max(last_name) AS patient_last_name,
+    max(gender) AS patient_gender,
+    max(birth_date) AS patient_birth_date,
+    max(address) AS patient_address,
+    max(city) AS patient_city,
+    max(state) AS patient_state,
+    max(postal_code) AS patient_postal_code,
+    max(language) AS patient_language,
+    max(medical_record_number) AS patient_mrn,
+    max(social_security_number) AS patient_ssn,
+    max(organization_ids) AS org_id
+   FROM patient_details
+  GROUP BY tenant_id, patient_id
+  ORDER BY patient_id DESC;
+
 
 /*******************************************************************************************
  * Comprehensive view of FHIR Content Screening Organization. * 
@@ -260,6 +400,42 @@ SELECT tenant_id AS qe_name,
 FROM patient_details
 GROUP BY tenant_id, org_id
 ORDER BY org_id DESC;
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_organization_new CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_organization_new
+AS WITH filtered_data AS (
+         SELECT sihr.hub_interaction_id,
+            sihr.tenant_id,
+            sihr.payload,
+            sihr.created_at
+           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+          WHERE sihr.uri ~~ '/Bundle%'::text AND sihr.nature = 'Original FHIR Payload'::text
+        ), patient_details AS (
+         SELECT filtered_data.tenant_id,
+            (entry.value -> 'resource'::text) ->> 'id'::text AS org_id,
+            (entry.value -> 'resource'::text) ->> 'resourceType'::text AS org_resource_type,
+            (entry.value -> 'resource'::text) ->> 'name'::text AS org_name,
+            (entry.value -> 'resource'::text) ->> 'active'::text AS org_active,
+            (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'text'::text AS org_address,
+            (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'city'::text AS org_city,
+            (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'state'::text AS org_state,
+            (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'postalCode'::text AS org_postal_code
+           FROM filtered_data,
+            LATERAL jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
+          WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Organization'::text
+        )
+ SELECT tenant_id AS qe_name,
+    org_id,
+    max(org_resource_type) AS org_type,
+    max(org_name) AS org_name,
+    max(org_active) AS org_active,
+    max(org_address) AS org_address,
+    max(org_city) AS org_city,
+    max(org_state) AS org_state,
+    max(org_postal_code) AS org_postal_code
+   FROM patient_details
+  GROUP BY tenant_id, org_id
+  ORDER BY org_id DESC;
 
 
 /****************************************************************************************
@@ -311,6 +487,44 @@ CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_date_time_idx ON techbd_udi
 CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_hub_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (hub_interaction_id);
 CREATE UNIQUE INDEX IF NOT EXISTS fhir_validation_issue_mat_row_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (row_id);
 CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_sat_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (sat_interaction_http_request_id);
+
+
+DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat CASCADE;
+CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_validation_issue_new_mat
+TABLESPACE pg_default
+AS WITH validation_results AS (
+         SELECT sat_req.hub_interaction_id,
+            sat_req.sat_interaction_fhir_request_id ,
+            jsonb_array_elements(sat_req.payload -> 'validationResults'::text) AS validation_result
+           FROM techbd_udi_ingress.sat_interaction_fhir_request sat_req 
+          WHERE 1 = 1 AND sat_req.nature = 'Forward HTTP Request'::text AND sat_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text])
+        ), issues AS (
+         SELECT validation_results.hub_interaction_id,
+            validation_results.sat_interaction_fhir_request_id,
+            jsonb_array_elements(validation_results.validation_result -> 'issues'::text) AS issue,
+            to_timestamp(((validation_results.validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
+            validation_results.validation_result ->> 'igVersion'::text AS ig_version,
+            TRIM(BOTH FROM regexp_replace((validation_results.validation_result -> 'observability'::text) ->> 'name'::text, '\(TODO:get from API instead of hard coding\) \(FHIR version 4.0.1\)\s*$'::text, ''::text)) AS validation_engine
+           FROM validation_results
+        )
+ SELECT DISTINCT ON (hub_interaction_id, (issue ->> 'message'::text)) gen_random_uuid() AS row_id,
+    hub_interaction_id,
+    sat_interaction_fhir_request_id,
+    issue ->> 'message'::text AS issue,
+    date_time,
+    validation_engine,
+    ig_version,
+    CURRENT_USER AS materialized_by,
+    CURRENT_TIMESTAMP AS materialized_at
+   FROM issues
+  WHERE (issue ->> 'message'::text) ~~ '%has not been checked because it is unknown%'::text OR (issue ->> 'message'::text) ~~ '%Unknown profile%'::text OR (issue ->> 'message'::text) ~~ '%Unknown extension%'::text OR (issue ->> 'message'::text) ~~ '%Unknown Code System%'::text OR (issue ->> 'message'::text) ~~ '%not found%'::text
+WITH NO DATA;
+
+-- View indexes:
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_date_time_idx ON techbd_udi_ingress.fhir_validation_issue_new_mat USING btree (date_time DESC);
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_hub_id_idx ON techbd_udi_ingress.fhir_validation_issue_new_mat USING btree (hub_interaction_id);
+CREATE UNIQUE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_row_id_idx ON techbd_udi_ingress.fhir_validation_issue_new_mat USING btree (row_id);
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_sat_id_idx ON techbd_udi_ingress.fhir_validation_issue_new_mat USING btree (sat_interaction_fhir_request_id);
 
 
 
