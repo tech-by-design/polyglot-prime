@@ -27,6 +27,7 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.conf.Configuration;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
+import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.util.ArtifactStore;
@@ -86,6 +87,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                         "^/needs-attention*", "^/needs-attention/.*",
                                         "^/interactions*", "^/interactions/.*",
                                         "^/dashboard*", "^/dashboard/.*",
+                                        "^/api/ux/.*",
                                         "^/api/expect/.*",
                                         "^/metadata",
                                         List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload"))
@@ -155,6 +157,13 @@ public class InteractionsFilter extends OncePerRequestFilter {
         setActiveRequestEnc(origRequest, requestEncountered);
 
         final var mutatableResp = new ContentCachingResponseWrapper(origResponse);
+
+        // Check for the X-TechBD-HealthCheck header
+        if ("true".equals(origRequest.getHeader(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER))) {
+            LOG.info("%s is true, skipping persistence.".formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
+            chain.doFilter(origRequest, origResponse);  // Skip the rest of the steps, as it is a health check request.
+            return;
+        }
 
         chain.doFilter(mutatableReq, mutatableResp);
 
