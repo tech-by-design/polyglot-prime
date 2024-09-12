@@ -358,6 +358,8 @@ const interactionUserRequestSat = interactionHub.satelliteTable(
     user_role: textNullable(),
     client_ip_address: textNullable(),
     user_agent: textNullable(),
+    interaction_start_time: dateTimeNullable(),
+    interaction_end_time: dateTimeNullable(),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },
@@ -604,6 +606,20 @@ const migrateSP = pgSQLa.storedProcedure(
 
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
       ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
+
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (hub_interaction_id);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_hub_inter_created_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (hub_interaction_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_created_idx ON techbd_udi_ingress.sat_interaction_fhir_request (created_at timestamptz_ops DESC);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_frm_state_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (from_state);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_to_state_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (to_state);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_nature_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (nature);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_payload_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING gin (payload);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_provenance_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (provenance);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_bund_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (bundle_id);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_bund_sess_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (bundle_session_id);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_org_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (organization_id);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_org_name_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (organization_name);
+      CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_patient_mrn_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (patient_mrn);
 
       ${interactionUserRequestSat}
 
