@@ -11,7 +11,7 @@ logging:
       springframework: INFO
       hibernate: ERROR
     ca:
-      uhn: DEBUG     
+      uhn: DEBUG
 
 spring:
   profiles:

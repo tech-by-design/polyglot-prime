@@ -1,7 +1,5 @@
 package org.techbd.service.http.hub.prime.api;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -47,6 +45,7 @@ import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
+import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -63,6 +62,7 @@ import reactor.core.publisher.Mono;
 @Controller
 @Tag(name = "Tech by Design Hub FHIR Endpoints")
 public class FhirController {
+
     private static final Logger LOG = LoggerFactory.getLogger(FhirController.class.getName());
 
     private final OrchestrationEngine engine = new OrchestrationEngine();
@@ -78,7 +78,7 @@ public class FhirController {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
-    @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
+    @GetMapping(value = "/metadata", produces = {MediaType.APPLICATION_XML_VALUE})
     @Operation(summary = "FHIR server's conformance statement")
     public String metadata(final Model model, HttpServletRequest request) {
         final var baseUrl = Helpers.getBaseUrl(request);
@@ -90,8 +90,8 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
-            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
+    @PostMapping(value = {"/Bundle", "/Bundle/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
+        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
     @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
     @ResponseBody
     @Async
@@ -103,6 +103,7 @@ public class FhirController {
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
+            @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
             @RequestParam(value = "immediate", required = false) boolean isSync,
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
@@ -138,7 +139,6 @@ public class FhirController {
         // TODO: if there are errors that should prevent forwarding, stop here
         // TODO: need to implement `immediate` (sync) webClient op, right now it's async
         // only
-
         // immediateResult is what's returned to the user while async operation
         // continues
         final var forwardedAt = OffsetDateTime.now();
@@ -161,6 +161,13 @@ public class FhirController {
         if (includeRequestInOutcome) {
             immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
         }
+
+        // Check for the X-TechBD-HealthCheck header
+        if ("true".equals(healthCheck)) {
+            LOG.info("%s is true, skipping DataLake submission.".formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
+            return result; // Return without proceeding to DataLake submission
+        }
+
         final var DSL = udiPrimeJpaConfig.dsl();
         final var jooqCfg = DSL.configuration();
         // Check if the validation results has last updated date missing error.If so ,
@@ -363,8 +370,8 @@ public class FhirController {
         return result;
     }
 
-    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
-            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
+    @PostMapping(value = {"/Bundle/$validate", "/Bundle/$validate/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
+        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
     @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
@@ -416,7 +423,7 @@ public class FhirController {
         return result;
     }
 
-    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
+    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = {"application/json", "text/html"})
     @ResponseBody
     @Operation(summary = "Check the state/status of async operation")
     public Object bundleStatus(@PathVariable String bundleSessionId, final Model model, HttpServletRequest request) {
