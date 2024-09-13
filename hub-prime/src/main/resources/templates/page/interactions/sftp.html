@@ -104,6 +104,7 @@
                                 document.querySelector('#json').data = params.data.session;
                                 document.getElementById('modal').style.display = 'block';
                             });
+                            link.style.textDecoration = 'underline';
                             return link;
                         }
                     },
@@ -121,6 +122,7 @@
                                     document.querySelector('#json').data = params.data.publishedFhirFailedResponse;
                                     document.getElementById('modal').style.display = 'block';
                                 });
+                                link.style.textDecoration = 'underline';
                                 return link;
                             }else{
                                 return params.value
