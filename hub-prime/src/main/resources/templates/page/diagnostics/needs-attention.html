@@ -100,7 +100,7 @@
             function qeNameCellRenderer(params) {
                 const qeName = params.data.qe_name;
                 const link = `/needs-attention/techbd-to-scoring-engine?qeName=${qeName}`;
-                return `<a href="${link}">${qeName}</a>`;
+                return `<a href="${link}" style="text-decoration:underline">${qeName}</a>`;
                 // return `${qeName}`;
             }
 
@@ -130,6 +130,7 @@
                             const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
                             const button = document.createElement('button');
                             button.innerText = hub_interaction_id;
+                            button.style.textDecoration = 'underline';
                             button.addEventListener('click', () => {
                                 if (error_type == 'Data Submission Error') {
                                     modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
