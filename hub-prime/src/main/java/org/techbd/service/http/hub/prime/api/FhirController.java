@@ -78,7 +78,7 @@ public class FhirController {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
-    @GetMapping(value = "/metadata", produces = {MediaType.APPLICATION_XML_VALUE})
+    @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
     @Operation(summary = "FHIR server's conformance statement")
     public String metadata(final Model model, HttpServletRequest request) {
         final var baseUrl = Helpers.getBaseUrl(request);
@@ -90,8 +90,8 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = {"/Bundle", "/Bundle/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
-        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
+    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
+            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
     @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
     @ResponseBody
     @Async
@@ -164,48 +164,13 @@ public class FhirController {
 
         // Check for the X-TechBD-HealthCheck header
         if ("true".equals(healthCheck)) {
-            LOG.info("%s is true, skipping DataLake submission.".formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
+            LOG.info("%s is true, skipping DataLake submission."
+                    .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
             return result; // Return without proceeding to DataLake submission
         }
 
         final var DSL = udiPrimeJpaConfig.dsl();
         final var jooqCfg = DSL.configuration();
-        // Check if the validation results has last updated date missing error.If so ,
-        // do not forward to scoring engine.
-        var hasLastUpdatedMissingError = session.getValidationResults().stream()
-                .map(OrchestrationEngine.ValidationResult::getIssues)
-                .filter(CollectionUtils::isNotEmpty)
-                .flatMap(List::stream)
-                .toList().stream()
-                .anyMatch(issue -> (ResultSeverityEnum.ERROR.getCode().equalsIgnoreCase(issue.getSeverity()) &&
-                        issue.getMessage().contains("Meta.lastUpdated")) ||
-                        (ResultSeverityEnum.FATAL.getCode().equalsIgnoreCase(issue.getSeverity()) &&
-                                issue.getMessage().contains("lastUpdated")));
-        if (hasLastUpdatedMissingError) {
-            LOG.info(
-                    "PAYLOAD NOT FORWARDED TO SCORING ENGINE : Meta.lastUpdated field has validation errors for interaction id {} and tenant id {} ",
-                    bundleAsyncInteractionId, tenantId);
-            final var payloadRIHR = new RegisterInteractionHttpRequest();
-            try {
-                payloadRIHR.setInteractionId(bundleAsyncInteractionId);
-                payloadRIHR.setInteractionKey(requestURI);
-                payloadRIHR.setNature(Configuration.objectMapper.valueToTree(
-                        Map.of("nature", "Validation Failed", "tenant_id", tenantId)));
-                payloadRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                payloadRIHR.setPayload(Configuration.objectMapper.valueToTree(immediateResult));
-                payloadRIHR.setFromState("NONE");
-                payloadRIHR.setToState("VALIDATION_FAILED");
-                payloadRIHR.setCreatedAt(OffsetDateTime.now());
-                payloadRIHR.setCreatedBy(FhirController.class.getName());
-                payloadRIHR.setProvenance(provenance);
-                final var execResult = payloadRIHR.execute(jooqCfg);
-                LOG.info("Validation Failed state persisted." + execResult);
-            } catch (Exception e) {
-                LOG.error("CALL " + payloadRIHR.getName() + " payloadRIHR error", e);
-            }
-            return result;
-        }
-
         final var dataLakeApiBaseURL = customDataLakeApi != null && !customDataLakeApi.isEmpty() ? customDataLakeApi
                 : appConfig.getDefaultDatalakeApiUrl();
         final var webClient = WebClient.builder().baseUrl(dataLakeApiBaseURL)
@@ -370,8 +335,8 @@ public class FhirController {
         return result;
     }
 
-    @PostMapping(value = {"/Bundle/$validate", "/Bundle/$validate/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
-        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
+    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
+            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
     @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
@@ -423,7 +388,7 @@ public class FhirController {
         return result;
     }
 
-    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = {"application/json", "text/html"})
+    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
     @ResponseBody
     @Operation(summary = "Check the state/status of async operation")
     public Object bundleStatus(@PathVariable String bundleSessionId, final Model model, HttpServletRequest request) {
