@@ -50,7 +50,9 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
+import ca.uhn.fhir.validation.ResultSeverityEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
@@ -76,7 +78,7 @@ public class FhirController {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
-    @GetMapping(value = "/metadata", produces = {MediaType.APPLICATION_XML_VALUE})
+    @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
     @Operation(summary = "FHIR server's conformance statement")
     public String metadata(final Model model, HttpServletRequest request) {
         final var baseUrl = Helpers.getBaseUrl(request);
@@ -88,8 +90,8 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = {"/Bundle", "/Bundle/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
-        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
+    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
+            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
     @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
     @ResponseBody
     @Async
@@ -112,6 +114,11 @@ public class FhirController {
                 isSync ? "sync" : "async");
         request = new CustomRequestWrapper(request, payload);
         final var bundleAsyncInteractionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
+        final var baseUrl = Helpers.getBaseUrl(request);
+        var validationResultMap = new HashMap<String,Object>();
+        final Object lock = new Object();
+       
+        synchronized (lock) {
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
         LOG.info("Getting structure definition Urls from config - Before: ");
@@ -139,9 +146,7 @@ public class FhirController {
         // only
         // immediateResult is what's returned to the user while async operation
         // continues
-        final var forwardedAt = OffsetDateTime.now();
-        final var baseUrl = Helpers.getBaseUrl(request);
-        final var immediateResult = new HashMap<>(Map.of(
+        validationResultMap = new HashMap<>(Map.of(
                 "resourceType", "OperationOutcome",
                 "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
                 "isAsync", true,
@@ -149,20 +154,24 @@ public class FhirController {
                 "statusUrl",
                 baseUrl + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
                 "device", session.getDevice()));
-        final var result = Map.of("OperationOutcome", immediateResult);
-        if (uaValidationStrategyJson != null) {
-            immediateResult.put("uaValidationStrategy",
-                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
-                            "issues",
-                            sessionBuilder.getUaStrategyJsonIssues()));
+                if (uaValidationStrategyJson != null) {
+                    validationResultMap.put("uaValidationStrategy",
+                            Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
+                                    "issues",
+                                    sessionBuilder.getUaStrategyJsonIssues()));
+                }
+                if (includeRequestInOutcome) {
+                    validationResultMap.put("request", InteractionsFilter.getActiveRequestEnc(request));
+                }
         }
-        if (includeRequestInOutcome) {
-            immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
-        }
+        final var forwardedAt = OffsetDateTime.now();
+        final var immediateResult = validationResultMap;
+        final var result = Map.of("OperationOutcome", immediateResult);       
 
         // Check for the X-TechBD-HealthCheck header
         if ("true".equals(healthCheck)) {
-            LOG.info("%s is true, skipping DataLake submission.".formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
+            LOG.info("%s is true, skipping DataLake submission."
+                    .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
             return result; // Return without proceeding to DataLake submission
         }
 
@@ -332,8 +341,8 @@ public class FhirController {
         return result;
     }
 
-    @PostMapping(value = {"/Bundle/$validate", "/Bundle/$validate/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
-        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
+    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
+            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
     @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
     @ResponseBody
     public Object validateBundle(final @RequestBody @Nonnull String payload,
@@ -385,7 +394,7 @@ public class FhirController {
         return result;
     }
 
-    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = {"application/json", "text/html"})
+    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
     @ResponseBody
     @Operation(summary = "Check the state/status of async operation")
     public Object bundleStatus(@PathVariable String bundleSessionId, final Model model, HttpServletRequest request) {
