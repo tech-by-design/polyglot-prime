@@ -142,6 +142,7 @@
                             const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
                             const button = document.createElement('button');
                             button.innerText = hub_interaction_id;
+                            button.style.textDecoration = 'underline';
                             button.addEventListener('click', () => {
                                 if (error_type == 'Data Submission Error') {
                                     modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
