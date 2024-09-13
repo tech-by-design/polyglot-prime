@@ -35,7 +35,7 @@
 
 
         // Define downloadPayload globally
-        window.downloadPayload = async function (apiUrl) {
+        window.downloadPayload = async function (apiUrl, patient_mrn = 'mrn', nature = 'nature') {
             try {
                 // Fetch data from the API
                 const response = await fetch(apiUrl);
@@ -62,7 +62,7 @@
                 // Create a temporary link to trigger the download
                 const tempLink = document.createElement('a');
                 tempLink.href = url;
-                tempLink.download = 'payload.json';
+                tempLink.download = patient_mrn + '_' + nature + '.json';
                 document.body.appendChild(tempLink);
                 tempLink.click();
 
@@ -78,15 +78,18 @@
         document.addEventListener('DOMContentLoaded', function () {
 
             function downloadCellRenderer(params) {
+
                 const contentType = params.data.content_type;
                 const payload = params.data.payload;
+                const patient_mrn = params.data.patient_mrn;
+                const nature = params.data.nature;
                 const sat_interaction_fhir_request_id = params.data.sat_interaction_fhir_request_id; // Assuming you need interaction_id
 
                 // Create the URL for the API call
                 const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_interaction_fhir_request_id/${sat_interaction_fhir_request_id}.json`;
 
                 // Create a download link placeholder
-                const downloadLink = `<a href="#" onclick="window.downloadPayload('${apiUrl}'); return false;" style="text-decoration: none; color: #007bff;">
+                const downloadLink = `<a href="#" onclick="window.downloadPayload('${apiUrl}','${patient_mrn}','${nature}'); return false;" style="text-decoration: none; color: #007bff;">
         <i class="fas fa-download"></i>
     </a>`;
 
