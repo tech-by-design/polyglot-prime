@@ -114,6 +114,11 @@ public class FhirController {
                 isSync ? "sync" : "async");
         request = new CustomRequestWrapper(request, payload);
         final var bundleAsyncInteractionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
+        final var baseUrl = Helpers.getBaseUrl(request);
+        var validationResultMap = new HashMap<String,Object>();
+        final Object lock = new Object();
+       
+        synchronized (lock) {
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
         LOG.info("Getting structure definition Urls from config - Before: ");
@@ -141,9 +146,7 @@ public class FhirController {
         // only
         // immediateResult is what's returned to the user while async operation
         // continues
-        final var forwardedAt = OffsetDateTime.now();
-        final var baseUrl = Helpers.getBaseUrl(request);
-        final var immediateResult = new HashMap<>(Map.of(
+        validationResultMap = new HashMap<>(Map.of(
                 "resourceType", "OperationOutcome",
                 "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
                 "isAsync", true,
@@ -151,16 +154,19 @@ public class FhirController {
                 "statusUrl",
                 baseUrl + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
                 "device", session.getDevice()));
-        final var result = Map.of("OperationOutcome", immediateResult);
-        if (uaValidationStrategyJson != null) {
-            immediateResult.put("uaValidationStrategy",
-                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
-                            "issues",
-                            sessionBuilder.getUaStrategyJsonIssues()));
+                if (uaValidationStrategyJson != null) {
+                    validationResultMap.put("uaValidationStrategy",
+                            Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
+                                    "issues",
+                                    sessionBuilder.getUaStrategyJsonIssues()));
+                }
+                if (includeRequestInOutcome) {
+                    validationResultMap.put("request", InteractionsFilter.getActiveRequestEnc(request));
+                }
         }
-        if (includeRequestInOutcome) {
-            immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
-        }
+        final var forwardedAt = OffsetDateTime.now();
+        final var immediateResult = validationResultMap;
+        final var result = Map.of("OperationOutcome", immediateResult);       
 
         // Check for the X-TechBD-HealthCheck header
         if ("true".equals(healthCheck)) {

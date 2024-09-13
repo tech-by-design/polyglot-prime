@@ -131,7 +131,7 @@ public class OrchestrationEngine {
         return Collections.unmodifiableList(sessions);
     }
 
-    public void orchestrate(@NotNull final OrchestrationSession... sessions) {
+    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
         for (final OrchestrationSession session : sessions) {
             session.validate();
             this.sessions.add(session);
