@@ -61,6 +61,7 @@ export class AGGridAide {
                     e.preventDefault();
                     onClick(params.value, modalAide);
                 });
+                link.style.textDecoration = 'underline';
                 return link;
             } else {
                 return null;
