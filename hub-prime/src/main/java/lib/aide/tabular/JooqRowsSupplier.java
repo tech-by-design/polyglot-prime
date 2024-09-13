@@ -339,7 +339,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var dslField = typableTable.column(field);
         return switch (type) {
             case "like" -> dslField.likeIgnoreCase("%" + filter + "%");
-            case "equals" -> dslField.eq(DSL.param(field, filter));
+            case "equals" -> dslField.equalIgnoreCase(filter.toString());
             case "notEqual" -> dslField.notEqual(DSL.param(field, filter));
             case "number" -> dslField.eq(DSL.param(field, filter));
             case "date" -> dslField.eq(DSL.param(field, filter));

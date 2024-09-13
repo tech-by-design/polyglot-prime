@@ -549,19 +549,17 @@ CREATE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_sat_id_idx ON techbd_ud
 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_details CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue_details
-AS  SELECT validation_engine,
-   issue,
-   count(*)
- AS issue_count,
-   max(date_time) AS most_recent_date,
-  COALESCE(ig_version, 'Unknown') AS ig_version,
-  TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY') AS issue_date
-  FROM techbd_udi_ingress.fhir_validation_issue_mat
-  WHERE date_time >= CURRENT_DATE - INTERVAL '7 days'
-  GROUP BY validation_engine, issue, 
-  COALESCE(ig_version, 'Unknown'), 
-  (date(date_time)),TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY')
-  ORDER BY (max(date_time)) DESC;
+AS SELECT validation_engine,
+    issue,
+    count(*) AS issue_count,
+    max(date_time) AS most_recent_date,
+    COALESCE(ig_version, 'Unknown'::text) AS ig_version,
+    to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text) AS issue_date
+   	FROM techbd_udi_ingress.fhir_validation_issue_mat
+ 	WHERE date_time >= (CURRENT_DATE - '7 days'::interval)
+   	AND (issue ILIKE '%valueset%' OR issue ILIKE '%extension%' OR issue ILIKE '%profile%')
+  	GROUP BY validation_engine, issue, (COALESCE(ig_version, 'Unknown'::text)), (date(date_time)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
+  	ORDER BY (max(date_time)) DESC;
 
 
 /****************************************************************************************
