@@ -98,20 +98,20 @@ org:
               shinnyMiddleName: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-middle-name.json
               shinnyPersonalPronouns: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-personal-pronouns.json
               shinnyGenderIdentity: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-gender-identity.json
-              hl7ObservationScreeningResponse: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationScreeningResponse.json
-              hl7UsCoreBirthSex: http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-birthsex.json
-              hl7UsCoreRace: http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-race.json
-              hl7UsCoreEthnicity: http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-ethnicity.json
-              hl7UsCorePractitioner: http://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-practitioner.json
+              hl7ObservationScreeningResponse: https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationScreeningResponse.json
+              hl7UsCoreBirthSex: https://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-birthsex.json
+              hl7UsCoreRace: https://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-race.json
+              hl7UsCoreEthnicity: https://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-ethnicity.json
+              hl7UsCorePractitioner: https://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-practitioner.json
               hl7UsCoreGenderIdentity: https://hl7.org/fhir/us/core/STU7/StructureDefinition-us-core-genderIdentity.json
-              hl7UsSDOHCCObservationAssessment: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationAssessment.json
+              hl7UsSDOHCCObservationAssessment: https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-ObservationAssessment.json
               hl7USECRDisabilityStatus: https://hl7.org/fhir/us/ecr/2021Jan/StructureDefinition-disability-status.json
-              hl7SDOHCCProcedure: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-Procedure.json
+              hl7SDOHCCProcedure: https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/StructureDefinition-SDOHCC-Procedure.json
             codeSystemUrls:
               nyCountyCodes: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-nys-county-codes.json
               nyHRSNQuestionnaire: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-NYS-HRSN-Questionnaire.json
-              hl7SDOHCCCodeSystemTemporaryCodes: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/CodeSystem-SDOHCC-CodeSystemTemporaryCodes.json
-              hl7CodeSystemConditionCategory: http://hl7.org/fhir/us/core/STU7/CodeSystem-condition-category.json
+              hl7SDOHCCCodeSystemTemporaryCodes: https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/CodeSystem-SDOHCC-CodeSystemTemporaryCodes.json
+              hl7CodeSystemConditionCategory: https://hl7.org/fhir/us/core/STU7/CodeSystem-condition-category.json
               hl7CodeSystemItemType: https://hl7.org/fhir/codesystem-item-type.json
             valueSetUrls:
               shinnyConsentProvisionTypesVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json
@@ -119,17 +119,17 @@ org:
               shinnyHttpVerbsVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHTTPVerbsVS.json
               shinnyPersonalPronounsVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYPersonalPronounsVS.json
               shinnyScreeningVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYScreeningVS.json
-              usCoreOmbRaceCategory: http://hl7.org/fhir/us/core/STU7/ValueSet-omb-race-category.json
-              usCoreEthnicityCategoty: http://hl7.org/fhir/us/core/STU7/ValueSet-omb-ethnicity-category.json
-              usCoreUsPsState: http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-usps-state.json
-              usCoreSimpleLanguage: http://hl7.org/fhir/us/core/STU7/ValueSet-simple-language.json
-              usCoreEncounterType: http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-encounter-type.json
-              usCoreValueSetObservationStatus: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json
-              usCoreConditionCode: http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-condition-code.json
-              usCoreProcedureCode: http://hl7.org/fhir/us/core/STU7/ValueSet-us-core-procedure-code.json
-              sdohValueSetObservationStatus: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json
-              sdohValueSetLoincSnomedct: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetLOINCSNOMEDCT.json
-              sdohValueSetReferralStatus: http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetReferralTaskStatus.json
+              usCoreOmbRaceCategory: https://hl7.org/fhir/us/core/STU7/ValueSet-omb-race-category.json
+              usCoreEthnicityCategoty: https://hl7.org/fhir/us/core/STU7/ValueSet-omb-ethnicity-category.json
+              usCoreUsPsState: https://hl7.org/fhir/us/core/STU7/ValueSet-us-core-usps-state.json
+              usCoreSimpleLanguage: https://hl7.org/fhir/us/core/STU7/ValueSet-simple-language.json
+              usCoreEncounterType: https://hl7.org/fhir/us/core/STU7/ValueSet-us-core-encounter-type.json
+              usCoreValueSetObservationStatus: https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json
+              usCoreConditionCode: https://hl7.org/fhir/us/core/STU7/ValueSet-us-core-condition-code.json
+              usCoreProcedureCode: https://hl7.org/fhir/us/core/STU7/ValueSet-us-core-procedure-code.json
+              sdohValueSetObservationStatus: https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetObservationStatus.json
+              sdohValueSetLoincSnomedct: https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetLOINCSNOMEDCT.json
+              sdohValueSetReferralStatus: https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.1/ValueSet-SDOHCC-ValueSetReferralTaskStatus.json
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:
