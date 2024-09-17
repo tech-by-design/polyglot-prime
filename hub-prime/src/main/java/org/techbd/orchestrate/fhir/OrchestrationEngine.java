@@ -273,7 +273,7 @@ public class OrchestrationEngine {
             try {
                 response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 bundleJson = response.body();
-            } catch (IOException | InterruptedException e) {
+            } catch (Exception e) {
                 LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse url ", url, e);
 
             }
@@ -281,7 +281,8 @@ public class OrchestrationEngine {
             return bundleJson;
         }
 
-        private synchronized void addStructureDefinitions(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private synchronized void addStructureDefinitions(
+                final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions Begin:");
             if (null != structureDefinitionUrls) {
                 LOG.info(
@@ -290,9 +291,12 @@ public class OrchestrationEngine {
                 structureDefinitionUrls.values().stream().forEach(structureDefintionUrl -> {
                     LOG.info("Adding  Structure Definition URL Begin: ", structureDefintionUrl);
                     final var jsonContent = readJsonFromUrl(structureDefintionUrl);
-                    final var structureDefinition = fhirContext.newJsonParser().parseResource(StructureDefinition.class,
-                            jsonContent);
-                    prePopulatedValidationSupport.addStructureDefinition(structureDefinition);
+                    if (!"".equals(jsonContent)) {
+                        final var structureDefinition = fhirContext.newJsonParser().parseResource(
+                                StructureDefinition.class,
+                                jsonContent);
+                        prePopulatedValidationSupport.addStructureDefinition(structureDefinition);
+                    }
                     LOG.info("Structure Defintion URL {} added to prePopulatedValidationSupport: ",
                             structureDefintionUrl);
                 });
@@ -309,9 +313,11 @@ public class OrchestrationEngine {
                 codeSystemUrls.values().stream().forEach(codeSystemUrl -> {
                     LOG.info("Adding  Code System URL Begin: ", codeSystemUrl);
                     final var jsonContent = readJsonFromUrl(codeSystemUrl);
-                    final var codeSystem = fhirContext.newJsonParser().parseResource(CodeSystem.class,
-                            jsonContent);
-                    prePopulatedValidationSupport.addCodeSystem(codeSystem);
+                    if (!"".equals(jsonContent)) {
+                        final var codeSystem = fhirContext.newJsonParser().parseResource(CodeSystem.class,
+                                jsonContent);
+                        prePopulatedValidationSupport.addCodeSystem(codeSystem);
+                    }
                     LOG.info("Code System URL {} added to prePopulatedValidationSupport: ",
                             codeSystemUrl);
                 });
@@ -328,9 +334,11 @@ public class OrchestrationEngine {
                 valueSetUrls.values().stream().forEach(valueSetUrl -> {
                     LOG.info("Adding  Value System URL Begin: ", valueSetUrl);
                     final var jsonContent = readJsonFromUrl(valueSetUrl);
-                    final var valueSet = fhirContext.newJsonParser().parseResource(ValueSet.class,
-                            jsonContent);
-                    prePopulatedValidationSupport.addValueSet(valueSet);
+                    if (!"".equals(jsonContent)) {
+                        final var valueSet = fhirContext.newJsonParser().parseResource(ValueSet.class,
+                                jsonContent);
+                        prePopulatedValidationSupport.addValueSet(valueSet);
+                    }
                     LOG.info("Value Set URL {} added to prePopulatedValidationSupport: ",
                             valueSetUrl);
                 });
