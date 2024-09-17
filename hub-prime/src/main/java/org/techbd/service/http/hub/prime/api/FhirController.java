@@ -115,58 +115,79 @@ public class FhirController {
         request = new CustomRequestWrapper(request, payload);
         final var bundleAsyncInteractionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
         final var baseUrl = Helpers.getBaseUrl(request);
-        var validationResultMap = new HashMap<String,Object>();
+        var validationResultMap = new HashMap<String, Object>();
         final Object lock = new Object();
-       
-        synchronized (lock) {
-        final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
-                : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
-        LOG.info("Getting structure definition Urls from config - Before: ");
-        final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
-        LOG.info("Getting structure definition Urls from config - After : ", structureDefintionUrls);
-        final var valueSetUrls = appConfig.getValueSetUrls();
-        LOG.info(" Total value system URLS  in config: ", null != valueSetUrls ? valueSetUrls.size() : 0);
-        final var codeSystemUrls = appConfig.getCodeSystemUrls();
-        LOG.info(" Total code system URLS  in config: ", null != codeSystemUrls ? codeSystemUrls.size() : 0);
-        final var sessionBuilder = engine.session()
-                .onDevice(Device.createDefault())
-                .withPayloads(List.of(payload))
-                .withFhirProfileUrl(fhirProfileUrl)
-                .withFhirStructureDefinitionUrls(structureDefintionUrls)
-                .withFhirCodeSystemUrls(codeSystemUrls)
-                .withFhirValueSetUrls(valueSetUrls)
-                .addHapiValidationEngine() // by default
-                // clearExisting is set to true so engines can be fully supplied through header
-                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-        final var session = sessionBuilder.build();
-        engine.orchestrate(session);
 
-        // TODO: if there are errors that should prevent forwarding, stop here
-        // TODO: need to implement `immediate` (sync) webClient op, right now it's async
-        // only
-        // immediateResult is what's returned to the user while async operation
-        // continues
-        validationResultMap = new HashMap<>(Map.of(
-                "resourceType", "OperationOutcome",
-                "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
-                "isAsync", true,
-                "validationResults", session.getValidationResults(),
-                "statusUrl",
-                baseUrl + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
-                "device", session.getDevice()));
+        synchronized (lock) {
+            while (!Thread.currentThread().isInterrupted()) {
+                LOG.info("FHIRController:Bundle :: Inside Synchronized block -BEGIN");
+                final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
+                        : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
+                                : appConfig.getDefaultSdohFhirProfileUrl();
+                LOG.info("Getting structure definition Urls from config - Before: ");
+                final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
+                LOG.info("Getting structure definition Urls from config - After : ", structureDefintionUrls);
+                final var valueSetUrls = appConfig.getValueSetUrls();
+                LOG.info(" Total value system URLS  in config: ", null != valueSetUrls ? valueSetUrls.size() : 0);
+                final var codeSystemUrls = appConfig.getCodeSystemUrls();
+                LOG.info(" Total code system URLS  in config: ", null != codeSystemUrls ? codeSystemUrls.size() : 0);
+                final var sessionBuilder = engine.session()
+                        .onDevice(Device.createDefault())
+                        .withPayloads(List.of(payload))
+                        .withFhirProfileUrl(fhirProfileUrl)
+                        .withFhirStructureDefinitionUrls(structureDefintionUrls)
+                        .withFhirCodeSystemUrls(codeSystemUrls)
+                        .withFhirValueSetUrls(valueSetUrls)
+                        .addHapiValidationEngine() // by default
+                        // clearExisting is set to true so engines can be fully supplied through header
+                        .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+                final var session = sessionBuilder.build();
+                engine.orchestrate(session);
+                session.getValidationResults().stream()
+                        .map(OrchestrationEngine.ValidationResult::getIssues)
+                        .filter(CollectionUtils::isNotEmpty)
+                        .flatMap(List::stream)
+                        .toList().stream()
+                        .filter(issue -> (ResultSeverityEnum.FATAL.getCode()
+                                .equalsIgnoreCase(issue.getSeverity())))
+                        .forEach(c -> {
+                            LOG.error(
+                                    "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -BEGIN");
+                            LOG.error("##############################################\nFATAL ERROR Message"
+                                    + c.getMessage()
+                                    + "##############");
+                            LOG.error(
+                                    "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -END");
+                        });
+                // TODO: if there are errors that should prevent forwarding, stop here
+                // TODO: need to implement `immediate` (sync) webClient op, right now it's async
+                // only
+                // immediateResult is what's returned to the user while async operation
+                // continues
+                validationResultMap = new HashMap<>(Map.of(
+                        "resourceType", "OperationOutcome",
+                        "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
+                        "isAsync", true,
+                        "validationResults", session.getValidationResults(),
+                        "statusUrl",
+                        baseUrl + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
+                        "device", session.getDevice()));
                 if (uaValidationStrategyJson != null) {
                     validationResultMap.put("uaValidationStrategy",
-                            Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
+                            Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+                                    uaValidationStrategyJson,
                                     "issues",
                                     sessionBuilder.getUaStrategyJsonIssues()));
                 }
                 if (includeRequestInOutcome) {
                     validationResultMap.put("request", InteractionsFilter.getActiveRequestEnc(request));
                 }
+                LOG.info("FHIRController:Bundle :: Inside Synchronized block -END");
+            }
         }
         final var forwardedAt = OffsetDateTime.now();
         final var immediateResult = validationResultMap;
-        final var result = Map.of("OperationOutcome", immediateResult);       
+        final var result = Map.of("OperationOutcome", immediateResult);
 
         // Check for the X-TechBD-HealthCheck header
         if ("true".equals(healthCheck)) {
@@ -354,44 +375,68 @@ public class FhirController {
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             HttpServletRequest request) {
         request = new CustomRequestWrapper(request, payload);
-        final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
-                : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader : appConfig.getDefaultSdohFhirProfileUrl();
-        LOG.info("Getting shinny Urls from config - Before: ");
-        final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
-        LOG.info(" Total structure definition URLS  in config: ",
-                null != structureDefintionUrls ? structureDefintionUrls.size() : 0);
-        final var valueSetUrls = appConfig.getValueSetUrls();
-        LOG.info(" Total value system URLS  in config: ", null != valueSetUrls ? valueSetUrls.size() : 0);
-        final var codeSystemUrls = appConfig.getCodeSystemUrls();
-        LOG.info(" Total code system URLS  in config: ", null != codeSystemUrls ? codeSystemUrls.size() : 0);
-        final var sessionBuilder = engine.session()
-                .onDevice(Device.createDefault())
-                .withPayloads(List.of(payload))
-                .withFhirProfileUrl(fhirProfileUrl)
-                .withFhirStructureDefinitionUrls(structureDefintionUrls)
-                .withFhirValueSetUrls(valueSetUrls)
-                .withFhirCodeSystemUrls(codeSystemUrls)
-                .addHapiValidationEngine() // by default
-                // clearExisting is set to true so engines can be fully supplied through header
-                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-        final var session = sessionBuilder.build();
-        engine.orchestrate(session);
-
-        final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
-                session.getValidationResults(), "device",
-                session.getDevice()));
-        final var result = Map.of("OperationOutcome", opOutcome);
-        if (uaValidationStrategyJson != null) {
-            opOutcome.put("uaValidationStrategy",
-                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, uaValidationStrategyJson,
-                            "issues",
-                            sessionBuilder.getUaStrategyJsonIssues()));
+        final Object lock = new Object();
+        synchronized (lock) {
+            while (!Thread.currentThread().isInterrupted()) {
+                LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -BEGIN");
+                final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
+                        : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
+                                : appConfig.getDefaultSdohFhirProfileUrl();
+                LOG.info("FHIRController:Bundle Validate :: Getting shinny Urls from config - Before: ");
+                final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
+                LOG.info("FHIRController:Bundle Validate :: Total structure definition URLS  in config: ",
+                        null != structureDefintionUrls ? structureDefintionUrls.size() : 0);
+                final var valueSetUrls = appConfig.getValueSetUrls();
+                LOG.info("FHIRController:Bundle Validate :: Total value system URLS  in config: ",
+                        null != valueSetUrls ? valueSetUrls.size() : 0);
+                final var codeSystemUrls = appConfig.getCodeSystemUrls();
+                LOG.info("FHIRController:Bundle Validate :: Total code system URLS  in config: ",
+                        null != codeSystemUrls ? codeSystemUrls.size() : 0);
+                final var sessionBuilder = engine.session()
+                        .onDevice(Device.createDefault())
+                        .withPayloads(List.of(payload))
+                        .withFhirProfileUrl(fhirProfileUrl)
+                        .withFhirStructureDefinitionUrls(structureDefintionUrls)
+                        .withFhirValueSetUrls(valueSetUrls)
+                        .withFhirCodeSystemUrls(codeSystemUrls)
+                        .addHapiValidationEngine() // by default
+                        // clearExisting is set to true so engines can be fully supplied through header
+                        .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+                final var session = sessionBuilder.build();
+                engine.orchestrate(session);
+                session.getValidationResults().stream()
+                        .map(OrchestrationEngine.ValidationResult::getIssues)
+                        .filter(CollectionUtils::isNotEmpty)
+                        .flatMap(List::stream)
+                        .toList().stream()
+                        .filter(issue -> (ResultSeverityEnum.FATAL.getCode()
+                                .equalsIgnoreCase(issue.getSeverity())))
+                        .forEach(c -> {
+                            LOG.error("\n\n**********************FATAL ERRORR********************** -BEGIN");
+                            LOG.error("##############################################\nFATAL ERROR Message"
+                                    + c.getMessage()
+                                    + "##############");
+                            LOG.error("\n\n**********************FATAL ERRORR********************** -END");
+                        });
+                final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
+                        session.getValidationResults(), "device",
+                        session.getDevice()));
+                final var result = Map.of("OperationOutcome", opOutcome);
+                if (uaValidationStrategyJson != null) {
+                    opOutcome.put("uaValidationStrategy",
+                            Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+                                    uaValidationStrategyJson,
+                                    "issues",
+                                    sessionBuilder.getUaStrategyJsonIssues()));
+                }
+                if (includeRequestInOutcome) {
+                    opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
+                }
+                LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");
+                return result;
+            }
         }
-        if (includeRequestInOutcome) {
-            opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
-        }
 
-        return result;
     }
 
     @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })

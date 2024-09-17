@@ -262,7 +262,8 @@ public class OrchestrationEngine {
             this.valueSetUrls = builder.valueSetUrls;
         }
 
-        private static String readJsonFromUrl(final String url) {
+        private synchronized String readJsonFromUrl(final String url) {
+            LOG.info("OrchestrationEngine ::  readJsonFromUrl Begin:");
             final var client = HttpClient.newHttpClient();
             final var request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -273,12 +274,14 @@ public class OrchestrationEngine {
                 response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 bundleJson = response.body();
             } catch (IOException | InterruptedException e) {
-                LOG.error("Failed to parse structure definition url ", url, e);
+                LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse structure definition url ", url, e);
+
             }
+            LOG.info("OrchestrationEngine ::  readJsonFromUrl END:");
             return bundleJson;
         }
 
-        private void addStructureDefinitions(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private synchronized void addStructureDefinitions(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions Begin:");
             if (null != structureDefinitionUrls) {
                 LOG.info(
@@ -297,7 +300,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions End : ");
         }
 
-        private void addCodeSystems(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private synchronized void addCodeSystems(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addCodeSystems Begin:");
             if (null != codeSystemUrls) {
                 LOG.info(
@@ -316,7 +319,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addCodeSystems End : ");
         }
 
-        private void addValueSets(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private synchronized void addValueSets(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addValueSets Begin:");
             if (null != valueSetUrls) {
                 LOG.info(
@@ -336,7 +339,7 @@ public class OrchestrationEngine {
         }
 
         @Override
-        public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
+        public synchronized OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
                 final var supportChain = new ValidationSupportChain();
@@ -367,15 +370,15 @@ public class OrchestrationEngine {
                 LOG.info("Add value sets of shinny IG -END");
 
                 supportChain.addValidationSupport(prePopulatedSupport);
-                final var cache = new CachingValidationSupport(supportChain);
-                final var instanceValidator = new FhirInstanceValidator(cache);
+                // final var cache = new CachingValidationSupport(supportChain);
+                final var instanceValidator = new FhirInstanceValidator(supportChain);
                 final var validator = fhirContext.newValidator().registerValidatorModule(instanceValidator);
                 LOG.info("BUNDLE PAYLOAD parse -BEGIN");
                 final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
                 LOG.info("BUNDLE PAYLOAD parse -END");
-                LOG.info("VALIDATOR -BEGIN");      
+                LOG.info("VALIDATOR -BEGIN");
                 final var hapiVR = validator.validateWithResult(bundle);
-                LOG.info("VALIDATOR -END");      
+                LOG.info("VALIDATOR -END");
                 final var completedAt = Instant.now();
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
@@ -870,7 +873,7 @@ public class OrchestrationEngine {
             return igVersion;
         }
 
-        public void validate() {
+        public synchronized void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
                     final ValidationResult result = engine.validate(payload);
