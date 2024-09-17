@@ -274,7 +274,7 @@ public class OrchestrationEngine {
                 response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 bundleJson = response.body();
             } catch (IOException | InterruptedException e) {
-                LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse structure definition url ", url, e);
+                LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse url ", url, e);
 
             }
             LOG.info("OrchestrationEngine ::  readJsonFromUrl END:");

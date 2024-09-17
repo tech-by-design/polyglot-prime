@@ -119,7 +119,7 @@ public class FhirController {
         final Object lock = new Object();
 
         synchronized (lock) {
-            while (!Thread.currentThread().isInterrupted()) {
+            if (!Thread.currentThread().isInterrupted()) {
                 LOG.info("FHIRController:Bundle :: Inside Synchronized block -BEGIN");
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                         : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
@@ -377,7 +377,7 @@ public class FhirController {
         request = new CustomRequestWrapper(request, payload);
         final Object lock = new Object();
         synchronized (lock) {
-            while (!Thread.currentThread().isInterrupted()) {
+            if (!Thread.currentThread().isInterrupted()) {
                 LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -BEGIN");
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                         : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
@@ -432,11 +432,11 @@ public class FhirController {
                 if (includeRequestInOutcome) {
                     opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
                 }
-                LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");
-                return result;
+                LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");    
+                return result;        }           
             }
-        }
-
+            
+        return Map.of("OperationOutcome", "");
     }
 
     @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
