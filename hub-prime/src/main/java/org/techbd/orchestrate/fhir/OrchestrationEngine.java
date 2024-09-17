@@ -9,6 +9,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -20,6 +21,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
@@ -34,6 +37,7 @@ import org.hl7.fhir.r4.model.StructureDefinition;
 import org.hl7.fhir.r4.model.ValueSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -262,22 +266,74 @@ public class OrchestrationEngine {
             this.valueSetUrls = builder.valueSetUrls;
         }
 
-        private synchronized String readJsonFromUrl(final String url) {
-            LOG.info("OrchestrationEngine ::  readJsonFromUrl Begin:");
-            final var client = HttpClient.newHttpClient();
+        private String readJsonFromUrl(final String url) {
+            LOG.info("OrchestrationEngine :: readJsonFromUrl {} Begin:", url);
+            final var client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10)) // Connection timeout
+                    .build();
+
             final var request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(10)) // Request timeout
                     .build();
-            String bundleJson = "";
-            HttpResponse<String> response;
-            try {
-                response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                bundleJson = response.body();
-            } catch (Exception e) {
-                LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse url ", url, e);
 
+            String bundleJson = "";
+            int attempt = 0;
+
+            while (attempt < 3) {
+                attempt++;
+                try {
+                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    int statusCode = response.statusCode();
+
+                    // Check if the response is successful (2xx status code)
+                    if (statusCode == 200) {
+                        bundleJson = response.body();
+                        break; // Success, no need to retry
+                    } else {
+                        LOG.warn("OrchestrationEngine :: readJsonFromUrl {}: Failed with status code " + statusCode,
+                                url);
+                    }
+                } catch (SSLHandshakeException e) {
+                    LOG.warn(
+                            "OrchestrationEngine :: readJsonFromUrl {}: Request timed out due to SSLHandShakeException on attempt :"
+                                    + attempt,
+                            url);
+                } catch (HttpTimeoutException e) {
+                    LOG.warn("OrchestrationEngine :: readJsonFromUrl {}: Request timed out on attempt :" + attempt,
+                            url);
+                } catch (IOException e) {
+                    LOG.error(
+                            "OrchestrationEngine :: readJsonFromUrl {}: Request failed due to IO exception on attempt : "
+                                    + attempt
+                                    + " - "
+                                    + e.getMessage(),
+                            url);
+                } catch (InterruptedException e) {
+                    LOG.error(
+                            "OrchestrationEngine :: readJsonFromUrl {}: Request failed due to Interrupted exception on attempt :"
+                                    + attempt + " - "
+                                    + e.getMessage(),
+                            url);
+                } catch (Exception e) {
+                    LOG.error("OrchestrationEngine :: readJsonFromUrl {}: Error occurred on attempt :" + attempt + " - "
+                            + e.getMessage(), url);
+                }
+
+                if (attempt < 3) {
+                    try {
+                        Thread.sleep((long) Math.pow(2, attempt) * 1000); // Exponential backoff
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
-            LOG.info("OrchestrationEngine ::  readJsonFromUrl END:");
+            if (bundleJson.isEmpty()) {
+                LOG.error("OrchestrationEngine :: readJsonFromUrl {}: Failed to retrieve JSON after " + 3
+                        + " attempts.", url);
+            }
+            LOG.info("OrchestrationEngine :: readJsonFromUrl {} END: ", url);
             return bundleJson;
         }
 
