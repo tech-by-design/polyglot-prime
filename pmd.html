@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-09-17<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.224.0</li>
+          <li id="projectVersion">Version: 0.225.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -78,7 +78,7 @@
 <td>This if statement could be combined with its parent</td>
 <td>76&#x2013;85</td></tr></table></section></section><section>
 <h3>Priority 4</h3><a id="Priority_4"></a><section>
-<h4>org/techbd/service/http/hub/prime/api/FhirController.java</h4><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java"></a>
+<h4>org/techbd/orchestrate/fhir/OrchestrationEngine.java</h4><a id="org.2Ftechbd.2Forchestrate.2Ffhir.2FOrchestrationEngine.java"></a>
 <table class="table table-striped">
 <tr class="a">
 <th>Rule</th>
@@ -86,12 +86,22 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
-<td>Unused import 'com.nimbusds.oauth2.sdk.util.CollectionUtils'</td>
-<td>53</td></tr>
+<td>Unused import 'org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport'</td>
+<td>25</td></tr></table></section><section>
+<h4>org/techbd/service/http/hub/prime/api/FhirController.java</h4><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java"></a>
+<table class="table table-striped">
 <tr class="a">
-<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
-<td>Unused import 'ca.uhn.fhir.validation.ResultSeverityEnum'</td>
-<td>55</td></tr></table></section><section>
+<th>Rule</th>
+<th>Violation</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#uselessparentheses">UselessParentheses</a></td>
+<td>Useless parentheses.</td>
+<td>151&#x2013;152</td></tr>
+<tr class="a">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#uselessparentheses">UselessParentheses</a></td>
+<td>Useless parentheses.</td>
+<td>412&#x2013;413</td></tr></table></section><section>
 <h4>org/techbd/service/http/hub/prime/ux/TabularRowsController.java</h4><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FTabularRowsController.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -103,6 +113,18 @@
 <td>Unused import 'org.jooq.impl.DSL'</td>
 <td>3</td></tr></table></section></section></section><section>
 <h2>Files</h2><a id="Files"></a><section>
+<h3>org/techbd/orchestrate/fhir/OrchestrationEngine.java</h3><a id="org.2Ftechbd.2Forchestrate.2Ffhir.2FOrchestrationEngine.java"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>Rule</th>
+<th>Violation</th>
+<th>Priority</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
+<td>Unused import 'org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport'</td>
+<td>4</td>
+<td>25</td></tr></table></section><section>
 <h3>org/techbd/service/http/GitHubUserAuthorizationFilter.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2FGitHubUserAuthorizationFilter.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -123,15 +145,15 @@
 <th>Priority</th>
 <th>Line</th></tr>
 <tr class="b">
-<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
-<td>Unused import 'com.nimbusds.oauth2.sdk.util.CollectionUtils'</td>
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#uselessparentheses">UselessParentheses</a></td>
+<td>Useless parentheses.</td>
 <td>4</td>
-<td>53</td></tr>
+<td>151&#x2013;152</td></tr>
 <tr class="a">
-<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
-<td>Unused import 'ca.uhn.fhir.validation.ResultSeverityEnum'</td>
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#uselessparentheses">UselessParentheses</a></td>
+<td>Useless parentheses.</td>
 <td>4</td>
-<td>55</td></tr></table></section><section>
+<td>412&#x2013;413</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/ux/TabularRowsController.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FTabularRowsController.java"></a>
 <table class="table table-striped">
 <tr class="a">
