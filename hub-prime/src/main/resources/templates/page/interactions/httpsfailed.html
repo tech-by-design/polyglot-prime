@@ -125,7 +125,13 @@
                     { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state from which the interaction originated" },
                     { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state to which the interaction was intended to transition" },
                     { headerName: "Outbound Http Message", field: "outbound_http_message", filter: "agTextColumnFilter", headerTooltip: "The HTTP message sent out during the interaction" },
-                    { headerName: "Error Message", field: "error", filter: "agTextColumnFilter", headerTooltip: "Details of any errors encountered" },
+                    {
+                        headerName: "Error Message", field: "error", filter: "agTextColumnFilter", headerTooltip: "Details of any errors encountered", valueGetter: (params) => {
+                            const error = params.data.error || ''; // Default to an empty string if no value
+                            const responseBodyDetails = params.data.response_body_details || ''; // Default to an empty string if no value
+                            return error && responseBodyDetails ? `${error}, ${responseBodyDetails}` : error || responseBodyDetails;
+                        }
+                    },
                     { headerName: "Validation Issues", field: "issues_count", filter: "agTextColumnFilter", headerTooltip: "Count of validation issues associated with the interaction" },
                     { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", headerTooltip: "Types of FHIR resources involved" },
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", headerTooltip: "IP address of the client making the request" },

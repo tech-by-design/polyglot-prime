@@ -39,7 +39,7 @@ jobs:
         run: echo "Running schema generation since UDI Mat Refresh (data-only) is not running."
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Create .pgpass file
         run: |
