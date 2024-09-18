@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.techbd.service.http.hub.prime.route.RoutesTree;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lib.aide.paths.PathsHtml;
 import lib.aide.paths.PathsVisuals;
@@ -22,6 +23,7 @@ import lib.aide.paths.PathsVisuals;
 @Controller
 @Tag(name = "Tech by Design Hub UX Presentation Shell")
 public class ShellController {
+
     private final ResourceLoader resourceLoader;
     private final Presentation presentation;
     private final PathsHtml<String, RoutesTree.Route> routesHtml = new PathsHtml.Builder<String, RoutesTree.Route>()
@@ -34,28 +36,32 @@ public class ShellController {
     }
 
     @Operation(summary = "Application Shell Primary Navigation")
-    @GetMapping(value = "/presentation/shell/nav/prime.fragment.html", produces = { "text/html" })
+    @GetMapping(value = "/presentation/shell/nav/prime.fragment.html", produces = {"text/html"})
     public ResponseEntity<?> navPrime() {
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
                 .body(routesHtml.toHtmlUL(presentation.getRoutesTrees().get("prime")));
     }
 
     @Operation(summary = "Application Shell Primary Navigation")
-    @GetMapping(value = "/presentation/shell/nav/prime-ascii.fragment.html", produces = { "text/html" })
+    @GetMapping(value = "/presentation/shell/nav/prime-ascii.fragment.html", produces = {"text/html"})
     public ResponseEntity<?> navPrimeAscii() {
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
                 .body(new PathsVisuals().asciiTree(presentation.getRoutesTrees().get("prime"), Optional.empty()));
     }
 
     @Operation(summary = "RoutesTrees")
-    @GetMapping(value = "/presentation/shell/routes/{namespace}.json", produces = { "application/json" })
-    public ResponseEntity<?> routeTrees(@PathVariable String namespace) {
+    @GetMapping(value = "/presentation/shell/routes/{namespace}.json", produces = {"application/json"})
+    public ResponseEntity<?> routeTrees(
+            @Parameter(description = "Path variable namespace", required = true)
+            @PathVariable String namespace) {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(presentation.getRoutesTrees().toJson());
     }
 
     @Operation(summary = "Application Shell JavaScript")
-    @GetMapping(value = "/presentation/shell/js/{namespace}.js", produces = { "text/javascript" })
-    public ResponseEntity<?> shellJs(@PathVariable String namespace) {
+    @GetMapping(value = "/presentation/shell/js/{namespace}.js", produces = {"text/javascript"})
+    public ResponseEntity<?> shellJs(
+            @Parameter(description = "Path variable namespace", required = true)
+            @PathVariable String namespace) {
         final var resourcePath = "classpath:templates/js/" + namespace + ".js";
         final var resource = resourceLoader.getResource(resourcePath);
 

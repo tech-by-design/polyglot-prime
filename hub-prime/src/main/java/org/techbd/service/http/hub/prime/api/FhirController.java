@@ -54,13 +54,15 @@ import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.validation.ResultSeverityEnum;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import reactor.core.publisher.Mono;
 
 @Controller
-@Tag(name = "Tech by Design Hub FHIR Endpoints")
+@Tag(name = "Tech by Design Hub FHIR Endpoints",
+        description = "Tech by Design Hub FHIR Endpoints")
 public class FhirController {
 
     private static final Logger LOG = LoggerFactory.getLogger(FhirController.class.getName());
@@ -78,7 +80,7 @@ public class FhirController {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
-    @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
+    @GetMapping(value = "/metadata", produces = {MediaType.APPLICATION_XML_VALUE})
     @Operation(summary = "FHIR server's conformance statement")
     public String metadata(final Model model, HttpServletRequest request) {
         final var baseUrl = Helpers.getBaseUrl(request);
@@ -90,22 +92,35 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
-            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
-    @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
+    @PostMapping(value = {"/Bundle", "/Bundle/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
+        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
+    @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.",
+            description = "Endpoint to to validate, store, and then forward a payload to SHIN-NY.")
     @ResponseBody
     @Async
-    public Object validateBundleAndForward(final @RequestBody @Nonnull String payload,
+    public Object validateBundleAndForward(
+            @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true)
+            final @RequestBody @Nonnull String payload,
+            @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true)
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
             // "profile" is the same name that HL7 validator uses
+            @Parameter(description = "Profile URL for the API.", required = false)
             @RequestParam(value = "profile", required = false) String fhirProfileUrlParam,
+            @Parameter(description = "Optional header to specify the Structure definition profile URL. If not specified, the default settings mentioned in the application configuration will be used.", required = false)
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
+            @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false)
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
+            @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false)
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
+            @Parameter(description = "Optional header to specify the Datalake API content type.", required = false)
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
+            @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false)
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
+            @Parameter(description = "Optional parameter to decide whether the Datalake submission to be synchronous or asynchronous.", required = false)
             @RequestParam(value = "immediate", required = false) boolean isSync,
+            @Parameter(description = "Optional parameter to decide whether the request is to be included in the outcome.", required = false)
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
+            @Parameter(description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false)
             @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
             HttpServletRequest request) throws SQLException {
 
@@ -143,15 +158,15 @@ public class FhirController {
                 .flatMap(List::stream)
                 .toList().stream()
                 .filter(issue -> (ResultSeverityEnum.FATAL.getCode()
-                        .equalsIgnoreCase(issue.getSeverity())))
+                .equalsIgnoreCase(issue.getSeverity())))
                 .forEach(c -> {
-                        LOG.error(
-                                "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -BEGIN");
-                        LOG.error("##############################################\nFATAL ERROR Message"
-                                + c.getMessage()
-                                + "##############");
-                        LOG.error(
-                                "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -END");
+                    LOG.error(
+                            "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -BEGIN");
+                    LOG.error("##############################################\nFATAL ERROR Message"
+                            + c.getMessage()
+                            + "##############");
+                    LOG.error(
+                            "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -END");
                 });
         // TODO: if there are errors that should prevent forwarding, stop here
         // TODO: need to implement `immediate` (sync) webClient op, right now it's async
@@ -167,14 +182,14 @@ public class FhirController {
                 baseUrl + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
                 "device", session.getDevice()));
         if (uaValidationStrategyJson != null) {
-                immediateResult.put("uaValidationStrategy",
-                        Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
-                                uaValidationStrategyJson,
-                                "issues",
-                                sessionBuilder.getUaStrategyJsonIssues()));
+            immediateResult.put("uaValidationStrategy",
+                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+                            uaValidationStrategyJson,
+                            "issues",
+                            sessionBuilder.getUaStrategyJsonIssues()));
         }
         if (includeRequestInOutcome) {
-                immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
+            immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
         }
         final var forwardedAt = OffsetDateTime.now();
         final var result = Map.of("OperationOutcome", immediateResult);
@@ -352,20 +367,28 @@ public class FhirController {
         return result;
     }
 
-    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
-            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
-    @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
+    @PostMapping(value = {"/Bundle/$validate", "/Bundle/$validate/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
+        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
+    @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.",
+            description = "Endpoint to validate but not store or forward a payload to SHIN-NY.")
     @ResponseBody
-    public Object validateBundle(final @RequestBody @Nonnull String payload,
+    public Object validateBundle(
+            @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true)
+            final @RequestBody @Nonnull String payload,
+            @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true)
             @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
             // "profile" is the same name that HL7 validator uses
+            @Parameter(description = "Parameter to specify the profile. This is an optional parameter. If not specified, the default settings mentioned in the application configuration will be used.", required = false)
             @RequestParam(value = "profile", required = false) String fhirProfileUrlParam,
+            @Parameter(description = "Optional header to specify the Structure definition profile URL. If not specified, the default settings mentioned in the application configuration will be used.", required = false)
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
+            @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false)
             @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
+            @Parameter(description = "Parameter to decide whether the request is to be included in the outcome.", required = false)
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             HttpServletRequest request) {
         request = new CustomRequestWrapper(request, payload);
-  
+
         LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -BEGIN");
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
@@ -398,36 +421,39 @@ public class FhirController {
                 .flatMap(List::stream)
                 .toList().stream()
                 .filter(issue -> (ResultSeverityEnum.FATAL.getCode()
-                        .equalsIgnoreCase(issue.getSeverity())))
+                .equalsIgnoreCase(issue.getSeverity())))
                 .forEach(c -> {
-                        LOG.error("\n\n**********************FATAL ERRORR********************** -BEGIN");
-                        LOG.error("##############################################\nFATAL ERROR Message"
-                                + c.getMessage()
-                                + "##############");
-                        LOG.error("\n\n**********************FATAL ERRORR********************** -END");
+                    LOG.error("\n\n**********************FATAL ERRORR********************** -BEGIN");
+                    LOG.error("##############################################\nFATAL ERROR Message"
+                            + c.getMessage()
+                            + "##############");
+                    LOG.error("\n\n**********************FATAL ERRORR********************** -END");
                 });
         final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
                 session.getValidationResults(), "device",
                 session.getDevice()));
         final var result = Map.of("OperationOutcome", opOutcome);
         if (uaValidationStrategyJson != null) {
-                opOutcome.put("uaValidationStrategy",
-                        Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
-                                uaValidationStrategyJson,
-                                "issues",
-                                sessionBuilder.getUaStrategyJsonIssues()));
+            opOutcome.put("uaValidationStrategy",
+                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+                            uaValidationStrategyJson,
+                            "issues",
+                            sessionBuilder.getUaStrategyJsonIssues()));
         }
         if (includeRequestInOutcome) {
-                opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
+            opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
         }
-        LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");    
-        return result;       
+        LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");
+        return result;
     }
 
-    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
+    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = {"application/json", "text/html"})
     @ResponseBody
     @Operation(summary = "Check the state/status of async operation")
-    public Object bundleStatus(@PathVariable String bundleSessionId, final Model model, HttpServletRequest request) {
+    public Object bundleStatus(
+            @Parameter(description = "<b>mandatory</b> path variable to specify the bundle session ID.", required = true)
+            @PathVariable String bundleSessionId,
+            final Model model, HttpServletRequest request) {
         final var jooqDSL = udiPrimeJpaConfig.dsl();
         try {
             final var result = jooqDSL.select()
@@ -448,7 +474,9 @@ public class FhirController {
     @Operation(summary = "Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.")
     @GetMapping("/mock/shinny-data-lake/1115-validate/{resourcePath}.json")
     public ResponseEntity<String> getJsonFile(
+            @Parameter(description = "Mandatory path variable.", required = true)
             @PathVariable String resourcePath,
+            @Parameter(description = "Optional parameter to specify lifetime simulation in milli seconds. The default value is 0.", required = true)
             @RequestParam(required = false, defaultValue = "0") long simulateLifetimeMs) {
         final var cpResourceName = "templates/mock/shinny-data-lake/1115-validate/" + resourcePath + ".json";
         try {

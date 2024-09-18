@@ -14,11 +14,13 @@ import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.UdiPrimeJpaConfig;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@Tag(name = "Tech by Design Hub Interactions UX API")
+@Tag(name = "Tech by Design Hub Interactions UX API",
+        description = "Tech by Design Hub Interactions UX API")
 public class InteractionsController {
 
     @SuppressWarnings("unused")
@@ -68,7 +70,9 @@ public class InteractionsController {
     @Operation(summary = "Recent SFTP Interactions")
     @GetMapping("/support/interaction/sftp/recent.json")
     @ResponseBody
-    public List<?> observeRecentSftpInteractions(final @RequestParam(defaultValue = "10") int limitMostRecent) {
+    public List<?> observeRecentSftpInteractions(
+            @Parameter(description = "Optional variable to mention the number of entries to be fetched. If no value is specified, 10 entries will be taken by default.", required = true)
+            final @RequestParam(defaultValue = "10") int limitMostRecent) {
         return sftpManager.tenantEgressSessions(limitMostRecent);
     }
 
