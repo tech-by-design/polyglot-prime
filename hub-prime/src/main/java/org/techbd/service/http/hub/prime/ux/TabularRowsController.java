@@ -1,6 +1,11 @@
 package org.techbd.service.http.hub.prime.ux;
 
-import org.jooq.impl.DSL;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -14,130 +19,165 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import lib.aide.tabular.JooqRowsSupplier;
 import lib.aide.tabular.TabularRowsRequest;
 import lib.aide.tabular.TabularRowsResponse;
-import io.swagger.v3.oas.annotations.Parameter;
 
 @Controller
 @Tag(name = "Tech by Design Hub Tabular Row API Endpoints for AG Grid")
 public class TabularRowsController {
-        private static final Logger LOG = LoggerFactory.getLogger(TabularRowsController.class);
 
-        private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+    private static final Logger LOG = LoggerFactory.getLogger(TabularRowsController.class);
 
-        public TabularRowsController(final UdiPrimeJpaConfig udiPrimeJpaConfig) {
-                this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        }
+    private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
-        @Operation(summary = "Fetch SQL rows from a master table or view with optional schema specification", description = "Retrieves rows from a specified master table or view, optionally within a specific schema. "
-                        +
-                        "The request body contains the filter criteria (via `TabularRowsRequest`) used to query the data. "
-                        +
-                        "Headers allow the client to include generated SQL in the response or error response for debugging or auditing purposes. "
-                        +
-                        "If the schema name is omitted, the default schema will be used.")
-        @PostMapping(value = { "/api/ux/tabular/jooq/{masterTableNameOrViewName}.json",
-                        "/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}.json" }, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-        @ResponseBody
-        public TabularRowsResponse<?> tabularRows(@PathVariable(required = false) String schemaName,
-                        final @PathVariable String masterTableNameOrViewName,
-                        final @RequestBody @Nonnull TabularRowsRequest payload,
-                        @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false) boolean includeGeneratedSqlInResp,
-                        @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
+    public TabularRowsController(final UdiPrimeJpaConfig udiPrimeJpaConfig) {
+        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+    }
 
-                return new JooqRowsSupplier.Builder()
-                                .withRequest(payload)
-                                .withTable(Tables.class, schemaName, masterTableNameOrViewName)
-                                .withDSL(udiPrimeJpaConfig.dsl())
-                                .withLogger(LOG)
-                                .includeGeneratedSqlInResp(includeGeneratedSqlInResp)
-                                .includeGeneratedSqlInErrorResp(includeGeneratedSqlInErrorResp)
-                                .build()
-                                .response();
-        }
+    @Operation(summary = "Fetch SQL rows from a master table or view with optional schema specification",
+            description = """
+            Retrieves rows from a specified master table or view, optionally within a specific schema.
+            The request body contains the filter criteria (via `TabularRowsRequest`) used to query the data.
+            Headers allow the client to include generated SQL in the response or error response for debugging or auditing purposes.
+            If the schema name is omitted, the default schema will be used.
+            """
+    )
+    @PostMapping(value = {"/api/ux/tabular/jooq/{masterTableNameOrViewName}.json",
+        "/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}.json"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public TabularRowsResponse<?> tabularRows(
+            @Parameter(description = "Mandatory path variable to mention schema name.", required = true)
+            @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Mandatory path variable to mention the table or view name.", required = true)
+            final @PathVariable String masterTableNameOrViewName,
+            @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true)
+            final @RequestBody @Nonnull TabularRowsRequest payload,
+            @Parameter(description = "Optional header to mention whether the generated SQL to be included in the response.", required = true)
+            @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false) boolean includeGeneratedSqlInResp,
+            @Parameter(description = "Optional header to mention whether the generated SQL to be included in the error response. This will be taken <code>true</code> by default.", required = true)
+            @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
 
-        @Operation(summary = "Retrieve SQL rows from a master table or view for a specific column value", description = "Fetches rows from the specified schema and master table or view where the value in column `{columnName}` exactly matches `{columnValue}`. "
-                        +
-                        "For example, to retrieve rows from a table 'orders' where the 'status' column equals 'shipped', pass 'shipped' as `{columnValue}`.")
-        @GetMapping("/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}/{columnName}/{columnValue}.json")
-        @ResponseBody
-        public Object tabularRowsCustom(final @PathVariable(required = false) String schemaName,
-                        final @PathVariable String masterTableNameOrViewName, final @PathVariable String columnName,
-                        final @PathVariable String columnValue) {
+        return new JooqRowsSupplier.Builder()
+                .withRequest(payload)
+                .withTable(Tables.class, schemaName, masterTableNameOrViewName)
+                .withDSL(udiPrimeJpaConfig.dsl())
+                .withLogger(LOG)
+                .includeGeneratedSqlInResp(includeGeneratedSqlInResp)
+                .includeGeneratedSqlInErrorResp(includeGeneratedSqlInErrorResp)
+                .build()
+                .response();
+    }
 
-                // Fetch the result using the dynamically determined table and column; if
-                // jOOQ-generated types were found, automatic column value mapping will occur
-                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                                masterTableNameOrViewName);
-                return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                                .where(typableTable.column(columnName).eq(columnValue))
-                                .fetch()
-                                .intoMaps();
-        }
+    @Operation(summary = "Retrieve SQL rows from a master table or view for a specific column value",
+            description = """
+            Fetches rows from the specified schema and master table or view where the value in column `{columnName}` exactly matches `{columnValue}`.
+            "For example, to retrieve rows from a table 'orders' where the 'status' column equals 'shipped', pass 'shipped' as `{columnValue}`.
+            """)
+    @GetMapping("/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}/{columnName}/{columnValue}.json")
+    @ResponseBody
+    public Object tabularRowsCustom(
+            @Parameter(description = "Mandatory path variable to mention schema name.", required = true)
+            final @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Mandatory path variable to mention the table or view name.", required = true)
+            final @PathVariable String masterTableNameOrViewName,
+            @Parameter(description = "Mandatory path variable to mention the column name.", required = true)
+            final @PathVariable String columnName,
+            @Parameter(description = "Mandatory path variable to mention the column value.", required = true)
+            final @PathVariable String columnValue) {
 
-        @Operation(summary = "Retrieve SQL rows from a master table or view with specific column value checks", description = "Fetches rows from the specified schema and master table or view where the value in column `{columnName}` exactly matches `{columnValue}`, and the value in column `{columnName2}` matches the pattern '{columnValue2}' using a LIKE condition. "
-                        +
-                        "For example, to retrieve rows from a table 'users' where the 'status' column equals 'active' and the 'email' column contains 'example.com', pass 'active' as `{columnValue}` and 'example.com' as `{columnValue2}`.")
-        @GetMapping("/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}/{columnName}/{columnValue}/{columnName2}/{columnValue2}.json")
-        @ResponseBody
-        public Object tabularRowsCustomWithMultipleParams(final @PathVariable(required = false) String schemaName,
-                        final @PathVariable String masterTableNameOrViewName, final @PathVariable String columnName,
-                        final @PathVariable String columnValue, final @PathVariable String columnName2,
-                        final @PathVariable String columnValue2) {
+        // Fetch the result using the dynamically determined table and column; if
+        // jOOQ-generated types were found, automatic column value mapping will occur
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                masterTableNameOrViewName);
+        return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                .where(typableTable.column(columnName).eq(columnValue))
+                .fetch()
+                .intoMaps();
+    }
 
-                // Fetch the result using the dynamically determined table and column; if
-                // jOOQ-generated types were found, automatic column value mapping will occur
-                String columnValue2LikePattern = "%" + columnValue2 + "%";
-                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                                masterTableNameOrViewName);
-                return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                                .where(typableTable.column(columnName).eq(columnValue)
-                                                .and(typableTable.column(columnName2).like(columnValue2LikePattern)))
-                                .fetch()
-                                .intoMaps();
-        }
+    @Operation(summary = "Retrieve SQL rows from a master table or view with specific column value checks",
+            description = """
+            Fetches rows from the specified schema and master table or view where the value in column `{columnName}` exactly matches `{columnValue}`, and the value in column `{columnName2}` matches the pattern '{columnValue2}' using a LIKE condition.
+            For example, to retrieve rows from a table 'users' where the 'status' column equals 'active' and the 'email' column contains 'example.com', pass 'active' as `{columnValue}` and 'example.com' as `{columnValue2}`.
+            """)
+    @GetMapping("/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}/{columnName}/{columnValue}/{columnName2}/{columnValue2}.json")
+    @ResponseBody
+    public Object tabularRowsCustomWithMultipleParams(
+            @Parameter(description = "Mandatory path variable to mention schema name.", required = true)
+            final @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Mandatory path variable to mention the table or view name.", required = true)
+            final @PathVariable String masterTableNameOrViewName,
+            @Parameter(description = "Mandatory path variable to mention the column name.", required = true)
+            final @PathVariable String columnName,
+            @Parameter(description = "Mandatory path variable to mention the column value.", required = true)
+            final @PathVariable String columnValue,
+            @Parameter(description = "Mandatory path variable to mention the column2 name.", required = true)
+            final @PathVariable String columnName2,
+            @Parameter(description = "Mandatory path variable to mention the column2 value.", required = true)
+            final @PathVariable String columnValue2) {
 
-        @Operation(summary = "Retrieve SQL rows from a master table or view with multiple column value checks", description = "Fetches rows from the specified schema and master table or view where the values in three different columns `{columnName1}`, `{columnName2}`, and `{columnName3}` match the provided values `{columnValue1}`, `{columnValue2}`, and `{columnValue3}` respectively. "
-                        +
-                        "For example, if you want to retrieve rows from a table 'orders' in schema 'sales' where the columns 'order_status', 'customer_id', and 'order_date' match the values 'pending', '12345', and '2024-09-17', provide those values in the corresponding URL parameters.")
-        @GetMapping("/api/ux/tabular/jooq/multiparam/{schemaName}/{masterTableNameOrViewName}/{columnName1}/{columnValue1}/{columnName2}/{columnValue2}/{columnName3}/{columnValue3}.json")
-        @ResponseBody
-        public Object tabularRowsCustomWithMultipleParamsChecks(final @PathVariable(required = false) String schemaName,
-                        final @PathVariable String masterTableNameOrViewName, final @PathVariable String columnName1,
-                        final @PathVariable String columnValue1, final @PathVariable String columnName2,
-                        final @PathVariable String columnValue2, final @PathVariable String columnName3,
-                        final @PathVariable String columnValue3) {
+        // Fetch the result using the dynamically determined table and column; if
+        // jOOQ-generated types were found, automatic column value mapping will occur
+        String columnValue2LikePattern = "%" + columnValue2 + "%";
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                masterTableNameOrViewName);
+        return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                .where(typableTable.column(columnName).eq(columnValue)
+                        .and(typableTable.column(columnName2).like(columnValue2LikePattern)))
+                .fetch()
+                .intoMaps();
+    }
 
-                // Decode URL-encoded values
-                String decodedColumnValue1 = URLDecoder.decode(columnValue1, StandardCharsets.UTF_8);
-                String decodedColumnValue2 = URLDecoder.decode(columnValue2, StandardCharsets.UTF_8);
-                String decodedColumnValue3 = URLDecoder.decode(columnValue3, StandardCharsets.UTF_8);
+    @Operation(summary = "Retrieve SQL rows from a master table or view with multiple column value checks",
+            description = """
+            Fetches rows from the specified schema and master table or view where the values in three different columns `{columnName1}`, `{columnName2}`, and `{columnName3}` match the provided values `{columnValue1}`, `{columnValue2}`, and `{columnValue3}` respectively.
+            For example, if you want to retrieve rows from a table 'orders' in schema 'sales' where the columns 'order_status', 'customer_id', and 'order_date' match the values 'pending', '12345', and '2024-09-17', provide those values in the corresponding URL parameters.
+            """)
+    @GetMapping("/api/ux/tabular/jooq/multiparam/{schemaName}/{masterTableNameOrViewName}/{columnName1}/{columnValue1}/{columnName2}/{columnValue2}/{columnName3}/{columnValue3}.json")
+    @ResponseBody
+    public Object tabularRowsCustomWithMultipleParamsChecks(
+            @Parameter(description = "Path variable to mention the schema name.", required = true)
+            final @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Path variable to mention the master table or view name.", required = true)
+            final @PathVariable String masterTableNameOrViewName,
+            @Parameter(description = "Path variable to mention the columnn 1 name.", required = true)
+            final @PathVariable String columnName1,
+            @Parameter(description = "Path variable to mention the column 1 value.", required = true)
+            final @PathVariable String columnValue1,
+            @Parameter(description = "Path variable to mention the column 2 name.", required = true)
+            final @PathVariable String columnName2,
+            @Parameter(description = "Path variable to mention the column 2 value.", required = true)
+            final @PathVariable String columnValue2,
+            @Parameter(description = "Path variable to mention the column 3 name.", required = true)
+            final @PathVariable String columnName3,
+            @Parameter(description = "Path variable to mention the column 3 value.", required = true)
+            final @PathVariable String columnValue3) {
 
-                // Fetch the result using the dynamically determined table and column; if
-                // jOOQ-generated types were found, automatic column value mapping will occur
-                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                                masterTableNameOrViewName);
-                return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                                .where(typableTable.column(columnName1).eq(decodedColumnValue1)
-                                                .and(typableTable.column(columnName2).eq(decodedColumnValue2))
-                                                .and(typableTable.column(columnName3).eq(decodedColumnValue3)))
-                                .fetch()
-                                .intoMaps();
-        }
-        @Operation(
-                summary = "SQL rows from a master table or view between specified start and end date-times",
-                description = """
+        // Decode URL-encoded values
+        String decodedColumnValue1 = URLDecoder.decode(columnValue1, StandardCharsets.UTF_8);
+        String decodedColumnValue2 = URLDecoder.decode(columnValue2, StandardCharsets.UTF_8);
+        String decodedColumnValue3 = URLDecoder.decode(columnValue3, StandardCharsets.UTF_8);
+
+        // Fetch the result using the dynamically determined table and column; if
+        // jOOQ-generated types were found, automatic column value mapping will occur
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                masterTableNameOrViewName);
+        return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                .where(typableTable.column(columnName1).eq(decodedColumnValue1)
+                        .and(typableTable.column(columnName2).eq(decodedColumnValue2))
+                        .and(typableTable.column(columnName3).eq(decodedColumnValue3)))
+                .fetch()
+                .intoMaps();
+    }
+
+    @Operation(
+            summary = "SQL rows from a master table or view between specified start and end date-times",
+            description = """
                 Retrieves submission counts from a specified schema and view where the values in the date-time column `{dateField}` fall 
                 between the provided start date-time `{startDateTimeValue}` and end date-time `{endDateTimeValue}`. 
                 
@@ -148,81 +188,85 @@ public class TabularRowsController {
                 use those values in the respective fields. If no `{columnName1}` and `{columnValue1}` are provided, the API will only filter 
                 based on the date range.
                 """
-            )       
-            @GetMapping({
-                "/api/ux/tabular/jooq/{schemaName}/{viewName}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json",
-                "/api/ux/tabular/jooq/{schemaName}/{viewName}/{columnName1}/{columnValue1}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json"
-            })
-        @ResponseBody
-        public Object getSubmissionCountsBetweenDates(
-                        final @PathVariable(required = true) String schemaName,
-                        final @PathVariable String viewName,
-                        final @PathVariable(required = false) String columnName1, 
-                        final @PathVariable(required = false) String columnValue1,
-                        final @PathVariable String dateField, final @PathVariable String startDateTimeValue,
-                        final @PathVariable String endDateTimeValue) throws UnsupportedEncodingException {
+    )
+    @GetMapping({
+        "/api/ux/tabular/jooq/{schemaName}/{viewName}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json",
+        "/api/ux/tabular/jooq/{schemaName}/{viewName}/{columnName1}/{columnValue1}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json"
+    })
+    @ResponseBody
+    public Object getSubmissionCountsBetweenDates(
+            @Parameter(description = "Mandatory path variable to mention schema name.", required = true)
+            final @PathVariable(required = true) String schemaName,
+            @Parameter(description = "Path variable to mention the view name.", required = true)
+            final @PathVariable String viewName,
+            @Parameter(description = "Path variable to mention column 1 name.", required = false)
+            final @PathVariable(required = false) String columnName1,
+            @Parameter(description = "Path variable to mention column 1 value.", required = false)
+            final @PathVariable(required = false) String columnValue1,
+            @Parameter(description = "Path variable to mention date field.", required = false)
+            final @PathVariable String dateField,
+            @Parameter(description = "Path variable to mention the start date. Expected format is 'MM-dd-yyyy HH:mm:ss'", required = false)
+            final @PathVariable String startDateTimeValue,
+            @Parameter(description = "Path variable to mention the end date.. Expected format is 'MM-dd-yyyy HH:mm:ss'", required = false)
+            final @PathVariable String endDateTimeValue) throws UnsupportedEncodingException {
 
-                // URL decode the date-time values to handle spaces encoded as %20 or +
-                String decodedStartDate = URLDecoder.decode(startDateTimeValue, "UTF-8");
-                String decodedEndDate = URLDecoder.decode(endDateTimeValue, "UTF-8");
+        // URL decode the date-time values to handle spaces encoded as %20 or +
+        String decodedStartDate = URLDecoder.decode(startDateTimeValue, "UTF-8");
+        String decodedEndDate = URLDecoder.decode(endDateTimeValue, "UTF-8");
 
-                // Define the table from which you want to fetch the data
-                final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                                viewName);
+        // Define the table from which you want to fetch the data
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                viewName);
 
-                // Parse the decoded startDateValue and endDateValue into LocalDateTime
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
-                LocalDateTime startDateTime = LocalDateTime.parse(decodedStartDate, formatter); // Parse with time
-                                                                                                // included
-                LocalDateTime endDateTime = LocalDateTime.parse(decodedEndDate, formatter); // Parse with time included
+        // Parse the decoded startDateValue and endDateValue into LocalDateTime
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+        LocalDateTime startDateTime = LocalDateTime.parse(decodedStartDate, formatter); // Parse with time
+        // included
+        LocalDateTime endDateTime = LocalDateTime.parse(decodedEndDate, formatter); // Parse with time included
 
-                // Build the query
-                var query = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                                .where(typableTable.column(dateField).between(startDateTime, endDateTime));
+        // Build the query
+        var query = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                .where(typableTable.column(dateField).between(startDateTime, endDateTime));
 
-                // If columnName1 and columnValue1 are provided, add them to the query
-                if (columnName1 != null && !columnName1.isEmpty() && columnValue1 != null && !columnValue1.isEmpty()) {
-                        query = query.and(typableTable.column(columnName1).eq(columnValue1));
-                }
-
-                // Execute the query and return the results
-                return query.fetch().intoMaps();
-
+        // If columnName1 and columnValue1 are provided, add them to the query
+        if (columnName1 != null && !columnName1.isEmpty() && columnValue1 != null && !columnValue1.isEmpty()) {
+            query = query.and(typableTable.column(columnName1).eq(columnValue1));
         }
 
-        // @Operation(summary = "Get submission counts between startDate and endDate
-        // andd parameters")
-        // @GetMapping("/api/ux/tabular/jooq/{schemaName}/{viewName}/{columnName1}/{columnValue1}/{recently_created_at}/{startDateValue}/{endDateValue}.json")
-        // @ResponseBody
-        // public Object getSubmissionParamAndCountsBetweenDates(
-        // final @PathVariable(required = false) String schemaName,
-        // final @PathVariable String viewName, final @PathVariable String columnName1,
-        // final @PathVariable String columnValue1,
-        // final @PathVariable String recently_created_at, final @PathVariable String
-        // startDateValue,
-        // final @PathVariable String endDateValue) {
+        // Execute the query and return the results
+        return query.fetch().intoMaps();
 
-        // // Define the table from which you want to fetch the data
-        // final var typableTable =
-        // JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-        // viewName);
+    }
 
-        // // Parse the startDateValue and endDateValue into LocalDateTime
-        // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-        // LocalDateTime startDateTime = LocalDate.parse(startDateValue,
-        // formatter).atStartOfDay(); // Start of the
-        // // day
-        // LocalDateTime endDateTime = LocalDate.parse(endDateValue,
-        // formatter).atTime(23, 59, 59); // End of the
-        // // day
-
-        // // Execute the query using jOOQ
-        // return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-        // .where(typableTable.column(recently_created_at).between(startDateTime,
-        // endDateTime))
-        // .and(typableTable.column(columnName1).eq(columnValue1))
-        // .fetch()
-        // .intoMaps(); // Convert the result to a map or any other desired format
-        // }
-
+    // @Operation(summary = "Get submission counts between startDate and endDate
+    // andd parameters")
+    // @GetMapping("/api/ux/tabular/jooq/{schemaName}/{viewName}/{columnName1}/{columnValue1}/{recently_created_at}/{startDateValue}/{endDateValue}.json")
+    // @ResponseBody
+    // public Object getSubmissionParamAndCountsBetweenDates(
+    // final @PathVariable(required = false) String schemaName,
+    // final @PathVariable String viewName, final @PathVariable String columnName1,
+    // final @PathVariable String columnValue1,
+    // final @PathVariable String recently_created_at, final @PathVariable String
+    // startDateValue,
+    // final @PathVariable String endDateValue) {
+    // // Define the table from which you want to fetch the data
+    // final var typableTable =
+    // JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+    // viewName);
+    // // Parse the startDateValue and endDateValue into LocalDateTime
+    // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+    // LocalDateTime startDateTime = LocalDate.parse(startDateValue,
+    // formatter).atStartOfDay(); // Start of the
+    // // day
+    // LocalDateTime endDateTime = LocalDate.parse(endDateValue,
+    // formatter).atTime(23, 59, 59); // End of the
+    // // day
+    // // Execute the query using jOOQ
+    // return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+    // .where(typableTable.column(recently_created_at).between(startDateTime,
+    // endDateTime))
+    // .and(typableTable.column(columnName1).eq(columnValue1))
+    // .fetch()
+    // .intoMaps(); // Convert the result to a map or any other desired format
+    // }
 }
