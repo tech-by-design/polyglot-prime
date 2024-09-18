@@ -136,7 +136,7 @@ public class OrchestrationEngine {
         return Collections.unmodifiableList(sessions);
     }
 
-    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
+    public void orchestrate(@NotNull final OrchestrationSession... sessions) {
         for (final OrchestrationSession session : sessions) {
             session.validate();
             this.sessions.add(session);
@@ -279,13 +279,14 @@ public class OrchestrationEngine {
                 response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 bundleJson = response.body();
             } catch (Exception e) {
-                LOG.error("OrchestrationEngine ::  readJsonFromUrl {}: Failed to parse url ", url, e);
+                LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse url ", url, e);
+
             }
             LOG.info("OrchestrationEngine ::  readJsonFromUrl END:");
             return bundleJson;
-        }
+        }  
 
-        private synchronized void addStructureDefinitions(
+        private void addStructureDefinitions(
                 final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions Begin:");
             if (null != structureDefinitionUrls) {
@@ -308,7 +309,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions End : ");
         }
 
-        private synchronized void addCodeSystems(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private void addCodeSystems(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addCodeSystems Begin:");
             if (null != codeSystemUrls) {
                 LOG.info(
@@ -329,7 +330,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addCodeSystems End : ");
         }
 
-        private synchronized void addValueSets(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private void addValueSets(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addValueSets Begin:");
             if (null != valueSetUrls) {
                 LOG.info(
@@ -351,7 +352,7 @@ public class OrchestrationEngine {
         }
 
         @Override
-        public synchronized OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
+        public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
                 final var supportChain = new ValidationSupportChain();
@@ -885,7 +886,7 @@ public class OrchestrationEngine {
             return igVersion;
         }
 
-        public synchronized void validate() {
+        public void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
                     final ValidationResult result = engine.validate(payload);
