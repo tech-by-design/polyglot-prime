@@ -136,7 +136,7 @@ public class OrchestrationEngine {
         return Collections.unmodifiableList(sessions);
     }
 
-    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
+    public void orchestrate(@NotNull final OrchestrationSession... sessions) {
         for (final OrchestrationSession session : sessions) {
             session.validate();
             this.sessions.add(session);
@@ -268,24 +268,68 @@ public class OrchestrationEngine {
         }
 
         private String readJsonFromUrl(final String url) {
-            LOG.info("OrchestrationEngine ::  readJsonFromUrl Begin:");
-            final var client = HttpClient.newHttpClient();
+
+            LOG.info("OrchestrationEngine :: readJsonFromUrl Begin:");
+            final int RETRY_COUNT = 1;
+            final long FIXED_TIMEOUT_MS = 3000; // Fixed timeout of 5 seconds
+            final var client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10)) // Connection timeout
+                    .build();
+
             final var request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(10)) // Request timeout
                     .build();
+
             String bundleJson = "";
-            HttpResponse<String> response;
-            try {
-                response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                bundleJson = response.body();
-            } catch (Exception e) {
-                LOG.error("OrchestrationEngine ::  readJsonFromUrl {}: Failed to parse url ", url, e);
+            int attempt = 0;
+
+            while (attempt <= RETRY_COUNT) {
+                attempt++;
+                try {
+                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    int statusCode = response.statusCode();
+
+                    // Check if the response is successful (2xx status code)
+                    if (statusCode == 200) {
+                        bundleJson = response.body();
+                        break; // Success, no need to retry
+                    } else {
+                        LOG.warn("OrchestrationEngine :: readJsonFromUrl {} : Failed with status code " + statusCode,
+                                url);
+                    }
+                } catch (Exception e) { // Catch all exceptions
+                    LOG.error("OrchestrationEngine :: readJsonFromUrl {} : Error occurred on attempt " + attempt + " - "
+                            + e.getMessage(), url);
+                    // Restore interrupted state if the thread was interrupted
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
+                // Retry logic (only one retry)
+                if (attempt <= RETRY_COUNT) {
+                    try {
+                        LOG.info("OrchestrationEngine :: readJsonFromUrl {} : Retrying after " + FIXED_TIMEOUT_MS
+                                + "ms...", url);
+                        Thread.sleep(FIXED_TIMEOUT_MS); // Fixed timeout between retries
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
-            LOG.info("OrchestrationEngine ::  readJsonFromUrl END:");
+
+            if (bundleJson.isEmpty()) {
+                LOG.error("OrchestrationEngine :: readJsonFromUrl {}: Failed to retrieve JSON after " + RETRY_COUNT
+                        + " retries.", url);
+            }
+
+            LOG.info("OrchestrationEngine :: readJsonFromUrl END:");
             return bundleJson;
         }
 
-        private synchronized void addStructureDefinitions(
+        private void addStructureDefinitions(
                 final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions Begin:");
             if (null != structureDefinitionUrls) {
@@ -308,7 +352,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addStructureDefinitions End : ");
         }
 
-        private synchronized void addCodeSystems(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private void addCodeSystems(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addCodeSystems Begin:");
             if (null != codeSystemUrls) {
                 LOG.info(
@@ -329,7 +373,7 @@ public class OrchestrationEngine {
             LOG.info("OrchestrationEngine ::  addCodeSystems End : ");
         }
 
-        private synchronized void addValueSets(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+        private void addValueSets(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
             LOG.info("OrchestrationEngine ::  addValueSets Begin:");
             if (null != valueSetUrls) {
                 LOG.info(
@@ -351,7 +395,7 @@ public class OrchestrationEngine {
         }
 
         @Override
-        public synchronized OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
+        public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
             final var initiatedAt = Instant.now();
             try {
                 final var supportChain = new ValidationSupportChain();
@@ -885,7 +929,7 @@ public class OrchestrationEngine {
             return igVersion;
         }
 
-        public synchronized void validate() {
+        public void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
                     final ValidationResult result = engine.validate(payload);
