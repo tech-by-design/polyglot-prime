@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-09-18<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.230.0</li>
+          <li id="projectVersion">Version: 0.231.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -140,27 +140,27 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
-<td>140</td></tr>
+<td>134</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
-<td>401</td></tr>
+<td>389</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>.withFhirValueSetUrls(valueSetUrls)
-                        .addHapiValidationEngine() // by default
-                        // clearExisting is set to true so engines can be fully supplied through header
-                        .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-                final var session = sessionBuilder.build();
-                engine.orchestrate(session);
-                session.getValidationResults().stream()
-                        .map(OrchestrationEngine.ValidationResult::getIssues)
-                        .filter(CollectionUtils::isNotEmpty)
-                        .flatMap(List::stream)
-                        .toList().stream()
-                        .filter(issue -&gt; (ResultSeverityEnum.FATAL.getCode()
-                                .equalsIgnoreCase(issue.getSeverity())))
-                        .forEach(c -&gt; {
-                            LOG.error(</pre></td></tr></table></section></section>
+                .addHapiValidationEngine() // by default
+                // clearExisting is set to true so engines can be fully supplied through header
+                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+        final var session = sessionBuilder.build();
+        engine.orchestrate(session);
+        session.getValidationResults().stream()
+                .map(OrchestrationEngine.ValidationResult::getIssues)
+                .filter(CollectionUtils::isNotEmpty)
+                .flatMap(List::stream)
+                .toList().stream()
+                .filter(issue -&gt; (ResultSeverityEnum.FATAL.getCode()
+                        .equalsIgnoreCase(issue.getSeverity())))
+                .forEach(c -&gt; {
+                        LOG.error(</pre></td></tr></table></section></section>
         </main>
       </div>
     </div>
