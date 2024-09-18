@@ -282,7 +282,7 @@ public class OrchestrationEngine {
                 response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 bundleJson = response.body();
             } catch (Exception e) {
-                LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse url ", url, e);
+                LOG.error("VALIDATION ERROR:: OrchestrationEngine ::  readJsonFromUrl : Failed to parse url ", url, e);
                 bundleJson = "";
             }
             LOG.info("OrchestrationEngine ::  readJsonFromUrl END:");
@@ -300,10 +300,14 @@ public class OrchestrationEngine {
                     LOG.info("Adding  Structure Definition URL Begin: ", structureDefintionUrl);
                     final var jsonContent = readJsonFromUrl(structureDefintionUrl);
                     if (!"".equals(jsonContent)) {
+                        try {
                         final var structureDefinition = fhirContext.newJsonParser().parseResource(
                                 StructureDefinition.class,
                                 jsonContent);
                         prePopulatedValidationSupport.addStructureDefinition(structureDefinition);
+                        } catch (Exception e) {
+                            LOG.error("VALIDATION ERROR:: OrchestrationEngine ::  addStructureDefinitions : Failed to add structure definition ", structureDefintionUrl, e);
+                        }
                     }
                     LOG.info("Structure Defintion URL {} added to prePopulatedValidationSupport: ",
                             structureDefintionUrl);
@@ -351,7 +355,7 @@ public class OrchestrationEngine {
                             prePopulatedValidationSupport.addStructureDefinition(structureDefinition);
                             count.incrementAndGet();
                         } catch (Exception e) {
-                            LOG.error("ERROR:: OrchestrationEngine :: addStructureDefinitionsFromLocal Failed to process structure definition: " + structureDefinitionPath, e);
+                            LOG.error("VALIDATION ERROR:: OrchestrationEngine :: addStructureDefinitionsFromLocal Failed to process structure definition: " + structureDefinitionPath, e);
                         }
                         LOG.info("OrchestrationEngine :: addStructureDefinitionsFromLocal Adding  Structure Definition from path {} End: ", structureDefinitionPath);
                     });
@@ -359,7 +363,7 @@ public class OrchestrationEngine {
                     LOG.info("OrchestrationEngine :: addStructureDefinitionsFromLocal  End: No of structure definitions added : " + count.get());
                 }
             } catch (Exception e) {
-                LOG.error("ERROR:: OrchestrationEngine :: addStructureDefinitionsFromLocal - Failed to load structure definitions from directory", e);
+                LOG.error("VALIDATION ERROR:: OrchestrationEngine :: addStructureDefinitionsFromLocal - Failed to load structure definitions from directory", e);
             }
         }
 
@@ -368,7 +372,7 @@ public class OrchestrationEngine {
         
             try {
                 // Collect the files into a List
-                List<String> valueSetPaths = loadFilesFromDirectory("ig-artifacts/structure-definitions")
+                List<String> valueSetPaths = loadFilesFromDirectory("ig-artifacts/value-sets")
                         .collect(Collectors.toList());
         
                 if (!valueSetPaths.isEmpty()) {
@@ -386,7 +390,7 @@ public class OrchestrationEngine {
                             prePopulatedValidationSupport.addValueSet(valueSet);
                             count.incrementAndGet();
                         } catch (Exception e) {
-                            LOG.error("ERROR:: OrchestrationEngine :: addValueSetsFromLocal Failed to process value set: " + valueSetPath, e);
+                            LOG.error("VALIDATION ERROR:: OrchestrationEngine :: addValueSetsFromLocal Failed to process value set: " + valueSetPath, e);
                         }
                         LOG.info("OrchestrationEngine :: addValueSetsFromLocal Adding value set from path {} End: ", valueSetPath);
                     });
@@ -394,7 +398,42 @@ public class OrchestrationEngine {
                     LOG.info("OrchestrationEngine :: addValueSetsFromLocal  End: No of value set added : " + count.get());
                 }
             } catch (Exception e) {
-                LOG.error("ERROR:: OrchestrationEngine :: addValueSetsFromLocal - Failed to load value set from directory", e);
+                LOG.error("VALIDATION ERROR:: OrchestrationEngine :: addValueSetsFromLocal - Failed to load value set from directory", e);
+            }
+        }
+
+        private void addCodesSystemsFromLocal(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+            LOG.info("OrchestrationEngine :: addCodesSystemsFromLocal Begin:");
+        
+            try {
+                // Collect the files into a List
+                List<String> codeSystemPaths = loadFilesFromDirectory("ig-artifacts/code-systems")
+                        .collect(Collectors.toList());
+        
+                if (!codeSystemPaths.isEmpty()) {
+                    AtomicInteger count = new AtomicInteger();
+        
+                    LOG.info("OrchestrationEngine :: addCodesSystemsFromLocal Begin: No of code systems to be added : " + codeSystemPaths.size());
+        
+                    // Process each structure definition
+                    codeSystemPaths.forEach(codeSystemPath -> {
+                        LOG.info("OrchestrationEngine :: addCodesSystemsFromLocal Adding  code system from path {} Begin: ", codeSystemPath);
+                        try {
+                            final var jsonContent = loadFile(codeSystemPath);
+                            final var codeSystem = fhirContext.newJsonParser().parseResource(CodeSystem.class,
+                            jsonContent);
+                            prePopulatedValidationSupport.addCodeSystem(codeSystem);
+                            count.incrementAndGet();
+                        } catch (Exception e) {
+                            LOG.error("VALIDATION ERROR:: OrchestrationEngine :: addCodesSystemsFromLocal Failed to process code system : " + codeSystemPath, e);
+                        }
+                        LOG.info("OrchestrationEngine :: addCodesSystemsFromLocal Adding code system from path {} End: ", codeSystemPath);
+                    });
+        
+                    LOG.info("OrchestrationEngine :: addCodesSystemsFromLocal  End: No of code system added : " + count.get());
+                }
+            } catch (Exception e) {
+                LOG.error("VALIDATION ERROR:: OrchestrationEngine :: addCodesSystemsFromLocal - Failed to load code system from directory", e);
             }
         }
 
@@ -420,9 +459,13 @@ public class OrchestrationEngine {
                     LOG.info("Adding  Code System URL Begin: ", codeSystemUrl);
                     final var jsonContent = readJsonFromUrl(codeSystemUrl);
                     if (!"".equals(jsonContent)) {
+                        try {
                         final var codeSystem = fhirContext.newJsonParser().parseResource(CodeSystem.class,
                                 jsonContent);
                         prePopulatedValidationSupport.addCodeSystem(codeSystem);
+                        } catch (Exception e) {
+                            LOG.error("VALIDATION ERROR:: OrchestrationEngine ::  addCodeSystems : Failed to add code system url ", codeSystemUrl, e);
+                        }
                     }
                     LOG.info("Code System URL {} added to prePopulatedValidationSupport: ",
                             codeSystemUrl);
@@ -441,9 +484,13 @@ public class OrchestrationEngine {
                     LOG.info("Adding  Value System URL Begin: ", valueSetUrl);
                     final var jsonContent = readJsonFromUrl(valueSetUrl);
                     if (!"".equals(jsonContent)) {
+                        try {
                         final var valueSet = fhirContext.newJsonParser().parseResource(ValueSet.class,
                                 jsonContent);
                         prePopulatedValidationSupport.addValueSet(valueSet);
+                        } catch (Exception e) {
+                            LOG.error("VALIDATION ERROR:: OrchestrationEngine ::  addValueSets : Failed to add code system url ", valueSetUrl, e);
+                        }
                     }
                     LOG.info("Value Set URL {} added to prePopulatedValidationSupport: ",
                             valueSetUrl);
@@ -482,6 +529,10 @@ public class OrchestrationEngine {
                 LOG.info("Add code systems of shinny IG -BEGIN");
                 addCodeSystems(prePopulatedSupport);
                 LOG.info("Add code systems of shinny IG -END");
+                // Add all resource profile code systems from local
+                LOG.info("Add code systems from local -BEGIN");
+                addCodesSystemsFromLocal(prePopulatedSupport);
+                LOG.info("Add code systems from local -END");
                 // Add all resource profile value sets
                 LOG.info("Add value sets of shinny IG -BEGIN");
                 addValueSets(prePopulatedSupport);

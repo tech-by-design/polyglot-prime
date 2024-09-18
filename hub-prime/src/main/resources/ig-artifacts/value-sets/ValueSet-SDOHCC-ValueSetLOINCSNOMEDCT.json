@@ -1,0 +1,44 @@
+{
+  "resourceType" : "ValueSet",
+  "id" : "SDOHCC-ValueSetLOINCSNOMEDCT",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This value set includes codes based on the following rules:</p><ul><li>Include all codes defined in <a href=\"http://loinc.org\"><code>http://loinc.org</code></a></li><li>Include all codes defined in <a href=\"http://www.snomed.org/\"><code>http://snomed.info/sct</code></a></li></ul></div>"
+  },
+  "url" : "http://hl7.org/fhir/us/sdoh-clinicalcare/ValueSet/SDOHCC-ValueSetLOINCSNOMEDCT",
+  "version" : "2.1.0",
+  "name" : "SDOHCCValueSetLOINCSNOMEDCT",
+  "title" : "SDOHCC ValueSet LOINC SNOMEDCT",
+  "status" : "draft",
+  "experimental" : false,
+  "date" : "2023-07-27T20:42:33+00:00",
+  "publisher" : "HL7 International Patient Care WG",
+  "contact" : [{
+    "name" : "HL7 International Patient Care WG",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://www.hl7.org/Special/committees/patientcare"
+    },
+    {
+      "system" : "email",
+      "value" : "patientcare@lists.hl7.org"
+    }]
+  }],
+  "description" : "This value set contains all of LOINC and SNOMED CT.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "urn:iso:std:iso:3166",
+      "code" : "US",
+      "display" : "United States of America"
+    }]
+  }],
+  "copyright" : "This material contains content from LOINC (http://loinc.org). LOINC is copyright © 1995-2020, Regenstrief Institute, Inc. and the Logical Observation Identifiers Names and Codes (LOINC) Committee and is available at no cost under the license at http://loinc.org/license. LOINC® is a registered United States trademark of Regenstrief Institute, Inc. This value set includes content from SNOMED CT, which is copyright © 2002+ International Health Terminology Standards Development Organisation (IHTSDO), and distributed by agreement between IHTSDO and HL7. Implementer use of SNOMED CT is not covered by this agreement",
+  "compose" : {
+    "include" : [{
+      "system" : "http://loinc.org"
+    },
+    {
+      "system" : "http://snomed.info/sct"
+    }]
+  }
+}
