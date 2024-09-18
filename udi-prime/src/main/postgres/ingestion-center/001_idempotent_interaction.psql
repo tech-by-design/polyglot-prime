@@ -2600,7 +2600,7 @@ AS SELECT sat_interaction_fhir_request_id,
     patient_id,
     payload,
     patient_mrn,
-    CONCAT_WS('-', tenant_id, organization_id, patient_mrn) AS source_mrn
-   	FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
-  	WHERE (to_state = 'FAIL'::text OR to_state = 'COMPLETE'::text) AND passed = FALSE
-  	;
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
+    (SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ') FROM jsonb_each_text((payload->>'responseBody')::jsonb) AS json_data(key, value)) AS response_body_details
+   FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
+  WHERE (to_state = 'FAIL'::text OR to_state = 'COMPLETE'::text) AND passed = false;
