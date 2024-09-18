@@ -17,7 +17,7 @@ jobs:
     synthetic-techbd-devl-deployment:
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
 
         - name: Configure Git
           run: |
@@ -43,7 +43,7 @@ jobs:
     synthetic-techbd-stage-deployment:
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
 
         - name: Configure Git
           run: |
@@ -82,7 +82,7 @@ jobs:
     synthetic-techbd-prod-deployment:
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
 
         - name: Configure Git
           run: |
