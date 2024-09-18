@@ -268,66 +268,23 @@ public class OrchestrationEngine {
         }
 
         private String readJsonFromUrl(final String url) {
-
-            LOG.info("OrchestrationEngine :: readJsonFromUrl Begin:");
-            final int RETRY_COUNT = 1;
-            final long FIXED_TIMEOUT_MS = 3000; // Fixed timeout of 5 seconds
-            final var client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10)) // Connection timeout
-                    .build();
-
+            LOG.info("OrchestrationEngine ::  readJsonFromUrl Begin:");
+            final var client = HttpClient.newHttpClient();
             final var request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(10)) // Request timeout
                     .build();
-
             String bundleJson = "";
-            int attempt = 0;
+            HttpResponse<String> response;
+            try {
+                response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                bundleJson = response.body();
+            } catch (Exception e) {
+                LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse url ", url, e);
 
-            while (attempt <= RETRY_COUNT) {
-                attempt++;
-                try {
-                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                    int statusCode = response.statusCode();
-
-                    // Check if the response is successful (2xx status code)
-                    if (statusCode == 200) {
-                        bundleJson = response.body();
-                        break; // Success, no need to retry
-                    } else {
-                        LOG.warn("OrchestrationEngine :: readJsonFromUrl {} : Failed with status code " + statusCode,
-                                url);
-                    }
-                } catch (Exception e) { // Catch all exceptions
-                    LOG.error("OrchestrationEngine :: readJsonFromUrl {} : Error occurred on attempt " + attempt + " - "
-                            + e.getMessage(), url);
-                    // Restore interrupted state if the thread was interrupted
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-
-                // Retry logic (only one retry)
-                if (attempt <= RETRY_COUNT) {
-                    try {
-                        LOG.info("OrchestrationEngine :: readJsonFromUrl {} : Retrying after " + FIXED_TIMEOUT_MS
-                                + "ms...", url);
-                        Thread.sleep(FIXED_TIMEOUT_MS); // Fixed timeout between retries
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
             }
-
-            if (bundleJson.isEmpty()) {
-                LOG.error("OrchestrationEngine :: readJsonFromUrl {}: Failed to retrieve JSON after " + RETRY_COUNT
-                        + " retries.", url);
-            }
-
-            LOG.info("OrchestrationEngine :: readJsonFromUrl END:");
+            LOG.info("OrchestrationEngine ::  readJsonFromUrl END:");
             return bundleJson;
-        }
+        }  
 
         private void addStructureDefinitions(
                 final PrePopulatedValidationSupport prePopulatedValidationSupport) {
