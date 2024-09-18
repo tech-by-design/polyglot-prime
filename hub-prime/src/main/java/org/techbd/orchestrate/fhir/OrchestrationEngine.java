@@ -1,15 +1,21 @@
 package org.techbd.orchestrate.fhir;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.net.http.HttpTimeoutException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -19,10 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
@@ -36,9 +42,6 @@ import org.hl7.fhir.r4.model.StructureDefinition;
 import org.hl7.fhir.r4.model.ValueSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.Hl7ValidationEngineApi;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.Hl7ValidationEngineEmbedded;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -280,11 +283,11 @@ public class OrchestrationEngine {
                 bundleJson = response.body();
             } catch (Exception e) {
                 LOG.error("OrchestrationEngine ::  readJsonFromUrl : Failed to parse url ", url, e);
-
+                bundleJson = "";
             }
             LOG.info("OrchestrationEngine ::  readJsonFromUrl END:");
             return bundleJson;
-        }  
+        }
 
         private void addStructureDefinitions(
                 final PrePopulatedValidationSupport prePopulatedValidationSupport) {
@@ -307,6 +310,104 @@ public class OrchestrationEngine {
                 });
             }
             LOG.info("OrchestrationEngine ::  addStructureDefinitions End : ");
+        }
+        private String loadFile(String filename) throws IOException {
+            final var inputStream = getClass().getClassLoader().getResourceAsStream(filename);
+            if (inputStream == null) {
+                    throw new IOException("Failed to load the file: " + filename);
+            }
+
+            try (final var reader = new BufferedReader(
+                            new InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8))) {
+                    final var content = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                            content.append(line).append(System.lineSeparator());
+                    }
+                    return content.toString();
+            }
+    }
+        private void addStructureDefinitionsFromLocal(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+            LOG.info("OrchestrationEngine :: addStructureDefinitionsFromLocal Begin:");
+        
+            try {
+                // Collect the files into a List
+                List<String> structureDefinitionPaths = loadFilesFromDirectory("ig-artifacts/structure-definitions")
+                        .collect(Collectors.toList());
+        
+                if (!structureDefinitionPaths.isEmpty()) {
+                    AtomicInteger count = new AtomicInteger();
+        
+                    LOG.info("OrchestrationEngine :: addStructureDefinitionsFromLocal Begin: No of structure definitions to be added : " + structureDefinitionPaths.size());
+        
+                    // Process each structure definition
+                    structureDefinitionPaths.forEach(structureDefinitionPath -> {
+                        LOG.info("OrchestrationEngine :: addStructureDefinitionsFromLocal Adding  Structure Definition from path {} Begin: ", structureDefinitionPath);
+                        try {
+                            final var jsonContent = loadFile(structureDefinitionPath);
+                            final var structureDefinition = fhirContext.newJsonParser().parseResource(
+                                    StructureDefinition.class,
+                                    jsonContent);
+                            prePopulatedValidationSupport.addStructureDefinition(structureDefinition);
+                            count.incrementAndGet();
+                        } catch (Exception e) {
+                            LOG.error("ERROR:: OrchestrationEngine :: addStructureDefinitionsFromLocal Failed to process structure definition: " + structureDefinitionPath, e);
+                        }
+                        LOG.info("OrchestrationEngine :: addStructureDefinitionsFromLocal Adding  Structure Definition from path {} End: ", structureDefinitionPath);
+                    });
+        
+                    LOG.info("OrchestrationEngine :: addStructureDefinitionsFromLocal  End: No of structure definitions added : " + count.get());
+                }
+            } catch (Exception e) {
+                LOG.error("ERROR:: OrchestrationEngine :: addStructureDefinitionsFromLocal - Failed to load structure definitions from directory", e);
+            }
+        }
+
+        private void addValueSetsFromLocal(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
+            LOG.info("OrchestrationEngine :: addValueSetsFromLocal Begin:");
+        
+            try {
+                // Collect the files into a List
+                List<String> valueSetPaths = loadFilesFromDirectory("ig-artifacts/structure-definitions")
+                        .collect(Collectors.toList());
+        
+                if (!valueSetPaths.isEmpty()) {
+                    AtomicInteger count = new AtomicInteger();
+        
+                    LOG.info("OrchestrationEngine :: addValueSetsFromLocal Begin: No of value sets to be added : " + valueSetPaths.size());
+        
+                    // Process each structure definition
+                    valueSetPaths.forEach(valueSetPath -> {
+                        LOG.info("OrchestrationEngine :: addValueSetsFromLocal Adding  value set from path {} Begin: ", valueSetPath);
+                        try {
+                            final var jsonContent = loadFile(valueSetPath);
+                            final var valueSet = fhirContext.newJsonParser().parseResource(ValueSet.class,
+                                jsonContent);
+                            prePopulatedValidationSupport.addValueSet(valueSet);
+                            count.incrementAndGet();
+                        } catch (Exception e) {
+                            LOG.error("ERROR:: OrchestrationEngine :: addValueSetsFromLocal Failed to process value set: " + valueSetPath, e);
+                        }
+                        LOG.info("OrchestrationEngine :: addValueSetsFromLocal Adding value set from path {} End: ", valueSetPath);
+                    });
+        
+                    LOG.info("OrchestrationEngine :: addValueSetsFromLocal  End: No of value set added : " + count.get());
+                }
+            } catch (Exception e) {
+                LOG.error("ERROR:: OrchestrationEngine :: addValueSetsFromLocal - Failed to load value set from directory", e);
+            }
+        }
+
+        private static Stream<String> loadFilesFromDirectory(String directory) throws IOException, URISyntaxException {
+            URL url = OrchestrationEngine.class.getClassLoader().getResource(directory);
+            if (url == null) {
+                throw new IOException("Directory not found: " + directory);
+            }
+            Path path = Paths.get(url.toURI());
+            return Files.walk(path)
+                    .filter(Files::isRegularFile)
+                    .map(Path::toString)
+                    .map(p -> directory + "/" + path.relativize(Paths.get(p)).toString().replace("\\", "/"));
         }
 
         private void addCodeSystems(final PrePopulatedValidationSupport prePopulatedValidationSupport) {
@@ -369,19 +470,26 @@ public class OrchestrationEngine {
                 igVersion = structureDefinition.getVersion();
                 // Add Shinny Bundle Profile structure definitions Url
                 prePopulatedSupport.addStructureDefinition(structureDefinition);
-                // Add all resource profile structure definitions
+                // Add all resource profile structure definitions from local
                 LOG.info("Add structure definition of shinny IG -BEGIN");
                 addStructureDefinitions(prePopulatedSupport);
                 LOG.info("Add structure definition of shinny IG -END");
                 // Add all resource profile structure definitions
+                LOG.info("Add structure definition from Local Folder -BEGIN");
+                addStructureDefinitionsFromLocal(prePopulatedSupport);
+                LOG.info("Add structure definition from Local Folder -END");
+                // Add all resource profile code systems
                 LOG.info("Add code systems of shinny IG -BEGIN");
                 addCodeSystems(prePopulatedSupport);
                 LOG.info("Add code systems of shinny IG -END");
-                // Add all resource profile structure definitions
+                // Add all resource profile value sets
                 LOG.info("Add value sets of shinny IG -BEGIN");
                 addValueSets(prePopulatedSupport);
                 LOG.info("Add value sets of shinny IG -END");
-
+                LOG.info("Add value sets from local -BEGIN");
+                addValueSetsFromLocal(prePopulatedSupport);
+                LOG.info("Add value sets from local -END");
+                
                 supportChain.addValidationSupport(prePopulatedSupport);
                 // final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(supportChain);
