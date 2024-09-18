@@ -75,7 +75,7 @@
 <tr class="b">
 <td style="text-align: left;">6</td>
 <td>0</td>
-<td>51</td>
+<td>47</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -112,7 +112,7 @@
 <tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FTabularRowsController.java">org/techbd/service/http/hub/prime/ux/TabularRowsController.java</a></td>
 <td>0</td>
-<td>7</td>
+<td>3</td>
 <td>0</td></tr></table></section><section>
 <h2>Rules</h2><a id="Rules"></a>
 <table class="table table-striped">
@@ -121,6 +121,23 @@
 <th>Rule</th>
 <th>Violations</th>
 <th>Severity</th></tr>
+<tr class="b">
+<td style="text-align: left;">annotation</td>
+<td><a class="externalLink" href="https://checkstyle.org/config_annotation.html#AnnotationLocation">AnnotationLocation</a>
+<ul>
+<li>allowSamelineMultipleAnnotations: <code>&quot;true&quot;</code></li>
+<li>tokens: <code>&quot;VARIABLE_DEF&quot;</code></li>
+<li>id: <code>&quot;AnnotationLocationVariables&quot;</code></li></ul></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_annotation.html#AnnotationLocation">AnnotationLocation</a>
+<ul>
+<li>tokens: <code>&quot;CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF&quot;</code></li>
+<li>id: <code>&quot;AnnotationLocationMostCases&quot;</code></li></ul></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="b">
 <td style="text-align: left;">blocks</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_blocks.html#NeedBraces">NeedBraces</a></td>
@@ -173,17 +190,9 @@
 <li>allowNoEmptyLineBetweenFields: <code>&quot;true&quot;</code></li>
 <li>allowMultipleEmptyLines: <code>&quot;false&quot;</code></li>
 <li>allowMultipleEmptyLinesInsideClassMembers: <code>&quot;false&quot;</code></li></ul></td>
-<td>10</td>
+<td>11</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="b">
-<td style="text-align: left;"></td>
-<td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#OperatorWrap">OperatorWrap</a>
-<ul>
-<li>tokens: <code>&quot;BAND, BOR, BSR, BXOR, DIV, EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF, LOR,                     LT, MINUS, MOD, NOT_EQUAL, PLUS, QUESTION, SL, SR, STAR, METHOD_REF &quot;</code></li>
-<li>option: <code>&quot;NL&quot;</code></li></ul></td>
-<td>6</td>
-<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#WhitespaceAround">WhitespaceAround</a>
 <ul>
@@ -510,45 +519,21 @@
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
-<td>OperatorWrap</td>
-<td>'+' should be on a new line.</td>
-<td>44</td></tr>
+<td>EmptyLineSeparator</td>
+<td>'METHOD_DEF' should be separated from previous line.</td>
+<td>138</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>OperatorWrap</td>
-<td>'+' should be on a new line.</td>
-<td>45</td></tr>
-<tr class="b">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>OperatorWrap</td>
-<td>'+' should be on a new line.</td>
-<td>46</td></tr>
-<tr class="a">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>OperatorWrap</td>
-<td>'+' should be on a new line.</td>
-<td>71</td></tr>
-<tr class="b">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>OperatorWrap</td>
-<td>'+' should be on a new line.</td>
-<td>92</td></tr>
-<tr class="a">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>OperatorWrap</td>
-<td>'+' should be on a new line.</td>
-<td>116</td></tr>
+<td>annotation</td>
+<td>AnnotationLocation</td>
+<td>Annotation 'GetMapping' have incorrect indentation level 12, expected level should be 8.</td>
+<td>152</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>indentation</td>
 <td>CommentsIndentation</td>
-<td>Comment has incorrect indentation level 96, expected is 16, indentation should be the same level as line 165.</td>
-<td>164</td></tr></table></section></section></section>
+<td>Comment has incorrect indentation level 96, expected is 16, indentation should be the same level as line 177.</td>
+<td>176</td></tr></table></section></section></section>
         </main>
       </div>
     </div>
