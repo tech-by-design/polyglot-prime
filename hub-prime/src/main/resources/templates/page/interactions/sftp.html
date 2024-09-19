@@ -68,8 +68,9 @@
                 let originalData = [];
 
                 var columnDefs = [
-                    { headerName: "QE", field: "tenantId", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true},
-                    { headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true,
+                    { headerName: "QE", field: "tenantId", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true },
+                    {
+                        headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true,
                         valueFormatter: function (params) {
                             if (params.value) {
                                 let date = new Date(params.value);
@@ -91,7 +92,7 @@
                                 return formattedDate;
                             }
                             return '';
-                        } 
+                        }
                     },
                     {
                         headerName: "Session ID", field: "sessionId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true,
@@ -112,8 +113,9 @@
                     { headerName: "Ingress Count", field: "ingressCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "Consumed CSV", field: "consumedCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "FHIR POSTs", field: "publishedFhirCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
-                    { headerName: "FHIR POSTs Failed", field: "publishedFhirFailedCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true, cellRenderer: function (params) {
-                            if(parseInt(params.value) > 0){
+                    {
+                        headerName: "FHIR POSTs Failed", field: "publishedFhirFailedCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true, cellRenderer: function (params) {
+                            if (parseInt(params.value) > 0) {
                                 var link = document.createElement('a');
                                 link.href = '#';
                                 link.innerText = params.value;
@@ -124,10 +126,11 @@
                                 });
                                 link.style.textDecoration = 'underline';
                                 return link;
-                            }else{
+                            } else {
                                 return params.value
-                            }                            
-                        } },
+                            }
+                        }
+                    },
                     { headerName: "FHIR POSTs Success", field: "publishedFhirSuccessCount", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                     { headerName: "Exception", field: "exception", sortable: true, filter: true, enablePivot: true, enableRowGroup: true },
                 ];
@@ -175,19 +178,24 @@
                                     }
                                     if (!response?.scoredcardResponse?.includes('TestResult: PASS')) {
                                         publishedFhirFailedCount++;
-                                        if(response.bundleID){
+                                        if (response && response.bundleID) {
                                             publishedFhirFailedResponse.push({
                                                 "File": r.fhirFileName,
                                                 "Response": response.scoredcardResponse,
                                                 "BundleID": response.bundleID
                                             });
-                                        }else{
+                                        } else if (response && response.error) {
                                             publishedFhirFailedResponse.push({
                                                 "File": r.fhirFileName,
-                                                "Error":response.error
+                                                "Error": response.error
+                                            });
+                                        } else {
+                                            publishedFhirFailedResponse.push({
+                                                "File": r.fhirFileName,
+                                                "Response": "None" 
                                             });
                                         }
-                                            
+
                                     } else {
                                         publishedFhirSuccessCount++;
                                     }
