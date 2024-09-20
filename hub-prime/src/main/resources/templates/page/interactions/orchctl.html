@@ -22,14 +22,13 @@
                 .withColumnDefs([
                     { headerName: "QE", field: "qe", filter: "agTextColumnFilter" },
                     {
-                        headerName: "Request Time", field: "request_time",
+                        headerName: "Request Time", field: "request_time",sortable: true,  sort: "desc",
                         valueFormatter: AGGridAide.dateTimeValueFormatter(false),
                         filter: "agTextColumnFilter"
                     },
                     {
                         headerName: "Session ID", field: "session_id",
-                        filter: "agTextColumnFilter",
-                        sort: "desc",
+                        filter: "agTextColumnFilter", 
                         cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
                             modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/session_id/${value}.json`));
                         }, modalAide)
