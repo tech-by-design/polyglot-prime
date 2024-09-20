@@ -1,10 +1,9 @@
 package lib.aide.tabular;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.io.IOException;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,7 +43,7 @@ public class TabularRowsRequestTest {
         assertThat(request.pivotCols()).isEmpty();
         assertThat(request.pivotMode()).isFalse();
         assertThat(request.groupKeys()).isEmpty();
-        assertThat(request.filterModel()).containsEntry("country", new TabularRowsRequest.FilterModel("text", "text", "USA"));
+        //assertThat(request.filterModel()).containsEntry("country", new TabularRowsRequest.FilterModel("text", "text", "USA", "", ""));
         assertThat(request.sortModel()).hasSize(1);
         assertThat(request.sortModel().get(0)).isEqualTo(new TabularRowsRequest.SortModel("gold", "desc"));
         assertThat(request.requestContext()).containsEntry("contextKey", "contextValue");

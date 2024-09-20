@@ -1,7 +1,15 @@
 package lib.aide.tabular;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -24,9 +32,11 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
 public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSupplier.JooqProvenance> {
+
     static private final Logger LOG = LoggerFactory.getLogger(JooqRowsSupplier.class);
 
     public record TypableTable(Table<?> table, boolean stronglyTyped) {
+
         static public TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
                 @Nonnull String tableLikeName) {
             // Attempt to find a generated table reference using reflection;
@@ -35,7 +45,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             // generated jOOQ assistance may treat certain columns incorrectly).
             try {
                 // looking for Tables.TABLISH_NAME ("tablish" means table or view)
-                                final var field = tablesRegistry.getField(tableLikeName.toUpperCase());
+                final var field = tablesRegistry.getField(tableLikeName.toUpperCase());
                 return new TypableTable((Table<?>) field.get(null), true);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName, tableLikeName)
@@ -62,9 +72,11 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     }
 
     public record JooqQuery(Query query, List<Object> bindValues, boolean stronglyTyped) {
+
     }
 
     public record JooqProvenance(String fromSQL, List<Object> bindValues, boolean stronglyTyped) {
+
     }
 
     private final TabularRowsRequest request;
@@ -104,25 +116,46 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var jq = query();
         final var provenance = new JooqProvenance(jq.query.getSQL(), jq.bindValues(), typableTable.stronglyTyped);
         try {
+            Instant start = Instant.now();
             final var query = jq.query();
             final var result = dsl.fetch(query.getSQL(), jq.bindValues().toArray());
             final var data = result.intoMaps();
+            // Format date fields in the result set
+            final var formattedData = new ArrayList<Map<String, Object>>();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+            for (Map<String, Object> row : data) {
+                Map<String, Object> formattedRow = new HashMap<>(row);
+                row.forEach((column, value) -> {
+                    if (value instanceof OffsetDateTime) {
+                        // Format the timestamp to desired format
+                        // formattedRow.put(column, ((OffsetDateTime) value).toLocalDateTime().format(formatter));
+                        formattedRow.put(column, ((OffsetDateTime) value)
+                                .atZoneSameInstant(ZoneId.of("America/New_York")) // Convert to America/New_York time zone
+                                .toLocalDateTime()
+                                .format(formatter));
 
-            var lastRow = request.startRow() + data.size();
-            if (data.size() < (request.endRow() - request.startRow())) {
+                    }
+                });
+                formattedData.add(formattedRow);
+            }
+            var lastRow = request.startRow() + formattedData.size();
+            if (formattedData.size() < (request.endRow() - request.startRow())) {
                 lastRow = -1;
             }
-
-            return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, data, lastRow, null);
+            Instant end = Instant.now();
+            long timeTaken = Duration.between(start, end).toNanos();
+            System.out.println("Time taken by JOOQ: %d ns (%d s)".formatted(timeTaken, Duration.between(start, end).toSeconds()));
+            return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, formattedData, lastRow, null);
         } catch (Exception e) {
-            if (logger != null)
+            if (logger != null) {
                 logger.error("JooqRowsSupplier error", e);
-            return new TabularRowsResponse<>(includeGeneratedSqlInErrorResp ? provenance : null, null, -1,
-                    e.getMessage());
+            }
+            return new TabularRowsResponse<>(includeGeneratedSqlInErrorResp ? provenance : null, null, -1, e.getMessage());
         }
     }
 
     private Condition finalCondition;
+
     @SuppressWarnings("unchecked")
     public JooqQuery query() {
         final var selectFields = new ArrayList<Field<?>>();
@@ -130,63 +163,71 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var bindValues = new ArrayList<Object>();
         final var sortFields = new ArrayList<SortField<?>>();
         final var groupByFields = new ArrayList<Field<?>>();
-        
-        finalCondition = null;
 
+        finalCondition = null;
 
         // // Adding columns to select
         // if (request.valueCols() != null)
         //     request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
-                // Check if groupKeys are available
-                if (request.groupKeys() != null && !request.groupKeys().isEmpty()) {
-                    // Adding the select field '*'
-                    selectFields.add(DSL.field("*"));
-                    // Adding where conditions based on groupKeys and rowGroupCols
-                    for (int i = 0; i < request.rowGroupCols().size(); i++) {
-                        final var col = request.rowGroupCols().get(i);
-                        final var value = request.groupKeys().get(i);
-                        final var condition = typableTable.column(col.field()).eq(value);
-                        whereConditions.add(condition);
-                        bindValues.add(value);
-                    }
-                } else {
-                    // Adding grouping
-                    if (request.rowGroupCols() != null) {
-                        request.rowGroupCols().forEach(col -> {
-                            final var field = typableTable.column(col.field());
-                            groupByFields.add(field);
-                            selectFields.add(field);
-                        });
-                    }
-        
-                    // Adding columns to select if no grouping
-                    if (groupByFields.isEmpty() && request.valueCols() != null) {
-                        request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
-                    }
-                }
+        // Check if groupKeys are available
+        if (request.groupKeys() != null && !request.groupKeys().isEmpty()) {
+            // Adding the select field '*'
+            selectFields.add(DSL.field("*"));
+            // Adding where conditions based on groupKeys and rowGroupCols
+            for (int i = 0; i < request.rowGroupCols().size(); i++) {
+                final var col = request.rowGroupCols().get(i);
+                final var value = request.groupKeys().get(i);
+                final var condition = typableTable.column(col.field()).eq(value);
+                whereConditions.add(condition);
+                bindValues.add(value);
+            }
+        } else {
+            // Adding grouping
+            if (request.rowGroupCols() != null) {
+                request.rowGroupCols().forEach(col -> {
+                    final var field = typableTable.column(col.field());
+                    groupByFields.add(field);
+                    selectFields.add(field);
+                });
+            }
+
+            // Adding columns to select if no grouping
+            if (groupByFields.isEmpty() && request.valueCols() != null) {
+                request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
+            }
+        }
         // Adding filters
-        if (request.filterModel() != null)
+        if (request.filterModel() != null) {
             request.filterModel().forEach((field, filter) -> {
-                
+
                 if (filter.operator() == null) {
                     final var singleWhereConditions = new ArrayList<Condition>();
                     final var condition = createCondition(field, filter);
-                    LOG.info("filter.operator() : {}",filter.operator());
+                    LOG.info("filter.operator() : {}", filter.operator());
                     whereConditions.add(condition);
                     singleWhereConditions.add(condition);
                     if (finalCondition == null) {
-                        finalCondition=DSL.and(singleWhereConditions);
-                    }
-                    else{
-                        finalCondition=DSL.and(finalCondition, DSL.and(singleWhereConditions));
+                        finalCondition = DSL.and(singleWhereConditions);
+                    } else {
+                        finalCondition = DSL.and(finalCondition, DSL.and(singleWhereConditions));
                     }
                     if (filter.type().equals("like") || filter.type().equals("contains")) {
                         bindValues.add("%" + filter.filter() + "%");
-                    } else {
+                    } else if (filter.filter() != null) {
                         bindValues.add(filter.filter());
                     }
                     if (filter.type().equals("between")) {
                         bindValues.add(filter.secondFilter());
+                    }
+                    if (filter.type().equals("inRange")) {
+                        // Parse the decoded startDateValue and endDateValue into LocalDateTime
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                        LocalDateTime startDateTime = LocalDateTime.parse(filter.dateFrom(), formatter); // Parse with time
+                        // included
+                        LocalDateTime endDateTime = LocalDateTime.parse(filter.dateTo(), formatter); // Parse with time included
+
+                        bindValues.add(startDateTime);
+                        bindValues.add(endDateTime);
                     }
                 } else {
                     final var multipleWhereConditions = new ArrayList<Condition>();
@@ -195,78 +236,93 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
                         LOG.info("filter.operator() exist");
                         // ******** */
-                        final var condition = createConditionSub(field, filterModel.type(), filterModel.filter(), filterModel.secondFilter());
+                        final var condition = createConditionSub(field, filterModel.type(), filterModel.filter(), filterModel.secondFilter(), filterModel.dateFrom(), filterModel.dateTo());
                         LOG.info("filter.operator() : {}", filter.operator());
-                        whereConditions.add(condition);    
-                                if ("OR".equalsIgnoreCase(filter.operator())) {
-                                    LOG.info("OR Filter");
-                                    multipleWhereConditions.add(DSL.or(condition));
-                                }
-                                if ("AND".equalsIgnoreCase(filter.operator())) {
-                                    LOG.info("AND Filter");
-                                    multipleWhereConditions.add(DSL.and(condition));
-                                }
-                            
-                            LOG.info("filter.where condition :{}",multipleWhereConditions.get(multipleWhereConditions.size()-1));
-                            if (filterModel.type().equals("like") || filterModel.type().equals("contains")) {
-                                bindValues.add("%" + filterModel.filter() + "%");
-                            } else {
-                                bindValues.add(filterModel.filter());
-                            }
-                            if (filterModel.type().equals("between")) {
-                                bindValues.add(filterModel.secondFilter());
-                            }
+                        whereConditions.add(condition);
+                        if ("OR".equalsIgnoreCase(filter.operator())) {
+                            LOG.info("OR Filter");
+                            multipleWhereConditions.add(DSL.or(condition));
+                        }
+                        if ("AND".equalsIgnoreCase(filter.operator())) {
+                            LOG.info("AND Filter");
+                            multipleWhereConditions.add(DSL.and(condition));
+                        }
+
+                        LOG.info("filter.where condition :{}", multipleWhereConditions.get(multipleWhereConditions.size() - 1));
+                        if (filterModel.type().equals("like") || filterModel.type().equals("contains")) {
+                            bindValues.add("%" + filterModel.filter() + "%");
+                        } else if (filterModel.filter() != null) {
+                            bindValues.add(filterModel.filter());
+                        }
+                        if (filterModel.type().equals("between")) {
+                            bindValues.add(filterModel.secondFilter());
+                        }
+                        if (filterModel.type().equals("inRange")) { // Date related
+                            // yyyy-MM-dd HH:mm:ss is the format obtained from the AGGrid. Convert dateFrom and dateTo
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                            LocalDateTime startDateTime = LocalDateTime.parse(filterModel.dateFrom(), formatter);
+                            LocalDateTime endDateTime = LocalDateTime.parse(filterModel.dateTo(), formatter);
+
+                            bindValues.add(startDateTime);
+                            bindValues.add(endDateTime);
+                        }
 
                     });
                     if (finalCondition != null) {
-                        
+
                         if ("OR".equalsIgnoreCase(filter.operator())) {
-                            finalCondition=DSL.and(finalCondition, DSL.or(multipleWhereConditions));
+                            finalCondition = DSL.and(finalCondition, DSL.or(multipleWhereConditions));
                         }
                         if ("AND".equalsIgnoreCase(filter.operator())) {
-                            finalCondition=DSL.and(finalCondition, DSL.and(multipleWhereConditions));
+                            finalCondition = DSL.and(finalCondition, DSL.and(multipleWhereConditions));
                         }
-                    }
-                    else{
+                    } else {
                         if ("OR".equalsIgnoreCase(filter.operator())) {
-                            finalCondition=DSL.or(multipleWhereConditions);
+                            finalCondition = DSL.or(multipleWhereConditions);
                         }
                         if ("AND".equalsIgnoreCase(filter.operator())) {
-                            finalCondition=DSL.and(multipleWhereConditions);
+                            finalCondition = DSL.and(multipleWhereConditions);
                         }
                     }
-                    
 
                 }
             });
+        }
 
         // Adding sorting
-        if (request.sortModel() != null)
+        if (request.sortModel() != null) {
             for (final var sort : request.sortModel()) {
                 final var sortField = typableTable.column(sort.colId());
                 switch (sort.sort()) {
-                    case "asc" -> sortFields.add(sortField.asc());
-                    case "desc" -> sortFields.add(sortField.desc());
+                    case "asc" ->
+                        sortFields.add(sortField.asc());
+                    case "desc" ->
+                        sortFields.add(sortField.desc());
                 }
             }
+        }
 
         // Adding grouping
-        if (request.rowGroupCols() != null)
+        if (request.rowGroupCols() != null) {
             request.rowGroupCols().forEach(col -> {
                 final var field = typableTable.column(col.field());
                 groupByFields.add(field);
                 selectFields.add(field);
             });
+        }
 
         // Adding aggregations
-        if (request.aggregationFunctions() != null)
+        if (request.aggregationFunctions() != null) {
             request.aggregationFunctions().forEach(aggFunc -> {
                 aggFunc.columns().forEach(col -> {
                     final var field = typableTable.column(col);
                     final var aggregationField = switch (aggFunc.functionName().toLowerCase()) {
-                        case "sum" -> DSL.sum(field.cast(Double.class));
-                        case "avg" -> DSL.avg(field.cast(Double.class));
-                        case "count" -> DSL.count(field);
+                        case "sum" ->
+                            DSL.sum(field.cast(Double.class));
+                        case "avg" ->
+                            DSL.avg(field.cast(Double.class));
+                        case "count" ->
+                            DSL.count(field);
                         default ->
                             throw new IllegalArgumentException(
                                     "Unknown aggregation function: " + aggFunc.functionName());
@@ -274,12 +330,13 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     selectFields.add(aggregationField);
                 });
             });
+        }
 
         // Creating the base query
         final var limit = request.endRow() - request.startRow();
         if (customQuery != null) {
             LOG.info("Custom Query for Single Schema {} :", customQuery);
- 
+
             final var select = groupByFields.isEmpty()
                     ? ((SelectLimitStep<Record>) customQuery)
                             .limit(request.startRow(), limit)
@@ -294,7 +351,6 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 }
             }
 
-            
             bindValues.add(request.startRow());
             bindValues.add(limit);
             LOG.info("Prepared Select Statement : {}", select);
@@ -333,35 +389,54 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     }
 
     private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {
-        return createConditionSub(field,filter.type(),filter.filter(),filter.secondFilter());
+        return createConditionSub(field, filter.type(), filter.filter(), filter.secondFilter(), filter.dateFrom(), filter.dateTo());
     }
-    private Condition createConditionSub(final String field, String type, Object filter, Object secondfilter) {
+
+    private Condition createConditionSub(final String field, String type, Object filter, Object secondfilter, Object dateFrom, Object dateTo) {
         final var dslField = typableTable.column(field);
         return switch (type) {
-            case "like" -> dslField.likeIgnoreCase("%" + filter + "%");
-            case "equals" -> dslField.equalIgnoreCase(filter.toString());
-            case "notEqual" -> dslField.notEqual(DSL.param(field, filter));
-            case "number" -> dslField.eq(DSL.param(field, filter));
-            case "date" -> dslField.eq(DSL.param(field, filter));
-            case "contains" -> dslField.likeIgnoreCase("%" + filter + "%");
-            case "notContains" -> dslField.notLikeIgnoreCase("%" + filter + "%");
-            case "startsWith" -> dslField.startsWith(filter);
-            case "endsWith" -> dslField.endsWith(filter);     
-            case "lessOrEqual" -> dslField.lessOrEqual(filter);      
-            case "greatersOrEqual" -> dslField.greaterOrEqual(filter);      
-            case "greaterThan" -> dslField.greaterThan(filter);      
-            case "lessThan" -> dslField.lessThan(filter);   
-            case "between" -> dslField.between(filter, secondfilter);   
-            default -> throw new IllegalArgumentException(
-                    "Unknown filter type '" + type + "' in filter for field '" + field
-                            + "' see JooqRowsSupplier::createCondition");
+            case "like" ->
+                dslField.likeIgnoreCase("%" + filter + "%");
+            case "equals" ->
+                dslField.equalIgnoreCase(filter.toString());
+            case "notEqual" ->
+                dslField.notEqual(DSL.param(field, filter));
+            case "number" ->
+                dslField.eq(DSL.param(field, filter));
+            case "date" ->
+                dslField.eq(DSL.param(field, filter));
+            case "contains" ->
+                dslField.likeIgnoreCase("%" + filter + "%");
+            case "notContains" ->
+                dslField.notLikeIgnoreCase("%" + filter + "%");
+            case "startsWith" ->
+                dslField.startsWith(filter);
+            case "endsWith" ->
+                dslField.endsWith(filter);
+            case "lessOrEqual" ->
+                dslField.lessOrEqual(filter);
+            case "greatersOrEqual" ->
+                dslField.greaterOrEqual(filter);
+            case "greaterThan" ->
+                dslField.greaterThan(filter);
+            case "lessThan" ->
+                dslField.lessThan(filter);
+            case "between" ->
+                dslField.between(filter, secondfilter);
+            case "inRange" ->
+                dslField.between(dateFrom, dateTo);
+
+            default ->
+                throw new IllegalArgumentException(
+                        "Unknown filter type '" + type + "' in filter for field '" + field
+                        + "' see JooqRowsSupplier::createCondition");
         };
     }
-    
 
     public static final class Builder {
+
         private TabularRowsRequest request;
-        private TypableTable table;       
+        private TypableTable table;
         private DSLContext dsl;
         private boolean includeGeneratedSqlInResp;
         private boolean includeGeneratedSqlInErrorResp;
@@ -407,14 +482,14 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             return this;
         }
 
-
         public Builder withQuery(Class<?> tablesClass, String schema, String tableLikeName, Query customQuery,
                 ArrayList<Object> bindValues) {
             TypableTable table = TypableTable.fromTablesRegistry(tablesClass, schema, tableLikeName);
             this.table = table;
             this.customQuery = customQuery;
-            if (bindValues.size() > 0)
+            if (bindValues.size() > 0) {
                 this.customBindValues = bindValues;
+            }
             LOG.info("Custom Query prepared {}:", this.customQuery);
             return this;
         }

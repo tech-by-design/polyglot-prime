@@ -37,15 +37,7 @@
         ];
         const screeningDetailsColDefs = [
             {
-                headerName: "Screening Details", field: "submitted_date_time", cellRenderer: 'agGroupCellRenderer',
-                cellRendererParams: {
-                    innerRenderer: (params) => {
-                        const date = formatDateToCustomString(params.data.submitted_date_time);
-                        const eDiv = document.createElement('div');
-                        eDiv.innerHTML = `Screening Details on: ${date}`;
-                        return eDiv;
-                    }
-                }
+                headerName: "Screening Details", field: "submitted_date_time", cellRenderer: 'agGroupCellRenderer'
             }
         ];
         const questionAndAnswersColumnDefs = [

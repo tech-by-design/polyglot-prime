@@ -26,7 +26,7 @@
         const viewName = 'interaction_user_list';
         const viewDetailsName = 'interaction_user_details';
         const userInteractionColumnDefs = [
-            { headerName: "Recorded Time", field: "created_at", filter: "agTextColumnFilter", headerTooltip: "Time at which the user interaction is recorded", valueFormatter: AGGridAide.dateTimeValueFormatter() },
+            { headerName: "Recorded Time", field: "created_at", filter: "agDateColumnFilter", headerTooltip: "Time at which the user interaction is recorded"},
             { headerName: "Interaction ID", field: "sat_interaction_user_id", filter: "agTextColumnFilter", headerTooltip: "Interaction ID" },
             { headerName: "URI Accessed", field: "uri", filter: "agTextColumnFilter", headerTooltip: "URI Accessed" },
             { headerName: "User Role", field: "user_role", filter: "agTextColumnFilter", headerTooltip: "User Role" },
@@ -49,8 +49,8 @@
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                  { headerName: "Session Start Time", field: "created_at", filter: "agTextColumnFilter", headerTooltip: "Time at which the user interaction is recorded", cellRenderer: 'agGroupCellRenderer', valueFormatter: AGGridAide.dateTimeValueFormatter() },
-                  { headerName: "Session ID", field: "user_session", filter: "agTextColumnFilter", headerTooltip: "SessionID of the session" },
+                  { headerName: "Session Start Time", field: "created_at", filter: "agTextColumnFilter", headerTooltip: "Time at which the user interaction is recorded", cellRenderer: 'agGroupCellRenderer' },
+                  { headerName: "Session ID", field: "user_session", filter: "agDateColumnFilter", headerTooltip: "SessionID of the session" },
                   { headerName: "User ID", field: "user_id", filter: "agTextColumnFilter", headerTooltip: "User ID of the user" },
                   { headerName: "Username", field: "user_name", filter: "agTextColumnFilter", headerTooltip: "User name of the user" },
                   ])

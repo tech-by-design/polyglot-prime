@@ -22,8 +22,8 @@
                 .withColumnDefs([
                     { headerName: "Job", field: "diagnostic_log_message", filter: "agTextColumnFilter",headerTooltip: "Name of the cron job"  },
                     { headerName: "Status", field: "final_status", filter: "agTextColumnFilter",headerTooltip: "Status of the cron job run"  },
-                    { headerName: "Start Time", field: "start_time", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the cron run started in EST" },
-                    { headerName: "End Time", field: "end_time", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the cron run ended in EST" },
+                    { headerName: "Start Time", field: "start_time", filter: "agDateColumnFilter", headerTooltip: "Time at which the cron run started in EST" },
+                    { headerName: "End Time", field: "end_time", filter: "agDateColumnFilter", headerTooltip: "Time at which the cron run ended in EST" },
                     { headerName: "Error", field: "error", filter: "agTextColumnFilter",headerTooltip: "Error from the cron job run"  },
                     { headerName: "Remediation", field: "remediation", filter: "agTextColumnFilter",headerTooltip: "Error from the cron job run"  }
                 ])

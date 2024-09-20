@@ -129,7 +129,7 @@
                         }
                     },
                     { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter", flex: 1 },
-                    { headerName: "Submission Date", field: "created_at", filter: "agTextColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(), flex: 1 },
+                    { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter", flex: 1 },
                 ])
                 .withServerSideDatasourceGET(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/qe_name/${qeName}.json`),
