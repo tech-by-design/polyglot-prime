@@ -80,16 +80,14 @@
                         headerName: "Submission Date",
                         field: "submitted_date_time",
                         sort: "desc",
-                        filter: "agNumberColumnFilter",
-                        valueFormatter: AGGridAide.dateTimeValueFormatter()
+                        filter: "agDateColumnFilter"
                     },
                     { headerName: "Areas of Interest ", field: "areas_of_interest", filter: "agTextColumnFilter" },
                     { headerName: "Total Safety Score", field: "total_safety_score", filter: "agTextColumnFilter" },
                     {
                         headerName: "Date",
                         field: "survey_date_time",
-                        filter: "agNumberColumnFilter",
-                        valueFormatter: AGGridAide.isoDateTimeValueFormatter()
+                        filter: "agDateColumnFilter"
                     },
                 ])
                 .withServerSideDatasource(

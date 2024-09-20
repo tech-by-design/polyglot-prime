@@ -48,7 +48,8 @@ public class TabularRowsController {
             """
     )
     @PostMapping(value = {"/api/ux/tabular/jooq/{masterTableNameOrViewName}.json",
-        "/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}.json"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+        "/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}.json"},
+            consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public TabularRowsResponse<?> tabularRows(
             @Parameter(description = "Mandatory path variable to mention schema name.", required = true)
@@ -57,9 +58,9 @@ public class TabularRowsController {
             final @PathVariable String masterTableNameOrViewName,
             @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true)
             final @RequestBody @Nonnull TabularRowsRequest payload,
-            @Parameter(description = "Optional header to mention whether the generated SQL to be included in the response.", required = true)
-            @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false) boolean includeGeneratedSqlInResp,
-            @Parameter(description = "Optional header to mention whether the generated SQL to be included in the error response. This will be taken <code>true</code> by default.", required = true)
+            @Parameter(description = "Header to mention whether the generated SQL to be included in the response.", required = false)
+            @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false, defaultValue = "false") boolean includeGeneratedSqlInResp,
+            @Parameter(description = "Header to mention whether the generated SQL to be included in the error response. This will be taken <code>true</code> by default.", required = false)
             @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
 
         return new JooqRowsSupplier.Builder()
@@ -237,36 +238,4 @@ public class TabularRowsController {
         return query.fetch().intoMaps();
 
     }
-
-    // @Operation(summary = "Get submission counts between startDate and endDate
-    // andd parameters")
-    // @GetMapping("/api/ux/tabular/jooq/{schemaName}/{viewName}/{columnName1}/{columnValue1}/{recently_created_at}/{startDateValue}/{endDateValue}.json")
-    // @ResponseBody
-    // public Object getSubmissionParamAndCountsBetweenDates(
-    // final @PathVariable(required = false) String schemaName,
-    // final @PathVariable String viewName, final @PathVariable String columnName1,
-    // final @PathVariable String columnValue1,
-    // final @PathVariable String recently_created_at, final @PathVariable String
-    // startDateValue,
-    // final @PathVariable String endDateValue) {
-    // // Define the table from which you want to fetch the data
-    // final var typableTable =
-    // JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-    // viewName);
-    // // Parse the startDateValue and endDateValue into LocalDateTime
-    // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-    // LocalDateTime startDateTime = LocalDate.parse(startDateValue,
-    // formatter).atStartOfDay(); // Start of the
-    // // day
-    // LocalDateTime endDateTime = LocalDate.parse(endDateValue,
-    // formatter).atTime(23, 59, 59); // End of the
-    // // day
-    // // Execute the query using jOOQ
-    // return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-    // .where(typableTable.column(recently_created_at).between(startDateTime,
-    // endDateTime))
-    // .and(typableTable.column(columnName1).eq(columnValue1))
-    // .fetch()
-    // .intoMaps(); // Convert the result to a map or any other desired format
-    // }
 }

@@ -20,7 +20,7 @@
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    { headerName: "Migration Time", field: "migrated_at", sortable: true, filter: "agNumberColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true),headerTooltip: "Time at which the migration occured in EST" },
+                    { headerName: "Migration Time", field: "migrated_at", sortable: true, filter: "agDateColumnFilter", headerTooltip: "Time at which the migration occured in EST" },
                     { headerName: "Version", field: "migration_version", filter: "agTextColumnFilter",headerTooltip: "Migration version"  },
                     { headerName: "Migration Reason", field: "migration_reason", filter: "agTextColumnFilter",headerTooltip: "Reason for this migration"  },
                     { headerName: "Idempotent", field: "is_idempotent", filter: "agTextColumnFilter",headerTooltip: "If the migration is idempotent(true) or stateful(false)"  },

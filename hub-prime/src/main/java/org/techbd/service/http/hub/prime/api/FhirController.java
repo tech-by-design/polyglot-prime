@@ -476,7 +476,7 @@ public class FhirController {
     public ResponseEntity<String> getJsonFile(
             @Parameter(description = "Mandatory path variable.", required = true)
             @PathVariable String resourcePath,
-            @Parameter(description = "Optional parameter to specify lifetime simulation in milli seconds. The default value is 0.", required = true)
+            @Parameter(description = "Parameter to specify lifetime simulation in milli seconds. The default value is 0.", required = false)
             @RequestParam(required = false, defaultValue = "0") long simulateLifetimeMs) {
         final var cpResourceName = "templates/mock/shinny-data-lake/1115-validate/" + resourcePath + ".json";
         try {

@@ -105,8 +105,8 @@
                         headerName: "Request Time",
                         field: "interaction_created_at",
                         sort: "desc",
-                        filter: "agNumberColumnFilter",
-                        valueFormatter: AGGridAide.dateTimeValueFormatter(), headerTooltip: "Timestamp of when the interaction was created"
+                        filter: "agDateColumnFilter",
+                        headerTooltip: "Timestamp of when the interaction was created"
                     },
                     { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },
                     { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },
