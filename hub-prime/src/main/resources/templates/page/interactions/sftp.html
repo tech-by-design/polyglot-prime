@@ -68,7 +68,7 @@
                 let originalData = [];
 
                 var columnDefs = [
-                    { headerName: "QE", field: "tenantId", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true },
+                    { headerName: "QE", field: "tenantId",  filter: true, enablePivot: true, enableRowGroup: true },
                     {
                         headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true,
                         valueFormatter: function (params) {
