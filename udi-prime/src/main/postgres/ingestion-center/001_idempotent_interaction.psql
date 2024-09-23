@@ -61,8 +61,8 @@ SELECT interaction_id,
             htt_req.provenance AS request_provenance,
             htt_req.issues_count,
             htt_req.resource_type_set AS resource_types,
-            htt_req.interaction_start_time::text AS start_time,
-            htt_req.interaction_end_time::text AS finish_time,
+            htt_req.interaction_start_time AS start_time,
+            htt_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM htt_req.interaction_end_time::timestamp without time zone - htt_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
            FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
         UNION ALL
@@ -87,8 +87,8 @@ SELECT interaction_id,
             user_req.provenance AS request_provenance,
             NULL::unknown AS issue_count,
             NULL::unknown AS resource_types,
-            user_req.interaction_start_time::text AS start_time,
-            user_req.interaction_end_time::text AS finish_time,
+            user_req.interaction_start_time AS start_time,
+            user_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
            FROM techbd_udi_ingress.sat_interaction_user user_req) combined_query
   ORDER BY interaction_created_at DESC;

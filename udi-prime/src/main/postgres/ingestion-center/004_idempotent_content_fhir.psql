@@ -68,7 +68,7 @@ AS SELECT hub_interaction_id,
     first_name,
     submitted_date_time,
     patient_mrn,
-    survey_date_time,
+    (survey_date_time::timestamptz) AS survey_date_time,
     areas_of_interest,
     total_safety_score
    FROM techbd_udi_ingress.fhir_screening_info_mat;
