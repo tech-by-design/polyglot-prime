@@ -224,7 +224,7 @@ AS WITH filtered_data AS (
     max(first_name) AS patient_first_name,
     max(last_name) AS patient_last_name,
     max(gender) AS patient_gender,
-    max(birth_date) AS patient_birth_date,
+    TO_CHAR(MAX(birth_date::date), 'MM-DD-YYYY') AS patient_birth_date,
     max(address) AS patient_address,
     max(city) AS patient_city,
     max(state) AS patient_state,
