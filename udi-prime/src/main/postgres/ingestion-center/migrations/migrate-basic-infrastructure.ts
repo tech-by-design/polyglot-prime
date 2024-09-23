@@ -460,6 +460,24 @@ const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   },
 });
 
+const jsonActionRule = SQLa.tableDefinition("json_action_rule", {
+  action_rule_id: textNullable(),
+  namespace: textNullable(),
+  json_path: textNullable(),
+  action: textNullable(),
+  condition: jsonbNullable(),
+  reject_json: jsonbNullable(),
+  modify_json: jsonbNullable(),
+  priority: integer().default(0),
+  updated_at: dateTime(),
+  updated_by: textNullable(),
+  last_applied_at: dateTimeNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -688,7 +706,22 @@ const migrateSP = pgSQLa.storedProcedure(
       USING btree ((payload->'nature'->>'tenant_id'));
 
       ANALYZE techbd_udi_ingress.sat_interaction_http_request;
-      
+
+      ${jsonActionRule}
+
+      ALTER TABLE techbd_udi_ingress.json_action_rule
+        ADD CONSTRAINT json_action_rule_action_check
+        CHECK (action = ANY (ARRAY['accept'::text, 'reject'::text, 'modify'::text]));
+
+      ALTER TABLE techbd_udi_ingress.json_action_rule
+        ADD CONSTRAINT json_action_rule_action_rule_id_pkey
+        PRIMARY KEY (action_rule_id);
+
+      CREATE INDEX IF NOT exists json_action_rule_action_idx ON techbd_udi_ingress.json_action_rule USING btree (action);
+      CREATE INDEX IF NOT EXISTS json_action_rule_json_path_idx ON techbd_udi_ingress.json_action_rule USING btree (json_path);
+      CREATE INDEX IF NOT EXISTS json_action_rule_last_applied_at_idx ON techbd_udi_ingress.json_action_rule USING btree (last_applied_at DESC);
+      CREATE INDEX IF NOT EXISTS json_action_rule_namespace_idx ON techbd_udi_ingress.json_action_rule USING btree (namespace);
+      CREATE INDEX IF NOT EXISTS json_action_rule_priority_idx ON techbd_udi_ingress.json_action_rule USING btree (priority);
       
       ${dependenciesSQL}
 
