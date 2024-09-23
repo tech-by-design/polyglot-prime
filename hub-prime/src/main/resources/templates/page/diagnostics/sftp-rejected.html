@@ -24,7 +24,7 @@
             const modalAide = new ModalAide('sftp-rejected');
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                { headerName: "Request Time", field: "orch_started_at", sortable: true, sort: "desc", filter: "agNumberColumnFilter", headerTooltip: "Timestamp indicating when the ingestion process started", valueFormatter: AGGridAide.dateTimeValueFormatter(false) },
+                { headerName: "Request Time", field: "orch_started_at", sortable: true, sort: "desc", filter: "agDateColumnFilter", headerTooltip: "Timestamp indicating when the ingestion process started" },
                     { headerName: "QE", field: "qe", filter: "agTextColumnFilter", headerTooltip: "Name of the Qualified Entity" },
                     { headerName: "Ingested File Source", field: "ingest_file", filter: "agTextColumnFilter", headerTooltip: "The name of the file being processed",tooltipValueGetter: (p) =>
                     p.value },

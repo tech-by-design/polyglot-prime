@@ -276,7 +276,7 @@ AS SELECT tenant_id,
     line,
     "column",
     diagnostics,
-    encounteredat,
+    to_timestamp((encounteredat)::float8)  AS encounteredat, 
     elaboration
    FROM techbd_udi_ingress.fhir_session_diagnostics_mat intr_diagno;
 
@@ -513,7 +513,7 @@ GROUP BY
 SELECT
 	"substring"(ose.ingest_src::text,
 	'/SFTP/([^/]+)/'::text) AS qe,
-	os.orch_started_at AS request_time,
+	os.orch_started_at::timestamptz AS request_time,
 	ose.session_id,
 	os."version",
 	count(ose.ingest_src) AS ingress_count,
@@ -541,7 +541,7 @@ GROUP BY
 	ose.session_id,
 	qe,
 	os."version",
-	os.orch_started_at,
+	os.orch_started_at::timestamptz,
 	ic.issue_count,
 	rc.rejection_count,
 	wc.warning_count;
