@@ -1,76 +1,6 @@
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_mat CASCADE;
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_screening_info_mat
 TABLESPACE pg_default
-AS WITH filtered_data AS (
-         SELECT sihr.hub_interaction_id,
-            sihr.nature ->> 'tenant_id'::text AS tenant_id,
-            sihr.payload,
-            hintr.created_at
-           FROM techbd_udi_ingress.hub_interaction hintr
-             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
-          WHERE hintr.key ~~ '/Bundle%'::text AND (sihr.nature ->> 'nature'::text) = 'Original FHIR Payload'::text
-        ), extracted_data AS (
-         SELECT filtered_data.hub_interaction_id,
-            filtered_data.tenant_id,
-            filtered_data.created_at,
-                CASE
-                    WHEN (filtered_data.payload ->> 'resourceType'::text) = 'Bundle'::text THEN (filtered_data.payload -> 'meta'::text) ->> 'lastUpdated'::text
-                    ELSE NULL::text
-                END AS last_updated,
-            ( SELECT (((entry.value -> 'resource'::text) -> 'identifier'::text) -> 0) ->> 'value'::text
-                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
-                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text LIMIT 1) AS patient_id,
-            ( SELECT (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'text'::text
-                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
-                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text LIMIT 1) AS full_name,
-            ( SELECT (((entry.value -> 'resource'::text) -> 'name'::text) -> 0) ->> 'family'::text
-                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
-                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text LIMIT 1) AS last_name,
-            ( SELECT array_to_string(ARRAY( SELECT jsonb_array_elements_text((((entry.value -> 'resource'::text) -> 'name'::text) -> 0) -> 'given'::text) AS jsonb_array_elements_text), ' '::text) AS array_to_string
-                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
-                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text LIMIT 1) AS first_name,
-            ( SELECT string_agg((entry.value -> 'resource'::text) ->> 'id'::text, ', '::text) AS string_agg
-                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
-                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Organization'::text LIMIT 1) AS org_id,
-            ( SELECT string_agg((entry.value -> 'resource'::text) ->> 'name'::text, ', '::text) AS string_agg
-                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
-                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Organization'::text LIMIT 1) AS org_name,
-            ( SELECT string_agg(DISTINCT coding.value ->> 'display'::text, ', '::text) AS string_agg
-                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
-                     JOIN LATERAL jsonb_array_elements((entry.value -> 'resource'::text) -> 'category'::text) category(value) ON true
-                     JOIN LATERAL jsonb_array_elements(category.value -> 'coding'::text) coding(value) ON true
-                  WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Observation'::text AND (coding.value ->> 'system'::text) = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes'::text LIMIT 1) AS category_display,
-            ( SELECT value_coding.value ->> 'display'::text
-                   FROM jsonb_array_elements(filtered_data.payload -> 'entry'::text) entry(value)
-                     JOIN LATERAL jsonb_array_elements(((entry.value -> 'resource'::text) -> 'code'::text) -> 'coding'::text) code_coding(value) ON true
-                     JOIN LATERAL jsonb_array_elements(((entry.value -> 'resource'::text) -> 'valueCodeableConcept'::text) -> 'coding'::text) value_coding(value) ON true
-                  WHERE (code_coding.value ->> 'display'::text) = 'Total Safety Score'::text AND (value_coding.value ->> 'code'::text) = '{score}'::text LIMIT 1) AS score_display
-           FROM filtered_data
-        )
- SELECT hub_interaction_id,
-    tenant_id AS qe_name,
-    org_id,
-    org_name,
-    last_name,
-    full_name,
-    first_name,
-    created_at AS submitted_date_time,
-    patient_id AS patient_mrn,
-    last_updated AS survey_date_time,
-    category_display AS areas_of_interest,
-    score_display AS total_safety_score
-   FROM extracted_data
-  WHERE patient_id IS NOT NULL
-  ORDER BY created_at DESC
-WITH NO DATA;
-
-CREATE UNIQUE INDEX IF NOT EXISTS fhir_screening_info_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_mat USING btree (hub_interaction_id, submitted_date_time);
-
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info_new_mat CASCADE;
--- techbd_udi_ingress.fhir_screening_info_new_mat source
-
-CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_screening_info_new_mat
-TABLESPACE pg_default
 AS SELECT hub_interaction_id,
     tenant_id AS qe_name,
     created_at AS submitted_date_time,
@@ -119,7 +49,8 @@ AS SELECT hub_interaction_id,
   ORDER BY created_at DESC
 WITH NO DATA;
 
-CREATE UNIQUE INDEX IF NOT EXISTS fhir_screening_info_new_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_new_mat USING btree (hub_interaction_id, submitted_date_time);
+CREATE UNIQUE INDEX IF NOT EXISTS fhir_screening_info_mat_hub_interaction_id_idx ON techbd_udi_ingress.fhir_screening_info_mat USING btree (hub_interaction_id, submitted_date_time);
+
 
 
 /*******************************************************************************************
@@ -450,49 +381,6 @@ DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_mat CA
 CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_validation_issue_mat 
 TABLESPACE pg_default
 AS WITH validation_results AS (
-         SELECT hub_req.hub_interaction_id,
-            sat_req.sat_interaction_http_request_id,
-            jsonb_array_elements(sat_req.payload -> 'validationResults'::text) AS validation_result
-           FROM techbd_udi_ingress.hub_interaction hub_req
-             JOIN techbd_udi_ingress.sat_interaction_http_request sat_req ON sat_req.hub_interaction_id = hub_req.hub_interaction_id
-          WHERE 1 = 1 AND (sat_req.nature ->> 'nature'::text) = 'Forward HTTP Request'::text AND (hub_req.key = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]))
-        ), issues AS (
-         SELECT validation_results.hub_interaction_id,
-            validation_results.sat_interaction_http_request_id,
-            jsonb_array_elements(validation_results.validation_result -> 'issues'::text) AS issue,
-            to_timestamp(((validation_results.validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
-            validation_results.validation_result ->> 'igVersion'::text AS ig_version,
-            TRIM(BOTH FROM regexp_replace((validation_results.validation_result -> 'observability'::text) ->> 'name'::text, '\(TODO:get from API instead of hard coding\) \(FHIR version 4.0.1\)\s*$'::text, ''::text)) AS validation_engine
-           FROM validation_results
-        )
- SELECT DISTINCT ON (hub_interaction_id, (issue ->> 'message'::text)) gen_random_uuid() AS row_id,
-    hub_interaction_id,
-    sat_interaction_http_request_id,
-    issue ->> 'message'::text AS issue,
-    date_time,
-    validation_engine,
-    ig_version,
-    CURRENT_USER AS materialized_by,
-    CURRENT_TIMESTAMP AS materialized_at
-   FROM issues
-  WHERE (issue ->> 'message'::text) LIKE '%has not been checked because it is unknown%'::text 
-  OR (issue ->> 'message'::text) LIKE '%Unknown profile%'::text 
-  OR (issue ->> 'message'::text) LIKE '%Unknown extension%'::text 
-  OR (issue ->> 'message'::text) LIKE '%Unknown Code System%'::text
-  OR (issue ->> 'message'::text) LIKE '%not found%'::text
-WITH NO DATA;
-
--- View indexes:
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_date_time_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (date_time DESC);
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_hub_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (hub_interaction_id);
-CREATE UNIQUE INDEX IF NOT EXISTS fhir_validation_issue_mat_row_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (row_id);
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_sat_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (sat_interaction_http_request_id);
-
-
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_new_mat CASCADE;
-CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_validation_issue_new_mat
-TABLESPACE pg_default
-AS WITH validation_results AS (
          SELECT sat_req.hub_interaction_id,
             sat_req.sat_interaction_fhir_request_id ,
             jsonb_array_elements(sat_req.payload -> 'validationResults'::text) AS validation_result
@@ -509,7 +397,7 @@ AS WITH validation_results AS (
         )
  SELECT DISTINCT ON (hub_interaction_id, (issue ->> 'message'::text)) gen_random_uuid() AS row_id,
     hub_interaction_id,
-    sat_interaction_fhir_request_id,
+    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
     issue ->> 'message'::text AS issue,
     date_time,
     validation_engine,
@@ -521,11 +409,10 @@ AS WITH validation_results AS (
 WITH NO DATA;
 
 -- View indexes:
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_date_time_idx ON techbd_udi_ingress.fhir_validation_issue_new_mat USING btree (date_time DESC);
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_hub_id_idx ON techbd_udi_ingress.fhir_validation_issue_new_mat USING btree (hub_interaction_id);
-CREATE UNIQUE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_row_id_idx ON techbd_udi_ingress.fhir_validation_issue_new_mat USING btree (row_id);
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_new_mat_sat_id_idx ON techbd_udi_ingress.fhir_validation_issue_new_mat USING btree (sat_interaction_fhir_request_id);
-
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_date_time_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (date_time DESC);
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_hub_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (hub_interaction_id);
+CREATE UNIQUE INDEX IF NOT EXISTS fhir_validation_issue_mat_row_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (row_id);
+CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_sat_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (sat_interaction_http_request_id);
 
 
 /****************************************************************************************
