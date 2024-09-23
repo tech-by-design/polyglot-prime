@@ -176,7 +176,7 @@
                                         // Handle JSON parsing error if needed
                                         return;
                                     }
-                                    if (!response?.scoredcardResponse?.includes('TestResult: PASS')) {
+                                    if (!response?.scoredcardResponse?.includes('TestResult: PASS') && response?.status!='Success') {
                                         publishedFhirFailedCount++;
                                         if (response && response.bundleID) {
                                             publishedFhirFailedResponse.push({
@@ -189,6 +189,11 @@
                                                 "File": r.fhirFileName,
                                                 "Error": response.error
                                             });
+                                        } else if (response && response.status=='Error') {
+                                            publishedFhirFailedResponse.push({
+                                                "File": r.fhirFileName,
+                                                "Error": response.message
+                                            });
                                         } else {
                                             publishedFhirFailedResponse.push({
                                                 "File": r.fhirFileName,
@@ -196,8 +201,6 @@
                                             });
                                         }
 
-                                    }else if(response.status!='Success') {
-                                        publishedFhirSuccessCount++;
                                     } else {
                                         publishedFhirSuccessCount++;
                                     }
