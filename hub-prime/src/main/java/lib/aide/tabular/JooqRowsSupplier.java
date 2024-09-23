@@ -127,13 +127,10 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 Map<String, Object> formattedRow = new HashMap<>(row);
                 row.forEach((column, value) -> {
                     if (value instanceof OffsetDateTime) {
-                        // Format the timestamp to desired format
-                        // formattedRow.put(column, ((OffsetDateTime) value).toLocalDateTime().format(formatter));
                         formattedRow.put(column, ((OffsetDateTime) value)
-                                .atZoneSameInstant(ZoneId.of("America/New_York")) // Convert to America/New_York time zone
+                                .atZoneSameInstant(ZoneId.of("America/New_York"))
                                 .toLocalDateTime()
                                 .format(formatter));
-
                     }
                 });
                 formattedData.add(formattedRow);

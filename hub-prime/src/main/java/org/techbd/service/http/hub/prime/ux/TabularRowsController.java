@@ -4,7 +4,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,12 +98,23 @@ public class TabularRowsController {
 
         // Fetch the result using the dynamically determined table and column; if
         // jOOQ-generated types were found, automatic column value mapping will occur
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                masterTableNameOrViewName);
-        return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, masterTableNameOrViewName);
+        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
                 .where(typableTable.column(columnName).eq(columnValue))
                 .fetch()
                 .intoMaps();
+
+        ZoneId newYorkZone = ZoneId.of("America/New_York");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+
+        result.forEach(row -> row.forEach((key, value) -> {
+            if (value instanceof OffsetDateTime) {
+                ZonedDateTime newYorkTime = ((OffsetDateTime) value).atZoneSameInstant(newYorkZone);
+                row.put(key, newYorkTime.format(formatter));
+            }
+        }));
+
+        return result;
     }
 
     @Operation(summary = "Retrieve SQL rows from a master table or view with specific column value checks",
@@ -122,16 +138,27 @@ public class TabularRowsController {
             @Parameter(description = "Mandatory path variable to mention the column2 value.", required = true)
             final @PathVariable String columnValue2) {
 
-        // Fetch the result using the dynamically determined table and column; if
-        // jOOQ-generated types were found, automatic column value mapping will occur
         String columnValue2LikePattern = "%" + columnValue2 + "%";
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                masterTableNameOrViewName);
-        return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, masterTableNameOrViewName);
+
+        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
                 .where(typableTable.column(columnName).eq(columnValue)
                         .and(typableTable.column(columnName2).like(columnValue2LikePattern)))
                 .fetch()
                 .intoMaps();
+
+        ZoneId newYorkZone = ZoneId.of("America/New_York");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+
+        result.forEach(row -> row.forEach((key, value) -> {
+            if (value instanceof OffsetDateTime) {
+                ZonedDateTime newYorkTime = ((OffsetDateTime) value).atZoneSameInstant(newYorkZone);
+                row.put(key, newYorkTime.format(formatter));
+            }
+        }));
+
+        return result;
     }
 
     @Operation(summary = "Retrieve SQL rows from a master table or view with multiple column value checks",
@@ -166,14 +193,25 @@ public class TabularRowsController {
 
         // Fetch the result using the dynamically determined table and column; if
         // jOOQ-generated types were found, automatic column value mapping will occur
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                masterTableNameOrViewName);
-        return udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, masterTableNameOrViewName);
+        List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
                 .where(typableTable.column(columnName1).eq(decodedColumnValue1)
                         .and(typableTable.column(columnName2).eq(decodedColumnValue2))
                         .and(typableTable.column(columnName3).eq(decodedColumnValue3)))
                 .fetch()
                 .intoMaps();
+
+        ZoneId newYorkZone = ZoneId.of("America/New_York");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+
+        result.forEach(row -> row.forEach((key, value) -> {
+            if (value instanceof OffsetDateTime) {
+                ZonedDateTime newYorkTime = ((OffsetDateTime) value).atZoneSameInstant(newYorkZone);
+                row.put(key, newYorkTime.format(formatter));
+            }
+        }));
+
+        return result;
     }
 
     @Operation(
