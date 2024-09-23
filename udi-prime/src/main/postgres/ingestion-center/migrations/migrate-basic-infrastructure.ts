@@ -461,7 +461,7 @@ const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
 });
 
 const jsonActionRule = SQLa.tableDefinition("json_action_rule", {
-  action_rule_id: textNullable(),
+  action_rule_id: text(),
   namespace: textNullable(),
   json_path: textNullable(),
   action: textNullable(),
