@@ -204,6 +204,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
         if (persistInteractionDB) {
             final var rihr = new RegisterInteractionHttpRequest();
             try {
+                LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
+                rre.interactionId().toString(), rre.tenant());
                 final var tenant = rre.tenant();
                 final var dsl = udiPrimeJpaConfig.dsl();
                 rihr.setInteractionId(rre.interactionId().toString());
@@ -248,8 +250,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 }
 
                 rihr.execute(dsl.configuration());
+                LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
+                rre.interactionId().toString(), rre.tenant());
             } catch (Exception e) {
-                LOG.error("CALL " + rihr.getName() + " error", e);
+                LOG.error("ERROR:: REGISTER State None  for  interaction id : {} tenant id : {} : CALL " + rihr.getName() + " error",  rre.interactionId().toString(), rre.tenant(),e);
             }
         }
 
