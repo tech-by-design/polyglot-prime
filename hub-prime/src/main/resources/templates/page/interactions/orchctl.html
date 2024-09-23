@@ -22,8 +22,9 @@
                 .withColumnDefs([
                     { headerName: "QE", field: "qe", filter: "agTextColumnFilter" },
                     {
-                        headerName: "Request Time", field: "request_time",sortable: true,  sort: "desc",
-                        filter: "agDateColumnFilter"
+                        headerName: "Request Time", field: "request_time", sortable: true, sort: "desc",
+                        valueFormatter: AGGridAide.dateTimeValueFormatter(false),
+                        filter: "agTextColumnFilter"
                     },
                     {
                         headerName: "Session ID", field: "session_id",
