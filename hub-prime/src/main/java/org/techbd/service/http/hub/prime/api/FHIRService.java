@@ -7,17 +7,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.jooq.JSONB;
-import org.jooq.impl.DSL;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.NestedExceptionUtils;
-import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -27,24 +23,24 @@ import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.InteractionsFilter;
-import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.validation.ResultSeverityEnum;
-import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import reactor.core.publisher.Mono;
 
 @Service
 public class FHIRService {
+
         private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
         private final AppConfig appConfig;
         private final OrchestrationEngine engine = new OrchestrationEngine();
@@ -56,7 +52,7 @@ public class FHIRService {
                 this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         }
 
-        public Map<String, Map<String, Object>> processBundle(final @RequestBody @Nonnull String payload,
+        public Object processBundle(final @RequestBody @Nonnull String payload,
                         String tenantId,
                         String fhirProfileUrlParam, String fhirProfileUrlHeader, String uaValidationStrategyJson,
                         String customDataLakeApi,
@@ -69,18 +65,35 @@ public class FHIRService {
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                 : appConfig.getDefaultSdohFhirProfileUrl();
-                final var immediateResult = validate(request, payload, fhirProfileUrl, uaValidationStrategyJson,
+                var immediateResult = validate(request, payload, fhirProfileUrl, uaValidationStrategyJson,
                                 includeRequestInOutcome);
-                final var result = Map.of("OperationOutcome", immediateResult);
-
+                var result = Map.of("OperationOutcome", immediateResult);
+                final var DSL = udiPrimeJpaConfig.dsl();
+                final var jooqCfg = DSL.configuration();
                 // Check for the X-TechBD-HealthCheck header
                 if ("true".equals(healthCheck)) {
                         LOG.info("%s is true, skipping DataLake submission."
                                         .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
                         return result; // Return without proceeding to DataLake submission
                 }
-                sendToScoringEngine(request, customDataLakeApi, tenantId, payload, provenance,
-                                immediateResult, includeIncomingPayloadInDB, dataLakeApiContentType, result);
+                registerStateAccept(getBundleInteractionId(request), request.getRequestURI(),
+                                tenantId, payload, provenance, jooqCfg);
+                String payloadWithDisposition = getTechByDesignDisposistion(immediateResult, jooqCfg);
+                try {
+                        immediateResult = Configuration.objectMapper.readValue(payloadWithDisposition,
+                                        new TypeReference<Map<String, Object>>() {
+                                        });
+                } catch (JsonProcessingException ex) {
+                        LOG.error("ERROR::  while parsing payload with disposition for interaction id : {} tenant id  :{} ",
+                                        getBundleInteractionId(request), tenantId);
+                }
+                registerStateDisposition(getBundleInteractionId(request), request.getRequestURI(), tenantId,
+                                payloadWithDisposition, provenance, jooqCfg);
+                if (checkForTechByDesignDisposition(payloadWithDisposition)) {
+                        return immediateResult;
+                }
+                sendToScoringEngine(request, customDataLakeApi, tenantId, payload, provenance, payloadWithDisposition,
+                                immediateResult, dataLakeApiContentType, jooqCfg);
                 return result;
         }
 
@@ -153,35 +166,11 @@ public class FHIRService {
                 return immediateResult;
         }
 
-        private boolean checkForTechByDesignDisposistion(Map<String, Map<String, Object>> validationResultJson,
-                        org.jooq.Configuration jooqCfg) {
-                boolean hasRejections = false;
-                try {
-                        LOG.info("FHIRService:: Invoke Tech By Design Disposition procedure -BEGIN");
-                        String validationResultStr = new com.fasterxml.jackson.databind.ObjectMapper()
-                                        .writeValueAsString(validationResultJson);
-                        String validationPayloadWithTechByDesignDisposistion = "";// DB function call
-                        LOG.info("FHIRService:: Invoke Tech By Design Disposition procedure -END");
-                        List<String> actions = JsonPath.read(validationPayloadWithTechByDesignDisposistion,
-                                        "$.techByDesignDisposition[*].action");
-                        hasRejections = actions.contains("reject");
-                        LOG.info("TECH BY DESIGN Disposition : " + (hasRejections ? "DO NOT FORWARD TO SCORING ENGINE "
-                                        : "FORWARD TO SCORING ENGINE"));
-                        // registerStateDispositon
-                } catch (Exception ex) {
-                        LOG.error("ERROR:: ", ex);
-                }
-                return hasRejections;
-        }
-
         private void sendToScoringEngine(HttpServletRequest request, String customDataLakeApi,
-                        String tenantId, String payload, String provenance,
-                        Map<String, Object> immediateResult, boolean includeIncomingPayloadInDB,
-                        String dataLakeApiContentType, Map<String, Map<String, Object>> result) {
+                        String tenantId, String payload, String provenance, String payloadWithDisposition,
+                        Map<String, Object> immediateResult, String dataLakeApiContentType,
+                        org.jooq.Configuration jooqCfg) {
                 final var requestURI = request.getRequestURI();
-
-                final var DSL = udiPrimeJpaConfig.dsl();
-                final var jooqCfg = DSL.configuration();
                 final var bundleAsyncInteractionId = getBundleInteractionId(request);
                 final var dataLakeApiBaseURL = customDataLakeApi != null && !customDataLakeApi.isEmpty()
                                 ? customDataLakeApi
@@ -197,12 +186,9 @@ public class FHIRService {
                                         clientRequest.headers().forEach((name, values) -> values
                                                         .forEach(value -> requestBuilder.append(name).append(": ")
                                                                         .append(value).append("\n")));
-                                        final var outboundHttpMessage = requestBuilder.toString();
-                                        registerStateAccept(bundleAsyncInteractionId, requestURI,
-                                                        tenantId, payload, provenance, jooqCfg);
-                                        registerStateForward(provenance, outboundHttpMessage,
-                                                        includeIncomingPayloadInDB, payload,
-                                                        bundleAsyncInteractionId, requestURI, tenantId, immediateResult,
+                                        // final var outboundHttpMessage = requestBuilder.toString();
+                                        registerStateForward(provenance, bundleAsyncInteractionId, requestURI, tenantId,
+                                                        payloadWithDisposition,
                                                         jooqCfg);
                                         return Mono.just(clientRequest);
                                 })).build();
@@ -237,6 +223,8 @@ public class FHIRService {
         private void registerStateAccept(String bundleAsyncInteractionId, String requestURI, String tenantId,
                         String payload,
                         String provenance, org.jooq.Configuration jooqCfg) {
+                LOG.info("REGISTER State Accept : BEGIN for  interaction id : {} tenant id : {}",
+                                bundleAsyncInteractionId, tenantId);
                 final var payloadRIHR = new RegisterInteractionHttpRequest();
                 try {
                         payloadRIHR.setInteractionId(bundleAsyncInteractionId);
@@ -260,24 +248,70 @@ public class FHIRService {
                         payloadRIHR.setCreatedBy(FHIRService.class.getName());
                         payloadRIHR.setProvenance(provenance);
                         final var execResult = payloadRIHR.execute(jooqCfg);
-                        LOG.info("payloadRIHR execResult" + execResult);
+                        LOG.info("REGISTER State Accept : END for  interaction id :{} ,tenant id : {} " + execResult,
+                                        bundleAsyncInteractionId, tenantId);
                 } catch (Exception e) {
-                        LOG.error("CALL " + payloadRIHR.getName() + " payloadRIHR error", e);
+                        LOG.error("ERROR:: REGISTER State Accept  CALL for  interaction id : {} tenant id : {} "
+                                        + payloadRIHR.getName() + " payloadRIHR error", bundleAsyncInteractionId,
+                                        tenantId, e);
                 }
         }
 
-        private void registerStateForward(String provenance, String outboundHttpMessage,
-                        boolean includeIncomingPayloadInDB,
-                        String payload, String bundleAsyncInteractionId, String requestURI, String tenantId,
-                        Map<String, Object> immediateResult,
-                        org.jooq.Configuration jooqCfg) {
+        private void registerStateDisposition(String bundleAsyncInteractionId, String requestURI, String tenantId,
+                        String payloadWithDisposition,
+                        String provenance, org.jooq.Configuration jooqCfg) {
+                LOG.info("REGISTER State Disposition : BEGIN for interaction id : {} tenant id : {}",
+                                bundleAsyncInteractionId, tenantId);
+                final var payloadRIHR = new RegisterInteractionHttpRequest();
+                try {
+                        payloadRIHR.setInteractionId(bundleAsyncInteractionId);
+                        payloadRIHR.setInteractionKey(requestURI);
+                        payloadRIHR.setNature(Configuration.objectMapper.valueToTree(
+                                        Map.of("nature", "Tech By Design Disposition", "tenant_id",
+                                                        tenantId)));
+                        payloadRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                        try {
+                                // Payload with Disposition
+                                payloadRIHR.setPayload(
+                                                Configuration.objectMapper.readTree(payloadWithDisposition));
+                        } catch (JsonProcessingException jpe) {
+                                // in case the payload is not JSON store the string
+                                payloadRIHR.setPayload(Configuration.objectMapper
+                                                .valueToTree(payloadWithDisposition));
+                        }
+                        payloadRIHR.setFromState("ACCEPT_FHIR_BUNDLE");
+                        payloadRIHR.setToState("DISPOSITION");
+                        payloadRIHR.setCreatedAt(OffsetDateTime.now());
+                        payloadRIHR.setCreatedBy(FHIRService.class.getName());
+                        payloadRIHR.setProvenance(provenance);
+                        final var execResult = payloadRIHR.execute(jooqCfg);
+                        LOG.info("REGISTER State Disposition : END  for interaction id : {} tenant id : {}"
+                                        + execResult, bundleAsyncInteractionId, tenantId);
+                } catch (Exception e) {
+                        LOG.error("\"ERROR:: REGISTER State Disposition CALL for interaction id : {}  tenant id : {}"
+                                        + payloadRIHR.getName() + " payloadRIHR error", bundleAsyncInteractionId,
+                                        tenantId, e);
+                }
+        }
+
+        private void registerStateForward(String provenance, String bundleAsyncInteractionId, String requestURI,
+                        String tenantId,
+                        String payloadWithDisposition, org.jooq.Configuration jooqCfg) {
+                LOG.info("REGISTER State Forward : BEGIN for inteaction id  : {} tenant id : {}",
+                                bundleAsyncInteractionId, tenantId);
                 final var forwardedAt = OffsetDateTime.now();
                 final var initRIHR = new RegisterInteractionHttpRequest();
                 try {
-                        immediateResult.put("outboundHttpMessage",
-                                        outboundHttpMessage + "\n" + (includeIncomingPayloadInDB
-                                                        ? payload
-                                                        : "The incoming FHIR payload was not stored (to save space).\nThis is not an error or warning just an FYI - if you'd like to see the incoming FHIR payload for debugging, next time just pass in the optional `?include-incoming-payload-in-db=true` to request payload storage for each request that you'd like to store."));
+                        // TODO - store payload based on includeIncomingPayloadInDB - check if this is
+                        // needed
+                        // immediateResult.put("outboundHttpMessage",
+                        // outboundHttpMessage + "\n" + (includeIncomingPayloadInDB
+                        // ? payload
+                        // : "The incoming FHIR payload was not stored (to save space).\nThis is not an
+                        // error or warning just an FYI - if you'd like to see the incoming FHIR payload
+                        // for debugging, next time just pass in the optional
+                        // `?include-incoming-payload-in-db=true` to request payload storage for each
+                        // request that you'd like to store."));
                         initRIHR.setInteractionId(bundleAsyncInteractionId);
                         initRIHR.setInteractionKey(requestURI);
                         initRIHR.setNature(Configuration.objectMapper.valueToTree(
@@ -285,22 +319,27 @@ public class FHIRService {
                                                         tenantId)));
                         initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                         initRIHR.setPayload(Configuration.objectMapper
-                                        .valueToTree(immediateResult));
-                        initRIHR.setFromState("ACCEPT_FHIR_BUNDLE");
+                                        .valueToTree(payloadWithDisposition));
+                        initRIHR.setFromState("DISPOSITION");
                         initRIHR.setToState("FORWARD");
                         initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app
-                                                            // time
+                        // time
                         initRIHR.setCreatedBy(FHIRService.class.getName());
                         initRIHR.setProvenance(provenance);
                         final var execResult = initRIHR.execute(jooqCfg);
-                        LOG.info("initRIHR execResult" + execResult);
+                        LOG.info("REGISTER State Forward : END for interaction id : {} tenant id : {}" + execResult,
+                                        bundleAsyncInteractionId, tenantId);
                 } catch (Exception e) {
-                        LOG.error("CALL " + initRIHR.getName() + " initRIHR error", e);
+                        LOG.error("ERROR:: REGISTER State Forward CALL for interaction id : {} tenant id : {}"
+                                        + initRIHR.getName() + " initRIHR error", bundleAsyncInteractionId, tenantId,
+                                        e);
                 }
         }
 
         private void registerStateComplete(String bundleAsyncInteractionId, String requestURI, String tenantId,
                         String response, String provenance, org.jooq.Configuration jooqCfg) {
+                LOG.info("REGISTER State Complete : BEGIN for interaction id :  {} tenant id : {}",
+                                bundleAsyncInteractionId, tenantId);
                 final var forwardRIHR = new RegisterInteractionHttpRequest();
                 try {
                         forwardRIHR.setInteractionId(bundleAsyncInteractionId);
@@ -322,22 +361,24 @@ public class FHIRService {
                         forwardRIHR.setFromState("FORWARD");
                         forwardRIHR.setToState("COMPLETE");
                         forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB
-                                                                        // set this, use
-                                                                        // app time
+                        // set this, use
+                        // app time
                         forwardRIHR.setCreatedBy(FHIRService.class.getName());
                         forwardRIHR.setProvenance(provenance);
                         final var execResult = forwardRIHR.execute(jooqCfg);
-                        LOG.info("forwardRIHR execResult" + execResult);
+                        LOG.info("REGISTER State Complete : BEGIN for interaction id : {} tenant id : {}" + execResult,
+                                        bundleAsyncInteractionId, tenantId);
                 } catch (Exception e) {
-                        LOG.error("CALL " + forwardRIHR.getName()
-                                        + " forwardRIHR error", e);
+                        LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
+                                        + forwardRIHR.getName()
+                                        + " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
                 }
         }
 
         private void registerStateFailure(String dataLakeApiBaseURL, String bundleAsyncInteractionId, Throwable error,
                         String requestURI, String tenantId,
                         String provenance, org.jooq.Configuration jooqCfg) {
-                LOG.error("Exception while sending FHIR payload to datalake URL {} for interaction id {}",
+                LOG.error("Register State Failure - Exception while sending FHIR payload to datalake URL {} for interaction id {}",
                                 dataLakeApiBaseURL, bundleAsyncInteractionId, error);
                 final var errorRIHR = new RegisterInteractionHttpRequest();
                 try {
@@ -372,11 +413,11 @@ public class FHIRService {
                                 JsonNode rootNode = Configuration.objectMapper
                                                 .readTree(responseBody);
                                 JsonNode bundleIdNode = rootNode.path("bundle_id"); // Adjust
-                                                                                    // this
-                                                                                    // path
-                                                                                    // based
-                                                                                    // on
-                                                                                    // actual
+                                // this
+                                // path
+                                // based
+                                // on
+                                // actual
                                 if (!bundleIdNode.isMissingNode()) {
                                         bundleId = bundleIdNode.asText();
                                 }
@@ -408,9 +449,12 @@ public class FHIRService {
                         errorRIHR.setCreatedBy(FHIRService.class.getName());
                         errorRIHR.setProvenance(provenance);
                         final var execResult = errorRIHR.execute(jooqCfg);
-                        LOG.info("forwardRIHR execResult" + execResult);
+                        LOG.error("Register State Failure - END for interaction id : {} tenant id : {} forwardRIHR execResult"
+                                        + execResult, bundleAsyncInteractionId, tenantId);
                 } catch (Exception e) {
-                        LOG.error("CALL " + errorRIHR.getName() + " errorRIHR error", e);
+                        LOG.error("ERROR :: Register State Failure - for interaction id : {} tenant id : {} CALL "
+                                        + errorRIHR.getName() + " errorRIHR error", bundleAsyncInteractionId, tenantId,
+                                        e);
                 }
         }
 
@@ -423,4 +467,31 @@ public class FHIRService {
                 return Helpers.getBaseUrl(request);
         }
 
+        private String getTechByDesignDisposistion(Map<String, Object> validationResultJson,
+                        org.jooq.Configuration jooqCfg) {
+                boolean hasRejections = false;
+                try {
+                        LOG.info("FHIRService:: Invoke Tech By Design Disposition procedure -BEGIN");
+                        // TODO - pass to validationResultStr to db function to get disposition
+                        String validationResultStr = new com.fasterxml.jackson.databind.ObjectMapper()
+                                        .writeValueAsString(validationResultJson);
+                        LOG.info("FHIRService:: Invoke Tech By Design Disposition procedure -END");
+                        String payloadWithDisposition = "";// DB function call
+                        return payloadWithDisposition;
+                } catch (Exception ex) {
+                        LOG.error("ERROR:: ", ex);
+                }
+                return null;
+        }
+
+        private boolean checkForTechByDesignDisposition(String payloadWithDisposition) {
+                var hasRejections = false;
+                if (StringUtils.isNotEmpty(payloadWithDisposition)) {
+                        List<String> actions = JsonPath.read(payloadWithDisposition,
+                                        "$.techByDesignDisposition[*].action");
+                        hasRejections = actions.contains("reject");
+                        LOG.info("Tech by Design Disposition : " + (hasRejections ? "DO NOT FORWARD" : "FORWARD"));
+                }
+                return hasRejections;
+        }
 }
