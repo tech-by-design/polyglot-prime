@@ -708,11 +708,12 @@ const migrateSP = pgSQLa.storedProcedure(
       ANALYZE techbd_udi_ingress.sat_interaction_http_request;
 
       ${jsonActionRule}
-
+      ALTER TABLE techbd_udi_ingress.json_action_rule DROP CONSTRAINT IF EXISTS json_action_rule_action_check;
       ALTER TABLE techbd_udi_ingress.json_action_rule
         ADD CONSTRAINT json_action_rule_action_check
         CHECK (action = ANY (ARRAY['accept'::text, 'reject'::text, 'modify'::text]));
 
+      ALTER TABLE techbd_udi_ingress.json_action_rule DROP CONSTRAINT IF EXISTS json_action_rule_action_rule_id_pkey;
       ALTER TABLE techbd_udi_ingress.json_action_rule
         ADD CONSTRAINT json_action_rule_action_rule_id_pkey
         PRIMARY KEY (action_rule_id);
