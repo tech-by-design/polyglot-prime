@@ -1,242 +1,4 @@
-/*******************************************************************************************
-This view aggregates data from two tables: 'hub_interaction' and 'sat_interaction_http_request'.
-The view includes various fields related to interactions and HTTP requests, extracting relevant 
-details from JSON fields and providing computed columns.
-******************************************************************************************/
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_mat CASCADE;
-CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_mat AS
-SELECT hi.hub_interaction_id,
-    sihr.sat_interaction_http_request_id,
-    hi.key AS uri,
-    hi.created_at AS interaction_created_at,
-    hi.created_by AS interaction_created_by,
-    hi.provenance AS interaction_provenance,
-    sihr.nature ->> 'nature'::text AS nature,
-    sihr.nature ->> 'tenant_id'::text AS tenant_id,
-    COALESCE((sihr.payload -> 'request'::text) ->> 'userAgent'::text, sihr.nature ->> 'userAgent'::text) AS user_agent,
-    COALESCE((sihr.payload -> 'request'::text) ->> 'clientIpAddress'::text, sihr.nature ->> 'clientIpAddress'::text) AS client_ip_address,
-    sihr.content_type,
-    sihr.elaboration,
-    sihr.from_state,
-    sihr.to_state,
-    sihr.state_transition_reason,
-    sihr.created_at AS request_created_at,
-    sihr.created_by AS request_created_by,
-    sihr.provenance AS request_provenance,
-    jsonb_array_length((((((sihr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text) AS issues_count,
-    sihr.payload,
-    lower(COALESCE(sihr.tenant_id_denorm, sihr.nature ->> 'tenant_id'::text)) AS tenant_id_lower,
-    CURRENT_USER AS materialized_by,
-    CURRENT_TIMESTAMP AS materialized_at,
-        CASE
-            WHEN (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN ( SELECT h.value ->> 'value'::text
-               FROM jsonb_array_elements((sihr.payload -> 'request'::text) -> 'headers'::text) h(value)
-              WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text)
-            ELSE NULL::text
-        END AS client_ip_address_forwarded,
-        (	SELECT regexp_replace(identifier_element->'assigner'->>'reference', '^Organization/', '') 
-	        FROM 
-	        jsonb_array_elements(COALESCE(sihr.payload->'entry', sihr.payload->'request'->'requestBody'->'entry')) AS entry
-	        CROSS JOIN jsonb_array_elements(entry.value->'resource'->'identifier') AS identifier_element
-	        WHERE entry.value->'resource'->>'resourceType' = 'Patient'
-	        AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
-	        LIMIT 1
-    	) AS organization_id,
-    	(
-	        SELECT entry.value->'resource'->>'name'
-	        FROM 
-	        jsonb_array_elements(COALESCE(sihr.payload->'entry', sihr.payload->'request'->'requestBody'->'entry')) AS entry
-	        WHERE entry.value->'resource'->>'resourceType' = 'Organization'
-	        AND entry.value->'resource'->>'id' = (
-	            SELECT regexp_replace(identifier_element->'assigner'->>'reference', '^Organization/', '') 
-	            FROM 
-	            jsonb_array_elements(COALESCE(sihr.payload->'entry', sihr.payload->'request'->'requestBody'->'entry')) AS entry
-	            CROSS JOIN jsonb_array_elements(entry.value->'resource'->'identifier') AS identifier_element
-	            WHERE entry.value->'resource'->>'resourceType' = 'Patient'
-	            AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
-	            LIMIT 1
-        )
-    ) AS organization_name                
-   FROM techbd_udi_ingress.hub_interaction hi
-     JOIN techbd_udi_ingress.sat_interaction_http_request sihr 
-     ON hi.hub_interaction_id = sihr.hub_interaction_id
-WITH NO DATA;
-  
-   
-/*******************************************************************************************
-This view aggregates resource types from HTTP request payloads associated with interactions 
-that match specific criteria.
-******************************************************************************************/
-  DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat CASCADE;
-  CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_resource_type_mat AS
-  SELECT 
-  sihr.sat_interaction_http_request_id,
-  sihr.hub_interaction_id,  
-  string_agg(DISTINCT (entry.value -> 'resource'::text) ->> 'resourceType'::text, ', '::text) AS resource_types
-  FROM 
-  techbd_udi_ingress.hub_interaction hintr
-  JOIN techbd_udi_ingress.sat_interaction_http_request sihr
-  ON hintr.hub_interaction_id = sihr.hub_interaction_id,
-  LATERAL jsonb_array_elements(sihr.payload -> 'entry') entry(value)
-  WHERE 
-  hintr.key LIKE '/Bundle%'
-  AND sihr.nature ->> 'nature' = 'Original FHIR Payload'
-  GROUP BY 
-  sihr.sat_interaction_http_request_id,
-  sihr.hub_interaction_id
-  WITH NO DATA;
-
-
-CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_resource_type_mat_sat_interaction_http_request_i_idx 
-ON techbd_udi_ingress.interaction_http_request_resource_type_mat (sat_interaction_http_request_id);  
-
-/*******************************************************************************************
-This view extracts and computes observability metrics related to HTTP requests and their 
-interactions.
-******************************************************************************************/
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_observe_mat CASCADE;
-CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.interaction_http_request_observe_mat AS
-SELECT sihr.sat_interaction_http_request_id AS sat_interaction_http_request_id,
-sihr.hub_interaction_id AS hub_interaction_id,
-headers.start_time,
-headers.finish_time,
-EXTRACT(epoch FROM headers.finish_time::timestamp without time zone - headers.start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
-(sihr.payload -> 'request'::text) ->> 'requestUri'::text AS uri
-   FROM techbd_udi_ingress.sat_interaction_http_request sihr
-     JOIN LATERAL ( SELECT max(
-                CASE
-                    WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Start-Time'::text THEN header.value ->> 'value'::text
-                ELSE NULL::text
-            END) AS start_time,
-        max(
-            CASE
-                WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Finish-Time'::text THEN header.value ->> 'value'::text
-                ELSE NULL::text
-            END) AS finish_time
-       FROM jsonb_array_elements((sihr.payload -> 'response'::text) -> 'headers'::text) header(value)) headers ON true
- WHERE 1 = 1 
- AND (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::TEXT
- WITH NO DATA;
-
-CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_observe_mat_sat_interaction_http_request_i_idx 
-ON techbd_udi_ingress.interaction_http_request_observe_mat (sat_interaction_http_request_id);
  
-
- 
-/*============================================================================================================
-This view aggregates data from the hub_interaction and sat_interaction_http_request tables, extracting and 
-transforming relevant fields from JSONB payloads. The view includes information about interaction IDs, 
-bundle details, and patient resources. It generates unique row identifiers and timestamps for tracking. 
-After creation, the view is indexed on several columns to optimize query performance. 
-The view is refreshed to include up-to-date data, and indexing ensures efficient access to key fields.
-============================================================================================================*/
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_request_mat CASCADE;
-CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_request_mat
-TABLESPACE pg_default
-AS
-WITH extracted AS (
-    SELECT 
-        sat.hub_interaction_id,
-        sat.sat_interaction_http_request_id,
-        sat.payload->>'id' AS bundle_id,
-        hub."key" AS uri,
-        sat.nature ->> 'nature' AS nature,
-        sat.nature ->> 'tenant_id' AS tenant_id,
-        sat.payload->'meta'->>'lastUpdated' AS bundle_last_updated,
-        sat.from_state,
-        sat.to_state,
-        sat.payload,
-        sat.created_at
-    FROM techbd_udi_ingress.hub_interaction hub
-    INNER JOIN techbd_udi_ingress.sat_interaction_http_request sat
-        ON hub.hub_interaction_id = sat.hub_interaction_id        
-    WHERE 1 = 1      
-        AND hub.key LIKE '/Bundle%'
-),
-patient_resources AS (
-    SELECT
-    	hub_interaction_id,
-    	sat_interaction_http_request_id,
-    	jsonb_path_query(payload, '$.entry[*].resource ? (@.resourceType == "Patient")') AS patient_resource
-    FROM 
-        extracted  
-),
-patient_details AS (
-    SELECT
-    	hub_interaction_id,
-    	sat_interaction_http_request_id,
-        patient_resource->>'id' AS patient_id,
-        (SELECT identifier->>'value'
-         FROM jsonb_array_elements(patient_resource->'identifier') AS identifier
-         WHERE identifier->'type'->'coding' @> '[{"code": "MR"}]' LIMIT 1) AS patient_mrn,
-        jsonb_array_elements(patient_resource->'name') AS patient_name
-    FROM 
-        patient_resources
-)
-SELECT 
-	gen_random_uuid() AS row_id,
-    e.hub_interaction_id,
-    e.sat_interaction_http_request_id,
-    e.bundle_id,
-    e.bundle_last_updated,
-    e.uri,
-    nature,
-    tenant_id,
-    pd.patient_id,
-    pd.patient_mrn,
-    e.payload,
-    e.from_state,
-    e.to_state,
-    e.created_at,
-    CURRENT_USER AS materialized_by,
-    CURRENT_TIMESTAMP AS materialized_at
-FROM 
-    extracted e
-LEFT OUTER JOIN 
-    patient_details pd
-ON e.sat_interaction_http_request_id = pd.sat_interaction_http_request_id -- Example: Adjust this based on the actual relationship
-AND e.hub_interaction_id = pd.hub_interaction_id
-WITH NO DATA; 
- 
- 
-CREATE UNIQUE INDEX IF NOT EXISTS fhir_request_mat_row_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (row_id);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_created_at_idx ON techbd_udi_ingress.fhir_request_mat USING btree (created_at DESC);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_hub_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (hub_interaction_id);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_sat_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (sat_interaction_http_request_id);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_patient_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (patient_id);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_nature_idx ON techbd_udi_ingress.fhir_request_mat USING btree (nature);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_tenant_id_idx ON techbd_udi_ingress.fhir_request_mat USING btree (tenant_id);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_from_state_idx ON techbd_udi_ingress.fhir_request_mat USING btree (from_state);
-CREATE INDEX IF NOT EXISTS fhir_request_mat_to_state_idx ON techbd_udi_ingress.fhir_request_mat USING btree (to_state);
-
-
-
-/*============================================================================================================
-This view selects data from the techbd_udi_ingress.fhir_request_mat materialized view and adds a 
-unique identifier (row_id) and timestamps for tracking. It includes key fields such as hub_interaction_id, 
-sat_interaction_http_request_id, bundle_id, patient details, and payload information
-============================================================================================================*/
-DROP VIEW IF EXISTS techbd_udi_ingress.fhir_request;
-CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_request
-AS SELECT gen_random_uuid() AS row_id,
-    hub_interaction_id,
-   	sat_interaction_http_request_id,
-    bundle_id,
-    bundle_last_updated,
-    uri,
-    nature,
-    tenant_id,
-    patient_id,
-    patient_mrn,
-    payload,
-    from_state,
-    to_state,
-    created_at,
-    CURRENT_USER AS materialized_by,
-    CURRENT_TIMESTAMP AS materialized_at
-    FROM techbd_udi_ingress.fhir_request_mat;
-
-    
 /****************************************************************************************
  * Comprehensive view of HTTP interactions and their associated requests.
  * 
@@ -254,38 +16,82 @@ AS SELECT gen_random_uuid() AS row_id,
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request
 AS 
-SELECT htt_req.hub_interaction_id AS interaction_id,
-    htt_req.uri,
-    htt_req.interaction_created_at AS interaction_created_at,
-    htt_req.interaction_created_by AS interaction_created_by,
-    htt_req.interaction_provenance AS interaction_provenance,
-    htt_req.sat_interaction_http_request_id,
-    htt_req.nature,
-    htt_req.tenant_id,
-    htt_req.user_agent,
-    htt_req.client_ip_address,
-    htt_req.content_type,
-    htt_req.payload,
-    htt_req.elaboration,
-    htt_req.from_state,
-    htt_req.to_state,
-    htt_req.state_transition_reason,
-    htt_req.request_created_at,
-    htt_req.request_created_by,
-    htt_req.request_provenance,
-    htt_req.issues_count,
-    rtyp.resource_types,
-    intr_observe.start_time,
-    intr_observe.finish_time,
-    intr_observe.duration_millisecs
-   FROM techbd_udi_ingress.interaction_http_request_mat htt_req
-   LEFT OUTER JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp  
-   ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id
-   AND rtyp.hub_interaction_id  = htt_req.hub_interaction_id
-   LEFT OUTER JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe
-   ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id
-   AND intr_observe.hub_interaction_id  = htt_req.hub_interaction_id 
-   ;
+SELECT interaction_id,
+    uri,
+    interaction_created_at,
+    interaction_created_by,
+    interaction_provenance,
+    sat_interaction_http_request_id,
+    nature,
+    tenant_id,
+    user_agent,
+    client_ip_address,
+    content_type,
+    payload,
+    elaboration,
+    from_state,
+    to_state,
+    state_transition_reason,
+    request_created_at,
+    request_created_by,
+    request_provenance,
+    issues_count,
+    resource_types,
+    start_time,
+    finish_time,
+    duration_millisecs
+   FROM ( SELECT htt_req.hub_interaction_id AS interaction_id,
+            htt_req.uri,
+            htt_req.created_at AS interaction_created_at,
+            htt_req.created_by AS interaction_created_by,
+            htt_req.provenance AS interaction_provenance,
+            htt_req.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+            htt_req.nature,
+            htt_req.tenant_id,
+            htt_req.user_agent,
+            htt_req.client_ip_address,
+            'application/json'::text AS content_type,
+            htt_req.payload,
+            htt_req.elaboration,
+            htt_req.from_state,
+            htt_req.to_state,
+            htt_req.state_transition_reason,
+            htt_req.created_at AS request_created_at,
+            htt_req.created_by AS request_created_by,
+            htt_req.provenance AS request_provenance,
+            htt_req.issues_count,
+            htt_req.resource_type_set AS resource_types,
+            htt_req.interaction_start_time::text AS start_time,
+            htt_req.interaction_end_time::text AS finish_time,
+            EXTRACT(epoch FROM htt_req.interaction_end_time::timestamp without time zone - htt_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
+           FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+        UNION ALL
+         SELECT user_req.hub_interaction_id AS interaction_id,
+            user_req.uri,
+            user_req.created_at AS interaction_created_at,
+            user_req.created_by AS interaction_created_by,
+            user_req.provenance AS interaction_provenance,
+            user_req.sat_interaction_user_id AS sat_interaction_http_request_id,
+            user_req.nature,
+            user_req.tenant_id,
+            user_req.user_agent,
+            user_req.client_ip_address,
+            'application/json'::text AS content_type,
+            NULL::unknown AS payload,
+            user_req.elaboration,
+            NULL::unknown AS from_state,
+            NULL::unknown AS to_state,
+            NULL::unknown AS state_transition_reason,
+            user_req.created_at AS request_created_at,
+            user_req.created_by AS request_created_by,
+            user_req.provenance AS request_provenance,
+            NULL::unknown AS issue_count,
+            NULL::unknown AS resource_types,
+            user_req.interaction_start_time::text AS start_time,
+            user_req.interaction_end_time::text AS finish_time,
+            EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
+           FROM techbd_udi_ingress.sat_interaction_user user_req) combined_query
+  ORDER BY interaction_created_at DESC;
 /*******************************************************************************************
  * Comprehensive view of HTTP interactions and their associated requests.
  * 
@@ -360,167 +166,6 @@ SELECT
 FROM
     techbd_udi_ingress.hub_interaction hi;
 
-
-/*******************************************************************************************
-This view is to facilitate the analysis and debugging of failed HTTP interactions. 
-This can help in improving the overall reliability and performance of the system by 
-addressing the root causes of these failures. The view captures important fields 
-such as interaction and request metadata, client information, and state transitions, 
-making it a comprehensive resource for monitoring and troubleshooting failed HTTP requests.
- ******************************************************************************************/
-DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed CASCADE;  
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_failed
-AS SELECT htt_req.hub_interaction_id AS interaction_id,
-    htt_req.uri,
-    htt_req.interaction_created_at AS interaction_created_at,
-    htt_req.interaction_created_by AS interaction_created_by,
-    htt_req.interaction_provenance AS interaction_provenance,
-    htt_req.sat_interaction_http_request_id,
-    htt_req.nature,
-    htt_req.tenant_id,
-    htt_req.user_agent,
-    htt_req.client_ip_address,
-    htt_req.content_type,
-    htt_req.payload,
-    htt_req.elaboration,
-    htt_req.from_state,
-    htt_req.to_state,
-    htt_req.state_transition_reason,
-    htt_req.request_created_at,
-    htt_req.request_created_by,
-    htt_req.request_provenance,
-    htt_req.issues_count,
-    rtyp.resource_types,
-    intr_observe.start_time,
-    intr_observe.finish_time,
-    intr_observe.duration_millisecs
-   FROM techbd_udi_ingress.interaction_http_request_mat htt_req
-   LEFT OUTER JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp  
-   ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id
-   AND rtyp.hub_interaction_id  = htt_req.hub_interaction_id
-   LEFT OUTER JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe
-   ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id
-   AND intr_observe.hub_interaction_id  = htt_req.hub_interaction_id 
-   WHERE upper(htt_req.to_state) = 'FAIL'::text;
-
-/*******************************************************************************************
-  This view combines data from interaction_http_request_multiple_3 and interaction_http_request_failed
-  to provide a consolidated view of failed HTTP requests and associated interactions.
-******************************************************************************************/
-DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_forward_fail CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_fail
-AS 
-WITH cte_resource_type AS (
-    SELECT  interaction_id, 
-        string_agg(DISTINCT entry->'resource'->>'resourceType', ', ') AS resource_types
-    FROM techbd_udi_ingress.interaction_http_request,
-        LATERAL jsonb_array_elements(payload->'entry') AS entry
-    WHERE upper(nature::text) = 'ORIGINAL FHIR PAYLOAD'
-    GROUP BY interaction_id
-), cte_interaction AS (
-    SELECT intr_multi.interaction_id,
-       hreq_failed.tenant_id,
-       intr_multi.uri,
-       hreq_failed.nature,
-       intr_multi.interaction_created_at,
-       intr_multi.interaction_created_by,
-       intr_multi.interaction_provenance,
-       intr_multi.first_request,
-       intr_multi.second_request,
-       intr_multi.third_request,
-       COALESCE(((intr_multi.first_request -> 'payload'::text) -> 'request'::text) ->> 'clientIpAddress'::text, hreq_failed.client_ip_address) AS client_ip_address,
-       COALESCE(((intr_multi.first_request -> 'payload'::text) -> 'request'::text) ->> 'userAgent'::text, hreq_failed.user_agent) AS user_agent,
-       COALESCE(intr_multi.first_request ->> 'from_state'::text, hreq_failed.from_state) AS from_state,
-       COALESCE(intr_multi.first_request ->> 'to_state'::text, hreq_failed.to_state) AS to_state,
-       "substring"(((((intr_multi.first_request -> 'payload'::text) -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text) AS outbound_http_message,
-       (intr_multi.third_request -> 'payload'::text) ->> 'error'::text AS full_error_message,
-        SUBSTRING((hreq_failed.payload ->> 'error') FROM POSITION(':' IN (hreq_failed.payload ->> 'error')) + 2) AS error_text,
-        jsonb_array_length(
-		(intr_multi.first_request -> 'payload'::text) -> 'response'::text -> 'responseBody'::text -> 'OperationOutcome'::text -> 'validationResults'::text -> 0 -> 'issues'
-  		) AS issues_count,
-  		crt.resource_types
-      	FROM techbd_udi_ingress.interaction_http_request_multiple_3 intr_multi
-      	INNER JOIN techbd_udi_ingress.interaction_http_request_failed hreq_failed 
-      	ON hreq_failed.interaction_id = intr_multi.interaction_id
-      	LEFT OUTER JOIN cte_resource_type crt 
-        ON crt.interaction_id = intr_multi.interaction_id
-   		)
-SELECT intr_hreq.interaction_id AS interaction_id,
-   intr_hreq.tenant_id AS tenant_id,
-   intr_hreq.uri AS uri,
-   intr_hreq.nature AS nature,
-   intr_hreq.interaction_created_at AS interaction_created_at,
-   intr_hreq.interaction_created_by AS interaction_created_by,
-   intr_hreq.interaction_provenance AS interaction_provenance,
-   intr_hreq.first_request AS first_request,
-   intr_hreq.second_request AS second_request,
-   intr_hreq.third_request AS third_request,
-   intr_hreq.client_ip_address AS client_ip_address,
-   intr_hreq.user_agent AS user_agent,
-   intr_hreq.from_state AS from_state,
-   intr_hreq.to_state AS to_state,
-   intr_hreq.outbound_http_message AS outbound_http_message,
-   intr_hreq.error_text AS error,
-   intr_hreq.issues_count,
-   intr_hreq.resource_types
-  FROM cte_interaction AS intr_hreq
- ;
-
-/*******************************************************************************************
-The view techbd_udi_ingress.interaction_diagnostics retrieves diagnostic information from 
-the techbd_udi_ingress.interaction_http_request_forward_fail object, extracting relevant fields 
-such as bundleSessionId, validation_engine, and various details about issues encountered 
-during interactions. It utilizes Common Table Expressions (CTEs) to structure the query, 
-extracting data from nested JSON structures.
-******************************************************************************************/
-DROP VIEW IF EXISTS techbd_udi_ingress.interaction_diagnostics CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_diagnostics
-AS WITH cte_interaction_issues AS(
-SELECT 
-	fwd_fail.interaction_id,
-	fwd_fail.tenant_id,
-	fwd_fail.uri,
-	fwd_fail.interaction_created_at,
-	fwd_fail.interaction_created_by,
-	fwd_fail.interaction_provenance,
-	fwd_fail.client_ip_address,
-	fwd_fail.user_agent,
-	fwd_fail.from_state,
-	fwd_fail.to_state,
-	fwd_fail.first_request -> 'payload' -> 'response' -> 'responseBody' -> 'OperationOutcome' ->> 'bundleSessionId' AS bundleSessionId,
-	validation_results -> 'observability' ->> 'name' AS validation_engine,
-	issue ->> 'message' AS issue_message,
-	issue -> 'location' ->> 'line' AS issue_line,
-	issue -> 'location' ->> 'column' AS issue_column,
-	issue -> 'location' ->> 'diagnostics' AS issue_diagnostics,
-	issue ->> 'severity' AS issue_type
-FROM
-	techbd_udi_ingress.interaction_http_request_forward_fail fwd_fail,
-	jsonb_array_elements(first_request #> '{payload,response,responseBody,OperationOutcome,validationResults}') AS validation_results,
-	jsonb_array_elements(validation_results -> 'issues') AS issue
-   )
-SELECT
-	intr_issue.interaction_id,
-	intr_issue.tenant_id,
-	intr_issue.uri,
-	intr_issue.interaction_created_at,
-	intr_issue.interaction_created_by,
-	intr_issue.interaction_provenance,
-	intr_issue.client_ip_address,
-	intr_issue.user_agent,
-	intr_issue.from_state,
-	intr_issue.to_state,
-	intr_issue.bundleSessionId,
-	intr_issue.validation_engine,
-	intr_issue.issue_message,
-	intr_issue.issue_line,
-	intr_issue.issue_column,
-	intr_issue.issue_diagnostics,
-	intr_issue.issue_type
-FROM
-	cte_interaction_issues intr_issue
-  ;
-
 /*******************************************************************************************
 This view combines data from hub_interaction and sat_interaction_http_request tables to 
 provide a consolidated view of HTTP FHIR requests, including resource types, 
@@ -528,139 +173,48 @@ interaction details, request attributes, and validation issues.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request
-AS with cte_http_fhir_req as (
-   SELECT
-    htt_req.hub_interaction_id AS interaction_id,
-    htt_req.uri,
-    htt_req.interaction_created_at,
-    htt_req.interaction_created_by,
-    htt_req.interaction_provenance,
-    htt_req.sat_interaction_http_request_id,
-    htt_req.nature,
-    htt_req.tenant_id,
-    htt_req.user_agent,
-    htt_req.client_ip_address,
-    htt_req.content_type,
-    htt_req.payload,
-    htt_req.elaboration,
-    htt_req.from_state,
-    htt_req.to_state,
-    htt_req.state_transition_reason,
-    htt_req.request_created_at,
-    htt_req.request_created_by,
-    htt_req.request_provenance,
-    htt_req.issues_count,
-    rtyp.resource_types,
-    intr_observe.start_time,
-    intr_observe.finish_time,
-    intr_observe.duration_millisecs,
-    MAX(fhir_req.patient_id) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_id,
-    MAX(fhir_req.patient_mrn) OVER (PARTITION BY htt_req.hub_interaction_id) AS patient_mrn,
-    max(htt_req.organization_id) OVER (PARTITION BY htt_req.hub_interaction_id) AS organization_id,
-	max(htt_req.organization_name) OVER (PARTITION BY htt_req.hub_interaction_id) AS organization_name
-FROM 
-    techbd_udi_ingress.interaction_http_request_mat htt_req
-LEFT JOIN 
-    techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp 
-    ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
-    AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
-LEFT JOIN 
-    techbd_udi_ingress.interaction_http_request_observe_mat intr_observe 
-    ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
-    AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
-LEFT OUTER JOIN 
-    techbd_udi_ingress.fhir_request fhir_req
-    ON fhir_req.hub_interaction_id = htt_req.hub_interaction_id 
-    AND fhir_req.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
-    AND fhir_req.tenant_id = htt_req.tenant_id
-WHERE 
-    htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text]))
-SELECT 
-  htt_req.interaction_id,
-    htt_req.uri,
-    htt_req.interaction_created_at,
-    htt_req.interaction_created_by,
-    htt_req.interaction_provenance,
-    htt_req.sat_interaction_http_request_id,
-    htt_req.nature,
-    htt_req.tenant_id,
-    htt_req.user_agent,
-    htt_req.client_ip_address,
-    htt_req.content_type,
-    htt_req.payload,
-    htt_req.elaboration,
-    htt_req.from_state,
-    htt_req.to_state,
-    htt_req.state_transition_reason,
-    htt_req.request_created_at,
-    htt_req.request_created_by,
-    htt_req.request_provenance,
-    htt_req.issues_count,
-    htt_req.resource_types,
-    htt_req.start_time,
-    htt_req.finish_time,
-    htt_req.duration_millisecs,
-    htt_req.patient_id,
-    htt_req.patient_mrn,
-    htt_req.organization_id,
-    htt_req.organization_name,
-   CONCAT_WS('-', htt_req.tenant_id, htt_req.organization_id, htt_req.patient_mrn) AS source_mrn  
-   from cte_http_fhir_req as htt_req; 
-
-/*******************************************************************************************
-This materialized view is to extract observability metrics from HTTP request interactions.This view joins 
-data from sat_interaction_http_request with JSONB headers to retrieve specific observability 
-metrics. Metrics extracted include start time, finish time, duration in nanoseconds, and 
-duration in milliseconds. To optimize the query, use a LATERAL join to extract the JSONB 
-values more efficiently. This approach avoids multiple jsonb_array_elements function calls 
-for each row and reduces repeated scanning of the JSONB arrays.
-******************************************************************************************/
-
--- techbd_udi_ingress.interaction_observe_mat source
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.interaction_observe_mat CASCADE;
-CREATE MATERIALIZED VIEW techbd_udi_ingress.interaction_observe_mat
-TABLESPACE pg_default
-AS WITH cte_interaction_observe AS (
-         SELECT sihr.sat_interaction_http_request_id AS interaction_http_request_id,
-            sihr.hub_interaction_id AS interaction_id,
-            headers.start_time,
-            headers.finish_time,
-            EXTRACT(epoch FROM headers.finish_time::timestamp without time zone - headers.start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
-            (sihr.payload -> 'request'::text) ->> 'requestUri'::text AS uri
-           FROM techbd_udi_ingress.sat_interaction_http_request sihr
-             JOIN LATERAL ( SELECT max(
-                        CASE
-                            WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Start-Time'::text THEN header.value ->> 'value'::text
-                            ELSE NULL::text
-                        END) AS start_time,
-                    max(
-                        CASE
-                            WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Finish-Time'::text THEN header.value ->> 'value'::text
-                            ELSE NULL::text
-                        END) AS finish_time
-                   FROM jsonb_array_elements((sihr.payload -> 'response'::text) -> 'headers'::text) header(value)) headers ON true
-          WHERE 1 = 1 AND (sihr.nature ->> 'nature'::text) = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text
-        )
- SELECT gen_random_uuid() AS row_id,
-    interaction_id,
+AS SELECT hub_interaction_id AS interaction_id,
     uri,
-    start_time,
-    finish_time,
-    duration_millisecs,
-    interaction_http_request_id
-   FROM cte_interaction_observe intr_observe
-  WHERE start_time IS NOT NULL AND finish_time IS NOT NULL
-  ORDER BY duration_millisecs DESC
-WITH NO DATA;
+    created_at AS interaction_created_at,
+    created_by AS interaction_created_by,
+    provenance AS interaction_provenance,
+    sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+    nature,
+    tenant_id,
+    user_agent,
+    client_ip_address,
+    'application/json'::text AS content_type,
+    payload,
+    elaboration,
+    from_state,
+    to_state,
+    state_transition_reason,
+    created_at AS request_created_at,
+    created_by AS request_created_by,
+    provenance AS request_provenance,
+    issues_count,
+    resource_type_set AS resource_types,
+    interaction_start_time::text AS start_time,
+    interaction_end_time::text AS finish_time,
+    EXTRACT(epoch FROM interaction_end_time::timestamp without time zone - interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
+    patient_id,
+    patient_mrn,
+    organization_id,
+    organization_name,
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn
+   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req; 
 
--- View indexes:
-CREATE INDEX interaction_observe_mat_hub_id_idx ON techbd_udi_ingress.interaction_observe_mat USING btree (interaction_id);
-CREATE INDEX interaction_observe_mat_request_id_idx ON techbd_udi_ingress.interaction_observe_mat USING btree (interaction_http_request_id);
-CREATE UNIQUE INDEX interaction_observe_mat_row_id_idx ON techbd_udi_ingress.interaction_observe_mat USING btree (row_id);
-CREATE INDEX interaction_observe_mat_start_time_idx ON techbd_udi_ingress.interaction_observe_mat USING btree (start_time);
+
+-- techbd_udi_ingress.interaction_http_request_payload source
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_payload;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_payload
+AS SELECT sat_interaction_http_request_id,
+    hub_interaction_id as interaction_id,
+    payload
+   FROM techbd_udi_ingress.sat_interaction_http_request sihr;   
 
 /*******************************************************************************************
-This materialized view is to extract observability metrics from interaction_observe_mat
+This materialized view is to extract observability metrics from interaction_http_request
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_observe CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_observe
@@ -669,9 +223,11 @@ SELECT 	intr_observe.interaction_id,
 		intr_observe.uri,
 		intr_observe.start_time,
 		intr_observe.finish_time,   
-		intr_observe.duration_millisecs,
-		intr_observe.interaction_http_request_id
-FROM techbd_udi_ingress.interaction_observe_mat intr_observe;
+		EXTRACT(epoch FROM intr_observe.finish_time::timestamp without time zone - intr_observe.start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
+		intr_observe.sat_interaction_http_request_id AS interaction_http_request_id
+FROM techbd_udi_ingress.interaction_http_request intr_observe
+WHERE intr_observe.start_time IS NOT NULL AND intr_observe.finish_time IS NOT null
+ ORDER BY duration_millisecs DESC;
 
 /*****************************************
 This materialized view extracts diagnostic information from JSON payloads of HTTP requests stored in 
@@ -683,53 +239,11 @@ and 'elaboration' for further analysis or reporting.
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_session_diagnostics_mat CASCADE;
 CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_session_diagnostics_mat
 TABLESPACE pg_default
-AS WITH cte_interaction_diagnostics AS (
-         SELECT intr_hreq.hub_interaction_id,
-            intr_hreq.nature ->> 'tenant_id'::text AS tenant_id,
-            hub_intr.key AS uri,
-            intr_hreq.hub_interaction_id AS session_id,
-            issue.value ->> 'severity'::text AS severity,
-            issue.value ->> 'message'::text AS message,
-            (issue.value -> 'location'::text) ->> 'line'::text AS line,
-            (issue.value -> 'location'::text) ->> 'column'::text AS "column",
-            (issue.value -> 'location'::text) ->> 'diagnostics'::text AS diagnostics,
-            (intr_hreq.payload -> 'response'::text) ->> 'encounteredAt'::text AS encounteredat,
-            intr_hreq.elaboration
-           FROM techbd_udi_ingress.hub_interaction hub_intr
-             JOIN techbd_udi_ingress.sat_interaction_http_request intr_hreq ON hub_intr.hub_interaction_id = intr_hreq.hub_interaction_id,
-            LATERAL jsonb_array_elements((((intr_hreq.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) validationresult(value),
-            LATERAL jsonb_array_elements(validationresult.value -> 'issues'::text) issue(value)
-          WHERE hub_intr.key = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text])
-        )
- SELECT gen_random_uuid() AS row_id,
-    hub_interaction_id,
-    tenant_id,
-    uri,
-    session_id,
-    severity,
-    message,
-    line,
-    "column",
-    diagnostics,
-    encounteredat,
-    elaboration
-   FROM cte_interaction_diagnostics intr_diagno
-WITH NO DATA;
-
--- View indexes:
-CREATE INDEX IF NOT EXISTS fhir_session_diagnostics_mat_encounteredat_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (encounteredat);
-CREATE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_hub_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (hub_interaction_id);
-CREATE UNIQUE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_row_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (row_id);
-CREATE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_tenant_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (tenant_id);
-
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_session_diagnostic_mat CASCADE;
-CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_session_diagnostic_mat
-TABLESPACE pg_default
 AS SELECT gen_random_uuid() AS row_id,
     sifr.hub_interaction_id,
     sifr.tenant_id,
     sifr.uri,
-    sifr.bundle_session_id,
+    sifr.bundle_session_id as session_id,
     issue.value ->> 'severity'::text AS severity,
     issue.value ->> 'message'::text AS message,
     (issue.value -> 'location'::text) ->> 'line'::text AS line,
@@ -744,11 +258,10 @@ AS SELECT gen_random_uuid() AS row_id,
 WITH NO DATA;
 
 -- View indexes:
-CREATE INDEX IF NOT EXISTS fhir_session_diagnostic_mat_encounteredat_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (encounteredat);
-CREATE INDEX  IF NOT EXISTS fhir_session_diagnostic_mat_hub_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (hub_interaction_id);
-CREATE UNIQUE INDEX  IF NOT EXISTS fhir_session_diagnostic_mat_row_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (row_id);
-CREATE INDEX  IF NOT EXISTS fhir_session_diagnostic_mat_tenant_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (tenant_id);
-
+CREATE INDEX IF NOT EXISTS fhir_session_diagnostics_mat_encounteredat_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (encounteredat);
+CREATE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_hub_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (hub_interaction_id);
+CREATE UNIQUE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_row_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (row_id);
+CREATE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_tenant_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (tenant_id);
 
 /*******************************************************************************************
 This view extracts diagnostic information from materialized view fhir_session_diagnostics_mat.
@@ -1279,56 +792,6 @@ FROM
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention AS  
 WITH submission_counts AS (
-         SELECT lower(sihr.nature ->> 'tenant_id'::text) AS qe_name,
-            count(
-                CASE
-                    WHEN sihr.from_state = 'NONE'::text THEN 1
-                    ELSE NULL::integer
-                END) AS qe_total_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forward HTTP Request'::text THEN 1
-                    ELSE NULL::integer
-                END) AS techbd_total_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text THEN 1
-                    ELSE NULL::integer
-                END) AS total_scoring_engine_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text 
-                    AND ((sihr.payload ->> 'insertScreeningsResponse'::text) = 'Record Successfully Added to DB'::text 
-                    OR (sihr.payload ->> 'insert_screeningsResponse'::text) = 'Record Successfully Added to DB'::text) THEN 1
-                    ELSE NULL::integer
-                END) AS scoring_engine_submission_passed,
-            max(sihr.created_at) AS recently_created_at
-           FROM techbd_udi_ingress.hub_interaction hintr
-             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
-          WHERE (hintr.key = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND (sihr.nature ->> 'tenant_id'::text) <> 'N/A'::text
-          GROUP BY (lower(sihr.nature ->> 'tenant_id'::text))
-        )
- SELECT ( SELECT count(*) AS count
-           FROM techbd_udi_ingress.hub_interaction hintr
-             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
-          WHERE lower(sihr.nature ->> 'tenant_id'::text) = sc.qe_name AND hintr.key = '/api/expect/fhir/bundle'::text AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval)) AS cross_roads_scn,
-    qe_name,
-    qe_total_submissions,
-    techbd_total_submissions,
-    total_scoring_engine_submissions,
-    scoring_engine_submission_passed,
-    abs(total_scoring_engine_submissions - scoring_engine_submission_passed) AS scoring_engine_submissions,
-    recently_created_at,
-    '??'::text AS shinny,
-    '??'::text AS mdw
-   FROM submission_counts sc
-  ORDER BY recently_created_at DESC;
-
-
-
-DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_stat CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_stat
-AS WITH submission_counts AS (
          SELECT sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
@@ -1507,41 +970,11 @@ $procedure$
  * into FHIR-related HTTP requests that failed or need attention, helping identify and resolve
  * issues with data submissions.
  */
-
+ 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_details CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_details AS  
-
-SELECT sihr.hub_interaction_id,
-    sihr.sat_interaction_http_request_id,
-    lower(sihr.nature ->> 'tenant_id'::text) AS qe_name,
-    sihr.created_at,
-    (((sihr.payload -> 'entry'::text) -> 0) -> 'resource'::text) ->> 'id'::text AS patient_mrn,
-    (((((sihr.payload -> 'entry'::text) -> 0) -> 'resource'::text) -> 'name'::text) -> 0) ->> 'text'::text AS patient_full_name,
-    (((((sihr.payload -> 'entry'::text) -> 0) -> 'resource'::text) -> 'name'::text) -> 0) ->> 'family'::text AS patient_last_name,
-    ((((((sihr.payload -> 'entry'::text) -> 0) -> 'resource'::text) -> 'name'::text) -> 0) -> 'given'::text) -> 0 AS patient_first_name,
-        CASE
-            WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response Error'::text THEN 'Data Submission Error'::text
-            WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text 
-            AND ((sihr.payload ->> 'insertScreeningsResponse'::text) <> 'Record Successfully Added to DB'::text
-            OR (sihr.payload ->> 'insert_screeningsResponse'::text) <> 'Record Successfully Added to DB'::text) THEN 'Data Validation Error'::text
-            ELSE 'no_error'::text
-        END AS error_type
-   FROM techbd_udi_ingress.hub_interaction hintr
-     JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
-  WHERE (hintr.key = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) 
-  AND ((sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response Error'::text
-  OR ((sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text 
-  AND ((sihr.payload ->> 'insertScreeningsResponse'::text) <> 'Record Successfully Added to DB'::text
-  OR  (sihr.payload ->> 'insert_screeningsResponse'::text) <> 'Record Successfully Added to DB'::text )))
-  AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval)
-  ORDER BY sihr.created_at DESC;
-
-
-  
-DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_detail CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_detail
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_details
 AS SELECT hub_interaction_id,
-    sat_interaction_fhir_request_id,
+    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
     tenant_id_lower AS qe_name,
     created_at,
     patient_mrn,
@@ -1718,63 +1151,13 @@ WITH combined_counts AS (
  * providing details of HTTP requests that failed and require attention.
  */
  
+-- techbd_udi_ingress.interaction_fhir_request_failed_needs_attention source
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed_needs_attention CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_failed_needs_attention
-AS SELECT  
-    htt_req.nature AS error_type,
-    htt_req.payload ->> 'error' AS error_message,
-    htt_req.request_created_at AS date,
-    htt_req.sat_interaction_http_request_id,
-    'This error occurs when the server cannot process the request due to invalid syntax. Ensure the request format, headers, and endpoint are correct.' AS failure_reason,
-    '<ol>
-        <li><strong>Resolution Steps:</strong></li>
-        <li><strong>1. Verify Request Format:</strong>
-            <ol>
-                <li>Ensure that the request payload (body) is correctly formatted according to the API documentation.</li>
-                <li>Check that all required parameters are included and correctly formatted.</li>
-            </ol>
-        </li>
-        <li><strong>2. Validate Data:</strong>
-            <ol>
-                <li>Double-check the data being sent in the request to ensure it adheres to the API''s expectations (e.g., data types, mandatory fields).</li>
-            </ol>
-        </li>
-        <li><strong>3. Check Headers:</strong>
-            <ol>
-                <li>Ensure that the correct Content-Type header is set (e.g., <code>application/json</code> for JSON payloads).</li>
-                <li>Confirm that any other required headers are present and correctly set.</li>
-            </ol>
-        </li>
-        <li><strong>4. Review Endpoint:</strong>
-            <ol>
-                <li>Verify that the endpoint URL is correct and matches the API''s documentation.</li>
-                <li>Check if there have been any updates or changes to the API that could affect the request.</li>
-                <li>Use tools like Postman or cURL to manually test the endpoint and compare results.</li>
-            </ol>
-        </li> 
-        <li>
-         If these steps do not resolve the issue, consider reaching out to the support.
-        </li>
-    </ol>' AS resolution_steps
-FROM 
-    techbd_udi_ingress.interaction_http_request_mat htt_req
-    LEFT JOIN techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp 
-        ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
-        AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
-    LEFT JOIN techbd_udi_ingress.interaction_http_request_observe_mat intr_observe 
-        ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
-        AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
-WHERE 
-    upper(htt_req.to_state) = 'FAIL'::text;
-
-
--- techbd_udi_ingress.interaction_fhir_request_failed_needs_attention source
-DROP VIEW IF EXISTS techbd_udi_ingress.interaction_fhir_request_failed_needs_attention CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_fhir_request_failed_needs_attention
 AS SELECT nature AS error_type,
     payload ->> 'error'::text AS error_message,
     created_at AS date,
-    sat_interaction_fhir_request_id,
+    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
     'This error occurs when the server cannot process the request due to invalid syntax. Ensure the request format, headers, and endpoint are correct.'::text AS failure_reason,
     '<ol>
         <li><strong>Resolution Steps:</strong></li>
@@ -1845,12 +1228,12 @@ AS SELECT nature AS error_type,
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_needs_attention CASCADE; 
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request_needs_attention
-AS SELECT  
-    htt_req.nature AS error_type,  
-    htt_req.payload ->> 'insertScreeningsResponse' AS error_message,
-    htt_req.request_created_at AS date,
-    htt_req.sat_interaction_http_request_id,
-    'Ensure that the data matches the required format and includes all mandatory fields as specified, to prevent errors related to invalid or incomplete submissions.' AS failure_reason,
+AS SELECT 
+htt_req.nature as error_type,
+htt_req.payload->> 'insertScreeningsResponse' AS error_message,
+htt_req.created_at AS date,
+htt_req.sat_interaction_fhir_request_id as sat_interaction_http_request_id,
+'Ensure that the data matches the required format and includes all mandatory fields as specified, to prevent errors related to invalid or incomplete submissions.' AS failure_reason,
     '<ol>
         <li><strong>Resolution Steps:</strong></li>
         <li><strong>1. Check the Data Format:</strong> 
@@ -1873,18 +1256,8 @@ AS SELECT
          If these steps do not resolve the issue, consider reaching out to the support.
         </li>
     </ol>' AS resolution_steps
-FROM 
-    techbd_udi_ingress.interaction_http_request_mat htt_req
-LEFT JOIN 
-    techbd_udi_ingress.interaction_http_request_resource_type_mat rtyp 
-    ON rtyp.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
-    AND rtyp.hub_interaction_id = htt_req.hub_interaction_id
-LEFT JOIN 
-    techbd_udi_ingress.interaction_http_request_observe_mat intr_observe 
-    ON intr_observe.sat_interaction_http_request_id = htt_req.sat_interaction_http_request_id 
-    AND intr_observe.hub_interaction_id = htt_req.hub_interaction_id
-WHERE 
-    htt_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]);
+FROM
+techbd_udi_ingress.sat_interaction_fhir_request htt_req;
 
 
 /**
@@ -1936,18 +1309,12 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_summary
 AS 
 WITH cte AS (
     SELECT tenant_id_lower,
-           COALESCE(
-               (SELECT h ->> 'value'
-                FROM jsonb_array_elements((payload -> 'request') -> 'headers') AS h
-                WHERE h ->> 'name' = 'x-forwarded-for'),
-               NULL
-           ) AS client_ip_address,
+           client_ip_address,
            user_agent
-    FROM techbd_udi_ingress.interaction_http_request_mat
-    WHERE uri = ANY (ARRAY['/Bundle', '/Bundle/'])
-      AND nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
-      AND user_agent <> 'httpyac' AND tenant_id_lower <> 'n/a'
-      AND request_created_at >= CURRENT_DATE - INTERVAL '7 days' 
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+      AND user_agent <> 'httpyac'
+      AND created_at >= CURRENT_DATE - INTERVAL '7 days' 
 )
 SELECT tenant_id_lower,
        client_ip_address,
@@ -2013,32 +1380,24 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_summary_detai
 AS 
 WITH cte AS (
     SELECT tenant_id_lower,
-           COALESCE(
-               (SELECT h ->> 'value'
-                FROM jsonb_array_elements((payload -> 'request') -> 'headers') AS h
-                WHERE h ->> 'name' = 'x-forwarded-for'),
-               NULL
-           )  AS client_ip_address,
+           client_ip_address,
            user_agent,
           hub_interaction_id,  
-          request_created_at         
-    FROM techbd_udi_ingress.interaction_http_request_mat
-    WHERE uri = ANY (ARRAY['/Bundle', '/Bundle/'])
-      AND nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+          created_at         
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
       AND user_agent <> 'httpyac'
-      AND request_created_at >= CURRENT_DATE - INTERVAL '7 days'  
+      AND created_at >= CURRENT_DATE - INTERVAL '7 days'  
 )
 SELECT tenant_id_lower,
        client_ip_address,
        user_agent,
        hub_interaction_id,
-       request_created_at
+       created_at as request_created_at
 FROM cte
 ORDER BY request_created_at DESC;
 
 
-CREATE UNIQUE INDEX IF NOT EXISTS interaction_http_request_mat_sat_interaction_http_request_i_idx 
-ON techbd_udi_ingress.interaction_http_request_mat (sat_interaction_http_request_id);
 
 /*******************************************************************************************************************************
  * Function to upsert user details related to an HTTP interaction, ensuring the associated hub interaction record exists and 
@@ -2289,7 +1648,7 @@ BEGIN
   		RETURN NULL;	
   	END IF;
   
-  	IF(LOWER(sat_interaction_fhir_request_upserted.nature) <> LOWER('org.techbd.service.http.Interactions$RequestResponseEncountered')) THEN
+  	IF(LOWER(sat_interaction_fhir_request_upserted.nature) <> LOWER('Original FHIR Payload')) THEN
 		SELECT 
 		fhir_req.client_ip_address,			fhir_req.user_agent, 				fhir_req.bundle_id, 
 		fhir_req.bundle_last_updated,		fhir_req.organization_id,			fhir_req.organization_name, 
@@ -2308,7 +1667,7 @@ BEGIN
 		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
 		WHERE 1 = 1
 		AND fhir_req.hub_interaction_id = sat_interaction_fhir_request_upserted.hub_interaction_id
-		AND fhir_req.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered';	
+		AND fhir_req.nature = 'Original FHIR Payload';	
   	END IF;
   
 	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = 'original fhir payload') THEN
@@ -2497,7 +1856,6 @@ BEGIN
         validation_completed_at,
         validation_engine,
         elaboration,
-        created_at,
         created_by,
         provenance,
         ig_version,
@@ -2516,7 +1874,7 @@ BEGIN
         nature,
         payload,
         COALESCE(v_client_ip_address_forwarded,v_client_ip_address),
-        COALESCE(v_user_agent,'unknown'),
+        COALESCE(v_user_agent,''),
         from_state,
         to_state,
         state_transition_reason,
@@ -2535,7 +1893,6 @@ BEGIN
         COALESCE(v_validation_completed_at::TIMESTAMPTZ,NULL),
         v_validation_engine,
         sat_interaction_fhir_request_upserted.elaboration,
-        created_at,
         created_by,
         provenance,
         v_ig_version,
@@ -2604,3 +1961,205 @@ AS SELECT sat_interaction_fhir_request_id,
     (SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ') FROM jsonb_each_text((payload->>'responseBody')::jsonb) AS json_data(key, value)) AS response_body_details
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
   WHERE (to_state = 'FAIL'::text OR to_state = 'COMPLETE'::text) AND passed = false;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.process_json_action_rules(jsonb,text,text,text,text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.process_json_action_rules(input_json jsonb, rule_namespace text, key text, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+/*******************************************************************************************************************************
+Function to process a set of JSON action rules on a given JSON input.
+
+Parameters:
+input_json    - The JSONB input on which the rules will be applied (JSONB)
+rule_namespace- The namespace for selecting action rules (TEXT)
+key           - A unique key to validate the process (TEXT)
+created_by    - The user who triggered the function (optional, default is NULL) (TEXT)
+provenance    - The origin of the data or process (optional, default is NULL) (TEXT)
+
+Returns:
+Modified JSONB after applying the action rules.
+*******************************************************************************************************************************/
+DECLARE
+    v_current_rule 		RECORD;
+    v_temp_json 		JSONB := process_json_action_rules.input_json;
+    v_json_value 		JSONB;
+   	v_json_path 		TEXT;
+   	v_found_flag   		BOOLEAN;
+   	v_new_action    	JSONB;
+   	v_error_msg 		TEXT;
+    v_error_type 		TEXT;
+    v_sqlstate 			TEXT;
+    v_pg_detail 		TEXT;
+    v_pg_hint 			TEXT;
+    v_pg_context 		TEXT;
+BEGIN
+	
+	IF(process_json_action_rules.key IS NULL) THEN
+		RETURN NULL;	
+	END IF;
+		
+    -- Loop through each row of json_action_rule within the given namespace
+    FOR v_current_rule IN 
+        SELECT json_path, action, reject_json, modify_json, condition, priority 
+        FROM techbd_udi_ingress.json_action_rule 
+        WHERE (namespace = process_json_action_rules.rule_namespace OR process_json_action_rules.rule_namespace IS NULL)
+        ORDER BY priority DESC -- Apply rules in order of priority
+    LOOP
+		 -- Check if the json_path starts with '$.'
+        IF LEFT(v_current_rule.json_path, 2) = '$.' THEN
+            v_json_path := v_current_rule.json_path;
+        ELSE
+            v_json_path := '$.' || v_current_rule.json_path;
+        END IF;
+
+	     -- Check if the json_path content exists in v_temp_json
+        v_found_flag := jsonb_path_exists( v_temp_json, v_json_path::jsonpath); -- Casting to jsonpath;   
+         
+		IF v_found_flag = false THEN
+			CONTINUE;
+		END IF; 
+	
+		IF v_current_rule.action = 'reject' THEN           	           	
+           	v_new_action := jsonb_build_object(
+                'action', 'reject',
+                'actionPayload', v_current_rule.reject_json::jsonb -- Including reject_json as JSONB
+            );                              
+          	-- Check if 'techByDesignDisposition' already exists in 'v_temp_json'
+            IF v_temp_json ? 'techByDesignDisposition' THEN
+                -- Append to existing array
+                v_temp_json := jsonb_set(
+                    v_temp_json,
+                    '{techByDesignDisposition}',
+                    (v_temp_json->'techByDesignDisposition') || v_new_action
+                );
+            ELSE
+                -- Create the array and add the new action
+                v_temp_json := jsonb_set(
+                    v_temp_json,
+                    '{techByDesignDisposition}', 
+                    jsonb_build_array(v_new_action)
+                );
+            END IF;
+		END IF;           
+	
+		-- Update the last_applied_at for the rule
+		UPDATE techbd_udi_ingress.json_action_rule
+			SET last_applied_at = current_timestamp
+				WHERE json_path = v_current_rule.json_path 
+					AND namespace = process_json_action_rules.rule_namespace;
+				
+		-- Initialize the varible with default values; 
+		v_found_flag 	:= FALSE;
+		v_json_path		:= NULL;
+		v_new_action	:= NULL;
+    END LOOP;
+   
+    -- Return the modified JSON
+    RETURN v_temp_json;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		PERFORM techbd_udi_ingress.register_issue(
+        NULL,
+		process_json_action_rules.interaction_key,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		process_json_action_rules.created_by,
+		process_json_action_rules.provenance);
+		RETURN NULL;
+END;
+$function$
+;
+
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.interaction_disposition(text, jsonb, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.interaction_disposition(interaction_id text, input_json jsonb, rule_namespace text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+/*******************************************************************************************************************************
+Wrapper function for processing interaction disposition and handling errors.
+
+Parameters:
+interaction_id   - ID of the interaction to process (TEXT)
+input_json       - JSONB input containing action rules (JSONB)
+rule_namespace   - Namespace for the rules to be applied (TEXT)
+
+Returns:
+JSONB result based on processed action rules, or NULL in case of an error.
+*******************************************************************************************************************************/
+DECLARE
+	-- Error-handling variables
+    v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;
+    v_exception_id 					TEXT; 
+   	-- Result variables
+   	v_result						JSONB;	-- To store the final JSON result
+   	v_interaction_key 				TEXT;	-- Key extracted from the hub_interaction table
+    v_created_by 					TEXT :=	current_user;	-- Username of the person executing the function
+    v_provenance 					TEXT := 'unknown';		-- Default provenance, can be updated later
+
+BEGIN
+    -- Validate and fetch interaction key from hub_interaction table
+    -- If no matching record is found, return NULL.
+   	SELECT t."key" 
+   	INTO v_interaction_key
+  	FROM techbd_udi_ingress.hub_interaction t
+  	WHERE t.hub_interaction_id = interaction_disposition.interaction_id
+  	;
+
+ 	IF(v_interaction_key IS NULL) THEN
+		RETURN NULL;	-- Return NULL if interaction key is not found
+	END IF;
+	
+	-- Process JSON action rules using the fetched interaction key and return the result
+	v_result := techbd_udi_ingress.process_json_action_rules(interaction_disposition.input_json, interaction_disposition.rule_namespace,v_interaction_key);
+
+	RETURN v_result;
+EXCEPTION
+	WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		    
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		v_interaction_key,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+	RETURN NULL;
+END;
+$function$
+;
