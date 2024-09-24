@@ -2,6 +2,7 @@ package lib.aide.tabular;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -125,12 +126,20 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
             for (Map<String, Object> row : data) {
                 Map<String, Object> formattedRow = new HashMap<>(row);
+
                 row.forEach((column, value) -> {
+                 
                     if (value instanceof OffsetDateTime) {
+                        LOG.info("", value);
                         formattedRow.put(column, ((OffsetDateTime) value)
                                 .atZoneSameInstant(ZoneId.of("America/New_York"))
                                 .toLocalDateTime()
                                 .format(formatter));
+                    } else if (value instanceof java.sql.Date) {
+                // Convert java.sql.Date to LocalDate
+                        LocalDate localDate = ((java.sql.Date) value).toLocalDate();
+                        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM-dd-yyyy"); 
+                        formattedRow.put(column, localDate.format(dateFormatter));
                     }
                 });
                 formattedData.add(formattedRow);
@@ -141,13 +150,16 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             }
             Instant end = Instant.now();
             long timeTaken = Duration.between(start, end).toNanos();
-            System.out.println("Time taken by JOOQ: %d ns (%d s)".formatted(timeTaken, Duration.between(start, end).toSeconds()));
-            return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, formattedData, lastRow, null);
+            System.out.println(
+                    "Time taken by JOOQ: %d ns (%d s)".formatted(timeTaken, Duration.between(start, end).toSeconds()));
+            return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, formattedData, lastRow,
+                    null);
         } catch (Exception e) {
             if (logger != null) {
                 logger.error("JooqRowsSupplier error", e);
             }
-            return new TabularRowsResponse<>(includeGeneratedSqlInErrorResp ? provenance : null, null, -1, e.getMessage());
+            return new TabularRowsResponse<>(includeGeneratedSqlInErrorResp ? provenance : null, null, -1,
+                    e.getMessage());
         }
     }
 
@@ -165,7 +177,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
         // // Adding columns to select
         // if (request.valueCols() != null)
-        //     request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
+        // request.valueCols().forEach(col ->
+        // selectFields.add(typableTable.column(col.field())));
         // Check if groupKeys are available
         if (request.groupKeys() != null && !request.groupKeys().isEmpty()) {
             // Adding the select field '*'
@@ -219,9 +232,11 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     if (filter.type().equals("inRange")) {
                         // Parse the decoded startDateValue and endDateValue into LocalDateTime
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                        LocalDateTime startDateTime = LocalDateTime.parse(filter.dateFrom(), formatter); // Parse with time
+                        LocalDateTime startDateTime = LocalDateTime.parse(filter.dateFrom(), formatter); // Parse with
+                                                                                                         // time
                         // included
-                        LocalDateTime endDateTime = LocalDateTime.parse(filter.dateTo(), formatter); // Parse with time included
+                        LocalDateTime endDateTime = LocalDateTime.parse(filter.dateTo(), formatter); // Parse with time
+                                                                                                     // included
 
                         bindValues.add(startDateTime);
                         bindValues.add(endDateTime);
@@ -233,7 +248,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
                         LOG.info("filter.operator() exist");
                         // ******** */
-                        final var condition = createConditionSub(field, filterModel.type(), filterModel.filter(), filterModel.secondFilter(), filterModel.dateFrom(), filterModel.dateTo());
+                        final var condition = createConditionSub(field, filterModel.type(), filterModel.filter(),
+                                filterModel.secondFilter(), filterModel.dateFrom(), filterModel.dateTo());
                         LOG.info("filter.operator() : {}", filter.operator());
                         whereConditions.add(condition);
                         if ("OR".equalsIgnoreCase(filter.operator())) {
@@ -245,7 +261,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                             multipleWhereConditions.add(DSL.and(condition));
                         }
 
-                        LOG.info("filter.where condition :{}", multipleWhereConditions.get(multipleWhereConditions.size() - 1));
+                        LOG.info("filter.where condition :{}",
+                                multipleWhereConditions.get(multipleWhereConditions.size() - 1));
                         if (filterModel.type().equals("like") || filterModel.type().equals("contains")) {
                             bindValues.add("%" + filterModel.filter() + "%");
                         } else if (filterModel.filter() != null) {
@@ -255,7 +272,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                             bindValues.add(filterModel.secondFilter());
                         }
                         if (filterModel.type().equals("inRange")) { // Date related
-                            // yyyy-MM-dd HH:mm:ss is the format obtained from the AGGrid. Convert dateFrom and dateTo
+                            // yyyy-MM-dd HH:mm:ss is the format obtained from the AGGrid. Convert dateFrom
+                            // and dateTo
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                             LocalDateTime startDateTime = LocalDateTime.parse(filterModel.dateFrom(), formatter);
                             LocalDateTime endDateTime = LocalDateTime.parse(filterModel.dateTo(), formatter);
@@ -386,10 +404,12 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     }
 
     private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {
-        return createConditionSub(field, filter.type(), filter.filter(), filter.secondFilter(), filter.dateFrom(), filter.dateTo());
+        return createConditionSub(field, filter.type(), filter.filter(), filter.secondFilter(), filter.dateFrom(),
+                filter.dateTo());
     }
 
-    private Condition createConditionSub(final String field, String type, Object filter, Object secondfilter, Object dateFrom, Object dateTo) {
+    private Condition createConditionSub(final String field, String type, Object filter, Object secondfilter,
+            Object dateFrom, Object dateTo) {
         final var dslField = typableTable.column(field);
         return switch (type) {
             case "like" ->
@@ -426,7 +446,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             default ->
                 throw new IllegalArgumentException(
                         "Unknown filter type '" + type + "' in filter for field '" + field
-                        + "' see JooqRowsSupplier::createCondition");
+                                + "' see JooqRowsSupplier::createCondition");
         };
     }
 
