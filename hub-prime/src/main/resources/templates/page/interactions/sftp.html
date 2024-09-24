@@ -70,7 +70,7 @@
                 var columnDefs = [
                     { headerName: "QE", field: "tenantId",  filter: true, enablePivot: true, enableRowGroup: true },
                     {
-                        headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true,
+                        headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: false, sort: "desc", enablePivot: true, enableRowGroup: true,
                         valueFormatter: function (params) {
                             if (params.value) {
                                 let date = new Date(params.value);

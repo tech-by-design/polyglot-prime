@@ -224,7 +224,7 @@ AS WITH filtered_data AS (
     max(first_name) AS patient_first_name,
     max(last_name) AS patient_last_name,
     max(gender) AS patient_gender,
-    TO_CHAR(MAX(birth_date::date), 'MM-DD-YYYY') AS patient_birth_date,
+    max(birth_date::date) AS patient_birth_date,
     max(address) AS patient_address,
     max(city) AS patient_city,
     max(state) AS patient_state,
@@ -463,7 +463,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
 AS SELECT
   validation_engine,
-  TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY') AS issue_date,  -- Format date as month, day, year
+  max(date_time::date) AS issue_date,
   MAX(date_time) AS most_recent_date,
   COALESCE(ig_version, 'Unknown') AS ig_version,
   COUNT(DISTINCT issue) AS distinct_issue_count
