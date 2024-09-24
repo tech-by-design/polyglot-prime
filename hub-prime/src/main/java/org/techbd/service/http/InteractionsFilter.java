@@ -201,7 +201,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var artifact = ArtifactStore.jsonArtifact(rre, rre.interactionId().toString(),
                 InteractionsFilter.class.getName() + ".interaction", asb.getProvenance());
 
-        if (persistInteractionDB) {
+        if (persistInteractionDB && !requestURI.equals("/Bundle") && !requestURI.equals("/Bundle/")) {
             final var rihr = new RegisterInteractionHttpRequest();
             try {
                 LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",

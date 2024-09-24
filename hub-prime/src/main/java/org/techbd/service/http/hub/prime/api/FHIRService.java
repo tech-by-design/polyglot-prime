@@ -1,5 +1,6 @@
 package org.techbd.service.http.hub.prime.api;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -7,10 +8,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.lang.NonNull;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,10 +21,15 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.ContentCachingRequestWrapper;
+import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
+import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.Helpers;
+import org.techbd.service.http.Interactions;
+import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -33,10 +41,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
-
 import ca.uhn.fhir.validation.ResultSeverityEnum;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -46,6 +54,12 @@ public class FHIRService {
         private final AppConfig appConfig;
         private final OrchestrationEngine engine = new OrchestrationEngine();
         private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+
+        @Value("${org.techbd.service.http.interactions.default-persist-strategy:#{null}}")
+        private String defaultPersistStrategy;
+
+        @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
+        private boolean saveUserDataToInteractions;
 
         public FHIRService(
                         final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig) {
@@ -62,14 +76,14 @@ public class FHIRService {
                         boolean isSync,
                         boolean includeRequestInOutcome,
                         boolean includeIncomingPayloadInDB,
-                        HttpServletRequest request, String provenance) {
+                        HttpServletRequest request,HttpServletResponse response, String provenance) throws IOException{
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                 : appConfig.getDefaultSdohFhirProfileUrl();
                 var immediateResult = validate(request, payload, fhirProfileUrl, uaValidationStrategyJson,
-                                includeRequestInOutcome);                
+                                includeRequestInOutcome);
+               
                 var result = Map.of("OperationOutcome", immediateResult);
-                final var interactionId = getBundleInteractionId(request);
                 final var DSL = udiPrimeJpaConfig.dsl();
                 final var jooqCfg = DSL.configuration();
                 // Check for the X-TechBD-HealthCheck header
@@ -78,18 +92,122 @@ public class FHIRService {
                                         .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
                         return result; // Return without proceeding to DataLake submission
                 }
+                registerBundleInteraction(jooqCfg,provenance, request, payload, response);
+                final var interactionId = getBundleInteractionId(request);
                 registerStateAccept(interactionId, request.getRequestURI(),
-                                tenantId, payload, provenance, jooqCfg);
-                Map<String, Object> payloadWithDisposition = getTechByDesignDisposistion(interactionId, immediateResult,
-                                jooqCfg);
+                tenantId, payload, provenance, jooqCfg);
+                Map<String, Object> payloadWithDisposition =
+                getTechByDesignDisposistion(interactionId, immediateResult,
+                jooqCfg);
                 registerStateDisposition(interactionId, request.getRequestURI(), tenantId,
-                                payloadWithDisposition, provenance, jooqCfg);
+                payloadWithDisposition, provenance, jooqCfg);
                 if (checkForTechByDesignDisposition(interactionId, payloadWithDisposition)) {
-                        return payloadWithDisposition;
+                return payloadWithDisposition;
                 }
-                sendToScoringEngine(request, customDataLakeApi, tenantId, payload, provenance, payloadWithDisposition,
-                                dataLakeApiContentType, jooqCfg);
+                sendToScoringEngine(request, customDataLakeApi, tenantId, payload,
+                provenance, payloadWithDisposition,
+                dataLakeApiContentType, jooqCfg);
                 return result;
+        }
+
+        private void registerBundleInteraction(org.jooq.Configuration jooqCfg,String requestURI,HttpServletRequest request, 
+        String payload,HttpServletResponse origResponse) throws IOException {
+                final Interactions interactions = new Interactions();
+                // Prepare a serializable RequestEncountered as early as possible in
+                // request cycle and store it as an attribute so that other filters
+                // and controllers can use the common "active request" instance.
+                final var mutatableReq = new ContentCachingRequestWrapper(request);
+                var requestEncountered = new Interactions.RequestEncountered(mutatableReq, null);
+                final var mutatableResp = new ContentCachingResponseWrapper(origResponse);
+                setActiveRequestEnc(mutatableReq, requestEncountered);
+                RequestResponseEncountered rre = new Interactions.RequestResponseEncountered(requestEncountered,
+                                new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
+                                                mutatableReq.getContentAsByteArray()));
+
+                interactions.addHistory(rre);
+                setActiveInteraction(mutatableReq, rre);
+                final var provenance = "%s.registerBundleInteraction".formatted(InteractionsFilter.class.getName());
+
+                final var rihr = new RegisterInteractionHttpRequest();
+                try {
+                        LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
+                                        rre.interactionId().toString(), rre.tenant());
+                        final var tenant = rre.tenant();
+                        final var dsl = udiPrimeJpaConfig.dsl();
+                        rihr.setInteractionId(rre.interactionId().toString());
+                        rihr.setNature(Configuration.objectMapper.valueToTree(
+                                        Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
+                                                        tenant != null ? tenant.tenantId() != null ? tenant.tenantId()
+                                                                        : "N/A" : "N/A")));
+                        rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                        rihr.setInteractionKey(requestURI);
+                        rihr.setPayload(Configuration.objectMapper
+                                        .readTree(payload));
+                        rihr.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, since it might be stored out
+                                                                 // of order
+                        rihr.setCreatedBy(InteractionsFilter.class.getName());
+                        rihr.setProvenance(provenance);
+
+                        // User details
+                        if (saveUserDataToInteractions) {
+                                var curUserName = "API_USER";
+                                var gitHubLoginId = "N/A";
+                                final var sessionId = request.getRequestedSessionId();
+                                var userRole = "API_ROLE";
+
+                                final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
+                                if (curUser.isPresent()) {
+                                        final var ghUser = curUser.get().ghUser();
+                                        if (null != ghUser) {
+                                                curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
+                                                gitHubLoginId = Optional.ofNullable(ghUser.gitHubId())
+                                                                .orElse("NO_DATA");
+                                                userRole = curUser.get().principal().getAuthorities().stream()
+                                                                .map(GrantedAuthority::getAuthority)
+                                                                .collect(Collectors.joining(","));
+                                                LOG.info("userRole: " + userRole);
+                                                userRole = "DEFAULT_ROLE"; // TODO: Remove this when role is implemented
+                                                                           // as part of Auth
+                                        }
+                                }
+                                rihr.setUserName(curUserName);
+                                rihr.setUserId(gitHubLoginId);
+                                rihr.setUserSession(sessionId);
+                                rihr.setUserRole(userRole);
+                        } else {
+                                LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
+                                                + saveUserDataToInteractions);
+                        }
+
+                        rihr.execute(dsl.configuration());
+                        // JsonNode payloadWithDisposition = rihr.getReturnValue();
+                        // LOG.info("FHIRService:: Invoke Tech By Design Disposition procedure -END for interaction id : {}  ", interactionId);
+                        // return Configuration.objectMapper.convertValue(payloadWithDisposition,
+                        //                 new TypeReference<Map<String, Object>>() {
+                        //                 });
+                        LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
+                                        rre.interactionId().toString(), rre.tenant());
+                } catch (Exception e) {
+                        LOG.error("ERROR:: REGISTER State None  for  interaction id : {} tenant id : {} : CALL "
+                                        + rihr.getName() + " error", rre.interactionId().toString(), rre.tenant(), e);
+                }
+
+        }
+
+        protected static final void setActiveRequestTenant(final @NonNull HttpServletRequest request,
+                        final @NonNull Interactions.Tenant tenant) {
+                request.setAttribute("activeHttpRequestTenant", tenant);
+        }
+
+        private void setActiveRequestEnc(final @NonNull HttpServletRequest request,
+                        final @NonNull Interactions.RequestEncountered re) {
+                request.setAttribute("activeHttpRequestEncountered", re);
+                setActiveRequestTenant(request, re.tenant());
+        }
+
+        private void setActiveInteraction(final @NonNull HttpServletRequest request,
+                        final @NonNull Interactions.RequestResponseEncountered rre) {
+                request.setAttribute("activeHttpInteraction", rre);
         }
 
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
