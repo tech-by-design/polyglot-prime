@@ -82,8 +82,7 @@ public class FHIRService {
                                                 : appConfig.getDefaultSdohFhirProfileUrl();
                 var immediateResult = validate(request, payload, fhirProfileUrl, uaValidationStrategyJson,
                                 includeRequestInOutcome);
-
-                var result = Map.of("OperationOutcome", immediateResult);
+                   var result = Map.of("OperationOutcome", immediateResult);
                 final var DSL = udiPrimeJpaConfig.dsl();
                 final var jooqCfg = DSL.configuration();
                 // Check for the X-TechBD-HealthCheck header
@@ -121,7 +120,7 @@ public class FHIRService {
 
                 final var rihr = new RegisterInteractionHttpRequest();
                 try {
-                        LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
+                        LOG.info("REGISTER State None , Accept, Disposition : BEGIN for  interaction id : {} tenant id : {}",
                                         rre.interactionId().toString(), rre.tenant());
                         final var tenant = rre.tenant();
                         final var dsl = udiPrimeJpaConfig.dsl();
@@ -157,8 +156,7 @@ public class FHIRService {
                                                                 .map(GrantedAuthority::getAuthority)
                                                                 .collect(Collectors.joining(","));
                                                 LOG.info("userRole: " + userRole);
-                                                userRole = "DEFAULT_ROLE"; // TODO: Remove this when role is implemented
-                                                                           // as part of Auth
+                                                userRole = "DEFAULT_ROLE";
                                         }
                                 }
                                 rihr.setUserName(curUserName);
@@ -171,16 +169,12 @@ public class FHIRService {
                         }
 
                         rihr.execute(dsl.configuration());
-                        // JsonNode payloadWithDisposition = rihr.getReturnValue();
-                        // LOG.info("FHIRService:: Invoke Tech By Design Disposition procedure -END for
-                        // interaction id : {} ", interactionId);
-                        // return Configuration.objectMapper.convertValue(payloadWithDisposition,
-                        // new TypeReference<Map<String, Object>>() {
-                        // });
-                        LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
-                                        rre.interactionId().toString(), rre.tenant());
+                        JsonNode payloadWithDisposition = rihr.getReturnValue();
+                        LOG.info("REGISTER State None , Accept, Disposition : END for interaction id : {} ",  rre.interactionId().toString());
+                        return Configuration.objectMapper.convertValue(payloadWithDisposition,new TypeReference<Map<String, Object>>() {});
+
                 } catch (Exception e) {
-                        LOG.error("ERROR:: REGISTER State None  for  interaction id : {} tenant id : {} : CALL "
+                        LOG.error("ERROR:: REGISTER State None , Accept, Disposition :  for  interaction id : {} tenant id : {} : CALL "
                                         + rihr.getName() + " error", rre.interactionId().toString(), rre.tenant(), e);
                 }
                 return null;
@@ -418,11 +412,11 @@ public class FHIRService {
                         // request that you'd like to store."));
                         initRIHR.setInteractionId(bundleAsyncInteractionId);
                         initRIHR.setInteractionKey(requestURI);
-                        initRIHR.setNature((JsonNode)Configuration.objectMapper.valueToTree(
+                        initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                                         Map.of("nature", "Forward HTTP Request", "tenant_id",
                                                         tenantId)));
                         initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                        initRIHR.setPayload((JsonNode)Configuration.objectMapper
+                        initRIHR.setPayload((JsonNode) Configuration.objectMapper
                                         .valueToTree(payloadWithDisposition));
                         initRIHR.setFromState("DISPOSITION");
                         initRIHR.setToState("FORWARD");
@@ -448,7 +442,7 @@ public class FHIRService {
                 try {
                         forwardRIHR.setInteractionId(bundleAsyncInteractionId);
                         forwardRIHR.setInteractionKey(requestURI);
-                        forwardRIHR.setNature((JsonNode)Configuration.objectMapper.valueToTree(
+                        forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                                         Map.of("nature", "Forwarded HTTP Response",
                                                         "tenant_id", tenantId)));
                         forwardRIHR.setContentType(
@@ -459,7 +453,7 @@ public class FHIRService {
                                                 .readTree(response));
                         } catch (JsonProcessingException jpe) {
                                 // in case the payload is not JSON store the string
-                                forwardRIHR.setPayload((JsonNode)Configuration.objectMapper
+                                forwardRIHR.setPayload((JsonNode) Configuration.objectMapper
                                                 .valueToTree(response));
                         }
                         forwardRIHR.setFromState("FORWARD");
@@ -488,7 +482,7 @@ public class FHIRService {
                 try {
                         errorRIHR.setInteractionId(bundleAsyncInteractionId);
                         errorRIHR.setInteractionKey(requestURI);
-                        errorRIHR.setNature((JsonNode)Configuration.objectMapper.valueToTree(
+                        errorRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                                         Map.of("nature", "Forwarded HTTP Response Error",
                                                         "tenant_id", tenantId)));
                         errorRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
@@ -545,7 +539,7 @@ public class FHIRService {
                                 errorMap.put("statusText", webClientResponseException
                                                 .getStatusText());
                         }
-                        errorRIHR.setPayload((JsonNode)Configuration.objectMapper
+                        errorRIHR.setPayload((JsonNode) Configuration.objectMapper
                                         .valueToTree(errorMap));
                         errorRIHR.setFromState("FORWARD");
                         errorRIHR.setToState("FAIL");
