@@ -157,49 +157,33 @@
                     { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter", flex: 1 },
                     { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter", flex: 1 },
                 ])
-                .withModalAide(modalAide)
-                .withGridDivStyles({ height: "500px", width: "100%" })
-                .withGridOptions({
-                    overlayNoRowsTemplate: '<span class="ag-overlay-no-rows-center">No Data Found</span>',
-                    rowModelType: 'clientSide', // Set to clientSide row model
-                    onGridReady: (params) => {
-                        // Fetch the data once the grid is ready
-                        fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/qe_name/${qeName}.json`))
-                            .then(response => response.json())
-                            .then(data => {
-                                if (Array.isArray(data) && data.length > 0) {
-                                    // Load data into the grid using client-side row model
-                                    params.api.applyTransaction({ add: data });
-                                    //params.api.setRowData(data);
-                                    console.log('Data loaded and switched to client-side row model');
-                                } else {
-                                    params.api.showNoRowsOverlay();
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                    {
+                    beforeRequest: async (reqPayload, dataSourceUrl) => {
+                            // Forcefully add the filterModel for error_type
+                            reqPayload.body.filterModel = {
+                                ...reqPayload.body.filterModel,
+                                qe_name: {
+                                    filterType: "text",
+                                    type: "equals",
+                                    filter: `${qeName}`
                                 }
-                            })
-                            .catch(error => {
-                                console.error('Error fetching data:', error);
-                                params.api.showNoRowsOverlay();
-                            });
+                            };
+                        }
                     }
-                })
-
+                )
                 .build();
 
             agGridInstance.init('serverDataGrid');
 
-            // Add date-range text 
-            // Inject the date range into the HTML
-            // helpers.injectDateRangeText('tenant',   qeName  );
-
-            // let lastBreadcrumb = document.querySelector('#nav-breadcrumbs ol li:last-child span');
-
-            // // Append the text "healthlink" to the existing text
-            // if (lastBreadcrumb) {
-            // lastBreadcrumb.textContent += '  (' + qeName + ')';
-            // }
-
-
-
+ 
 
         });
 
