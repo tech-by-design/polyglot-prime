@@ -1974,7 +1974,7 @@ AS SELECT sat_interaction_fhir_request_id,
     concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
     (SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ') FROM jsonb_each_text((payload->>'responseBody')::jsonb) AS json_data(key, value)) AS response_body_details
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
-  WHERE (to_state = 'FAIL'::text OR to_state = 'COMPLETE'::text) AND passed = false;
+WHERE to_state = 'FAIL'::text;
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.process_json_action_rules(jsonb,text,text,text,text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.process_json_action_rules(input_json jsonb, rule_namespace text, key text, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text)
