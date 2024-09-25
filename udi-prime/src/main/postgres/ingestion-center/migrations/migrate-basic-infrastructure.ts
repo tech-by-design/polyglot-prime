@@ -705,7 +705,7 @@ const migrateSP = pgSQLa.storedProcedure(
                       WHERE table_name='sat_interaction_user' 
                       AND column_name='interaction_start_time') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_user
-            ADD COLUMN interaction_start_time TEXT DEFAULT null;
+            ADD COLUMN interaction_start_time TIMESTAMPTZ DEFAULT null;
         END IF;
 
         -- Check and add 'nature_denorm' column if it does not exist
@@ -713,7 +713,7 @@ const migrateSP = pgSQLa.storedProcedure(
                       WHERE table_name='sat_interaction_user' 
                       AND column_name='interaction_end_time') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_user
-            ADD COLUMN interaction_end_time TEXT DEFAULT null;
+            ADD COLUMN interaction_end_time TIMESTAMPTZ DEFAULT null;
         END IF;
 
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 
