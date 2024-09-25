@@ -77,16 +77,7 @@
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_needs_attention_details';
         const detailTableViewName = 'interaction_http_request_failed_needs_attention';
-
-
-        const errorDetailsColDefs = [
-            { headerName: "Error Type", field: "error_type", filter: "agTextColumnFilter" },
-            { headerName: "Error Message", field: "error_message", filter: "agTextColumnFilter" },
-            { headerName: "Date", field: "date", filter: "agTextColumnFilter", valueFormatter: AGGridAide.isoDateTimeValueFormatter() }
-        ];
-
-
-
+ 
         document.addEventListener('DOMContentLoaded', function () {
             
             const helpers = new Helpers();
@@ -154,7 +145,7 @@
                             return button;
                         }
                     },
-                    { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter", flex: 1 },
+                    // { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter", flex: 1 },
                     { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter", flex: 1 },
                 ])
                 .withServerSideDatasource(
