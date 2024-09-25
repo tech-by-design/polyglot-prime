@@ -365,6 +365,27 @@ const interactionUserRequestSat = interactionHub.satelliteTable(
   },
 );
 
+
+const interactionFhirSessionDiagnosticSat = interactionHub.satelliteTable(
+  "fhir_session_diagnostic",
+  {
+    sat_interaction_fhir_session_diagnostic_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    uri: text(),
+    session_id: text(),
+    severity: textNullable(),
+    message: textNullable(),
+    line: textNullable(),
+    column: textNullable(),
+    diagnostics: textNullable(),
+    encountered_at: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
 enum EnumFileExchangeProtocol {
   SFTP = "SFTP",
   S3 = "S3",
@@ -641,6 +662,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${interactionUserRequestSat}
 
+      ${interactionFhirSessionDiagnosticSat}
+
       ${fileExchangeProtocol}
 
       BEGIN
@@ -674,6 +697,23 @@ const migrateSP = pgSQLa.storedProcedure(
                       AND column_name='tenant_id_denorm') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
             ADD COLUMN tenant_id_denorm TEXT DEFAULT null;
+        END IF;
+
+        
+        -- Check and add 'nature_denorm' column if it does not exist
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='sat_interaction_user' 
+                      AND column_name='interaction_start_time') THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_user
+            ADD COLUMN interaction_start_time TEXT DEFAULT null;
+        END IF;
+
+        -- Check and add 'nature_denorm' column if it does not exist
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='sat_interaction_user' 
+                      AND column_name='interaction_end_time') THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_user
+            ADD COLUMN interaction_end_time TEXT DEFAULT null;
         END IF;
 
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 

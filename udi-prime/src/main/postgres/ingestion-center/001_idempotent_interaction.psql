@@ -1904,6 +1904,19 @@ BEGIN
         COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL)
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
+    IF (v_return IS NOT NULL) THEN
+        CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
+            hub_interaction_id, 
+            tenant_id, 
+            uri, 
+            v_bundle_session_id, 
+            payload, 
+            created_by, 
+            provenance,
+            sat_interaction_fhir_request_upserted.elaboration
+        );
+    END IF;        
+
     RETURN v_return;
 EXCEPTION
    WHEN OTHERS THEN
@@ -2164,3 +2177,120 @@ EXCEPTION
 END;
 $function$
 ;
+
+/*******************************************************************************************************************************
+Procedure for inserting FHIR session diagnostic data extracted from a JSONB payload.
+
+Parameters:
+hub_interaction_id  - Unique identifier of the hub interaction (UUID)
+tenant_id           - Unique identifier of the tenant (UUID)
+uri                 - URI associated with the FHIR session (TEXT)
+v_bundle_session_id - Unique identifier of the bundle session (UUID)
+payload             - JSONB object containing the FHIR response and validation results (JSONB)
+created_by          - Identifier of the user or system creating the record (TEXT)
+provenance          - Metadata providing the provenance or origin of the interaction (TEXT)
+
+Returns:
+No return value. Inserts diagnostic records into the 'sat_interaction_fhir_session_diagnostic' table for each issue found in the payload.
+*******************************************************************************************************************************/
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text,text,text,text,jsonb,text,text);
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_session_diagnostic(
+    IN hub_interaction_id TEXT,
+    IN tenant_id TEXT,
+    IN uri TEXT,
+    IN bundle_session_id TEXT,
+    IN payload JSONB,
+    IN created_by TEXT,
+    IN provenance TEXT,
+    IN elaboration JSONB
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    session_diagnostic_set          RECORD;
+    v_exception_id 	                TEXT;
+    v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;
+    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+BEGIN
+    -- Extract values from the JSONB payload variable
+    FOR session_diagnostic_set IN
+        SELECT
+            issue.value ->> 'severity'::text AS severity,
+            issue.value ->> 'message'::text AS message,
+            (issue.value -> 'location'::text) ->> 'line'::text AS line,
+            (issue.value -> 'location'::text) ->> 'column'::text AS "column",
+            (issue.value -> 'location'::text) ->> 'diagnostics'::text AS diagnostics,
+            (insert_fhir_session_diagnostic.payload -> 'response'::text) ->> 'encounteredAt'::text AS encounteredAt,
+            insert_fhir_session_diagnostic.elaboration
+        FROM LATERAL jsonb_array_elements(
+            (((insert_fhir_session_diagnostic.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text
+        ) validationresult(value),
+        LATERAL jsonb_array_elements(validationresult.value -> 'issues'::text) issue(value)
+    LOOP
+        -- Insert extracted data into the target table
+        INSERT INTO techbd_udi_ingress.sat_interaction_fhir_session_diagnostic (
+            sat_interaction_fhir_session_diagnostic_id,
+            hub_interaction_id,
+            tenant_id,
+            uri,
+            session_id,
+            severity,
+            message,
+            "line",
+            "column",
+            diagnostics,
+            encountered_at,
+            elaboration,
+            created_by,
+            provenance
+        )
+        VALUES (
+            gen_random_uuid()::TEXT, 
+            insert_fhir_session_diagnostic.hub_interaction_id,
+            insert_fhir_session_diagnostic.tenant_id,
+            insert_fhir_session_diagnostic.uri,
+            insert_fhir_session_diagnostic.bundle_session_id,
+            session_diagnostic_set.severity,
+            session_diagnostic_set.message,
+            session_diagnostic_set.line,
+            session_diagnostic_set.column,
+            session_diagnostic_set.diagnostics,
+            session_diagnostic_set.encounteredAt,
+            session_diagnostic_set.elaboration,
+            insert_fhir_session_diagnostic.created_by,
+            insert_fhir_session_diagnostic.provenance
+        );
+    END LOOP;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    -- RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		insert_fhir_session_diagnostic.uri,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+END;
+$$;
