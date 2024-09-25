@@ -43,7 +43,7 @@ WITH cte_business_rule AS (
     ose.ingest_src AS ingest_file_source,
     SUBSTRING(ose.ingest_src FROM '.*/(.*)$') AS ingest_file,
     upper(substring(ose.ingest_src FROM '/SFTP/([^/]+)/')) AS qe,
-    os.orch_started_at,
+    os.orch_started_at::timestamptz,
         CASE
             WHEN upper(isi.issue_type::text) = 'MISSING COLUMN'::text THEN 'STRUCTURAL ISSUE'::text
             ELSE br.record_action
@@ -67,7 +67,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.orch_session_diagnostics_rejection CASCAD
 CREATE or REPLACE
 view techbd_udi_ingress.orch_session_diagnostics_rejection AS
 SELECT 
-	orch_started_at, 
+	orch_started_at,
 	qe, 
 	ingest_file_source, 
     ingest_file,

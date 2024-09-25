@@ -20,7 +20,7 @@
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    { headerName: "Encountered Time", field: "encounteredat", sortable: true, sort: "desc", filter: "agNumberColumnFilter", valueFormatter: AGGridAide.dateTimeValueFormatter(true) },
+                    { headerName: "Encountered Time", field: "encounteredat", sortable: true, sort: "desc", filter: "agDateColumnFilter" },
                     { headerName: "Session ID", field: "session_id", filter: "agTextColumnFilter" },
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
                     { headerName: "Severity", field: "severity", filter: "agTextColumnFilter" },

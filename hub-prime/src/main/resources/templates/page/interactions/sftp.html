@@ -70,7 +70,7 @@
                 var columnDefs = [
                     { headerName: "QE", field: "tenantId",  filter: true, enablePivot: true, enableRowGroup: true },
                     {
-                        headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: true, sort: "desc", enablePivot: true, enableRowGroup: true,
+                        headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: false, sort: "desc", enablePivot: true, enableRowGroup: true,
                         valueFormatter: function (params) {
                             if (params.value) {
                                 let date = new Date(params.value);
@@ -176,7 +176,7 @@
                                         // Handle JSON parsing error if needed
                                         return;
                                     }
-                                    if (!response?.scoredcardResponse?.includes('TestResult: PASS')) {
+                                    if (!response?.scoredcardResponse?.includes('TestResult: PASS') && response?.status!='Success') {
                                         publishedFhirFailedCount++;
                                         if (response && response.bundleID) {
                                             publishedFhirFailedResponse.push({
@@ -188,6 +188,11 @@
                                             publishedFhirFailedResponse.push({
                                                 "File": r.fhirFileName,
                                                 "Error": response.error
+                                            });
+                                        } else if (response && response.status=='Error') {
+                                            publishedFhirFailedResponse.push({
+                                                "File": r.fhirFileName,
+                                                "Error": response.message
                                             });
                                         } else {
                                             publishedFhirFailedResponse.push({

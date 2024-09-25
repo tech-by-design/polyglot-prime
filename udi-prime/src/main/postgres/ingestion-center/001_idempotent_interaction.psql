@@ -61,8 +61,8 @@ SELECT interaction_id,
             htt_req.provenance AS request_provenance,
             htt_req.issues_count,
             htt_req.resource_type_set AS resource_types,
-            htt_req.interaction_start_time::text AS start_time,
-            htt_req.interaction_end_time::text AS finish_time,
+            htt_req.interaction_start_time AS start_time,
+            htt_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM htt_req.interaction_end_time::timestamp without time zone - htt_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
            FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
         UNION ALL
@@ -87,8 +87,8 @@ SELECT interaction_id,
             user_req.provenance AS request_provenance,
             NULL::unknown AS issue_count,
             NULL::unknown AS resource_types,
-            user_req.interaction_start_time::text AS start_time,
-            user_req.interaction_end_time::text AS finish_time,
+            user_req.interaction_start_time AS start_time,
+            user_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
            FROM techbd_udi_ingress.sat_interaction_user user_req) combined_query
   ORDER BY interaction_created_at DESC;
@@ -276,7 +276,7 @@ AS SELECT tenant_id,
     line,
     "column",
     diagnostics,
-    encounteredat,
+    to_timestamp((encounteredat)::float8)  AS encounteredat, 
     elaboration
    FROM techbd_udi_ingress.fhir_session_diagnostics_mat intr_diagno;
 
@@ -513,7 +513,7 @@ GROUP BY
 SELECT
 	"substring"(ose.ingest_src::text,
 	'/SFTP/([^/]+)/'::text) AS qe,
-	os.orch_started_at AS request_time,
+	os.orch_started_at::timestamptz AS request_time,
 	ose.session_id,
 	os."version",
 	count(ose.ingest_src) AS ingress_count,
@@ -541,7 +541,7 @@ GROUP BY
 	ose.session_id,
 	qe,
 	os."version",
-	os.orch_started_at,
+	os.orch_started_at::timestamptz,
 	ic.issue_count,
 	rc.rejection_count,
 	wc.warning_count;
@@ -819,8 +819,9 @@ WITH submission_counts AS (
           GROUP BY sihr.tenant_id_lower
         )
  SELECT ( SELECT count(*) AS count
-           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE sihr.tenant_id_lower = sc.qe_name AND sihr.uri = '/api/expect/fhir/bundle'::text AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval)) AS cross_roads_scn,
+           FROM techbd_udi_ingress.hub_interaction hintr
+             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
+          WHERE lower(sihr.nature ->> 'tenant_id'::text) = sc.qe_name AND hintr.key = '/api/expect/fhir/bundle'::text AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval)) AS cross_roads_scn,
     qe_name,
     qe_total_submissions,
     techbd_total_submissions,
