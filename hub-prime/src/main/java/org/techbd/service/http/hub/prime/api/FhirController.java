@@ -47,6 +47,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 @Tag(name = "Tech by Design Hub FHIR Endpoints",
@@ -113,13 +114,13 @@ public class FhirController {
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @Parameter(description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false)
             @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
-            HttpServletRequest request) throws SQLException {
+            HttpServletRequest request,HttpServletResponse response) throws SQLException ,IOException{
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
         request = new CustomRequestWrapper(request, payload);
         return fhirService.processBundle(payload,tenantId,fhirProfileUrlParam,fhirProfileUrlHeader,uaValidationStrategyJson,
         customDataLakeApi,dataLakeApiContentType,healthCheck,isSync,includeRequestInOutcome,includeIncomingPayloadInDB,
-        request,provenance);
+        request,response,provenance);
     }
 
     @PostMapping(value = {"/Bundle/$validate", "/Bundle/$validate/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,

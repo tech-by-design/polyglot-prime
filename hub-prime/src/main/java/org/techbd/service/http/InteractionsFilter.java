@@ -33,6 +33,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.util.ArtifactStore;
 import org.techbd.util.ArtifactStore.Artifact;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.util.StandardCharset;
 
 import jakarta.servlet.FilterChain;
@@ -209,7 +210,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 final var tenant = rre.tenant();
                 final var dsl = udiPrimeJpaConfig.dsl();
                 rihr.setInteractionId(rre.interactionId().toString());
-                rihr.setNature(Configuration.objectMapper.valueToTree(
+                rihr.setNature((JsonNode)Configuration.objectMapper.valueToTree(
                         Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
                                 tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
