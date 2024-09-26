@@ -1,8 +1,6 @@
 package org.techbd.service.http.hub.prime.api;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +42,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
+
 import ca.uhn.fhir.validation.ResultSeverityEnum;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
@@ -83,9 +83,10 @@ public class FHIRService {
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                 : appConfig.getDefaultSdohFhirProfileUrl();
-                var immediateResult = validate(request, payload, fhirProfileUrl, uaValidationStrategyJson,
+                final var immediateResult = validate(request, payload, fhirProfileUrl,
+                                uaValidationStrategyJson,
                                 includeRequestInOutcome);
-                var result = Map.of("OperationOutcome", immediateResult);
+                final var result = Map.of("OperationOutcome", immediateResult);
                 // Check for the X-TechBD-HealthCheck header
                 if ("true".equals(healthCheck)) {
                         LOG.info("%s is true, skipping Scoring Engine submission."
@@ -94,27 +95,36 @@ public class FHIRService {
                 }
                 final var dslContext = udiPrimeJpaConfig.dsl();
                 final var jooqCfg = dslContext.configuration();
-                final Map<String, Object> payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
-                                response, payload, immediateResult);
-                if (null != payloadWithDisposition) {
+                Map<String, Object> payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
+                                response, payload, result);
+                if (null == payloadWithDisposition) {
+                        LOG.warn("FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
+                                        getBundleInteractionId(request));
+                        sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
+                                        includeIncomingPayloadInDB, tenantId, payload,
+                                        provenance, null);
+                        return result;
+                } 
+                else {
+                        LOG.warn("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
+                                        getBundleInteractionId(request));
                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                         includeIncomingPayloadInDB, tenantId, payload,
                                         provenance, payloadWithDisposition);
-                    return payloadWithDisposition;
+                        return payloadWithDisposition;
                 }
-                return result; 
         }
 
         private Map<String, Object> registerBundleInteraction(org.jooq.Configuration jooqCfg,
                         HttpServletRequest request, HttpServletResponse response,
-                        String payload, Map<String, Object> validationResult)
+                        String payload, Map<String, Map<String, Object>> validationResult)
                         throws IOException {
                 final Interactions interactions = new Interactions();
                 final var mutatableReq = new ContentCachingRequestWrapper(request);
-                var requestEncountered = new Interactions.RequestEncountered(mutatableReq, payload.getBytes());
+                final var requestEncountered = new Interactions.RequestEncountered(mutatableReq, payload.getBytes());
                 final var mutatableResp = new ContentCachingResponseWrapper(response);
                 setActiveRequestEnc(mutatableReq, requestEncountered);
-                final RequestResponseEncountered rre = new Interactions.RequestResponseEncountered(requestEncountered,
+                final var rre = new Interactions.RequestResponseEncountered(requestEncountered,
                                 new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
                                                 Configuration.objectMapper.writeValueAsBytes(validationResult)));
                 interactions.addHistory(rre);
@@ -155,7 +165,6 @@ public class FHIRService {
                 rihr.setCreatedAt(OffsetDateTime.now());
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
-                rihr.setRuleNamespace("namespace_group_1"); // TODO - Hardcode for now
                 if (saveUserDataToInteractions) {
                         setUserDetails(rihr, request);
                 } else {
@@ -283,15 +292,23 @@ public class FHIRService {
                 LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {}", interactionId);
 
                 try {
-                        Map<String, Object> bundlePayloadWithDisposition = preparePayload(request,
-                        payload,
-                        validationPayloadWithDisposition);
-                        var webClient = createWebClient(scoringEngineApiURL, jooqCfg, request, tenantId, payload,
+                        Map<String, Object> bundlePayloadWithDisposition = null;
+                        if (null != validationPayloadWithDisposition) {  //todo -revisit
+                                bundlePayloadWithDisposition = preparePayload(request,
+                                                payload,
+                                                validationPayloadWithDisposition);
+                        } else {
+                                bundlePayloadWithDisposition = Configuration.objectMapper.readValue(payload,new TypeReference<Map<String, Object>>() {
+                                                });
+                        }
+                        final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL).filter(s -> !s.isEmpty())
+                        .orElse(appConfig.getDefaultDatalakeApiUrl());
+                        var webClient = createWebClient(dataLakeApiBaseURL, jooqCfg, request, tenantId, payload,
                                         bundlePayloadWithDisposition, provenance, includeIncomingPayloadInDB);
 
                         sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
                                         dataLakeApiContentType, interactionId,
-                                        jooqCfg, provenance, request.getRequestURI(), scoringEngineApiURL);
+                                        jooqCfg, provenance, request.getRequestURI(), dataLakeApiBaseURL);
 
                 } catch (Exception e) {
                         handleError(validationPayloadWithDisposition, e, request);
@@ -309,11 +326,10 @@ public class FHIRService {
                         String provenance,
                         boolean includeIncomingPayloadInDB) {
 
-                final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL).filter(s -> !s.isEmpty())
-                                .orElse(appConfig.getDefaultDatalakeApiUrl());
+
 
                 return WebClient.builder()
-                                .baseUrl(dataLakeApiBaseURL)
+                                .baseUrl(scoringEngineApiURL)
                                 .filter(ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
                                         filter(clientRequest, request, jooqCfg, provenance, tenantId, payload,
                                                         bundlePayloadWithDisposition, includeIncomingPayloadInDB);
@@ -332,6 +348,8 @@ public class FHIRService {
                         boolean includeIncomingPayloadInDB) {
 
                 final var interactionId = getBundleInteractionId(request);
+                LOG.info("FHIRService:: sendToScoringEngine Filter request before post - BEGIN interaction id: {}",
+                                interactionId);
                 final var requestURI = request.getRequestURI();
                 StringBuilder requestBuilder = new StringBuilder()
                                 .append(clientRequest.method().name()).append(" ")
@@ -340,7 +358,7 @@ public class FHIRService {
                 clientRequest.headers().forEach((name, values) -> values
                                 .forEach(value -> requestBuilder.append(name).append(": ").append(value).append("\n")));
 
-                var outboundHttpMessage = requestBuilder.toString();
+                final var outboundHttpMessage = requestBuilder.toString();
 
                 registerStateForward(jooqCfg, provenance, getBundleInteractionId(request), requestURI, tenantId,
                                 Optional.ofNullable(bundlePayloadWithDisposition).orElse(new HashMap<>()),
@@ -394,7 +412,7 @@ public class FHIRService {
                 LOG.info("FHIRService:: handleResponse BEGIN for interaction id: {}", interactionId);
 
                 try {
-                        var responseMap = new ObjectMapper().readValue(response,
+                        final var responseMap = new ObjectMapper().readValue(response,
                                         new TypeReference<Map<String, String>>() {
                                         });
 
@@ -436,10 +454,6 @@ public class FHIRService {
                 Map<String, Object> resultMap = null;
 
                 try {
-                        if(null == payloadWithDisposition) {
-                                LOG.warn("FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",interactionId);
-                                return Configuration.objectMapper.convertValue(bundlePayload, new TypeReference<Map<String,Object>>() {}); 
-                        }
                         Map<String, Object> extractedOutcome = Optional
                                         .ofNullable(extractIssueAndDisposition(interactionId, payloadWithDisposition))
                                         .filter(outcome -> !outcome.isEmpty())
@@ -452,7 +466,7 @@ public class FHIRService {
                         if (extractedOutcome == null) {
                                 LOG.warn("FHIRService:: extractedOutcome is null for interaction id : {}",
                                                 interactionId);
-                                return null;
+                                return payloadWithDisposition;
                         }
                         Map<String, Object> bundleMap = Optional
                                         .ofNullable(Configuration.objectMapper.readValue(bundlePayload,
@@ -467,15 +481,19 @@ public class FHIRService {
 
                         if (bundleMap == null) {
                                 LOG.warn("FHIRService:: bundleMap is null for interaction id : {}", interactionId);
-                                return null;
+                                return payloadWithDisposition;
                         }
                         resultMap = appendToBundlePayload(interactionId, bundleMap, extractedOutcome);
+                        LOG.info("FHIRService:: addValidationResultToPayload END - Validation results added to Bundle payload for interaction id : {}",
+                                        interactionId);
+                        return resultMap;
                 } catch (Exception ex) {
                         LOG.error("ERROR :: FHIRService:: addValidationResultToPayload encountered an exception for interaction id : {}",
                                         interactionId, ex);
                 }
-                LOG.info("FHIRService:: addValidationResultToPayload END for interaction id : {}", interactionId);
-                return resultMap;
+                LOG.info("FHIRService:: addValidationResultToPayload END - Validation results not added - returning original payload for interaction id : {}",
+                                interactionId);
+                return payloadWithDisposition;
         }
 
         @SuppressWarnings("unchecked")
@@ -526,8 +544,8 @@ public class FHIRService {
                         Map<String, Object> extractedOutcome) {
                 LOG.info("FHIRService:: appendToBundlePayload BEGIN for interaction id : {}", interactionId);
                 if (payload == null) {
-                        LOG.warn("FHIRService:: payload1 is null for interaction id : {}", interactionId);
-                        return null;
+                        LOG.warn("FHIRService:: payload is null for interaction id : {}", interactionId);
+                        return payload;
                 }
 
                 if (extractedOutcome == null || extractedOutcome.isEmpty()) {
@@ -543,14 +561,13 @@ public class FHIRService {
                                 .orElseGet(() -> {
                                         LOG.warn("FHIRService:: 'entry' field is missing or invalid for interaction id : {}",
                                                         interactionId);
-                                        return new ArrayList<>(); // Create a new empty list if 'entry' is null
+                                        return new ArrayList<>(); // if no entries in payload create new
                                 });
 
-                Map<String, Object> newEntry = Map.of("resource", extractedOutcome);
+                final Map<String, Object> newEntry = Map.of("resource", extractedOutcome);
                 entries.add(newEntry);
 
-                Map<String, Object> modifiedPayload = Map.copyOf(payload);
-                Map<String, Object> finalPayload = new HashMap<>(modifiedPayload);
+                final Map<String, Object> finalPayload = new HashMap<>(payload);
                 finalPayload.put("entry", List.copyOf(entries));
                 LOG.info("FHIRService:: appendToBundlePayload END for interaction id : {}", interactionId);
                 return finalPayload;
@@ -566,10 +583,15 @@ public class FHIRService {
                 final var forwardedAt = OffsetDateTime.now();
                 final var initRIHR = new RegisterInteractionHttpRequest();
                 try {
-                        payloadWithDisposition.put("outboundHttpMessage",
-                                        outboundHttpMessage + "\n" + (includeIncomingPayloadInDB
-                                                        ? payload
-                                                        : "The incoming FHIR payload was not stored (to save space).\nThis is not an error or warning just an FYI - if you'd like to see the incoming FHIR payload `?include-incoming-payload-in-db=true` to request payload storage for each request that you'd like to store."));
+                        // TODO -check the need of includeIncomingPayloadInDB and add this later if
+                        // needed
+                        // payloadWithDisposition.put("outboundHttpMessage", outboundHttpMessage);
+                        // + "\n" + (includeIncomingPayloadInDB
+                        // ? payload
+                        // : "The incoming FHIR payload was not stored (to save space).\nThis is not an
+                        // error or warning just an FYI - if you'd like to see the incoming FHIR payload
+                        // `?include-incoming-payload-in-db=true` to request payload storage for each
+                        // request that you'd like to store."));
                         initRIHR.setInteractionId(bundleAsyncInteractionId);
                         initRIHR.setInteractionKey(requestURI);
                         initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
@@ -577,7 +599,7 @@ public class FHIRService {
                                                         tenantId)));
                         initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                         initRIHR.setPayload((JsonNode) Configuration.objectMapper
-                                        .valueToTree(null != payloadWithDisposition ? payloadWithDisposition : payload));
+                                        .valueToTree(payloadWithDisposition));
                         initRIHR.setFromState("DISPOSITION");
                         initRIHR.setToState("FORWARD");
                         initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app
