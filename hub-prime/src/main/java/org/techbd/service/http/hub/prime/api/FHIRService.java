@@ -69,26 +69,23 @@ public class FHIRService {
                 this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         }
 
-        // private Map<String, Object> loadFile() throws IOException {
-        // final var inputStream =
-        // getClass().getClassLoader().getResourceAsStream("ig-artifacts/Test_Json.json");
-        // if (inputStream == null) {
-        // throw new IOException("Failed to load the file:Test_Json");
-        // }
+        // private Map<String, Object> loadFile(String fileName) throws IOException {
+        //         final var inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
+        //         if (inputStream == null) {
+        //                 throw new IOException("Failed to load the file:Test_Json");
+        //         }
 
-        // try (final var reader = new BufferedReader(
-        // new InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8)))
-        // {
-        // final var content = new StringBuilder();
-        // String line;
-        // while ((line = reader.readLine()) != null) {
-        // content.append(line).append(System.lineSeparator());
-        // }
-        // String payload = content.toString();
-        // return Configuration.objectMapper.readValue(payload, new
-        // TypeReference<Map<String, Object>>() {
-        // });
-        // }
+        //         try (final var reader = new BufferedReader(
+        //                         new InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8))) {
+        //                 final var content = new StringBuilder();
+        //                 String line;
+        //                 while ((line = reader.readLine()) != null) {
+        //                         content.append(line).append(System.lineSeparator());
+        //                 }
+        //                 String payload = content.toString();
+        //                 return Configuration.objectMapper.readValue(payload, new TypeReference<Map<String, Object>>() {
+        //                 });
+        //         }
         // }
 
         public Object processBundle(final @RequestBody @Nonnull String payload,
@@ -105,7 +102,7 @@ public class FHIRService {
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                 : appConfig.getDefaultSdohFhirProfileUrl();
-                // var immediateResult = loadFile();
+                // var immediateResult = loadFile("ig-artifacts/Test_Json.json");
                 var immediateResult = validate(request, payload, fhirProfileUrl, uaValidationStrategyJson,
                                 includeRequestInOutcome);
                 var result = Map.of("OperationOutcome", immediateResult);
@@ -115,27 +112,28 @@ public class FHIRService {
                                         .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
                         return result; // Return without proceeding to DataLake submission
                 }
-                Map<String, Object> payloadWithDisposition = registerBundleInteraction(request,
+                final var dslContext = udiPrimeJpaConfig.dsl();
+                final var jooqCfg = dslContext.configuration();
+                final Map<String, Object> payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                 response, payload, immediateResult);
-                sendToScoringEngine(request, customDataLakeApi, dataLakeApiContentType,
+                // final Map<String, Object> payloadWithDisposition = loadFile("ig-artifacts/result.json");
+                sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                 includeIncomingPayloadInDB, tenantId, payload,
                                 provenance, payloadWithDisposition);
                 return payloadWithDisposition;
         }
 
-        private Map<String, Object> registerBundleInteraction(HttpServletRequest request, HttpServletResponse response,
+        private Map<String, Object> registerBundleInteraction(org.jooq.Configuration jooqCfg,
+                        HttpServletRequest request, HttpServletResponse response,
                         String payload, Map<String, Object> validationResult)
                         throws IOException {
-                final var dslContext = udiPrimeJpaConfig.dsl();
-                final var jooqCfg = dslContext.configuration(); // Create configuration here
-
                 final Interactions interactions = new Interactions();
                 final var mutatableReq = new ContentCachingRequestWrapper(request);
                 var requestEncountered = new Interactions.RequestEncountered(mutatableReq, payload.getBytes());
                 final var mutatableResp = new ContentCachingResponseWrapper(response);
                 setActiveRequestEnc(mutatableReq, requestEncountered);
 
-                RequestResponseEncountered rre = new Interactions.RequestResponseEncountered(requestEncountered,
+                final RequestResponseEncountered rre = new Interactions.RequestResponseEncountered(requestEncountered,
                                 new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
                                                 Configuration.objectMapper.writeValueAsBytes(validationResult)));
 
@@ -146,14 +144,7 @@ public class FHIRService {
 
                 try {
                         prepareRequest(rihr, rre, provenance, request);
-                        if (saveUserDataToInteractions) {
-                                saveUserDetails(rihr, request);
-                        } else {
-                                LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
-                                                + saveUserDataToInteractions);
-                        }
-                        rihr.execute(jooqCfg); // Use the created configuration here
-
+                        rihr.execute(jooqCfg);
                         JsonNode payloadWithDisposition = rihr.getReturnValue();
                         LOG.info("REGISTER State None, Accept, Disposition: END for interaction id: {} ",
                                         rre.interactionId().toString());
@@ -185,9 +176,15 @@ public class FHIRService {
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
                 rihr.setRuleNamespace("namespace_group_1"); // TODO - Hardcode for now
+                if (saveUserDataToInteractions) {
+                        setUserDetails(rihr, request);
+                } else {
+                        LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
+                                        + saveUserDataToInteractions);
+                }
         }
 
-        private void saveUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
+        private void setUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
                 var curUserName = "API_USER";
                 var gitHubLoginId = "N/A";
                 final var sessionId = request.getRequestedSessionId();
@@ -202,7 +199,7 @@ public class FHIRService {
                                                 .map(GrantedAuthority::getAuthority)
                                                 .collect(Collectors.joining(","));
                                 LOG.info("userRole: " + userRole);
-                                userRole = "DEFAULT_ROLE"; // Update if needed
+                                userRole = "DEFAULT_ROLE"; // TODO -set user role
                         }
                 }
                 rihr.setUserName(curUserName);
@@ -295,7 +292,7 @@ public class FHIRService {
                 return immediateResult;
         }
 
-        private void sendToScoringEngine(HttpServletRequest request,
+        private void sendToScoringEngine(org.jooq.Configuration jooqCfg, HttpServletRequest request,
                         String scoringEngineApiURL,
                         String dataLakeApiContentType,
                         boolean includeIncomingPayloadInDB,
@@ -308,30 +305,20 @@ public class FHIRService {
                 LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {}", interactionId);
 
                 try {
-                        var dslContext = udiPrimeJpaConfig.dsl();
-                        var jooqCfg = dslContext.configuration();
-
                         Map<String, Object> bundlePayloadWithDisposition = preparePayload(request, payload,
                                         validationPayloadWithDisposition);
-
                         var webClient = createWebClient(scoringEngineApiURL, jooqCfg, request, tenantId, payload,
                                         bundlePayloadWithDisposition, provenance, includeIncomingPayloadInDB);
 
                         sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
-                                        dataLakeApiContentType,  interactionId,
-                                         jooqCfg, provenance,request.getRequestURI(),scoringEngineApiURL);
+                                        dataLakeApiContentType, interactionId,
+                                        jooqCfg, provenance, request.getRequestURI(), scoringEngineApiURL);
 
                 } catch (Exception e) {
                         handleError(validationPayloadWithDisposition, e, request);
                 } finally {
                         LOG.info("FHIRService:: sendToScoringEngine END for interaction id: {}", interactionId);
                 }
-        }
-
-        private Map<String, Object> preparePayload(HttpServletRequest request, String payload,
-                        Map<String, Object> validationPayloadWithDisposition) {
-                return addValidationResultToPayload(getBundleInteractionId(request), payload,
-                                validationPayloadWithDisposition);
         }
 
         private WebClient createWebClient(String scoringEngineApiURL,
@@ -398,14 +385,14 @@ public class FHIRService {
                                 interactionId);
 
                 webClient.post()
-                                .uri("?processingAgent=" + tenantId)
+                                        .uri("?processingAgent=" + tenantId)
                                 .body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
-                                                ? bundlePayloadWithDisposition
-                                                : payload))
-                                .header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
-                                                .orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
-                                .retrieve()
-                                .bodyToMono(String.class)
+                                                        ? bundlePayloadWithDisposition
+                                                        : payload))
+                                        .header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
+                                                        .orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
+                                        .retrieve()
+                                        .bodyToMono(String.class)
                                 .subscribe(response -> {
                                         handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
                                                         provenance, scoringEngineApiURL);
@@ -414,8 +401,8 @@ public class FHIRService {
                                                         requestURI, tenantId, provenance);
                                 });
 
-                LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {}",
-                                interactionId);
+                        LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {}",
+                                        interactionId);
         }
 
         private void handleResponse(String response,
@@ -425,7 +412,7 @@ public class FHIRService {
                         String tenantId,
                         String provenance,
                         String scoringEngineApiURL) {
-                LOG.info("FHIRService:: handleResponse for interaction id: {}", interactionId);
+                LOG.info("FHIRService:: handleResponse BEGIN for interaction id: {}", interactionId);
 
                 try {
                         var responseMap = new ObjectMapper().readValue(response,
@@ -450,6 +437,7 @@ public class FHIRService {
                                         new Exception("Unexpected error: " + e.getMessage()), requestURI, tenantId,
                                         provenance);
                 }
+                LOG.info("FHIRService:: handleResponse END for interaction id: {}", interactionId);
         }
 
         private void handleError(Map<String, Object> validationPayloadWithDisposition,
@@ -461,29 +449,19 @@ public class FHIRService {
                                 getBundleInteractionId(request), e);
         }
 
-        private Map<String, Object> addValidationResultToPayload(String interactionId, String bundlePayload,
+        private Map<String, Object> preparePayload(HttpServletRequest request, String bundlePayload,
                         Map<String, Object> payloadWithDisposition) {
+                final var interactionId = getBundleInteractionId(request);
                 LOG.info("FHIRService:: addValidationResultToPayload BEGIN for interaction id : {}", interactionId);
-
-                // Use Optional to handle null checks and log warnings
-                if (bundlePayload == null || bundlePayload.isBlank()) {
-                        LOG.warn("FHIRService:: bundlePayload is missing or empty for interaction id : {}",
-                                        interactionId);
-                        return null;
-                }
-                if (payloadWithDisposition == null) {
-                        LOG.warn("FHIRService:: payloadWithDisposition is null for interaction id : {}", interactionId);
-                        return null;
-                }
 
                 Map<String, Object> resultMap = null;
 
                 try {
                         Map<String, Object> extractedOutcome = Optional
-                                        .ofNullable(extractResourceTypeAndIssue(interactionId, payloadWithDisposition))
+                                        .ofNullable(extractIssueAndDisposition(interactionId, payloadWithDisposition))
                                         .filter(outcome -> !outcome.isEmpty())
                                         .orElseGet(() -> {
-                                                LOG.warn("FHIRService:: resource type operation outcome or issues is missing or empty for interaction id : {}",
+                                                LOG.warn("FHIRService:: resource type operation outcome or issues or techByDisposition is missing or empty for interaction id : {}",
                                                                 interactionId);
                                                 return null;
                                         });
@@ -518,27 +496,41 @@ public class FHIRService {
         }
 
         @SuppressWarnings("unchecked")
-        private Map<String, Object> extractResourceTypeAndIssue(String interactionId,
+        private Map<String, Object> extractIssueAndDisposition(String interactionId,
                         Map<String, Object> operationOutcomePayload) {
-                LOG.info("FHIRService:: extractResourceTypeAndIssue BEGIN for interaction id : {}", interactionId);
+                LOG.info("FHIRService:: extractResourceTypeAndDisposition BEGIN for interaction id : {}",
+                                interactionId);
 
                 if (operationOutcomePayload == null) {
                         LOG.warn("FHIRService:: operationOutcomePayload is null for interaction id : {}",
                                         interactionId);
                         return null;
                 }
+
                 return Optional.ofNullable(operationOutcomePayload.get("OperationOutcome"))
                                 .filter(Map.class::isInstance)
                                 .map(Map.class::cast)
-                                .map(operationOutcomeMap -> (List<?>) operationOutcomeMap.get("validationResults"))
-                                .filter(validationResults -> validationResults != null && !validationResults.isEmpty())
-                                .map(validationResults -> (Map<String, Object>) validationResults.get(0))
-                                .map(validationResult -> (Map<String, Object>) validationResult.get("operationOutcome"))
-                                .map(operationOutcome -> {
+                                .flatMap(operationOutcomeMap -> {
+                                        List<?> validationResults = (List<?>) operationOutcomeMap
+                                                        .get("validationResults");
+                                        if (validationResults == null || validationResults.isEmpty()) {
+                                                return Optional.empty();
+                                        }
+                                        Map<String, Object> validationResult = (Map<String, Object>) validationResults
+                                                        .get(0);
+
+                                        // Extract resourceType, issue and techByDesignDisposition
                                         Map<String, Object> result = new HashMap<>();
-                                        result.put("resourceType", operationOutcome.get("resourceType"));
-                                        result.put("issue", operationOutcome.get("issue"));
-                                        return result;
+                                        result.put("resourceType", operationOutcomeMap.get("resourceType"));
+                                        result.put("issue", validationResult.get("issues"));
+
+                                        List<?> techByDesignDisposition = (List<?>) operationOutcomeMap
+                                                        .get("techByDesignDisposition");
+                                        if (techByDesignDisposition != null && !techByDesignDisposition.isEmpty()) {
+                                                result.put("techByDesignDisposition", techByDesignDisposition);
+                                        }
+
+                                        return Optional.of(result);
                                 })
                                 .orElseGet(() -> {
                                         LOG.warn("FHIRService:: Missing required fields in operationOutcome for interaction id : {}",
