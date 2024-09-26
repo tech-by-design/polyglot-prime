@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -128,7 +129,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 Map<String, Object> formattedRow = new HashMap<>(row);
 
                 row.forEach((column, value) -> {
-                 
+
                     if (value instanceof OffsetDateTime) {
                         LOG.info("", value);
                         formattedRow.put(column, ((OffsetDateTime) value)
@@ -136,9 +137,9 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                                 .toLocalDateTime()
                                 .format(formatter));
                     } else if (value instanceof java.sql.Date) {
-                // Convert java.sql.Date to LocalDate
+                        // Convert java.sql.Date to LocalDate
                         LocalDate localDate = ((java.sql.Date) value).toLocalDate();
-                        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM-dd-yyyy"); 
+                        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
                         formattedRow.put(column, localDate.format(dateFormatter));
                     }
                 });
@@ -232,11 +233,14 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     if (filter.type().equals("inRange")) {
                         // Parse the decoded startDateValue and endDateValue into LocalDateTime
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                        LocalDateTime startDateTime = LocalDateTime.parse(filter.dateFrom(), formatter); // Parse with
-                                                                                                         // time
-                        // included
-                        LocalDateTime endDateTime = LocalDateTime.parse(filter.dateTo(), formatter); // Parse with time
-                                                                                                     // included
+                        LocalDateTime startDateTime = LocalDateTime.parse(filter.dateFrom(), formatter);
+                        LocalDateTime endDateTime = LocalDateTime.parse(filter.dateTo(), formatter);
+
+                        // Check if the time part of endDateTime is 00:00:00 and update to 23:59:59 if
+                        // true
+                        if (endDateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+                            endDateTime = endDateTime.with(LocalTime.of(23, 59, 59));
+                        }
 
                         bindValues.add(startDateTime);
                         bindValues.add(endDateTime);
@@ -277,6 +281,12 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                             LocalDateTime startDateTime = LocalDateTime.parse(filterModel.dateFrom(), formatter);
                             LocalDateTime endDateTime = LocalDateTime.parse(filterModel.dateTo(), formatter);
+
+                            // Check if the time part of endDateTime is 00:00:00 and update to 23:59:59 if
+                            // true
+                            if (endDateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+                                endDateTime = endDateTime.with(LocalTime.of(23, 59, 59));
+                            }
 
                             bindValues.add(startDateTime);
                             bindValues.add(endDateTime);
