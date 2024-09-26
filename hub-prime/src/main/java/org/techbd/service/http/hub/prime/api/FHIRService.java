@@ -69,25 +69,6 @@ public class FHIRService {
                 this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         }
 
-        // private Map<String, Object> loadFile(String fileName) throws IOException {
-        //         final var inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
-        //         if (inputStream == null) {
-        //                 throw new IOException("Failed to load the file:Test_Json");
-        //         }
-
-        //         try (final var reader = new BufferedReader(
-        //                         new InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8))) {
-        //                 final var content = new StringBuilder();
-        //                 String line;
-        //                 while ((line = reader.readLine()) != null) {
-        //                         content.append(line).append(System.lineSeparator());
-        //                 }
-        //                 String payload = content.toString();
-        //                 return Configuration.objectMapper.readValue(payload, new TypeReference<Map<String, Object>>() {
-        //                 });
-        //         }
-        // }
-
         public Object processBundle(final @RequestBody @Nonnull String payload,
                         String tenantId,
                         String fhirProfileUrlParam, String fhirProfileUrlHeader, String uaValidationStrategyJson,
@@ -102,25 +83,26 @@ public class FHIRService {
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                 : appConfig.getDefaultSdohFhirProfileUrl();
-                // var immediateResult = loadFile("ig-artifacts/Test_Json.json");
                 var immediateResult = validate(request, payload, fhirProfileUrl, uaValidationStrategyJson,
                                 includeRequestInOutcome);
                 var result = Map.of("OperationOutcome", immediateResult);
                 // Check for the X-TechBD-HealthCheck header
                 if ("true".equals(healthCheck)) {
-                        LOG.info("%s is true, skipping DataLake submission."
+                        LOG.info("%s is true, skipping Scoring Engine submission."
                                         .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
-                        return result; // Return without proceeding to DataLake submission
+                        return result; // Return without proceeding to scoring engine submission
                 }
                 final var dslContext = udiPrimeJpaConfig.dsl();
                 final var jooqCfg = dslContext.configuration();
                 final Map<String, Object> payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                 response, payload, immediateResult);
-                // final Map<String, Object> payloadWithDisposition = loadFile("ig-artifacts/result.json");
-                sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
-                                includeIncomingPayloadInDB, tenantId, payload,
-                                provenance, payloadWithDisposition);
-                return payloadWithDisposition;
+                if (null != payloadWithDisposition) {
+                        sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
+                                        includeIncomingPayloadInDB, tenantId, payload,
+                                        provenance, payloadWithDisposition);
+                    return payloadWithDisposition;
+                }
+                return result; 
         }
 
         private Map<String, Object> registerBundleInteraction(org.jooq.Configuration jooqCfg,
@@ -132,11 +114,9 @@ public class FHIRService {
                 var requestEncountered = new Interactions.RequestEncountered(mutatableReq, payload.getBytes());
                 final var mutatableResp = new ContentCachingResponseWrapper(response);
                 setActiveRequestEnc(mutatableReq, requestEncountered);
-
                 final RequestResponseEncountered rre = new Interactions.RequestResponseEncountered(requestEncountered,
                                 new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
                                                 Configuration.objectMapper.writeValueAsBytes(validationResult)));
-
                 interactions.addHistory(rre);
                 setActiveInteraction(mutatableReq, rre);
                 final var provenance = "%s.doFilterInternal".formatted(FHIRService.class.getName());
@@ -273,8 +253,6 @@ public class FHIRService {
                                 "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
                                 "isAsync", true,
                                 "validationResults", session.getValidationResults(),
-                                "rejectionsList", List.of(),
-                                "rejectionsMap", Map.of(),
                                 "statusUrl",
                                 getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
                                 "device", session.getDevice()));
@@ -305,8 +283,9 @@ public class FHIRService {
                 LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {}", interactionId);
 
                 try {
-                        Map<String, Object> bundlePayloadWithDisposition = preparePayload(request, payload,
-                                        validationPayloadWithDisposition);
+                        Map<String, Object> bundlePayloadWithDisposition = preparePayload(request,
+                        payload,
+                        validationPayloadWithDisposition);
                         var webClient = createWebClient(scoringEngineApiURL, jooqCfg, request, tenantId, payload,
                                         bundlePayloadWithDisposition, provenance, includeIncomingPayloadInDB);
 
@@ -385,14 +364,14 @@ public class FHIRService {
                                 interactionId);
 
                 webClient.post()
-                                        .uri("?processingAgent=" + tenantId)
+                                .uri("?processingAgent=" + tenantId)
                                 .body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
-                                                        ? bundlePayloadWithDisposition
-                                                        : payload))
-                                        .header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
-                                                        .orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
-                                        .retrieve()
-                                        .bodyToMono(String.class)
+                                                ? bundlePayloadWithDisposition
+                                                : payload))
+                                .header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
+                                                .orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
+                                .retrieve()
+                                .bodyToMono(String.class)
                                 .subscribe(response -> {
                                         handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
                                                         provenance, scoringEngineApiURL);
@@ -401,8 +380,8 @@ public class FHIRService {
                                                         requestURI, tenantId, provenance);
                                 });
 
-                        LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {}",
-                                        interactionId);
+                LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {}",
+                                interactionId);
         }
 
         private void handleResponse(String response,
@@ -457,6 +436,10 @@ public class FHIRService {
                 Map<String, Object> resultMap = null;
 
                 try {
+                        if(null == payloadWithDisposition) {
+                                LOG.warn("FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",interactionId);
+                                return Configuration.objectMapper.convertValue(bundlePayload, new TypeReference<Map<String,Object>>() {}); 
+                        }
                         Map<String, Object> extractedOutcome = Optional
                                         .ofNullable(extractIssueAndDisposition(interactionId, payloadWithDisposition))
                                         .filter(outcome -> !outcome.isEmpty())
@@ -594,7 +577,7 @@ public class FHIRService {
                                                         tenantId)));
                         initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                         initRIHR.setPayload((JsonNode) Configuration.objectMapper
-                                        .valueToTree(payloadWithDisposition));
+                                        .valueToTree(null != payloadWithDisposition ? payloadWithDisposition : payload));
                         initRIHR.setFromState("DISPOSITION");
                         initRIHR.setToState("FORWARD");
                         initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app
