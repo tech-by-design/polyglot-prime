@@ -810,7 +810,7 @@ WITH submission_counts AS (
                 END) AS total_scoring_engine_submissions,
             count(
                 CASE
-                    WHEN sihr.nature = 'Forwarded HTTP Response'::text AND ((sihr.payload ->> 'insertScreeningsResponse'::text) = 'Record Successfully Added to DB'::text OR (sihr.payload ->> 'insert_screeningsResponse'::text) = 'Record Successfully Added to DB'::text) THEN 1
+                    WHEN (sihr.nature = 'Forwarded HTTP Response'::text) AND  sihr.to_state <> 'FAIL'::text THEN 1   
                     ELSE NULL::integer
                 END) AS scoring_engine_submission_passed,
             max(sihr.created_at) AS recently_created_at
@@ -988,7 +988,9 @@ AS SELECT hub_interaction_id,
             ELSE 'no_error'::text
         END AS error_type
    FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-  WHERE (uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) AND (nature = 'Forwarded HTTP Response Error'::text OR nature = 'Forwarded HTTP Response'::text AND ((payload ->> 'insertScreeningsResponse'::text) <> 'Record Successfully Added to DB'::text OR (payload ->> 'insert_screeningsResponse'::text) <> 'Record Successfully Added to DB'::text)) AND created_at >= (CURRENT_DATE - '7 days'::interval)
+  WHERE (uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) 
+  AND ((nature = 'Forwarded HTTP Response Error'::text) and to_state = 'FAIL'::text) 
+  AND created_at >= (CURRENT_DATE - '7 days'::interval)
   ORDER BY created_at DESC;
 
 
@@ -1048,11 +1050,7 @@ WITH combined_counts AS (
                 END) AS total_scoring_engine_submissions,
             count(
                 CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text
-					AND ((sihr.payload ->> 'insertScreeningsResponse'::text) = 'Record Successfully Added to DB'::text 
-					OR (sihr.payload ->> 'insert_screeningsResponse'::text) = 'Record Successfully Added to DB'::text)
-					 
-					THEN 1
+                    WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text AND  sihr.to_state <> 'FAIL'::text THEN 1 
                     ELSE NULL::integer
                 END) AS scoring_engine_submission_passed,
             count(
