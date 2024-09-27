@@ -387,7 +387,7 @@ public class FHIRService {
                                                 }))
                                                 .build();
                         } catch (Exception ex) {
-                                LOG.error("Exception while getting SSL Context and posting to URL {} for interaction id : ",scoringEngineApiURL ,interactionId,e);
+                                LOG.error("Exception while getting SSL Context and posting to URL {} for interaction id : ",scoringEngineApiURL ,interactionId,ex);
                                 return null;
                         }
                 } else {
