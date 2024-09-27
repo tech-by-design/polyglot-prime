@@ -46,7 +46,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.validation.ResultSeverityEnum;
-import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
@@ -324,10 +323,11 @@ public class FHIRService {
                                         interactionId);
                         if (null != webClient) {
                                 sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
-                                        dataLakeApiContentType, interactionId,
-                                        jooqCfg, provenance, request.getRequestURI(), dataLakeApiBaseURL);
+                                                dataLakeApiContentType, interactionId,
+                                                jooqCfg, provenance, request.getRequestURI(), dataLakeApiBaseURL);
                         } else {
-                                LOG.error("ERROR:: FHIRService:: sendToScoringEngine Payload not send to url {} for interaction id {}",scoringEngineApiURL,interactionId);
+                                LOG.error("ERROR:: FHIRService:: sendToScoringEngine Payload not send to url {} for interaction id {}",
+                                                scoringEngineApiURL, interactionId);
                         }
 
                 } catch (Exception e) {
@@ -350,22 +350,40 @@ public class FHIRService {
                 if (mTlsEnabled) {
                         LOG.info("FHIRService:: createWebClient MTLS Enabled ...Fetching DefaultDataLakeAPi Auth from application.yml -BEGIN interaction id: {}",
                                         interactionId);
-                        String mTlsKeySecretName = defaultDatalakeApiAuthn.get(MTLS_KEY_SECRET_NAME);
-                        String mTlsCertSecretName = defaultDatalakeApiAuthn.get(MTLS_CERT_SECRET_NAME);
-                        Map<String, String> secretValuesFromAWS = getSecretsFromAWSSecretManager(mTlsKeySecretName,
-                                        mTlsCertSecretName, interactionId);
-                        LOG.info("FHIRService:: createWebClient MTLS Enabled ...Fetching DefaultDataLakeAPi Auth Auth from application.yml -END interaction id: {}",
-                                        interactionId);
+
                         try {
+                                final var mTlsKeySecretName = defaultDatalakeApiAuthn.get(MTLS_KEY_SECRET_NAME);
+                                final var mTlsCertSecretName = defaultDatalakeApiAuthn.get(MTLS_CERT_SECRET_NAME);
+                                if (null == mTlsCertSecretName || null == mTlsKeySecretName) {
+                                        throw new IllegalArgumentException(
+                                                        "Secret Key and cert not defined in application yaml");
+                                }
+                                Map<String, String> secretValuesFromAWS = getSecretsFromAWSSecretManager(
+                                                mTlsKeySecretName,
+                                                mTlsCertSecretName, interactionId);
+                                LOG.info("FHIRService:: createWebClient MTLS Enabled ...Fetching DefaultDataLakeAPi Auth Auth from application.yml -END interaction id: {}",
+                                                interactionId);
                                 LOG.info("FHIRService:: Get SSL Context -BEGIN interaction id: {}",
                                                 interactionId);
-          
+                                if (null == secretValuesFromAWS
+                                                .get(MTLS_CERT_SECRET_NAME)) {
+                                        throw new IllegalArgumentException(
+                                                        "Value is null for secret : " + mTlsCertSecretName);
+                                }
+                                if (null == secretValuesFromAWS
+                                                .get(MTLS_KEY_SECRET_NAME)) {
+                                        throw new IllegalArgumentException(
+                                                        "Value is null for secret : " + mTlsKeySecretName);
+                                }
                                 final var sslContext = SslContextBuilder.forClient()
                                                 .keyManager(new ByteArrayInputStream(secretValuesFromAWS
                                                                 .get(MTLS_CERT_SECRET_NAME).getBytes()),
                                                                 new ByteArrayInputStream(secretValuesFromAWS
                                                                                 .get(MTLS_KEY_SECRET_NAME).getBytes()))
                                                 .build();
+                                if (null == sslContext) {
+                                        throw new IllegalArgumentException("SSL context cannot be null.");
+                                }
                                 LOG.info("FHIRService:: Get HttpClient interaction id: {}",
                                                 interactionId);
                                 HttpClient httpClient = HttpClient.create()
@@ -388,7 +406,13 @@ public class FHIRService {
                                                 }))
                                                 .build();
                         } catch (Exception ex) {
-                                LOG.error("Exception while getting SSL Context and posting to URL {} for interaction id : ",scoringEngineApiURL ,interactionId,ex);
+                                LOG.error("Exception while getting SSL Context and posting to URL {} for interaction id : ",
+                                                scoringEngineApiURL, interactionId, ex);
+                                handleError(bundlePayloadWithDisposition, ex, request);
+                                registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId,
+                                                new Exception("Unexpected error: " + ex.getMessage()), "/Bundle",
+                                                tenantId,
+                                                provenance);
                                 return null;
                         }
                 } else {
@@ -416,7 +440,7 @@ public class FHIRService {
                                 .region(region)
                                 .build();
                 secretsMap.put(MTLS_KEY_SECRET_NAME, getValue(secretsClient, mTlsKeySecretName));
-                secretsMap.put(MTLS_CERT_SECRET_NAME, getValue(secretsClient, mTlsKeySecretName));
+                secretsMap.put(MTLS_CERT_SECRET_NAME, getValue(secretsClient, mTlsCertSecretName));
                 secretsClient.close();
                 LOG.info("FHIRService:: getSecretsFromAWSSecretManager  - Get Secrets Client Manager for region : {} END for interaction id: {}",
                                 Region.US_EAST_1, interactionId);
@@ -433,12 +457,14 @@ public class FHIRService {
 
                         GetSecretValueResponse valueResponse = secretsClient.getSecretValue(valueRequest);
                         secret = valueResponse.secretString();
-                        LOG.info("FHIRService:: getValue  - Fetched value of secret with name  : {}  value  is null : {} -END", secretName,secret!=null ? "true" :"false");
+                        LOG.info("FHIRService:: getValue  - Fetched value of secret with name  : {}  value  is null : {} -END",
+                                        secretName, secret == null ? "true" : "false");
                 } catch (SecretsManagerException e) {
                         LOG.error("ERROR:: FHIRService:: getValue  - Get Value of secret with name  : {} - FAILED with error "
                                         + e.awsErrorDetails().errorMessage(), e);
                 } catch (Exception e) {
-                        LOG.error("ERROR:: FHIRService:: getValue  - Get Value of secret with name  : {} - FAILED with error ", e);
+                        LOG.error("ERROR:: FHIRService:: getValue  - Get Value of secret with name  : {} - FAILED with error ",
+                                        e);
                 }
                 LOG.info("FHIRService:: getValue  - Get Value of secret with name  : {} -END", secretName);
                 return secret;
