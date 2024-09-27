@@ -39,7 +39,8 @@ org:
       http:
         hub:
           prime:
+            defaultDatalakeApiUrl: https://qa.hrsn.nyehealth.org/HRSNBundle
             defaultDatalakeApiAuthn:
-              mTlsEnabled: false
+              mTlsEnabled: true
               mTlsKeySecretName: techbd-qa-client-key
               mTlsCertSecretName: techbd-qa-client-certificate         
