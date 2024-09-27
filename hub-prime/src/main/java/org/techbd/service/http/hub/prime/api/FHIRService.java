@@ -1,5 +1,6 @@
 package org.techbd.service.http.hub.prime.api;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -44,15 +46,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.validation.ResultSeverityEnum;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
+import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
 
 @Service
 public class FHIRService {
 
         private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
+        private static final String MTLS_KEY_SECRET_NAME = "mTlsKeySecretName";
+        private static final String MTLS_CERT_SECRET_NAME = "mTlsCertSecretName";
+        private static final String MTLS_ENABLED_KEY = "mTlsEnabled";
         private final AppConfig appConfig;
         private final OrchestrationEngine engine = new OrchestrationEngine();
         private final UdiPrimeJpaConfig udiPrimeJpaConfig;
@@ -104,8 +117,7 @@ public class FHIRService {
                                         includeIncomingPayloadInDB, tenantId, payload,
                                         provenance, null);
                         return result;
-                } 
-                else {
+                } else {
                         LOG.warn("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
                                         getBundleInteractionId(request));
                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
@@ -293,22 +305,30 @@ public class FHIRService {
 
                 try {
                         Map<String, Object> bundlePayloadWithDisposition = null;
-                        if (null != validationPayloadWithDisposition) {  //todo -revisit
+                        if (null != validationPayloadWithDisposition) { // todo -revisit
                                 bundlePayloadWithDisposition = preparePayload(request,
                                                 payload,
                                                 validationPayloadWithDisposition);
                         } else {
-                                bundlePayloadWithDisposition = Configuration.objectMapper.readValue(payload,new TypeReference<Map<String, Object>>() {
+                                bundlePayloadWithDisposition = Configuration.objectMapper.readValue(payload,
+                                                new TypeReference<Map<String, Object>>() {
                                                 });
                         }
-                        final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL).filter(s -> !s.isEmpty())
-                        .orElse(appConfig.getDefaultDatalakeApiUrl());
-                        var webClient = createWebClient(dataLakeApiBaseURL, jooqCfg, request, tenantId, payload,
-                                        bundlePayloadWithDisposition, provenance, includeIncomingPayloadInDB);
-
-                        sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
+                        final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL)
+                                        .filter(s -> !s.isEmpty())
+                                        .orElse(appConfig.getDefaultDatalakeApiUrl());
+                        final var defaultDatalakeApiAuthn = appConfig.getDefaultDatalakeApiAuthn();
+                        var webClient = createWebClient(dataLakeApiBaseURL, defaultDatalakeApiAuthn, jooqCfg, request,
+                                        tenantId, payload,
+                                        bundlePayloadWithDisposition, provenance, includeIncomingPayloadInDB,
+                                        interactionId);
+                        if (null != webClient) {
+                                sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
                                         dataLakeApiContentType, interactionId,
                                         jooqCfg, provenance, request.getRequestURI(), dataLakeApiBaseURL);
+                        } else {
+                                LOG.error("ERROR:: FHIRService:: sendToScoringEngine Payload not send to url {} for interaction id {}",scoringEngineApiURL,interactionId);
+                        }
 
                 } catch (Exception e) {
                         handleError(validationPayloadWithDisposition, e, request);
@@ -317,25 +337,110 @@ public class FHIRService {
                 }
         }
 
-        private WebClient createWebClient(String scoringEngineApiURL,
+        private WebClient createWebClient(String scoringEngineApiURL, Map<String, String> defaultDatalakeApiAuthn,
                         org.jooq.Configuration jooqCfg,
                         HttpServletRequest request,
                         String tenantId,
                         String payload,
                         Map<String, Object> bundlePayloadWithDisposition,
                         String provenance,
-                        boolean includeIncomingPayloadInDB) {
+                        boolean includeIncomingPayloadInDB, String interactionId) {
+                boolean mTlsEnabled = Boolean.valueOf(defaultDatalakeApiAuthn.get(MTLS_ENABLED_KEY)).booleanValue();
+                LOG.info("FHIRService:: mtlsEnabled : {}  for interaction id: {}", mTlsEnabled, interactionId);
+                if (mTlsEnabled) {
+                        LOG.info("FHIRService:: createWebClient MTLS Enabled ...Fetching DefaultDataLakeAPi Auth from application.yml -BEGIN interaction id: {}",
+                                        interactionId);
+                        String mTlsKeySecretName = defaultDatalakeApiAuthn.get(MTLS_KEY_SECRET_NAME);
+                        String mTlsCertSecretName = defaultDatalakeApiAuthn.get(MTLS_CERT_SECRET_NAME);
+                        Map<String, String> secretValuesFromAWS = getSecretsFromAWSSecretManager(mTlsKeySecretName,
+                                        mTlsCertSecretName, interactionId);
+                        LOG.info("FHIRService:: createWebClient MTLS Enabled ...Fetching DefaultDataLakeAPi Auth Auth from application.yml -END interaction id: {}",
+                                        interactionId);
+                        try {
+                                LOG.info("FHIRService:: Get SSL Context -BEGIN interaction id: {}",
+                                                interactionId);
+                                SslContext sslContext = SslContextBuilder.forClient()
+                                                .keyManager(new ByteArrayInputStream(secretValuesFromAWS
+                                                                .get(MTLS_CERT_SECRET_NAME).getBytes()),
+                                                                new ByteArrayInputStream(secretValuesFromAWS
+                                                                                .get(MTLS_KEY_SECRET_NAME).getBytes()))
+                                                .build();
+                                LOG.info("FHIRService:: Get HttpClient interaction id: {}",
+                                                interactionId);
+                                HttpClient httpClient = HttpClient.create()
+                                                .secure(sslSpec -> sslSpec.sslContext(sslContext));
 
+                                LOG.info("FHIRService:: Create ReactorClientHttpConnector: {}",
+                                                interactionId);
+                                ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+                                LOG.info("FHIRService:: Build WebClient with MTLS Enabled ReactorClientHttpConnector: {}",
+                                                interactionId);
+                                return WebClient.builder()
+                                                .baseUrl(scoringEngineApiURL)
+                                                .clientConnector(connector)
+                                                .filter(ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
+                                                        filter(clientRequest, request, jooqCfg, provenance, tenantId,
+                                                                        payload,
+                                                                        bundlePayloadWithDisposition,
+                                                                        includeIncomingPayloadInDB);
+                                                        return Mono.just(clientRequest);
+                                                }))
+                                                .build();
+                        } catch (Exception ex) {
+                                LOG.error("Exception while getting SSL Context and posting to URL {} for interaction id : ",scoringEngineApiURL ,interactionId,e);
+                                return null;
+                        }
+                } else {
+                        LOG.info("FHIRService:: createWebClient MTLS Disabled  for interaction id: {}",
+                                        interactionId);
+                        return WebClient.builder()
+                                        .baseUrl(scoringEngineApiURL)
+                                        .filter(ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
+                                                filter(clientRequest, request, jooqCfg, provenance, tenantId, payload,
+                                                                bundlePayloadWithDisposition,
+                                                                includeIncomingPayloadInDB);
+                                                return Mono.just(clientRequest);
+                                        }))
+                                        .build();
+                }
+        }
 
-
-                return WebClient.builder()
-                                .baseUrl(scoringEngineApiURL)
-                                .filter(ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-                                        filter(clientRequest, request, jooqCfg, provenance, tenantId, payload,
-                                                        bundlePayloadWithDisposition, includeIncomingPayloadInDB);
-                                        return Mono.just(clientRequest);
-                                }))
+        private Map<String, String> getSecretsFromAWSSecretManager(String mTlsKeySecretName,
+                        String mTlsCertSecretName, String interactionId) {
+                final Map<String, String> secretsMap = new HashMap<>();
+                Region region = Region.US_EAST_1;
+                LOG.info("FHIRService:: getSecretsFromAWSSecretManager  - Get Secrets Client Manager for region : {} BEGIN for interaction id: {}",
+                                Region.US_EAST_1, interactionId);
+                SecretsManagerClient secretsClient = SecretsManagerClient.builder()
+                                .region(region)
                                 .build();
+                secretsMap.put("mTlsKey", getValue(secretsClient, mTlsKeySecretName));
+                secretsMap.put("mTlsCert", getValue(secretsClient, mTlsKeySecretName));
+                secretsClient.close();
+                LOG.info("FHIRService:: getSecretsFromAWSSecretManager  - Get Secrets Client Manager for region : {} END for interaction id: {}",
+                                Region.US_EAST_1, interactionId);
+                return secretsMap;
+        }
+
+        public static String getValue(SecretsManagerClient secretsClient, String secretName) {
+                LOG.info("FHIRService:: getValue  - Get Value of secret with name  : {} -BEGIN", secretName);
+                String secret = null;
+                try {
+                        GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
+                                        .secretId(secretName)
+                                        .build();
+
+                        GetSecretValueResponse valueResponse = secretsClient.getSecretValue(valueRequest);
+                        secret = valueResponse.secretString();
+
+                } catch (SecretsManagerException e) {
+                        LOG.error("ERROR:: FHIRService:: getValue  - Get Value of secret with name  : {} - FAILED with error "
+                                        + e.awsErrorDetails().errorMessage(), e);
+                } catch (Exception e) {
+                        LOG.error("ERROR:: FHIRService:: getValue  - Get Value of secret with name  : {} - FAILED with error ", e);
+                }
+                LOG.info("FHIRService:: getValue  - Get Value of secret with name  : {} -END", secretName);
+                return secret;
         }
 
         private void filter(ClientRequest clientRequest,
