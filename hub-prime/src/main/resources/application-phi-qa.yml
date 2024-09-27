@@ -42,4 +42,4 @@ org:
             defaultDatalakeApiAuthn:
               mTlsEnabled: false
               mTlsKeySecretName: techbd-qa-client-key
-              mTlsCertSecretName: techbd-qa-client-certificate    
+              mTlsCertSecretName: techbd-qa-client-certificate         

@@ -33,3 +33,13 @@ management:
       enabled: true
     os:
       enabled: true
+org:
+  techbd:
+    service:
+      http:
+        hub:
+          prime:
+            defaultDatalakeApiAuthn:
+              mTlsEnabled: false
+              mTlsKeySecretName: techbd-qa-client-key
+              mTlsCertSecretName: techbd-qa-client-certificate   
