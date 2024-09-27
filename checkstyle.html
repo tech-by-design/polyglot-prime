@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-09-27<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.246.0</li>
+          <li id="projectVersion">Version: 0.248.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -73,9 +73,9 @@
 <th><img src="images/icon_warning_sml.gif" />&#160;Warnings</th>
 <th><img src="images/icon_error_sml.gif" />&#160;Errors</th></tr>
 <tr class="b">
-<td style="text-align: left;">7</td>
+<td style="text-align: left;">8</td>
 <td>0</td>
-<td>14</td>
+<td>19</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -100,21 +100,26 @@
 <td>2</td>
 <td>0</td></tr>
 <tr class="a">
-<td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java">org/techbd/service/http/hub/prime/api/FHIRService.java</a></td>
+<td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2FAppConfig.java">org/techbd/service/http/hub/prime/AppConfig.java</a></td>
 <td>0</td>
-<td>3</td>
+<td>1</td>
 <td>0</td></tr>
 <tr class="b">
+<td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java">org/techbd/service/http/hub/prime/api/FHIRService.java</a></td>
+<td>0</td>
+<td>7</td>
+<td>0</td></tr>
+<tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java">org/techbd/service/http/hub/prime/api/FhirController.java</a></td>
 <td>0</td>
 <td>2</td>
 <td>0</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FNeedAttentionController.java">org/techbd/service/http/hub/prime/ux/NeedAttentionController.java</a></td>
 <td>0</td>
 <td>2</td>
 <td>0</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fux.2FPrimeController.java">org/techbd/service/http/hub/prime/ux/PrimeController.java</a></td>
 <td>0</td>
 <td>1</td>
@@ -126,23 +131,6 @@
 <th>Rule</th>
 <th>Violations</th>
 <th>Severity</th></tr>
-<tr class="b">
-<td style="text-align: left;">blocks</td>
-<td><a class="externalLink" href="https://checkstyle.org/config_blocks.html#RightCurly">RightCurly</a>
-<ul>
-<li>tokens: <code>&quot;CLASS_DEF, METHOD_DEF, CTOR_DEF, LITERAL_FOR, LITERAL_WHILE, STATIC_INIT,                     INSTANCE_INIT&quot;</code></li>
-<li>id: <code>&quot;RightCurlyAlone&quot;</code></li>
-<li>option: <code>&quot;alone&quot;</code></li></ul></td>
-<td>1</td>
-<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
-<td style="text-align: left;"></td>
-<td><a class="externalLink" href="https://checkstyle.org/config_blocks.html#RightCurly">RightCurly</a>
-<ul>
-<li>tokens: <code>&quot;LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE,                     LITERAL_DO&quot;</code></li>
-<li>id: <code>&quot;RightCurlySame&quot;</code></li></ul></td>
-<td>1</td>
-<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="b">
 <td style="text-align: left;">coding</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_coding.html#MissingSwitchDefault">MissingSwitchDefault</a></td>
@@ -162,6 +150,21 @@
 <td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_naming.html#LocalVariableName">LocalVariableName</a>
+<ul>
+<li>format: <code>&quot;^[a-z]([a-z0-9][a-zA-Z0-9]*)?$&quot;</code></li>
+<li>tokens: <code>&quot;VARIABLE_DEF&quot;</code></li></ul></td>
+<td>3</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="b">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_naming.html#ParameterName">ParameterName</a>
+<ul>
+<li>format: <code>&quot;^[a-z]([a-z0-9][a-zA-Z0-9]*)?$&quot;</code></li></ul></td>
+<td>2</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
 <td style="text-align: left;">whitespace</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#EmptyLineSeparator">EmptyLineSeparator</a>
 <ul>
@@ -176,7 +179,7 @@
 <ul>
 <li>tokens: <code>&quot;COMMA, SEMI, POST_INC, POST_DEC, DOT, ELLIPSIS, METHOD_REF&quot;</code></li>
 <li>allowLineBreaks: <code>&quot;true&quot;</code></li></ul></td>
-<td>1</td>
+<td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
 <td style="text-align: left;"></td>
@@ -250,6 +253,20 @@
 <td>EmptyLineSeparator</td>
 <td>'METHOD_DEF' should be separated from previous line.</td>
 <td>334</td></tr></table></section><section>
+<h3>org/techbd/service/http/hub/prime/AppConfig.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2FAppConfig.java"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>Severity</th>
+<th>Category</th>
+<th>Rule</th>
+<th>Message</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>EmptyLineSeparator</td>
+<td>'METHOD_DEF' should be separated from previous line.</td>
+<td>57</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/api/FHIRService.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -263,19 +280,43 @@
 <td>naming</td>
 <td>AbbreviationAsWordInName</td>
 <td>Abbreviation in name 'FHIRService' must contain no more than '4' consecutive capital letters.</td>
-<td>53</td></tr>
+<td>63</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>blocks</td>
-<td>RightCurly</td>
-<td>'}' at column 17 should be on the same line as the next part of a multi-block statement (one that directly contains multiple blocks: if/else-if/else, do/while or try/catch/finally).</td>
-<td>107</td></tr>
+<td>naming</td>
+<td>LocalVariableName</td>
+<td>Local variable name 'mTlsEnabled' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>348</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>LocalVariableName</td>
+<td>Local variable name 'mTlsKeySecretName' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>353</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>LocalVariableName</td>
+<td>Local variable name 'mTlsCertSecretName' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>354</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
-<td>EmptyLineSeparator</td>
-<td>There is more than 1 empty line after this line.</td>
-<td>327</td></tr></table></section><section>
+<td>NoWhitespaceBefore</td>
+<td>',' is preceded with whitespace.</td>
+<td>390</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'mTlsKeySecretName' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>408</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'mTlsCertSecretName' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>409</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/api/FhirController.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java"></a>
 <table class="table table-striped">
 <tr class="a">

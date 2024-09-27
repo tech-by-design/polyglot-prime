@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-09-27<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.246.0</li>
+          <li id="projectVersion">Version: 0.248.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -77,7 +77,7 @@
 <th>Missing Classes</th></tr>
 <tr class="b">
 <td>230</td>
-<td>7</td>
+<td>8</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -99,7 +99,7 @@
 <td>2</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.api.FHIRService">org.techbd.service.http.hub.prime.api.FHIRService</a></td>
-<td>2</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
+<td>3</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -165,16 +165,22 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
+<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.createWebClient(String, Map, Configuration, HttpServletRequest, String, String, Map, String, boolean, String): String.getBytes()</td>
+<td>I18N</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
+<td>364</td>
+<td>High</td></tr>
+<tr class="a">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>124</td>
+<td>136</td>
 <td>High</td></tr>
-<tr class="a">
+<tr class="b">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>736</td>
+<td>841</td>
 <td>Medium</td></tr></table></section>
         </main>
       </div>
