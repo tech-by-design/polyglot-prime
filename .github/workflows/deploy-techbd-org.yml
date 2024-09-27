@@ -115,4 +115,42 @@ jobs:
             GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           run: |
             cd infrastructure-prime
-            gh pr create --base main --head synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment --title "FHIR prod techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir prod deployment for version ${{ github.ref_name }}"  
+            gh pr create --base main --head synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment --title "FHIR prod techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir prod deployment for version ${{ github.ref_name }}"
+
+    phi-qa-techbd-deployment:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Configure Git
+          run: |
+            git config --global user.email "action@github.com"
+            git config --global user.name "GitHub Action"
+  
+        - name: Clone infrastructure repository
+          run: |
+            git clone https://${{ secrets.ACTIONS_GITHUB_TOKEN }}@github.com/tech-by-design/infrastructure-prime.git
+            
+        - name: Create and switch to a new branch
+          run: |
+            cd infrastructure-prime
+            git checkout -b phi-qa-techbd-fhir-${{ github.ref_name}}-deployment
+            
+        - name: Update fhir environment file
+          run: |
+            cd infrastructure-prime
+            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/phi.hub.qa.techbd.org/.env
+  
+        - name: Commit and push changes
+          run: |
+            cd infrastructure-prime
+            git add .
+            git commit -m "ci: fhir phi qa ${{ github.ref_name }} deployment"
+            git push --set-upstream origin phi-qa-techbd-fhir-${{ github.ref_name}}-deployment
+  
+        - name: Create Pull Request
+          env:
+            GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          run: |
+            cd infrastructure-prime
+            gh pr create --base main --head phi-qa-techbd-fhir-${{ github.ref_name}}-deployment --title "FHIR PHI QA techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir phi qa deployment for version ${{ github.ref_name }}"
