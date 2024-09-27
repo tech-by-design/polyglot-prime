@@ -343,5 +343,20 @@
     "name": "org.techbd.service.http.interactions.saveUserDataToInteractions",
     "type": "java.lang.Boolean",
     "description": "Set 'org.techbd.service.http.interactions.saveUserDataToInteractions' to true or false. If set to true, the logged-in user details will be saved for interactions."
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.m-tls-key-secret-name",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.m-tls-key-secret-name'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsEnabled",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsEnabled'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsCertSecretName",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsCertSecretName'"
   }
 ]}

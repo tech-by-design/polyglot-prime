@@ -5,6 +5,12 @@ org:
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           saveUserDataToInteractions: true
+        hub:
+          prime:
+            defaultDatalakeApiAuthn:
+              mTlsEnabled: true
+              mTlsKeySecretName: techbd-qa-client-key
+              mTlsCertSecretName: techbd-qa-client-certificate
 
 management:
   endpoints:
@@ -41,3 +47,4 @@ management:
       enabled: true
     os:
       enabled: true
+       
