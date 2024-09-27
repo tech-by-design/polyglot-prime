@@ -125,24 +125,23 @@
                          headerTooltip: "Unique Id For Identify The Record",
                         cellRenderer: params => {
                             const hub_interaction_id = params.value;
-                            const error_type = params.data.error_type;
+                           // const error_type = params.data.error_type;
                             const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
                             const button = document.createElement('button');
                             button.innerText = hub_interaction_id;
                             button.style.textDecoration = 'underline';
-                            button.addEventListener('click', () => {
-                                if (error_type == 'Data Submission Error') {
-                                    modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_request_failed_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
-                                } else if (error_type == 'Data Validation Error') {
+                            button.addEventListener('click', () => { 
                                     modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
-                                } else {
-                                    console.error('hub_interaction_id is undefined');
-                                }
                             });
                             return button;
                         }
                     },
-                    { headerName: "Error type", field: "error_type", filter: "agTextColumnFilter" },
+                    { headerName: "Error Message", field: "error_message", filter: "agTextColumnFilter",tooltipValueGetter: (p) =>
+                    p.value,  valueGetter: (params) => {
+                            const error = params.data.error_message || ''; // Default to an empty string if no value
+                            const responseBodyDetails = params.data.response_body_details || ''; // Default to an empty string if no value
+                            return error && responseBodyDetails ? `${error}, ${responseBodyDetails}` : error || responseBodyDetails;
+                        } },
                     { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter" },
                 ],
                 detailRowHeight: 280,
