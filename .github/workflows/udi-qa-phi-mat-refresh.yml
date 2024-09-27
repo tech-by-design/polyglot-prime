@@ -1,0 +1,45 @@
+name: QA PHI UDI Mat Refresh
+
+on:
+  workflow_dispatch: {}
+  workflow_run:
+    workflows: ["UDI QA non-PHI RDS schema generator"]
+    types:
+      - completed
+
+jobs:
+  build:
+    runs-on: qa-techbd-sql
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .pgpass file
+        run: |
+          # Write the metadata comment to the .pgpass file
+          echo "# { id: \"QA_TECHBD_UDI_DS\", description: \"UDI QA non-PHI database \", boundary: \"non-PHI QA\" }" > ~/.pgpass
+
+          # Append the database connection details to the .pgpass file
+           echo "${{ secrets.PHI_QA_TECHBD_UDI_DS_HOST }}:${{ secrets.PHI_QA_TECHBD_UDI_DS_PORT }}:${{ secrets.PHI_QA_TECHBD_UDI_DS_NAME }}:${{ secrets.PHI_QA_TECHBD_UDI_DS_USER }}:${{ secrets.PHI_QA_TECHBD_UDI_DS_PASSWORD }}" >> ~/.pgpass
+
+          # Set the .pgpass file permissions to 600 (read and write for owner only)
+          chmod 600 ~/.pgpass
+
+      - name: Refresh Materialized views
+        run: |
+          psql -h ${{ secrets.PHI_QA_TECHBD_UDI_DS_HOST }} \
+               -p ${{ secrets.PHI_QA_TECHBD_UDI_DS_PORT }} \
+               -U ${{ secrets.PHI_QA_TECHBD_UDI_DS_USER }} \
+               -d ${{ secrets.PHI_QA_TECHBD_UDI_DS_NAME }} \
+               -c "REFRESH MATERIALIZED VIEW techbd_udi_ingress.fhir_screening_info_mat;"
+          psql -h ${{ secrets.PHI_QA_TECHBD_UDI_DS_HOST }} \
+               -p ${{ secrets.PHI_QA_TECHBD_UDI_DS_PORT }} \
+               -U ${{ secrets.PHI_QA_TECHBD_UDI_DS_USER }} \
+               -d ${{ secrets.PHI_QA_TECHBD_UDI_DS_NAME }} \
+               -c "REFRESH MATERIALIZED VIEW techbd_udi_ingress.fhir_validation_issue_mat;" 
+          psql -h ${{ secrets.PHI_QA_TECHBD_UDI_DS_HOST }} \
+               -p ${{ secrets.PHI_QA_TECHBD_UDI_DS_PORT }} \
+               -U ${{ secrets.PHI_QA_TECHBD_UDI_DS_USER }} \
+               -d ${{ secrets.PHI_QA_TECHBD_UDI_DS_NAME }} \
+               -c "REFRESH MATERIALIZED VIEW techbd_udi_ingress.fhir_session_diagnostics_mat;" 
