@@ -1763,7 +1763,7 @@ BEGIN
   		RETURN NULL;	
   	END IF;
   
-  	IF(LOWER(sat_interaction_fhir_request_upserted.nature) <> LOWER('Original FHIR Payload')) THEN
+  	IF(LOWER(sat_interaction_fhir_request_upserted.nature) <> LOWER('org.techbd.service.http.Interactions$RequestResponseEncountered')) THEN
 		SELECT 
 		fhir_req.client_ip_address,			fhir_req.user_agent, 				fhir_req.bundle_id, 
 		fhir_req.bundle_last_updated,		fhir_req.organization_id,			fhir_req.organization_name, 
@@ -1782,61 +1782,8 @@ BEGIN
 		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
 		WHERE 1 = 1
 		AND fhir_req.hub_interaction_id = sat_interaction_fhir_request_upserted.hub_interaction_id
-		AND fhir_req.nature = 'Original FHIR Payload';	
-  	END IF;
-  
-	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = 'original fhir payload') THEN
-	    SELECT entry->'resource'->>'id'
-	    INTO v_patient_id
-	    FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry
-	    WHERE entry->'resource'->>'resourceType' = 'Patient'
-	    LIMIT 1;
-	   
-	    SELECT 
-	    identifier_element->>'value', 
-	    regexp_replace(identifier_element->'assigner'->>'reference','^Organization/', '') 
-	    INTO v_patient_mrn, v_organization_id
-	    FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry,
-	    jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
-	    WHERE entry->'resource'->>'resourceType' = 'Patient'
-	    AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
-	    LIMIT 1;	  
-	  
-	  	SELECT entry.value->'resource'->>'name' INTO v_organization_name
-    	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry(value)
-   	 	WHERE 
-        entry.value->'resource'->>'resourceType' = 'Organization' 
-        AND entry.value->'resource'->>'id' = v_organization_id;
-   	   	     
-	    SELECT identifier_element->>'value'
-	    INTO v_medicaid_cin
-	   	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry,
-		jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
-		WHERE entry->'resource'->>'resourceType' = 'Patient'
-		AND identifier_element #>> '{type, coding, 0, code}' = 'MA'
-		LIMIT 1;		  		
-	   	
-	    SELECT identifier_element->>'value'
-	    INTO v_ssn
-	   	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry,
-		jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
-		WHERE entry->'resource'->>'resourceType' = 'Patient'
-		AND identifier_element #>> '{type, coding, 0, code}' = 'SS'
-		LIMIT 1;			   	   
-	   	
-		SELECT 
-		sat_interaction_fhir_request_upserted.payload->>'id', 
-		sat_interaction_fhir_request_upserted.payload->'meta'->>'lastUpdated' 
-		INTO v_bundle_id, v_bundle_last_updated
-		WHERE sat_interaction_fhir_request_upserted.payload->>'resourceType' = 'Bundle'
-		LIMIT 1;		
-		
-		SELECT STRING_AGG(DISTINCT entry->'resource'->>'resourceType', ', ') 
-		INTO v_resource_type_set
-		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'entry') AS entry
-		WHERE entry ? 'resource';	
-	
-	END IF; /*End of : original fhir payload*/
+		AND fhir_req.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered';	
+  	END IF;  	
 
 	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('org.techbd.service.http.Interactions$RequestResponseEncountered')) THEN				   
     	
@@ -1939,7 +1886,13 @@ BEGIN
 		END IF;		
 			
 	END IF; /*End of: Forwarded HTTP Response Error. Forwarded HTTP Response*/
-				
+	
+	BEGIN
+		v_bundle_last_updated := v_bundle_last_updated::TIMESTAMPTZ;
+	EXCEPTION
+	    WHEN others THEN v_bundle_last_updated := NULL;  -- Set to NULL if it's an invalid timestamp
+	END;
+
     -- The INSERT statement inserts a new record into the sat_interaction_fhir_request table, generating a UUID for the primary key.
     -- Extracted and transformed values from the payload JSONB are inserted into corresponding columns.
     -- If the operation succeeds, the generated UUID is returned.
@@ -1998,7 +1951,7 @@ BEGIN
         COALESCE(v_issues_count,0),
         v_bundle_id,
         v_bundle_session_id,
-        COALESCE(v_bundle_last_updated::TIMESTAMPTZ,NULL),
+        COALESCE(NULLIF(v_bundle_last_updated, '')::TIMESTAMPTZ, NULL),
         v_organization_id,
         v_organization_name,
         v_patient_id,
