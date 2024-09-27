@@ -359,7 +359,8 @@ public class FHIRService {
                         try {
                                 LOG.info("FHIRService:: Get SSL Context -BEGIN interaction id: {}",
                                                 interactionId);
-                                SslContext sslContext = SslContextBuilder.forClient()
+          
+                                final var sslContext = SslContextBuilder.forClient()
                                                 .keyManager(new ByteArrayInputStream(secretValuesFromAWS
                                                                 .get(MTLS_CERT_SECRET_NAME).getBytes()),
                                                                 new ByteArrayInputStream(secretValuesFromAWS
@@ -414,8 +415,8 @@ public class FHIRService {
                 SecretsManagerClient secretsClient = SecretsManagerClient.builder()
                                 .region(region)
                                 .build();
-                secretsMap.put("mTlsKey", getValue(secretsClient, mTlsKeySecretName));
-                secretsMap.put("mTlsCert", getValue(secretsClient, mTlsKeySecretName));
+                secretsMap.put(MTLS_KEY_SECRET_NAME, getValue(secretsClient, mTlsKeySecretName));
+                secretsMap.put(MTLS_CERT_SECRET_NAME, getValue(secretsClient, mTlsKeySecretName));
                 secretsClient.close();
                 LOG.info("FHIRService:: getSecretsFromAWSSecretManager  - Get Secrets Client Manager for region : {} END for interaction id: {}",
                                 Region.US_EAST_1, interactionId);
@@ -432,7 +433,7 @@ public class FHIRService {
 
                         GetSecretValueResponse valueResponse = secretsClient.getSecretValue(valueRequest);
                         secret = valueResponse.secretString();
-
+                        LOG.info("FHIRService:: getValue  - Fetched value of secret with name  : {}  value  is null : {} -END", secretName,secret!=null ? "true" :"false");
                 } catch (SecretsManagerException e) {
                         LOG.error("ERROR:: FHIRService:: getValue  - Get Value of secret with name  : {} - FAILED with error "
                                         + e.awsErrorDetails().errorMessage(), e);
@@ -602,7 +603,7 @@ public class FHIRService {
         }
 
         @SuppressWarnings("unchecked")
-        private Map<String, Object> extractIssueAndDisposition(String interactionId,
+        public Map<String, Object> extractIssueAndDisposition(String interactionId,
                         Map<String, Object> operationOutcomePayload) {
                 LOG.info("FHIRService:: extractResourceTypeAndDisposition BEGIN for interaction id : {}",
                                 interactionId);
