@@ -31,8 +31,8 @@
                         headerName: "Interaction ID",
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
-                        cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${value}.json`));
+                        cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
                         }, modalAide)
                     },
                     { headerName: "URI", field: "uri", filter: "agTextColumnFilter" },
