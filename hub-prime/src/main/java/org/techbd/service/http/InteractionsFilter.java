@@ -33,6 +33,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.util.ArtifactStore;
 import org.techbd.util.ArtifactStore.Artifact;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.util.StandardCharset;
 
 import jakarta.servlet.FilterChain;
@@ -201,13 +202,15 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var artifact = ArtifactStore.jsonArtifact(rre, rre.interactionId().toString(),
                 InteractionsFilter.class.getName() + ".interaction", asb.getProvenance());
 
-        if (persistInteractionDB) {
+        if (persistInteractionDB && !requestURI.equals("/Bundle") && !requestURI.equals("/Bundle/")) {
             final var rihr = new RegisterInteractionHttpRequest();
             try {
+                LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
+                rre.interactionId().toString(), rre.tenant());
                 final var tenant = rre.tenant();
                 final var dsl = udiPrimeJpaConfig.dsl();
                 rihr.setInteractionId(rre.interactionId().toString());
-                rihr.setNature(Configuration.objectMapper.valueToTree(
+                rihr.setNature((JsonNode)Configuration.objectMapper.valueToTree(
                         Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
                                 tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
@@ -248,8 +251,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 }
 
                 rihr.execute(dsl.configuration());
+                LOG.info("REGISTER State None : END for  interaction id : {} tenant id : {}",
+                rre.interactionId().toString(), rre.tenant());
             } catch (Exception e) {
-                LOG.error("CALL " + rihr.getName() + " error", e);
+                LOG.error("ERROR:: REGISTER State None  for  interaction id : {} tenant id : {} : CALL " + rihr.getName() + " error",  rre.interactionId().toString(), rre.tenant(),e);
             }
         }
 
