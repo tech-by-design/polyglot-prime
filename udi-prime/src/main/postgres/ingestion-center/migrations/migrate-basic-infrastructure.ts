@@ -386,6 +386,29 @@ const interactionFhirSessionDiagnosticSat = interactionHub.satelliteTable(
   },
 );
 
+
+const interactionFhirScreeningInfoSat = interactionHub.satelliteTable(
+  "fhir_screening_info",
+  {
+    sat_interaction_fhir_screening_info_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    qe_name : text(),
+    submitted_date_time: dateTimeNullable(),
+    survey_date_time: textNullable(),
+    patient_mrn: textNullable(),
+    full_name: textNullable(),
+    last_name: textNullable(),
+    first_name: textNullable(),
+    org_id: textNullable(),
+    org_name: textNullable(),
+    total_safety_score: textNullable(),
+    areas_of_interest: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
 enum EnumFileExchangeProtocol {
   SFTP = "SFTP",
   S3 = "S3",
@@ -664,6 +687,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${interactionFhirSessionDiagnosticSat}
 
+      ${interactionFhirScreeningInfoSat}
+
       ${fileExchangeProtocol}
 
       BEGIN
@@ -757,6 +782,39 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.json_action_rule
         ADD CONSTRAINT json_action_rule_action_rule_id_pkey
         PRIMARY KEY (action_rule_id);
+
+      INSERT INTO techbd_udi_ingress.json_action_rule(
+        action_rule_id,
+        "namespace",
+        json_path,
+        "action",
+        "condition",
+        reject_json,
+        modify_json,
+        priority,
+        updated_at,
+        updated_by,
+        last_applied_at,
+        created_at,
+        created_by,
+        provenance
+      )
+      VALUES(
+        '36eb7e17-107a-44ad-834e-9699b435708f',
+        'NYeC Rule',
+        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*] ? (@.location.diagnostics == "Bundle.meta")',
+        'reject',
+        NULL,
+        NULL,
+        NULL,
+        1,
+        current_timestamp,
+        current_user,
+        current_timestamp ,
+        current_timestamp,
+        current_user,
+        '{"Key" : "value"}'
+      ) ON CONFLICT (action_rule_id) DO NOTHING;
 
       CREATE INDEX IF NOT exists json_action_rule_action_idx ON techbd_udi_ingress.json_action_rule USING btree (action);
       CREATE INDEX IF NOT EXISTS json_action_rule_json_path_idx ON techbd_udi_ingress.json_action_rule USING btree (json_path);
