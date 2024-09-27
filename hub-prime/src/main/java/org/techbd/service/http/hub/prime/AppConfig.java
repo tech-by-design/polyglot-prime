@@ -43,11 +43,11 @@ public class AppConfig {
     private Map<String, String> structureDefinitionsUrls;
     private Map<String, String> codeSystemUrls;
     private Map<String, String> valueSetUrls;
-
-    public String getVersion() {
+    private Map<String,String> defaultDatalakeApiAuthn;
+    
+     public String getVersion() {
         return version;
     }
-
     /**
      * Spring Boot will retrieve required value from properties file which is
      * injected from pom.xml.
@@ -98,4 +98,11 @@ public class AppConfig {
         return valueSetUrls;
     }
 
+    public Map<String, String> getDefaultDatalakeApiAuthn() {
+        return defaultDatalakeApiAuthn;
+    }
+
+    public void setDefaultDatalakeApiAuthn(Map<String, String> defaultDatalakeApiAuthn) {
+        this.defaultDatalakeApiAuthn = defaultDatalakeApiAuthn;
+    }
 }
