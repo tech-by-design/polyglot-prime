@@ -304,10 +304,12 @@ AS SELECT tenant_id,
  *                                      If TRUE, unique violation is not treated as an error.
  *                                      If FALSE, unique violation is treated as an error.
  *******************************************************************************************************************************/
-DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, jsonb, jsonb, text, text, text, text, timestamptz, text, text, bool);
-CREATE OR REPLACE PROCEDURE techbd_udi_ingress.register_interaction_http_request(IN interaction_id text, IN interaction_key text, IN payload jsonb, IN elaboration jsonb DEFAULT NULL::jsonb, IN nature jsonb DEFAULT NULL::jsonb, IN content_type text DEFAULT NULL::text, IN from_state text DEFAULT NULL::text, IN to_state text DEFAULT NULL::text, IN state_transition_reason text DEFAULT NULL::text, IN user_id text DEFAULT NULL::text, IN user_name text DEFAULT NULL::text, IN user_session text DEFAULT NULL::text, IN user_role text DEFAULT NULL::text, IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, IN created_by text DEFAULT NULL::text, IN provenance text DEFAULT NULL::text, IN hub_upsert_behavior boolean DEFAULT true)
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true)
+ RETURNS jsonb
  LANGUAGE plpgsql
-AS $procedure$
+AS $function$
 DECLARE
     v_error_msg 		TEXT;
     v_error_type 		TEXT;
@@ -321,11 +323,21 @@ DECLARE
     v_exception_id 		TEXT;
    	v_nature_denorm 	TEXT;
    	v_tenant_id_denorm 	TEXT;
+   
+   	v_from_state				TEXT;
+   	v_to_state					TEXT;
+   	v_state_transition_reason 	TEXT;
+   	v_nature 					JSONB;   
+   	v_return 					JSONB := NULL;
+   	v_disposition_json			JSONB := NULL;
+   	v_payload					JSONB := NULL;
+   
 BEGIN
     -- Attempt to insert into hub_interaction
     BEGIN	   	    
         INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
-        VALUES (interaction_id, interaction_key, v_created_at, v_created_by, v_provenance);
+        VALUES (register_interaction_http_request.interaction_id, interaction_key, v_created_at, v_created_by, v_provenance)
+       ;
 
     EXCEPTION
         WHEN unique_violation THEN
@@ -344,24 +356,29 @@ BEGIN
                     NULL, interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
                 );
             END IF;
+   
     END;
 
     -- Attempt to insert into sat_interaction_http_request
     BEGIN
+  
 	    v_nature_denorm = nature->>'nature';
 	   	v_tenant_id_denorm = nature->>'tenant_id';
+	   
+	   	/*INSERT INTO techbd_udi_assurance.pgtap_fixtures_json("name","jsonb")
+	   	values(gen_random_uuid()::TEXT, register_interaction_http_request.payload);*/
 	   
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, 
             to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm
         )
         VALUES (
-            gen_random_uuid()::text, interaction_id, nature, content_type, payload, from_state, to_state, 
+            gen_random_uuid()::text, register_interaction_http_request.interaction_id, nature, content_type, payload, from_state, to_state, 
             state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
-       
+ 
        	--1) Call the function with the defined parameters to upsert user info
-       	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN
+       	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 	        register_interaction_http_request.interaction_id, 
 	        register_interaction_http_request.interaction_key, 
@@ -376,11 +393,11 @@ BEGIN
 	        v_created_at, 
 	        v_created_by, 
 	        v_provenance
-	       );
+	       );  	
 	    END IF;
-	   	
 	     --2) Call the function with the defined parameters to upsert interaction FHIR request info.
 	   	IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate') THEN
+
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
 	        register_interaction_http_request.interaction_id,
 	        v_tenant_id_denorm,
@@ -395,8 +412,85 @@ BEGIN
 	        v_provenance,
 	      	register_interaction_http_request.elaboration
 	       );	    
-		END IF;
-	    	    
+
+		END IF;	
+		/*==============================================================================================================================*/
+		--RECURSIVE FUNCTION CALL
+		IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/') THEN  
+			IF (v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN	--Check previous nature				
+				v_from_state 	:= 'NONE';
+				v_to_state 		:= 'ACCEPT_FHIR_BUNDLE';
+				v_nature 		:= jsonb_build_object('nature', 'Original FHIR Payload', 'tenant_id', v_tenant_id_denorm);
+				v_payload 		:= COALESCE(register_interaction_http_request.payload->'request'->'requestBody', 'null'::jsonb);
+				   
+				-- Recursive call with adjusted parameters
+				v_return := techbd_udi_ingress.register_interaction_http_request(
+				register_interaction_http_request.interaction_id, 
+				register_interaction_http_request.interaction_key,  
+				v_payload,--register_interaction_http_request.payload,  -- Adjust this if needed
+				register_interaction_http_request.rule_namespace,
+				register_interaction_http_request.elaboration, 
+				v_nature,   -- Adjust this if needed
+				register_interaction_http_request.content_type, 
+				v_from_state, 
+				v_to_state, 
+				state_transition_reason, 
+				register_interaction_http_request.user_id, 
+				register_interaction_http_request.user_name, 
+				register_interaction_http_request.user_session, 
+				register_interaction_http_request.user_role, 
+				register_interaction_http_request.created_at, 
+				register_interaction_http_request.created_by, 
+				register_interaction_http_request.provenance, 
+				register_interaction_http_request.hub_upsert_behavior
+			    );						   
+			ELSEIF (v_nature_denorm = 'Original FHIR Payload') THEN	
+				v_from_state 	:= 'ACCEPT_FHIR_BUNDLE';
+				v_to_state		:= 'DISPOSITION';
+				v_nature 		:= jsonb_build_object('nature', 'techByDesignDisposition', 'tenant_id', v_tenant_id_denorm);
+				
+				SELECT sat_intr_req.payload
+				INTO v_payload
+				FROM techbd_udi_ingress.sat_interaction_http_request sat_intr_req
+				WHERE sat_intr_req.hub_interaction_id = register_interaction_http_request.interaction_id
+				AND sat_intr_req.nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+				AND sat_intr_req.tenant_id_denorm = v_tenant_id_denorm;
+				
+				--Function call to validate with Json Action Rule
+				v_disposition_json := techbd_udi_ingress.process_json_action_rules(
+				v_payload,
+				register_interaction_http_request.rule_namespace,
+				register_interaction_http_request.interaction_key
+				);
+				
+				v_disposition_json := v_disposition_json-> 'response'->'responseBody';
+			
+				-- Recursive call with adjusted parameters
+				v_return := techbd_udi_ingress.register_interaction_http_request(
+				register_interaction_http_request.interaction_id, 
+				register_interaction_http_request.interaction_key,  
+				v_disposition_json, -- Adjust this if needed
+				register_interaction_http_request.rule_namespace,
+				register_interaction_http_request.elaboration, 
+				v_nature,   -- Adjust this if needed
+			    register_interaction_http_request.content_type, 
+			    v_from_state, 
+			    v_to_state, 
+			    state_transition_reason, 
+			    register_interaction_http_request.user_id, 
+			    register_interaction_http_request.user_name, 
+			    register_interaction_http_request.user_session, 
+			    register_interaction_http_request.user_role, 
+			    register_interaction_http_request.created_at, 
+			    register_interaction_http_request.created_by, 
+			    register_interaction_http_request.provenance, 
+			    register_interaction_http_request.hub_upsert_behavior
+			    );			   	
+			ELSEIF (v_nature_denorm = 'techByDesignDisposition') THEN
+				v_return := register_interaction_http_request.payload;
+			END IF;	
+		END IF;				
+		/*==============================================================================================================================*/	 	
     EXCEPTION
         WHEN OTHERS THEN
             -- Capture exception details
@@ -408,14 +502,21 @@ BEGIN
                 v_pg_context = PG_EXCEPTION_CONTEXT;
                 v_error_type = 'SQL';
                
+         	--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+               
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
                 COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
             );
+           v_return := NULL;
     END;
+   	RETURN v_return;
 END;
-$procedure$
+$function$
 ;
+
+
+
 
 
 /*******************************************************************************************
@@ -1918,16 +2019,30 @@ BEGIN
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     IF (v_return IS NOT NULL) THEN
-        CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
-            hub_interaction_id, 
-            tenant_id, 
-            uri, 
-            v_bundle_session_id, 
-            payload, 
-            created_by, 
-            provenance,
-            sat_interaction_fhir_request_upserted.elaboration
-        );
+        IF(uri='/Bundle' OR uri='/Bundle/') THEN
+            CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
+                hub_interaction_id, 
+                tenant_id, 
+                uri, 
+                v_bundle_session_id, 
+                payload, 
+                created_by, 
+                provenance,
+                sat_interaction_fhir_request_upserted.elaboration
+            );
+        END IF;            
+        IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('Original FHIR Payload')) THEN
+            CALL techbd_udi_ingress.insert_fhir_screening_info(
+                hub_interaction_id, 
+                tenant_id, 
+                uri, 
+                v_created_at, 
+                payload,
+                created_by, 
+                provenance,
+                sat_interaction_fhir_request_upserted.elaboration
+            );
+        END IF;            
     END IF;        
 
     RETURN v_return;
@@ -1989,11 +2104,6 @@ AS SELECT sat_interaction_fhir_request_id,
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
 WHERE to_state = 'FAIL'::text;
 
-DROP FUNCTION IF EXISTS techbd_udi_ingress.process_json_action_rules(jsonb,text,text,text,text);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.process_json_action_rules(input_json jsonb, rule_namespace text, key text, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text)
- RETURNS jsonb
- LANGUAGE plpgsql
-AS $function$
 /*******************************************************************************************************************************
 Function to process a set of JSON action rules on a given JSON input.
 
@@ -2007,6 +2117,11 @@ provenance    - The origin of the data or process (optional, default is NULL) (T
 Returns:
 Modified JSONB after applying the action rules.
 *******************************************************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.process_json_action_rules(jsonb,text,text,text,text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.process_json_action_rules(input_json jsonb, rule_namespace text, key text, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
 DECLARE
     v_current_rule 		RECORD;
     v_temp_json 		JSONB := process_json_action_rules.input_json;
@@ -2020,15 +2135,13 @@ DECLARE
     v_pg_detail 		TEXT;
     v_pg_hint 			TEXT;
     v_pg_context 		TEXT;
-BEGIN
-	
-	IF(process_json_action_rules.key IS NULL) THEN
-		RETURN NULL;	
-	END IF;
-		
+   	v_issue_message		TEXT;
+   	v_message_path		TEXT;
+   	v_action_payload	JSONB;
+BEGIN	
     -- Loop through each row of json_action_rule within the given namespace
     FOR v_current_rule IN 
-        SELECT json_path, action, reject_json, modify_json, condition, priority 
+        SELECT json_path, action, reject_json, modify_json, condition, priority, "namespace" 
         FROM techbd_udi_ingress.json_action_rule 
         WHERE (namespace = process_json_action_rules.rule_namespace OR process_json_action_rules.rule_namespace IS NULL)
         ORDER BY priority DESC -- Apply rules in order of priority
@@ -2039,32 +2152,44 @@ BEGIN
         ELSE
             v_json_path := '$.' || v_current_rule.json_path;
         END IF;
-
+		
 	     -- Check if the json_path content exists in v_temp_json
         v_found_flag := jsonb_path_exists( v_temp_json, v_json_path::jsonpath); -- Casting to jsonpath;   
          
+       
 		IF v_found_flag = false THEN
 			CONTINUE;
 		END IF; 
 	
-		IF v_current_rule.action = 'reject' THEN           	           	
-           	v_new_action := jsonb_build_object(
+		IF v_current_rule.action = 'reject' THEN  					                                    	         
+		
+			-- Dynamically build the path to extract the "message" based on v_json_path
+            v_message_path := v_json_path || '.message';          
+
+            -- Retrieve the corresponding "message" value dynamically using v_message_path
+            SELECT jsonb_path_query(v_temp_json, v_message_path::jsonpath) 
+            INTO v_issue_message;                      
+           
+           v_action_payload := jsonb_build_object('description', v_current_rule."namespace", 'message', v_issue_message);
+		
+           v_new_action := jsonb_build_object(
                 'action', 'reject',
-                'actionPayload', v_current_rule.reject_json::jsonb -- Including reject_json as JSONB
-            );                              
-          	-- Check if 'techByDesignDisposition' already exists in 'v_temp_json'
-            IF v_temp_json ? 'techByDesignDisposition' THEN
+                'actionPayload', COALESCE(v_current_rule.reject_json, v_action_payload) -- Including reject_json as JSONB
+            );           
+           	
+           -- Check if 'techByDesignDisposition' exists in response->responseBody->OperationOutcome
+            IF v_temp_json->'response'->'responseBody'->'OperationOutcome' ? 'techByDesignDisposition' THEN
                 -- Append to existing array
                 v_temp_json := jsonb_set(
                     v_temp_json,
-                    '{techByDesignDisposition}',
-                    (v_temp_json->'techByDesignDisposition') || v_new_action
+                    '{response,responseBody,OperationOutcome,techByDesignDisposition}',
+                    (v_temp_json->'response'->'responseBody'->'OperationOutcome'->'techByDesignDisposition') || v_new_action
                 );
             ELSE
                 -- Create the array and add the new action
                 v_temp_json := jsonb_set(
                     v_temp_json,
-                    '{techByDesignDisposition}', 
+                    '{response,responseBody,OperationOutcome,techByDesignDisposition}', 
                     jsonb_build_array(v_new_action)
                 );
             END IF;
@@ -2077,9 +2202,11 @@ BEGIN
 					AND namespace = process_json_action_rules.rule_namespace;
 				
 		-- Initialize the varible with default values; 
-		v_found_flag 	:= FALSE;
-		v_json_path		:= NULL;
-		v_new_action	:= NULL;
+		v_found_flag 		:= FALSE;
+		v_json_path			:= NULL;
+		v_new_action		:= NULL;
+		v_message_path		:= NULL;
+		v_action_payload	:= NULL;
     END LOOP;
    
     -- Return the modified JSON
@@ -2110,83 +2237,6 @@ EXCEPTION
 		process_json_action_rules.created_by,
 		process_json_action_rules.provenance);
 		RETURN NULL;
-END;
-$function$
-;
-
-
-DROP FUNCTION IF EXISTS techbd_udi_ingress.interaction_disposition(text, jsonb, text);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.interaction_disposition(interaction_id text, input_json jsonb, rule_namespace text)
- RETURNS jsonb
- LANGUAGE plpgsql
-AS $function$
-/*******************************************************************************************************************************
-Wrapper function for processing interaction disposition and handling errors.
-
-Parameters:
-interaction_id   - ID of the interaction to process (TEXT)
-input_json       - JSONB input containing action rules (JSONB)
-rule_namespace   - Namespace for the rules to be applied (TEXT)
-
-Returns:
-JSONB result based on processed action rules, or NULL in case of an error.
-*******************************************************************************************************************************/
-DECLARE
-	-- Error-handling variables
-    v_error_msg 					TEXT;
-    v_error_type 					TEXT;
-    v_sqlstate 						TEXT;
-    v_pg_detail 					TEXT;
-    v_pg_hint 						TEXT;
-    v_pg_context 					TEXT;
-    v_exception_id 					TEXT; 
-   	-- Result variables
-   	v_result						JSONB;	-- To store the final JSON result
-   	v_interaction_key 				TEXT;	-- Key extracted from the hub_interaction table
-    v_created_by 					TEXT :=	current_user;	-- Username of the person executing the function
-    v_provenance 					TEXT := 'unknown';		-- Default provenance, can be updated later
-
-BEGIN
-    -- Validate and fetch interaction key from hub_interaction table
-    -- If no matching record is found, return NULL.
-   	SELECT t."key" 
-   	INTO v_interaction_key
-  	FROM techbd_udi_ingress.hub_interaction t
-  	WHERE t.hub_interaction_id = interaction_disposition.interaction_id
-  	;
-
- 	IF(v_interaction_key IS NULL) THEN
-		RETURN NULL;	-- Return NULL if interaction key is not found
-	END IF;
-	
-	-- Process JSON action rules using the fetched interaction key and return the result
-	v_result := techbd_udi_ingress.process_json_action_rules(interaction_disposition.input_json, interaction_disposition.rule_namespace,v_interaction_key);
-
-	RETURN v_result;
-EXCEPTION
-	WHEN OTHERS THEN
-	    -- Capture exception details
-	    GET STACKED DIAGNOSTICS
-	        v_error_msg = MESSAGE_TEXT,
-	        v_sqlstate = RETURNED_SQLSTATE,
-	        v_pg_detail = PG_EXCEPTION_DETAIL,
-	        v_pg_hint = PG_EXCEPTION_HINT,
-	        v_pg_context = PG_EXCEPTION_CONTEXT;
-	        v_error_type = 'SQL';
-		    
-	    -- Log the exception, reusing the previous exception ID if it exists
-		v_exception_id := techbd_udi_ingress.register_issue(
-        COALESCE(v_exception_id,NULL),
-		v_interaction_key,
-		v_error_msg,
-		v_error_type,
-		v_sqlstate,
-		v_pg_detail,
-		v_pg_hint,
-		v_pg_context,
-		v_created_by,
-		v_provenance);
-	RETURN NULL;
 END;
 $function$
 ;
@@ -2307,3 +2357,121 @@ EXCEPTION
 		v_provenance);
 END;
 $$;
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_info(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb);
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_info (
+    IN hub_interaction_id TEXT,
+    IN tenant_id TEXT,
+    IN uri TEXT,
+    IN created_at TIMESTAMPTZ,
+    IN payload JSONB,
+    IN created_by TEXT,
+    IN provenance TEXT,
+    IN elaboration JSONB
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_exception_id 	                TEXT;
+    v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;
+    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+BEGIN
+    INSERT INTO techbd_udi_ingress.sat_interaction_fhir_screening_info (
+        sat_interaction_fhir_screening_info_id,
+        hub_interaction_id,
+        qe_name,
+        submitted_date_time,
+        survey_date_time,
+        patient_mrn,
+        full_name,
+        last_name,
+        first_name,
+        org_id,
+        org_name,
+        areas_of_interest,
+        total_safety_score,
+        elaboration,
+        created_by,
+        provenance
+    )
+    SELECT 
+        gen_random_uuid()::TEXT,
+        insert_fhir_screening_info.hub_interaction_id,
+        insert_fhir_screening_info.tenant_id,
+        insert_fhir_screening_info.created_at,
+        CASE
+            WHEN (insert_fhir_screening_info.payload ->> 'resourceType' = 'Bundle') THEN (insert_fhir_screening_info.payload -> 'meta' ->> 'lastUpdated')
+            ELSE NULL
+        END AS survey_date_time,
+        (SELECT (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value'
+           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
+          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
+         LIMIT 1) AS patient_mrn,
+        (SELECT (((entry.value -> 'resource') -> 'name') -> 0) ->> 'text'
+           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
+          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
+         LIMIT 1) AS full_name,
+        (SELECT (((entry.value -> 'resource') -> 'name') -> 0) ->> 'family'
+           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
+          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
+         LIMIT 1) AS last_name,
+        (SELECT array_to_string(ARRAY(SELECT jsonb_array_elements_text((((entry.value -> 'resource') -> 'name') -> 0) -> 'given')), ' ')
+           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
+          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
+         LIMIT 1) AS first_name,
+        (SELECT string_agg((entry.value -> 'resource') ->> 'id', ', ')
+           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
+          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Organization'
+         LIMIT 1) AS org_id,
+        (SELECT string_agg((entry.value -> 'resource') ->> 'name', ', ')
+           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
+          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Organization'
+         LIMIT 1) AS org_name,
+        (SELECT string_agg(DISTINCT coding.value ->> 'display', ', ')
+           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
+             JOIN LATERAL jsonb_array_elements((entry.value -> 'resource') -> 'category') category(value) ON true
+             JOIN LATERAL jsonb_array_elements(category.value -> 'coding') coding(value) ON true
+          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Observation' AND (coding.value ->> 'system') = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes'
+         LIMIT 1) AS areas_of_interest,
+        (SELECT value_coding.value ->> 'display'
+           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
+             JOIN LATERAL jsonb_array_elements(((entry.value -> 'resource') -> 'code') -> 'coding') code_coding(value) ON true
+             JOIN LATERAL jsonb_array_elements(((entry.value -> 'resource') -> 'valueCodeableConcept') -> 'coding') value_coding(value) ON true
+          WHERE (code_coding.value ->> 'display') = 'Total Safety Score' AND (value_coding.value ->> 'code') = '{score}'
+         LIMIT 1) AS total_safety_score,
+        insert_fhir_screening_info.elaboration,
+        insert_fhir_screening_info.created_by,
+        insert_fhir_screening_info.provenance;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    -- RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		insert_fhir_screening_info.uri,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+END;         
+$$;
+
