@@ -28,8 +28,8 @@
                     {
                         headerName: "Session ID", field: "session_id",
                         filter: "agTextColumnFilter", 
-                        cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/session_id/${value}.json`));
+                        cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/session_id/${params.value}.json`));
                         }, modalAide)
                     },
                     { headerName: "Version", field: "version", filter: "agTextColumnFilter" },

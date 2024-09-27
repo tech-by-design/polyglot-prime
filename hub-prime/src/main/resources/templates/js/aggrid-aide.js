@@ -53,13 +53,14 @@ export class AGGridAide {
      */
     static modalCellRenderer(onClick, modalAide) {
         return function (params) {
+            console.log(params);
             if (params.value) {
                 const link = document.createElement('a');
                 link.href = '#';
                 link.innerText = params.value;
                 link.addEventListener('click', function (e) {
                     e.preventDefault();
-                    onClick(params.value, modalAide);
+                    onClick(params, modalAide);
                 });
                 link.style.textDecoration = 'underline';
                 return link;

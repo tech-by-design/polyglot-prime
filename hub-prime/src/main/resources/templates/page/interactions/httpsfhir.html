@@ -114,8 +114,8 @@
                         headerName: "Interaction ID",
                         field: "interaction_id",
                         filter: "agTextColumnFilter", headerTooltip: "Unique identifier for each interaction",
-                        cellRenderer: AGGridAide.modalCellRenderer((value, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/interaction_id/${value}.json`));
+                        cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
                         }, modalAide)
                     },
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "ID of the tenant involved in the interaction" },
