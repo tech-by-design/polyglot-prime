@@ -251,7 +251,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 }
 
                 rihr.execute(dsl.configuration());
-                LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
+                LOG.info("REGISTER State None : END for  interaction id : {} tenant id : {}",
                 rre.interactionId().toString(), rre.tenant());
             } catch (Exception e) {
                 LOG.error("ERROR:: REGISTER State None  for  interaction id : {} tenant id : {} : CALL " + rihr.getName() + " error",  rre.interactionId().toString(), rre.tenant(),e);
