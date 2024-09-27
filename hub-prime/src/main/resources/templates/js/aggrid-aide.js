@@ -53,7 +53,6 @@ export class AGGridAide {
      */
     static modalCellRenderer(onClick, modalAide) {
         return function (params) {
-            console.log(params);
             if (params.value) {
                 const link = document.createElement('a');
                 link.href = '#';
