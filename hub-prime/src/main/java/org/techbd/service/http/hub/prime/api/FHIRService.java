@@ -321,7 +321,7 @@ public class FHIRService {
                                         .getPostStdinPayloadToNyecDataLakeExternal();
                         LOG.info("FHIRService:: sendToScoringEngine postStdinPayloadToNyecDataLakeExternal : {} from application.yml for interaction id {} -BEGIN",
                                         postStdinPayloadToNyecDataLakeExternal, interactionId);
-                        if (null == postStdinPayloadToNyecDataLakeExternal) {
+                        if (null != postStdinPayloadToNyecDataLakeExternal) {
                                 LOG.info("Proceed with posting payload via external process BEGIN for interactionId : {}",
                                                 interactionId);
                                 try {
