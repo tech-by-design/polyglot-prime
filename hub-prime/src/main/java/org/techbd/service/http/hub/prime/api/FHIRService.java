@@ -325,6 +325,11 @@ public class FHIRService {
                                 LOG.info("Proceed with posting payload via external process BEGIN for interactionId : {}",
                                                 interactionId);
                                 try {
+                                        registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
+                                                        request.getRequestURI(), tenantId,
+                                                        Optional.ofNullable(bundlePayloadWithDisposition)
+                                                                        .orElse(new HashMap<>()),
+                                                        null, includeIncomingPayloadInDB, payload);
                                         var postToNyecExternalResponse = postStdinPayloadToNyecDataLakeExternal(
                                                         tenantId, interactionId,
                                                         bundlePayloadWithDisposition,
@@ -335,22 +340,24 @@ public class FHIRService {
                                         var payloadJson = Map.of("completed", postToNyecExternalResponse.completed(),
                                                         "processOutput", postToNyecExternalResponse.processOutput(),
                                                         "errorOutput", postToNyecExternalResponse.errorOutput());
-                                        String responsePayload = Configuration.objectMapper.writeValueAsString(payloadJson);
+                                        String responsePayload = Configuration.objectMapper
+                                                        .writeValueAsString(payloadJson);
                                         LOG.info("Create payload from postToNyecExternalResponse-  END for interactionId : {}",
                                                         interactionId);
                                         if (postToNyecExternalResponse.completed()) {
-                                                registerStateComplete(jooqCfg, scoringEngineApiURL,
-                                                                dataLakeApiContentType, tenantId, responsePayload, provenance);
+                                                registerStateComplete(jooqCfg, interactionId,
+                                                                request.getRequestURI(), tenantId, responsePayload,
+                                                                provenance);
                                         } else {
-                                                registerStateFailure(jooqCfg, dataLakeApiContentType,
-                                                                dataLakeApiContentType, null, responsePayload, tenantId,
+                                                registerStateFailed(jooqCfg, interactionId,
+                                                                request.getRequestURI(), tenantId, responsePayload,
                                                                 provenance);
                                         }
                                 } catch (Exception ex) {
                                         LOG.error("Exception while postStdinPayloadToNyecDataLakeExternal for interactionId : {}",
                                                         interactionId, ex);
-                                        registerStateFailure(jooqCfg, dataLakeApiContentType, dataLakeApiContentType,
-                                                        ex, ex.getMessage(), tenantId, provenance);
+                                        registerStateFailed(jooqCfg, interactionId,
+                                                        request.getRequestURI(), tenantId, ex.getMessage(), provenance);
                                 }
                                 LOG.info("Proceed with posting payload via external process END for interactionId : {}",
                                                 interactionId);
@@ -388,8 +395,8 @@ public class FHIRService {
                         Map<String, Object> bundlePayloadWithDisposition,
                         Map<String, String> postStdinPayloadToNyecDataLakeExternal) throws Exception {
                 boolean completed = false;
-                String processOutput ="";
-                String errorOutput="";
+                String processOutput = "";
+                String errorOutput = "";
                 LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal BEGIN for interaction id : {} tenantID :{}",
                                 interactionId, tenantId);
                 final var bashScriptPath = postStdinPayloadToNyecDataLakeExternal.get("cmd");
@@ -454,7 +461,7 @@ public class FHIRService {
 
                 LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal END for interaction id : {} tenantID :{}",
                                 interactionId, tenantId);
-                return new PostToNyecExternalResponse(completed,processOutput,errorOutput);
+                return new PostToNyecExternalResponse(completed, processOutput, errorOutput);
         }
 
         private WebClient createWebClient(String scoringEngineApiURL,
@@ -599,8 +606,7 @@ public class FHIRService {
                                                 provenance);
                                 LOG.info("FHIRService:: handleResponse SUCCESS for interaction id: {}", interactionId);
                         } else {
-                                registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId,
-                                                new Exception("Unsuccessful response"), requestURI, tenantId,
+                                registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, response,
                                                 provenance);
                                 LOG.warn("FHIRService:: handleResponse FAILURE for interaction id: {}, response: {}",
                                                 interactionId, response);
@@ -608,8 +614,7 @@ public class FHIRService {
                 } catch (Exception e) {
                         LOG.error("FHIRService:: handleResponse unexpected error for interaction id : {}, response: {}",
                                         interactionId, response, e);
-                        registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId,
-                                        new Exception("Unexpected error: " + e.getMessage()), requestURI, tenantId,
+                        registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, e.getMessage(),
                                         provenance);
                 }
                 LOG.info("FHIRService:: handleResponse END for interaction id: {}", interactionId);
@@ -819,6 +824,46 @@ public class FHIRService {
                         }
                         forwardRIHR.setFromState("FORWARD");
                         forwardRIHR.setToState("COMPLETE");
+                        forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB
+                        // set this, use
+                        // app time
+                        forwardRIHR.setCreatedBy(FHIRService.class.getName());
+                        forwardRIHR.setProvenance(provenance);
+                        final var execResult = forwardRIHR.execute(jooqCfg);
+                        LOG.info("REGISTER State Complete : END for interaction id : {} tenant id : {}" + execResult,
+                                        bundleAsyncInteractionId, tenantId);
+                } catch (Exception e) {
+                        LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
+                                        + forwardRIHR.getName()
+                                        + " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
+                }
+        }
+
+        private void registerStateFailed(org.jooq.Configuration jooqCfg, String bundleAsyncInteractionId,
+                        String requestURI, String tenantId,
+                        String response, String provenance) {
+                LOG.info("REGISTER State Complete : BEGIN for interaction id :  {} tenant id : {}",
+                                bundleAsyncInteractionId, tenantId);
+                final var forwardRIHR = new RegisterInteractionHttpRequest();
+                try {
+                        forwardRIHR.setInteractionId(bundleAsyncInteractionId);
+                        forwardRIHR.setInteractionKey(requestURI);
+                        forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
+                                        Map.of("nature", "Forwarded HTTP Response",
+                                                        "tenant_id", tenantId)));
+                        forwardRIHR.setContentType(
+                                        MimeTypeUtils.APPLICATION_JSON_VALUE);
+                        try {
+                                // expecting a JSON payload from the server
+                                forwardRIHR.setPayload(Configuration.objectMapper
+                                                .readTree(response));
+                        } catch (JsonProcessingException jpe) {
+                                // in case the payload is not JSON store the string
+                                forwardRIHR.setPayload((JsonNode) Configuration.objectMapper
+                                                .valueToTree(response));
+                        }
+                        forwardRIHR.setFromState("FORWARD");
+                        forwardRIHR.setToState("FAIL");
                         forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB
                         // set this, use
                         // app time
