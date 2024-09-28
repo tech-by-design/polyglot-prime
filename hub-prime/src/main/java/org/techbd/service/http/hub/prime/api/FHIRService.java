@@ -842,7 +842,7 @@ public class FHIRService {
         private void registerStateFailed(org.jooq.Configuration jooqCfg, String bundleAsyncInteractionId,
                         String requestURI, String tenantId,
                         String response, String provenance) {
-                LOG.info("REGISTER State Complete : BEGIN for interaction id :  {} tenant id : {}",
+                LOG.info("REGISTER State Fail : BEGIN for interaction id :  {} tenant id : {}",
                                 bundleAsyncInteractionId, tenantId);
                 final var forwardRIHR = new RegisterInteractionHttpRequest();
                 try {
@@ -870,10 +870,10 @@ public class FHIRService {
                         forwardRIHR.setCreatedBy(FHIRService.class.getName());
                         forwardRIHR.setProvenance(provenance);
                         final var execResult = forwardRIHR.execute(jooqCfg);
-                        LOG.info("REGISTER State Complete : END for interaction id : {} tenant id : {}" + execResult,
+                        LOG.info("REGISTER State Fail : END for interaction id : {} tenant id : {}" + execResult,
                                         bundleAsyncInteractionId, tenantId);
                 } catch (Exception e) {
-                        LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
+                        LOG.error("ERROR:: REGISTER State Fail CALL for interaction id : {} tenant id : {} "
                                         + forwardRIHR.getName()
                                         + " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
                 }
