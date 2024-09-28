@@ -7,10 +7,13 @@ org:
           saveUserDataToInteractions: true
         hub:
           prime:
-            defaultDatalakeApiAuthn:
-              mTlsEnabled: true
-              mTlsKeySecretName: techbd-qa-client-key
-              mTlsCertSecretName: techbd-qa-client-certificate
+            postStdinPayloadToNyecDataLakeExternal:
+              # The command requires tenantId as argument 1 and payload via STDIN
+              # The command will return a status as a normal process and STDOUT will include all verbose debugging
+              #cmd: support/bin/post-stdin-payload-to-nyec-datalake-qa-endpoint-via-mtls.sh
+              cmd: ../support/bin/post-stdin-payload-to-nyec-datalake-qa-endpoint-sandbox-test.sh
+              # Wait time to receive response from scoring engine
+              timeout: 180
 
 management:
   endpoints:
