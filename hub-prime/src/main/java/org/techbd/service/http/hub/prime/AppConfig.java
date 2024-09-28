@@ -43,9 +43,9 @@ public class AppConfig {
     private Map<String, String> structureDefinitionsUrls;
     private Map<String, String> codeSystemUrls;
     private Map<String, String> valueSetUrls;
-    private Map<String,String> defaultDatalakeApiAuthn;
+    private Map<String,String> postStdinPayloadToNyecDataLakeExternal;
     
-     public String getVersion() {
+    public String getVersion() {
         return version;
     }
     /**
@@ -97,12 +97,10 @@ public class AppConfig {
     public Map<String, String> getValueSetUrls() {
         return valueSetUrls;
     }
-
-    public Map<String, String> getDefaultDatalakeApiAuthn() {
-        return defaultDatalakeApiAuthn;
+    public Map<String, String> getPostStdinPayloadToNyecDataLakeExternal() {
+        return postStdinPayloadToNyecDataLakeExternal;
     }
-
-    public void setDefaultDatalakeApiAuthn(Map<String, String> defaultDatalakeApiAuthn) {
-        this.defaultDatalakeApiAuthn = defaultDatalakeApiAuthn;
+    public void setPostStdinPayloadToNyecDataLakeExternal(Map<String, String> postStdinPayloadToNyecDataLakeExternal) {
+        this.postStdinPayloadToNyecDataLakeExternal = postStdinPayloadToNyecDataLakeExternal;
     }
 }
