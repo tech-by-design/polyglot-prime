@@ -230,41 +230,10 @@ WHERE intr_observe.start_time IS NOT NULL AND intr_observe.finish_time IS NOT nu
  ORDER BY duration_millisecs DESC;
 
 /*****************************************
-This materialized view extracts diagnostic information from JSON payloads of HTTP requests stored in 
+This view extracts diagnostic information from JSON payloads of HTTP requests stored in 
 'sat_interaction_http_request'. It transforms and presents fields such as 'tenant_id', 'uri', 
 'session_id', 'severity', 'message', 'line', 'column', 'diagnostics', 'encounteredAt', 
 and 'elaboration' for further analysis or reporting.
-**************************************************/
--- techbd_udi_ingress.fhir_session_diagnostics_mat source
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_session_diagnostics_mat CASCADE;
-CREATE MATERIALIZED VIEW techbd_udi_ingress.fhir_session_diagnostics_mat
-TABLESPACE pg_default
-AS SELECT gen_random_uuid() AS row_id,
-    sifr.hub_interaction_id,
-    sifr.tenant_id,
-    sifr.uri,
-    sifr.bundle_session_id as session_id,
-    issue.value ->> 'severity'::text AS severity,
-    issue.value ->> 'message'::text AS message,
-    (issue.value -> 'location'::text) ->> 'line'::text AS line,
-    (issue.value -> 'location'::text) ->> 'column'::text AS "column",
-    (issue.value -> 'location'::text) ->> 'diagnostics'::text AS diagnostics,
-    (sifr.payload -> 'response'::text) ->> 'encounteredAt'::text AS encounteredat,
-    sifr.elaboration
-   FROM techbd_udi_ingress.sat_interaction_fhir_request sifr,
-    LATERAL jsonb_array_elements((((sifr.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) validationresult(value),
-    LATERAL jsonb_array_elements(validationresult.value -> 'issues'::text) issue(value)
-  WHERE sifr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text])
-WITH NO DATA;
-
--- View indexes:
-CREATE INDEX IF NOT EXISTS fhir_session_diagnostics_mat_encounteredat_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (encounteredat);
-CREATE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_hub_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (hub_interaction_id);
-CREATE UNIQUE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_row_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (row_id);
-CREATE INDEX  IF NOT EXISTS fhir_session_diagnostics_mat_tenant_id_idx ON techbd_udi_ingress.fhir_session_diagnostics_mat USING btree (tenant_id);
-
-/*******************************************************************************************
-This view extracts diagnostic information from materialized view fhir_session_diagnostics_mat.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_session_diagnostics CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_session_diagnostics
@@ -276,9 +245,9 @@ AS SELECT tenant_id,
     line,
     "column",
     diagnostics,
-    to_timestamp((encounteredat)::float8)  AS encounteredat, 
+    to_timestamp(intr_diagno.encountered_at::double precision) AS encounteredat, 
     elaboration
-   FROM techbd_udi_ingress.fhir_session_diagnostics_mat intr_diagno;
+   FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic intr_diagno;
 
 /*******************************************************************************************************************************
  * Procedure to register an HTTP interaction, handling potential unique constraint violations
