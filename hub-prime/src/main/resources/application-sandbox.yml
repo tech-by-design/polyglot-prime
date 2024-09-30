@@ -7,13 +7,22 @@ org:
           saveUserDataToInteractions: true
         hub:
           prime:
-            postStdinPayloadToNyecDataLakeExternal:
-              # The command requires tenantId as argument 1 and payload via STDIN
-              # The command will return a status as a normal process and STDOUT will include all verbose debugging
-              #cmd: support/bin/post-stdin-payload-to-nyec-datalake-qa-endpoint-via-mtls.sh
-              cmd: ../support/bin/post-stdin-payload-to-nyec-datalake-qa-endpoint-sandbox-test.sh
-              # Wait time to receive response from scoring engine
-              timeout: 180
+            defaultDataLakeApiAuthn:
+              # The allowed values for mTlsStrategy are as follows:
+              # - no-mTls: No mTLS is used. The WebClient sends a standard HTTP POST request to the scoring engine API without mutual TLS (mTLS).
+              # - aws-secrets: mTLS is enabled. The WebClient retrieves the TLS key and certificate from AWS Secrets Manager, and then sends an HTTPS POST request to the scoring engine API with mutual TLS authentication.
+              # - post-stdin-payload-to-nyec-datalake-external: This option runs a bash script via ProcessBuilder. The payload is passed through standard input (STDIN) to the script, which uses `curl` to send the request to the scoring engine API. In the `phiqa` environment, mTLS is enabled for this request. In other environments, mTLS is disabled for this script.
+              mTlsStrategy: no-mTls
+              mTlsAwsSecrets: 
+                mTlsKeySecretName: techbd-qa-client-key # The name of the AWS Secrets Manager secret that holds the mTLS private key
+                mTlsCertSecretName: techbd-qa-client-certificate  # The name of the AWS Secrets Manager secret that holds the mTLS client certificate
+              postStdinPayloadToNyecDataLakeExternal:
+                # The command requires tenantId as argument 1 and payload via STDIN
+                # The command will return a status as a normal process and STDOUT will include all verbose debugging
+                #cmd: support/bin/post-stdin-payload-to-nyec-datalake-qa-endpoint-via-mtls.sh
+                cmd: ../support/bin/post-stdin-payload-to-nyec-datalake-qa-endpoint-sandbox-test.sh
+                # Wait time to receive response from scoring engine
+                timeout: 180
 
 management:
   endpoints:
