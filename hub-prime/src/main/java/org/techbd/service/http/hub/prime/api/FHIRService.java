@@ -90,7 +90,8 @@ public class FHIRService {
                         boolean isSync,
                         boolean includeRequestInOutcome,
                         boolean includeIncomingPayloadInDB,
-                        HttpServletRequest request, HttpServletResponse response, String provenance)
+                        HttpServletRequest request, HttpServletResponse response, String provenance,
+                        boolean includeOperationOutcome)
                         throws IOException {
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
@@ -114,14 +115,14 @@ public class FHIRService {
                                         getBundleInteractionId(request));
                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                         includeIncomingPayloadInDB, tenantId, payload,
-                                        provenance, null);
+                                        provenance, null, includeOperationOutcome);
                         return result;
                 } else {
                         LOG.warn("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
                                         getBundleInteractionId(request));
                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                         includeIncomingPayloadInDB, tenantId, payload,
-                                        provenance, payloadWithDisposition);
+                                        provenance, payloadWithDisposition, includeOperationOutcome);
                         return payloadWithDisposition;
                 }
         }
@@ -297,18 +298,24 @@ public class FHIRService {
                         String tenantId,
                         String payload,
                         String provenance,
-                        Map<String, Object> validationPayloadWithDisposition) {
+                        Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome) {
 
                 final var interactionId = getBundleInteractionId(request);
                 LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {}", interactionId);
 
                 try {
                         Map<String, Object> bundlePayloadWithDisposition = null;
-                        if (null != validationPayloadWithDisposition) { // todo -revisit
+                        LOG.info("FHIRService:: sendToScoringEngine includeOperationOutcome : {} interaction id: {}",
+                                        includeOperationOutcome, interactionId);
+                        if (includeOperationOutcome && null != validationPayloadWithDisposition) { // todo -revisit
+                                LOG.info("FHIRService:: sendToScoringEngine Prepare payload with operation outcome interaction id: {}",
+                                                interactionId);
                                 bundlePayloadWithDisposition = preparePayload(request,
                                                 payload,
                                                 validationPayloadWithDisposition);
                         } else {
+                                LOG.info("FHIRService:: sendToScoringEngine Send payload without operation outcome interaction id: {}",
+                                                interactionId);
                                 bundlePayloadWithDisposition = Configuration.objectMapper.readValue(payload,
                                                 new TypeReference<Map<String, Object>>() {
                                                 });
