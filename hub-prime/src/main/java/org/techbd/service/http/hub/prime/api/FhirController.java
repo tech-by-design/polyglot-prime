@@ -114,13 +114,14 @@ public class FhirController {
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @Parameter(description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false)
             @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
+            @RequestParam(value = "include-operation-outcome", required = false) boolean includeOperationOutcome,
             HttpServletRequest request,HttpServletResponse response) throws SQLException ,IOException{
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
         request = new CustomRequestWrapper(request, payload);
         return fhirService.processBundle(payload,tenantId,fhirProfileUrlParam,fhirProfileUrlHeader,uaValidationStrategyJson,
         customDataLakeApi,dataLakeApiContentType,healthCheck,isSync,includeRequestInOutcome,includeIncomingPayloadInDB,
-        request,response,provenance);
+        request,response,provenance,includeOperationOutcome);
     }
 
     @PostMapping(value = {"/Bundle/$validate", "/Bundle/$validate/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
