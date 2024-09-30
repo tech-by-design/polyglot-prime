@@ -15,9 +15,9 @@ AS SELECT hub_interaction_id,
     patient_mrn,
    --  (survey_date_time::timestamptz) AS survey_date_time,
     CASE 
-        WHEN survey_date_time ~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{2}Z$'
+        -- Match flexible formats like '2024-02-23T00:00:00Z', '2024-02-23 00:00:00', or '2024-02-2300:00:00.00Z'
+        WHEN survey_date_time::text ~ '^\d{4}-\d{2}-\d{2}(T| )\d{2}:\d{2}:\d{2}(\.\d{2})?(Z)?$' 
         THEN survey_date_time::timestamp with time zone
-        ELSE NULL
     END AS survey_date_time,
     areas_of_interest,
     total_safety_score
