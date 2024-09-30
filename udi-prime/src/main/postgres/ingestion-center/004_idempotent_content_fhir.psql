@@ -68,10 +68,15 @@ AS SELECT hub_interaction_id,
     first_name,
     submitted_date_time,
     patient_mrn,
-    (survey_date_time::timestamptz) AS survey_date_time,
+   --  (survey_date_time::timestamptz) AS survey_date_time,
+    CASE 
+        WHEN survey_date_time ~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{2}Z$'
+        THEN survey_date_time::timestamp with time zone
+        ELSE NULL
+    END AS survey_date_time,
     areas_of_interest,
     total_safety_score
-   FROM techbd_udi_ingress.fhir_screening_info_mat;
+   FROM techbd_udi_ingress.sat_interaction_fhir_screening_info;
 
 /*============================================================================================================*/
 
