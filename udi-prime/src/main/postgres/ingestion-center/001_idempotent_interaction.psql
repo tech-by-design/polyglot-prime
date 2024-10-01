@@ -1952,19 +1952,29 @@ BEGIN
                 provenance,
                 sat_interaction_fhir_request_upserted.elaboration
             );
-        END IF;            
-        IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('Original FHIR Payload')) THEN
-            CALL techbd_udi_ingress.insert_fhir_screening_info(
-                hub_interaction_id, 
-                tenant_id, 
-                uri, 
-                v_created_at, 
-                payload,
-                created_by, 
-                provenance,
-                sat_interaction_fhir_request_upserted.elaboration
-            );
-        END IF;            
+            IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('techByDesignDisposition')) THEN
+                CALL techbd_udi_ingress.insert_validation_issues(
+                    hub_interaction_id, 
+                    uri, 
+                    payload, 
+                    created_by, 
+                    provenance,
+                    sat_interaction_fhir_request_upserted.elaboration
+                );
+            END IF;              
+            IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('Original FHIR Payload')) THEN
+                CALL techbd_udi_ingress.insert_fhir_screening_info(
+                    hub_interaction_id, 
+                    tenant_id, 
+                    uri, 
+                    v_created_at, 
+                    payload,
+                    created_by, 
+                    provenance,
+                    sat_interaction_fhir_request_upserted.elaboration
+                );
+            END IF;                  
+        END IF;         
     END IF;        
 
     RETURN v_return;
@@ -2279,6 +2289,7 @@ EXCEPTION
 		v_provenance);
 END;
 $$;
+
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_info(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_info (
     IN hub_interaction_id TEXT,
@@ -2395,5 +2406,90 @@ EXCEPTION
 		v_created_by,
 		v_provenance);
 END;         
+$$;
+
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_validation_issues(text,text,jsonb,text,text,jsonb);
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_validation_issues (
+    IN hub_interaction_id TEXT,
+    IN uri TEXT,
+    IN payload JSONB,
+    IN created_by TEXT,
+    IN provenance TEXT,
+    IN elaboration JSONB
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    issue_set                       RECORD;
+    v_exception_id 	                TEXT;
+    v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;
+    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+BEGIN
+    -- Extract values from the JSONB payload variable
+    FOR issue_set IN
+        SELECT
+            jsonb_array_elements(validation_result -> 'issues'::text) AS issue,
+            to_timestamp(((validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
+            validation_result ->> 'igVersion'::text AS ig_version,
+            TRIM(BOTH FROM regexp_replace(
+                (validation_result -> 'observability'::text) ->> 'name'::text, 
+                '\(TODO:get from API instead of hard coding\) \(FHIR version 4.0.1\)\s*$'::text, ''::text)) AS validation_engine
+        FROM LATERAL jsonb_array_elements(insert_validation_issues.payload -> 'OperationOutcome'-> 'validationResults'::text) validation_result
+    LOOP
+        -- Insert the extracted data into the target table
+        INSERT INTO techbd_udi_ingress.sat_interaction_fhir_validation_issue (
+            sat_interaction_fhir_validation_issue_id,
+            hub_interaction_id,
+            issue,
+            date_time,
+            validation_engine,
+            ig_version,
+            elaboration,
+            created_by,
+            provenance
+        )
+        VALUES (
+            gen_random_uuid()::TEXT, 
+            insert_validation_issues.hub_interaction_id,
+            issue_set.issue ->> 'message'::text, 
+            issue_set.date_time,
+            issue_set.validation_engine,
+            issue_set.ig_version,
+            insert_validation_issues.elaboration,
+            v_created_by,
+            insert_validation_issues.provenance
+        );
+    END LOOP;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Capture exception details
+        GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;
+            v_error_type = 'SQL';
+        
+        -- Log the exception, reusing the previous exception ID if it exists
+        v_exception_id := techbd_udi_ingress.register_issue(
+            COALESCE(v_exception_id, NULL),
+            insert_validation_issues.uri,
+            v_error_msg,
+            v_error_type,
+            v_sqlstate,
+            v_pg_detail,
+            v_pg_hint,
+            v_pg_context,
+            v_created_by,
+            v_provenance
+        );
+END;       
 $$;
 

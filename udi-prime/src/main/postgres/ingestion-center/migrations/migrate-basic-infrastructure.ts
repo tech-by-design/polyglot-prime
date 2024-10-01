@@ -409,6 +409,22 @@ const interactionFhirScreeningInfoSat = interactionHub.satelliteTable(
   },
 );
 
+
+const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
+  "fhir_validation_issue",
+  {
+    sat_interaction_fhir_validation_issue_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    issue : text(),
+    date_time: dateTimeNullable(),
+    validation_engine: textNullable(),
+    ig_version: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
 enum EnumFileExchangeProtocol {
   SFTP = "SFTP",
   S3 = "S3",
@@ -688,6 +704,8 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionFhirSessionDiagnosticSat}
 
       ${interactionFhirScreeningInfoSat}
+
+      ${interactionFhirValidationIssueSat}
 
       ${fileExchangeProtocol}
 

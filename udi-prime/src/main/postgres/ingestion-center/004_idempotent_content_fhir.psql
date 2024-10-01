@@ -194,50 +194,7 @@ AS WITH filtered_data AS (
   ORDER BY created_at DESC;
 
 
-/****************************************************************************************
- * This materialized view consolidates validation issues from HTTP requests in the FHIR data. 
- * It extracts relevant validation issues from payloads and provides a unique identifier 
- * for each issue detected in the HTTP requests.
- * The WITH NO DATA clause prevents the materialized view from being populated immediately 
- * after creation. To populate it, use the REFRESH MATERIALIZED VIEW command.
-****************************************************************************************/
-
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_mat CASCADE;
-CREATE MATERIALIZED VIEW IF NOT EXISTS techbd_udi_ingress.fhir_validation_issue_mat 
-TABLESPACE pg_default
-AS WITH validation_results AS (
-         SELECT sat_req.hub_interaction_id,
-            sat_req.sat_interaction_fhir_request_id ,
-            jsonb_array_elements(sat_req.payload -> 'validationResults'::text) AS validation_result
-           FROM techbd_udi_ingress.sat_interaction_fhir_request sat_req 
-          WHERE 1 = 1 AND sat_req.nature = 'Forward HTTP Request'::text AND sat_req.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text])
-        ), issues AS (
-         SELECT validation_results.hub_interaction_id,
-            validation_results.sat_interaction_fhir_request_id,
-            jsonb_array_elements(validation_results.validation_result -> 'issues'::text) AS issue,
-            to_timestamp(((validation_results.validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
-            validation_results.validation_result ->> 'igVersion'::text AS ig_version,
-            TRIM(BOTH FROM regexp_replace((validation_results.validation_result -> 'observability'::text) ->> 'name'::text, '\(TODO:get from API instead of hard coding\) \(FHIR version 4.0.1\)\s*$'::text, ''::text)) AS validation_engine
-           FROM validation_results
-        )
- SELECT DISTINCT ON (hub_interaction_id, (issue ->> 'message'::text)) gen_random_uuid() AS row_id,
-    hub_interaction_id,
-    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
-    issue ->> 'message'::text AS issue,
-    date_time,
-    validation_engine,
-    ig_version,
-    CURRENT_USER AS materialized_by,
-    CURRENT_TIMESTAMP AS materialized_at
-   FROM issues
-  WHERE (issue ->> 'message'::text) ~~ '%has not been checked because it is unknown%'::text OR (issue ->> 'message'::text) ~~ '%Unknown profile%'::text OR (issue ->> 'message'::text) ~~ '%Unknown extension%'::text OR (issue ->> 'message'::text) ~~ '%Unknown Code System%'::text OR (issue ->> 'message'::text) ~~ '%not found%'::text
-WITH NO DATA;
-
--- View indexes:
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_date_time_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (date_time DESC);
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_hub_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (hub_interaction_id);
-CREATE UNIQUE INDEX IF NOT EXISTS fhir_validation_issue_mat_row_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (row_id);
-CREATE INDEX IF NOT EXISTS fhir_validation_issue_mat_sat_id_idx ON techbd_udi_ingress.fhir_validation_issue_mat USING btree (sat_interaction_http_request_id);
 
 
 /****************************************************************************************
@@ -267,9 +224,14 @@ AS SELECT validation_engine,
     max(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown'::text) AS ig_version,
     to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text) AS issue_date
-   	FROM techbd_udi_ingress.fhir_validation_issue_mat
+   	FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
  	WHERE date_time >= (CURRENT_DATE - '7 days'::interval)
    	AND (issue ILIKE '%valueset%' OR issue ILIKE '%extension%' OR issue ILIKE '%profile%')
+      AND (issue ~~ '%has not been checked because it is unknown%'::text 
+            OR issue ~~ '%Unknown profile%'::text 
+            OR issue ~~ '%Unknown extension%'::text 
+            OR issue ~~ '%Unknown Code System%'::text 
+            OR issue ~~ '%not found%'::text)
   	GROUP BY validation_engine, issue, (COALESCE(ig_version, 'Unknown'::text)), (date(date_time)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
   	ORDER BY (max(date_time)) DESC;
 
@@ -292,7 +254,12 @@ AS SELECT
   MAX(date_time) AS most_recent_date,
   COALESCE(ig_version, 'Unknown') AS ig_version,
   COUNT(DISTINCT issue) AS distinct_issue_count
-FROM techbd_udi_ingress.fhir_validation_issue_mat
+FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
 WHERE date_time >= CURRENT_DATE - INTERVAL '7 days'
+AND (issue ~~ '%has not been checked because it is unknown%'::text 
+            OR issue ~~ '%Unknown profile%'::text 
+            OR issue ~~ '%Unknown extension%'::text 
+            OR issue ~~ '%Unknown Code System%'::text 
+            OR issue ~~ '%not found%'::text)
 GROUP BY validation_engine, TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY'), COALESCE(ig_version, 'Unknown')
 ORDER BY issue_date DESC;
