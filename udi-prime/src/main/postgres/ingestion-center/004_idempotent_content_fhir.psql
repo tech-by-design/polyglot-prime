@@ -131,7 +131,8 @@ AS WITH filtered_data AS (
           WHERE ((entry.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text
         )
  SELECT tenant_id AS qe_name,
-    patient_id,
+    medical_record_number AS patient_mrn,
+    max(patient_id) AS patient_id,
     max(patient_resource_type) AS patient_type,
     max(full_name) AS patient_full_name,
     max(first_name) AS patient_first_name,
@@ -143,12 +144,11 @@ AS WITH filtered_data AS (
     max(state) AS patient_state,
     max(postal_code) AS patient_postal_code,
     max(language) AS patient_language,
-    max(medical_record_number) AS patient_mrn,
     max(social_security_number) AS patient_ssn,
     max(organization_ids) AS org_id,
     max(created_at) as created_at
    FROM patient_details
-  GROUP BY tenant_id, patient_id
+  GROUP BY tenant_id, medical_record_number
   ORDER BY created_at DESC;
 
 
