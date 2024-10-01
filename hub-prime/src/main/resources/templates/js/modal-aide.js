@@ -108,6 +108,9 @@ export class ModalAide {
     viewJsonValue(value) {
         this.setupJsonViewerModal();
         document.querySelector(`#${this.jsonViewerId}`).data = value;
+        if(value.length == 1){
+            document.querySelector(`#${this.jsonViewerId}`).expandAll();
+        }
         document.getElementById(this.modalId).style.display = 'block';
     }
 
