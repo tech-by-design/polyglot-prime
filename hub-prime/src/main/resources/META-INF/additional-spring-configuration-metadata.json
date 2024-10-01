@@ -358,5 +358,55 @@
     "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsCertSecretName",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsCertSecretName'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsStrategy",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsStrategy'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsAwsSecrets.m-tls-key-secret-name",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsAwsSecrets.m-tls-key-secret-name'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsAwsSecrets.mTlsCertSecretName",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsAwsSecrets.mTlsCertSecretName'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsResources.m-tls-cert-resource-name",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsResources.m-tls-cert-resource-name'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsResources.mTlsKeyResourceName",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDatalakeApiAuthn.mTlsResources.mTlsKeyResourceName'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.m-tls-strategy",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.m-tls-strategy'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsAwsSecrets.m-tls-key-secret-name",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsAwsSecrets.m-tls-key-secret-name'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsAwsSecrets.mTlsCertSecretName",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsAwsSecrets.mTlsCertSecretName'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.postStdinPayloadToNyecDataLakeExternal.cmd",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.postStdinPayloadToNyecDataLakeExternal.cmd'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.postStdinPayloadToNyecDataLakeExternal.timeout",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.postStdinPayloadToNyecDataLakeExternal.timeout'"
   }
 ]}
