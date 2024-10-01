@@ -43,11 +43,12 @@ public class AppConfig {
     private Map<String, String> structureDefinitionsUrls;
     private Map<String, String> codeSystemUrls;
     private Map<String, String> valueSetUrls;
-    private Map<String,String> postStdinPayloadToNyecDataLakeExternal;
-    
+    private DefaultDataLakeApiAuthn defaultDataLakeApiAuthn;
+
     public String getVersion() {
         return version;
     }
+
     /**
      * Spring Boot will retrieve required value from properties file which is
      * injected from pom.xml.
@@ -97,10 +98,22 @@ public class AppConfig {
     public Map<String, String> getValueSetUrls() {
         return valueSetUrls;
     }
-    public Map<String, String> getPostStdinPayloadToNyecDataLakeExternal() {
-        return postStdinPayloadToNyecDataLakeExternal;
+    public DefaultDataLakeApiAuthn getDefaultDataLakeApiAuthn() {
+        return defaultDataLakeApiAuthn;
     }
-    public void setPostStdinPayloadToNyecDataLakeExternal(Map<String, String> postStdinPayloadToNyecDataLakeExternal) {
-        this.postStdinPayloadToNyecDataLakeExternal = postStdinPayloadToNyecDataLakeExternal;
+
+    public void setDefaultDataLakeApiAuthn(DefaultDataLakeApiAuthn defaultDataLakeApiAuthn) {
+        this.defaultDataLakeApiAuthn = defaultDataLakeApiAuthn;
+    }
+    public record DefaultDataLakeApiAuthn(
+            String mTlsStrategy,
+            MTlsAwsSecrets mTlsAwsSecrets,
+            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal) {
+    }
+
+    public record MTlsAwsSecrets(String mTlsKeySecretName, String mTlsCertSecretName) {
+    }
+
+    public record PostStdinPayloadToNyecDataLakeExternal(String cmd, int timeout) {
     }
 }

@@ -114,7 +114,7 @@ public class FhirController {
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @Parameter(description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false)
             @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
-            @RequestParam(value = "include-operation-outcome", required = false) boolean includeOperationOutcome,
+            @RequestParam(value = "include-operation-outcome", required = false,defaultValue = "true") boolean includeOperationOutcome,
             HttpServletRequest request,HttpServletResponse response) throws SQLException ,IOException{
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
