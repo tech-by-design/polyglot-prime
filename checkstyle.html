@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-10-01<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.257.0</li>
+          <li id="projectVersion">Version: 0.258.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -75,7 +75,7 @@
 <tr class="b">
 <td style="text-align: left;">8</td>
 <td>0</td>
-<td>17</td>
+<td>20</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -102,12 +102,12 @@
 <tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2FAppConfig.java">org/techbd/service/http/hub/prime/AppConfig.java</a></td>
 <td>0</td>
-<td>3</td>
+<td>2</td>
 <td>0</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java">org/techbd/service/http/hub/prime/api/FHIRService.java</a></td>
 <td>0</td>
-<td>3</td>
+<td>7</td>
 <td>0</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java">org/techbd/service/http/hub/prime/api/FhirController.java</a></td>
@@ -147,16 +147,24 @@
 <ul>
 <li>ignoreFinal: <code>&quot;false&quot;</code></li>
 <li>allowedAbbreviationLength: <code>&quot;3&quot;</code></li></ul></td>
-<td>2</td>
+<td>4</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_naming.html#LocalVariableName">LocalVariableName</a>
+<ul>
+<li>format: <code>&quot;^[a-z]([a-z0-9][a-zA-Z0-9]*)?$&quot;</code></li>
+<li>tokens: <code>&quot;VARIABLE_DEF&quot;</code></li></ul></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="b">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_naming.html#ParameterName">ParameterName</a>
 <ul>
 <li>format: <code>&quot;^[a-z]([a-z0-9][a-zA-Z0-9]*)?$&quot;</code></li></ul></td>
 <td>2</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;">whitespace</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#EmptyLineSeparator">EmptyLineSeparator</a>
 <ul>
@@ -165,7 +173,7 @@
 <li>allowMultipleEmptyLinesInsideClassMembers: <code>&quot;false&quot;</code></li></ul></td>
 <td>7</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#NoWhitespaceBefore">NoWhitespaceBefore</a>
 <ul>
@@ -173,7 +181,7 @@
 <li>allowLineBreaks: <code>&quot;true&quot;</code></li></ul></td>
 <td>1</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#WhitespaceAround">WhitespaceAround</a>
 <ul>
@@ -258,19 +266,13 @@
 <td>whitespace</td>
 <td>EmptyLineSeparator</td>
 <td>'METHOD_DEF' should be separated from previous line.</td>
-<td>57</td></tr>
+<td>101</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
 <td>EmptyLineSeparator</td>
-<td>'METHOD_DEF' should be separated from previous line.</td>
-<td>100</td></tr>
-<tr class="b">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>EmptyLineSeparator</td>
-<td>'METHOD_DEF' should be separated from previous line.</td>
-<td>103</td></tr></table></section><section>
+<td>'RECORD_DEF' should be separated from previous line.</td>
+<td>108</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/api/FHIRService.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -284,19 +286,43 @@
 <td>naming</td>
 <td>AbbreviationAsWordInName</td>
 <td>Abbreviation in name 'FHIRService' must contain no more than '4' consecutive capital letters.</td>
-<td>62</td></tr>
+<td>73</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>naming</td>
-<td>ParameterName</td>
-<td>Parameter name 'mTlsKeySecretName' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
-<td>493</td></tr>
+<td>LocalVariableName</td>
+<td>Local variable name 'mTlsStrategy' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>365</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>naming</td>
 <td>ParameterName</td>
-<td>Parameter name 'mTlsCertSecretName' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
-<td>494</td></tr></table></section><section>
+<td>Parameter name 'mTlsStrategy' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>384</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'mTlsAwsSecrets' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>410</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>AbbreviationAsWordInName</td>
+<td>Abbreviation in name 'CERTIFICATE' must contain no more than '4' consecutive capital letters.</td>
+<td>429</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>AbbreviationAsWordInName</td>
+<td>Abbreviation in name 'PRIVATE_KEY' must contain no more than '4' consecutive capital letters.</td>
+<td>430</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>EmptyLineSeparator</td>
+<td>'METHOD_DEF' should be separated from previous line.</td>
+<td>1139</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/api/FhirController.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java"></a>
 <table class="table table-striped">
 <tr class="a">

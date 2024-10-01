@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-10-01<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.257.0</li>
+          <li id="projectVersion">Version: 0.258.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -96,27 +96,23 @@
 <tr class="b">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
 <td>Avoid unused method parameters such as 'interactionId'.</td>
-<td>481</td></tr>
+<td>616</td></tr>
 <tr class="a">
-<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedprivatemethod">UnusedPrivateMethod</a></td>
-<td>Avoid unused private methods such as 'getSecretsFromAWSSecretManager(String, String, String)'.</td>
-<td>493</td></tr>
-<tr class="b">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
 <td>Avoid unused method parameters such as 'scoringEngineApiURL'.</td>
-<td>603</td></tr>
-<tr class="a">
-<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
-<td>Avoid unused method parameters such as 'outboundHttpMessage'.</td>
-<td>770</td></tr>
+<td>738</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
-<td>Avoid unused method parameters such as 'includeIncomingPayloadInDB'.</td>
-<td>770</td></tr>
+<td>Avoid unused method parameters such as 'outboundHttpMessage'.</td>
+<td>907</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
+<td>Avoid unused method parameters such as 'includeIncomingPayloadInDB'.</td>
+<td>907</td></tr>
+<tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
 <td>Avoid unused method parameters such as 'payload'.</td>
-<td>770</td></tr></table></section></section><section>
+<td>907</td></tr></table></section></section><section>
 <h3>Priority 4</h3><a id="Priority_4"></a><section>
 <h4>org/techbd/service/http/hub/prime/api/FHIRService.java</h4><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java"></a>
 <table class="table table-striped">
@@ -125,9 +121,29 @@
 <th>Violation</th>
 <th>Line</th></tr>
 <tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
+<td>Unused import 'java.nio.file.Files'</td>
+<td>7</td></tr>
+<tr class="a">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
+<td>Unused import 'java.nio.file.Paths'</td>
+<td>8</td></tr>
+<tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
+<td>Unused import 'org.techbd.service.http.hub.prime.api.FHIRService.MTlsStrategy'</td>
+<td>49</td></tr>
+<tr class="a">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#uselessparentheses">UselessParentheses</a></td>
 <td>Useless parentheses.</td>
-<td>256&#x2013;257</td></tr></table></section><section>
+<td>264&#x2013;265</td></tr>
+<tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryfullyqualifiedname">UnnecessaryFullyQualifiedName</a></td>
+<td>Unnecessary qualifier 'MTlsStrategy': 'values' is already in scope</td>
+<td>1135</td></tr>
+<tr class="a">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryfullyqualifiedname">UnnecessaryFullyQualifiedName</a></td>
+<td>Unnecessary qualifier 'MTlsStrategy': 'values' is already in scope</td>
+<td>1140</td></tr></table></section><section>
 <h4>org/techbd/service/http/hub/prime/api/FhirController.java</h4><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -185,40 +201,60 @@
 <th>Priority</th>
 <th>Line</th></tr>
 <tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
+<td>Unused import 'java.nio.file.Files'</td>
+<td>4</td>
+<td>7</td></tr>
+<tr class="a">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
+<td>Unused import 'java.nio.file.Paths'</td>
+<td>4</td>
+<td>8</td></tr>
+<tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryimport">UnnecessaryImport</a></td>
+<td>Unused import 'org.techbd.service.http.hub.prime.api.FHIRService.MTlsStrategy'</td>
+<td>4</td>
+<td>49</td></tr>
+<tr class="a">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#uselessparentheses">UselessParentheses</a></td>
 <td>Useless parentheses.</td>
 <td>4</td>
-<td>256&#x2013;257</td></tr>
-<tr class="a">
+<td>264&#x2013;265</td></tr>
+<tr class="b">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
 <td>Avoid unused method parameters such as 'interactionId'.</td>
 <td>3</td>
-<td>481</td></tr>
-<tr class="b">
-<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedprivatemethod">UnusedPrivateMethod</a></td>
-<td>Avoid unused private methods such as 'getSecretsFromAWSSecretManager(String, String, String)'.</td>
-<td>3</td>
-<td>493</td></tr>
+<td>616</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
 <td>Avoid unused method parameters such as 'scoringEngineApiURL'.</td>
 <td>3</td>
-<td>603</td></tr>
+<td>738</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
 <td>Avoid unused method parameters such as 'outboundHttpMessage'.</td>
 <td>3</td>
-<td>770</td></tr>
+<td>907</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
 <td>Avoid unused method parameters such as 'includeIncomingPayloadInDB'.</td>
 <td>3</td>
-<td>770</td></tr>
+<td>907</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_bestpractices.html#unusedformalparameter">UnusedFormalParameter</a></td>
 <td>Avoid unused method parameters such as 'payload'.</td>
 <td>3</td>
-<td>770</td></tr></table></section><section>
+<td>907</td></tr>
+<tr class="a">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryfullyqualifiedname">UnnecessaryFullyQualifiedName</a></td>
+<td>Unnecessary qualifier 'MTlsStrategy': 'values' is already in scope</td>
+<td>4</td>
+<td>1135</td></tr>
+<tr class="b">
+<td style="text-align: left;"><a class="externalLink" href="https://docs.pmd-code.org/pmd-doc-7.0.0/pmd_rules_java_codestyle.html#unnecessaryfullyqualifiedname">UnnecessaryFullyQualifiedName</a></td>
+<td>Unnecessary qualifier 'MTlsStrategy': 'values' is already in scope</td>
+<td>4</td>
+<td>1140</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/api/FhirController.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java"></a>
 <table class="table table-striped">
 <tr class="a">
