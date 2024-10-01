@@ -4,8 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.rmi.UnexpectedException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -46,7 +44,6 @@ import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.AppConfig.DefaultDataLakeApiAuthn;
 import org.techbd.service.http.hub.prime.AppConfig.MTlsAwsSecrets;
 import org.techbd.service.http.hub.prime.AppConfig.PostStdinPayloadToNyecDataLakeExternal;
-import org.techbd.service.http.hub.prime.api.FHIRService.MTlsStrategy;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
@@ -299,7 +296,7 @@ public class FHIRService {
                 return immediateResult;
         }
 
-        private void sendToScoringEngine(org.jooq.Configuration jooqCfg, HttpServletRequest request,
+        private void  sendToScoringEngine(org.jooq.Configuration jooqCfg, HttpServletRequest request,
                         String scoringEngineApiURL,
                         String dataLakeApiContentType,
                         boolean includeIncomingPayloadInDB,
@@ -508,7 +505,9 @@ public class FHIRService {
                                         .writeValueAsString(payloadJson);
                         LOG.info("Create payload from postToNyecExternalResponse- END forinteractionId : {}",
                                         interactionId);
-                        if (postToNyecExternalResponse.completed()) {
+                        if (postToNyecExternalResponse.completed() && null != postToNyecExternalResponse.processOutput()
+                        && postToNyecExternalResponse.processOutput().contains("{\"status\": \"Success\"")
+                        ) {
                                 registerStateComplete(jooqCfg, interactionId,
                                                 request.getRequestURI(), tenantId, responsePayload,
                                                 provenance);
