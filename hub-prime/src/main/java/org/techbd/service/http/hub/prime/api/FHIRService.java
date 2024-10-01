@@ -336,15 +336,16 @@ public class FHIRService {
                         if (null == defaultDatalakeApiAuthn) {
                                 LOG.info("###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
                                                 interactionId);
-                                handleNoMtls(MTlsStrategy.NO_MTLS, dataLakeApiBaseURL, tenantId, dataLakeApiContentType,
+                                         
+                                handleNoMtls(MTlsStrategy.NO_MTLS, interactionId, tenantId, dataLakeApiBaseURL,
                                                 jooqCfg, request,
                                                 bundlePayloadWithDisposition, payload, dataLakeApiContentType,
                                                 provenance, includeIncomingPayloadInDB);
                         } else {
-                                handleMTlsStrategy(defaultDatalakeApiAuthn, dataLakeApiBaseURL, tenantId,
-                                                dataLakeApiContentType, jooqCfg, request, bundlePayloadWithDisposition,
+                                handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId,dataLakeApiBaseURL,
+                                                 jooqCfg, request, bundlePayloadWithDisposition,
                                                 payload,
-                                                dataLakeApiContentType, provenance, includeIncomingPayloadInDB);
+                                                dataLakeApiContentType, provenance, includeIncomingPayloadInDB);                                           
                         }
 
                 } catch (
