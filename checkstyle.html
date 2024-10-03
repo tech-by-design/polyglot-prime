@@ -75,7 +75,7 @@
 <tr class="b">
 <td style="text-align: left;">8</td>
 <td>0</td>
-<td>20</td>
+<td>33</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -102,12 +102,12 @@
 <tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2FAppConfig.java">org/techbd/service/http/hub/prime/AppConfig.java</a></td>
 <td>0</td>
-<td>2</td>
+<td>3</td>
 <td>0</td></tr>
 <tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java">org/techbd/service/http/hub/prime/api/FHIRService.java</a></td>
 <td>0</td>
-<td>7</td>
+<td>19</td>
 <td>0</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java">org/techbd/service/http/hub/prime/api/FhirController.java</a></td>
@@ -162,7 +162,7 @@
 <td><a class="externalLink" href="https://checkstyle.org/config_naming.html#ParameterName">ParameterName</a>
 <ul>
 <li>format: <code>&quot;^[a-z]([a-z0-9][a-zA-Z0-9]*)?$&quot;</code></li></ul></td>
-<td>2</td>
+<td>3</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
 <td style="text-align: left;">whitespace</td>
@@ -182,6 +182,14 @@
 <td>1</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#OperatorWrap">OperatorWrap</a>
+<ul>
+<li>tokens: <code>&quot;BAND, BOR, BSR, BXOR, DIV, EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF, LOR,                     LT, MINUS, MOD, NOT_EQUAL, PLUS, QUESTION, SL, SR, STAR, METHOD_REF &quot;</code></li>
+<li>option: <code>&quot;NL&quot;</code></li></ul></td>
+<td>12</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="b">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#WhitespaceAround">WhitespaceAround</a>
 <ul>
@@ -272,7 +280,13 @@
 <td>whitespace</td>
 <td>EmptyLineSeparator</td>
 <td>'RECORD_DEF' should be separated from previous line.</td>
-<td>108</td></tr></table></section><section>
+<td>108</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>EmptyLineSeparator</td>
+<td>'RECORD_DEF' should be separated from previous line.</td>
+<td>113</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/api/FHIRService.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -286,43 +300,115 @@
 <td>naming</td>
 <td>AbbreviationAsWordInName</td>
 <td>Abbreviation in name 'FHIRService' must contain no more than '4' consecutive capital letters.</td>
-<td>70</td></tr>
+<td>74</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>naming</td>
 <td>LocalVariableName</td>
 <td>Local variable name 'mTlsStrategy' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
-<td>362</td></tr>
+<td>366</td></tr>
 <tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>ParameterName</td>
+<td>Parameter name 'mTlsResources' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
+<td>395</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>469</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>470</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>471</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>472</td></tr>
+<tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>naming</td>
 <td>ParameterName</td>
 <td>Parameter name 'mTlsStrategy' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
-<td>381</td></tr>
+<td>497</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>508</td></tr>
 <tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>509</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>510</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>511</td></tr>
+<tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>naming</td>
 <td>ParameterName</td>
 <td>Parameter name 'mTlsAwsSecrets' must match pattern '^[a-z]([a-z0-9][a-zA-Z0-9]*)?$'.</td>
-<td>407</td></tr>
-<tr class="b">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>naming</td>
-<td>AbbreviationAsWordInName</td>
-<td>Abbreviation in name 'CERTIFICATE' must contain no more than '4' consecutive capital letters.</td>
-<td>426</td></tr>
+<td>534</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>naming</td>
 <td>AbbreviationAsWordInName</td>
+<td>Abbreviation in name 'CERTIFICATE' must contain no more than '4' consecutive capital letters.</td>
+<td>553</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>naming</td>
+<td>AbbreviationAsWordInName</td>
 <td>Abbreviation in name 'PRIVATE_KEY' must contain no more than '4' consecutive capital letters.</td>
-<td>427</td></tr>
+<td>554</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>591</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
-<td>EmptyLineSeparator</td>
-<td>'METHOD_DEF' should be separated from previous line.</td>
-<td>1138</td></tr></table></section><section>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>592</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>593</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>OperatorWrap</td>
+<td>'+' should be on a new line.</td>
+<td>594</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/api/FhirController.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFhirController.java"></a>
 <table class="table table-striped">
 <tr class="a">

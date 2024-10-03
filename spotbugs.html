@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>236</td>
-<td>9</td>
+<td>237</td>
+<td>11</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -99,7 +99,7 @@
 <td>2</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.api.FHIRService">org.techbd.service.http.hub.prime.api.FHIRService</a></td>
-<td>4</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
+<td>6</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -168,25 +168,37 @@
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>435</td>
+<td>575</td>
 <td>High</td></tr>
 <tr class="a">
+<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources): String.getBytes()</td>
+<td>I18N</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
+<td>445</td>
+<td>High</td></tr>
+<tr class="b">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>141</td>
+<td>145</td>
 <td>High</td></tr>
-<tr class="b">
+<tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>469</td>
+<td>620</td>
+<td>Medium</td></tr>
+<tr class="b">
+<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
+<td>488</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>1102</td>
+<td>1253</td>
 <td>Medium</td></tr></table></section>
         </main>
       </div>
