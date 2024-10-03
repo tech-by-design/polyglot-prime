@@ -408,5 +408,15 @@
     "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.postStdinPayloadToNyecDataLakeExternal.timeout",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.postStdinPayloadToNyecDataLakeExternal.timeout'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsResources.m-tls-key-resource-name",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsResources.m-tls-key-resource-name'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsResources.mTlsCertResourceName",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsResources.mTlsCertResourceName'"
   }
 ]}

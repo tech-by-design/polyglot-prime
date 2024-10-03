@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.UnexpectedException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -43,6 +45,7 @@ import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.AppConfig.DefaultDataLakeApiAuthn;
 import org.techbd.service.http.hub.prime.AppConfig.MTlsAwsSecrets;
+import org.techbd.service.http.hub.prime.AppConfig.MTlsResources;
 import org.techbd.service.http.hub.prime.AppConfig.PostStdinPayloadToNyecDataLakeExternal;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
@@ -51,6 +54,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ibm.icu.impl.IllegalIcuArgumentException;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.validation.ResultSeverityEnum;
@@ -296,7 +300,7 @@ public class FHIRService {
                 return immediateResult;
         }
 
-        private void  sendToScoringEngine(org.jooq.Configuration jooqCfg, HttpServletRequest request,
+        private void sendToScoringEngine(org.jooq.Configuration jooqCfg, HttpServletRequest request,
                         String scoringEngineApiURL,
                         String dataLakeApiContentType,
                         boolean includeIncomingPayloadInDB,
@@ -306,7 +310,7 @@ public class FHIRService {
                         Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome) {
 
                 final var interactionId = getBundleInteractionId(request);
-                LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {}", interactionId);
+                LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {} for", interactionId);
 
                 try {
                         Map<String, Object> bundlePayloadWithDisposition = null;
@@ -333,16 +337,16 @@ public class FHIRService {
                         if (null == defaultDatalakeApiAuthn) {
                                 LOG.info("###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
                                                 interactionId);
-                                         
+
                                 handleNoMtls(MTlsStrategy.NO_MTLS, interactionId, tenantId, dataLakeApiBaseURL,
                                                 jooqCfg, request,
                                                 bundlePayloadWithDisposition, payload, dataLakeApiContentType,
                                                 provenance, includeIncomingPayloadInDB);
                         } else {
-                                handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId,dataLakeApiBaseURL,
-                                                 jooqCfg, request, bundlePayloadWithDisposition,
+                                handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId, dataLakeApiBaseURL,
+                                                jooqCfg, request, bundlePayloadWithDisposition,
                                                 payload,
-                                                dataLakeApiContentType, provenance, includeIncomingPayloadInDB);                                           
+                                                dataLakeApiContentType, provenance, includeIncomingPayloadInDB);
                         }
 
                 } catch (
@@ -370,11 +374,123 @@ public class FHIRService {
                                                 bundlePayloadWithDisposition,
                                                 includeIncomingPayloadInDB, payload, provenance, request,
                                                 defaultDatalakeApiAuthn.postStdinPayloadToNyecDataLakeExternal());
+                        case MTLS_RESOURCES ->
+                                handleMtlsResources(interactionId, tenantId, jooqCfg,
+                                                bundlePayloadWithDisposition,
+                                                includeIncomingPayloadInDB, payload, provenance, request,
+                                                dataLakeApiContentType, dataLakeApiBaseURL,
+                                                defaultDatalakeApiAuthn.mTlsResources());
                         default ->
                                 handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
                                                 request,
                                                 bundlePayloadWithDisposition, payload, dataLakeApiContentType,
                                                 provenance, includeIncomingPayloadInDB);
+                }
+        }
+
+        private void handleMtlsResources(String interactionId, String tenantId, org.jooq.Configuration jooqCfg,
+                        Map<String, Object> bundlePayloadWithDisposition, boolean includeIncomingPayloadInDB,
+                        String payload, String provenance, HttpServletRequest request, String dataLakeApiContentType,
+                        String dataLakeApiBaseURL,
+                        MTlsResources mTlsResources) {
+                LOG.info("FHIRService:: handleMtlsResources BEGIN for interaction id: {} tenantid :{} scoring",
+                                interactionId,
+                                tenantId);
+                try {
+                        registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
+                                        request.getRequestURI(), tenantId,
+                                        Optional.ofNullable(bundlePayloadWithDisposition)
+                                                        .orElse(new HashMap<>()),
+                                        null, includeIncomingPayloadInDB, payload);
+
+                        if (null == mTlsResources.mTlsKeyResourceName()) {
+                                LOG.error("ERROR:: FHIRService:: handleMtlsResources Key location  `mTlsKeyResourceName` is not configured in application.yml for interaction id : {}  tenant id :{} ",
+                                                interactionId, tenantId);
+                                throw new IllegalArgumentException(
+                                                "Client key location `mTlsKeyResourceName` is not configured in application.yml");
+                        }
+                        if (null == mTlsResources.mTlsCertResourceName()) {
+                                LOG.error("ERROR:: FHIRService:: handleMtlsResources Client certificate location `mTlsCertResourceName` not configured in application.yml  for interaction id : {} tenant id : {}",
+                                                interactionId, tenantId);
+                                throw new IllegalArgumentException(
+                                                "Client certificate location `mTlsCertResourceName` not configured in application.yml");
+                        }
+                        String myClientKey = Files
+                                        .readString(Paths.get(mTlsResources.mTlsKeyResourceName()));
+                        if (null == myClientKey) {
+                                LOG.error("ERROR:: FHIRService:: handleMtlsResources Key not provided.Copy the key to file in location :{} for interaction id :{} tenant id :{} ",
+                                                mTlsResources.mTlsKeyResourceName(), interactionId, tenantId);
+                                throw new IllegalArgumentException(
+                                                "Client key not provided.Copy the key to file in location : "
+                                                                + mTlsResources.mTlsKeyResourceName());
+                        }
+                        LOG.info("FHIRService:: handleMtlsResources Client key fetched successfully for interaction id: {} tenantid :{} ",
+                                        interactionId,
+                                        tenantId);
+                        String myClientCert = Files.readString(Paths.get(mTlsResources.mTlsCertResourceName()));
+                        if (null == myClientCert) {
+                                LOG.error("ERROR:: FHIRService:: handleMtlsResources Client certificate not provided.Copy the certificate to file in location :{}  for interaction id : {}  tenantId :{}",
+                                                mTlsResources.mTlsCertResourceName(), interactionId, tenantId);
+                                throw new IllegalArgumentException(
+                                                "Client certificate not provided.Copy the certificate to file in location : "
+                                                                + mTlsResources.mTlsCertResourceName());
+                        }
+                        LOG.info("FHIRService:: handleMtlsResources Client cert fetched successfully for interaction id: {} tenantid :{} ",
+                                        interactionId,
+                                        tenantId);
+                        LOG.info("FHIRService:: handleMtlsResources Get SSL Context -BEGIN for interaction id: {} tenantid:{}",
+                                        interactionId, tenantId);
+
+                        final var sslContext = SslContextBuilder.forClient()
+                                        .keyManager(new ByteArrayInputStream(myClientCert.getBytes()),
+                                                        new ByteArrayInputStream(myClientKey.getBytes()))
+                                        .build();
+                        LOG.info("FHIRService:: handleMtlsResources Get SSL Context -END for interaction id: {} tenantId:{}",
+                                        interactionId, tenantId);
+                        LOG.info("FHIRService:: handleMtlsResources Create HttpClient for interaction id: {} tenantID:{}",
+                                        interactionId, tenantId);
+                        HttpClient httpClient = HttpClient.create()
+                                        .secure(sslSpec -> sslSpec.sslContext(sslContext));
+
+                        LOG.info("FHIRService:: Create ReactorClientHttpConnector for interaction id: {} tenantId:{}",
+                                        interactionId, tenantId);
+                        ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+                        LOG.info("FHIRService:: Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN with scoring Engine API URL : {} for interactionID :{} tenant Id:{} ",
+                                        dataLakeApiBaseURL, interactionId, tenantId);
+                        var webClient = WebClient.builder()
+                                        .baseUrl(dataLakeApiBaseURL)
+                                        .defaultHeader("Content-Type", dataLakeApiContentType)
+                                        .clientConnector(connector)
+                                        .build();
+                        LOG.info("FHIRService:: Build WebClient with MTLS Enabled ReactorClientHttpConnector -END with scoring Engine API URL : {} for interactionID :{} tenant Id:{} ",
+                                        dataLakeApiBaseURL, interactionId, tenantId);
+                        LOG.info("FHIRService:: handleMtlsResources Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                        +
+                                        "with scoring Engine API URL: {} \n" +
+                                        "dataLakeApiContentType: {} \n" +
+                                        "bundlePayloadWithDisposition: {} \n" +
+                                        "for interactionID: {} \n" +
+                                        "tenant Id: {}",
+                                        dataLakeApiBaseURL,
+                                        dataLakeApiContentType,
+                                        bundlePayloadWithDisposition == null ? "Payload is null"
+                                                        : "Payload is not null",
+                                        interactionId,
+                                        tenantId);
+                        sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
+                                        dataLakeApiContentType, interactionId,
+                                        jooqCfg, provenance, request.getRequestURI(), dataLakeApiBaseURL);
+                        LOG.info("FHIRService:: handleMtlsResources Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interaction Id :{}",
+                                        interactionId);
+                        LOG.info("FHIRService:: handleMtlsResources END for interaction id: {} tenantid :{} ",
+                                        interactionId,
+                                        tenantId);
+                } catch (Exception ex) {
+                        LOG.error("ERROR:: handleMtlsResources Exception while posting to scoring engine with MTLS enabled for interactionId : {}",
+                                        interactionId, ex);
+                        registerStateFailed(jooqCfg, interactionId,
+                                        request.getRequestURI(), tenantId, ex.getMessage(), provenance);
+
                 }
         }
 
@@ -387,7 +503,18 @@ public class FHIRService {
                         LOG.info("#########Invalid MTLS Strategy defined #############: Allowed values are {} .Hence proceeding with post to scoring engine without mTls for interaction id :{}",
                                         MTlsStrategy.getAllValues(), interactionId);
                 }
-                LOG.info("FHIRService:: createWebClient BEGIN for interaction id: {} tenantid :{} ", interactionId,
+                LOG.info("FHIRService:: handleNoMtls Build WebClient with MTLS  Disabled -BEGIN \n"
+                                +
+                                "with scoring Engine API URL: {} \n" +
+                                "dataLakeApiContentType: {} \n" +
+                                "bundlePayloadWithDisposition: {} \n" +
+                                "for interactionID: {} \n" +
+                                "tenant Id: {}",
+                                dataLakeApiBaseURL,
+                                dataLakeApiContentType,
+                                bundlePayloadWithDisposition == null ? "Payload is null"
+                                                : "Payload is not null",
+                                interactionId,
                                 tenantId);
                 var webClient = createWebClient(dataLakeApiBaseURL, jooqCfg, request,
                                 tenantId, payload,
@@ -425,6 +552,19 @@ public class FHIRService {
                                         mTlsAwsSecrets.mTlsCertSecretName());
                         final String CERTIFICATE = keyDetails.cert();
                         final String PRIVATE_KEY = keyDetails.key();
+                        if (null == CERTIFICATE) {
+
+                                throw new IllegalArgumentException(
+                                                "Certifcate read from secrets manager with certficate secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (null == PRIVATE_KEY) {
+
+                                throw new IllegalArgumentException(
+                                                "Private key read from secrets manager with key secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
                         LOG.info("FHIRService :: handleAwsSecrets Certificate and Key Details fetched successfully for interactionId : {}",
                                         interactionId);
 
@@ -446,14 +586,25 @@ public class FHIRService {
                         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
                         LOG.info("FHIRService :: handleAwsSecrets ReactorClientHttpConnector created successfully  for interactionId : {}",
                                         interactionId);
-                        LOG.info("FHIRService :: handleAwsSecrets  Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN for interactionId :{}",
-                                        interactionId);
+                        LOG.info("FHIRService:: handleAwsSecrets Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                        +
+                                        "with scoring Engine API URL: {} \n" +
+                                        "dataLakeApiContentType: {} \n" +
+                                        "bundlePayloadWithDisposition: {} \n" +
+                                        "for interactionID: {} \n" +
+                                        "tenant Id: {}",
+                                        dataLakeApiBaseURL,
+                                        dataLakeApiContentType,
+                                        bundlePayloadWithDisposition == null ? "Payload is null"
+                                                        : "Payload is not null",
+                                        interactionId,
+                                        tenantId);
                         var webClient = WebClient.builder()
                                         .baseUrl(dataLakeApiBaseURL)
-                                        .defaultHeader("Content-Type", "application/json")
+                                        .defaultHeader("Content-Type", dataLakeApiContentType)
                                         .clientConnector(connector)
                                         .build();
-                        LOG.info("FHIRService :: handleAwsSecrets  Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN for interactionId :{}",
+                        LOG.info("FHIRService :: handleAwsSecrets  Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
                                         interactionId);
                         LOG.info("FHIRService:: handleAwsSecrets - sendPostRequest BEGIN for interaction id: {} tenantid :{} ",
                                         interactionId,
@@ -506,8 +657,8 @@ public class FHIRService {
                         LOG.info("Create payload from postToNyecExternalResponse- END forinteractionId : {}",
                                         interactionId);
                         if (postToNyecExternalResponse.completed() && null != postToNyecExternalResponse.processOutput()
-                        && postToNyecExternalResponse.processOutput().contains("{\"status\": \"Success\"")
-                        ) {
+                                        && postToNyecExternalResponse.processOutput()
+                                                        .contains("{\"status\": \"Success\"")) {
                                 registerStateComplete(jooqCfg, interactionId,
                                                 request.getRequestURI(), tenantId, responsePayload,
                                                 provenance);
@@ -1118,6 +1269,7 @@ public class FHIRService {
         public enum MTlsStrategy {
                 NO_MTLS("no-mTls"),
                 AWS_SECRETS("aws-secrets"),
+                MTLS_RESOURCES("mTlsResources"),
                 POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL("post-stdin-payload-to-nyec-datalake-external");
 
                 private final String value;
@@ -1135,14 +1287,15 @@ public class FHIRService {
                                         .map(MTlsStrategy::getValue)
                                         .collect(Collectors.joining(", "));
                 }
+
                 public static MTlsStrategy fromString(String value) {
                         for (MTlsStrategy strategy : MTlsStrategy.values()) {
-                            if (strategy.value.equals(value)) {
-                                return strategy;
-                            }
+                                if (strategy.value.equals(value)) {
+                                        return strategy;
+                                }
                         }
                         throw new IllegalArgumentException("No enum constant for value: " + value);
-                    }
+                }
         }
 
         public record KeyDetails(String key, String cert) {
