@@ -108,7 +108,9 @@ public class AppConfig {
     public record DefaultDataLakeApiAuthn(
             String mTlsStrategy,
             MTlsAwsSecrets mTlsAwsSecrets,
-            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal) {
+            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal,MTlsResources mTlsResources) {
+    }
+    public record MTlsResources(String mTlsKeyResourceName, String mTlsCertResourceName) {
     }
 
     public record MTlsAwsSecrets(String mTlsKeySecretName, String mTlsCertSecretName) {
@@ -116,4 +118,5 @@ public class AppConfig {
 
     public record PostStdinPayloadToNyecDataLakeExternal(String cmd, int timeout) {
     }
+    
 }
