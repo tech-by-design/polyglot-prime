@@ -144,3 +144,155 @@ BEGIN
 END;
 $function$
 ;
+
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_json_action_rule_upsert(text);
+
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_json_action_rule_upsert(schema_name text DEFAULT 'techbd_udi_ingress'::text)
+ RETURNS SETOF text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE    
+    v_payload 				jsonb; 
+    v_action_rule_id 		TEXT 		:= NULL;
+    v_created_at 			timestamp; 
+    v_hub_diagnostic_row 	techbd_udi_ingress.hub_diagnostic%ROWTYPE;
+    v_namespace 			TEXT; 
+    v_json_path 			TEXT; 
+    v_action 				TEXT; 
+    v_condition 			jsonb; 
+    v_reject_json 			jsonb; 
+    v_modify_json 			jsonb; 
+    v_priority 				integer; 
+    v_updated_by 			TEXT; 
+    v_last_applied_at 		timestamp with time zone; 
+    v_created_by 			TEXT; 
+    v_provenance 			TEXT;
+	v_return				TEXT 		:= NULL;
+	v_key					TEXT 		:= 'action_rule';
+BEGIN
+	/**
+	* The function techbd_udi_assurance.test_json_action_rule_upsert is designed to perform unit tests on the
+	* json_action_rule_upserted function in the techbd_udi_ingress schema. It validates the existence of key functions,
+	* checks the correctness of insert and update operations, and tests the handling of exceptions. The function returns
+	* detailed messages regarding the success or failure of each test, including checking the insertion of records into the
+	* json_action_rule table and verifying exception handling by checking logs in diagnostic tables.
+	*/
+
+    v_namespace			:= 'namespace_group_1';
+    v_json_path			:= '$.response.responseBody.OperationOutcome.validationResults[*].operationOutcome.issue[*].location[*] ? (@ == "Bundle.entry[0].resource/*Patient/PatientExample*/.extension[2].value.ofType(code)")';
+    v_action			:= 'reject';
+    v_priority			:= 1;
+    v_updated_by		:= CURRENT_USER;
+    v_last_applied_at	:= CURRENT_TIMESTAMP;
+    v_created_by		:= CURRENT_USER;
+    v_provenance		:= '{"Key" : "value"}';	
+
+
+    -- Check if the table 'pgtap_fixtures_json' exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
+               AND table_name = 'pgtap_fixtures_json') THEN 
+        SELECT "jsonb" INTO v_condition
+        FROM techbd_udi_assurance.pgtap_fixtures_json 
+        WHERE "name" = 'json_action_rule_condition';
+       
+        SELECT "jsonb" INTO v_reject_json
+        FROM techbd_udi_assurance.pgtap_fixtures_json 
+        WHERE "name" = 'json_action_rule_reject_json';
+       
+        SELECT "jsonb" INTO v_modify_json
+        FROM techbd_udi_assurance.pgtap_fixtures_json 
+        WHERE "name" = 'json_action_rule_modify_json';
+    ELSE 
+        RETURN NEXT 'Table techbd_udi_assurance.pgtap_fixtures_json does not exist';
+    END IF;
+
+    -- Check existence of required functions     
+    RETURN NEXT has_function(
+        schema_name,
+        'json_action_rule_upserted',
+        ARRAY['text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'jsonb', 'integer', 'text', 'text', 'text'],
+        'Function json_action_rule_upserted exists'
+    ); 
+   
+    RETURN NEXT has_function(
+        schema_name,
+        'register_issue',
+        ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'],
+        'Function register_issue exists'
+    );
+
+	
+    SELECT techbd_udi_ingress.json_action_rule_upserted(
+    	action_rule_id	=> NULL,
+    	namespace		=> v_namespace, 
+    	json_path		=> v_json_path, 
+    	action			=> v_action, 
+    	condition		=> v_condition, 
+    	reject_json		=> v_reject_json, 
+    	modify_json		=> v_modify_json, 
+    	priority		=> v_priority, 
+    	updated_by		=> v_updated_by, 
+    	created_by		=> v_created_by, 
+    	provenance		=> v_provenance
+    ) INTO v_return;  
+   
+	RETURN NEXT ok(
+			EXISTS(SELECT 1 WHERE v_return IS NOT NULL),
+            'Successfully inserted into the table json_action_rule'
+        );
+
+   	v_action_rule_id := v_return;
+       
+   	SELECT techbd_udi_ingress.json_action_rule_upserted(
+    	action_rule_id	=> v_action_rule_id,
+    	namespace		=> v_namespace, 
+    	json_path		=> v_json_path, 
+    	action			=> v_action, 
+    	condition		=> v_condition, 
+    	reject_json		=> v_reject_json, 
+    	modify_json		=> v_modify_json, 
+    	priority		=> v_priority, 
+    	updated_by		=> v_updated_by, 
+    	created_by		=> v_created_by, 
+    	provenance		=> v_provenance
+   ) INTO v_return;  
+   
+   RETURN NEXT ok(v_action_rule_id = v_return,
+            'Successfully updated the table json_action_rule'
+        );
+
+   /*Test the exception handling*/
+   SELECT techbd_udi_ingress.json_action_rule_upserted(
+    	action_rule_id	=> NULL,
+    	namespace		=> v_namespace, 
+    	json_path		=> v_json_path, 
+    	action			=> 'test', 
+    	condition		=> v_condition, 
+    	reject_json		=> v_reject_json, 
+    	modify_json		=> v_modify_json, 
+    	priority		=> v_priority, 
+    	updated_by		=> v_updated_by, 
+    	created_by		=> v_created_by, 
+    	provenance		=> '{"Key" : "exception"}' 
+    ) INTO v_return; 
+   
+   SELECT hub_exp.* INTO v_hub_diagnostic_row
+   FROM techbd_udi_ingress.hub_diagnostic hub_exp
+   WHERE hub_exp."key"      	= v_key
+	   AND hub_exp.created_by   = CURRENT_USER
+	   AND hub_exp.provenance   = '{"Key" : "exception"}' 
+   ;
+   
+   RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic'); 
+   
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
+                            WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
+                            AND sat_exp.created_by           = CURRENT_USER
+                            AND sat_exp.provenance           = '{"Key" : "exception"}'
+                   ),
+            'Successfully inserted exception details into the table sat_diagnostic_exception'
+        );  
+END;
+$function$
+;

@@ -2493,3 +2493,121 @@ EXCEPTION
 END;       
 $$;
 
+/**
+* The function techbd_udi_ingress.json_action_rule_upserted is designed to either insert a new record or 
+* update an existing record in the json_action_rule table, depending on whether the action_rule_id is provided. 
+* If the action_rule_id is not NULL, the function attempts to update the existing record. If action_rule_id is NULL, 
+* a new record is inserted with a randomly generated UUID as the primary key.
+
+* The function also handles exception logging. In the event of an error during the execution of an insert or 
+* update operation, the exception details are captured, and the issue is logged in a diagnostic table using the * register_issue function.
+*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.json_action_rule_upserted(text, text, text, text, jsonb, jsonb, jsonb, int4, text, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.json_action_rule_upserted(action_rule_id text, namespace text, json_path text, action text, condition jsonb, reject_json jsonb, modify_json jsonb, priority integer, updated_by text, created_by text, provenance text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    -- Declare variables to hold error and extracted data
+    v_error_msg                 TEXT;
+    v_error_type                TEXT;
+    v_sqlstate                  TEXT;
+    v_pg_detail                 TEXT;
+    v_pg_hint                   TEXT;
+    v_pg_context                TEXT;
+    v_exception_id              TEXT;
+    v_created_by                TEXT        := COALESCE(json_action_rule_upserted.created_by, current_user);  -- Default created_by to the current user if not provided    
+    v_updated_by                TEXT        := COALESCE(json_action_rule_upserted.updated_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance                TEXT        := COALESCE(provenance, 'unknown');  -- Set default provenance
+    v_return                    TEXT;
+    
+BEGIN
+	
+	
+    -- First, attempt to update the record if it exists
+	IF(json_action_rule_upserted.action_rule_id IS NOT null) THEN
+
+		UPDATE techbd_udi_ingress.json_action_rule
+		SET
+			"namespace"         = json_action_rule_upserted.namespace,
+			json_path           = json_action_rule_upserted.json_path,
+			"action"            = json_action_rule_upserted.action,
+			"condition"         = json_action_rule_upserted.condition,
+			reject_json         = json_action_rule_upserted.reject_json,
+			modify_json         = json_action_rule_upserted.modify_json,
+			priority            = json_action_rule_upserted.priority,
+			updated_at          = CURRENT_TIMESTAMP,
+			updated_by          = v_updated_by,
+			last_applied_at     = CURRENT_TIMESTAMP,
+			provenance          = json_action_rule_upserted.provenance
+			WHERE techbd_udi_ingress.json_action_rule.action_rule_id = json_action_rule_upserted.action_rule_id
+			RETURNING techbd_udi_ingress.json_action_rule.action_rule_id INTO v_return 
+		;	
+
+		RETURN v_return;
+	END IF;
+   
+   	INSERT INTO techbd_udi_ingress.json_action_rule (
+        action_rule_id,
+        "namespace",
+        json_path,
+        "action",
+        "condition",
+        reject_json,
+        modify_json,
+        priority,
+        updated_at,
+        updated_by,
+        last_applied_at,
+        created_at,
+        created_by,
+        provenance
+    ) VALUES (
+        gen_random_uuid()::TEXT,
+        json_action_rule_upserted.namespace,
+        json_action_rule_upserted.json_path,
+        json_action_rule_upserted.action,
+        json_action_rule_upserted.condition,
+        json_action_rule_upserted.reject_json,
+        json_action_rule_upserted.modify_json,
+        json_action_rule_upserted.priority,
+        CURRENT_TIMESTAMP,
+        v_updated_by,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP,
+        json_action_rule_upserted.created_by,
+        json_action_rule_upserted.provenance
+    ) RETURNING json_action_rule.action_rule_id INTO v_return;
+   
+    -- Return a success message
+    RETURN v_return;
+EXCEPTION
+   WHEN OTHERS THEN
+        -- Capture exception details
+        GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;
+        	v_error_type = 'SQL';
+
+        RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+       
+        -- Log the exception, reusing the previous exception ID if it exists
+        PERFORM techbd_udi_ingress.register_issue(
+            COALESCE(v_exception_id,NULL),
+            'action_rule',
+            v_error_msg,
+            v_error_type,
+            v_sqlstate,
+            v_pg_detail,
+            v_pg_hint,
+            v_pg_context,
+            v_created_by,
+            v_provenance);
+
+        RETURN NULL;
+END;
+$function$
+;
