@@ -175,29 +175,36 @@ public class FhirController {
                         AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
         @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.", description = "Endpoint to validate but not store or forward a payload to SHIN-NY.")
         @ApiResponses(value = {
-                @ApiResponse(responseCode = "200", description = "Request processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
-                        +
-                        "  \"OperationOutcome\": {\n" +
-                        "    \"validationResults\": [\n" +
-                        "      {\n" +
-                        "        \"operationOutcome\": {\n" +
-                        "          \"resourceType\": \"OperationOutcome\",\n" +
-                        "          \"issue\": [\n" +
-                        "            {\n" +
-                        "              \"severity\": \"error\",\n" +
-                        "              \"diagnostics\": \"Error Message\",\n" +
-                        "              \"location\": [\n" +
-                        "                \"Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\",\n"
-                        +
-                        "                \"Line[1] Col[5190]\"\n" +
-                        "              ]\n" +
-                        "            }\n" +
-                        "          ]\n" +
-                        "        }\n" +
-                        "      }\n" +
-                        "    ]\n" +
-                        "}"))),
-
+                @ApiResponse(
+                        responseCode = "200", 
+                        description = "Request processed successfully", 
+                        content = @Content(
+                            mediaType = "application/json", 
+                            examples = @ExampleObject(
+                                value = "{\n" +
+                                        "  \"OperationOutcome\": {\n" +
+                                        "    \"validationResults\": [\n" +
+                                        "      {\n" +
+                                        "        \"operationOutcome\": {\n" +
+                                        "          \"resourceType\": \"OperationOutcome\",\n" +
+                                        "          \"issue\": [\n" +
+                                        "            {\n" +
+                                        "              \"severity\": \"error\",\n" +
+                                        "              \"diagnostics\": \"Error Message\",\n" +
+                                        "              \"location\": [\n" +
+                                        "                \"Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\",\n" +
+                                        "                \"Line[1] Col[5190]\"\n" +
+                                        "              ]\n" +
+                                        "            }\n" +
+                                        "          ]\n" +
+                                        "        }\n" +
+                                        "      }\n" +
+                                        "    ]\n" +
+                                        "  }\n" +
+                                        "}"
+                            )
+                        )
+                    ),
                 @ApiResponse(responseCode = "400", description = "Validation Error: Missing or invalid parameter", content = @Content(mediaType = "application/json", examples = {
                         @ExampleObject(value = "{\n" +
                                         "  \"status\": \"Error\",\n" +
