@@ -194,7 +194,42 @@
     }
 
     @Override
-    public List&lt;ResourceProvenance&lt;GitHubFileProvenance, Resource&lt;? extends Nature, ?&gt;&gt;&gt; resources() {</pre></td></tr></table></section></section>
+    public List&lt;ResourceProvenance&lt;GitHubFileProvenance, Resource&lt;? extends Nature, ?&gt;&gt;&gt; resources() {</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
+<td>123</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
+<td>202</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>&quot;    \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;\n&quot; +
+                        &quot;  }\n&quot; +
+                        &quot;}&quot;))),
+
+                @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Validation Error: Missing or invalid parameter&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = {
+                        @ExampleObject(value = &quot;{\n&quot; +
+                                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                                        &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request body is missing.\&quot;\n&quot;
+                                        +
+                                        &quot;}&quot;),
+                        @ExampleObject(value = &quot;{\n&quot; +
+                                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                                        &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\&quot;\n&quot;
+                                        +
+                                        &quot;}&quot;)
+                })),
+                @ApiResponse(responseCode = &quot;500&quot;, description = &quot;An unexpected system error occurred&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
+                        +
+                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                        &quot;  \&quot;message\&quot;: \&quot;An unexpected system error occurred.\&quot;\n&quot; +
+                        &quot;}&quot;)))
+        })
+        @ResponseBody</pre></td></tr></table></section></section>
         </main>
       </div>
     </div>
