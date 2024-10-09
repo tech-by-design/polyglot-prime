@@ -418,5 +418,30 @@
     "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsResources.mTlsCertResourceName",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.mTlsResources.mTlsCertResourceName'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.fhirVersion",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.fhirVersion'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.igPackages.fhir-v4.shin-ny",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.igPackages.fhir-v4.shin-ny'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.igPackages.fhir-v4.usCore",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.igPackages.fhir-v4.usCore'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.igPackages.fhir-v4.sdoh",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.igPackages.fhir-v4.sdoh'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.igVersion",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.igVersion'"
   }
 ]}
