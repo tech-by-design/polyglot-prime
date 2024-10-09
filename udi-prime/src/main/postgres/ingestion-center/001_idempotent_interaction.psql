@@ -1964,6 +1964,16 @@ BEGIN
                     provenance,
                     sat_interaction_fhir_request_upserted.elaboration
                 );
+                CALL techbd_udi_ingress.insert_fhir_screening_patient(
+                    hub_interaction_id, 
+                    tenant_id, 
+                    uri, 
+                    v_created_at, 
+                    payload,
+                    created_by, 
+                    provenance,
+                    sat_interaction_fhir_request_upserted.elaboration
+                );
             END IF;                  
         END IF;         
     END IF;        
@@ -2602,3 +2612,131 @@ EXCEPTION
 END;
 $function$
 ;
+
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_patient(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb);
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_patient (
+    IN hub_interaction_id TEXT,
+    IN tenant_id TEXT,
+    IN uri TEXT,
+    IN created_at TIMESTAMPTZ,
+    IN payload JSONB,
+    IN created_by TEXT,
+    IN provenance TEXT,
+    IN elaboration JSONB
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_exception_id 	                TEXT;
+    v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;
+    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+BEGIN
+    WITH filtered_data AS (
+        SELECT 
+                insert_fhir_screening_patient.hub_interaction_id AS hub_interaction_id,
+                insert_fhir_screening_patient.tenant_id AS tenant_id,
+                v_created_by,
+                v_provenance,
+                insert_fhir_screening_patient.elaboration AS elaboration,
+                insert_fhir_screening_patient.payload ->> 'created_at' AS created_at,
+                (entry.value -> 'resource') ->> 'id' AS patient_id,
+                (entry.value -> 'resource') ->> 'resourceType' AS patient_resource_type,
+                (((entry.value -> 'resource') -> 'name') -> 0) ->> 'text' AS full_name,
+                (((entry.value -> 'resource') -> 'name') -> 0) ->> 'family' AS last_name,
+                array_to_string(ARRAY(
+                    SELECT jsonb_array_elements_text((((entry.value -> 'resource') -> 'name') -> 0) -> 'given'))
+                , ' ') AS first_name,
+                (entry.value -> 'resource') ->> 'gender' AS gender,
+                (entry.value -> 'resource') ->> 'birthDate' AS birth_date,
+                (((entry.value -> 'resource') -> 'address') -> 0) ->> 'text' AS address,
+                (((entry.value -> 'resource') -> 'address') -> 0) ->> 'city' AS city,
+                (((entry.value -> 'resource') -> 'address') -> 0) ->> 'state' AS state,
+                (((entry.value -> 'resource') -> 'address') -> 0) ->> 'postalCode' AS postal_code,
+                ((((((entry.value -> 'resource') -> 'communication') -> 0) -> 'language') -> 'coding') -> 0) ->> 'code' AS language,
+                (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value' AS medical_record_number,
+                (((entry.value -> 'resource') -> 'identifier') -> 3) ->> 'value' AS social_security_number,
+                array_to_string(ARRAY(
+                    SELECT replace((jsonb_array_elements((entry.value -> 'resource') -> 'identifier') -> 'assigner') ->> 'reference', 'Organization/', '')
+                    FROM jsonb_array_elements((entry.value -> 'resource') -> 'identifier')
+                ), ', ') AS organization_ids
+        FROM LATERAL jsonb_array_elements(insert_fhir_screening_patient.payload -> 'entry') entry
+        WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Patient'
+    )
+    INSERT INTO techbd_udi_ingress.sat_interaction_fhir_screening_patient (
+        sat_interaction_fhir_screening_patient_id,
+        hub_interaction_id,
+        qe_name,
+        patient_mrn,
+        patient_id,
+        patient_type,
+        patient_full_name,
+        patient_first_name,
+        patient_last_name,
+        patient_gender,
+        patient_birth_date,
+        patient_address,
+        patient_city,
+        patient_state,
+        patient_postal_code,
+        patient_language,
+        patient_ssn,
+        org_id,
+        elaboration,
+        created_by,
+        provenance
+    )
+    SELECT gen_random_uuid()::TEXT,
+        filtered_data.hub_interaction_id,
+        filtered_data.tenant_id,
+        filtered_data.medical_record_number,
+        filtered_data.patient_id,
+        filtered_data.patient_resource_type,
+        filtered_data.full_name,
+        filtered_data.first_name,
+        filtered_data.last_name,
+        filtered_data.gender,
+        filtered_data.birth_date,
+        filtered_data.address,
+        filtered_data.city,
+        filtered_data.state,
+        filtered_data.postal_code,
+        filtered_data.language,
+        filtered_data.social_security_number,
+        filtered_data.organization_ids,
+        filtered_data.elaboration,
+        filtered_data.v_created_by,
+        filtered_data.v_provenance
+    FROM filtered_data;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    -- RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		insert_fhir_screening_patient.uri,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+END;         
+$$;

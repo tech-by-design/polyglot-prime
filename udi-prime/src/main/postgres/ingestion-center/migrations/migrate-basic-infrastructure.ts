@@ -410,6 +410,34 @@ const interactionFhirScreeningInfoSat = interactionHub.satelliteTable(
 );
 
 
+const interactionFhirScreeningPatientSat = interactionHub.satelliteTable(
+  "fhir_screening_patient",
+  {
+    sat_interaction_fhir_screening_patient_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    qe_name : text(),
+    patient_mrn: text(),
+    patient_id: textNullable(),
+    patient_type: textNullable(),
+    patient_full_name: textNullable(),
+    patient_first_name: textNullable(),
+    patient_last_name: textNullable(),
+    patient_gender: textNullable(),
+    patient_birth_date: textNullable(),
+    patient_address: textNullable(),
+    patient_city: textNullable(),
+    patient_state: textNullable(),
+    patient_postal_code: textNullable(),
+    patient_language: textNullable(),
+    patient_ssn: textNullable(),
+    org_id: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
 const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
   "fhir_validation_issue",
   {
@@ -704,6 +732,8 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionFhirSessionDiagnosticSat}
 
       ${interactionFhirScreeningInfoSat}
+
+      ${interactionFhirScreeningPatientSat}
 
       ${interactionFhirValidationIssueSat}
 
