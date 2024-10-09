@@ -66,8 +66,8 @@ public class AppConfig {
         return defaultSdohFhirProfileUrl;
     }
 
-    public void setDefaultSdohFhirProfileUrl(String fhirVersion) {
-        this.defaultSdohFhirProfileUrl = fhirVersion;
+    public void setDefaultSdohFhirProfileUrl(String defaultSdohFhirProfileUrl) {
+        this.defaultSdohFhirProfileUrl = defaultSdohFhirProfileUrl;
     }
 
     public String getDefaultDatalakeApiUrl() {
