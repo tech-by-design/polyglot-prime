@@ -880,10 +880,10 @@ WITH submission_counts AS (
           WHERE (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND sihr.tenant_id <> 'N/A'::text
           GROUP BY sihr.tenant_id_lower
         )
- SELECT ( SELECT count(*) AS count
+  SELECT ( SELECT count(*) AS count
            FROM techbd_udi_ingress.hub_interaction hintr
-             JOIN techbd_udi_ingress.sat_interaction_fhir_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
-          WHERE sihr.tenant_id_lower::text = sc.qe_name AND hintr.key = '/api/expect/fhir/bundle'::text AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval)) AS cross_roads_scn,
+             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
+          WHERE lower(sihr.nature ->> 'tenant_id'::text) = sc.qe_name AND hintr.key = '/api/expect/fhir/bundle'::text AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval)) AS cross_roads_scn,
     qe_name,
     qe_total_submissions,  
     scoring_engine_submissions,
