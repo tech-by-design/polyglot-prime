@@ -241,6 +241,8 @@ public class FHIRService {
                 final var structureDefintionUrls = appConfig.getStructureDefinitionsUrls();
                 LOG.info("Getting structure definition Urls from config - After : ", structureDefintionUrls);
                 final var valueSetUrls = appConfig.getValueSetUrls();
+                final var igPackages = appConfig.getIgPackages();
+                final var igVersion = appConfig.getIgVersion();
                 LOG.info(" Total value system URLS  in config: ", null != valueSetUrls ? valueSetUrls.size() : 0);
                 final var codeSystemUrls = appConfig.getCodeSystemUrls();
                 LOG.info(" Total code system URLS  in config: ", null != codeSystemUrls ? codeSystemUrls.size() : 0);
@@ -251,6 +253,8 @@ public class FHIRService {
                                 .withFhirStructureDefinitionUrls(structureDefintionUrls)
                                 .withFhirCodeSystemUrls(codeSystemUrls)
                                 .withFhirValueSetUrls(valueSetUrls)
+                                .withFhirIGPackages(igPackages)
+                                .withIgVersion(igVersion)
                                 .addHapiValidationEngine() // by default
                                 // clearExisting is set to true so engines can be fully supplied through header
                                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
