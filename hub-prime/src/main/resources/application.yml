@@ -87,36 +87,6 @@ org:
                     sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
             defaultSdohFhirProfileUrl: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
-            structureDefinitionsUrls:
-              shinnyEncounter: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-encounter.json
-              shinnyConsent: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-Consent.json
-              shinnyOrganization: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-organization.json
-              shinnyPatient: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-patient.json
-              shinnyPractitioner: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-practitioner.json
-              shinnyObservationScreeningResponse:  https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-observation-screening-response.json
-              shinnyQuestionaire: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire.json
-              shinnyQuestionaireResponse: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-questionnaire-response.json
-              shinnyObservationAssessment: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-observation-assessment.json
-              shinnySDOHProcedure: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-sdoh-procedure.json
-              shinnySDOHServiceRequest: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYSDOHServiceRequest.json
-              shinnySDOHTaskForReferralManagement : https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYSDOHTaskForReferralManagement.json
-              shinnySDOHCCCondition: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNY-SDOHCC-Condition.json
-              shinnySDOHCCGoal: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-SDOHCCGoal.json
-              shinnyObservationSexualOrientation: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shin-ny-observation-sexual-orientation.json
-              shinnyMetaData: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYMeta.json
-              shinnyCountry: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-county.json
-              shinnyMiddleName: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-middle-name.json
-              shinnyPersonalPronouns: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-personal-pronouns.json
-              shinnyGenderIdentity: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-shinny-gender-identity.json
-            codeSystemUrls:
-              nyCountyCodes: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-nys-county-codes.json
-              nyHRSNQuestionnaire: https://shinny.org/ImplementationGuide/HRSN/CodeSystem-NYS-HRSN-Questionnaire.json
-            valueSetUrls:
-              shinnyConsentProvisionTypesVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYConsentProvisionTypeVS.json
-              shinnyCountyVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYCountyVS.json
-              shinnyHttpVerbsVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYHTTPVerbsVS.json
-              shinnyPersonalPronounsVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYPersonalPronounsVS.json
-              shinnyScreeningVS: https://shinny.org/ImplementationGuide/HRSN/ValueSet-SHINNYScreeningVS.json
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:
