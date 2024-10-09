@@ -38,7 +38,7 @@
                     { headerName: "Rejection Count", field: "rejection_count", filter: "agTextColumnFilter" },
                     { headerName: "Warning Count", field: "warning_count", filter: "agTextColumnFilter" },
                     { headerName: "Consumed CSV", field: "consumed_count", filter: "agTextColumnFilter" },
-                    { headerName: "FHIR Posts", field: "published_fhir_count", filter: "agTextColumnFilter" },
+                    { headerName: "FHIR Posts", field: "published_fhir_count", sortable: false,  filter: false }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
