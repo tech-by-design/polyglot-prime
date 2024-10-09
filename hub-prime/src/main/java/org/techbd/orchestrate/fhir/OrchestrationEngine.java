@@ -820,9 +820,6 @@ public class OrchestrationEngine {
             private Device device = Device.INSTANCE;
             private String fhirProfileUrl;
             private final List<String> uaStrategyJsonIssues = new ArrayList<>();
-            private Map<String, String> structureDefinitionUrls;
-            private Map<String, String> codeSystemUrls;
-            private Map<String, String> valueSetUrls;
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
 
