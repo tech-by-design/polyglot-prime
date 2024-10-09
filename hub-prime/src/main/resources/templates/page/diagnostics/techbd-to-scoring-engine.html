@@ -132,17 +132,17 @@
                             button.innerText = hub_interaction_id;
                             button.style.textDecoration = 'underline';
                             button.addEventListener('click', () => { 
-                                    modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));                                
+                                    modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));                                
                             });
                             return button;
                         }
                     },
-                    { headerName: "Error Message", field: "error_message", filter: "agTextColumnFilter",tooltipValueGetter: (p) =>
-                    p.value, valueGetter: (params) => {
-                            const error = params.data.error_message || ''; // Default to an empty string if no value
-                            const responseBodyDetails = params.data.response_body_details || ''; // Default to an empty string if no value
-                            return error && responseBodyDetails ? `${error}, ${responseBodyDetails}` : error || responseBodyDetails;
-                        } },
+                    // { headerName: "Error Message", field: "error_message", filter: "agTextColumnFilter",tooltipValueGetter: (p) =>
+                    // p.value, valueGetter: (params) => {
+                    //         const error = params.data.error_message || ''; // Default to an empty string if no value
+                    //         const responseBodyDetails = params.data.response_body_details || ''; // Default to an empty string if no value
+                    //         return error && responseBodyDetails ? `${error}, ${responseBodyDetails}` : error || responseBodyDetails;
+                    //     } },
                     { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter" },
                 ])
                 .withServerSideDatasource(

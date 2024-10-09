@@ -80,7 +80,7 @@
                 arrow.style.cursor = 'pointer';
                 arrow.style.marginRight = '5px';
 
-                button.innerText = params.data.scoring_engine_submission_passed;
+                button.innerText = params.data.scoring_engine_submissions;
                 button.style.marginLeft = '5px';
 
                 container.appendChild(arrow);
@@ -88,7 +88,7 @@
 
                 container.addEventListener('click', () => {
                     // Set buttonPressed before expanding
-                    params.node.data.buttonPressed = 'scoring_engine_submission_passed';
+                    params.node.data.buttonPressed = 'scoring_engine_submissions';
                     params.node.setExpanded(!params.node.expanded);
                     arrow.innerText = params.node.expanded ? '▼' : '▶';
                 });
@@ -103,18 +103,7 @@
                 // return `${qeName}`;
             }
 
-
-
-            const detailGridOptions1 = {
-                columnDefs: [
-                    { headerName: "Screening Info", field: "error_type2", filter: "agTextColumnFilter" },
-                    { headerName: "Date", field: "date2", filter: "agDateColumnFilter" }
-                ],
-                defaultColDef: {
-                    flex: 1,
-                    filter: true,
-                }
-            };
+ 
 
             const detailGridOptions2 = {
                 columnDefs: [
@@ -131,17 +120,11 @@
                             button.innerText = hub_interaction_id;
                             button.style.textDecoration = 'underline';
                             button.addEventListener('click', () => { 
-                                    modalAide.viewFetchedJsonValueCustom(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request_needs_attention/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
+                                    modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
                             });
                             return button;
                         }
-                    },
-                    { headerName: "Error Message", field: "error_message", filter: "agTextColumnFilter",tooltipValueGetter: (p) =>
-                    p.value,  valueGetter: (params) => {
-                            const error = params.data.error_message || ''; // Default to an empty string if no value
-                            const responseBodyDetails = params.data.response_body_details || ''; // Default to an empty string if no value
-                            return error && responseBodyDetails ? `${error}, ${responseBodyDetails}` : error || responseBodyDetails;
-                        } },
+                    }, 
                     { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter" },
                 ],
                 detailRowHeight: 280,
@@ -152,13 +135,7 @@
 
 
             const gridOptions = {
-                columnDefs: [
-                    {
-                        headerName: "CrossRoads SCN",
-                        field: "cross_roads_scn",
-                        filter: "agTextColumnFilter",
-                        headerTooltip: "FHIR file count from CrossRoads SCN"
-                    },
+                columnDefs: [ 
                     {
                         headerName: "QE Name",
                         field: "qe_name",
@@ -167,24 +144,17 @@
                         headerTooltip: "Name of the Qualified Entity"
                     },
                     {
-                        headerName: "SCN to QE",
-                        field: "qe_total_submissions",
-                        filter: "agTextColumnFilter",
-                        cellRenderer: cellRenderer1,
-                        cellStyle: function (params) {
-                            if (params.data.cross_roads_scn !== params.data.qe_total_submissions) {
-                                return { color: 'red' };
-                            }
-                            return null;
-                        },
+                        headerName: "SCN to QE",                        
+                        field: "cross_roads_scn",
+                        filter: "agTextColumnFilter", 
                         headerTooltip: "FHIR File count from CrossRoads SCN to QE"
                     },
                     {
                         headerName: "QE to Tech by Design",
-                        field: "techbd_total_submissions",
+                        field: "qe_total_submissions",
                         filter: "agTextColumnFilter",
                         cellStyle: function (params) {
-                            if (params.data.qe_total_submissions !== params.data.techbd_total_submissions) {
+                            if (params.data.cross_roads_scn !== params.data.qe_total_submissions) {
                                 return { color: 'red' };
                             }
                             return null;
@@ -192,12 +162,12 @@
                         headerTooltip: "FHIR File count from QE to Tech by Design"
                     },
                     {
-                        headerName: "Tech by Design to Scoring Engine",
-                        field: "scoring_engine_submission_passed",
+                        headerName: "Tech by Design to Scoring Engine", 
+                        field: "scoring_engine_submissions",
                         filter: "agTextColumnFilter",
                         cellRenderer: cellRenderer2,
                         cellStyle: function (params) {
-                            if (params.data.techbd_total_submissions !== params.data.scoring_engine_submission_passed) {
+                            if (params.data.qe_total_submissions !== params.data.scoring_engine_submissions) {
                                 return { color: 'red' };
                             }
                             return null;
@@ -220,24 +190,7 @@
                 masterDetail: true,
                 detailCellRendererParams: (params) => {
 
-                    if (params.data.buttonPressed === 'qe_total_submissions') {
-
-                        return {
-                            detailGridOptions: detailGridOptions1,
-                            getDetailRowData: function (params) {
-                                const value = params.data.qe_name;
-                                fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/qe_name/test_test_qe_test.json`))
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        params.successCallback(data);
-                                    });
-                            }, defaultColDef: {
-                                flex: 1,
-                                filter: true,
-                            },
-                        };
-
-                    } else if (params.data.buttonPressed === 'scoring_engine_submission_passed') {
+ 
                         return {
                             detailGridOptions: detailGridOptions2,
                             getDetailRowData: function (params) {
@@ -251,8 +204,7 @@
                                 flex: 1,
                                 filter: true,
                             },
-                        };
-                    }
+                        }; 
 
                 }
             };
@@ -301,7 +253,7 @@
                     indicates an error, and the mismatched numbers are highlighted in red.</li>
                 <li>If there are errors or issues, clicking on the red arrow before the count text allows for a
                     drill-down to see the detailed numbers.</li>
-                <li>When viewing the numbers, clicking on them will open a popup containing the error details.</li>
+                <li>When viewing the numbers, clicking on them will open a popup containing the interaction details.</li>
             </ul>
 
         </div>

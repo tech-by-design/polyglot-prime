@@ -264,8 +264,7 @@
                 QE ->> Tech by Design: Healtheconnections Proxy FHIR JSON (${healtheconnections})
                 QE ->> Tech by Design: Healthix Proxy FHIR JSON (${healthix})
                 QE ->> Tech by Design: Rochester Proxy FHIR JSON (${grrhio})
-                QE ->> Tech by Design: HixNY Proxy FHIR JSON (${hixny})
-                Tech by Design ->> Tech by Design: Validate and Store FHIR JSON (${qeTotalSubmissions})
+                QE ->> Tech by Design: HixNY Proxy FHIR JSON (${hixny}) 
                 Tech by Design ->> ScoringEngine: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_scoring_engine_submission_passed})
                 Tech by Design ->> ScoringEngine: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_scoring_engine_submission_passed})
                 Tech by Design ->> ScoringEngine: Healthix Proxy Validated FHIR JSON (${healthix_scoring_engine_submission_passed})
@@ -290,13 +289,13 @@
                     mermaid.contentLoaded();
 
                     // Wait for Mermaid to render and then add click event listeners
-                    setTimeout(function () {
-                        addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink');
-                        addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn');
-                        addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix');
-                        addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio');
-                        addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny');
-                    }, 500);
+                    // setTimeout(function () {
+                    //     addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink');
+                    //     addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn');
+                    //     addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix');
+                    //     addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio');
+                    //     addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny');
+                    // }, 500);
 
                 } catch (error) {
                     console.error('Error fetching data:', error);
