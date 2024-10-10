@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
   private static final String AUTH_USER_SESSION_ATTR_NAME = "authenticatedUser";
-  private static final String supportEmail = "NYeC QCS Support <qcs-help@qualifiedentity.org>";
+  private static final String supportEmail = "Tech by Design Support <help@techbd.org>";
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record AuthenticatedUser(OAuth2User principal, GitHubUsersService.AuthorizedUser ghUser) implements Serializable {
