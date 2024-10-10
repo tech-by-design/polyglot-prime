@@ -438,6 +438,27 @@ const interactionFhirScreeningPatientSat = interactionHub.satelliteTable(
 );
 
 
+const interactionFhirScreeninOrganizationSat = interactionHub.satelliteTable(
+  "fhir_screening_organization",
+  {
+    sat_interaction_fhir_screening_organization_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    qe_name : text(),
+    org_id: textNullable(),
+    org_type: textNullable(),
+    org_name: textNullable(),
+    org_active: textNullable(),
+    org_address: textNullable(),
+    org_city: textNullable(),
+    org_state: textNullable(),
+    org_postal_code: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
 const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
   "fhir_validation_issue",
   {
@@ -734,6 +755,8 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionFhirScreeningInfoSat}
 
       ${interactionFhirScreeningPatientSat}
+
+      ${interactionFhirScreeninOrganizationSat}
 
       ${interactionFhirValidationIssueSat}
 
