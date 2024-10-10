@@ -1,20 +1,19 @@
 package org.techbd.orchestrate.fhir;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationIssue;
-
-import java.util.Map;
-import java.util.function.Predicate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-
-import org.assertj.core.api.SoftAssertions;
-
-import java.io.*;
-import java.net.*;
-import java.net.http.*;
 
 public class IgPublicationIssuesTest {
     private OrchestrationEngine engine;
@@ -321,34 +320,20 @@ public class IgPublicationIssuesTest {
         return engine.getSessions().get(0).getValidationResults();
     }
 
-     private Map<String, Map<String, String>> getIgPackages() {
+    private Map<String, Map<String, String>> getIgPackages() {
         final Map<String, Map<String, String>> igPackages = new HashMap<>();
 
-        // Create a nested map for each IG package
-        Map<String, String> shinNyIg = new HashMap<>();
-        shinNyIg.put("url", "ig-packages/shin-ny-ig/v0.13.0/package.tgz");
-
-        Map<String, String> usCoreIg = new HashMap<>();
-        usCoreIg.put("url", "ig-packages/fhir-v4/us-core/stu-7.0.0/package.tgz");
-
-        Map<String, String> sdohClinicalCareIg = new HashMap<>();
-        sdohClinicalCareIg.put("url", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0/package.tgz");
-
-        // Add the nested maps to the main map
-        igPackages.put("shinNyIg", shinNyIg);
-        igPackages.put("usCoreIg", usCoreIg);
-        igPackages.put("sdohClinicalCareIg", sdohClinicalCareIg);
-
-        // Add the nyCountyCodes entry
-        igPackages.put("nyCountyCodes",
-                Collections.singletonMap("url",
-                        "https://shinny.org/ImplementationGuide/HRSN/CodeSystem-nys-county-codes.json"));
+        Map<String, String> igMap = new HashMap<>();
+        igMap.put("shinNy", "ig-packages/shin-ny-ig/v0.13.0/package.tgz");
+        igMap.put("usCore", "ig-packages/fhir-v4/us-core/stu-7.0.0/package.tgz");
+        igMap.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0/package.tgz");
+        igPackages.put("fhir-v4", igMap);
 
         return igPackages;
     }
 
     private String getIgVersion() {
-        final String igVersion = new String();
+        final String igVersion = "0.13.0";
         return igVersion;
     }
 
