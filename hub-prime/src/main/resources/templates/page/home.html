@@ -234,20 +234,17 @@
                     };
 
                     // Extract counts using the helper function
-                    const crossRoadsScn = getCountByLabel('total_cross_roads_scn');
-                    const qeTotalSubmissions = getCountByLabel('total_techbd_total_submissions');
-                    const techbdTotalSubmissions = getCountByLabel('total_total_scoring_engine_submissions');
-                    const scoringEngineSubmissionPassed = getCountByLabel('total_scoring_engine_submission_passed');
+                    const crossRoadsScn = getCountByLabel('total_cross_roads_scn'); 
                     const healthelink = getCountByLabel('healthelink_total_submissions');
                     const healtheconnections = getCountByLabel('healtheconnections_total_submissions');
                     const healthix = getCountByLabel('healthix_total_submissions');
                     const grrhio = getCountByLabel('grrhio_total_submissions');
                     const hixny = getCountByLabel('hixny_total_submissions');
-                    const healthelink_scoring_engine_submission_passed = getCountByLabel('healthelink_scoring_engine_submission_passed');
-                    const healtheconnections_scoring_engine_submission_passed = getCountByLabel('healtheconnections_scoring_engine_submission_passed');
-                    const healthix_scoring_engine_submission_passed = getCountByLabel('healthix_scoring_engine_submission_passed');
-                    const grrhio_scoring_engine_submission_passed = getCountByLabel('grrhio_scoring_engine_submission_passed');
-                    const hixny_scoring_engine_submission_passed = getCountByLabel('hixny_scoring_engine_submission_passed');
+                    const healthelink_scoring_engine_submissions = getCountByLabel('healthelink_scoring_engine_submissions');
+                    const healtheconnections_scoring_engine_submissions = getCountByLabel('healtheconnections_scoring_engine_submissions');
+                    const healthix_scoring_engine_submissions = getCountByLabel('healthix_scoring_engine_submissions');
+                    const grrhio_scoring_engine_submissions = getCountByLabel('grrhio_scoring_engine_submissions');
+                    const hixny_scoring_engine_submissions = getCountByLabel('hixny_scoring_engine_submissions');
 
                     // Construct Mermaid diagram code with fetched data
                     const mermaidCode = `
@@ -265,11 +262,11 @@
                 QE ->> Tech by Design: Healthix Proxy FHIR JSON (${healthix})
                 QE ->> Tech by Design: Rochester Proxy FHIR JSON (${grrhio})
                 QE ->> Tech by Design: HixNY Proxy FHIR JSON (${hixny}) 
-                Tech by Design ->> ScoringEngine: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_scoring_engine_submission_passed})
-                Tech by Design ->> ScoringEngine: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_scoring_engine_submission_passed})
-                Tech by Design ->> ScoringEngine: Healthix Proxy Validated FHIR JSON (${healthix_scoring_engine_submission_passed})
-                Tech by Design ->> ScoringEngine: Rochester Proxy Validated FHIR JSON (${grrhio_scoring_engine_submission_passed})
-                Tech by Design ->> ScoringEngine: HixNY Proxy Validated FHIR JSON (${hixny_scoring_engine_submission_passed})
+                Tech by Design ->> ScoringEngine: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_scoring_engine_submissions})
+                Tech by Design ->> ScoringEngine: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_scoring_engine_submissions})
+                Tech by Design ->> ScoringEngine: Healthix Proxy Validated FHIR JSON (${healthix_scoring_engine_submissions})
+                Tech by Design ->> ScoringEngine: Rochester Proxy Validated FHIR JSON (${grrhio_scoring_engine_submissions})
+                Tech by Design ->> ScoringEngine: HixNY Proxy Validated FHIR JSON (${hixny_scoring_engine_submissions})
                 ScoringEngine ->> SHINNY: HEALTHeLINK Proxy Submit to Data lake (?)
                 ScoringEngine ->> SHINNY: Healtheconnections Proxy Submit to Data lake (?)
                 ScoringEngine ->> SHINNY: Healthix Proxy Submit to Data lake (?)
@@ -289,13 +286,13 @@
                     mermaid.contentLoaded();
 
                     // Wait for Mermaid to render and then add click event listeners
-                    // setTimeout(function () {
-                    //     addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink');
-                    //     addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn');
-                    //     addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix');
-                    //     addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio');
-                    //     addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny');
-                    // }, 500);
+                    setTimeout(function () {
+                        addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink');
+                        addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn');
+                        addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix');
+                        addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio');
+                        addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny');
+                    }, 500);
 
                 } catch (error) {
                     console.error('Error fetching data:', error);
