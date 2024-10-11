@@ -1974,6 +1974,16 @@ BEGIN
                     provenance,
                     sat_interaction_fhir_request_upserted.elaboration
                 );
+                CALL techbd_udi_ingress.insert_fhir_screening_organization(
+                    hub_interaction_id, 
+                    tenant_id, 
+                    uri, 
+                    v_created_at, 
+                    payload,
+                    created_by, 
+                    provenance,
+                    sat_interaction_fhir_request_upserted.elaboration
+                );
             END IF;                  
         END IF;         
     END IF;        
@@ -2709,6 +2719,108 @@ BEGIN
         filtered_data.language,
         filtered_data.social_security_number,
         filtered_data.organization_ids,
+        filtered_data.elaboration,
+        filtered_data.v_created_by,
+        filtered_data.v_provenance
+    FROM filtered_data;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    -- RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		insert_fhir_screening_patient.uri,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+END;         
+$$;
+
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_organization(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb);
+CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_organization (
+    IN hub_interaction_id TEXT,
+    IN tenant_id TEXT,
+    IN uri TEXT,
+    IN created_at TIMESTAMPTZ,
+    IN payload JSONB,
+    IN created_by TEXT,
+    IN provenance TEXT,
+    IN elaboration JSONB
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_exception_id 	                TEXT;
+    v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;
+    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+BEGIN
+    WITH filtered_data AS (
+        SELECT 
+                insert_fhir_screening_organization.hub_interaction_id AS hub_interaction_id,
+                insert_fhir_screening_organization.tenant_id AS tenant_id,
+                v_created_by,
+                v_provenance,
+                insert_fhir_screening_organization.elaboration AS elaboration,
+                insert_fhir_screening_organization.payload ->> 'created_at' AS created_at,
+                (entry.value -> 'resource'::text) ->> 'id'::text AS org_id,
+                (entry.value -> 'resource'::text) ->> 'resourceType'::text AS org_resource_type,
+                (entry.value -> 'resource'::text) ->> 'name'::text AS org_name,
+                (entry.value -> 'resource'::text) ->> 'active'::text AS org_active,
+                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'text'::text AS org_address,
+                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'city'::text AS org_city,
+                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'state'::text AS org_state,
+                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'postalCode'::text AS org_postal_code
+        FROM LATERAL jsonb_array_elements(insert_fhir_screening_organization.payload -> 'entry') entry
+        WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Organization'
+    )
+    INSERT INTO techbd_udi_ingress.sat_interaction_fhir_screening_organization (
+        sat_interaction_fhir_screening_organization_id,
+        hub_interaction_id,
+        qe_name,
+        org_id,
+        org_type,
+        org_name,
+        org_active,
+        org_address,
+        org_city,
+        org_state,
+        org_postal_code,
+        elaboration,
+        created_by,
+        provenance
+    )
+    SELECT gen_random_uuid()::TEXT,
+        filtered_data.hub_interaction_id,
+        filtered_data.tenant_id,
+        filtered_data.org_id,
+        filtered_data.org_resource_type,
+        filtered_data.org_name,
+        filtered_data.org_active,
+        filtered_data.org_address,
+        filtered_data.org_city,
+        filtered_data.org_state,
+        filtered_data.org_postal_code,
         filtered_data.elaboration,
         filtered_data.v_created_by,
         filtered_data.v_provenance
