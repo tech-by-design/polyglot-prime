@@ -90,7 +90,7 @@ SELECT interaction_id,
             user_req.interaction_start_time AS start_time,
             user_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
-           FROM techbd_udi_ingress.sat_interaction_user user_req) combined_query
+           FROM techbd_udi_ingress.sat_interaction_user user_req where user_req.uri !='/Bundle') combined_query
   ORDER BY interaction_created_at DESC;
 /*******************************************************************************************
  * Comprehensive view of HTTP interactions and their associated requests.
