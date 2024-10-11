@@ -1090,93 +1090,121 @@ ORDER BY created_at DESC;
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_dashbaord CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_dashbaord AS     
 WITH combined_counts AS (
-         SELECT lower(sihr.nature ->> 'tenant_id'::text) AS qe_name,
-            count(
-                CASE
-                    WHEN sihr.from_state = 'NONE'::text THEN 1
-                    ELSE NULL::integer
-                END) AS qe_total_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forward HTTP Request'::text THEN 1
-                    ELSE NULL::integer
-                END) AS techbd_total_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text THEN 1
-                    ELSE NULL::integer
-                END) AS total_scoring_engine_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text AND  sihr.to_state <> 'FAIL'::text THEN 1 
-                    ELSE NULL::integer
-                END) AS scoring_engine_submission_passed,
-            count(
-                CASE
-                    WHEN hintr.key = '/api/expect/fhir/bundle'::text THEN 1
-                    ELSE NULL::integer
-                END) AS cross_roads_scn
+    SELECT 
+        sihr.tenant_id_lower::text AS qe_name,
+        
+        -- Calculate total submissions for the QE
+        count(
+            CASE 
+                WHEN sihr.from_state = 'NONE'::text THEN 1 
+                ELSE NULL::integer 
+            END
+        ) AS qe_total_submissions,
+
+        -- Scoring engine submissions (Forwarded HTTP Response and Forwarded HTTP Response Error)
+        count(
+            CASE 
+                WHEN ((sihr.nature::text) = 'Forwarded HTTP Response'::text 
+                     OR (sihr.nature::text) = 'Forwarded HTTP Response Error'::text) THEN 1
+                ELSE NULL::integer 
+            END
+        ) AS scoring_engine_submissions, 
+        max(sihr.created_at) AS recently_created_at
+    FROM 
+        techbd_udi_ingress.hub_interaction hintr
+        JOIN techbd_udi_ingress.sat_interaction_fhir_request sihr 
+        ON hintr.hub_interaction_id = sihr.hub_interaction_id
+    WHERE 
+        sihr.created_at >= (CURRENT_DATE - '7 days'::interval) 
+        AND sihr.tenant_id_lower::text = ANY (
+            ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text  ]
+        )
+    GROUP BY 
+        sihr.tenant_id_lower::text
+)
+
+SELECT 
+( SELECT ( SELECT count(*) AS count
            FROM techbd_udi_ingress.hub_interaction hintr
              JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
-          WHERE sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND (lower(sihr.nature ->> 'tenant_id'::text) = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]))
-          GROUP BY (lower(sihr.nature ->> 'tenant_id'::text))
+          WHERE lower(sihr.nature ->> 'tenant_id'::text)  = ANY (
+            ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text  ]
         )
- SELECT sum(cross_roads_scn) AS total_cross_roads_scn,
+          AND hintr.key = '/api/expect/fhir/bundle'::text AND 
+          sihr.created_at >= (CURRENT_DATE - '7 days'::interval))) AS total_cross_roads_scn,
+  
+
+    -- QE total submissions per tenant
     sum(
-        CASE
-            WHEN qe_name = 'healthelink'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS healthelink_total_submissions,
+        CASE 
+            WHEN qe_name = 'healthelink'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS healthelink_total_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'healtheconn'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS healtheconnections_total_submissions,
+        CASE 
+            WHEN qe_name = 'healtheconn'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS healtheconnections_total_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'healthix'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS healthix_total_submissions,
+        CASE 
+            WHEN qe_name = 'healthix'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS healthix_total_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'grrhio'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS grrhio_total_submissions,
+        CASE 
+            WHEN qe_name = 'grrhio'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS grrhio_total_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'hixny'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS hixny_total_submissions,
-    sum(techbd_total_submissions) AS total_techbd_total_submissions,
-    sum(total_scoring_engine_submissions) AS total_total_scoring_engine_submissions,
+        CASE 
+            WHEN qe_name = 'hixny'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS hixny_total_submissions, 
+
+    -- Missed scoring engine submissions for each tenant
     sum(
-        CASE
-            WHEN qe_name = 'healthelink'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS healthelink_scoring_engine_submission_passed,
+        CASE 
+            WHEN qe_name = 'healthelink'::text THEN  scoring_engine_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS healthelink_scoring_engine_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'healtheconn'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS healtheconnections_scoring_engine_submission_passed,
+        CASE 
+            WHEN qe_name = 'healtheconn'::text THEN scoring_engine_submissions
+            ELSE 0::bigint 
+        END
+    ) AS healtheconnections_scoring_engine_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'healthix'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS healthix_scoring_engine_submission_passed,
+        CASE 
+            WHEN qe_name = 'healthix'::text THEN scoring_engine_submissions
+            ELSE 0::bigint 
+        END
+    ) AS healthix_scoring_engine_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'grrhio'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS grrhio_scoring_engine_submission_passed,
+        CASE 
+            WHEN qe_name = 'grrhio'::text THEN  scoring_engine_submissions
+            ELSE 0::bigint 
+        END
+    ) AS grrhio_scoring_engine_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'hixny'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS hixny_scoring_engine_submission_passed,
-    sum(scoring_engine_submission_passed) AS total_scoring_engine_submission_passed
-   FROM combined_counts
-  WHERE qe_name = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]);
+        CASE 
+            WHEN qe_name = 'hixny'::text THEN scoring_engine_submissions
+            ELSE 0::bigint 
+        END
+    ) AS hixny_scoring_engine_submissions 
+ 
+
+FROM 
+    combined_counts
+WHERE 
+    qe_name = ANY (
+        ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text ]
+    );
 
 /**
  * View to identify and analyze failed HTTP request interactions that need attention.
