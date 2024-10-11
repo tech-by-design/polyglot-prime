@@ -275,7 +275,7 @@ AS SELECT tenant_id,
  *******************************************************************************************************************************/
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true)
+ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -305,9 +305,7 @@ BEGIN
     -- Attempt to insert into hub_interaction
     BEGIN	   	    
         INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
-        VALUES (register_interaction_http_request.interaction_id, interaction_key, v_created_at, v_created_by, v_provenance)
-       ;
-
+        VALUES (register_interaction_http_request.interaction_id, interaction_key, v_created_at, v_created_by, v_provenance);
     EXCEPTION
         WHEN unique_violation THEN
             IF NOT hub_upsert_behavior THEN
@@ -324,8 +322,7 @@ BEGIN
                 v_exception_id := techbd_udi_ingress.register_issue(
                     NULL, interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
                 );
-            END IF;
-   
+            END IF;  
     END;
 
     -- Attempt to insert into sat_interaction_http_request
@@ -333,10 +330,9 @@ BEGIN
   
 	    v_nature_denorm = nature->>'nature';
 	   	v_tenant_id_denorm = nature->>'tenant_id';
-	   
 	   	/*INSERT INTO techbd_udi_assurance.pgtap_fixtures_json("name","jsonb")
 	   	values(gen_random_uuid()::TEXT, register_interaction_http_request.payload);*/
-	   
+	  
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, 
             to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm
@@ -345,7 +341,7 @@ BEGIN
             gen_random_uuid()::text, register_interaction_http_request.interaction_id, nature, content_type, payload, from_state, to_state, 
             state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
- 
+       
        	--1) Call the function with the defined parameters to upsert user info
        	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
@@ -366,7 +362,6 @@ BEGIN
 	    END IF;
 	     --2) Call the function with the defined parameters to upsert interaction FHIR request info.
 	   	IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate') THEN
-
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
 	        register_interaction_http_request.interaction_id,
 	        v_tenant_id_denorm,
@@ -380,9 +375,8 @@ BEGIN
 	        v_created_by,
 	        v_provenance,
 	      	register_interaction_http_request.elaboration
-	       );	    
-
-		END IF;	
+	       );	 
+	    END IF;	
 		/*==============================================================================================================================*/
 		--RECURSIVE FUNCTION CALL
 		IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/') THEN  
@@ -412,7 +406,7 @@ BEGIN
 				register_interaction_http_request.created_by, 
 				register_interaction_http_request.provenance, 
 				register_interaction_http_request.hub_upsert_behavior
-			    );						   
+			    );
 			ELSEIF (v_nature_denorm = 'Original FHIR Payload') THEN	
 				v_from_state 	:= 'ACCEPT_FHIR_BUNDLE';
 				v_to_state		:= 'DISPOSITION';
@@ -431,9 +425,9 @@ BEGIN
 				register_interaction_http_request.rule_namespace,
 				register_interaction_http_request.interaction_key
 				);
-				
-				v_disposition_json := v_disposition_json-> 'response'->'responseBody';
 			
+				v_disposition_json := v_disposition_json-> 'response'->'responseBody';		
+					
 				-- Recursive call with adjusted parameters
 				v_return := techbd_udi_ingress.register_interaction_http_request(
 				register_interaction_http_request.interaction_id, 
@@ -454,12 +448,23 @@ BEGIN
 			    register_interaction_http_request.created_by, 
 			    register_interaction_http_request.provenance, 
 			    register_interaction_http_request.hub_upsert_behavior
-			    );			   	
+			    );	   
 			ELSEIF (v_nature_denorm = 'techByDesignDisposition') THEN
-				v_return := register_interaction_http_request.payload;
+			
+				--v_return := register_interaction_http_request.payload;
+			
+				SELECT sat_intr_req.payload
+					INTO v_payload
+					FROM techbd_udi_ingress.sat_interaction_http_request sat_intr_req
+					WHERE sat_intr_req.hub_interaction_id = register_interaction_http_request.interaction_id
+					AND sat_intr_req.nature_denorm = 'techByDesignDisposition'
+					AND sat_intr_req.tenant_id_denorm = v_tenant_id_denorm;
+	
+				v_return := v_payload;
+			
 			END IF;	
-		END IF;				
-		/*==============================================================================================================================*/	 	
+		END IF;	
+	/*==============================================================================================================================*/	 	
     EXCEPTION
         WHEN OTHERS THEN
             -- Capture exception details
@@ -483,7 +488,6 @@ BEGIN
 END;
 $function$
 ;
-
 
 
 
@@ -2109,7 +2113,13 @@ DECLARE
    	v_issue_message		TEXT;
    	v_message_path		TEXT;
    	v_action_payload	JSONB;
+    v_is_accept_flag	NUMERIC := 1;
 BEGIN	
+    v_temp_json := process_json_action_rules.input_json;
+
+	IF(process_json_action_rules.key IS NULL) THEN
+		RETURN NULL;	
+	END IF;
     -- Loop through each row of json_action_rule within the given namespace
     FOR v_current_rule IN 
         SELECT json_path, action, reject_json, modify_json, condition, priority, "namespace" 
@@ -2126,8 +2136,7 @@ BEGIN
 		
 	     -- Check if the json_path content exists in v_temp_json
         v_found_flag := jsonb_path_exists( v_temp_json, v_json_path::jsonpath); -- Casting to jsonpath;   
-         
-       
+
 		IF v_found_flag = false THEN
 			CONTINUE;
 		END IF; 
@@ -2139,16 +2148,21 @@ BEGIN
 
             -- Retrieve the corresponding "message" value dynamically using v_message_path
             SELECT jsonb_path_query(v_temp_json, v_message_path::jsonpath) 
-            INTO v_issue_message;                      
+            INTO v_issue_message;   
            
-           v_action_payload := jsonb_build_object('description', v_current_rule."namespace", 'message', v_issue_message);
+            IF v_issue_message IS NULL THEN
+           		SELECT jsonb_path_query(v_temp_json, v_json_path::jsonpath) 
+            	INTO v_issue_message;   
+            END IF;
+           
+            v_action_payload := jsonb_build_object('description', v_current_rule."namespace", 'message', v_issue_message);
 		
-           v_new_action := jsonb_build_object(
+            v_new_action := jsonb_build_object(
                 'action', 'reject',
                 'actionPayload', COALESCE(v_current_rule.reject_json, v_action_payload) -- Including reject_json as JSONB
             );           
            	
-           -- Check if 'techByDesignDisposition' exists in response->responseBody->OperationOutcome
+            -- Check if 'techByDesignDisposition' exists in response->responseBody->OperationOutcome
             IF v_temp_json->'response'->'responseBody'->'OperationOutcome' ? 'techByDesignDisposition' THEN
                 -- Append to existing array
                 v_temp_json := jsonb_set(
@@ -2164,6 +2178,9 @@ BEGIN
                     jsonb_build_array(v_new_action)
                 );
             END IF;
+           
+            -- If any 'reject' rule is found, then set the v_is_accept_flag to 0, means it is not fully accepted
+            v_is_accept_flag := 0;
 		END IF;           
 	
 		-- Update the last_applied_at for the rule
@@ -2179,6 +2196,29 @@ BEGIN
 		v_message_path		:= NULL;
 		v_action_payload	:= NULL;
     END LOOP;
+
+    /*If all the selected rules are accepted, then add techByDesignDisposition tag with 'accepted'*/
+    IF v_is_accept_flag = 1 THEN 
+    	v_new_action := jsonb_build_object(
+                'action', 'accept'
+            );
+   
+	   IF v_temp_json->'response'->'responseBody'->'OperationOutcome' ? 'techByDesignDisposition' THEN
+	        -- Append to existing array
+	        v_temp_json := jsonb_set(
+	            v_temp_json,
+	            '{response,responseBody,OperationOutcome,techByDesignDisposition}',
+	            (v_temp_json->'response'->'responseBody'->'OperationOutcome'->'techByDesignDisposition') || v_new_action
+	        );
+	    ELSE
+	        -- Create the array and add the new action
+	        v_temp_json := jsonb_set(
+	            v_temp_json,
+	            '{response,responseBody,OperationOutcome,techByDesignDisposition}', 
+	            jsonb_build_array(v_new_action)
+	        );
+	    END IF;
+    END IF;                      
    
     -- Return the modified JSON
     RETURN v_temp_json;
