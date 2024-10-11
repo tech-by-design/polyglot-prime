@@ -91,6 +91,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                         "^/api/ux/.*",
                                         "^/api/expect/.*",
                                         "^/metadata",
+                                        List.of("^/Hl7.*", "POST", "persistReqPayload persistRespPayload"),
                                         List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload"))
                                 : regexAndMethods)
                 .build();
@@ -202,7 +203,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var artifact = ArtifactStore.jsonArtifact(rre, rre.interactionId().toString(),
                 InteractionsFilter.class.getName() + ".interaction", asb.getProvenance());
 
-        if (persistInteractionDB && !requestURI.equals("/Bundle") && !requestURI.equals("/Bundle/")) {
+        if (persistInteractionDB && !requestURI.equals("/Bundle") && !requestURI.equals("/Bundle/")
+        && !requestURI.equals("/Hl7/v2")  && !requestURI.equals("/Hl7/v2/")
+        ) {
             final var rihr = new RegisterInteractionHttpRequest();
             try {
                 LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",

@@ -36,7 +36,7 @@ public class SecurityConfig {
         // allow authentication for security
         // and turn off CSRF to allow POST methods
         http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**", "/metadata",
+                .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**","/Hl7/v2", "/Hl7/v2/", "/metadata",
                         "/api/expect/**",
                         "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**",
                         "/docs/api/openapi/**",
