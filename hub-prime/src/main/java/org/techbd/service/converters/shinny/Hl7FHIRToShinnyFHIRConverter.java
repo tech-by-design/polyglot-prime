@@ -1,4 +1,4 @@
-package org.techbd.service.converters;
+package org.techbd.service.converters.shinny;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,11 +12,11 @@ import org.springframework.stereotype.Component;
 import ca.uhn.fhir.context.FhirContext;
 
 @Component
-public class BundleToFHIRConverter {
+public class Hl7FHIRToShinnyFHIRConverter {
 
     private final List<IConverter> converters;
 
-     public BundleToFHIRConverter(final List<IConverter> converters) {
+     public Hl7FHIRToShinnyFHIRConverter(final List<IConverter> converters) {
         this.converters = converters;
     }
 

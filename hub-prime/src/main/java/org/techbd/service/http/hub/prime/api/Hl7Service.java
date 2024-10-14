@@ -14,7 +14,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.conf.Configuration;
-import org.techbd.service.converters.BundleToFHIRConverter;
+import org.techbd.service.converters.shinny.Hl7FHIRToShinnyFHIRConverter;
 import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -30,7 +30,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Service
 public class Hl7Service {
     private static final Logger LOG = LoggerFactory.getLogger(Hl7Service.class.getName());
-    private final BundleToFHIRConverter bundleToFHIRConverter;
+    private final Hl7FHIRToShinnyFHIRConverter hl7FHIRToShinnyFHIRConverter;
     private final FHIRService fhirService;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
@@ -41,10 +41,10 @@ public class Hl7Service {
     private boolean saveUserDataToInteractions;
 
     public Hl7Service(final FHIRService fhirService, final UdiPrimeJpaConfig udiPrimeJpaConfig,
-            final BundleToFHIRConverter bundleToFHIRConverter) {
+            final Hl7FHIRToShinnyFHIRConverter hl7FHIRToShinnyFHIRConverter) {
         this.fhirService = fhirService;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        this.bundleToFHIRConverter = bundleToFHIRConverter;
+        this.hl7FHIRToShinnyFHIRConverter = hl7FHIRToShinnyFHIRConverter;
     }
 
     public Object processHl7Message(String hl7Payload, String tenantId, String healthCheck, HttpServletRequest request,
@@ -56,9 +56,9 @@ public class Hl7Service {
             LOG.info("HL7Service::processHl7Message BEGIN for interactionid : {} tenantId :{} ", interactionId,
                     tenantId);
             registerStateHl7Accept(jooqCfg, hl7Payload, tenantId, interactionId, healthCheck, request, response);
-            final var bundleJson = convertToFHIRJson(jooqCfg, hl7Payload, tenantId, interactionId);
-            if (null != bundleJson) {
-                final String shinnyFhirJson = convertToShinnyFHIRJson(jooqCfg, bundleJson, tenantId, interactionId);
+            final var hl7FHIRJson = convertHl7ToFHIRJson(jooqCfg, hl7Payload, tenantId, interactionId);
+            if (null != hl7FHIRJson) {
+                final String shinnyFhirJson = convertToShinnyFHIRJson(jooqCfg, hl7FHIRJson, tenantId, interactionId);
                 if (null != shinnyFhirJson) {
                     registerStateHl7Parse(jooqCfg, shinnyFhirJson, tenantId, interactionId, healthCheck, request,
                             response);
@@ -81,12 +81,12 @@ public class Hl7Service {
         return null;
     }
 
-    public String convertToShinnyFHIRJson(org.jooq.Configuration jooqCfg, String bundleJson, String tenantId,
+    public String convertToShinnyFHIRJson(org.jooq.Configuration jooqCfg, String hl7FHIRJson, String tenantId,
             String interactionId) {
         LOG.info("HL7Service::convertToShinnyFHIRJson BRGIN for interactionid : {} tenantId :{} ", interactionId,
                 tenantId);
         try {
-            return bundleToFHIRConverter.convertToShinnyFHIRJson(bundleJson);
+            return hl7FHIRToShinnyFHIRConverter.convertToShinnyFHIRJson(hl7FHIRJson);
         } catch (Exception ex) {
             LOG.error(
                     "ERROR:: HL7Service::convertToShinnyFHIRJson Exception during conversion of JSON to Shinny Bundle Json   for interactionid : {} tenantId :{} ",
@@ -122,8 +122,8 @@ public class Hl7Service {
                     Map.of("nature", "Converted FHIR JSON", "tenant_id",
                             tenantId)));
             initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-            initRIHR.setPayload((JsonNode) Configuration.objectMapper
-                    .valueToTree(shinnyFhirJson));
+            initRIHR.setPayload(Configuration.objectMapper
+                    .readTree(shinnyFhirJson));
             initRIHR.setFromState("HL7_ACCEPT");
             initRIHR.setToState("HL7_PARSE");
             initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app
@@ -246,7 +246,7 @@ public class Hl7Service {
         rihr.setUserRole(userRole);
     }
 
-    public String convertToFHIRJson(org.jooq.Configuration jooqCfg, String hl7Payload, String tenantId,
+    private String convertHl7ToFHIRJson(org.jooq.Configuration jooqCfg, String hl7Payload, String tenantId,
             String interactionId) {
         LOG.info("HL7Service::convertToFHIRJson BEGIN for interactionid : {} tenantId :{} ", interactionId,
                 tenantId);
