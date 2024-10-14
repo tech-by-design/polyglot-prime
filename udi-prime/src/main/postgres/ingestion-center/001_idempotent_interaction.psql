@@ -90,81 +90,8 @@ SELECT interaction_id,
             user_req.interaction_start_time AS start_time,
             user_req.interaction_end_time AS finish_time,
             EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
-           FROM techbd_udi_ingress.sat_interaction_user user_req) combined_query
+           FROM techbd_udi_ingress.sat_interaction_user user_req where user_req.uri not ilike '%/Bundle%') combined_query
   ORDER BY interaction_created_at DESC;
-/*******************************************************************************************
- * Comprehensive view of HTTP interactions and their associated requests.
- * 
- * This view joins the hub_interaction table with the sat_interaction_http_request table
- * and pivots the child rows into columns (first_request, second_request, third_request), 
- * each containing a JSONB object with fields payload, elaboration, and created_at.
- * 
- * Purpose:
- * - To offer a business-level overview of HTTP interactions processed by the system.
- * - Each interaction typically involves a single HTTP request, but some interactions may
- *   involve multiple asynchronous HTTP requests. This view shows up to three requests
- *   per interaction.
- * - Useful for understanding complex interactions involving multiple steps or dependent
- *   requests to fulfill a single client request.
- * 
- * Note:
- * - If there are fewer than 3 sat_interaction_http_request rows for a hub_interaction,
- *   the resulting columns for the missing requests will be NULL.
- * - If there are more than 3 sat_interaction_http_request rows for a hub_interaction,
- *   only the first three requests (ordered by created_at) will be included in the view.
- ******************************************************************************************/
-DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_multiple_3 CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_multiple_3 AS
-SELECT
-    hi.hub_interaction_id AS interaction_id,
-    hi.key AS uri,
-    hi.created_at AS interaction_created_at,
-    hi.created_by AS interaction_created_by,
-    hi.provenance AS interaction_provenance,
-    (SELECT jsonb_build_object(
-        'nature', sihr.nature,
-        'content_type', sihr.content_type,
-        'payload', sihr.payload,
-        'elaboration', sihr.elaboration,
-        'from_state', sihr.from_state,
-        'to_state', sihr.to_state,
-        'state_transition_reason', sihr.state_transition_reason,
-        'created_at', sihr.created_at
-    )
-    FROM techbd_udi_ingress.sat_interaction_http_request sihr
-    WHERE sihr.hub_interaction_id = hi.hub_interaction_id
-    ORDER BY sihr.created_at
-    LIMIT 1 OFFSET 0) AS first_request,
-    (SELECT jsonb_build_object(
-        'nature', sihr.nature,
-        'content_type', sihr.content_type,
-        'payload', sihr.payload,
-        'elaboration', sihr.elaboration,
-        'from_state', sihr.from_state,
-        'to_state', sihr.to_state,
-        'state_transition_reason', sihr.state_transition_reason,
-        'created_at', sihr.created_at
-    )
-    FROM techbd_udi_ingress.sat_interaction_http_request sihr
-    WHERE sihr.hub_interaction_id = hi.hub_interaction_id
-    ORDER BY sihr.created_at
-    LIMIT 1 OFFSET 1) AS second_request,
-    (SELECT jsonb_build_object(
-        'nature', sihr.nature,
-        'content_type', sihr.content_type,
-        'payload', sihr.payload,
-        'elaboration', sihr.elaboration,
-        'from_state', sihr.from_state,
-        'to_state', sihr.to_state,
-        'state_transition_reason', sihr.state_transition_reason,
-        'created_at', sihr.created_at
-    )
-    FROM techbd_udi_ingress.sat_interaction_http_request sihr
-    WHERE sihr.hub_interaction_id = hi.hub_interaction_id
-    ORDER BY sihr.created_at
-    LIMIT 1 OFFSET 2) AS third_request
-FROM
-    techbd_udi_ingress.hub_interaction hi;
 
 /*******************************************************************************************
 This view combines data from hub_interaction and sat_interaction_http_request tables to 
@@ -202,7 +129,8 @@ AS SELECT hub_interaction_id AS interaction_id,
     organization_id,
     organization_name,
     concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn
-   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req; 
+   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+   WHERE uri != '/api/expect/fhir/bundle'; 
 
 
 -- techbd_udi_ingress.interaction_http_request_payload source
@@ -275,7 +203,7 @@ AS SELECT tenant_id,
  *******************************************************************************************************************************/
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true)
+ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -305,9 +233,7 @@ BEGIN
     -- Attempt to insert into hub_interaction
     BEGIN	   	    
         INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
-        VALUES (register_interaction_http_request.interaction_id, interaction_key, v_created_at, v_created_by, v_provenance)
-       ;
-
+        VALUES (register_interaction_http_request.interaction_id, interaction_key, v_created_at, v_created_by, v_provenance);
     EXCEPTION
         WHEN unique_violation THEN
             IF NOT hub_upsert_behavior THEN
@@ -324,8 +250,7 @@ BEGIN
                 v_exception_id := techbd_udi_ingress.register_issue(
                     NULL, interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
                 );
-            END IF;
-   
+            END IF;  
     END;
 
     -- Attempt to insert into sat_interaction_http_request
@@ -333,10 +258,9 @@ BEGIN
   
 	    v_nature_denorm = nature->>'nature';
 	   	v_tenant_id_denorm = nature->>'tenant_id';
-	   
 	   	/*INSERT INTO techbd_udi_assurance.pgtap_fixtures_json("name","jsonb")
 	   	values(gen_random_uuid()::TEXT, register_interaction_http_request.payload);*/
-	   
+	  
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
             sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, 
             to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm
@@ -345,7 +269,7 @@ BEGIN
             gen_random_uuid()::text, register_interaction_http_request.interaction_id, nature, content_type, payload, from_state, to_state, 
             state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
- 
+       
        	--1) Call the function with the defined parameters to upsert user info
        	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
@@ -365,7 +289,7 @@ BEGIN
 	       );  	
 	    END IF;
 	     --2) Call the function with the defined parameters to upsert interaction FHIR request info.
-	   	IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate') THEN
+	   	IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle') THEN
 
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
 	        register_interaction_http_request.interaction_id,
@@ -380,9 +304,8 @@ BEGIN
 	        v_created_by,
 	        v_provenance,
 	      	register_interaction_http_request.elaboration
-	       );	    
-
-		END IF;	
+	       );	 
+	    END IF;	
 		/*==============================================================================================================================*/
 		--RECURSIVE FUNCTION CALL
 		IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/') THEN  
@@ -412,7 +335,7 @@ BEGIN
 				register_interaction_http_request.created_by, 
 				register_interaction_http_request.provenance, 
 				register_interaction_http_request.hub_upsert_behavior
-			    );						   
+			    );
 			ELSEIF (v_nature_denorm = 'Original FHIR Payload') THEN	
 				v_from_state 	:= 'ACCEPT_FHIR_BUNDLE';
 				v_to_state		:= 'DISPOSITION';
@@ -431,9 +354,9 @@ BEGIN
 				register_interaction_http_request.rule_namespace,
 				register_interaction_http_request.interaction_key
 				);
-				
-				v_disposition_json := v_disposition_json-> 'response'->'responseBody';
 			
+				v_disposition_json := v_disposition_json-> 'response'->'responseBody';		
+					
 				-- Recursive call with adjusted parameters
 				v_return := techbd_udi_ingress.register_interaction_http_request(
 				register_interaction_http_request.interaction_id, 
@@ -454,12 +377,23 @@ BEGIN
 			    register_interaction_http_request.created_by, 
 			    register_interaction_http_request.provenance, 
 			    register_interaction_http_request.hub_upsert_behavior
-			    );			   	
+			    );	   
 			ELSEIF (v_nature_denorm = 'techByDesignDisposition') THEN
-				v_return := register_interaction_http_request.payload;
+			
+				--v_return := register_interaction_http_request.payload;
+			
+				SELECT sat_intr_req.payload
+					INTO v_payload
+					FROM techbd_udi_ingress.sat_interaction_http_request sat_intr_req
+					WHERE sat_intr_req.hub_interaction_id = register_interaction_http_request.interaction_id
+					AND sat_intr_req.nature_denorm = 'techByDesignDisposition'
+					AND sat_intr_req.tenant_id_denorm = v_tenant_id_denorm;
+	
+				v_return := v_payload;
+			
 			END IF;	
-		END IF;				
-		/*==============================================================================================================================*/	 	
+		END IF;	
+	/*==============================================================================================================================*/	 	
     EXCEPTION
         WHEN OTHERS THEN
             -- Capture exception details
@@ -483,7 +417,6 @@ BEGIN
 END;
 $function$
 ;
-
 
 
 
@@ -624,22 +557,19 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_fhir CASCADE;
  CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_fhir AS
  WITH ranked_records AS (
     SELECT 
-        sihr.sat_interaction_http_request_id,
-        hi.hub_interaction_id AS interaction_id,
-        sihr.nature ->> 'tenant_id'::text AS tenant_id,
-        hi.created_at AS interaction_created_at,
-        row_number() OVER (PARTITION BY (upper(sihr.nature ->> 'tenant_id'::text)) ORDER BY hi.created_at DESC) AS rn,
+        sihr.sat_interaction_fhir_request_id,
+        sihr.hub_interaction_id AS interaction_id,
+        sihr.tenant_id AS tenant_id,
+        sihr.created_at AS interaction_created_at,
+        row_number() OVER (PARTITION BY (upper(sihr.tenant_id)) ORDER BY sihr.created_at DESC) AS rn,
         COUNT(*)
- OVER (PARTITION BY (upper(sihr.nature ->> 'tenant_id'::text))) AS interaction_count
+ OVER (PARTITION BY (upper(sihr.tenant_id))) AS interaction_count
     FROM 
-        techbd_udi_ingress.hub_interaction hi
-    JOIN 
-        techbd_udi_ingress.sat_interaction_http_request sihr 
-        ON hi.hub_interaction_id = sihr.hub_interaction_id
-    WHERE hi.key = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text])
+        techbd_udi_ingress.sat_interaction_fhir_request sihr 
+    WHERE sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text])
 )
 SELECT 
-    sat_interaction_http_request_id,
+    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
     interaction_id,
     tenant_id,
     interaction_created_at,
@@ -648,125 +578,6 @@ FROM
     ranked_records
 WHERE rn = 1;
 
-
-
- /**
- * Function to retrieve the latest paginated list of FHIR interactions per tenant ID from the database.
- * This function returns a detailed view of the HTTP request interactions, including metadata
- * such as tenant ID, user agent, client IP address, content type, and payload. The function
- * also aggregates resource types involved in the interactions and calculates the duration
- * of each interaction in milliseconds.
- *
- * The function uses multiple Common Table Expressions (CTEs) to organize and extract
- * data:
- * 1. `cte_sihr`: Extracts core details of HTTP requests from the `sat_interaction_http_request` table.
- * 2. `cte_resource_types`: Aggregates resource types from the interaction payload.
- * 3. `cte_intr_observe`: Calculates the duration of each interaction using observability metrics from headers.
- *
- * The main SELECT query combines these CTEs to provide a comprehensive dataset for each
- * interaction, including:
- * - Interaction metadata (ID, URI, nature, states, etc.)
- * - Tenant and client information (tenant ID, user agent, client IP address)
- * - Payload details and elaboration
- * - Resource types involved
- * - Interaction duration in milliseconds
- *
- * @param offset_value NUMERIC (default 0) - The offset for pagination.
- * @param limit_value NUMERIC (default 100) - The limit for the number of rows returned.
- * @return TABLE - A table containing details of the latest FHIR interactions per tenant ID.
- */
-
- DROP FUNCTION IF EXISTS techbd_udi_ingress.get_interaction_http_request;
- CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_http_request(offset_value numeric DEFAULT 0, limit_value numeric DEFAULT 100)
- RETURNS TABLE(sat_interaction_http_request_id text, interaction_id text, uri text, nature text, tenant_id text, user_agent text, client_ip_address text, content_type text, payload jsonb, elaboration jsonb, from_state text, to_state text, state_transition_reason text, request_created_at timestamp with time zone, request_created_by text, request_provenance text, interaction_created_at timestamp with time zone, interaction_created_by text, interaction_provenance text, issues_count integer, resource_types text, start_time text, finish_time text, duration_millisecs numeric)
- LANGUAGE plpgsql
-    AS $function$
-    BEGIN
-        RETURN QUERY
-        WITH cte_interaction AS (
-            SELECT 
-                sihr.sat_interaction_http_request_id,
-                sihr.hub_interaction_id,
-                sihr.content_type,
-                sihr.payload,
-                sihr.nature,
-                sihr.elaboration,
-                sihr.from_state,
-                sihr.to_state,
-                sihr.state_transition_reason,
-                sihr.created_at AS request_created_at,
-                sihr.created_by AS request_created_by,
-                sihr.provenance AS request_provenance,
-                hi.key AS uri,
-                hi.created_at AS interaction_created_at,
-                hi.created_by AS interaction_created_by,
-                hi.provenance AS interaction_provenance
-            FROM techbd_udi_ingress.hub_interaction hi
-            INNER JOIN techbd_udi_ingress.sat_interaction_http_request sihr
-            ON hi.hub_interaction_id = sihr.hub_interaction_id
-            OFFSET offset_value ROWS
-            FETCH NEXT limit_value ROWS ONLY
-        ),
-        cte_resource_types AS (
-        SELECT 
-            intr.sat_interaction_http_request_id,
-            string_agg(DISTINCT (entry.value -> 'resource'::text) ->> 'resourceType'::text, ', '::text) AS resource_types
-        FROM cte_interaction intr
-        LEFT JOIN LATERAL jsonb_array_elements(intr.payload -> 'entry'::text) entry(value) ON true
-        GROUP BY intr.sat_interaction_http_request_id
-        ),
-        cte_intr_observe AS (
-            SELECT intr.sat_interaction_http_request_id,
-                intr.hub_interaction_id,
-                headers.start_time,
-                headers.finish_time,
-                EXTRACT(epoch FROM headers.finish_time::timestamp without time zone - headers.start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
-            FROM cte_interaction intr
-                JOIN LATERAL ( SELECT max(
-                            CASE
-                                WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Start-Time'::text THEN header.value ->> 'value'::text
-                                ELSE NULL
-                            END) AS start_time,
-                        max(
-                            CASE
-                                WHEN (header.value ->> 'name'::text) = 'X-Observability-Metric-Interaction-Finish-Time'::text THEN header.value ->> 'value'::text
-                                ELSE NULL
-                            END) AS finish_time
-                    FROM jsonb_array_elements((intr.payload -> 'response') -> 'headers') header(value)) headers ON true
-            --WHERE (intr.nature ->> 'nature') = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
-            )
-        SELECT
-        intr.sat_interaction_http_request_id,
-        intr.hub_interaction_id	AS interaction_id,
-        intr.uri,
-        intr.nature ->> 'nature' AS nature,
-        intr.nature ->> 'tenant_id'::text AS tenant_id,
-        COALESCE((intr.payload -> 'request') ->> 'userAgent', intr.nature ->> 'userAgent') AS user_agent,
-        COALESCE((intr.payload -> 'request') ->> 'clientIpAddress', intr.nature ->> 'clientIpAddress') AS client_ip_address,
-        intr.content_type,
-        intr.payload,
-        intr.elaboration,
-        intr.from_state,
-        intr.to_state,
-        intr.state_transition_reason,
-        intr.request_created_at,
-        intr.request_created_by,
-        intr.request_provenance,
-        intr.interaction_created_at,
-        intr.interaction_created_by,
-        intr.interaction_provenance,
-        jsonb_array_length((((((intr.payload -> 'response') -> 'responseBody') -> 'OperationOutcome') -> 'validationResults') -> 0) -> 'issues') AS issues_count,
-        rt.resource_types,    
-        obsrv.start_time,
-        obsrv.finish_time,
-        obsrv.duration_millisecs    
-        FROM cte_interaction intr
-        LEFT JOIN cte_resource_types rt ON intr.sat_interaction_http_request_id = rt.sat_interaction_http_request_id
-        LEFT OUTER JOIN cte_intr_observe obsrv ON obsrv.sat_interaction_http_request_id = intr.sat_interaction_http_request_id
-        ;
-    END;
-    $function$
-    ;
 
 /**
  * View to summarize FHIR submission interactions from the database.
@@ -803,17 +614,15 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_submission_summary AS
    WITH submission_counts AS (
     SELECT  
         --NONE    -> ACCEPT_FHIR_BUNDLE
-        COUNT(CASE WHEN sihr.nature->>'nature' = 'Original FHIR Payload' THEN 1 END) AS total_submissions,
+        COUNT(CASE WHEN sihr.nature = 'Original FHIR Payload' THEN 1 END) AS total_submissions,
         --FORWARD-> COMPLETE
-        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response' THEN 1 END) AS accepted_submissions,
+        COUNT(CASE WHEN sihr.nature = 'Forwarded HTTP Response' THEN 1 END) AS accepted_submissions,
         --FORWARD-> FAIL
-        COUNT(CASE WHEN sihr.nature->>'nature' = 'Forwarded HTTP Response Error' THEN 1 END) AS rejected_submissions
+        COUNT(CASE WHEN sihr.nature = 'Forwarded HTTP Response Error' THEN 1 END) AS rejected_submissions
     FROM 
-        techbd_udi_ingress.hub_interaction AS hintr
-        INNER JOIN techbd_udi_ingress.sat_interaction_http_request AS sihr
-        ON hintr.hub_interaction_id = sihr.hub_interaction_id
+        techbd_udi_ingress.sat_interaction_fhir_request AS sihr
     WHERE 
-        hintr."key" = '/Bundle'
+        sihr."uri" = '/Bundle'
         AND sihr.created_at >= CURRENT_DATE - INTERVAL '7 days'
 )
 SELECT  
@@ -865,7 +674,7 @@ WITH submission_counts AS (
          SELECT sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
-                    WHEN sihr.from_state = 'NONE'::text THEN 1
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
                     ELSE NULL::integer
                 END) AS qe_total_submissions,
  
@@ -881,9 +690,8 @@ WITH submission_counts AS (
           GROUP BY sihr.tenant_id_lower
         )
   SELECT ( SELECT count(*) AS count
-           FROM techbd_udi_ingress.hub_interaction hintr
-             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
-          WHERE lower(sihr.nature ->> 'tenant_id'::text) = sc.qe_name AND hintr.key = '/api/expect/fhir/bundle'::text AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval)) AS cross_roads_scn,
+           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr 
+          WHERE sihr.tenant_id_lower = sc.qe_name AND sihr.uri = '/api/expect/fhir/bundle' AND sihr.created_at >= (CURRENT_DATE - '7 days'::interval)) AS cross_roads_scn,
     qe_name,
     qe_total_submissions,  
     scoring_engine_submissions,
@@ -1040,7 +848,7 @@ AS SELECT hub_interaction_id,
     created_at 
    FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
  WHERE 
- sihr.from_state = 'NONE'
+ sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' 
   AND NOT EXISTS (
       SELECT 1
       FROM techbd_udi_ingress.sat_interaction_fhir_request sihr_sub
@@ -1090,93 +898,119 @@ ORDER BY created_at DESC;
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_dashbaord CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_dashbaord AS     
 WITH combined_counts AS (
-         SELECT lower(sihr.nature ->> 'tenant_id'::text) AS qe_name,
-            count(
-                CASE
-                    WHEN sihr.from_state = 'NONE'::text THEN 1
-                    ELSE NULL::integer
-                END) AS qe_total_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forward HTTP Request'::text THEN 1
-                    ELSE NULL::integer
-                END) AS techbd_total_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text THEN 1
-                    ELSE NULL::integer
-                END) AS total_scoring_engine_submissions,
-            count(
-                CASE
-                    WHEN (sihr.nature ->> 'nature'::text) = 'Forwarded HTTP Response'::text AND  sihr.to_state <> 'FAIL'::text THEN 1 
-                    ELSE NULL::integer
-                END) AS scoring_engine_submission_passed,
-            count(
-                CASE
-                    WHEN hintr.key = '/api/expect/fhir/bundle'::text THEN 1
-                    ELSE NULL::integer
-                END) AS cross_roads_scn
-           FROM techbd_udi_ingress.hub_interaction hintr
-             JOIN techbd_udi_ingress.sat_interaction_http_request sihr ON hintr.hub_interaction_id = sihr.hub_interaction_id
-          WHERE sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND (lower(sihr.nature ->> 'tenant_id'::text) = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]))
-          GROUP BY (lower(sihr.nature ->> 'tenant_id'::text))
+    SELECT 
+        sihr.tenant_id_lower AS qe_name,
+        
+        -- Calculate total submissions for the QE
+        count(
+            CASE 
+                WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
+                ELSE NULL::integer 
+            END
+        ) AS qe_total_submissions,
+
+        -- Scoring engine submissions (Forwarded HTTP Response and Forwarded HTTP Response Error)
+        count(
+            CASE 
+                WHEN ((sihr.nature) = 'Forwarded HTTP Response' 
+                     OR (sihr.nature) = 'Forwarded HTTP Response Error') THEN 1
+                ELSE NULL::integer 
+            END
+        ) AS scoring_engine_submissions, 
+        max(sihr.created_at) AS recently_created_at
+    FROM 
+         techbd_udi_ingress.sat_interaction_fhir_request sihr
+    WHERE 
+        sihr.created_at >= (CURRENT_DATE - '7 days'::interval) 
+        AND (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text]))
+        AND sihr.tenant_id_lower::text = ANY (
+            ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text  ]
         )
- SELECT sum(cross_roads_scn) AS total_cross_roads_scn,
+    GROUP BY 
+        sihr.tenant_id_lower::text
+)
+
+SELECT 
+( SELECT ( SELECT count(*) AS count
+           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+          WHERE sihr.tenant_id_lower  = ANY (
+            ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text  ]
+        )
+          AND sihr.uri = '/api/expect/fhir/bundle' AND 
+          sihr.created_at >= (CURRENT_DATE - '7 days'::interval))) AS total_cross_roads_scn,
+  
+
+    -- QE total submissions per tenant
     sum(
-        CASE
-            WHEN qe_name = 'healthelink'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS healthelink_total_submissions,
+        CASE 
+            WHEN qe_name = 'healthelink'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS healthelink_total_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'healtheconn'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS healtheconnections_total_submissions,
+        CASE 
+            WHEN qe_name = 'healtheconn'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS healtheconnections_total_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'healthix'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS healthix_total_submissions,
+        CASE 
+            WHEN qe_name = 'healthix'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS healthix_total_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'grrhio'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS grrhio_total_submissions,
+        CASE 
+            WHEN qe_name = 'grrhio'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS grrhio_total_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'hixny'::text THEN qe_total_submissions
-            ELSE 0::bigint
-        END) AS hixny_total_submissions,
-    sum(techbd_total_submissions) AS total_techbd_total_submissions,
-    sum(total_scoring_engine_submissions) AS total_total_scoring_engine_submissions,
+        CASE 
+            WHEN qe_name = 'hixny'::text THEN qe_total_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS hixny_total_submissions, 
+
+    -- Missed scoring engine submissions for each tenant
     sum(
-        CASE
-            WHEN qe_name = 'healthelink'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS healthelink_scoring_engine_submission_passed,
+        CASE 
+            WHEN qe_name = 'healthelink'::text THEN  scoring_engine_submissions 
+            ELSE 0::bigint 
+        END
+    ) AS healthelink_scoring_engine_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'healtheconn'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS healtheconnections_scoring_engine_submission_passed,
+        CASE 
+            WHEN qe_name = 'healtheconn'::text THEN scoring_engine_submissions
+            ELSE 0::bigint 
+        END
+    ) AS healtheconnections_scoring_engine_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'healthix'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS healthix_scoring_engine_submission_passed,
+        CASE 
+            WHEN qe_name = 'healthix'::text THEN scoring_engine_submissions
+            ELSE 0::bigint 
+        END
+    ) AS healthix_scoring_engine_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'grrhio'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS grrhio_scoring_engine_submission_passed,
+        CASE 
+            WHEN qe_name = 'grrhio'::text THEN  scoring_engine_submissions
+            ELSE 0::bigint 
+        END
+    ) AS grrhio_scoring_engine_submissions,
     sum(
-        CASE
-            WHEN qe_name = 'hixny'::text THEN scoring_engine_submission_passed
-            ELSE 0::bigint
-        END) AS hixny_scoring_engine_submission_passed,
-    sum(scoring_engine_submission_passed) AS total_scoring_engine_submission_passed
-   FROM combined_counts
-  WHERE qe_name = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]);
+        CASE 
+            WHEN qe_name = 'hixny'::text THEN scoring_engine_submissions
+            ELSE 0::bigint 
+        END
+    ) AS hixny_scoring_engine_submissions 
+ 
+
+FROM 
+    combined_counts
+WHERE 
+    qe_name = ANY (
+        ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text ]
+    );
 
 /**
  * View to identify and analyze failed HTTP request interactions that need attention.
@@ -1388,6 +1222,7 @@ WITH cte AS (
            user_agent
     FROM techbd_udi_ingress.sat_interaction_fhir_request
     WHERE nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+      AND uri != '/api/expect/fhir/bundle'
       AND user_agent <> 'httpyac'
       AND created_at >= CURRENT_DATE - INTERVAL '7 days' 
 )
@@ -1461,6 +1296,7 @@ WITH cte AS (
           created_at         
     FROM techbd_udi_ingress.sat_interaction_fhir_request
     WHERE nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+      AND uri != '/api/expect/fhir/bundle'
       AND user_agent <> 'httpyac'
       AND created_at >= CURRENT_DATE - INTERVAL '7 days'  
 )
@@ -2081,7 +1917,13 @@ DECLARE
    	v_issue_message		TEXT;
    	v_message_path		TEXT;
    	v_action_payload	JSONB;
+    v_is_accept_flag	NUMERIC := 1;
 BEGIN	
+    v_temp_json := process_json_action_rules.input_json;
+
+	IF(process_json_action_rules.key IS NULL) THEN
+		RETURN NULL;	
+	END IF;
     -- Loop through each row of json_action_rule within the given namespace
     FOR v_current_rule IN 
         SELECT json_path, action, reject_json, modify_json, condition, priority, "namespace" 
@@ -2098,8 +1940,7 @@ BEGIN
 		
 	     -- Check if the json_path content exists in v_temp_json
         v_found_flag := jsonb_path_exists( v_temp_json, v_json_path::jsonpath); -- Casting to jsonpath;   
-         
-       
+
 		IF v_found_flag = false THEN
 			CONTINUE;
 		END IF; 
@@ -2111,16 +1952,21 @@ BEGIN
 
             -- Retrieve the corresponding "message" value dynamically using v_message_path
             SELECT jsonb_path_query(v_temp_json, v_message_path::jsonpath) 
-            INTO v_issue_message;                      
+            INTO v_issue_message;   
            
-           v_action_payload := jsonb_build_object('description', v_current_rule."namespace", 'message', v_issue_message);
+            IF v_issue_message IS NULL THEN
+           		SELECT jsonb_path_query(v_temp_json, v_json_path::jsonpath) 
+            	INTO v_issue_message;   
+            END IF;
+           
+            v_action_payload := jsonb_build_object('description', v_current_rule."namespace", 'message', v_issue_message);
 		
-           v_new_action := jsonb_build_object(
+            v_new_action := jsonb_build_object(
                 'action', 'reject',
                 'actionPayload', COALESCE(v_current_rule.reject_json, v_action_payload) -- Including reject_json as JSONB
             );           
            	
-           -- Check if 'techByDesignDisposition' exists in response->responseBody->OperationOutcome
+            -- Check if 'techByDesignDisposition' exists in response->responseBody->OperationOutcome
             IF v_temp_json->'response'->'responseBody'->'OperationOutcome' ? 'techByDesignDisposition' THEN
                 -- Append to existing array
                 v_temp_json := jsonb_set(
@@ -2136,6 +1982,9 @@ BEGIN
                     jsonb_build_array(v_new_action)
                 );
             END IF;
+           
+            -- If any 'reject' rule is found, then set the v_is_accept_flag to 0, means it is not fully accepted
+            v_is_accept_flag := 0;
 		END IF;           
 	
 		-- Update the last_applied_at for the rule
@@ -2151,6 +2000,29 @@ BEGIN
 		v_message_path		:= NULL;
 		v_action_payload	:= NULL;
     END LOOP;
+
+    /*If all the selected rules are accepted, then add techByDesignDisposition tag with 'accepted'*/
+    IF v_is_accept_flag = 1 THEN 
+    	v_new_action := jsonb_build_object(
+                'action', 'accept'
+            );
+   
+	   IF v_temp_json->'response'->'responseBody'->'OperationOutcome' ? 'techByDesignDisposition' THEN
+	        -- Append to existing array
+	        v_temp_json := jsonb_set(
+	            v_temp_json,
+	            '{response,responseBody,OperationOutcome,techByDesignDisposition}',
+	            (v_temp_json->'response'->'responseBody'->'OperationOutcome'->'techByDesignDisposition') || v_new_action
+	        );
+	    ELSE
+	        -- Create the array and add the new action
+	        v_temp_json := jsonb_set(
+	            v_temp_json,
+	            '{response,responseBody,OperationOutcome,techByDesignDisposition}', 
+	            jsonb_build_array(v_new_action)
+	        );
+	    END IF;
+    END IF;                      
    
     -- Return the modified JSON
     RETURN v_temp_json;

@@ -267,18 +267,11 @@ public class PrimeController {
                 .intoMaps(); 
         // Check if data is available
         if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
-            Map<String, Object> data = fhirSubmission.get(0);
-            //LOG.info("data------------" + data);
+            Map<String, Object> data = fhirSubmission.get(0); 
 
             // Populate the list with data
             interactions.add(new InteractionData("total_cross_roads_scn",
                     getSafeIntegerValue(data.get("total_cross_roads_scn"))));
-            interactions.add(new InteractionData("total_techbd_total_submissions",
-                    getSafeIntegerValue(data.get("total_techbd_total_submissions"))));
-            interactions.add(new InteractionData("total_total_scoring_engine_submissions",
-                    getSafeIntegerValue(data.get("total_total_scoring_engine_submissions"))));
-            interactions.add(new InteractionData("total_scoring_engine_submission_passed",
-                    getSafeIntegerValue(data.get("total_scoring_engine_submission_passed"))));
             interactions.add(new InteractionData("healthelink_total_submissions",
                     getSafeIntegerValue(data.get("healthelink_total_submissions"))));
             interactions.add(new InteractionData("healtheconnections_total_submissions",
@@ -290,33 +283,30 @@ public class PrimeController {
             interactions.add(new InteractionData("hixny_total_submissions",
                     getSafeIntegerValue(data.get("hixny_total_submissions"))));
 
-            interactions.add(new InteractionData("healthelink_scoring_engine_submission_passed",
-                    getSafeIntegerValue(data.get("healthelink_scoring_engine_submission_passed"))));
-            interactions.add(new InteractionData("healtheconnections_scoring_engine_submission_passed",
-                    getSafeIntegerValue(data.get("healtheconnections_scoring_engine_submission_passed"))));                    
-            interactions.add(new InteractionData("healthix_scoring_engine_submission_passed",
-                    getSafeIntegerValue(data.get("healthix_scoring_engine_submission_passed"))));
-            interactions.add(new InteractionData("grrhio_scoring_engine_submission_passed",
-                    getSafeIntegerValue(data.get("grrhio_scoring_engine_submission_passed"))));
-            interactions.add(new InteractionData("hixny_scoring_engine_submission_passed",
-                    getSafeIntegerValue(data.get("hixny_scoring_engine_submission_passed"))));        
+            interactions.add(new InteractionData("healthelink_scoring_engine_submissions",
+                    getSafeIntegerValue(data.get("healthelink_scoring_engine_submissions"))));
+            interactions.add(new InteractionData("healtheconnections_scoring_engine_submissions",
+                    getSafeIntegerValue(data.get("healtheconnections_scoring_engine_submissions"))));                    
+            interactions.add(new InteractionData("healthix_scoring_engine_submissions",
+                    getSafeIntegerValue(data.get("healthix_scoring_engine_submissions"))));
+            interactions.add(new InteractionData("grrhio_scoring_engine_submissions",
+                    getSafeIntegerValue(data.get("grrhio_scoring_engine_submissions"))));
+            interactions.add(new InteractionData("hixny_scoring_engine_submissions",
+                    getSafeIntegerValue(data.get("hixny_scoring_engine_submissions"))));        
         } else {
             // Default values if no data found
-            interactions.add(new InteractionData("total_cross_roads_scn", 0));
-            interactions.add(new InteractionData("total_techbd_total_submissions", 0));
-            interactions.add(new InteractionData("total_total_scoring_engine_submissions", 0));
-            interactions.add(new InteractionData("total_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("total_cross_roads_scn", 0)); 
             interactions.add(new InteractionData("healthelink_total_submissions", 0));
             interactions.add(new InteractionData("healtheconnections_total_submissions", 0));
             interactions.add(new InteractionData("healthix_total_submissions", 0));
             interactions.add(new InteractionData("grrhio_total_submissions", 0));
             interactions.add(new InteractionData("hixny_total_submissions", 0));
 
-            interactions.add(new InteractionData("healthelink_scoring_engine_submission_passed", 0));
-            interactions.add(new InteractionData("healtheconnections_scoring_engine_submission_passed", 0));
-            interactions.add(new InteractionData("healthix_scoring_engine_submission_passed", 0));
-            interactions.add(new InteractionData("grrhio_scoring_engine_submission_passed", 0));
-            interactions.add(new InteractionData("hixny_scoring_engine_submission_passed", 0));
+            interactions.add(new InteractionData("healthelink_scoring_engine_submissions", 0));
+            interactions.add(new InteractionData("healtheconnections_scoring_engine_submissions", 0));
+            interactions.add(new InteractionData("healthix_scoring_engine_submissions", 0));
+            interactions.add(new InteractionData("grrhio_scoring_engine_submissions", 0));
+            interactions.add(new InteractionData("hixny_scoring_engine_submissions", 0));
 
         }
 
