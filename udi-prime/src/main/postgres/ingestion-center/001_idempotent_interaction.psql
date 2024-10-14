@@ -849,7 +849,12 @@ AS SELECT hub_interaction_id,
    FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
  WHERE 
  sihr.from_state = 'NONE'
-  AND nature not IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Error')
+  AND NOT EXISTS (
+      SELECT 1
+      FROM techbd_udi_ingress.sat_interaction_fhir_request sihr_sub
+      WHERE sihr_sub.hub_interaction_id = sihr.hub_interaction_id
+        AND sihr_sub.nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Error')
+  )
   AND (uri = ANY (ARRAY['/Bundle/', '/Bundle', '/api/expect/fhir/bundle'])) 
   AND created_at >= (CURRENT_DATE - '7 days'::interval)
 ORDER BY created_at DESC;
