@@ -674,7 +674,7 @@ WITH submission_counts AS (
          SELECT sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
-                    WHEN sihr.from_state = 'NONE'::text THEN 1
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
                     ELSE NULL::integer
                 END) AS qe_total_submissions,
  
@@ -904,7 +904,7 @@ WITH combined_counts AS (
         -- Calculate total submissions for the QE
         count(
             CASE 
-                WHEN sihr.from_state = 'NONE'::text THEN 1 
+                WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
                 ELSE NULL::integer 
             END
         ) AS qe_total_submissions,
