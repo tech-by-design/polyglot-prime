@@ -848,7 +848,7 @@ AS SELECT hub_interaction_id,
     created_at 
    FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
  WHERE 
- sihr.from_state = 'NONE'
+ sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' 
   AND NOT EXISTS (
       SELECT 1
       FROM techbd_udi_ingress.sat_interaction_fhir_request sihr_sub
