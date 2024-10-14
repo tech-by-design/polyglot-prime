@@ -25,9 +25,9 @@ public class Hl7FHIRToShinnyFHIRConverter {
         convertEntries(bundle.getEntry());
         return FhirContext.forR4().newJsonParser().encodeResourceToString(bundle);
     }
-    public String convertToShinnyFHIRJson(String bundleJson) {
+    public String convertToShinnyFHIRJson(String hl7FHIRJson) {
         FhirContext fhirContext = FhirContext.forR4();
-        Bundle bundle = fhirContext.newJsonParser().parseResource(Bundle.class, bundleJson);
+        Bundle bundle = fhirContext.newJsonParser().parseResource(Bundle.class, hl7FHIRJson);
         convertBundleMeta(bundle);
         convertEntries(bundle.getEntry());
         return fhirContext.newJsonParser().encodeResourceToString(bundle);
