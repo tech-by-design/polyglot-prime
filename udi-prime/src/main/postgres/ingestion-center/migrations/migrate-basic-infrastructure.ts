@@ -906,7 +906,7 @@ const migrateSP = pgSQLa.storedProcedure(
       VALUES(
         '189b6342-3797-459f-9a4a-b8a71015f082',
         'NYeC Rule',
-        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*HAPI-1821: \\[element=\"lastUpdated\"\\].*")',
+        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*HAPI-1821: \\\\[element=\\\"lastUpdated\\\"\\\\].*")',
         'reject',
         NULL,
         NULL,
