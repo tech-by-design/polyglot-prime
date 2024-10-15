@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +17,7 @@ import org.techbd.service.converters.shinny.Hl7FHIRToShinnyFHIRConverter;
 import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.udi.UdiPrimeJpaConfig;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequestAll;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -55,12 +54,11 @@ public class Hl7Service {
         try {
             LOG.info("HL7Service::processHl7Message BEGIN for interactionid : {} tenantId :{} ", interactionId,
                     tenantId);
-            registerStateHl7Accept(jooqCfg, hl7Payload, tenantId, interactionId, healthCheck, request, response);
             final var hl7FHIRJson = convertHl7ToFHIRJson(jooqCfg, hl7Payload, tenantId, interactionId);
             if (null != hl7FHIRJson) {
                 final String shinnyFhirJson = convertToShinnyFHIRJson(jooqCfg, hl7FHIRJson, tenantId, interactionId);
                 if (null != shinnyFhirJson) {
-                    registerStateHl7Parse(jooqCfg, shinnyFhirJson, tenantId, interactionId, healthCheck, request,
+                    registerStateHl7Accept(jooqCfg,hl7Payload, hl7FHIRJson, tenantId, interactionId, healthCheck, request,
                             response);
                     LOG.info(
                             "HL7Service::processHl7Message END -start processing FHIR Json for interactionid : {} tenantId :{} ",
@@ -108,50 +106,12 @@ public class Hl7Service {
                 .toString();
     }
 
-    private void registerStateHl7Parse(org.jooq.@NotNull Configuration jooqCfg, String shinnyFhirJson, String tenantId,
-            String interactionId,
-            String healthCheck, HttpServletRequest request, HttpServletResponse response) {
-        LOG.info("REGISTER State HL7 Parse : BEGIN for interaction id  : {} tenant id : {}",
-                interactionId, tenantId);
-        final var forwardedAt = OffsetDateTime.now();
-        final var initRIHR = new RegisterInteractionHttpRequestAll();
-        try {
-            initRIHR.setInteractionId(interactionId);
-            initRIHR.setInteractionKey(request.getRequestURI());
-            initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                    Map.of("nature", "Converted FHIR JSON", "tenant_id",
-                            tenantId)));
-            initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-            initRIHR.setPayload(Configuration.objectMapper
-                    .readTree(shinnyFhirJson));
-            initRIHR.setFromState("HL7_ACCEPT");
-            initRIHR.setToState("HL7_PARSE");
-            initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app
-            // time
-            initRIHR.setCreatedBy(FHIRService.class.getName());
-            initRIHR.setProvenance("%s.registerStateHl7Parse".formatted(Hl7Service.class.getName()));
-            if (saveUserDataToInteractions) {
-                setUserDetails(initRIHR, request);
-            } else {
-                LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
-                        + saveUserDataToInteractions);
-            }
-            final var execResult = initRIHR.execute(jooqCfg);
-            LOG.info("REGISTER State HL7 Parse : END for interaction id  : {} tenant id : {}",
-                    interactionId, tenantId);
-        } catch (Exception e) {
-            LOG.error("ERROR:: REGISTER State HL7 Parse CALL for interaction id : {} tenant id : {}"
-                    + initRIHR.getName() + " initRIHR error", interactionId, tenantId,
-                    e);
-        }
-    }
-
     private void registerStateFailed(org.jooq.Configuration jooqCfg, String interactionId,
             String requestURI, String tenantId,
             String response, String provenance) {
         LOG.info("REGISTER State Fail : BEGIN for interaction id :  {} tenant id : {}",
                 interactionId, tenantId);
-        final var forwardRIHR = new RegisterInteractionHttpRequestAll();
+        final var forwardRIHR = new RegisterInteractionHttpRequest();
         try {
             forwardRIHR.setInteractionId(interactionId);
             forwardRIHR.setInteractionKey(requestURI);
@@ -176,7 +136,7 @@ public class Hl7Service {
             // app time
             forwardRIHR.setCreatedBy(FHIRService.class.getName());
             forwardRIHR.setProvenance(provenance);
-            final var execResult = forwardRIHR.execute(jooqCfg);     
+            forwardRIHR.execute(jooqCfg);     
         } catch (Exception e) {
             LOG.error("ERROR:: REGISTER State Fail CALL for interaction id : {} tenant id : {} "
                     + forwardRIHR.getName()
@@ -186,13 +146,13 @@ public class Hl7Service {
         interactionId, tenantId);
     }
 
-    private void registerStateHl7Accept(org.jooq.Configuration jooqCfg, String hl7Payload, String tenantId,
+    private void registerStateHl7Accept(org.jooq.Configuration jooqCfg, String hl7Payload ,String hl7FHIRJson, String tenantId,
             String interactionId,
             String healthCheck, HttpServletRequest request, HttpServletResponse response) throws IOException {
         LOG.info("REGISTER State HL7 ACCEPT : BEGIN for interaction id :  {} tenant id : {}",
                 interactionId, tenantId);
         final var forwardedAt = OffsetDateTime.now();
-        final var initRIHR = new RegisterInteractionHttpRequestAll();
+        final var initRIHR = new RegisterInteractionHttpRequest();
         try {
             initRIHR.setInteractionId(interactionId);
             initRIHR.setInteractionKey(request.getRequestURI());
@@ -200,21 +160,23 @@ public class Hl7Service {
                     Map.of("nature", "Original HL7 Payload", "tenant_id",
                             tenantId)));
             initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+            initRIHR.setPayload(Configuration.objectMapper
+            .readTree(hl7FHIRJson));
             initRIHR.setPayloadText(hl7Payload);
             initRIHR.setFromState("NONE");
             initRIHR.setToState("HL7_ACCEPT");
             initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app
-            initRIHR.setCreatedBy(FHIRService.class.getName());
-            initRIHR.setProvenance("%s.registerStateHl7Parse".formatted(Hl7Service.class.getName()));
+            initRIHR.setCreatedBy(Hl7Service.class.getName());
+            initRIHR.setProvenance("%s.registerStateHl7Accept".formatted(Hl7Service.class.getName()));
             if (saveUserDataToInteractions) {
                 setUserDetails(initRIHR, request);
             } else {
                 LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
                         + saveUserDataToInteractions);
             }
-            final var execResult = initRIHR.execute(jooqCfg);
+            initRIHR.execute(jooqCfg);
         } catch (Exception e) {
-            LOG.error("ERROR:: REGISTER State HL7 Parse CALL for interaction id : {} tenant id : {}"
+            LOG.error("ERROR:: REGISTER State HL7 ACCEPT CALL for interaction id : {} tenant id : {}"
                     + initRIHR.getName() + " initRIHR error", interactionId, tenantId,
                     e);
         }
@@ -222,7 +184,7 @@ public class Hl7Service {
                 interactionId, tenantId);
     }
 
-    private void setUserDetails(RegisterInteractionHttpRequestAll rihr, HttpServletRequest request) {
+    private void setUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
         var curUserName = "API_USER";
         var gitHubLoginId = "N/A";
         final var sessionId = request.getRequestedSessionId();
@@ -251,7 +213,7 @@ public class Hl7Service {
         LOG.info("HL7Service::convertToFHIRJson BEGIN for interactionid : {} tenantId :{} ", interactionId,
                 tenantId);
         try {
-            HL7ToFHIRConverter ftv = new HL7ToFHIRConverter();
+               HL7ToFHIRConverter ftv = new HL7ToFHIRConverter();
             final var fhirJson = ftv.convert(hl7Payload);
             return fhirJson;
         } catch (Exception ex) {
