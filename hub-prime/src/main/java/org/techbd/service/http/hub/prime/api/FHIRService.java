@@ -74,7 +74,7 @@ public class FHIRService {
 
     private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
     private final AppConfig appConfig;
-    private final OrchestrationEngine engine = new OrchestrationEngine();
+    private final OrchestrationEngine engine;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
     @Value("${org.techbd.service.http.interactions.default-persist-strategy:#{null}}")
@@ -84,9 +84,10 @@ public class FHIRService {
     private boolean saveUserDataToInteractions;
 
     public FHIRService(
-            final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig) {
+            final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig,OrchestrationEngine engine) {
         this.appConfig = appConfig;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.engine = engine;
     }
 
     public Object processBundle(final @RequestBody @Nonnull String payload,
@@ -251,22 +252,6 @@ public class FHIRService {
         final var session = sessionBuilder.build();
         final var bundleAsyncInteractionId = getBundleInteractionId(request);
         engine.orchestrate(session);
-        session.getValidationResults().stream()
-                .map(OrchestrationEngine.ValidationResult::getIssues)
-                .filter(CollectionUtils::isNotEmpty)
-                .flatMap(List::stream)
-                .toList().stream()
-                .filter(issue -> (ResultSeverityEnum.FATAL.getCode()
-                        .equalsIgnoreCase(issue.getSeverity())))
-                .forEach(c -> {
-                    LOG.error(
-                            "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -BEGIN");
-                    LOG.error("##############################################\nFATAL ERROR Message"
-                            + c.getMessage()
-                            + "##############");
-                    LOG.error(
-                            "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -END");
-                });
         // TODO: if there are errors that should prevent forwarding, stop here
         // TODO: need to implement `immediate` (sync) webClient op, right now it's async
         // only
