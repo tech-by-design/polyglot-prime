@@ -6,4 +6,5 @@ lib.aide.tabular
 lib.aide.vfs
 org.techbd.orchestrate.fhir
 org.techbd.service.http.hub.prime
+org.techbd.service.http.hub.prime.ux
 org.techbd.util
