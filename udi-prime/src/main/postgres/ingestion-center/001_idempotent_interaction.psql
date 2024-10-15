@@ -2724,3 +2724,52 @@ EXCEPTION
 		v_provenance);
 END;         
 $$;
+
+/*******************************************************************************************************************************
+View for aggregating FHIR interaction statistics by tenant.
+
+This view retrieves submission, pass, and fail counts for FHIR interactions 
+for specified tenants over the last 7 days.
+
+Columns:
+- qe_name                : Tenant name (e.g., 'healthelink', 'healtheconn').
+- created_at             : Interaction date.
+- qe_fhir_submission_count: Count of submissions.
+- qe_fhir_pass_count     : Count of successful responses.
+- qe_fhir_fail_count     : Count of failed responses.
+
+Usage:
+Useful for analyzing FHIR interaction statistics over a defined period.
+*******************************************************************************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_tenant_stats_view  CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_tenant_stats_view  AS  
+    SELECT 
+        sihr.tenant_id_lower::text AS qe_name,  
+        sihr.created_at::date,
+        COUNT(CASE 
+                  WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' THEN 1 
+                  ELSE NULL 
+              END) AS qe_fhir_submission_count,        
+        COUNT(CASE 
+                  WHEN sihr.nature = 'Forwarded HTTP Response' THEN 1 
+                  ELSE NULL 
+              END) AS qe_fhir_pass_count,
+        COUNT(CASE 
+                  WHEN sihr.nature = 'Forwarded HTTP Response Error' THEN 1 
+                  ELSE NULL 
+              END) AS qe_fhir_fail_count
+    FROM 
+        techbd_udi_ingress.hub_interaction hintr
+    JOIN 
+        techbd_udi_ingress.sat_interaction_fhir_request sihr 
+    ON 
+        hintr.hub_interaction_id = sihr.hub_interaction_id
+    WHERE 
+        sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]) 
+        AND sihr.tenant_id_lower::text IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny')
+    AND sihr.created_at::date >= (CURRENT_DATE - INTERVAL '7 days')  -- Filter for last 7 days
+GROUP BY 
+    sihr.tenant_id_lower::text, sihr.created_at::date
+ORDER BY 
+    sihr.created_at::date DESC;
