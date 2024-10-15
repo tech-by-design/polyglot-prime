@@ -134,10 +134,10 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine.validate(String) makes inefficient use of keySet iterator instead of entrySet iterator</td>
+<td>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine.initializeFhirValidator() makes inefficient use of keySet iterator instead of entrySet iterator</td>
 <td>PERFORMANCE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#WMI_WRONG_MAP_ITERATOR">WMI_WRONG_MAP_ITERATOR</a></td>
-<td>272</td>
+<td>274</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
@@ -151,7 +151,7 @@
 <td>Unwritten field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession.igVersion</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UWF_UNWRITTEN_FIELD">UWF_UNWRITTEN_FIELD</a></td>
-<td>804</td>
+<td>812</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.InteractionsFilter"></a><section>
 <h2>org.techbd.service.http.InteractionsFilter</h2>
 <table class="table table-striped">
@@ -185,37 +185,37 @@
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>569</td>
+<td>554</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>439</td>
+<td>424</td>
 <td>High</td></tr>
 <tr class="b">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>144</td>
+<td>145</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>614</td>
+<td>599</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>482</td>
+<td>467</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>1247</td>
+<td>1232</td>
 <td>Medium</td></tr></table></section>
         </main>
       </div>
