@@ -1,4 +1,4 @@
-
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_http_request(text);
 CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_register_interaction_http_request(schema_name text DEFAULT 'techbd_udi_ingress'::text)
  RETURNS SETOF text
  LANGUAGE plpgsql
@@ -21,6 +21,7 @@ DECLARE
     v_hub_upsert_behavior boolean;
     v_hub_diagnostic_row techbd_udi_ingress.hub_diagnostic%ROWTYPE;
    	function_exists boolean;
+    v_payload_text TEXT; 
 BEGIN
     
     v_interaction_id            := 'b41ccd27-9a4f-5cc8-9c5d-b55242d90fb0';
@@ -36,6 +37,8 @@ BEGIN
     v_provenance                := 'org.techbd.service.http.InteractionsFilter.doFilterInternal';
     v_hub_upsert_behavior       := TRUE;
     v_rule_namespace            := NULL;
+    v_payload_text				:= 'MSH|^~\&|SendingApp1|SendingFac1|ReceivingApp1|ReceivingFac|2023100412||ADT^A01|124445678|P|2.4||||
+PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Main St^^Anytown^USA^12345||(555)555-5555||S||123456789|987654^NC||||2135-2^Hispanic or Latino';
 
     -- Check if the table 'pgtap_fixtures_json' exists
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
@@ -51,10 +54,9 @@ BEGIN
    RETURN NEXT has_function(
         schema_name,
         'register_interaction_http_request',
-        ARRAY['text', 'text', 'jsonb', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean'],
+        ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean'],
         'Function register_interaction_http_request exists'
     );
-   
     RETURN NEXT has_function(
         schema_name,
         'register_issue',
@@ -62,10 +64,12 @@ BEGIN
         'Function register_issue exists'
     );
    
+    /*Testing with FHIR bundle*/
     PERFORM techbd_udi_ingress.register_interaction_http_request(
         interaction_id           => v_interaction_id,
         interaction_key          => v_interaction_key,
         payload                  => v_payload,
+        payload_text             => NULL,
         rule_namespace           => v_rule_namespace,
         elaboration              => v_elaboration,
         nature                   => v_nature,
@@ -111,6 +115,7 @@ BEGIN
         interaction_id           => v_interaction_id,
         interaction_key          => v_interaction_key,
         payload                  => v_payload,
+        payload_text             => NULL,
         rule_namespace           => v_rule_namespace,
         elaboration              => v_elaboration,
         nature                   => v_nature,
