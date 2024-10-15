@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>239</td>
-<td>12</td>
+<td>253</td>
+<td>13</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -98,9 +98,12 @@
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</a></td>
 <td>1</td></tr>
 <tr class="b">
+<td><a href="#org.techbd.service.converters.shinny.BaseConverter">org.techbd.service.converters.shinny.BaseConverter</a></td>
+<td>1</td></tr>
+<tr class="a">
 <td><a href="#org.techbd.service.http.InteractionsFilter">org.techbd.service.http.InteractionsFilter</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.api.FHIRService">org.techbd.service.http.hub.prime.api.FHIRService</a></td>
 <td>6</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
@@ -152,7 +155,21 @@
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UWF_UNWRITTEN_FIELD">UWF_UNWRITTEN_FIELD</a></td>
 <td>812</td>
-<td>Medium</td></tr></table></section><a name="org.techbd.service.http.InteractionsFilter"></a><section>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.BaseConverter"></a><section>
+<h2>org.techbd.service.converters.shinny.BaseConverter</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>org.techbd.service.converters.shinny.BaseConverter.PROFILE_MAP isn't final but should be</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_SHOULD_BE_FINAL">MS_SHOULD_BE_FINAL</a></td>
+<td>13</td>
+<td>High</td></tr></table></section><a name="org.techbd.service.http.InteractionsFilter"></a><section>
 <h2>org.techbd.service.http.InteractionsFilter</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -165,13 +182,13 @@
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.InteractionsFilter.doFilterInternal(HttpServletRequest, HttpServletResponse, FilterChain)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>256</td>
+<td>259</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Method org.techbd.service.http.InteractionsFilter.setActiveRequestEnc(HttpServletRequest, Interactions$RequestEncountered) seems to be useless</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UC_USELESS_VOID_METHOD">UC_USELESS_VOID_METHOD</a></td>
-<td>122</td>
+<td>123</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.api.FHIRService"></a><section>
 <h2>org.techbd.service.http.hub.prime.api.FHIRService</h2>
 <table class="table table-striped">
@@ -185,37 +202,37 @@
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>554</td>
+<td>562</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>424</td>
+<td>432</td>
 <td>High</td></tr>
 <tr class="b">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>145</td>
+<td>150</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>599</td>
+<td>607</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>467</td>
+<td>475</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>1232</td>
+<td>1240</td>
 <td>Medium</td></tr></table></section>
         </main>
       </div>

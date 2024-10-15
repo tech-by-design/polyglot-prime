@@ -71,6 +71,150 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
+<td style="text-align: left;">org/techbd/service/http/Interactions.java</td>
+<td>100</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/Interactions.java</td>
+<td>127</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>UUID.randomUUID(),
+                    new Tenant(request),
+                    request.getMethod(),
+                    request.getRequestURL().toString(),
+                    request.getRequestURL()
+                            .append(request.getQueryString() != null ? &quot;?&quot; + request.getQueryString() : &quot;&quot;).toString(),
+                    request.getRequestURI(),
+                    request.getRemoteAddr(),
+                    request.getHeader(&quot;User-Agent&quot;),
+                    Instant.now(),
+                    StreamSupport
+                            .stream(((Iterable&lt;String&gt;) () -&gt; request.getHeaderNames().asIterator()).spliterator(),
+                                    false)
+                            .map(headerName -&gt; new Header(headerName, request.getHeader(headerName)))
+                            .collect(Collectors.toList()),
+                    request.getParameterMap(),
+                    request.getContentType(), // Content type
+                    request.getQueryString(), // Query string
+                    request.getProtocol(), // Protocol
+                    request.getSession(false),
+                    Arrays.asList(request.getCookies() != null ? request.getCookies() : new Cookie[0]),
+                    body // Request body
+            );
+        }
+
+        public RequestEncountered(HttpServletRequest request, byte[] body,UUID requestId) throws IOException {</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/controller/http/hub/prime/api/Hl7Controller.java</td>
+<td>43</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
+<td>92</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>@Operation(summary = &quot;Endpoint to to validate, store, and then forward a HL7 v2 payload to SHIN-NY.&quot;, description = &quot;Endpoint to to validate, store, and then forward a HL7 v2 payload to SHIN-NY.&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Request processed successfully&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
+                    +
+                    &quot;  \&quot;OperationOutcome\&quot;: {\n&quot; +
+                    &quot;    \&quot;validationResults\&quot;: [\n&quot; +
+                    &quot;      {\n&quot; +
+                    &quot;        \&quot;operationOutcome\&quot;: {\n&quot; +
+                    &quot;          \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;,\n&quot; +
+                    &quot;          \&quot;issue\&quot;: [\n&quot; +
+                    &quot;            {\n&quot; +
+                    &quot;              \&quot;severity\&quot;: \&quot;error\&quot;,\n&quot; +
+                    &quot;              \&quot;diagnostics\&quot;: \&quot;Error Message\&quot;,\n&quot; +
+                    &quot;              \&quot;location\&quot;: [\n&quot; +
+                    &quot;                \&quot;Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\&quot;,\n&quot;
+                    +
+                    &quot;                \&quot;Line[1] Col[5190]\&quot;\n&quot; +
+                    &quot;              ]\n&quot; +
+                    &quot;            }\n&quot; +
+                    &quot;          ]\n&quot; +
+                    &quot;        }\n&quot; +
+                    &quot;      }\n&quot; +
+                    &quot;    ],\n&quot; +
+                    &quot;    \&quot;techByDesignDisposition\&quot;: [\n&quot; +
+                    &quot;      {\n&quot; +
+                    &quot;        \&quot;action\&quot;: \&quot;reject\&quot;,\n&quot; +
+                    &quot;        \&quot;actionPayload\&quot;: {\n&quot; +
+                    &quot;          \&quot;message\&quot;: \&quot;reject message\&quot;,\n&quot; +
+                    &quot;          \&quot;description\&quot;: \&quot;rule name\&quot;\n&quot; +
+                    &quot;        }\n&quot; +
+                    &quot;      }\n&quot; +
+                    &quot;    ],\n&quot; +
+                    &quot;    \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;\n&quot; +
+                    &quot;  }\n&quot; +
+                    &quot;}&quot;))),
+
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Validation Error: Missing or invalid parameter&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = {
+                    @ExampleObject(value = &quot;{\n&quot; +
+                            &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                            &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request body is missing.\&quot;\n&quot;
+                            +
+                            &quot;}&quot;),
+                    @ExampleObject(value = &quot;{\n&quot; +
+                            &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                            &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\&quot;\n&quot;
+                            +
+                            &quot;}&quot;)
+            })),
+            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;An unexpected system error occurred&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
+                    +
+                    &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                    &quot;  \&quot;message\&quot;: \&quot;An unexpected system error occurred.\&quot;\n&quot; +
+                    &quot;}&quot;)))
+    })
+    @ResponseBody
+    @Async
+    public Object validateHl7MessageAndForward(</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>203</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
+<td>185</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>}
+
+        private void setUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
+                var curUserName = &quot;API_USER&quot;;
+                var gitHubLoginId = &quot;N/A&quot;;
+                final var sessionId = request.getRequestedSessionId();
+                var userRole = &quot;API_ROLE&quot;;
+                final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
+                if (curUser.isPresent()) {
+                        final var ghUser = curUser.get().ghUser();
+                        if (ghUser != null) {
+                                curUserName = Optional.ofNullable(ghUser.name()).orElse(&quot;NO_DATA&quot;);
+                                gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse(&quot;NO_DATA&quot;);
+                                userRole = curUser.get().principal().getAuthorities().stream()
+                                                .map(GrantedAuthority::getAuthority)
+                                                .collect(Collectors.joining(&quot;,&quot;));
+                                LOG.info(&quot;userRole: &quot; + userRole);
+                                userRole = &quot;DEFAULT_ROLE&quot;; // TODO -set user role
+                        }
+                }
+                rihr.setUserName(curUserName);
+                rihr.setUserId(gitHubLoginId);
+                rihr.setUserSession(sessionId);
+                rihr.setUserRole(userRole);
+        }</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/health/BundleHealthIndicator.java</td>
 <td>34</td></tr>
 <tr class="a">
@@ -101,45 +245,48 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>1078</td></tr>
+<td>1086</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>1118</td></tr>
+<td>1126</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>LOG.info(&quot;REGISTER State Complete : BEGIN for interaction id :  {} tenant id : {}&quot;,
-                bundleAsyncInteractionId, tenantId);
-        final var forwardRIHR = new RegisterInteractionHttpRequest();
-        try {
-            forwardRIHR.setInteractionId(bundleAsyncInteractionId);
-            forwardRIHR.setInteractionKey(requestURI);
-            forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                    Map.of(&quot;nature&quot;, &quot;Forwarded HTTP Response&quot;,
-                            &quot;tenant_id&quot;, tenantId)));
-            forwardRIHR.setContentType(
-                    MimeTypeUtils.APPLICATION_JSON_VALUE);
-            try {
-                // expecting a JSON payload from the server
-                forwardRIHR.setPayload(Configuration.objectMapper
-                        .readTree(response));
-            } catch (JsonProcessingException jpe) {
-                // in case the payload is not JSON store the string
-                forwardRIHR.setPayload((JsonNode) Configuration.objectMapper
-                        .valueToTree(response));
-            }
-            forwardRIHR.setFromState(&quot;FORWARD&quot;);
-            forwardRIHR.setToState(&quot;COMPLETE&quot;);</pre></td></tr></table>
+                                bundleAsyncInteractionId, tenantId);
+                final var forwardRIHR = new RegisterInteractionHttpRequest();
+                try {
+                        forwardRIHR.setInteractionId(bundleAsyncInteractionId);
+                        forwardRIHR.setInteractionKey(requestURI);
+                        forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
+                                        Map.of(&quot;nature&quot;, &quot;Forwarded HTTP Response&quot;,
+                                                        &quot;tenant_id&quot;, tenantId)));
+                        forwardRIHR.setContentType(
+                                        MimeTypeUtils.APPLICATION_JSON_VALUE);
+                        try {
+                                // expecting a JSON payload from the server
+                                forwardRIHR.setPayload(Configuration.objectMapper
+                                                .readTree(response));
+                        } catch (JsonProcessingException jpe) {
+                                // in case the payload is not JSON store the string
+                                forwardRIHR.setPayload((JsonNode) Configuration.objectMapper
+                                                .valueToTree(response));
+                        }
+                        forwardRIHR.setFromState(&quot;FORWARD&quot;);
+                        forwardRIHR.setToState(&quot;COMPLETE&quot;);</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/InteractionsFilter.java</td>
-<td>234</td></tr>
+<td>237</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>205</td></tr>
+<td>213</td></tr>
 <tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
+<td>195</td></tr>
+<tr class="a">
 <td colspan="2" style="text-align: left;">
 <pre>if (null != ghUser) {
                             curUserName = Optional.ofNullable(ghUser.name()).orElse(&quot;NO_DATA&quot;);
@@ -200,12 +347,15 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
-<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
-<td>124</td></tr>
+<td style="text-align: left;">org/techbd/controller/http/hub/prime/api/Hl7Controller.java</td>
+<td>75</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
-<td>203</td></tr>
+<td>124</td></tr>
 <tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
+<td>203</td></tr>
+<tr class="a">
 <td colspan="2" style="text-align: left;">
 <pre>&quot;    \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;\n&quot; +
                     &quot;  }\n&quot; +
