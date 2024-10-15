@@ -11,7 +11,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -39,6 +41,8 @@ public class TabularRowsController {
 
     private static final Logger LOG = LoggerFactory.getLogger(TabularRowsController.class);
 
+    private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
+
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
     public TabularRowsController(final UdiPrimeJpaConfig udiPrimeJpaConfig) {
@@ -51,8 +55,8 @@ public class TabularRowsController {
             Headers allow the client to include generated SQL in the response or error response for debugging or auditing purposes.
             If the schema name is omitted, the default schema will be used.
             """)
-    @PostMapping(value = { "/api/ux/tabular/jooq/{masterTableNameOrViewName}.json",
-            "/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}.json" }, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = {"/api/ux/tabular/jooq/{masterTableNameOrViewName}.json",
+        "/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}.json"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public TabularRowsResponse<?> tabularRows(
             @Parameter(description = "Mandatory path variable to mention schema name.", required = true) @PathVariable(required = false) String schemaName,
@@ -61,6 +65,10 @@ public class TabularRowsController {
             @Parameter(description = "Header to mention whether the generated SQL to be included in the response.", required = false) @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false, defaultValue = "false") boolean includeGeneratedSqlInResp,
             @Parameter(description = "Header to mention whether the generated SQL to be included in the error response. This will be taken <code>true</code> by default.", required = false) @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
 
+        if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(masterTableNameOrViewName).matches()) {
+            throw new IllegalArgumentException("Invalid schema or table name.");
+        }
         return new JooqRowsSupplier.Builder()
                 .withRequest(payload)
                 .withTable(Tables.class, schemaName, masterTableNameOrViewName)
@@ -84,12 +92,17 @@ public class TabularRowsController {
             @Parameter(description = "Mandatory path variable to mention the column name.", required = true) final @PathVariable String columnName,
             @Parameter(description = "Mandatory path variable to mention the column value.", required = true) final @PathVariable String columnValue) {
 
+        if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(masterTableNameOrViewName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName).matches()) {
+            throw new IllegalArgumentException("Invalid schema or table or column name.");
+        }
         // Fetch the result using the dynamically determined table and column; if
         // jOOQ-generated types were found, automatic column value mapping will occur
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
         List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(typableTable.column(columnName).eq(columnValue))
+                .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue)))
                 .fetch()
                 .intoMaps();
 
@@ -125,14 +138,20 @@ public class TabularRowsController {
             @Parameter(description = "Mandatory path variable to mention the column2 name.", required = true) final @PathVariable String columnName2,
             @Parameter(description = "Mandatory path variable to mention the column2 value.", required = true) final @PathVariable String columnValue2) {
 
+        if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(masterTableNameOrViewName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName2).matches()) {
+            throw new IllegalArgumentException("Invalid schema or table or column name.");
+        }
         String columnValue2LikePattern = "%" + columnValue2 + "%";
 
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
 
         List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(typableTable.column(columnName).eq(columnValue)
-                        .and(typableTable.column(columnName2).like(columnValue2LikePattern)))
+                .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue))
+                        .and(DSL.field(typableTable.column(columnName2)).like(DSL.val(columnValue2LikePattern))))
                 .fetch()
                 .intoMaps();
 
@@ -174,6 +193,13 @@ public class TabularRowsController {
             @Parameter(description = "Path variable to mention the column 3 name.", required = true) final @PathVariable String columnName3,
             @Parameter(description = "Path variable to mention the column 3 value.", required = true) final @PathVariable String columnValue3) {
 
+        if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(masterTableNameOrViewName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName1).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName2).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName3).matches()) {
+            throw new IllegalArgumentException("Invalid schema or table or column name.");
+        }
         // Decode URL-encoded values
         String decodedColumnValue1 = URLDecoder.decode(columnValue1, StandardCharsets.UTF_8);
         String decodedColumnValue2 = URLDecoder.decode(columnValue2, StandardCharsets.UTF_8);
@@ -184,9 +210,9 @@ public class TabularRowsController {
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
         List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(typableTable.column(columnName1).eq(decodedColumnValue1)
-                        .and(typableTable.column(columnName2).eq(decodedColumnValue2))
-                        .and(typableTable.column(columnName3).eq(decodedColumnValue3)))
+                .where(DSL.field(typableTable.column(columnName1)).eq(DSL.val(decodedColumnValue1))
+                        .and(DSL.field(typableTable.column(columnName2)).eq(DSL.val(decodedColumnValue2)))
+                        .and(DSL.field(typableTable.column(columnName3)).eq(DSL.val(decodedColumnValue3))))
                 .fetch()
                 .intoMaps();
 
@@ -220,8 +246,8 @@ public class TabularRowsController {
             based on the date range.
             """)
     @GetMapping({
-            "/api/ux/tabular/jooq/{schemaName}/{viewName}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json",
-            "/api/ux/tabular/jooq/{schemaName}/{viewName}/{columnName1}/{columnValue1}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json"
+        "/api/ux/tabular/jooq/{schemaName}/{viewName}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json",
+        "/api/ux/tabular/jooq/{schemaName}/{viewName}/{columnName1}/{columnValue1}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json"
     })
     @ResponseBody
     public Object getSubmissionCountsBetweenDates(
@@ -233,7 +259,12 @@ public class TabularRowsController {
             @Parameter(description = "Path variable to mention the start date. Expected format is 'MM-dd-yyyy HH:mm:ss'", required = false) final @PathVariable String startDateTimeValue,
             @Parameter(description = "Path variable to mention the end date.. Expected format is 'MM-dd-yyyy HH:mm:ss'", required = false) final @PathVariable String endDateTimeValue)
             throws UnsupportedEncodingException {
-
+                if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(viewName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName1).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(dateField).matches()) {
+            throw new IllegalArgumentException("Invalid schema or table or column name.");
+        }
         // URL decode the date-time values to handle spaces encoded as %20 or +
         String decodedStartDate = URLDecoder.decode(startDateTimeValue, "UTF-8");
         String decodedEndDate = URLDecoder.decode(endDateTimeValue, "UTF-8");
@@ -250,11 +281,11 @@ public class TabularRowsController {
 
         // Build the query
         var query = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(typableTable.column(dateField).between(startDateTime, endDateTime));
+                .where(DSL.field(typableTable.column(dateField)).between(DSL.val(startDateTime), DSL.val(endDateTime)));
 
         // If columnName1 and columnValue1 are provided, add them to the query
         if (columnName1 != null && !columnName1.isEmpty() && columnValue1 != null && !columnValue1.isEmpty()) {
-            query = query.and(typableTable.column(columnName1).eq(columnValue1));
+            query = query.and(DSL.field(typableTable.column(columnName1)).eq(DSL.val(columnValue1)));
         }
 
         // Execute the query and return the results

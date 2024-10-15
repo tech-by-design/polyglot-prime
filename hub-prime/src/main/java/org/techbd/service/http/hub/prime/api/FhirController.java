@@ -57,8 +57,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class FhirController {
 
     private static final Logger LOG = LoggerFactory.getLogger(FhirController.class.getName());
-
-    private final OrchestrationEngine engine = new OrchestrationEngine();
+    private final OrchestrationEngine engine;
     private final AppConfig appConfig;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private final FHIRService fhirService;
@@ -67,11 +66,13 @@ public class FhirController {
             final AppConfig appConfig,
             final UdiPrimeJpaConfig udiPrimeJpaConfig,
             final FHIRService fhirService,
+            final OrchestrationEngine orchestrationEngine,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
         this.appConfig = appConfig;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         this.fhirService = fhirService;
+        this.engine = orchestrationEngine;
     }
 
     @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -253,20 +254,6 @@ public class FhirController {
                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
         final var session = sessionBuilder.build();
         engine.orchestrate(session);
-        session.getValidationResults().stream()
-                .map(OrchestrationEngine.ValidationResult::getIssues)
-                .filter(CollectionUtils::isNotEmpty)
-                .flatMap(List::stream)
-                .toList().stream()
-                .filter(issue -> (ResultSeverityEnum.FATAL.getCode()
-                        .equalsIgnoreCase(issue.getSeverity())))
-                .forEach(c -> {
-                    LOG.error("\n\n**********************FATAL ERRORR********************** -BEGIN");
-                    LOG.error("##############################################\nFATAL ERROR Message"
-                            + c.getMessage()
-                            + "##############");
-                    LOG.error("\n\n**********************FATAL ERRORR********************** -END");
-                });
         final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
                 session.getValidationResults(), "device",
                 session.getDevice()));

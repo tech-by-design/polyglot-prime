@@ -74,10 +74,10 @@ import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerExcept
 @Service
 public class FHIRService {
 
-        private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
-        private final AppConfig appConfig;
-        private final OrchestrationEngine engine = new OrchestrationEngine();
-        private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+    private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
+    private final AppConfig appConfig;
+    private final OrchestrationEngine engine;
+    private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
         @Value("${org.techbd.service.http.interactions.default-persist-strategy:#{null}}")
         private String defaultPersistStrategy;
@@ -85,11 +85,12 @@ public class FHIRService {
         @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
         private boolean saveUserDataToInteractions;
 
-        public FHIRService(
-                        final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig) {
-                this.appConfig = appConfig;
-                this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        }
+    public FHIRService(
+            final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig,OrchestrationEngine engine) {
+        this.appConfig = appConfig;
+        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.engine = engine;
+    }
 
         public Object processBundle(final @RequestBody @Nonnull String payload,
                         String tenantId,
@@ -241,53 +242,37 @@ public class FHIRService {
                 request.setAttribute("activeHttpInteraction", rre);
         }
 
-        private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
-                        String uaValidationStrategyJson,
-                        boolean includeRequestInOutcome) {
-                LOG.info("Getting structure definition Urls from config - Before: ");
-                final var igPackages = appConfig.getIgPackages();
-                final var igVersion = appConfig.getIgVersion();
-                final var sessionBuilder = engine.session()
-                                .onDevice(Device.createDefault())
-                                .withPayloads(List.of(payload))
-                                .withFhirProfileUrl(fhirProfileUrl)
-                                .withFhirIGPackages(igPackages)
-                                .withIgVersion(igVersion)
-                                .addHapiValidationEngine() // by default
-                                // clearExisting is set to true so engines can be fully supplied through header
-                                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-                final var session = sessionBuilder.build();
-                final var bundleAsyncInteractionId = getBundleInteractionId(request);
-                engine.orchestrate(session);
-                session.getValidationResults().stream()
-                                .map(OrchestrationEngine.ValidationResult::getIssues)
-                                .filter(CollectionUtils::isNotEmpty)
-                                .flatMap(List::stream)
-                                .toList().stream()
-                                .filter(issue -> (ResultSeverityEnum.FATAL.getCode()
-                                                .equalsIgnoreCase(issue.getSeverity())))
-                                .forEach(c -> {
-                                        LOG.error(
-                                                        "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -BEGIN");
-                                        LOG.error("##############################################\nFATAL ERROR Message"
-                                                        + c.getMessage()
-                                                        + "##############");
-                                        LOG.error(
-                                                        "\n\n**********************FHIRController:Bundle ::  FATAL ERRORR********************** -END");
-                                });
-                // TODO: if there are errors that should prevent forwarding, stop here
-                // TODO: need to implement `immediate` (sync) webClient op, right now it's async
-                // only
-                // immediateResult is what's returned to the user while async operation
-                // continues
-                final var immediateResult = new HashMap<>(Map.of(
-                                "resourceType", "OperationOutcome",
-                                "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
-                                "isAsync", true,
-                                "validationResults", session.getValidationResults(),
-                                "statusUrl",
-                                getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
-                                "device", session.getDevice()));
+    private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
+            String uaValidationStrategyJson,
+            boolean includeRequestInOutcome) {
+        LOG.info("Getting structure definition Urls from config - Before: ");
+        final var igPackages = appConfig.getIgPackages();
+        final var igVersion = appConfig.getIgVersion();
+        final var sessionBuilder = engine.session()
+                .onDevice(Device.createDefault())
+                .withPayloads(List.of(payload))
+                .withFhirProfileUrl(fhirProfileUrl)
+                .withFhirIGPackages(igPackages)
+                .withIgVersion(igVersion)
+                .addHapiValidationEngine() // by default
+                // clearExisting is set to true so engines can be fully supplied through header
+                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+        final var session = sessionBuilder.build();
+        final var bundleAsyncInteractionId = getBundleInteractionId(request);
+        engine.orchestrate(session);
+        // TODO: if there are errors that should prevent forwarding, stop here
+        // TODO: need to implement `immediate` (sync) webClient op, right now it's async
+        // only
+        // immediateResult is what's returned to the user while async operation
+        // continues
+        final var immediateResult = new HashMap<>(Map.of(
+                "resourceType", "OperationOutcome",
+                "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
+                "isAsync", true,
+                "validationResults", session.getValidationResults(),
+                "statusUrl",
+                getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
+                "device", session.getDevice()));
 
                 if (uaValidationStrategyJson != null) {
                         immediateResult.put("uaValidationStrategy",

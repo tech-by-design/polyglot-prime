@@ -178,32 +178,46 @@ AS SELECT tenant_id,
    FROM techbd_udi_ingress.sat_interaction_fhir_session_diagnostic intr_diagno;
 
 /*******************************************************************************************************************************
- * Procedure to register an HTTP interaction, handling potential unique constraint violations
+ * Function to register an HTTP interaction request, handling potential unique constraint violations
  * and logging exceptions when necessary.
  *
- * @param interaction_id TEXT - The unique ID for the interaction.
- * @param interaction_key TEXT - A key to identify the interaction.
- * @param payload JSONB - The JSON payload associated with the interaction.
- * @param elaboration JSONB (nullable) - Additional JSON data elaborating the interaction. Default is NULL.
- * @param nature JSONB (nullable) - The nature of the HTTP interaction (including tenant, etc.). Default is NULL.
+ * Parameters:
+ * @param interaction_id TEXT - The unique identifier of the interaction.
+ * @param interaction_key TEXT - The key to identify the interaction.
+ * @param payload JSONB (nullable) - The JSON payload associated with the interaction. Default is NULL.
+ * @param payload_text TEXT (nullable) - The text version of the payload. Default is NULL.
+ * @param rule_namespace TEXT (nullable) - The namespace for JSON action rules. Default is NULL.
+ * @param elaboration JSONB (nullable) - Additional JSON data to elaborate on the interaction. Default is NULL.
+ * @param nature JSONB (nullable) - Describes the nature of the HTTP interaction, including tenant details. Default is NULL.
  * @param content_type TEXT (nullable) - The content type of the HTTP interaction. Default is NULL.
- * @param from_state TEXT (nullable) - The initial state before the HTTP interaction. Default is NULL.
+ * @param from_state TEXT (nullable) - The state before the HTTP interaction. Default is NULL.
  * @param to_state TEXT (nullable) - The state after the HTTP interaction. Default is NULL.
  * @param state_transition_reason TEXT (nullable) - The reason for the state transition. Default is NULL.
  * @param user_id TEXT (nullable) - The ID of the user involved in the interaction. Default is NULL.
  * @param user_name TEXT (nullable) - The name of the user involved in the interaction. Default is NULL.
- * @param user_session TEXT (nullable) - The session identifier of the user involved in the interaction. Default is NULL.
+ * @param user_session TEXT (nullable) - The session ID of the user involved in the interaction. Default is NULL.
  * @param user_role TEXT (nullable) - The role of the user involved in the interaction. Default is NULL.
- * @param created_at TIMESTAMPTZ (nullable) - The creation timestamp of the record. Defaults to the current timestamp if NULL.
- * @param created_by TEXT (nullable) - The user who created the record. Defaults to the current user if NULL.
- * @param provenance TEXT (nullable) - The provenance of the record. Defaults to 'unknown' if NULL.
- * @param hub_upsert_behavior BOOLEAN - Flag to control behavior on unique constraint violation. Default is TRUE.
- *                                      If TRUE, unique violation is not treated as an error.
- *                                      If FALSE, unique violation is treated as an error.
+ * @param created_at TIMESTAMPTZ (nullable) - The timestamp of when the interaction was created. Defaults to the current timestamp.
+ * @param created_by TEXT (nullable) - The user who created the interaction. Defaults to the current user.
+ * @param provenance TEXT (nullable) - Metadata providing the provenance or origin of the interaction. Defaults to 'unknown'.
+ * @param hub_upsert_behavior BOOLEAN - Controls whether unique constraint violations should be treated as an error (FALSE) or ignored (TRUE). Defaults to TRUE.
+ *
+ * Returns:
+ * @return JSONB - The JSON result of the operation or NULL if the interaction registration fails.
+ *
+ * Description:
+ * This function handles the upserting (inserting or updating) of an HTTP interaction request into the system. It first attempts to insert
+ * the interaction into the 'hub_interaction' table and handles any unique constraint violations based on the `hub_upsert_behavior`.
+ * It then proceeds to insert the interaction into the 'sat_interaction_http_request' table, extracting relevant details from the `nature` parameter.
+ * Depending on the `interaction_key` and `nature`, the function conditionally upserts additional data into satellite tables for FHIR and HL7 requests.
+ * Recursive function calls are used to further process FHIR bundles and perform additional validation. 
+ * If an error occurs during any step, the function logs the error using the `register_issue` procedure and returns NULL.
  *******************************************************************************************************************************/
-DROP PROCEDURE IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
+
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
- CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true)
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamp with time zone, text, text, boolean);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb DEFAULT NULL::jsonb, payload_text TEXT DEFAULT NULL::text, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -215,8 +229,8 @@ DECLARE
     v_pg_hint 			TEXT;
     v_pg_context 		TEXT;
     v_created_at 		TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
-    v_created_by 		TEXT := COALESCE(created_by, current_user);
-    v_provenance 		TEXT := COALESCE(provenance, 'unknown');
+    v_created_by 		TEXT 		:= COALESCE(created_by, current_user);
+    v_provenance 		TEXT 		:= COALESCE(provenance, 'unknown');
     v_exception_id 		TEXT;
    	v_nature_denorm 	TEXT;
    	v_tenant_id_denorm 	TEXT;
@@ -229,7 +243,7 @@ DECLARE
    	v_disposition_json			JSONB := NULL;
    	v_payload					JSONB := NULL;
    
-BEGIN
+BEGIN 
     -- Attempt to insert into hub_interaction
     BEGIN	   	    
         INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
@@ -252,7 +266,7 @@ BEGIN
                 );
             END IF;  
     END;
-
+      
     -- Attempt to insert into sat_interaction_http_request
     BEGIN
   
@@ -261,17 +275,21 @@ BEGIN
 	   	/*INSERT INTO techbd_udi_assurance.pgtap_fixtures_json("name","jsonb")
 	   	values(gen_random_uuid()::TEXT, register_interaction_http_request.payload);*/
 	  
+	    -- The insertion to sat_interaction_http_request table needs only once. Need to be corrected later.
         INSERT INTO techbd_udi_ingress.sat_interaction_http_request (
-            sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, from_state, 
+            sat_interaction_http_request_id, hub_interaction_id, nature, content_type, payload, payload_text, from_state, 
             to_state, state_transition_reason, elaboration, created_at, created_by, provenance, nature_denorm, tenant_id_denorm
         )
         VALUES (
-            gen_random_uuid()::text, register_interaction_http_request.interaction_id, nature, content_type, payload, from_state, to_state, 
+            gen_random_uuid()::text, register_interaction_http_request.interaction_id, nature, content_type, payload, payload_text, from_state, to_state, 
             state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
        
+       
        	--1) Call the function with the defined parameters to upsert user info
-       	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN     		       	
+       	IF((v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND register_interaction_http_request.interaction_key NOT IN ('/Hl7/v2')) /*fhir bundle*/
+       	   OR (v_nature_denorm = 'Original HL7 Payload'	AND register_interaction_http_request.interaction_key = '/Hl7/v2')   /*hl7*/	
+       	  ) THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 	        register_interaction_http_request.interaction_id, 
 	        register_interaction_http_request.interaction_key, 
@@ -286,11 +304,14 @@ BEGIN
 	        v_created_at, 
 	        v_created_by, 
 	        v_provenance
-	       );  	
+	       );  
+	      
 	    END IF;
-	     --2) Call the function with the defined parameters to upsert interaction FHIR request info.
-	   	IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle') THEN
-
+	   
+	    --2) Call the function with the defined parameters to upsert interaction FHIR request info.
+	   	IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle', '/Hl7/v2')
+	   		AND v_nature_denorm != 'Original HL7 Payload' THEN
+	   		
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
 	        register_interaction_http_request.interaction_id,
 	        v_tenant_id_denorm,
@@ -304,11 +325,29 @@ BEGIN
 	        v_created_by,
 	        v_provenance,
 	      	register_interaction_http_request.elaboration
-	       );	 
+	       );	
+	      --2) Call the function with the defined parameters to upsert interaction HL7 request info.
+	    ELSIF register_interaction_http_request.interaction_key = '/Hl7/v2' AND v_nature_denorm = 'Original HL7 Payload' THEN
+	   		PERFORM techbd_udi_ingress.sat_interaction_hl7_request_upserted(
+	        register_interaction_http_request.interaction_id,
+	        v_tenant_id_denorm,
+	        register_interaction_http_request.interaction_key,
+	        v_nature_denorm,
+	        register_interaction_http_request.from_state,
+	        register_interaction_http_request.to_state,
+	        register_interaction_http_request.payload,
+	        register_interaction_http_request.state_transition_reason,
+	        v_created_at,
+	        v_created_by,
+	        v_provenance,
+	        register_interaction_http_request.elaboration
+	       );	
 	    END IF;	
+	   
 		/*==============================================================================================================================*/
 		--RECURSIVE FUNCTION CALL
-		IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/') THEN  
+	   	/*----------------------------- FHIR Bundle inserts into sat_interaction_http_request ----------------------*/
+		IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Hl7/v2') THEN  
 			IF (v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN	--Check previous nature				
 				v_from_state 	:= 'NONE';
 				v_to_state 		:= 'ACCEPT_FHIR_BUNDLE';
@@ -317,24 +356,25 @@ BEGIN
 				   
 				-- Recursive call with adjusted parameters
 				v_return := techbd_udi_ingress.register_interaction_http_request(
-				register_interaction_http_request.interaction_id, 
-				register_interaction_http_request.interaction_key,  
-				v_payload,--register_interaction_http_request.payload,  -- Adjust this if needed
-				register_interaction_http_request.rule_namespace,
-				register_interaction_http_request.elaboration, 
-				v_nature,   -- Adjust this if needed
-				register_interaction_http_request.content_type, 
-				v_from_state, 
-				v_to_state, 
-				state_transition_reason, 
-				register_interaction_http_request.user_id, 
-				register_interaction_http_request.user_name, 
-				register_interaction_http_request.user_session, 
-				register_interaction_http_request.user_role, 
-				register_interaction_http_request.created_at, 
-				register_interaction_http_request.created_by, 
-				register_interaction_http_request.provenance, 
-				register_interaction_http_request.hub_upsert_behavior
+					register_interaction_http_request.interaction_id, 
+					register_interaction_http_request.interaction_key,  
+					v_payload,--register_interaction_http_request.payload,  -- Adjust this if needed
+					register_interaction_http_request.payload_text, -- payload_text IS NULL FOR FHIR
+					register_interaction_http_request.rule_namespace,
+					register_interaction_http_request.elaboration, 
+					v_nature,   -- Adjust this if needed
+					register_interaction_http_request.content_type, 
+					v_from_state, 
+					v_to_state, 
+					state_transition_reason, 
+					register_interaction_http_request.user_id, 
+					register_interaction_http_request.user_name, 
+					register_interaction_http_request.user_session, 
+					register_interaction_http_request.user_role, 
+					register_interaction_http_request.created_at, 
+					register_interaction_http_request.created_by, 
+					register_interaction_http_request.provenance, 
+					register_interaction_http_request.hub_upsert_behavior
 			    );
 			ELSEIF (v_nature_denorm = 'Original FHIR Payload') THEN	
 				v_from_state 	:= 'ACCEPT_FHIR_BUNDLE';
@@ -350,34 +390,37 @@ BEGIN
 				
 				--Function call to validate with Json Action Rule
 				v_disposition_json := techbd_udi_ingress.process_json_action_rules(
-				v_payload,
-				register_interaction_http_request.rule_namespace,
-				register_interaction_http_request.interaction_key
+					v_payload,
+					register_interaction_http_request.rule_namespace,
+					register_interaction_http_request.interaction_key
 				);
 			
-				v_disposition_json := v_disposition_json-> 'response'->'responseBody';		
+				v_disposition_json := v_disposition_json-> 'response'->'responseBody';
+			
 					
 				-- Recursive call with adjusted parameters
 				v_return := techbd_udi_ingress.register_interaction_http_request(
-				register_interaction_http_request.interaction_id, 
-				register_interaction_http_request.interaction_key,  
-				v_disposition_json, -- Adjust this if needed
-				register_interaction_http_request.rule_namespace,
-				register_interaction_http_request.elaboration, 
-				v_nature,   -- Adjust this if needed
-			    register_interaction_http_request.content_type, 
-			    v_from_state, 
-			    v_to_state, 
-			    state_transition_reason, 
-			    register_interaction_http_request.user_id, 
-			    register_interaction_http_request.user_name, 
-			    register_interaction_http_request.user_session, 
-			    register_interaction_http_request.user_role, 
-			    register_interaction_http_request.created_at, 
-			    register_interaction_http_request.created_by, 
-			    register_interaction_http_request.provenance, 
-			    register_interaction_http_request.hub_upsert_behavior
-			    );	   
+					register_interaction_http_request.interaction_id, 
+					register_interaction_http_request.interaction_key,  
+					v_disposition_json, -- Adjust this if needed
+					register_interaction_http_request.payload_text, -- payload_text IS NULL FOR FHIR
+					register_interaction_http_request.rule_namespace,
+					register_interaction_http_request.elaboration, 
+					v_nature,   -- Adjust this if needed
+				    register_interaction_http_request.content_type, 
+				    v_from_state, 
+				    v_to_state, 
+				    state_transition_reason, 
+				    register_interaction_http_request.user_id, 
+				    register_interaction_http_request.user_name, 
+				    register_interaction_http_request.user_session, 
+				    register_interaction_http_request.user_role, 
+				    register_interaction_http_request.created_at, 
+				    register_interaction_http_request.created_by, 
+				    register_interaction_http_request.provenance, 
+				    register_interaction_http_request.hub_upsert_behavior
+			    );
+			   
 			ELSEIF (v_nature_denorm = 'techByDesignDisposition') THEN
 			
 				--v_return := register_interaction_http_request.payload;
@@ -391,7 +434,7 @@ BEGIN
 	
 				v_return := v_payload;
 			
-			END IF;	
+			END IF;			
 		END IF;	
 	/*==============================================================================================================================*/	 	
     EXCEPTION
@@ -417,7 +460,6 @@ BEGIN
 END;
 $function$
 ;
-
 
 
 
@@ -2713,7 +2755,7 @@ EXCEPTION
 	    -- Log the exception, reusing the previous exception ID if it exists
 		v_exception_id := techbd_udi_ingress.register_issue(
         COALESCE(v_exception_id,NULL),
-		insert_fhir_screening_patient.uri,
+		insert_fhir_screening_organization.uri,
 		v_error_msg,
 		v_error_type,
 		v_sqlstate,
@@ -2724,3 +2766,163 @@ EXCEPTION
 		v_provenance);
 END;         
 $$;
+
+/*******************************************************************************************************************************
+Function for upserting HL7 interaction request data from a JSONB payload.
+
+Parameters:
+hub_interaction_id   - Unique identifier of the hub interaction (TEXT)
+tenant_id            - Unique identifier of the tenant (TEXT)
+uri                  - URI associated with the HL7 request (TEXT)
+nature               - Nature of the interaction request (TEXT)
+from_state           - The initial state of the interaction (TEXT)
+to_state             - The final state of the interaction after processing (TEXT)
+payload              - JSONB object containing the HL7 request data (JSONB), default is NULL
+state_transition_reason - Reason for transitioning between states (TEXT), default is NULL
+created_at           - Timestamp of when the record was created (TIMESTAMPTZ), defaults to CURRENT_TIMESTAMP if not provided
+created_by           - Identifier of the user or system creating the record (TEXT), defaults to the current user if not provided
+provenance           - Metadata providing the provenance or origin of the interaction (TEXT), defaults to 'unknown'
+elaboration          - JSONB object containing additional details about the interaction (JSONB), default is NULL
+
+Returns:
+The function returns the generated UUID of the newly inserted record in the 'sat_interaction_hl7_request' table or NULL if the 
+interaction is not valid or the payload is null.
+
+Description:
+This function inserts HL7 interaction request data into the 'sat_interaction_hl7_request' table. It ensures that the hub interaction 
+exists in the 'hub_interaction' table and that the payload is not null. If both conditions are met, a new record is inserted, 
+generating a UUID for the 'sat_interaction_hl7_request_id'. The function also handles exceptions, logging errors with the 
+'register_issue' procedure if any SQL or runtime errors occur during the insert operation.
+*******************************************************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_hl7_request_upserted(text, text, text, text, text, text, jsonb, text, timestamp with time zone, text, text, jsonb);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_hl7_request_upserted(hub_interaction_id text, tenant_id text, uri text, nature text, from_state text, to_state text, payload jsonb DEFAULT NULL::jsonb, state_transition_reason text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    -- Declare variables to hold error and extracted data
+	v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;   
+    v_created_at 					TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
+    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  -- Set default provenance
+    v_exception_id 					TEXT;
+    
+    -- Additional variables for extracting and holding data from the payload JSONB
+    v_return 						TEXT 	:= NULL;
+
+BEGIN	
+	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
+  		WHERE t.hub_interaction_id = sat_interaction_hl7_request_upserted.hub_interaction_id 
+  		AND t."key" = sat_interaction_hl7_request_upserted.uri) THEN
+  		RETURN NULL;	
+  	END IF;
+  
+  	IF sat_interaction_hl7_request_upserted.payload IS NULL THEN
+  		RETURN NULL;	
+  	END IF;
+  
+  	-- The INSERT statement inserts a new record into the sat_interaction_hl7_request table, generating a UUID for the primary key.
+    -- If the operation succeeds, the generated UUID is returned.
+    INSERT INTO techbd_udi_ingress.sat_interaction_hl7_request (
+        sat_interaction_hl7_request_id,
+        hub_interaction_id,
+        tenant_id,
+        tenant_id_lower,
+        uri,
+        nature,
+        payload,
+        client_ip_address,
+        user_agent,
+        from_state,
+        to_state,
+        state_transition_reason,
+        created_by,
+        provenance,
+        elaboration
+    )
+    VALUES (
+        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+        hub_interaction_id,
+        tenant_id,
+        LOWER(tenant_id),  -- Store the tenant ID in lowercase for consistency
+        uri,
+        nature,
+        payload,
+        null,
+        null,
+        from_state,
+        to_state,
+        state_transition_reason,
+        created_by,
+        provenance,
+        elaboration
+    ) RETURNING sat_interaction_hl7_request_id INTO v_return;  -- Return the generated UUID
+
+    RETURN v_return;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		sat_interaction_hl7_request_upserted.uri,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+		RETURN NULL;
+END;
+$function$
+;
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_tenant_stats_view  CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_tenant_stats_view  AS  
+    SELECT 
+        sihr.tenant_id_lower::text AS qe_name,  
+        sihr.created_at::date,
+        COUNT(CASE 
+                  WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' THEN 1 
+                  ELSE NULL 
+              END) AS qe_fhir_submission_count,        
+        COUNT(CASE 
+                  WHEN sihr.nature = 'Forwarded HTTP Response' THEN 1 
+                  ELSE NULL 
+              END) AS qe_fhir_pass_count,
+        COUNT(CASE 
+                  WHEN sihr.nature = 'Forwarded HTTP Response Error' THEN 1 
+                  ELSE NULL 
+              END) AS qe_fhir_fail_count
+    FROM 
+        techbd_udi_ingress.hub_interaction hintr
+    JOIN 
+        techbd_udi_ingress.sat_interaction_fhir_request sihr 
+    ON 
+        hintr.hub_interaction_id = sihr.hub_interaction_id
+    WHERE 
+        sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]) 
+        AND sihr.tenant_id_lower::text IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny')
+    AND sihr.created_at::date >= (CURRENT_DATE - INTERVAL '7 days')  -- Filter for last 7 days
+GROUP BY 
+    sihr.tenant_id_lower::text, sihr.created_at::date
+ORDER BY 
+    sihr.created_at::date DESC;
