@@ -47,4 +47,3 @@ jobs:
           body: "Here is the data from the Postgres view:\n\n${{ env.data }}"
           from: "Tech by Design QE Statistics Notification <no-reply@tx.techbd.org>"
           to: alan-francis@netspective.in
-          secure: true
