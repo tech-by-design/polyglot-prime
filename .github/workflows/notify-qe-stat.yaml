@@ -1,4 +1,4 @@
-name: Postgres View Email Sender
+name: QE Statistics Notification
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
                       -p ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }} \
                       -U ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }} \
                       -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
-                      -c "SELECT * FROM techbd_udi_ingress.fhir_needs_attention LIMIT 10;" \
+                      -c "SELECT SUM(qe_fhir_submission_count) AS tenant_submission_count, SUM(qe_fhir_pass_count) AS tenant_pass_count, SUM(qe_fhir_fail_count) AS tenant_fail_count, SUM(qe_fhir_pass_count + qe_fhir_fail_count) AS overall_response_count FROM techbd_udi_ingress.fhir_tenant_stats_view as ftsv" \
                       --no-align --tuples-only)
           echo "data=${DATA}" >> $GITHUB_ENV
 
