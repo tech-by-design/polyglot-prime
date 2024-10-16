@@ -56,6 +56,6 @@ jobs:
           username: ${{ secrets.SES_SMTP_USERNAME }}
           password: ${{ secrets.SES_SMTP_PASSWORD }}
           subject: "Daily Tech by Design QE Statistics Notification"
-          body: "Here is the data from the Postgres view:\n\n${{ env.data }}"
+          body: "${{ env.formatted_data }}"
           from: "Tech by Design QE Statistics Notification <no-reply@tx.techbd.org>"
           to: alan-francis@netspective.in
