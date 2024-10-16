@@ -345,35 +345,35 @@ public class FHIRService {
                 }
         }
 
-        public void handleMTlsStrategy(DefaultDataLakeApiAuthn defaultDatalakeApiAuthn, String interactionId,
-                        String tenantId, String dataLakeApiBaseURL,
-                        org.jooq.Configuration jooqCfg, HttpServletRequest request,
-                        Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
-                        String provenance, boolean includeIncomingPayloadInDB) {
-                MTlsStrategy mTlsStrategy = MTlsStrategy.fromString(defaultDatalakeApiAuthn.mTlsStrategy());
-                switch (mTlsStrategy) {
-                        case AWS_SECRETS -> handleAwsSecrets(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
-                                        tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
-                                        bundlePayloadWithDisposition, jooqCfg, provenance,
-                                        request.getRequestURI(), includeIncomingPayloadInDB, payload);
-                        case POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL ->
-                                handlePostStdoutPayload(interactionId, tenantId, jooqCfg,
-                                                bundlePayloadWithDisposition,
-                                                includeIncomingPayloadInDB, payload, provenance, request,
-                                                defaultDatalakeApiAuthn.postStdinPayloadToNyecDataLakeExternal());
-                        case MTLS_RESOURCES ->
-                                handleMtlsResources(interactionId, tenantId, jooqCfg,
-                                                bundlePayloadWithDisposition,
-                                                includeIncomingPayloadInDB, payload, provenance, request,
-                                                dataLakeApiContentType, dataLakeApiBaseURL,
-                                                defaultDatalakeApiAuthn.mTlsResources());
-                        default ->
-                                handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
-                                                request,
-                                                bundlePayloadWithDisposition, payload, dataLakeApiContentType,
-                                                provenance, includeIncomingPayloadInDB);
-                }
+    public void handleMTlsStrategy(DefaultDataLakeApiAuthn defaultDatalakeApiAuthn, String interactionId,
+            String tenantId, String dataLakeApiBaseURL,
+            org.jooq.Configuration jooqCfg, HttpServletRequest request,
+            Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
+            String provenance, boolean includeIncomingPayloadInDB) {
+        MTlsStrategy mTlsStrategy = MTlsStrategy.fromString(defaultDatalakeApiAuthn.mTlsStrategy());
+        switch (mTlsStrategy) {
+            case AWS_SECRETS -> handleAwsSecrets(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                    tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                    bundlePayloadWithDisposition, jooqCfg, provenance,
+                    request.getRequestURI(), includeIncomingPayloadInDB, payload);
+            case POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL ->
+                handlePostStdoutPayload(interactionId, tenantId, jooqCfg,dataLakeApiBaseURL,
+                        bundlePayloadWithDisposition,
+                        includeIncomingPayloadInDB, payload, provenance, request,
+                        defaultDatalakeApiAuthn.postStdinPayloadToNyecDataLakeExternal());
+            case MTLS_RESOURCES ->
+                handleMtlsResources(interactionId, tenantId, jooqCfg,
+                        bundlePayloadWithDisposition,
+                        includeIncomingPayloadInDB, payload, provenance, request,
+                        dataLakeApiContentType, dataLakeApiBaseURL,
+                        defaultDatalakeApiAuthn.mTlsResources());
+            default ->
+                handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
+                        request,
+                        bundlePayloadWithDisposition, payload, dataLakeApiContentType,
+                        provenance, includeIncomingPayloadInDB);
         }
+    }
 
         private void handleMtlsResources(String interactionId, String tenantId, org.jooq.Configuration jooqCfg,
                         Map<String, Object> bundlePayloadWithDisposition, boolean includeIncomingPayloadInDB,
@@ -615,23 +615,23 @@ public class FHIRService {
                                 interactionId);
         }
 
-        private void handlePostStdoutPayload(String interactionId, String tenantId, org.jooq.Configuration jooqCfg,
-                        Map<String, Object> bundlePayloadWithDisposition,
-                        boolean includeIncomingPayloadInDB, String payload, String provenance,
-                        HttpServletRequest request,
-                        PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal) {
-                LOG.info("Proceed with posting payload via external process BEGIN forinteractionId : {}",
-                                interactionId);
-                try {
-                        registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
-                                        request.getRequestURI(), tenantId,
-                                        Optional.ofNullable(bundlePayloadWithDisposition)
-                                                        .orElse(new HashMap<>()),
-                                        null, includeIncomingPayloadInDB, payload);
-                        var postToNyecExternalResponse = postStdinPayloadToNyecDataLakeExternal(
-                                        tenantId, interactionId,
-                                        bundlePayloadWithDisposition,
-                                        postStdinPayloadToNyecDataLakeExternal);
+    private void handlePostStdoutPayload(String interactionId, String tenantId, org.jooq.Configuration jooqCfg,String dataLakeApiBaseURL,
+            Map<String, Object> bundlePayloadWithDisposition,
+            boolean includeIncomingPayloadInDB, String payload, String provenance,
+            HttpServletRequest request,
+            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal) {
+        LOG.info("Proceed with posting payload via external process BEGIN forinteractionId : {}",
+                interactionId);
+        try {
+            registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
+                    request.getRequestURI(), tenantId,
+                    Optional.ofNullable(bundlePayloadWithDisposition)
+                            .orElse(new HashMap<>()),
+                    null, includeIncomingPayloadInDB, payload);
+            var postToNyecExternalResponse = postStdinPayloadToNyecDataLakeExternal(dataLakeApiBaseURL,
+                    tenantId, interactionId,
+                    bundlePayloadWithDisposition,
+                    postStdinPayloadToNyecDataLakeExternal);
 
                         LOG.info("Create payload from postToNyecExternalResponse- BEGIN for interactionId : {}",
                                         interactionId);
@@ -664,36 +664,36 @@ public class FHIRService {
                                 interactionId);
         }
 
-        private PostToNyecExternalResponse postStdinPayloadToNyecDataLakeExternal(String tenantId,
-                        String interactionId,
-                        Map<String, Object> bundlePayloadWithDisposition,
-                        PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal)
-                        throws Exception {
-                boolean completed = false;
-                String processOutput = "";
-                String errorOutput = "";
-                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal BEGIN for interaction id : {} tenantID :{}",
-                                interactionId, tenantId);
-                final var bashScriptPath = postStdinPayloadToNyecDataLakeExternal.cmd();
-                if (null == bashScriptPath) {
-                        throw new IllegalArgumentException(
-                                        "Bash Script path not configured for the environment.Configure this in application.yml.");
-                }
-                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Fetched Bash Script Path :{} for interaction id : {} tenantID :{}",
-                                bashScriptPath, interactionId, tenantId);
-                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Prepare ProcessBuilder to run the bash script for interaction id : {} tenantID :{}",
-                                interactionId, tenantId);
-                final var processBuilder = new ProcessBuilder(bashScriptPath, tenantId)
-                                .redirectErrorStream(true);
-                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Start the process  for interaction id : {} tenantID :{}",
-                                interactionId, tenantId);
-                final var process = processBuilder.start();
-                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal DEBUG: Capture any output from stdout or stderr immediately after starting\r\n"
-                                + //
-                                "        // the process  for interaction id : {} tenantID :{}",
-                                interactionId, tenantId);
-                try (var errorStream = process.getErrorStream();
-                                var inputStream = process.getInputStream()) {
+    private PostToNyecExternalResponse postStdinPayloadToNyecDataLakeExternal(String dataLakeApiBaseURL,String tenantId,
+            String interactionId,
+            Map<String, Object> bundlePayloadWithDisposition,
+            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal)
+            throws Exception {
+        boolean completed = false;
+        String processOutput = "";
+        String errorOutput = "";
+        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal BEGIN for interaction id : {} tenantID :{}",
+                interactionId, tenantId);
+        final var bashScriptPath = postStdinPayloadToNyecDataLakeExternal.cmd();
+        if (null == bashScriptPath) {
+            throw new IllegalArgumentException(
+                    "Bash Script path not configured for the environment.Configure this in application.yml.");
+        }
+        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Fetched Bash Script Path :{} for interaction id : {} tenantID :{}",
+                bashScriptPath, interactionId, tenantId);
+        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Prepare ProcessBuilder to run the bash script for interaction id : {} tenantID :{}",
+                interactionId, tenantId);
+        final var processBuilder = new ProcessBuilder(bashScriptPath, tenantId,dataLakeApiBaseURL)
+                .redirectErrorStream(true);
+        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Start the process  for interaction id : {} tenantID :{}",
+                interactionId, tenantId);
+        final var process = processBuilder.start();
+        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal DEBUG: Capture any output from stdout or stderr immediately after starting\r\n"
+                        + //
+                        "        // the process  for interaction id : {} tenantID :{}",
+                interactionId, tenantId);
+        try (var errorStream = process.getErrorStream();
+                var inputStream = process.getInputStream()) {
 
                         // DEBUG: Print any errors encountered
                         errorOutput = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
