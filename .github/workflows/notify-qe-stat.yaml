@@ -1,0 +1,50 @@
+name: Postgres View Email Sender
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  send-email:
+    runs-on: techbd-sql
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .pgpass file
+        run: |
+          # Write the metadata comment to the .pgpass file
+          echo "# { id: \"PROD_TECHBD_UDI_DS_PRIME\", description: \"UDI Prime database\", boundary: \"Production\" }" > ~/.pgpass
+
+          # Append the database connection details to the .pgpass file
+          echo "${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PASSWORD }}" >> ~/.pgpass
+
+          # Set the .pgpass file permissions to 600 (read and write for owner only)
+          chmod 600 ~/.pgpass
+
+      - name: Fetch data from PostgreSQL
+        id: fetch-data
+        run: |
+          DATA=$(psql -h ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }} \
+                      -p ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }} \
+                      -U ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }} \
+                      -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
+                      -c "SELECT * FROM techbd_udi_ingress.fhir_needs_attention LIMIT 10;" \
+                      --no-align --tuples-only)
+          echo "data=${DATA}" >> $GITHUB_ENV
+
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: email-smtp.us-east-1.amazonaws.com
+          server_port: 587
+          username: ${{ secrets.SES_SMTP_USERNAME }}
+          password: ${{ secrets.SES_SMTP_PASSWORD }}
+          subject: "Daily Tech by Design QE Statistics Notification"
+          body: "Here is the data from the Postgres view:\n\n${{ env.data }}"
+          from: "Tech by Design QE Statistics Notification <no-reply@tx.techbd.org>"
+          to: alan-francis@netspective.in
+          secure: true
