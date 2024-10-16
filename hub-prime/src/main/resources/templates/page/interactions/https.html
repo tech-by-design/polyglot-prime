@@ -38,7 +38,26 @@
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${popViewName}/interaction_id/${params.value}.json`));
+
+                            // Get the value of the URI field from the current row
+                            const uri = params.data.uri;
+
+                            // Define API endpoint based on the URI value
+                            let apiEndpoint;
+
+                            if (uri === "/Bundle" || uri === "/Bundle/") {
+                                const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
+                                // If URI is /Bundle, use the bundle-specific view                                
+                                apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`;
+                            } else {
+                                // Otherwise, use the default view
+                                apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/${popViewName}/interaction_id/${params.value}.json`;
+                            }
+
+                            // Fetch and display the JSON value in the modal
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(apiEndpoint));
+
+                            
                         }, modalAide)
                     },
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
