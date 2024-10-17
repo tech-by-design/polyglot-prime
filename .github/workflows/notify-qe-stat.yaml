@@ -139,6 +139,29 @@ jobs:
           echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+          
+      - name: Fetch Hixny data from PostgreSQL
+        id: fetch-data-hixny
+        run: |
+          DATA=$(psql -h ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }} \
+                      -p ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }} \
+                      -U ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }} \
+                      -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
+                      -c "SELECT SUM(qe_fhir_submission_count) AS tenant_submission_count, SUM(qe_fhir_pass_count) AS tenant_pass_count, SUM(qe_fhir_fail_count) AS tenant_fail_count, SUM(qe_fhir_pass_count + qe_fhir_fail_count) AS overall_response_count FROM techbd_udi_ingress.fhir_tenant_stats_view as ftsv where qe_name='hixny'" \
+                      --no-align --tuples-only)
+          echo "hixny_data=${DATA}" >> $GITHUB_ENV
+     
+      - name: Format fetched data Hixny
+        id: format-data-hixny
+        run: |
+          IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.hixny_data }}"
+          echo "formatted_hixny_data<<EOF" >> $GITHUB_ENV
+          echo "Hixny FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
+          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
 
       - name: Send email
@@ -161,6 +184,8 @@ jobs:
               ${{ env.formatted_healthelink_data }}
 
               ${{ env.formatted_healthix_data }}
+
+              ${{ env.formatted_hixny_data }}
           content_type: "text/html"
           from: "Tech by Design QE Statistics Notification <no-reply@tx.techbd.org>"
           to: alan-francis@netspective.in
