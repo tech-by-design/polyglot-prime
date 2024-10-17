@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-10-17<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.280.0</li>
+          <li id="projectVersion">Version: 0.281.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -117,62 +117,62 @@
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>@Operation(summary = &quot;Endpoint to to validate, store, and then forward a HL7 v2 payload to SHIN-NY.&quot;, description = &quot;Endpoint to to validate, store, and then forward a HL7 v2 payload to SHIN-NY.&quot;)
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Request processed successfully&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
-                    +
-                    &quot;  \&quot;OperationOutcome\&quot;: {\n&quot; +
-                    &quot;    \&quot;validationResults\&quot;: [\n&quot; +
-                    &quot;      {\n&quot; +
-                    &quot;        \&quot;operationOutcome\&quot;: {\n&quot; +
-                    &quot;          \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;,\n&quot; +
-                    &quot;          \&quot;issue\&quot;: [\n&quot; +
-                    &quot;            {\n&quot; +
-                    &quot;              \&quot;severity\&quot;: \&quot;error\&quot;,\n&quot; +
-                    &quot;              \&quot;diagnostics\&quot;: \&quot;Error Message\&quot;,\n&quot; +
-                    &quot;              \&quot;location\&quot;: [\n&quot; +
-                    &quot;                \&quot;Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\&quot;,\n&quot;
-                    +
-                    &quot;                \&quot;Line[1] Col[5190]\&quot;\n&quot; +
-                    &quot;              ]\n&quot; +
-                    &quot;            }\n&quot; +
-                    &quot;          ]\n&quot; +
-                    &quot;        }\n&quot; +
-                    &quot;      }\n&quot; +
-                    &quot;    ],\n&quot; +
-                    &quot;    \&quot;techByDesignDisposition\&quot;: [\n&quot; +
-                    &quot;      {\n&quot; +
-                    &quot;        \&quot;action\&quot;: \&quot;reject\&quot;,\n&quot; +
-                    &quot;        \&quot;actionPayload\&quot;: {\n&quot; +
-                    &quot;          \&quot;message\&quot;: \&quot;reject message\&quot;,\n&quot; +
-                    &quot;          \&quot;description\&quot;: \&quot;rule name\&quot;\n&quot; +
-                    &quot;        }\n&quot; +
-                    &quot;      }\n&quot; +
-                    &quot;    ],\n&quot; +
-                    &quot;    \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;\n&quot; +
-                    &quot;  }\n&quot; +
-                    &quot;}&quot;))),
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Request processed successfully&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
+                                        +
+                                        &quot;  \&quot;OperationOutcome\&quot;: {\n&quot; +
+                                        &quot;    \&quot;validationResults\&quot;: [\n&quot; +
+                                        &quot;      {\n&quot; +
+                                        &quot;        \&quot;operationOutcome\&quot;: {\n&quot; +
+                                        &quot;          \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;,\n&quot; +
+                                        &quot;          \&quot;issue\&quot;: [\n&quot; +
+                                        &quot;            {\n&quot; +
+                                        &quot;              \&quot;severity\&quot;: \&quot;error\&quot;,\n&quot; +
+                                        &quot;              \&quot;diagnostics\&quot;: \&quot;Error Message\&quot;,\n&quot; +
+                                        &quot;              \&quot;location\&quot;: [\n&quot; +
+                                        &quot;                \&quot;Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\&quot;,\n&quot;
+                                        +
+                                        &quot;                \&quot;Line[1] Col[5190]\&quot;\n&quot; +
+                                        &quot;              ]\n&quot; +
+                                        &quot;            }\n&quot; +
+                                        &quot;          ]\n&quot; +
+                                        &quot;        }\n&quot; +
+                                        &quot;      }\n&quot; +
+                                        &quot;    ],\n&quot; +
+                                        &quot;    \&quot;techByDesignDisposition\&quot;: [\n&quot; +
+                                        &quot;      {\n&quot; +
+                                        &quot;        \&quot;action\&quot;: \&quot;reject\&quot;,\n&quot; +
+                                        &quot;        \&quot;actionPayload\&quot;: {\n&quot; +
+                                        &quot;          \&quot;message\&quot;: \&quot;reject message\&quot;,\n&quot; +
+                                        &quot;          \&quot;description\&quot;: \&quot;rule name\&quot;\n&quot; +
+                                        &quot;        }\n&quot; +
+                                        &quot;      }\n&quot; +
+                                        &quot;    ],\n&quot; +
+                                        &quot;    \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;\n&quot; +
+                                        &quot;  }\n&quot; +
+                                        &quot;}&quot;))),
 
-            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Validation Error: Missing or invalid parameter&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = {
-                    @ExampleObject(value = &quot;{\n&quot; +
-                            &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
-                            &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request body is missing.\&quot;\n&quot;
-                            +
-                            &quot;}&quot;),
-                    @ExampleObject(value = &quot;{\n&quot; +
-                            &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
-                            &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\&quot;\n&quot;
-                            +
-                            &quot;}&quot;)
-            })),
-            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;An unexpected system error occurred&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
-                    +
-                    &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
-                    &quot;  \&quot;message\&quot;: \&quot;An unexpected system error occurred.\&quot;\n&quot; +
-                    &quot;}&quot;)))
-    })
-    @ResponseBody
-    @Async
-    public Object validateHl7MessageAndForward(</pre></td></tr></table>
+                        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Validation Error: Missing or invalid parameter&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = {
+                                        @ExampleObject(value = &quot;{\n&quot; +
+                                                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                                                        &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request body is missing.\&quot;\n&quot;
+                                                        +
+                                                        &quot;}&quot;),
+                                        @ExampleObject(value = &quot;{\n&quot; +
+                                                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                                                        &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\&quot;\n&quot;
+                                                        +
+                                                        &quot;}&quot;)
+                        })),
+                        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;An unexpected system error occurred&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
+                                        +
+                                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                                        &quot;  \&quot;message\&quot;: \&quot;An unexpected system error occurred.\&quot;\n&quot; +
+                                        &quot;}&quot;)))
+        })
+        @ResponseBody
+        @Async
+        public Object validateHl7MessageAndForward(</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
@@ -182,7 +182,7 @@
 <td>203</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
-<td>185</td></tr>
+<td>195</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>}
@@ -285,7 +285,7 @@
 <td>213</td></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
-<td>195</td></tr>
+<td>205</td></tr>
 <tr class="a">
 <td colspan="2" style="text-align: left;">
 <pre>if (null != ghUser) {
@@ -358,28 +358,28 @@
 <tr class="a">
 <td colspan="2" style="text-align: left;">
 <pre>&quot;    \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;\n&quot; +
-                    &quot;  }\n&quot; +
-                    &quot;}&quot;))),
+                                        &quot;  }\n&quot; +
+                                        &quot;}&quot;))),
 
-            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Validation Error: Missing or invalid parameter&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = {
-                    @ExampleObject(value = &quot;{\n&quot; +
-                            &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
-                            &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request body is missing.\&quot;\n&quot;
-                            +
-                            &quot;}&quot;),
-                    @ExampleObject(value = &quot;{\n&quot; +
-                            &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
-                            &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\&quot;\n&quot;
-                            +
-                            &quot;}&quot;)
-            })),
-            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;An unexpected system error occurred&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
-                    +
-                    &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
-                    &quot;  \&quot;message\&quot;: \&quot;An unexpected system error occurred.\&quot;\n&quot; +
-                    &quot;}&quot;)))
-    })
-    @ResponseBody</pre></td></tr></table></section></section>
+                        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Validation Error: Missing or invalid parameter&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = {
+                                        @ExampleObject(value = &quot;{\n&quot; +
+                                                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                                                        &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request body is missing.\&quot;\n&quot;
+                                                        +
+                                                        &quot;}&quot;),
+                                        @ExampleObject(value = &quot;{\n&quot; +
+                                                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                                                        &quot;  \&quot;message\&quot;: \&quot;Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\&quot;\n&quot;
+                                                        +
+                                                        &quot;}&quot;)
+                        })),
+                        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;An unexpected system error occurred&quot;, content = @Content(mediaType = &quot;application/json&quot;, examples = @ExampleObject(value = &quot;{\n&quot;
+                                        +
+                                        &quot;  \&quot;status\&quot;: \&quot;Error\&quot;,\n&quot; +
+                                        &quot;  \&quot;message\&quot;: \&quot;An unexpected system error occurred.\&quot;\n&quot; +
+                                        &quot;}&quot;)))
+        })
+        @ResponseBody</pre></td></tr></table></section></section>
         </main>
       </div>
     </div>
