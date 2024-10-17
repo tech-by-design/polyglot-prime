@@ -48,6 +48,29 @@ jobs:
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+      - name: Fetch Rochester data from PostgreSQL
+        id: fetch-data-rochester
+        run: |
+          DATA=$(psql -h ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }} \
+                      -p ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }} \
+                      -U ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }} \
+                      -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
+                      -c "SELECT SUM(qe_fhir_submission_count) AS tenant_submission_count, SUM(qe_fhir_pass_count) AS tenant_pass_count, SUM(qe_fhir_fail_count) AS tenant_fail_count, SUM(qe_fhir_pass_count + qe_fhir_fail_count) AS overall_response_count FROM techbd_udi_ingress.fhir_tenant_stats_view as ftsv where qe_name='grrhio'" \
+                      --no-align --tuples-only)
+          echo "rochester_data=${DATA}" >> $GITHUB_ENV
+     
+      - name: Format fetched data Rochester
+        id: format-data-rochester
+        run: |
+          IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.rochester_data }}"
+          echo "formatted_rochester_data<<EOF" >> $GITHUB_ENV
+          echo "Rochester FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
+          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
 
       - name: Send email
         uses: dawidd6/action-send-mail@v3
@@ -61,6 +84,8 @@ jobs:
               The following are the QE FHIR Submission Statistics for the day:
           
               ${{ env.formatted_combined_data }}
+
+              ${{ env.formatted_rochester_data }}
           content_type: "text/html"
           from: "Tech by Design QE Statistics Notification <no-reply@tx.techbd.org>"
           to: alan-francis@netspective.in
