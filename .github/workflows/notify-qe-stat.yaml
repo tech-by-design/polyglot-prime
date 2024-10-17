@@ -25,8 +25,8 @@ jobs:
           # Set the .pgpass file permissions to 600 (read and write for owner only)
           chmod 600 ~/.pgpass
 
-      - name: Fetch data from PostgreSQL
-        id: fetch-data
+      - name: Fetch combined data from PostgreSQL
+        id: fetch-data-combined
         run: |
           DATA=$(psql -h ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }} \
                       -p ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }} \
@@ -34,19 +34,18 @@ jobs:
                       -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
                       -c "SELECT SUM(qe_fhir_submission_count) AS tenant_submission_count, SUM(qe_fhir_pass_count) AS tenant_pass_count, SUM(qe_fhir_fail_count) AS tenant_fail_count, SUM(qe_fhir_pass_count + qe_fhir_fail_count) AS overall_response_count FROM techbd_udi_ingress.fhir_tenant_stats_view as ftsv" \
                       --no-align --tuples-only)
-          echo "data=${DATA}" >> $GITHUB_ENV
+          echo "combined_data=${DATA}" >> $GITHUB_ENV
      
-      - name: Format fetched data as HTML table
-        id: format-data
+      - name: Format fetched data combined
+        id: format-data-combined
         run: |
-          IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.data }}"
-          echo "formatted_data<<EOF" >> $GITHUB_ENV
+          IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.combined_data }}"
+          echo "formatted_combined_data<<EOF" >> $GITHUB_ENV
           echo "Combined QE FHIR Submission Statistics:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
           echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
-          echo "- Total Responses (Pass + Fail): $overall_response_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
 
@@ -61,7 +60,7 @@ jobs:
           body: |
               The following are the QE FHIR Submission Statistics for the day:
           
-              "${{ env.formatted_data }}"
+              ${{ env.formatted_combined_data }}
           content_type: "text/html"
           from: "Tech by Design QE Statistics Notification <no-reply@tx.techbd.org>"
           to: alan-francis@netspective.in
