@@ -43,7 +43,7 @@ jobs:
           echo "formatted_combined_data<<EOF" >> $GITHUB_ENV
           echo "Combined QE FHIR Submission Status:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
-          echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
+          echo "- Total Submissions: <b>$tenant_submission_count</b>" >> $GITHUB_ENV
           echo "- Successful Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -171,9 +171,9 @@ jobs:
           server_port: 587
           username: ${{ secrets.SES_SMTP_USERNAME }}
           password: ${{ secrets.SES_SMTP_PASSWORD }}
-          subject: "Daily Tech by Design FHIR Submission Status Notification"
+          subject: "TechBD FHIR Submission Status Notification"
           body: |
-              The following are the QE FHIR Submission Status for the day:
+              The following are the QE FHIR Submission Status for the day: 
           
               ${{ env.formatted_combined_data }}
 
@@ -188,4 +188,4 @@ jobs:
               ${{ env.formatted_hixny_data }}
           content_type: "text/html"
           from: "Tech by Design FHIR Submission Status Notification <no-reply@tx.techbd.org>"
-          to: alan-francis@netspective.in,ratheeshkumar-kr@netspective.in
+          to: alan-francis@netspective.in
