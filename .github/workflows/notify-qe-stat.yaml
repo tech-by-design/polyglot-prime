@@ -40,16 +40,14 @@ jobs:
         id: format-data
         run: |
           IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.data }}"
-          echo "formatted_data=\
-          Combined QE FHIR Submission Statistics:
-          
-          - Total Submissions: $tenant_submission_count
-          
-          - Passed Submissions: $tenant_pass_count
-          
-          - Failed Submissions: $tenant_fail_count
-          
-          - Total Responses (Pass + Fail): $overall_response_count" >> $GITHUB_ENV
+          echo "formatted_data<<EOF" >> $GITHUB_ENV
+          echo "Combined QE FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
+          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
+          echo "- Total Responses (Pass + Fail): $overall_response_count" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
 
       - name: Send email
