@@ -45,7 +45,7 @@
                             // Define API endpoint based on the URI value
                             let apiEndpoint;
 
-                            if (uri === "/Bundle" || uri === "/Bundle/") {
+                            if (uri === "/Bundle" || uri === "/Bundle/"  || uri === "/Hl7/v2") {
                                 const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id;
                                 // If URI is /Bundle, use the bundle-specific view                                
                                 apiEndpoint = `/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`;
