@@ -1,13 +1,14 @@
 #!/bin/bash
  
-# Ensure processingAgent is provided as a command-line argument
-if [ -z "$1" ]; then
-  echo "Usage: $0 <processingAgent>"
+# Ensure both processingAgent and url are provided as command-line arguments
+if [ -z "$1" ] || [ -z "$2" ]; then
+  echo "Usage: $0 <processingAgent> <url>"
   exit 1
 fi
  
-# Assign the first argument to a variable
+# Assign the arguments to variables
 PROCESSING_AGENT="$1"
+URL="$2"
  
 # Fetch secrets from AWS Secrets Manager and store them in temporary files
 CERT_FILE=$(mktemp)
@@ -16,10 +17,10 @@ export AWS_DEFAULT_REGION=us-east-1
 aws secretsmanager get-secret-value --secret-id techbd-qa-client-certificate --query 'SecretString' --output text > "$CERT_FILE"
 aws secretsmanager get-secret-value --secret-id techbd-qa-client-key --query 'SecretString' --output text > "$KEY_FILE"
  
-# Use curl to send the stdin payload to the endpoint with the specified processingAgent
+# Use curl to send the stdin payload to the specified endpoint with the processingAgent
 curl --key "$KEY_FILE" \
      --cert "$CERT_FILE" \
-     -s -X POST "https://qa.hrsn.nyehealth.org/HRSNBundle?processingAgent=${PROCESSING_AGENT}" \
+     -s -X POST "${URL}?processingAgent=${PROCESSING_AGENT}" \
      -H 'Content-Type: application/json' \
      --verbose \
      --data @-
