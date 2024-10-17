@@ -43,7 +43,7 @@ jobs:
           echo "formatted_combined_data<<EOF" >> $GITHUB_ENV
           echo "Combined QE FHIR Submission Status:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
-          echo "- Total Submissions: <b>$tenant_submission_count</b>" >> $GITHUB_ENV
+          echo "- Total Submissions: **$tenant_submission_count**" >> $GITHUB_ENV
           echo "- Successful Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
