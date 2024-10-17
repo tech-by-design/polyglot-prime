@@ -41,10 +41,10 @@ jobs:
         run: |
           IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.combined_data }}"
           echo "formatted_combined_data<<EOF" >> $GITHUB_ENV
-          echo "Combined QE FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "Combined QE FHIR Submission Status:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
-          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Successful Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
@@ -64,10 +64,10 @@ jobs:
         run: |
           IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.rochester_data }}"
           echo "formatted_rochester_data<<EOF" >> $GITHUB_ENV
-          echo "Rochester FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "Rochester FHIR Submission Status:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
-          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Successful Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           
@@ -87,10 +87,10 @@ jobs:
         run: |
           IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.healtheconn_data }}"
           echo "formatted_healtheconn_data<<EOF" >> $GITHUB_ENV
-          echo "Healtheconnections FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "Healtheconnections FHIR Submission Status:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
-          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Successful Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           
@@ -110,10 +110,10 @@ jobs:
         run: |
           IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.healthelink_data }}"
           echo "formatted_healthelink_data<<EOF" >> $GITHUB_ENV
-          echo "Healthelink FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "Healthelink FHIR Submission Status:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
-          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Successful Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           
@@ -133,10 +133,10 @@ jobs:
         run: |
           IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.healthix_data }}"
           echo "formatted_healthix_data<<EOF" >> $GITHUB_ENV
-          echo "Healthix FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "Healthix FHIR Submission Status:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
-          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Successful Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           
@@ -156,10 +156,10 @@ jobs:
         run: |
           IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.hixny_data }}"
           echo "formatted_hixny_data<<EOF" >> $GITHUB_ENV
-          echo "Hixny FHIR Submission Statistics:" >> $GITHUB_ENV
+          echo "Hixny FHIR Submission Status:" >> $GITHUB_ENV
           echo "" >> $GITHUB_ENV
           echo "- Total Submissions: $tenant_submission_count" >> $GITHUB_ENV
-          echo "- Passed Submissions: $tenant_pass_count" >> $GITHUB_ENV
+          echo "- Successful Submissions: $tenant_pass_count" >> $GITHUB_ENV
           echo "- Failed Submissions: $tenant_fail_count" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
@@ -171,9 +171,9 @@ jobs:
           server_port: 587
           username: ${{ secrets.SES_SMTP_USERNAME }}
           password: ${{ secrets.SES_SMTP_PASSWORD }}
-          subject: "Daily Tech by Design QE Statistics Notification"
+          subject: "Daily Tech by Design FHIR Submission Status Notification"
           body: |
-              The following are the QE FHIR Submission Statistics for the day:
+              The following are the QE FHIR Submission Status for the day:
           
               ${{ env.formatted_combined_data }}
 
@@ -187,5 +187,5 @@ jobs:
 
               ${{ env.formatted_hixny_data }}
           content_type: "text/html"
-          from: "Tech by Design QE Statistics Notification <no-reply@tx.techbd.org>"
+          from: "Tech by Design FHIR Submission Status Notification <no-reply@tx.techbd.org>"
           to: alan-francis@netspective.in
