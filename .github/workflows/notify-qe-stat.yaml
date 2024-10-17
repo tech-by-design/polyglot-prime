@@ -1,9 +1,7 @@
 name: QE Statistics Notification
-
-
 on:
     schedule:
-      - cron: '38 11 * * *'
+      - cron: '43 11 * * *'
 
 jobs:
   send-email:
