@@ -47,16 +47,26 @@ public class Hl7Service {
     }
 
     public Object processHl7Message(String hl7Payload, String tenantId, String healthCheck, HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+            HttpServletResponse response,boolean logPayloadEnabled) throws IOException {
         final var interactionId = getBundleInteractionId(request);
         final var dslContext = udiPrimeJpaConfig.dsl();
         final var jooqCfg = dslContext.configuration();
         try {
             LOG.info("HL7Service::processHl7Message BEGIN for interactionid : {} tenantId :{} ", interactionId,
                     tenantId);
+            if(logPayloadEnabled) {
+                LOG.info("HL7Service :: *****************ORIGINAL HL7 PAYLOAD*************\n\n : {} ",hl7Payload);
+            }
+
             final var hl7FHIRJson = convertHl7ToFHIRJson(jooqCfg, hl7Payload, tenantId, interactionId);
+            if(logPayloadEnabled) {
+                LOG.info("HL7Service :: *****************LINUX CONVERTED PAYLOAD*************\n\n : {} ",hl7FHIRJson);
+            }
             if (null != hl7FHIRJson) {
                 final String shinnyFhirJson = convertToShinnyFHIRJson(jooqCfg, hl7FHIRJson, tenantId, interactionId);
+                if(logPayloadEnabled) {
+                        LOG.info("HL7Service :: *****************SHINNY FHIR PAYLOAD*************\n\n : {} ",shinnyFhirJson);
+                    }
                 if (null != shinnyFhirJson) {
                     registerStateHl7Accept(jooqCfg,hl7Payload, hl7FHIRJson, tenantId, interactionId, healthCheck, request,
                             response);
@@ -81,7 +91,7 @@ public class Hl7Service {
 
     public String convertToShinnyFHIRJson(org.jooq.Configuration jooqCfg, String hl7FHIRJson, String tenantId,
             String interactionId) {
-        LOG.info("HL7Service::convertToShinnyFHIRJson BRGIN for interactionid : {} tenantId :{} ", interactionId,
+        LOG.info("HL7Service::convertToShinnyFHIRJson BEGIN for interactionid : {} tenantId :{} ", interactionId,
                 tenantId);
         try {
             return hl7FHIRToShinnyFHIRConverter.convertToShinnyFHIRJson(hl7FHIRJson);
