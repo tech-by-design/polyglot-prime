@@ -27,9 +27,7 @@ jobs:
           
       - name: Set previous day's date in New York time (EST/EDT)
         run: |
-          # Calculate the previous day's date in New York time
-          PREV_DATE=$(date -d "yesterday TZ=\"America/New_York\"" +"%m-%d-%Y")
-          # Store it in GITHUB_ENV for use in later steps
+          PREV_DATE=$(TZ="America/New_York" date -d "yesterday" +"%m-%d-%Y")
           echo "PREV_DATE=${PREV_DATE}" >> $GITHUB_ENV
 
       - name: Fetch combined data from PostgreSQL
