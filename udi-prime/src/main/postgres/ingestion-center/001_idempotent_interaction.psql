@@ -2921,7 +2921,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_tenant_stats_view  AS
     WHERE 
         sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/'::text]) 
         AND sihr.tenant_id_lower::text IN ('healthelink', 'healtheconn', 'healthix', 'grrhio', 'hixny')
-    AND sihr.created_at::date >= (CURRENT_DATE - INTERVAL '7 days')  -- Filter for last 7 days
+    AND sihr.created_at::date >= (CURRENT_DATE - INTERVAL '1 day')  -- Filter for last 1 day
 GROUP BY 
     sihr.tenant_id_lower::text, sihr.created_at::date
 ORDER BY 
