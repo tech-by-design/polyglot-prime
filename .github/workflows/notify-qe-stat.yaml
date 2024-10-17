@@ -35,17 +35,18 @@ jobs:
                       -c "SELECT SUM(qe_fhir_submission_count) AS tenant_submission_count, SUM(qe_fhir_pass_count) AS tenant_pass_count, SUM(qe_fhir_fail_count) AS tenant_fail_count, SUM(qe_fhir_pass_count + qe_fhir_fail_count) AS overall_response_count FROM techbd_udi_ingress.fhir_tenant_stats_view as ftsv" \
                       --no-align --tuples-only)
           echo "data=${DATA}" >> $GITHUB_ENV
-          
-      - name: Format fetched data
+     
+      - name: Format fetched data as HTML table
         id: format-data
         run: |
           IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.data }}"
-          echo "formatted_data=\
-          Tenant FHIR Submission Statistics:\n\n\
-          - Total Submissions: $tenant_submission_count\n\
-          - Passed Submissions: $tenant_pass_count\n\
-          - Failed Submissions: $tenant_fail_count\n\
-          - Total Responses (Pass + Fail): $overall_response_count" >> $GITHUB_ENV
+          echo "formatted_data=<table border='1' cellpadding='10' cellspacing='0'>
+                  <tr><th>Metric</th><th>Count</th></tr>
+                  <tr><td>Total Submissions</td><td>$tenant_submission_count</td></tr>
+                  <tr><td>Passed Submissions</td><td>$tenant_pass_count</td></tr>
+                  <tr><td>Failed Submissions</td><td>$tenant_fail_count</td></tr>
+                  <tr><td>Total Responses (Pass + Fail)</td><td>$overall_response_count</td></tr>
+                </table>" >> $GITHUB_ENV
 
 
       - name: Send email
