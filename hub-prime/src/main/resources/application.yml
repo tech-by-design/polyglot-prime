@@ -52,6 +52,11 @@ springdoc:
 server:
   servlet:
     context-path: /
+    session:
+      cookie:
+        secure: true
+        http-only: true
+        same-site: LAX
 
 org:
   techbd:
