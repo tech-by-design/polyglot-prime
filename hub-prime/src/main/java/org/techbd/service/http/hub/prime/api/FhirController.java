@@ -155,9 +155,10 @@ public class FhirController {
             @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
             @Parameter(description = "Optional parameter to decide whether the Datalake submission to be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false) boolean isSync,
             @Parameter(description = "Optional parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
-            @Parameter(description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false) @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
+            @Parameter(hidden =true,description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false) @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
             @RequestParam(value = "include-operation-outcome", required = false, defaultValue = "true") boolean includeOperationOutcome,
-            @RequestParam(value = "enable-aws-secret", required = false, defaultValue = "false") boolean enableAwsSecret,
+            @Parameter(hidden=true)
+            @RequestParam(value = "mtls-strategy", required = false, defaultValue = "no-mTls") String mtlsStrategy,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
@@ -167,7 +168,7 @@ public class FhirController {
                 uaValidationStrategyJson,
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
-                request, response, provenance, includeOperationOutcome,enableAwsSecret);
+                request, response, provenance, includeOperationOutcome,mtlsStrategy);
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
