@@ -39,14 +39,12 @@ import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 
-import com.nimbusds.oauth2.sdk.util.CollectionUtils;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import ca.uhn.fhir.validation.ResultSeverityEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
@@ -159,6 +157,7 @@ public class FhirController {
             @Parameter(description = "Optional parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @Parameter(description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false) @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
             @RequestParam(value = "include-operation-outcome", required = false, defaultValue = "true") boolean includeOperationOutcome,
+            @RequestParam(value = "enable-aws-secret", required = false, defaultValue = "false") boolean enableAwsSecret,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
@@ -168,7 +167,7 @@ public class FhirController {
                 uaValidationStrategyJson,
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
-                request, response, provenance, includeOperationOutcome);
+                request, response, provenance, includeOperationOutcome,enableAwsSecret);
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {

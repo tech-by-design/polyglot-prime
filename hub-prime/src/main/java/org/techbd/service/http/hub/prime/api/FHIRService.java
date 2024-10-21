@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.GrantedAuthority;
@@ -105,8 +106,11 @@ public class FHIRService {
                         boolean includeRequestInOutcome,
                         boolean includeIncomingPayloadInDB,
                         HttpServletRequest request, HttpServletResponse response, String provenance,
-                        boolean includeOperationOutcome)
+                        boolean includeOperationOutcome,boolean enableAwsSecret)
                         throws IOException {
+                if (null == dataLakeApiContentType) {
+                        dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
+                }                             
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                 : appConfig.getDefaultSdohFhirProfileUrl();
@@ -130,14 +134,14 @@ public class FHIRService {
                                         getBundleInteractionId(request));
                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                         includeIncomingPayloadInDB, tenantId, payload,
-                                        provenance, null, includeOperationOutcome);
+                                        provenance, null, includeOperationOutcome,enableAwsSecret);
                         return result;
                 } else {
                         LOG.warn("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
                                         getBundleInteractionId(request));
                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                         includeIncomingPayloadInDB, tenantId, payload,
-                                        provenance, payloadWithDisposition, includeOperationOutcome);
+                                        provenance, payloadWithDisposition, includeOperationOutcome,enableAwsSecret);
                         return payloadWithDisposition;
                 }
         }
@@ -333,7 +337,7 @@ public class FHIRService {
                         String tenantId,
                         String payload,
                         String provenance,
-                        Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome) {
+                        Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome,boolean enableAwsSecret) {
 
                 final var interactionId = getBundleInteractionId(request);
                 LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {} for", interactionId);
@@ -358,8 +362,15 @@ public class FHIRService {
                         final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL)
                                         .filter(s -> !s.isEmpty())
                                         .orElse(appConfig.getDefaultDatalakeApiUrl());
-
                         final var defaultDatalakeApiAuthn = appConfig.getDefaultDataLakeApiAuthn();
+                        if (enableAwsSecret) {
+                                LOG.info("###### AWS secret enabled through endpoint for interaction id :{}",
+                                                interactionId);
+                                 handleAwsSecrets(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                        tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                        bundlePayloadWithDisposition, jooqCfg, provenance,
+                                        request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        } else {                        
                         if (null == defaultDatalakeApiAuthn) {
                                 LOG.info("###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
                                                 interactionId);
@@ -374,6 +385,7 @@ public class FHIRService {
                                                 payload,
                                                 dataLakeApiContentType, provenance, includeIncomingPayloadInDB);
                         }
+                }
 
                 } catch (
 
@@ -1169,8 +1181,8 @@ public class FHIRService {
                         forwardRIHR.setInteractionId(bundleAsyncInteractionId);
                         forwardRIHR.setInteractionKey(requestURI);
                         forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                                        Map.of("nature", "Forwarded HTTP Response",
-                                                        "tenant_id", tenantId)));
+                                Map.of("nature", "Forwarded HTTP Response Error",
+                                                "tenant_id", tenantId)));
                         forwardRIHR.setContentType(
                                         MimeTypeUtils.APPLICATION_JSON_VALUE);
                         try {
