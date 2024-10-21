@@ -46,7 +46,7 @@ public class Hl7Service {
         this.hl7FHIRToShinnyFHIRConverter = hl7FHIRToShinnyFHIRConverter;
     }
 
-    public Object processHl7Message(String hl7Payload, String tenantId, String healthCheck, HttpServletRequest request,
+    public Object processHl7Message(String hl7Payload, String tenantId, HttpServletRequest request,
             HttpServletResponse response,boolean logPayloadEnabled) throws IOException {
         final var interactionId = getBundleInteractionId(request);
         final var dslContext = udiPrimeJpaConfig.dsl();
@@ -68,15 +68,15 @@ public class Hl7Service {
                         LOG.info("HL7Service :: *****************SHINNY FHIR PAYLOAD*************\n\n : {} ",shinnyFhirJson);
                     }
                 if (null != shinnyFhirJson) {
-                    registerStateHl7Accept(jooqCfg,hl7Payload, hl7FHIRJson, tenantId, interactionId, healthCheck, request,
+                    registerStateHl7Accept(jooqCfg,hl7Payload, hl7FHIRJson, tenantId, interactionId,  request,
                             response);
                     LOG.info(
                             "HL7Service::processHl7Message END -start processing FHIR Json for interactionid : {} tenantId :{} ",
                             interactionId, tenantId);
                     return fhirService.processBundle(shinnyFhirJson, tenantId, null, null, null, null, null,
-                            healthCheck, false,
+                            Boolean.toString(false), false,
                             false,
-                            false, request, response, null, true);
+                            false, request, response, null, true,false);
                 }
             }
         } catch (Exception ex) {
@@ -157,8 +157,7 @@ public class Hl7Service {
     }
 
     private void registerStateHl7Accept(org.jooq.Configuration jooqCfg, String hl7Payload ,String hl7FHIRJson, String tenantId,
-            String interactionId,
-            String healthCheck, HttpServletRequest request, HttpServletResponse response) throws IOException {
+            String interactionId, HttpServletRequest request, HttpServletResponse response) throws IOException {
         LOG.info("REGISTER State HL7 ACCEPT : BEGIN for interaction id :  {} tenant id : {}",
                 interactionId, tenantId);
         final var forwardedAt = OffsetDateTime.now();
