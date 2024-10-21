@@ -99,12 +99,14 @@ public class Hl7Controller {
         public Object validateHl7MessageAndForward(
                         @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true) final @RequestBody @Nonnull String payload,
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
-                        @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
                         @Parameter(description = "Boolean parameter to enable logging of the payload. Default value is <code>false</code>.", required = false) @RequestParam(value = "logPayloadEnabled", defaultValue = "false") boolean logPayloadEnabled,
                         HttpServletRequest request,
                         HttpServletResponse response) throws IOException {
-
+                if (tenantId == null || tenantId.trim().isEmpty()) {
+                        LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
+                        throw new IllegalArgumentException("Tenant ID must be provided");
+                }
                 request = new CustomRequestWrapper(request, payload);
-                return hl7Service.processHl7Message(payload, tenantId, healthCheck, request, response,logPayloadEnabled);
+                return hl7Service.processHl7Message(payload, tenantId, request, response, logPayloadEnabled);
         }
 }
