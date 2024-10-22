@@ -50,6 +50,10 @@ public class ExpectController {
             @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             final HttpServletRequest request) {
 
+        if (tenantId == null ||  tenantId.trim().isEmpty()) {
+            LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
+            throw new IllegalArgumentException("Tenant ID must be provided");
+        }
         final var interactionId = InteractionsFilter.getActiveRequestEnc(request).requestId().toString();
         var objectMapper = new ObjectMapper();
         Map<String, Object> payloadMap;

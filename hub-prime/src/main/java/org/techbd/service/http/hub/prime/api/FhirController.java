@@ -161,6 +161,10 @@ public class FhirController {
             @RequestParam(value = "mtls-strategy", required = false, defaultValue = "no-mTls") String mtlsStrategy,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
+        if (tenantId == null ||  tenantId.trim().isEmpty()) {
+            LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
+            throw new IllegalArgumentException("Tenant ID must be provided");
+        }
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
         request = new CustomRequestWrapper(request, payload);
