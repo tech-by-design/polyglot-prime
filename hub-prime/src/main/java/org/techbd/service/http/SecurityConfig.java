@@ -1,6 +1,7 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -36,7 +37,7 @@ public class SecurityConfig {
         // allow authentication for security
         // and turn off CSRF to allow POST methods
         http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**","/Hl7/v2", "/Hl7/v2/", "/metadata",
+                .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**", "/Hl7/v2", "/Hl7/v2/", "/metadata",
                         "/api/expect/**",
                         "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**",
                         "/docs/api/openapi/**",
@@ -55,7 +56,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
-        http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
+        http.headers(headers -> {
+            headers.frameOptions(frameOptions -> frameOptions.sameOrigin());
+            headers.httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000)); // Enable HSTS for 1 year
+        });
         return http.build();
     }
 
