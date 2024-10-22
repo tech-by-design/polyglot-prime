@@ -157,7 +157,6 @@ public class FhirController {
             @Parameter(description = "Optional parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @Parameter(hidden =true,description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false) @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
             @RequestParam(value = "include-operation-outcome", required = false, defaultValue = "true") boolean includeOperationOutcome,
-            @Parameter(hidden=true)
             @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
