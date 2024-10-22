@@ -397,12 +397,14 @@ public class FHIRService {
                         String tenantId, String dataLakeApiBaseURL,
                         org.jooq.Configuration jooqCfg, HttpServletRequest request,
                         Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
-                        String provenance, boolean includeIncomingPayloadInDB, String mtlsStrategy) {
+                        String provenance, boolean includeIncomingPayloadInDB, String mtlsStrategyStr) {
                 MTlsStrategy mTlsStrategy = null;
-                if (StringUtils.isNotEmpty(mtlsStrategy)) {
-                        LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from endpoint for interaction id: {}",
-                                        interactionId);
-                        mTlsStrategy = MTlsStrategy.fromString(mtlsStrategy);
+                LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from endpoint :{} for interaction id: {}",
+                mtlsStrategyStr,interactionId);
+                LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from application.yml :{} for interaction id: {}",
+                defaultDatalakeApiAuthn.mTlsStrategy(),interactionId);
+                if (StringUtils.isNotEmpty(mtlsStrategyStr)) {
+                        mTlsStrategy = MTlsStrategy.fromString(mtlsStrategyStr);
                 } else {
                         LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from application.yml for interaction id: {}",
                                         interactionId);
