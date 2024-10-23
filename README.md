@@ -41,7 +41,7 @@ maintainability, and scalability. Here are the key aspects of our strategy:
 5. **CI/CD Integration**: Integrate Continuous Integration and Continuous
    Deployment (CI/CD) pipelines for automated testing and deployment.
 6. **Documentation**: Each project will contain comprehensive documentation to
-   assist developers in understanding and contributing to the codebase. 
+   assist developers in understanding and contributing to the codebase.
 
 ## Repository Structure
 
