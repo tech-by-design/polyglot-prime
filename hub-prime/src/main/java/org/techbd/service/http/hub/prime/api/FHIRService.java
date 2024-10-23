@@ -1479,7 +1479,7 @@ public class FHIRService {
                                 errorMap.put("headers", responseHeaders);
                                 errorMap.put("statusText", webClientResponseException
                                                 .getStatusText());
-                        }
+                        } 
                         errorRIHR.setPayload((JsonNode) Configuration.objectMapper
                                         .valueToTree(errorMap));
                         errorRIHR.setFromState("FORWARD");
