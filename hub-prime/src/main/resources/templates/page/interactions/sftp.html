@@ -122,6 +122,7 @@
                                 link.addEventListener('click', function (e) {
                                     e.preventDefault();
                                     document.querySelector('#json').data = params.data.publishedFhirFailedResponse;
+                                    document.querySelector('#json').expand(/^(0|0.payload)$/);
                                     document.getElementById('modal').style.display = 'block';
                                 });
                                 link.style.textDecoration = 'underline';

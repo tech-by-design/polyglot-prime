@@ -122,6 +122,33 @@ public class Interactions {
             );
         }
 
+        public RequestEncountered(HttpServletRequest request, byte[] body,UUID requestId) throws IOException {
+            this(
+                    requestId,
+                    new Tenant(request),
+                    request.getMethod(),
+                    request.getRequestURL().toString(),
+                    request.getRequestURL()
+                            .append(request.getQueryString() != null ? "?" + request.getQueryString() : "").toString(),
+                    request.getRequestURI(),
+                    request.getRemoteAddr(),
+                    request.getHeader("User-Agent"),
+                    Instant.now(),
+                    StreamSupport
+                            .stream(((Iterable<String>) () -> request.getHeaderNames().asIterator()).spliterator(),
+                                    false)
+                            .map(headerName -> new Header(headerName, request.getHeader(headerName)))
+                            .collect(Collectors.toList()),
+                    request.getParameterMap(),
+                    request.getContentType(), // Content type
+                    request.getQueryString(), // Query string
+                    request.getProtocol(), // Protocol
+                    request.getSession(false),
+                    Arrays.asList(request.getCookies() != null ? request.getCookies() : new Cookie[0]),
+                    body // Request body
+            );
+        }
+
     public RequestEncountered withRequestBody(byte[] newRequestBody) {
         return new RequestEncountered(
                 this.requestId,

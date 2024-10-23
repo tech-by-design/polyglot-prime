@@ -1,0 +1,57 @@
+name: QE Statistics Notification
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  send-email:
+    runs-on: techbd-sql
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .pgpass file
+        run: |
+          # Write the metadata comment to the .pgpass file
+          echo "# { id: \"PROD_TECHBD_UDI_DS_PRIME\", description: \"UDI Prime database\", boundary: \"Production\" }" > ~/.pgpass
+
+          # Append the database connection details to the .pgpass file
+          echo "${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }}:${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PASSWORD }}" >> ~/.pgpass
+
+          # Set the .pgpass file permissions to 600 (read and write for owner only)
+          chmod 600 ~/.pgpass
+
+      - name: Fetch data from PostgreSQL
+        id: fetch-data
+        run: |
+          DATA=$(psql -h ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_HOST }} \
+                      -p ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_PORT }} \
+                      -U ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_USER }} \
+                      -d ${{ secrets.PROD_TECHBD_UDI_DS_PRIME_NAME }} \
+                      -c "SELECT SUM(qe_fhir_submission_count) AS tenant_submission_count, SUM(qe_fhir_pass_count) AS tenant_pass_count, SUM(qe_fhir_fail_count) AS tenant_fail_count, SUM(qe_fhir_pass_count + qe_fhir_fail_count) AS overall_response_count FROM techbd_udi_ingress.fhir_tenant_stats_view as ftsv" \
+                      --no-align --tuples-only)
+          echo "data=${DATA}" >> $GITHUB_ENV
+     
+      - name: Format fetched data as HTML table
+        id: format-data
+        run: |
+          IFS='|' read -r tenant_submission_count tenant_pass_count tenant_fail_count overall_response_count <<< "${{ env.data }}"
+          echo "formatted_data=<table border='1' cellpadding='10' cellspacing='0'><tr><th>Metric</th><th>Count</th></tr><tr><td>Total Submissions</td><td>$tenant_submission_count</td></tr><tr><td>Passed Submissions</td><td>$tenant_pass_count</td></tr><tr><td>Failed Submissions</td><td>$tenant_fail_count</td></tr><tr><td>Total Responses (Pass + Fail)</td><td>$overall_response_count</td></tr></table>" >> $GITHUB_ENV
+
+
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: email-smtp.us-east-1.amazonaws.com
+          server_port: 587
+          username: ${{ secrets.SES_SMTP_USERNAME }}
+          password: ${{ secrets.SES_SMTP_PASSWORD }}
+          subject: "Daily Tech by Design QE Statistics Notification"
+          body: "${{ env.formatted_data }}"
+          content_type: "text/html"
+          from: "Tech by Design QE Statistics Notification <no-reply@tx.techbd.org>"
+          to: alan-francis@netspective.in

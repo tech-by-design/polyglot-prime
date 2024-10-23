@@ -1,16 +1,17 @@
 #!/bin/bash
  
-# Ensure processingAgent is provided as a command-line argument
-if [ -z "$1" ]; then
-  echo "Usage: $0 <processingAgent>"
+# Ensure both processingAgent and url are provided as command-line arguments
+if [ -z "$1" ] || [ -z "$2" ]; then
+  echo "Usage: $0 <processingAgent> <url>"
   exit 1
 fi
  
-# Assign the first argument to a variable
+# Assign the arguments to variables
 PROCESSING_AGENT="$1"
+URL="$2"
  
-# Use curl to send the stdin payload to the endpoint with the specified processingAgent
-curl -s -X POST "https://qa.hrsn.nyehealth.org/HRSNBundle?processingAgent=${PROCESSING_AGENT}" \
+# Use curl to send the stdin payload to the specified endpoint with the processingAgent
+curl -s -X POST "${URL}?processingAgent=${PROCESSING_AGENT}" \
      -H 'Content-Type: application/json' \
      --verbose \
      --data @-

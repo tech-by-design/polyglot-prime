@@ -587,6 +587,29 @@ const jsonActionRule = SQLa.tableDefinition("json_action_rule", {
   sqlNS: ingressSchema
 });
 
+
+const interactionHl7RequestSat = interactionHub.satelliteTable(
+  "hl7_request",
+  {
+    sat_interaction_hl7_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: textNullable(),
+    nature: textNullable(),
+    payload: jsonbNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -761,6 +784,16 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionFhirValidationIssueSat}
 
       ${fileExchangeProtocol}
+      
+      ${interactionHl7RequestSat}    
+      
+      CREATE UNIQUE INDEX sat_int_hl7_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id, tenant_id, nature);
+      CREATE INDEX sat_inter_hl7_req_created_at_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (created_at DESC);
+      CREATE INDEX sat_inter_hl7_req_frm_state_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (from_state);
+      CREATE INDEX sat_inter_hl7_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id);
+      CREATE INDEX sat_inter_hl7_req_nature_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (nature);
+      CREATE INDEX sat_inter_hl7_req_payload_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING gin (payload);
+      CREATE INDEX sat_inter_hl7_req_to_state_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (to_state);
 
       BEGIN
         ${fileExchangeProtocol.seedDML}
@@ -794,6 +827,8 @@ const migrateSP = pgSQLa.storedProcedure(
             ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
             ADD COLUMN tenant_id_denorm TEXT DEFAULT null;
         END IF;
+
+        ALTER TABLE techbd_udi_ingress.sat_interaction_http_request	ADD COLUMN IF NOT EXISTS payload_text text NULL;
 
         
         -- Check and add 'nature_denorm' column if it does not exist
@@ -925,7 +960,9 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS json_action_rule_last_applied_at_idx ON techbd_udi_ingress.json_action_rule USING btree (last_applied_at DESC);
       CREATE INDEX IF NOT EXISTS json_action_rule_namespace_idx ON techbd_udi_ingress.json_action_rule USING btree (namespace);
       CREATE INDEX IF NOT EXISTS json_action_rule_priority_idx ON techbd_udi_ingress.json_action_rule USING btree (priority);
-      
+
+
+
       ${dependenciesSQL}
 
       CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};
