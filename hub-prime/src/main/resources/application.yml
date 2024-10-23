@@ -15,7 +15,7 @@ logging:
     io:
       netty:
         handler:
-          ssl: TRACE
+          ssl: DEBUG
     software:
       amazon:
         awssdk:
