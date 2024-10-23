@@ -26,7 +26,8 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
     private static final String supportEmailDisplayName = "Tech by Design Support <" + supportEmail + ">";
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record AuthenticatedUser(OAuth2User principal, GitHubUsersService.AuthorizedUser ghUser) implements Serializable {
+    public record AuthenticatedUser(OAuth2User principal, GitHubUsersService.AuthorizedUser ghUser)
+            implements Serializable {
     }
 
     public static final Optional<AuthenticatedUser> getAuthenticatedUser(
@@ -45,7 +46,7 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
 
     public GitHubUserAuthorizationFilter(final GitHubUsersService gitHubUsers) {
         this.gitHubUsers = gitHubUsers;
-            }
+    }
 
     @Override
     protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response,
@@ -54,9 +55,9 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
         final var sessionUser = getAuthenticatedUser(request);
         if (sessionUser.isEmpty()) {
             final var authentication = SecurityContextHolder.getContext().getAuthentication();
-if (authentication != null && authentication.isAuthenticated()
-          && !"anonymousUser".equals(authentication.getPrincipal().toString())) {
-        final var gitHubPrincipal = (DefaultOAuth2User) authentication.getPrincipal();
+            if (authentication != null && authentication.isAuthenticated()
+                    && !"anonymousUser".equals(authentication.getPrincipal().toString())) {
+                final var gitHubPrincipal = (DefaultOAuth2User) authentication.getPrincipal();
                 final var gitHubLoginId = Optional.ofNullable(gitHubPrincipal.getAttribute("login")).orElseThrow();
                 final var gitHubAuthnUser = gitHubUsers.isAuthorizedUser(gitHubLoginId.toString());
                 if (!gitHubAuthnUser.isPresent()) {
