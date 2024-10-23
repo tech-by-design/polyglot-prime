@@ -39,14 +39,12 @@ import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 
-import com.nimbusds.oauth2.sdk.util.CollectionUtils;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import ca.uhn.fhir.validation.ResultSeverityEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
@@ -157,10 +155,15 @@ public class FhirController {
             @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
             @Parameter(description = "Optional parameter to decide whether the Datalake submission to be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false) boolean isSync,
             @Parameter(description = "Optional parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
-            @Parameter(description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false) @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
+            @Parameter(hidden =true,description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false) @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
             @RequestParam(value = "include-operation-outcome", required = false, defaultValue = "true") boolean includeOperationOutcome,
+            @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
+        if (tenantId == null ||  tenantId.trim().isEmpty()) {
+            LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
+            throw new IllegalArgumentException("Tenant ID must be provided");
+        }
         final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
                 isSync ? "sync" : "async");
         request = new CustomRequestWrapper(request, payload);
@@ -168,7 +171,7 @@ public class FhirController {
                 uaValidationStrategyJson,
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
-                request, response, provenance, includeOperationOutcome);
+                request, response, provenance, includeOperationOutcome,mtlsStrategy);
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
@@ -234,6 +237,11 @@ public class FhirController {
             @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @Parameter(description = "Parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             HttpServletRequest request) {
+                
+        if (tenantId == null ||  tenantId.trim().isEmpty()) {
+            LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
+            throw new IllegalArgumentException("Tenant ID must be provided");
+        }
         request = new CustomRequestWrapper(request, payload);
 
         LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -BEGIN");

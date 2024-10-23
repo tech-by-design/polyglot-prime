@@ -46,27 +46,37 @@ public class Hl7Service {
         this.hl7FHIRToShinnyFHIRConverter = hl7FHIRToShinnyFHIRConverter;
     }
 
-    public Object processHl7Message(String hl7Payload, String tenantId, String healthCheck, HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    public Object processHl7Message(String hl7Payload, String tenantId, HttpServletRequest request,
+            HttpServletResponse response,boolean logPayloadEnabled) throws IOException {
         final var interactionId = getBundleInteractionId(request);
         final var dslContext = udiPrimeJpaConfig.dsl();
         final var jooqCfg = dslContext.configuration();
         try {
             LOG.info("HL7Service::processHl7Message BEGIN for interactionid : {} tenantId :{} ", interactionId,
                     tenantId);
+            if(logPayloadEnabled) {
+                LOG.info("HL7Service :: *****************ORIGINAL HL7 PAYLOAD*************\n\n : {} ",hl7Payload);
+            }
+
             final var hl7FHIRJson = convertHl7ToFHIRJson(jooqCfg, hl7Payload, tenantId, interactionId);
+            if(logPayloadEnabled) {
+                LOG.info("HL7Service :: *****************LINUX CONVERTED PAYLOAD*************\n\n : {} ",hl7FHIRJson);
+            }
             if (null != hl7FHIRJson) {
                 final String shinnyFhirJson = convertToShinnyFHIRJson(jooqCfg, hl7FHIRJson, tenantId, interactionId);
+                if(logPayloadEnabled) {
+                        LOG.info("HL7Service :: *****************SHINNY FHIR PAYLOAD*************\n\n : {} ",shinnyFhirJson);
+                    }
                 if (null != shinnyFhirJson) {
-                    registerStateHl7Accept(jooqCfg,hl7Payload, hl7FHIRJson, tenantId, interactionId, healthCheck, request,
+                    registerStateHl7Accept(jooqCfg,hl7Payload, hl7FHIRJson, tenantId, interactionId,  request,
                             response);
                     LOG.info(
                             "HL7Service::processHl7Message END -start processing FHIR Json for interactionid : {} tenantId :{} ",
                             interactionId, tenantId);
                     return fhirService.processBundle(shinnyFhirJson, tenantId, null, null, null, null, null,
-                            healthCheck, false,
+                            Boolean.toString(false), false,
                             false,
-                            false, request, response, null, true);
+                            false, request, response, null, true,null);
                 }
             }
         } catch (Exception ex) {
@@ -81,7 +91,7 @@ public class Hl7Service {
 
     public String convertToShinnyFHIRJson(org.jooq.Configuration jooqCfg, String hl7FHIRJson, String tenantId,
             String interactionId) {
-        LOG.info("HL7Service::convertToShinnyFHIRJson BRGIN for interactionid : {} tenantId :{} ", interactionId,
+        LOG.info("HL7Service::convertToShinnyFHIRJson BEGIN for interactionid : {} tenantId :{} ", interactionId,
                 tenantId);
         try {
             return hl7FHIRToShinnyFHIRConverter.convertToShinnyFHIRJson(hl7FHIRJson);
@@ -147,8 +157,7 @@ public class Hl7Service {
     }
 
     private void registerStateHl7Accept(org.jooq.Configuration jooqCfg, String hl7Payload ,String hl7FHIRJson, String tenantId,
-            String interactionId,
-            String healthCheck, HttpServletRequest request, HttpServletResponse response) throws IOException {
+            String interactionId, HttpServletRequest request, HttpServletResponse response) throws IOException {
         LOG.info("REGISTER State HL7 ACCEPT : BEGIN for interaction id :  {} tenant id : {}",
                 interactionId, tenantId);
         final var forwardedAt = OffsetDateTime.now();

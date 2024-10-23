@@ -12,7 +12,19 @@ logging:
       hibernate: ERROR
     ca:
       uhn: DEBUG
-
+    io:
+      netty:
+        handler:
+          ssl: TRACE
+    software:
+      amazon:
+        awssdk:
+          services:
+            secretsmanager: DEBUG
+    reactor:
+      netty:
+        http:
+          client: DEBUG
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE}
@@ -52,6 +64,11 @@ springdoc:
 server:
   servlet:
     context-path: /
+    session:
+      cookie:
+        secure: true
+        http-only: true
+        same-site: LAX
 
 org:
   techbd:

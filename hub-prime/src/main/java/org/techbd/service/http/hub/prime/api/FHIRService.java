@@ -3,10 +3,15 @@ package org.techbd.service.http.hub.prime.api;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.UnexpectedException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,14 +19,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.GrantedAuthority;
@@ -56,11 +62,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
-import ca.uhn.fhir.validation.ResultSeverityEnum;
+import io.micrometer.common.util.StringUtils;
 import io.netty.handler.ssl.SslContextBuilder;
 import jakarta.annotation.Nonnull;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import reactor.core.publisher.Mono;
@@ -73,11 +79,11 @@ import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerExcept
 
 @Service
 public class FHIRService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
-    private final AppConfig appConfig;
-    private final OrchestrationEngine engine;
-    private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+        private static final String START_TIME_ATTRIBUTE = "startTime";
+        private static final Logger LOG = LoggerFactory.getLogger(FHIRService.class.getName());
+        private final AppConfig appConfig;
+        private final OrchestrationEngine engine;
+        private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
         @Value("${org.techbd.service.http.interactions.default-persist-strategy:#{null}}")
         private String defaultPersistStrategy;
@@ -85,12 +91,13 @@ public class FHIRService {
         @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
         private boolean saveUserDataToInteractions;
 
-    public FHIRService(
-            final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig,OrchestrationEngine engine) {
-        this.appConfig = appConfig;
-        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        this.engine = engine;
-    }
+        public FHIRService(
+                        final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig,
+                        OrchestrationEngine engine) {
+                this.appConfig = appConfig;
+                this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+                this.engine = engine;
+        }
 
         public Object processBundle(final @RequestBody @Nonnull String payload,
                         String tenantId,
@@ -102,8 +109,11 @@ public class FHIRService {
                         boolean includeRequestInOutcome,
                         boolean includeIncomingPayloadInDB,
                         HttpServletRequest request, HttpServletResponse response, String provenance,
-                        boolean includeOperationOutcome)
+                        boolean includeOperationOutcome, String mtlsStrategy)
                         throws IOException {
+                if (null == dataLakeApiContentType) {
+                        dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
+                }
                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                 : appConfig.getDefaultSdohFhirProfileUrl();
@@ -119,6 +129,7 @@ public class FHIRService {
                 }
                 final var dslContext = udiPrimeJpaConfig.dsl();
                 final var jooqCfg = dslContext.configuration();
+                addObservabilityHeadersToResponse(request, response);
                 Map<String, Object> payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                 response, payload, result);
                 if (null == payloadWithDisposition) {
@@ -126,15 +137,50 @@ public class FHIRService {
                                         getBundleInteractionId(request));
                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                         includeIncomingPayloadInDB, tenantId, payload,
-                                        provenance, null, includeOperationOutcome);
+                                        provenance, null, includeOperationOutcome, mtlsStrategy);
                         return result;
                 } else {
                         LOG.warn("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
                                         getBundleInteractionId(request));
                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                         includeIncomingPayloadInDB, tenantId, payload,
-                                        provenance, payloadWithDisposition, includeOperationOutcome);
+                                        provenance, payloadWithDisposition, includeOperationOutcome, mtlsStrategy);
                         return payloadWithDisposition;
+                }
+        }
+
+        private void addObservabilityHeadersToResponse(HttpServletRequest request, HttpServletResponse response) {
+                final var startTime = (Instant) request.getAttribute(START_TIME_ATTRIBUTE);
+                final var finishTime = Instant.now();
+                final Duration duration = Duration.between(startTime, finishTime);
+
+                final String startTimeText = startTime.toString();
+                final String finishTimeText = finishTime.toString();
+                final String durationMsText = String.valueOf(duration.toMillis());
+                final String durationNsText = String.valueOf(duration.toNanos());
+
+                // set response headers for those clients that can access HTTP headers
+                response.addHeader("X-Observability-Metric-Interaction-Start-Time", startTimeText);
+                response.addHeader("X-Observability-Metric-Interaction-Finish-Time", finishTimeText);
+                response.addHeader("X-Observability-Metric-Interaction-Duration-Nanosecs", durationMsText);
+                response.addHeader("X-Observability-Metric-Interaction-Duration-Millisecs", durationNsText);
+
+                // set a cookie which is accessible to a JavaScript user agent that cannot
+                // access HTTP headers (usually HTML pages in web browser cannot access HTTP
+                // response headers)
+                try {
+                        final var metricCookie = new Cookie("Observability-Metric-Interaction-Active",
+                                        URLEncoder.encode("{ \"startTime\": \"" + startTimeText
+                                                        + "\", \"finishTime\": \"" + finishTimeText
+                                                        + "\", \"durationMillisecs\": \"" + durationMsText
+                                                        + "\", \"durationNanosecs\": \""
+                                                        + durationNsText + "\" }", StandardCharsets.UTF_8.toString()));
+                        metricCookie.setPath("/"); // Set path as required
+                        metricCookie.setHttpOnly(false); // Ensure the cookie is accessible via JavaScript
+                        response.addCookie(metricCookie);
+                } catch (UnsupportedEncodingException ex) {
+                        LOG.error("Exception during setting  Observability-Metric-Interaction-Active cookie to response header",
+                                        ex);
                 }
         }
 
@@ -146,8 +192,10 @@ public class FHIRService {
                 final var mutatableReq = new ContentCachingRequestWrapper(request);
                 RequestEncountered requestEncountered = null;
                 if (null != getBundleInteractionId(request)) {
-                        //If its a converted HL7 payload ,it will already have an interaction id.hence do not create new interactionId
-                        requestEncountered = new Interactions.RequestEncountered(mutatableReq, payload.getBytes(),UUID.fromString(getBundleInteractionId(request)));
+                        // If its a converted HL7 payload ,it will already have an interaction id.hence
+                        // do not create new interactionId
+                        requestEncountered = new Interactions.RequestEncountered(mutatableReq, payload.getBytes(),
+                                        UUID.fromString(getBundleInteractionId(request)));
                 } else {
                         requestEncountered = new Interactions.RequestEncountered(mutatableReq, payload.getBytes());
                 }
@@ -242,37 +290,37 @@ public class FHIRService {
                 request.setAttribute("activeHttpInteraction", rre);
         }
 
-    private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
-            String uaValidationStrategyJson,
-            boolean includeRequestInOutcome) {
-        LOG.info("Getting structure definition Urls from config - Before: ");
-        final var igPackages = appConfig.getIgPackages();
-        final var igVersion = appConfig.getIgVersion();
-        final var sessionBuilder = engine.session()
-                .onDevice(Device.createDefault())
-                .withPayloads(List.of(payload))
-                .withFhirProfileUrl(fhirProfileUrl)
-                .withFhirIGPackages(igPackages)
-                .withIgVersion(igVersion)
-                .addHapiValidationEngine() // by default
-                // clearExisting is set to true so engines can be fully supplied through header
-                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-        final var session = sessionBuilder.build();
-        final var bundleAsyncInteractionId = getBundleInteractionId(request);
-        engine.orchestrate(session);
-        // TODO: if there are errors that should prevent forwarding, stop here
-        // TODO: need to implement `immediate` (sync) webClient op, right now it's async
-        // only
-        // immediateResult is what's returned to the user while async operation
-        // continues
-        final var immediateResult = new HashMap<>(Map.of(
-                "resourceType", "OperationOutcome",
-                "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
-                "isAsync", true,
-                "validationResults", session.getValidationResults(),
-                "statusUrl",
-                getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
-                "device", session.getDevice()));
+        private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
+                        String uaValidationStrategyJson,
+                        boolean includeRequestInOutcome) {
+                LOG.info("Getting structure definition Urls from config - Before: ");
+                final var igPackages = appConfig.getIgPackages();
+                final var igVersion = appConfig.getIgVersion();
+                final var sessionBuilder = engine.session()
+                                .onDevice(Device.createDefault())
+                                .withPayloads(List.of(payload))
+                                .withFhirProfileUrl(fhirProfileUrl)
+                                .withFhirIGPackages(igPackages)
+                                .withIgVersion(igVersion)
+                                .addHapiValidationEngine() // by default
+                                // clearExisting is set to true so engines can be fully supplied through header
+                                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+                final var session = sessionBuilder.build();
+                final var bundleAsyncInteractionId = getBundleInteractionId(request);
+                engine.orchestrate(session);
+                // TODO: if there are errors that should prevent forwarding, stop here
+                // TODO: need to implement `immediate` (sync) webClient op, right now it's async
+                // only
+                // immediateResult is what's returned to the user while async operation
+                // continues
+                final var immediateResult = new HashMap<>(Map.of(
+                                "resourceType", "OperationOutcome",
+                                "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
+                                "isAsync", true,
+                                "validationResults", session.getValidationResults(),
+                                "statusUrl",
+                                getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
+                                "device", session.getDevice()));
 
                 if (uaValidationStrategyJson != null) {
                         immediateResult.put("uaValidationStrategy",
@@ -294,7 +342,8 @@ public class FHIRService {
                         String tenantId,
                         String payload,
                         String provenance,
-                        Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome) {
+                        Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome,
+                        String mtlsStrategy) {
 
                 final var interactionId = getBundleInteractionId(request);
                 LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {} for", interactionId);
@@ -319,12 +368,11 @@ public class FHIRService {
                         final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL)
                                         .filter(s -> !s.isEmpty())
                                         .orElse(appConfig.getDefaultDatalakeApiUrl());
-
                         final var defaultDatalakeApiAuthn = appConfig.getDefaultDataLakeApiAuthn();
+
                         if (null == defaultDatalakeApiAuthn) {
                                 LOG.info("###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
                                                 interactionId);
-
                                 handleNoMtls(MTlsStrategy.NO_MTLS, interactionId, tenantId, dataLakeApiBaseURL,
                                                 jooqCfg, request,
                                                 bundlePayloadWithDisposition, payload, dataLakeApiContentType,
@@ -333,7 +381,8 @@ public class FHIRService {
                                 handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId, dataLakeApiBaseURL,
                                                 jooqCfg, request, bundlePayloadWithDisposition,
                                                 payload,
-                                                dataLakeApiContentType, provenance, includeIncomingPayloadInDB);
+                                                dataLakeApiContentType, provenance, includeIncomingPayloadInDB,
+                                                mtlsStrategy);
                         }
 
                 } catch (
@@ -345,35 +394,54 @@ public class FHIRService {
                 }
         }
 
-    public void handleMTlsStrategy(DefaultDataLakeApiAuthn defaultDatalakeApiAuthn, String interactionId,
-            String tenantId, String dataLakeApiBaseURL,
-            org.jooq.Configuration jooqCfg, HttpServletRequest request,
-            Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
-            String provenance, boolean includeIncomingPayloadInDB) {
-        MTlsStrategy mTlsStrategy = MTlsStrategy.fromString(defaultDatalakeApiAuthn.mTlsStrategy());
-        switch (mTlsStrategy) {
-            case AWS_SECRETS -> handleAwsSecrets(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
-                    tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
-                    bundlePayloadWithDisposition, jooqCfg, provenance,
-                    request.getRequestURI(), includeIncomingPayloadInDB, payload);
-            case POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL ->
-                handlePostStdoutPayload(interactionId, tenantId, jooqCfg,dataLakeApiBaseURL,
-                        bundlePayloadWithDisposition,
-                        includeIncomingPayloadInDB, payload, provenance, request,
-                        defaultDatalakeApiAuthn.postStdinPayloadToNyecDataLakeExternal());
-            case MTLS_RESOURCES ->
-                handleMtlsResources(interactionId, tenantId, jooqCfg,
-                        bundlePayloadWithDisposition,
-                        includeIncomingPayloadInDB, payload, provenance, request,
-                        dataLakeApiContentType, dataLakeApiBaseURL,
-                        defaultDatalakeApiAuthn.mTlsResources());
-            default ->
-                handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
-                        request,
-                        bundlePayloadWithDisposition, payload, dataLakeApiContentType,
-                        provenance, includeIncomingPayloadInDB);
+        public void handleMTlsStrategy(DefaultDataLakeApiAuthn defaultDatalakeApiAuthn, String interactionId,
+                        String tenantId, String dataLakeApiBaseURL,
+                        org.jooq.Configuration jooqCfg, HttpServletRequest request,
+                        Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
+                        String provenance, boolean includeIncomingPayloadInDB, String mtlsStrategyStr) {
+                MTlsStrategy mTlsStrategy = null;
+                LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from endpoint :{} for interaction id: {}",
+                                mtlsStrategyStr, interactionId);
+                LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from application.yml :{} for interaction id: {}",
+                                defaultDatalakeApiAuthn.mTlsStrategy(), interactionId);
+                if (StringUtils.isNotEmpty(mtlsStrategyStr)) {
+                        LOG.info("FHIRService:: Proceed with temp file strategy -BEGIN  :{} for interaction id: {}",
+                                        defaultDatalakeApiAuthn.mTlsStrategy(), interactionId);
+                        mTlsStrategy = MTlsStrategy.fromString(mtlsStrategyStr);
+                        handleAwsSecretsTemporaryFile(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                        tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                        bundlePayloadWithDisposition, jooqCfg, provenance,
+                                        request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        LOG.info("FHIRService:: Proceed with temp file strategy -BEGIN  :{} for interaction id: {}",
+                                        defaultDatalakeApiAuthn.mTlsStrategy(), interactionId);
+                } else {
+                        LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from application.yml for interaction id: {}",
+                                        interactionId);
+                        mTlsStrategy = MTlsStrategy.fromString(defaultDatalakeApiAuthn.mTlsStrategy());
+                }
+                switch (mTlsStrategy) {
+                        case AWS_SECRETS -> handleAwsSecrets(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                        tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                        bundlePayloadWithDisposition, jooqCfg, provenance,
+                                        request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        case POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL ->
+                                handlePostStdoutPayload(interactionId, tenantId, jooqCfg, dataLakeApiBaseURL,
+                                                bundlePayloadWithDisposition,
+                                                includeIncomingPayloadInDB, payload, provenance, request,
+                                                defaultDatalakeApiAuthn.postStdinPayloadToNyecDataLakeExternal());
+                        case MTLS_RESOURCES ->
+                                handleMtlsResources(interactionId, tenantId, jooqCfg,
+                                                bundlePayloadWithDisposition,
+                                                includeIncomingPayloadInDB, payload, provenance, request,
+                                                dataLakeApiContentType, dataLakeApiBaseURL,
+                                                defaultDatalakeApiAuthn.mTlsResources());
+                        default ->
+                                handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
+                                                request,
+                                                bundlePayloadWithDisposition, payload, dataLakeApiContentType,
+                                                provenance, includeIncomingPayloadInDB);
+                }
         }
-    }
 
         private void handleMtlsResources(String interactionId, String tenantId, org.jooq.Configuration jooqCfg,
                         Map<String, Object> bundlePayloadWithDisposition, boolean includeIncomingPayloadInDB,
@@ -518,6 +586,133 @@ public class FHIRService {
                                 tenantId);
         }
 
+        private void handleAwsSecretsTemporaryFile(MTlsAwsSecrets mTlsAwsSecrets, String interactionId, String tenantId,
+                        String dataLakeApiBaseURL, String dataLakeApiContentType,
+                        Map<String, Object> bundlePayloadWithDisposition,
+                        org.jooq.Configuration jooqCfg, String provenance, String requestURI,
+                        boolean includeIncomingPayloadInDB, String payload) {
+                try {
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile -BEGIN for interactionId : {}",
+                                        interactionId);
+
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                "######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### ");
+                        }
+
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+                        if (null == CERTIFICATE) {
+                                throw new IllegalArgumentException(
+                                                "Certificate read from secrets manager with certificate secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (null == PRIVATE_KEY) {
+                                throw new IllegalArgumentException(
+                                                "Private key read from secrets manager with key secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Certificate and Key Details fetched successfully for interactionId : {}",
+                                        interactionId);
+
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Creating SSLContext -BEGIN for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Creating  temp file  tempC -BEGIN for interactionId : {}",
+                                        interactionId);
+                        Path certFile = Files.createTempFile("tempC", ".pem");
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Creating  temp file  tempC -END for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Creating  temp file  tempK -BEGIN for interactionId : {}",
+                                        interactionId);
+                        Path keyFile = Files.createTempFile("tempK", ".key");
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Creating  temp file  tempK -END for interactionId : {}",
+                                        interactionId);
+                        try {
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Write to  tempc -BEGIN for interactionId : {}",
+                                                interactionId);
+                                Files.writeString(certFile, CERTIFICATE);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Write to  tempC -END for interactionId : {}",
+                                                interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Write to  tempK -BEGIN for interactionId : {}",
+                                                interactionId);
+                                Files.writeString(keyFile, PRIVATE_KEY);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Write to  tempK -END for interactionId : {}",
+                                                interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Create SSL context with tempC and tempK -BEGIN for interactionId : {}",
+                                                interactionId);
+                                final var sslContext = SslContextBuilder.forClient()
+                                                .keyManager(Files.newInputStream(certFile),
+                                                                Files.newInputStream(keyFile))
+                                                .build();
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Create SSL context with tempC and tempK -END for interactionId : {}",
+                                                interactionId);
+                                LOG.info("FHIRService :: handleAwsSecrets SSLContext created successfully for interactionId : {}",
+                                                interactionId);
+
+                                HttpClient httpClient = HttpClient.create()
+                                                .secure(ssl -> ssl.sslContext(sslContext));
+
+                                LOG.info("FHIRService :: handleAwsSecrets HttpClient created successfully for interactionId : {}",
+                                                interactionId);
+
+                                ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+                                LOG.info("FHIRService :: handleAwsSecrets ReactorClientHttpConnector created successfully for interactionId : {}",
+                                                interactionId);
+
+                                LOG.info("FHIRService:: handleAwsSecrets Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                                + "with scoring Engine API URL: {} \n" +
+                                                "dataLakeApiContentType: {} \n" +
+                                                "bundlePayloadWithDisposition: {} \n" +
+                                                "for interactionID: {} \n" +
+                                                "tenant Id: {}",
+                                                dataLakeApiBaseURL,
+                                                dataLakeApiContentType,
+                                                bundlePayloadWithDisposition == null ? "Payload is null"
+                                                                : "Payload is not null",
+                                                interactionId,
+                                                tenantId);
+
+                                var webClient = WebClient.builder()
+                                                .baseUrl(dataLakeApiBaseURL)
+                                                .defaultHeader("Content-Type", dataLakeApiContentType)
+                                                .clientConnector(connector)
+                                                .build();
+
+                                LOG.info("FHIRService :: handleAwsSecrets Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
+                                                interactionId);
+                                LOG.info("FHIRService:: handleAwsSecrets - sendPostRequest BEGIN for interaction id: {} tenantId :{} ",
+                                                interactionId, tenantId);
+
+                                sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
+                                                dataLakeApiContentType, interactionId,
+                                                jooqCfg, provenance, requestURI, dataLakeApiBaseURL);
+
+                                LOG.info("FHIRService:: handleAwsSecrets -sendPostRequest END for interaction id: {} tenantId :{} ",
+                                                interactionId, tenantId);
+                                LOG.info("FHIRService :: handleAwsSecrets Post to scoring engine -END for interactionId :{}",
+                                                interactionId);
+                        } finally {
+                                // Clean up temporary files
+                                Files.deleteIfExists(certFile);
+                                Files.deleteIfExists(keyFile);
+                        }
+                } catch (Exception ex) {
+                        LOG.error("ERROR:: FHIRService :: handleAwsSecrets Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
+                                        ex.getMessage(), interactionId, tenantId);
+                        registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(), provenance);
+                }
+                LOG.info("FHIRService :: handleAwsSecrets -END for interactionId : {}", interactionId);
+        }
+
         private void handleAwsSecrets(MTlsAwsSecrets mTlsAwsSecrets, String interactionId, String tenantId,
                         String dataLakeApiBaseURL, String dataLakeApiContentType,
                         Map<String, Object> bundlePayloadWithDisposition,
@@ -555,14 +750,14 @@ public class FHIRService {
                         LOG.info("FHIRService :: handleAwsSecrets Certificate and Key Details fetched successfully for interactionId : {}",
                                         interactionId);
 
-                        LOG.info("FHIRService :: handleAwsSecrets Creating SSLContext successfully -BEGIN for interactionId : {}",
+                        LOG.info("FHIRService :: handleAwsSecrets Creating SSLContext  -BEGIN for interactionId : {}",
                                         interactionId);
 
                         final var sslContext = SslContextBuilder.forClient()
                                         .keyManager(new ByteArrayInputStream(CERTIFICATE.getBytes()),
                                                         new ByteArrayInputStream(PRIVATE_KEY.getBytes()))
                                         .build();
-                        LOG.info("FHIRService :: handleAwsSecrets Creating SSLContext successfully -END for interactionId : {}",
+                        LOG.info("FHIRService :: handleAwsSecrets Creating SSLContext  - END for interactionId : {}",
                                         interactionId);
 
                         HttpClient httpClient = HttpClient.create()
@@ -615,23 +810,24 @@ public class FHIRService {
                                 interactionId);
         }
 
-    private void handlePostStdoutPayload(String interactionId, String tenantId, org.jooq.Configuration jooqCfg,String dataLakeApiBaseURL,
-            Map<String, Object> bundlePayloadWithDisposition,
-            boolean includeIncomingPayloadInDB, String payload, String provenance,
-            HttpServletRequest request,
-            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal) {
-        LOG.info("Proceed with posting payload via external process BEGIN forinteractionId : {}",
-                interactionId);
-        try {
-            registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
-                    request.getRequestURI(), tenantId,
-                    Optional.ofNullable(bundlePayloadWithDisposition)
-                            .orElse(new HashMap<>()),
-                    null, includeIncomingPayloadInDB, payload);
-            var postToNyecExternalResponse = postStdinPayloadToNyecDataLakeExternal(dataLakeApiBaseURL,
-                    tenantId, interactionId,
-                    bundlePayloadWithDisposition,
-                    postStdinPayloadToNyecDataLakeExternal);
+        private void handlePostStdoutPayload(String interactionId, String tenantId, org.jooq.Configuration jooqCfg,
+                        String dataLakeApiBaseURL,
+                        Map<String, Object> bundlePayloadWithDisposition,
+                        boolean includeIncomingPayloadInDB, String payload, String provenance,
+                        HttpServletRequest request,
+                        PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal) {
+                LOG.info("Proceed with posting payload via external process BEGIN forinteractionId : {}",
+                                interactionId);
+                try {
+                        registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
+                                        request.getRequestURI(), tenantId,
+                                        Optional.ofNullable(bundlePayloadWithDisposition)
+                                                        .orElse(new HashMap<>()),
+                                        null, includeIncomingPayloadInDB, payload);
+                        var postToNyecExternalResponse = postStdinPayloadToNyecDataLakeExternal(dataLakeApiBaseURL,
+                                        tenantId, interactionId,
+                                        bundlePayloadWithDisposition,
+                                        postStdinPayloadToNyecDataLakeExternal);
 
                         LOG.info("Create payload from postToNyecExternalResponse- BEGIN for interactionId : {}",
                                         interactionId);
@@ -664,36 +860,37 @@ public class FHIRService {
                                 interactionId);
         }
 
-    private PostToNyecExternalResponse postStdinPayloadToNyecDataLakeExternal(String dataLakeApiBaseURL,String tenantId,
-            String interactionId,
-            Map<String, Object> bundlePayloadWithDisposition,
-            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal)
-            throws Exception {
-        boolean completed = false;
-        String processOutput = "";
-        String errorOutput = "";
-        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal BEGIN for interaction id : {} tenantID :{}",
-                interactionId, tenantId);
-        final var bashScriptPath = postStdinPayloadToNyecDataLakeExternal.cmd();
-        if (null == bashScriptPath) {
-            throw new IllegalArgumentException(
-                    "Bash Script path not configured for the environment.Configure this in application.yml.");
-        }
-        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Fetched Bash Script Path :{} for interaction id : {} tenantID :{}",
-                bashScriptPath, interactionId, tenantId);
-        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Prepare ProcessBuilder to run the bash script for interaction id : {} tenantID :{}",
-                interactionId, tenantId);
-        final var processBuilder = new ProcessBuilder(bashScriptPath, tenantId,dataLakeApiBaseURL)
-                .redirectErrorStream(true);
-        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Start the process  for interaction id : {} tenantID :{}",
-                interactionId, tenantId);
-        final var process = processBuilder.start();
-        LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal DEBUG: Capture any output from stdout or stderr immediately after starting\r\n"
-                        + //
-                        "        // the process  for interaction id : {} tenantID :{}",
-                interactionId, tenantId);
-        try (var errorStream = process.getErrorStream();
-                var inputStream = process.getInputStream()) {
+        private PostToNyecExternalResponse postStdinPayloadToNyecDataLakeExternal(String dataLakeApiBaseURL,
+                        String tenantId,
+                        String interactionId,
+                        Map<String, Object> bundlePayloadWithDisposition,
+                        PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal)
+                        throws Exception {
+                boolean completed = false;
+                String processOutput = "";
+                String errorOutput = "";
+                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal BEGIN for interaction id : {} tenantID :{}",
+                                interactionId, tenantId);
+                final var bashScriptPath = postStdinPayloadToNyecDataLakeExternal.cmd();
+                if (null == bashScriptPath) {
+                        throw new IllegalArgumentException(
+                                        "Bash Script path not configured for the environment.Configure this in application.yml.");
+                }
+                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Fetched Bash Script Path :{} for interaction id : {} tenantID :{}",
+                                bashScriptPath, interactionId, tenantId);
+                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Prepare ProcessBuilder to run the bash script for interaction id : {} tenantID :{}",
+                                interactionId, tenantId);
+                final var processBuilder = new ProcessBuilder(bashScriptPath, tenantId, dataLakeApiBaseURL)
+                                .redirectErrorStream(true);
+                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal Start the process  for interaction id : {} tenantID :{}",
+                                interactionId, tenantId);
+                final var process = processBuilder.start();
+                LOG.info("FHIRService :: postStdinPayloadToNyecDataLakeExternal DEBUG: Capture any output from stdout or stderr immediately after starting\r\n"
+                                + //
+                                "        // the process  for interaction id : {} tenantID :{}",
+                                interactionId, tenantId);
+                try (var errorStream = process.getErrorStream();
+                                var inputStream = process.getInputStream()) {
 
                         // DEBUG: Print any errors encountered
                         errorOutput = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
@@ -1130,7 +1327,7 @@ public class FHIRService {
                         forwardRIHR.setInteractionId(bundleAsyncInteractionId);
                         forwardRIHR.setInteractionKey(requestURI);
                         forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                                        Map.of("nature", "Forwarded HTTP Response",
+                                        Map.of("nature", "Forwarded HTTP Response Error",
                                                         "tenant_id", tenantId)));
                         forwardRIHR.setContentType(
                                         MimeTypeUtils.APPLICATION_JSON_VALUE);

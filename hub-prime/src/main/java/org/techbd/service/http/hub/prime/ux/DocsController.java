@@ -3,11 +3,13 @@ package org.techbd.service.http.hub.prime.ux;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -86,12 +88,18 @@ public class DocsController {
         final var path = URLDecoder.decode(request.getRequestURI().split("/docs/techbd-hub/resource/content/")[1],
                 StandardCharsets.UTF_8.toString());
 
+        if (!path.matches("[a-zA-Z0-9_/.-]+")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("Invalid request path");
+        }
+
         final var found = drs.sidebarPaths().findNode(path);
         if (found.isPresent()) {
             final var node = found.orElseThrow();
             if (node.payload().isPresent()) {
                 final var resource = node.payload().orElseThrow().resource();
-                // if the resource is not "renderable" and is "forwardable"
+                // If the resource is not "renderable" and is "forwardable"
                 if (resource instanceof ForwardableResource) {
                     final var location = "/docs/techbd-hub/resource/proxy/" + path;
                     LOG.info("[techbdHubResource] proxying '%s' via '%s'".formatted(path, location));
@@ -104,21 +112,31 @@ public class DocsController {
                 final var ns = drs.getNamingStrategy();
                 final var breadcrumbs = node.ancestors().stream()
                         .filter(n -> !n.absolutePath().equals("docs")) // we don't want the relative "root"
-                        .map(n -> Map.of("text", ns.caption(n)))
+                        .map(n -> Map.of("text", StringEscapeUtils.escapeHtml4(ns.caption(n))))
                         .collect(Collectors.toList());
-                breadcrumbs.add(Map.of("href", "/docs/techbd-hub", "text", "Tech by Design Hub"));
+                breadcrumbs.add(Map.of("href", "/docs/techbd-hub", "text", StringEscapeUtils.escapeHtml4("Tech by Design Hub")));
+
+                // Derive a file name from the path
+                String fileName = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+                fileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString());
 
                 return ResponseEntity.ok()
+                        .header("X-Content-Type-Options", "nosniff")
+                        .header("X-XSS-Protection", "1; mode=block")
+                        .header("Content-Security-Policy", "default-src 'self'")
                         .header("Resource-Breadcrumbs", headersOM.writeValueAsString(breadcrumbs))
-                        .header("Resource-Title", ns.title(node))
+                        .header("Resource-Title", StringEscapeUtils.escapeHtml4(ns.title(node)))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                         .contentType(MediaType.valueOf(resource.nature().mimeType()))
                         .body(resource.content());
             }
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                    .body("No resource found in path's payload: " + path);
-
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("No resource found for the provided path");
         } else {
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body("Invalid path: " + path);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("Invalid request path");
         }
     }
 
