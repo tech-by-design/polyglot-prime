@@ -16,9 +16,9 @@ enterprise and utility projects:
 - Thymeleaf for HTML templating and HTMX 2.0 for HATEOS interactions.
 - OpenTelemetry (observability) and OpenFeature (feature flags).
 - jOOQ with automatic code generation for type-safe SQL-first database
-  interactions.
+  interactions. 
 - PostgreSQL 16 for server-side persistence and SQLite for edge-side
-  persistence.
+  persistence. 
 - JUnit 5 with AssertJ assertions for testing the app server, Playwright for
   testing the front end, and pgTAP for testing the database.
 - Deployment via containers
