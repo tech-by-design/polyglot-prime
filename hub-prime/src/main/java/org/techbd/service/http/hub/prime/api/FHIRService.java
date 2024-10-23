@@ -405,15 +405,9 @@ public class FHIRService {
                 LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from application.yml :{} for interaction id: {}",
                                 defaultDatalakeApiAuthn.mTlsStrategy(), interactionId);
                 if (StringUtils.isNotEmpty(mtlsStrategyStr)) {
-                        LOG.info("FHIRService:: Proceed with temp file strategy -BEGIN  :{} for interaction id: {}",
+                        LOG.info("FHIRService:: Proceed with mtls strategy from endpoint  :{} for interaction id: {}",
                                         defaultDatalakeApiAuthn.mTlsStrategy(), interactionId);
                         mTlsStrategy = MTlsStrategy.fromString(mtlsStrategyStr);
-                        handleAwsSecretsTemporaryFile(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
-                                        tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
-                                        bundlePayloadWithDisposition, jooqCfg, provenance,
-                                        request.getRequestURI(), includeIncomingPayloadInDB, payload);
-                        LOG.info("FHIRService:: Proceed with temp file strategy -BEGIN  :{} for interaction id: {}",
-                                        defaultDatalakeApiAuthn.mTlsStrategy(), interactionId);
                 } else {
                         LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from application.yml for interaction id: {}",
                                         interactionId);
@@ -424,6 +418,11 @@ public class FHIRService {
                                         tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
                                         bundlePayloadWithDisposition, jooqCfg, provenance,
                                         request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        case AWS_SECRETS_TEMP_FILE ->
+                                handleAwsSecretsTemporaryFile(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                                tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                                bundlePayloadWithDisposition, jooqCfg, provenance,
+                                                request.getRequestURI(), includeIncomingPayloadInDB, payload);
                         case POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL ->
                                 handlePostStdoutPayload(interactionId, tenantId, jooqCfg, dataLakeApiBaseURL,
                                                 bundlePayloadWithDisposition,
@@ -592,7 +591,7 @@ public class FHIRService {
                         org.jooq.Configuration jooqCfg, String provenance, String requestURI,
                         boolean includeIncomingPayloadInDB, String payload) {
                 try {
-                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile -BEGIN for interactionId : {}",
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFile  Proceed with temporary file creation -BEGIN for interactionId : {}",
                                         interactionId);
 
                         registerStateForward(jooqCfg, provenance, interactionId, requestURI,
@@ -1454,7 +1453,8 @@ public class FHIRService {
                 NO_MTLS("no-mTls"),
                 AWS_SECRETS("aws-secrets"),
                 MTLS_RESOURCES("mTlsResources"),
-                POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL("post-stdin-payload-to-nyec-datalake-external");
+                POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL("post-stdin-payload-to-nyec-datalake-external"),
+                AWS_SECRETS_TEMP_FILE("aws-secrets-temp-file");
 
                 private final String value;
 

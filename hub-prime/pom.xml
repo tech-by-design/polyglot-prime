@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.288.0</version>
+	<version>0.289.0</version>
 	<packaging>war</packaging>
 	<name>Tech by Design Hub (Prime)</name>
 	<description>Tech by Design Hub (Primary)</description>
@@ -46,6 +46,11 @@
 			<scope>system</scope>
 			<version>1.0</version>
 			<systemPath>${basedir}/lib/techbd-udi-jooq-ingress.auto.jar</systemPath>
+		</dependency>
+		<dependency>
+    		<groupId>org.bouncycastle</groupId>
+    		<artifactId>bcprov-jdk18on</artifactId>
+    		<version>1.76</version> <!-- Use the latest version available -->
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
