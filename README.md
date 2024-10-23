@@ -11,7 +11,7 @@ At Tech by Design, we focus on the following primary languages and frameworks fo
 enterprise and utility projects:
 
 - Modern Java 21 LTS and above with Spring Boot 3.3 and above for all API and
-  HTTP service-related use cases. 
+  HTTP service-related use cases.
 - Maven for project management.
 - Thymeleaf for HTML templating and HTMX 2.0 for HATEOS interactions.
 - OpenTelemetry (observability) and OpenFeature (feature flags).
