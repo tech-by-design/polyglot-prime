@@ -49,17 +49,17 @@ public class TabularRowsController {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
-    @Operation(summary = "Fetch SQL rows from a master table or view with optional schema specification", description = """
-            Retrieves rows from a specified master table or view, optionally within a specific schema.
+    @Operation(summary = "Fetch SQL rows from a master table or view with schema specification", description = """
+            Retrieves rows from a specified master table or view, within a specific schema.
             The request body contains the filter criteria (via `TabularRowsRequest`) used to query the data.
             Headers allow the client to include generated SQL in the response or error response for debugging or auditing purposes.
             If the schema name is omitted, the default schema will be used.
             """)
-    @PostMapping(value = {"/api/ux/tabular/jooq/{masterTableNameOrViewName}.json",
+    @PostMapping(value = {
         "/api/ux/tabular/jooq/{schemaName}/{masterTableNameOrViewName}.json"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public TabularRowsResponse<?> tabularRows(
-            @Parameter(description = "Mandatory path variable to mention schema name.", required = true) @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Mandatory path variable to mention schema name.", required = true) @PathVariable(required = true) String schemaName,
             @Parameter(description = "Mandatory path variable to mention the table or view name.", required = true) final @PathVariable String masterTableNameOrViewName,
             @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true) final @RequestBody @Nonnull TabularRowsRequest payload,
             @Parameter(description = "Header to mention whether the generated SQL to be included in the response.", required = false) @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false, defaultValue = "false") boolean includeGeneratedSqlInResp,
