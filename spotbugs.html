@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-10-24<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.292.0</li>
+          <li id="projectVersion">Version: 0.293.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -76,7 +76,7 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>253</td>
+<td>254</td>
 <td>16</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
@@ -140,7 +140,7 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine.initializeFhirValidator() makes inefficient use of keySet iterator instead of entrySet iterator</td>
 <td>PERFORMANCE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#WMI_WRONG_MAP_ITERATOR">WMI_WRONG_MAP_ITERATOR</a></td>
-<td>274</td>
+<td>352</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
@@ -154,7 +154,7 @@
 <td>Unwritten field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession.igVersion</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UWF_UNWRITTEN_FIELD">UWF_UNWRITTEN_FIELD</a></td>
-<td>812</td>
+<td>897</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.BaseConverter"></a><section>
 <h2>org.techbd.service.converters.shinny.BaseConverter</h2>
 <table class="table table-striped">
@@ -202,25 +202,25 @@
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.executeOpenSSLCommand(String[], String): new java.io.InputStreamReader(InputStream)</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>1607</td>
+<td>1610</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>813</td>
+<td>816</td>
 <td>High</td></tr>
 <tr class="b">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>506</td>
+<td>509</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.hashString(String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>748</td>
+<td>751</td>
 <td>High</td></tr>
 <tr class="b">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map): String.getBytes()</td>
@@ -232,25 +232,25 @@
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>549</td>
+<td>552</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>1493</td>
+<td>1496</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exceptional return value of java.io.File.delete() ignored in org.techbd.service.http.hub.prime.api.FHIRService.validateCertificate(String, String)</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#RV_RETURN_VALUE_IGNORED_BAD_PRACTICE">RV_RETURN_VALUE_IGNORED_BAD_PRACTICE</a></td>
-<td>1565</td>
+<td>1568</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Exceptional return value of java.io.File.delete() ignored in org.techbd.service.http.hub.prime.api.FHIRService.validatePrivateKey(String, String)</td>
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#RV_RETURN_VALUE_IGNORED_BAD_PRACTICE">RV_RETURN_VALUE_IGNORED_BAD_PRACTICE</a></td>
-<td>1591</td>
+<td>1594</td>
 <td>Medium</td></tr></table></section>
         </main>
       </div>
