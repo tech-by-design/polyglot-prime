@@ -1,10 +1,8 @@
 package org.techbd.service.http.hub.prime.ux;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -234,62 +232,4 @@ public class TabularRowsController {
         return result;
     }
 
-    @Operation(summary = "SQL rows from a master table or view between specified start and end date-times", description = """
-            Retrieves submission counts from a specified schema and view where the values in the date-time column `{dateField}` fall
-            between the provided start date-time `{startDateTimeValue}` and end date-time `{endDateTimeValue}`.
-
-            Optionally, you can specify an additional column `{columnName1}` and its corresponding value `{columnValue1}` to further
-            filter the results. The date-time values should be provided in 'MM-dd-yyyy HH:mm:ss' format.
-
-            For example, to retrieve counts for the date column 'submission_date' between '09-10-2024 10:25:30' and '09-10-2024 12:25:30',
-            use those values in the respective fields. If no `{columnName1}` and `{columnValue1}` are provided, the API will only filter
-            based on the date range.
-            """)
-    @GetMapping({
-        "/api/ux/tabular/jooq/{schemaName}/{viewName}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json",
-        "/api/ux/tabular/jooq/{schemaName}/{viewName}/{columnName1}/{columnValue1}/{dateField}/{startDateTimeValue}/{endDateTimeValue}.json"
-    })
-    @ResponseBody
-    public Object getSubmissionCountsBetweenDates(
-            @Parameter(description = "Mandatory path variable to mention schema name.", required = true) final @PathVariable(required = true) String schemaName,
-            @Parameter(description = "Path variable to mention the view name.", required = true) final @PathVariable String viewName,
-            @Parameter(description = "Path variable to mention column 1 name.", required = false) final @PathVariable(required = false) String columnName1,
-            @Parameter(description = "Path variable to mention column 1 value.", required = false) final @PathVariable(required = false) String columnValue1,
-            @Parameter(description = "Path variable to mention date field.", required = false) final @PathVariable String dateField,
-            @Parameter(description = "Path variable to mention the start date. Expected format is 'MM-dd-yyyy HH:mm:ss'", required = false) final @PathVariable String startDateTimeValue,
-            @Parameter(description = "Path variable to mention the end date.. Expected format is 'MM-dd-yyyy HH:mm:ss'", required = false) final @PathVariable String endDateTimeValue)
-            throws UnsupportedEncodingException {
-                if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
-                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(viewName).matches()
-                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName1).matches()
-                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(dateField).matches()) {
-            throw new IllegalArgumentException("Invalid schema or table or column name.");
-        }
-        // URL decode the date-time values to handle spaces encoded as %20 or +
-        String decodedStartDate = URLDecoder.decode(startDateTimeValue, "UTF-8");
-        String decodedEndDate = URLDecoder.decode(endDateTimeValue, "UTF-8");
-
-        // Define the table from which you want to fetch the data
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
-                viewName);
-
-        // Parse the decoded startDateValue and endDateValue into LocalDateTime
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
-        LocalDateTime startDateTime = LocalDateTime.parse(decodedStartDate, formatter); // Parse with time
-        // included
-        LocalDateTime endDateTime = LocalDateTime.parse(decodedEndDate, formatter); // Parse with time included
-
-        // Build the query
-        var query = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
-                .where(DSL.field(typableTable.column(dateField)).between(DSL.val(startDateTime), DSL.val(endDateTime)));
-
-        // If columnName1 and columnValue1 are provided, add them to the query
-        if (columnName1 != null && !columnName1.isEmpty() && columnValue1 != null && !columnValue1.isEmpty()) {
-            query = query.and(DSL.field(typableTable.column(columnName1)).eq(DSL.val(columnValue1)));
-        }
-
-        // Execute the query and return the results
-        return query.fetch().intoMaps();
-
-    }
 }
