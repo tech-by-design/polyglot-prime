@@ -847,6 +847,16 @@ const migrateSP = pgSQLa.storedProcedure(
             ADD COLUMN interaction_end_time TIMESTAMPTZ DEFAULT null;
         END IF;
 
+
+        -- Check and add 'primary_org_id' column if it does not exist
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='sat_interaction_fhir_screening_organization' 
+                      AND column_name='primary_org_id') THEN
+            ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
+            ADD COLUMN primary_org_id TEXT  NULL;
+        END IF;
+        
+
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 
       ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id);
 
