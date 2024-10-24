@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-10-24<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.294.0</li>
+          <li id="projectVersion">Version: 0.295.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -66,6 +66,59 @@
 <h1>CPD Results</h1><a id="CPD_Results"></a>
 <p>The following document contains the results of PMD's  <a class="externalLink" href="https://pmd.github.io/latest/pmd_userdocs_cpd.html">CPD</a> 7.0.0.</p><section>
 <h2>Duplications</h2><a id="Duplications"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>630</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>932</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>LOG.info(&quot;FHIRService :: handleAwsSecretsTemporaryFile  Proceed with temporary file creation -BEGIN for interactionId : {}&quot;,
+                                        interactionId);
+                        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                                Security.addProvider(new BouncyCastleProvider());
+                        }
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                &quot;######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### &quot;);
+                        }
+
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+                                throw new IllegalArgumentException(
+                                                &quot;Certificate read from secrets manager with certificate secret name : {} is null &quot;
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+                                throw new IllegalArgumentException(
+                                                &quot;Private key read from secrets manager with key secret name : {} is null &quot;
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        LOG.info(&quot;FHIRService :: validate cert through openssl -BEGIN for interactionId : {}&quot;,
+                                        interactionId);
+                        validateCertificate(CERTIFICATE, interactionId);
+                        LOG.info(&quot;FHIRService :: Openssl success - certificate is valid -END for interactionId : {}&quot;,
+                                        interactionId);
+                        LOG.info(&quot;FHIRService :: validate KEY through openssl -BEGIN for interactionId : {}&quot;,
+                                        interactionId);
+                        validatePrivateKey(PRIVATE_KEY, interactionId);
+                        LOG.info(&quot;FHIRService :: kEY IS Successful through openssl for interactionId : {}&quot;,
+                                        interactionId);
+                        LOG.info(&quot;FHIRService :: handleAwsSecretsTemporaryFile Certificate and Key Details fetched successfully for interactionId : {}&quot;,</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
@@ -179,7 +232,7 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>258</td></tr>
+<td>259</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>194</td></tr>
@@ -244,11 +297,148 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>630</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>779</td></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>932</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1081</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>LOG.info(&quot;FHIRService :: handleAwsSecretsTemporaryFile  Proceed with temporary file creation -BEGIN for interactionId : {}&quot;,
+                                        interactionId);
+                        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                                Security.addProvider(new BouncyCastleProvider());
+                        }
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                &quot;######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### &quot;);
+                        }
+
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+                                throw new IllegalArgumentException(
+                                                &quot;Certificate read from secrets manager with certificate secret name : {} is null &quot;
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+                                throw new IllegalArgumentException(
+                                                &quot;Private key read from secrets manager with key secret name : {} is null &quot;
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        LOG.info(&quot;FHIRService :: validate cert through openssl -BEGIN for interactionId : {}&quot;,</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1239</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1352</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>LOG.info(&quot;FHIRService :: handleAwsSecrets -BEGIN for interactionId : {}&quot;,
+                                        interactionId);
+
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                &quot;######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### &quot;);
+                        }
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+                                throw new IllegalArgumentException(
+                                                &quot;Certifcate read from secrets manager with certficate secret name : {} is null &quot;
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+                                throw new IllegalArgumentException(
+                                                &quot;Private key read from secrets manager with key secret name : {} is null &quot;
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        LOG.info(&quot;FHIRService :: validate cert through openssl -BEGIN for interactionId : {}&quot;,
+                                        interactionId);
+                        validateCertificate(CERTIFICATE, interactionId);
+                        LOG.info(&quot;FHIRService :: Openssl success - certificate is valid -END for interactionId : {}&quot;,
+                                        interactionId);
+                        LOG.info(&quot;FHIRService ::Hash value for cert : {} -END for interactionId : {}&quot;,</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1239</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1352</td></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1469</td></tr>
+<tr class="a">
+<td colspan="2" style="text-align: left;">
+<pre>LOG.info(&quot;FHIRService :: handleAwsSecrets -BEGIN for interactionId : {}&quot;,
+                                        interactionId);
+
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                &quot;######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### &quot;);
+                        }
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+                                throw new IllegalArgumentException(
+                                                &quot;Certifcate read from secrets manager with certficate secret name : {} is null &quot;
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+                                throw new IllegalArgumentException(
+                                                &quot;Private key read from secrets manager with key secret name : {} is null &quot;
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        LOG.info(&quot;FHIRService :: validate cert through openssl -BEGIN for interactionId : {}&quot;,</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
 <td style="text-align: left;">org/techbd/service/http/InteractionsFilter.java</td>
 <td>237</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>268</td></tr>
+<td>269</td></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>204</td></tr>
