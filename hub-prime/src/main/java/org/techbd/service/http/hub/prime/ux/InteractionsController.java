@@ -71,7 +71,7 @@ public class InteractionsController {
     @GetMapping("/support/interaction/sftp/recent.json")
     @ResponseBody
     public List<?> observeRecentSftpInteractions(
-            @Parameter(description = "Optional variable to mention the number of entries to be fetched. If no value is specified, 10 entries will be taken by default.", required = false)
+            @Parameter(description = "Optional variable to mention the number of entries to be fetched for each tenant. If no value is specified, 10 entries will be taken by default.", required = false)
             final @RequestParam(defaultValue = "10") int limitMostRecent) {
         return sftpManager.tenantEgressSessions(limitMostRecent);
     }
