@@ -29,19 +29,10 @@ public class ScoringEngineApiTest {
     private static final String MTLS_KEY_SECRET_NAME = "techbd-qa-client-key";
     private static final String MTLS_CERT_SECRET_NAME = "techbd-qa-client-certificate";
     private static final String URL_QA_SCORING_ENGINE_API = "https://qa.hrsn.nyehealth.org/HRSNBundle";
-        private static final Logger LOG = LoggerFactory.getLogger(ScoringEngineApiTest.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(ScoringEngineApiTest.class.getName());
 
     @Test
-        public void testSimplePass() {
-        assertThat("success").isEqualTo("success");
-    }
-
-    @Test
-    public void testSimpleFail() {
-    assertThat("success").isEqualTo("fail");
-}
-    @Test
-    public void testApi_error() throws Exception {
+    public void testScoringEngineApi() throws Exception {
         try {
             KeyDetails keyDetails = getSecretsFromAWSSecretManager();
             final String CERTIFICATE = keyDetails.cert();
