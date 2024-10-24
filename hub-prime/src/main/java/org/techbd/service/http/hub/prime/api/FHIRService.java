@@ -2,6 +2,7 @@ package org.techbd.service.http.hub.prime.api;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -28,7 +29,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.io.File;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -428,8 +429,33 @@ public class FHIRService {
                                         tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
                                         bundlePayloadWithDisposition, jooqCfg, provenance,
                                         request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        case AWS_SECRETS_TEMP_WITHOUT_HASH ->
+                                handleAwsSecretsWithoutHash(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                                tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                                bundlePayloadWithDisposition, jooqCfg, provenance,
+                                                request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        case AWS_SECRETS_TEMP_WITHOUT_OPENSSL ->
+                                handleAwsSecretsWithoutOpenssl(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                                tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                                bundlePayloadWithDisposition, jooqCfg, provenance,
+                                                request.getRequestURI(), includeIncomingPayloadInDB, payload);
                         case AWS_SECRETS_TEMP_FILE ->
                                 handleAwsSecretsTemporaryFile(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                                tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                                bundlePayloadWithDisposition, jooqCfg, provenance,
+                                                request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        case AWS_SECRETS_TEMP_FILE_WITHOUT_HASH ->
+                                handleAwsSecretsTemporaryFileWithoutHash(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                                tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                                bundlePayloadWithDisposition, jooqCfg, provenance,
+                                                request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        case AWS_SECRETS_TEMP_FILE_WITHOUT_OPENSSL ->
+                                handleAwsSecretsTemporaryFileWithoutOpenssl(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
+                                                tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
+                                                bundlePayloadWithDisposition, jooqCfg, provenance,
+                                                request.getRequestURI(), includeIncomingPayloadInDB, payload);
+                        case AWS_SECRETS_TEMP_FILE_WITHOUT_OPENSSLANDHASH ->
+                                handleAwsSecretsTemporaryFileWithoutHashAndOpenssl(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
                                                 tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
                                                 bundlePayloadWithDisposition, jooqCfg, provenance,
                                                 request.getRequestURI(), includeIncomingPayloadInDB, payload);
@@ -691,14 +717,14 @@ public class FHIRService {
                                 HttpClient httpClient = HttpClient.create()
                                                 .secure(ssl -> ssl.sslContext(sslContext));
 
-                                LOG.info("FHIRService :: handleAwsSecrets HttpClient created successfully for interactionId : {}",
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile HttpClient created successfully for interactionId : {}",
                                                 interactionId);
 
                                 ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
-                                LOG.info("FHIRService :: handleAwsSecrets ReactorClientHttpConnector created successfully for interactionId : {}",
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile ReactorClientHttpConnector created successfully for interactionId : {}",
                                                 interactionId);
 
-                                LOG.info("FHIRService:: handleAwsSecrets Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFile Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
                                                 + "with scoring Engine API URL: {} \n" +
                                                 "dataLakeApiContentType: {} \n" +
                                                 "bundlePayloadWithDisposition: {} \n" +
@@ -717,18 +743,18 @@ public class FHIRService {
                                                 .clientConnector(connector)
                                                 .build();
 
-                                LOG.info("FHIRService :: handleAwsSecrets Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
                                                 interactionId);
-                                LOG.info("FHIRService:: handleAwsSecrets - sendPostRequest BEGIN for interaction id: {} tenantId :{} ",
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFile - sendPostRequest BEGIN for interaction id: {} tenantId :{} ",
                                                 interactionId, tenantId);
 
                                 sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
                                                 dataLakeApiContentType, interactionId,
                                                 jooqCfg, provenance, requestURI, dataLakeApiBaseURL);
 
-                                LOG.info("FHIRService:: handleAwsSecrets -sendPostRequest END for interaction id: {} tenantId :{} ",
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFile -sendPostRequest END for interaction id: {} tenantId :{} ",
                                                 interactionId, tenantId);
-                                LOG.info("FHIRService :: handleAwsSecrets Post to scoring engine -END for interactionId :{}",
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Post to scoring engine -END for interactionId :{}",
                                                 interactionId);
                         } finally {
                                 // Clean up temporary files
@@ -736,21 +762,471 @@ public class FHIRService {
                                 Files.deleteIfExists(keyFile);
                         }
                 } catch (Exception ex) {
-                        LOG.error("ERROR:: FHIRService :: handleAwsSecrets Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
-                                        ex.getMessage(), interactionId, tenantId,ex);
+                        LOG.error("ERROR:: FHIRService :: handleAwsSecretsTemporaryFile Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
+                                        ex.getMessage(), interactionId, tenantId, ex);
                         registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(), provenance);
                 }
-                LOG.info("FHIRService :: handleAwsSecrets -END for interactionId : {}", interactionId);
+                LOG.info("FHIRService :: handleAwsSecretsTemporaryFile -END for interactionId : {}", interactionId);
+        }
+
+        private void handleAwsSecretsTemporaryFileWithoutOpenssl(MTlsAwsSecrets mTlsAwsSecrets, String interactionId,
+                        String tenantId,
+                        String dataLakeApiBaseURL, String dataLakeApiContentType,
+                        Map<String, Object> bundlePayloadWithDisposition,
+                        org.jooq.Configuration jooqCfg, String provenance, String requestURI,
+                        boolean includeIncomingPayloadInDB, String payload) {
+                try {
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl  Proceed with temporary file creation -BEGIN for interactionId : {}",
+                                        interactionId);
+                        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                                Security.addProvider(new BouncyCastleProvider());
+                        }
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                "######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### ");
+                        }
+
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+                                throw new IllegalArgumentException(
+                                                "Certificate read from secrets manager with certificate secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+                                throw new IllegalArgumentException(
+                                                "Private key read from secrets manager with key secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        // LOG.info("FHIRService :: validate cert through openssl -BEGIN for
+                        // interactionId : {}",
+                        // interactionId);
+                        // validateCertificate(CERTIFICATE, interactionId);
+                        // LOG.info("FHIRService :: Openssl success - certificate is valid -END for
+                        // interactionId : {}",
+                        // interactionId);
+                        // LOG.info("FHIRService :: validate KEY through openssl -BEGIN for
+                        // interactionId : {}",
+                        // interactionId);
+                        // validatePrivateKey(PRIVATE_KEY, interactionId);
+                        // LOG.info("FHIRService :: kEY IS Successful through openssl for interactionId
+                        // : {}",
+                        // interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Certificate and Key Details fetched successfully for interactionId : {}",
+                                        interactionId);
+
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Creating SSLContext -BEGIN for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Creating  temp file  tempC -BEGIN for interactionId : {}",
+                                        interactionId);
+                        Path certFile = Files.createTempFile("tempC", ".pem");
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Creating  temp file  tempC -END for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Creating  temp file  tempK -BEGIN for interactionId : {}",
+                                        interactionId);
+                        Path keyFile = Files.createTempFile("tempK", ".key");
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Creating  temp file  tempK -END for interactionId : {}",
+                                        interactionId);
+                        try {
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Write to  tempc -BEGIN for interactionId : {}",
+                                                interactionId);
+                                Files.writeString(certFile, CERTIFICATE);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Write to  tempC -END for interactionId : {}",
+                                                interactionId);
+                                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                                byte[] certHashBytes = digest.digest();
+                                String certFileHash = HexFormat.of().formatHex(certHashBytes);
+                                LOG.info("FHIRService :: Hash for certfile : {} -END for interactionId : {}",
+                                                certFileHash, interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Write to  tempK -BEGIN for interactionId : {}",
+                                                interactionId);
+                                Files.writeString(keyFile, PRIVATE_KEY);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Write to  tempK -END for interactionId : {}",
+                                                interactionId);
+                                MessageDigest digestKey = MessageDigest.getInstance("SHA-256");
+                                byte[] keyHashBytes = digestKey.digest();
+                                String keyFileHash = HexFormat.of().formatHex(keyHashBytes);
+                                LOG.info("FHIRService :: Hash for key file : {} -END for interactionId : {}",
+                                                keyFileHash, interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Create SSL context with tempC and tempK -BEGIN for interactionId : {}",
+                                                interactionId);
+                                final var sslContext = SslContextBuilder.forClient()
+                                                .keyManager(Files.newInputStream(certFile),
+                                                                Files.newInputStream(keyFile))
+                                                .build();
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Create SSL context with tempC and tempK -END for interactionId : {}",
+                                                interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl SSLContext created successfully for interactionId : {}",
+                                                interactionId);
+
+                                HttpClient httpClient = HttpClient.create()
+                                                .secure(ssl -> ssl.sslContext(sslContext));
+
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl HttpClient created successfully for interactionId : {}",
+                                                interactionId);
+
+                                ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl ReactorClientHttpConnector created successfully for interactionId : {}",
+                                                interactionId);
+
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutOpenssl Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                                + "with scoring Engine API URL: {} \n" +
+                                                "dataLakeApiContentType: {} \n" +
+                                                "bundlePayloadWithDisposition: {} \n" +
+                                                "for interactionID: {} \n" +
+                                                "tenant Id: {}",
+                                                dataLakeApiBaseURL,
+                                                dataLakeApiContentType,
+                                                bundlePayloadWithDisposition == null ? "Payload is null"
+                                                                : "Payload is not null",
+                                                interactionId,
+                                                tenantId);
+
+                                var webClient = WebClient.builder()
+                                                .baseUrl(dataLakeApiBaseURL)
+                                                .defaultHeader("Content-Type", dataLakeApiContentType)
+                                                .clientConnector(connector)
+                                                .build();
+
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
+                                                interactionId);
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutOpenssl - sendPostRequest BEGIN for interaction id: {} tenantId :{} ",
+                                                interactionId, tenantId);
+
+                                sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
+                                                dataLakeApiContentType, interactionId,
+                                                jooqCfg, provenance, requestURI, dataLakeApiBaseURL);
+
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutOpenssl -sendPostRequest END for interaction id: {} tenantId :{} ",
+                                                interactionId, tenantId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Post to scoring engine -END for interactionId :{}",
+                                                interactionId);
+                        } finally {
+                                // Clean up temporary files
+                                Files.deleteIfExists(certFile);
+                                Files.deleteIfExists(keyFile);
+                        }
+                } catch (Exception ex) {
+                        LOG.error("ERROR:: FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
+                                        ex.getMessage(), interactionId, tenantId, ex);
+                        registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(), provenance);
+                }
+                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutOpenssl -END for interactionId : {}", interactionId);
+        }
+
+        private void handleAwsSecretsTemporaryFileWithoutHash(MTlsAwsSecrets mTlsAwsSecrets, String interactionId,
+                        String tenantId,
+                        String dataLakeApiBaseURL, String dataLakeApiContentType,
+                        Map<String, Object> bundlePayloadWithDisposition,
+                        org.jooq.Configuration jooqCfg, String provenance, String requestURI,
+                        boolean includeIncomingPayloadInDB, String payload) {
+                try {
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash  Proceed with temporary file creation -BEGIN for interactionId : {}",
+                                        interactionId);
+                        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                                Security.addProvider(new BouncyCastleProvider());
+                        }
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                "######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### ");
+                        }
+
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+                                throw new IllegalArgumentException(
+                                                "Certificate read from secrets manager with certificate secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+                                throw new IllegalArgumentException(
+                                                "Private key read from secrets manager with key secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        LOG.info("FHIRService :: validate cert through openssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        validateCertificate(CERTIFICATE, interactionId);
+                        LOG.info("FHIRService :: Openssl success - certificate is valid -END for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: validate KEY through openssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        validatePrivateKey(PRIVATE_KEY, interactionId);
+                        LOG.info("FHIRService :: kEY IS Successful through openssl for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Certificate and Key Details fetched successfully for interactionId : {}",
+                                        interactionId);
+
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Creating SSLContext -BEGIN for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Creating  temp file  tempC -BEGIN for interactionId : {}",
+                                        interactionId);
+                        Path certFile = Files.createTempFile("tempC", ".pem");
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Creating  temp file  tempC -END for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Creating  temp file  tempK -BEGIN for interactionId : {}",
+                                        interactionId);
+                        Path keyFile = Files.createTempFile("tempK", ".key");
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Creating  temp file  tempK -END for interactionId : {}",
+                                        interactionId);
+                        try {
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Write to  tempc -BEGIN for interactionId : {}",
+                                                interactionId);
+                                Files.writeString(certFile, CERTIFICATE);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Write to  tempC -END for interactionId : {}",
+                                                interactionId);
+                                // MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                                // byte[] certHashBytes = digest.digest();
+                                // String certFileHash = HexFormat.of().formatHex(certHashBytes);
+                                // LOG.info("FHIRService :: Hash for certfile : {} -END for interactionId : {}",
+                                // certFileHash, interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Write to  tempK -BEGIN for interactionId : {}",
+                                                interactionId);
+                                Files.writeString(keyFile, PRIVATE_KEY);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Write to  tempK -END for interactionId : {}",
+                                                interactionId);
+                                // MessageDigest digestKey = MessageDigest.getInstance("SHA-256");
+                                // byte[] keyHashBytes = digestKey.digest();
+                                // String keyFileHash = HexFormat.of().formatHex(keyHashBytes);
+                                // LOG.info("FHIRService :: Hash for key file : {} -END for interactionId : {}",
+                                // keyFileHash, interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Create SSL context with tempC and tempK -BEGIN for interactionId : {}",
+                                                interactionId);
+                                final var sslContext = SslContextBuilder.forClient()
+                                                .keyManager(Files.newInputStream(certFile),
+                                                                Files.newInputStream(keyFile))
+                                                .build();
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Create SSL context with tempC and tempK -END for interactionId : {}",
+                                                interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash SSLContext created successfully for interactionId : {}",
+                                                interactionId);
+
+                                HttpClient httpClient = HttpClient.create()
+                                                .secure(ssl -> ssl.sslContext(sslContext));
+
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash HttpClient created successfully for interactionId : {}",
+                                                interactionId);
+
+                                ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash ReactorClientHttpConnector created successfully for interactionId : {}",
+                                                interactionId);
+
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutHash Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                                + "with scoring Engine API URL: {} \n" +
+                                                "dataLakeApiContentType: {} \n" +
+                                                "bundlePayloadWithDisposition: {} \n" +
+                                                "for interactionID: {} \n" +
+                                                "tenant Id: {}",
+                                                dataLakeApiBaseURL,
+                                                dataLakeApiContentType,
+                                                bundlePayloadWithDisposition == null ? "Payload is null"
+                                                                : "Payload is not null",
+                                                interactionId,
+                                                tenantId);
+
+                                var webClient = WebClient.builder()
+                                                .baseUrl(dataLakeApiBaseURL)
+                                                .defaultHeader("Content-Type", dataLakeApiContentType)
+                                                .clientConnector(connector)
+                                                .build();
+
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
+                                                interactionId);
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutHash - sendPostRequest BEGIN for interaction id: {} tenantId :{} ",
+                                                interactionId, tenantId);
+
+                                sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
+                                                dataLakeApiContentType, interactionId,
+                                                jooqCfg, provenance, requestURI, dataLakeApiBaseURL);
+
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutHash -sendPostRequest END for interaction id: {} tenantId :{} ",
+                                                interactionId, tenantId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Post to scoring engine -END for interactionId :{}",
+                                                interactionId);
+                        } finally {
+                                // Clean up temporary files
+                                Files.deleteIfExists(certFile);
+                                Files.deleteIfExists(keyFile);
+                        }
+                } catch (Exception ex) {
+                        LOG.error("ERROR:: FHIRService :: handleAwsSecretsTemporaryFileWithoutHash Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
+                                        ex.getMessage(), interactionId, tenantId, ex);
+                        registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(), provenance);
+                }
+                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHash -END for interactionId : {}", interactionId);
+        }
+
+        private void handleAwsSecretsTemporaryFileWithoutHashAndOpenssl(MTlsAwsSecrets mTlsAwsSecrets,
+                        String interactionId, String tenantId,
+                        String dataLakeApiBaseURL, String dataLakeApiContentType,
+                        Map<String, Object> bundlePayloadWithDisposition,
+                        org.jooq.Configuration jooqCfg, String provenance, String requestURI,
+                        boolean includeIncomingPayloadInDB, String payload) {
+                try {
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl  Proceed with temporary file creation -BEGIN for interactionId : {}",
+                                        interactionId);
+                        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                                Security.addProvider(new BouncyCastleProvider());
+                        }
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                "######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### ");
+                        }
+
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+                                throw new IllegalArgumentException(
+                                                "Certificate read from secrets manager with certificate secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+                                throw new IllegalArgumentException(
+                                                "Private key read from secrets manager with key secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        // LOG.info("FHIRService :: validate cert through openssl -BEGIN for
+                        // interactionId : {}",
+                        // interactionId);
+                        // validateCertificate(CERTIFICATE, interactionId);
+                        // LOG.info("FHIRService :: Openssl success - certificate is valid -END for
+                        // interactionId : {}",
+                        // interactionId);
+                        // LOG.info("FHIRService :: validate KEY through openssl -BEGIN for
+                        // interactionId : {}",
+                        // interactionId);
+                        // validatePrivateKey(PRIVATE_KEY, interactionId);
+                        // LOG.info("FHIRService :: kEY IS Successful through openssl for interactionId
+                        // : {}",
+                        // interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Certificate and Key Details fetched successfully for interactionId : {}",
+                                        interactionId);
+
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Creating SSLContext -BEGIN for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Creating  temp file  tempC -BEGIN for interactionId : {}",
+                                        interactionId);
+                        Path certFile = Files.createTempFile("tempC", ".pem");
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Creating  temp file  tempC -END for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Creating  temp file  tempK -BEGIN for interactionId : {}",
+                                        interactionId);
+                        Path keyFile = Files.createTempFile("tempK", ".pem");
+                        LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Creating  temp file  tempK -END for interactionId : {}",
+                                        interactionId);
+                        try {
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Write to  tempc -BEGIN for interactionId : {}",
+                                                interactionId);
+                                Files.writeString(certFile, CERTIFICATE);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Write to  tempC -END for interactionId : {}",
+                                                interactionId);
+                                // MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                                // byte[] certHashBytes = digest.digest();
+                                // String certFileHash = HexFormat.of().formatHex(certHashBytes);
+                                // LOG.info("FHIRService :: Hash for certfile : {} -END for interactionId : {}",
+                                // certFileHash, interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Write to  tempK -BEGIN for interactionId : {}",
+                                                interactionId);
+                                Files.writeString(keyFile, PRIVATE_KEY);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Write to  tempK -END for interactionId : {}",
+                                                interactionId);
+                                // MessageDigest digestKey = MessageDigest.getInstance("SHA-256");
+                                // byte[] keyHashBytes = digestKey.digest();
+                                // String keyFileHash = HexFormat.of().formatHex(keyHashBytes);
+                                // LOG.info("FHIRService :: Hash for key file : {} -END for interactionId : {}",
+                                // keyFileHash, interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Create SSL context with tempC and tempK -BEGIN for interactionId : {}",
+                                                interactionId);
+                                final var sslContext = SslContextBuilder.forClient()
+                                                .keyManager(Files.newInputStream(certFile),
+                                                                Files.newInputStream(keyFile))
+                                                .build();
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Create SSL context with tempC and tempK -END for interactionId : {}",
+                                                interactionId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl SSLContext created successfully for interactionId : {}",
+                                                interactionId);
+
+                                HttpClient httpClient = HttpClient.create()
+                                                .secure(ssl -> ssl.sslContext(sslContext));
+
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl HttpClient created successfully for interactionId : {}",
+                                                interactionId);
+
+                                ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl ReactorClientHttpConnector created successfully for interactionId : {}",
+                                                interactionId);
+
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                                + "with scoring Engine API URL: {} \n" +
+                                                "dataLakeApiContentType: {} \n" +
+                                                "bundlePayloadWithDisposition: {} \n" +
+                                                "for interactionID: {} \n" +
+                                                "tenant Id: {}",
+                                                dataLakeApiBaseURL,
+                                                dataLakeApiContentType,
+                                                bundlePayloadWithDisposition == null ? "Payload is null"
+                                                                : "Payload is not null",
+                                                interactionId,
+                                                tenantId);
+
+                                var webClient = WebClient.builder()
+                                                .baseUrl(dataLakeApiBaseURL)
+                                                .defaultHeader("Content-Type", dataLakeApiContentType)
+                                                .clientConnector(connector)
+                                                .build();
+
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
+                                                interactionId);
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl - sendPostRequest BEGIN for interaction id: {} tenantId :{} ",
+                                                interactionId, tenantId);
+
+                                sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
+                                                dataLakeApiContentType, interactionId,
+                                                jooqCfg, provenance, requestURI, dataLakeApiBaseURL);
+
+                                LOG.info("FHIRService:: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl -sendPostRequest END for interaction id: {} tenantId :{} ",
+                                                interactionId, tenantId);
+                                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Post to scoring engine -END for interactionId :{}",
+                                                interactionId);
+                        } finally {
+                                // Clean up temporary files
+                                Files.deleteIfExists(certFile);
+                                Files.deleteIfExists(keyFile);
+                        }
+                } catch (Exception ex) {
+                        LOG.error("ERROR:: FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
+                                        ex.getMessage(), interactionId, tenantId, ex);
+                        registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(), provenance);
+                }
+                LOG.info("FHIRService :: handleAwsSecretsTemporaryFileWithoutHashAndOpenssl -END for interactionId : {}", interactionId);
         }
 
         public static String hashString(String input) throws NoSuchAlgorithmException {
-                // Initialize the SHA-256 message digest
                 MessageDigest digest = MessageDigest.getInstance("SHA-256");
-
-                // Compute the hash
                 byte[] hashBytes = digest.digest(input.getBytes());
-
-                // Convert the hash to a hex string
                 return HexFormat.of().formatHex(hashBytes);
         }
 
@@ -777,14 +1253,12 @@ public class FHIRService {
                         final String PRIVATE_KEY = keyDetails.key();
 
                         if (StringUtils.isEmpty(CERTIFICATE)) {
-
                                 throw new IllegalArgumentException(
                                                 "Certifcate read from secrets manager with certficate secret name : {} is null "
                                                                 + mTlsAwsSecrets.mTlsCertSecretName());
                         }
 
                         if (StringUtils.isEmpty(PRIVATE_KEY)) {
-
                                 throw new IllegalArgumentException(
                                                 "Private key read from secrets manager with key secret name : {} is null "
                                                                 + mTlsAwsSecrets.mTlsKeySecretName());
@@ -861,11 +1335,247 @@ public class FHIRService {
                 } catch (Exception ex) {
                         LOG.error("ERROR:: FHIRService :: handleAwsSecrets Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
                                         ex.getMessage(),
-                                        interactionId, tenantId,ex);
+                                        interactionId, tenantId, ex);
                         registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(),
                                         provenance);
                 }
                 LOG.info("FHIRService :: handleAwsSecrets -END for interactionId : {}",
+                                interactionId);
+        }
+
+        private void handleAwsSecretsWithoutHash(MTlsAwsSecrets mTlsAwsSecrets, String interactionId, String tenantId,
+                        String dataLakeApiBaseURL, String dataLakeApiContentType,
+                        Map<String, Object> bundlePayloadWithDisposition,
+                        org.jooq.Configuration jooqCfg, String provenance, String requestURI,
+                        boolean includeIncomingPayloadInDB, String payload) {
+                try {
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash -BEGIN for interactionId : {}",
+                                        interactionId);
+
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                "######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### ");
+                        }
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+
+                                throw new IllegalArgumentException(
+                                                "Certifcate read from secrets manager with certficate secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+
+                                throw new IllegalArgumentException(
+                                                "Private key read from secrets manager with key secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        LOG.info("FHIRService :: validate cert through openssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        validateCertificate(CERTIFICATE, interactionId);
+                        LOG.info("FHIRService :: Openssl success - certificate is valid -END for interactionId : {}",
+                                        interactionId);
+                        // LOG.info("FHIRService ::Hash value for cert : {} -END for interactionId :
+                        // {}",
+                        // hashString(CERTIFICATE), interactionId);
+
+                        LOG.info("FHIRService :: validate KEY through openssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        validatePrivateKey(PRIVATE_KEY, interactionId);
+                        LOG.info("FHIRService :: kEY IS Successful through openssl for interactionId : {}",
+                                        interactionId);
+                        // LOG.info("FHIRService ::Hash value for key : {} -END for interactionId : {}",
+                        // hashString(PRIVATE_KEY), interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash -BEGIN for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash Certificate and Key Details fetched successfully for interactionId : {}",
+                                        interactionId);
+
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash Creating SSLContext  -BEGIN for interactionId : {}",
+                                        interactionId);
+
+                        final var sslContext = SslContextBuilder.forClient()
+                                        .keyManager(new ByteArrayInputStream(CERTIFICATE.getBytes()),
+                                                        new ByteArrayInputStream(PRIVATE_KEY.getBytes()))
+                                        .build();
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash Creating SSLContext  - END for interactionId : {}",
+                                        interactionId);
+
+                        HttpClient httpClient = HttpClient.create()
+                                        .secure(sslSpec -> sslSpec.sslContext(sslContext));
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash HttpClient created successfully  for interactionId : {}",
+                                        interactionId);
+
+                        ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash ReactorClientHttpConnector created successfully  for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService:: handleAwsSecretsWithoutHash Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                        +
+                                        "with scoring Engine API URL: {} \n" +
+                                        "dataLakeApiContentType: {} \n" +
+                                        "bundlePayloadWithDisposition: {} \n" +
+                                        "for interactionID: {} \n" +
+                                        "tenant Id: {}",
+                                        dataLakeApiBaseURL,
+                                        dataLakeApiContentType,
+                                        bundlePayloadWithDisposition == null ? "Payload is null"
+                                                        : "Payload is not null",
+                                        interactionId,
+                                        tenantId);
+                        var webClient = WebClient.builder()
+                                        .baseUrl(dataLakeApiBaseURL)
+                                        .defaultHeader("Content-Type", dataLakeApiContentType)
+                                        .clientConnector(connector)
+                                        .build();
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash  Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
+                                        interactionId);
+                        LOG.info("FHIRService:: handleAwsSecretsWithoutHash - sendPostRequest BEGIN for interaction id: {} tenantid :{} ",
+                                        interactionId,
+                                        tenantId);
+                        sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
+                                        dataLakeApiContentType, interactionId,
+                                        jooqCfg, provenance, requestURI, dataLakeApiBaseURL);
+                        LOG.info("FHIRService:: handleAwsSecretsWithoutHash -sendPostRequest END for interaction id: {} tenantid :{} ",
+                                        interactionId,
+                                        tenantId);
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutHash Post to scoring engine -END for interactionId :{}",
+                                        interactionId);
+                } catch (Exception ex) {
+                        LOG.error("ERROR:: FHIRService :: handleAwsSecretsWithoutHash Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
+                                        ex.getMessage(),
+                                        interactionId, tenantId, ex);
+                        registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(),
+                                        provenance);
+                }
+                LOG.info("FHIRService :: handleAwsSecretsWithoutHash -END for interactionId : {}",
+                                interactionId);
+        }
+
+        private void handleAwsSecretsWithoutOpenssl(MTlsAwsSecrets mTlsAwsSecrets, String interactionId,
+                        String tenantId,
+                        String dataLakeApiBaseURL, String dataLakeApiContentType,
+                        Map<String, Object> bundlePayloadWithDisposition,
+                        org.jooq.Configuration jooqCfg, String provenance, String requestURI,
+                        boolean includeIncomingPayloadInDB, String payload) {
+                try {
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl -BEGIN for interactionId : {}",
+                                        interactionId);
+
+                        registerStateForward(jooqCfg, provenance, interactionId, requestURI,
+                                        tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
+                                        payload);
+                        if (null == mTlsAwsSecrets || null == mTlsAwsSecrets.mTlsKeySecretName()
+                                        || null == mTlsAwsSecrets.mTlsCertSecretName()) {
+                                throw new IllegalArgumentException(
+                                                "######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### ");
+                        }
+                        KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
+                                        mTlsAwsSecrets.mTlsCertSecretName());
+                        final String CERTIFICATE = keyDetails.cert();
+                        final String PRIVATE_KEY = keyDetails.key();
+
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
+
+                                throw new IllegalArgumentException(
+                                                "Certifcate read from secrets manager with certficate secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsCertSecretName());
+                        }
+
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
+
+                                throw new IllegalArgumentException(
+                                                "Private key read from secrets manager with key secret name : {} is null "
+                                                                + mTlsAwsSecrets.mTlsKeySecretName());
+                        }
+                        // LOG.info("FHIRService :: validate cert through openssl -BEGIN for
+                        // interactionId : {}",
+                        // interactionId);
+                        // validateCertificate(CERTIFICATE, interactionId);
+                        // LOG.info("FHIRService :: Openssl success - certificate is valid -END for
+                        // interactionId : {}",
+                        // interactionId);
+                        LOG.info("FHIRService ::Hash value for cert : {} -END for interactionId : {}",
+                                        hashString(CERTIFICATE), interactionId);
+
+                        // LOG.info("FHIRService :: validate KEY through openssl -BEGIN for
+                        // interactionId : {}",
+                        // interactionId);
+                        // validatePrivateKey(PRIVATE_KEY, interactionId);
+                        // LOG.info("FHIRService :: kEY IS Successful through openssl for interactionId
+                        // : {}",
+                        // interactionId);
+                        LOG.info("FHIRService ::Hash value for key : {} -END for interactionId : {}",
+                                        hashString(PRIVATE_KEY), interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl Certificate and Key Details fetched successfully for interactionId : {}",
+                                        interactionId);
+
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl Creating SSLContext  -BEGIN for interactionId : {}",
+                                        interactionId);
+
+                        final var sslContext = SslContextBuilder.forClient()
+                                        .keyManager(new ByteArrayInputStream(CERTIFICATE.getBytes()),
+                                                        new ByteArrayInputStream(PRIVATE_KEY.getBytes()))
+                                        .build();
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl Creating SSLContext  - END for interactionId : {}",
+                                        interactionId);
+
+                        HttpClient httpClient = HttpClient.create()
+                                        .secure(sslSpec -> sslSpec.sslContext(sslContext));
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl HttpClient created successfully  for interactionId : {}",
+                                        interactionId);
+
+                        ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl ReactorClientHttpConnector created successfully  for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService:: handleAwsSecretsWithoutOpenssl Build WebClient with MTLS Enabled ReactorClientHttpConnector -BEGIN \n"
+                                        +
+                                        "with scoring Engine API URL: {} \n" +
+                                        "dataLakeApiContentType: {} \n" +
+                                        "bundlePayloadWithDisposition: {} \n" +
+                                        "for interactionID: {} \n" +
+                                        "tenant Id: {}",
+                                        dataLakeApiBaseURL,
+                                        dataLakeApiContentType,
+                                        bundlePayloadWithDisposition == null ? "Payload is null"
+                                                        : "Payload is not null",
+                                        interactionId,
+                                        tenantId);
+                        var webClient = WebClient.builder()
+                                        .baseUrl(dataLakeApiBaseURL)
+                                        .defaultHeader("Content-Type", dataLakeApiContentType)
+                                        .clientConnector(connector)
+                                        .build();
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl  Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interactionId :{}",
+                                        interactionId);
+                        LOG.info("FHIRService:: handleAwsSecretsWithoutOpenssl - sendPostRequest BEGIN for interaction id: {} tenantid :{} ",
+                                        interactionId,
+                                        tenantId);
+                        sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
+                                        dataLakeApiContentType, interactionId,
+                                        jooqCfg, provenance, requestURI, dataLakeApiBaseURL);
+                        LOG.info("FHIRService:: handleAwsSecretsWithoutOpenssl -sendPostRequest END for interaction id: {} tenantid :{} ",
+                                        interactionId,
+                                        tenantId);
+                        LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl Post to scoring engine -END for interactionId :{}",
+                                        interactionId);
+                } catch (Exception ex) {
+                        LOG.error("ERROR:: FHIRService :: handleAwsSecretsWithoutOpenssl Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
+                                        ex.getMessage(),
+                                        interactionId, tenantId, ex);
+                        registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(),
+                                        provenance);
+                }
+                LOG.info("FHIRService :: handleAwsSecretsWithoutOpenssl -END for interactionId : {}",
                                 interactionId);
         }
 
@@ -1482,7 +2192,7 @@ public class FHIRService {
                                 errorMap.put("headers", responseHeaders);
                                 errorMap.put("statusText", webClientResponseException
                                                 .getStatusText());
-                        } 
+                        }
                         errorRIHR.setPayload((JsonNode) Configuration.objectMapper
                                         .valueToTree(errorMap));
                         errorRIHR.setFromState("FORWARD");
@@ -1514,7 +2224,12 @@ public class FHIRService {
                 AWS_SECRETS("aws-secrets"),
                 MTLS_RESOURCES("mTlsResources"),
                 POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL("post-stdin-payload-to-nyec-datalake-external"),
-                AWS_SECRETS_TEMP_FILE("aws-secrets-temp-file");
+                AWS_SECRETS_TEMP_FILE("aws-secrets-temp-file"),
+                AWS_SECRETS_TEMP_WITHOUT_HASH("aws-secrets-without-hash"),
+                AWS_SECRETS_TEMP_WITHOUT_OPENSSL("aws-secrets-without-openssl"),
+                AWS_SECRETS_TEMP_FILE_WITHOUT_HASH("aws-secrets-temp-file-without-hash"),
+                AWS_SECRETS_TEMP_FILE_WITHOUT_OPENSSL("aws-secrets-temp-file-without-openssl"),
+                AWS_SECRETS_TEMP_FILE_WITHOUT_OPENSSLANDHASH("aws-secrets-temp-file-without-opensslandhash");
 
                 private final String value;
 
