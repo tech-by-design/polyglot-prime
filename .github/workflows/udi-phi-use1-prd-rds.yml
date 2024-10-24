@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: use1-prd-sql
+    runs-on: techbd-hub-prd
 
     steps:
       - name: Checkout repository
