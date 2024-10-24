@@ -1,7 +1,9 @@
 package org.techbd.service.http.hub.prime.api;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -10,19 +12,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.UnexpectedException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
+import java.io.File;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -593,7 +600,9 @@ public class FHIRService {
                 try {
                         LOG.info("FHIRService :: handleAwsSecretsTemporaryFile  Proceed with temporary file creation -BEGIN for interactionId : {}",
                                         interactionId);
-
+                        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                                Security.addProvider(new BouncyCastleProvider());
+                        }
                         registerStateForward(jooqCfg, provenance, interactionId, requestURI,
                                         tenantId, bundlePayloadWithDisposition, null, includeIncomingPayloadInDB,
                                         payload);
@@ -608,18 +617,27 @@ public class FHIRService {
                                         mTlsAwsSecrets.mTlsCertSecretName());
                         final String CERTIFICATE = keyDetails.cert();
                         final String PRIVATE_KEY = keyDetails.key();
-                        if (null == CERTIFICATE) {
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
                                 throw new IllegalArgumentException(
                                                 "Certificate read from secrets manager with certificate secret name : {} is null "
                                                                 + mTlsAwsSecrets.mTlsCertSecretName());
                         }
 
-                        if (null == PRIVATE_KEY) {
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
                                 throw new IllegalArgumentException(
                                                 "Private key read from secrets manager with key secret name : {} is null "
                                                                 + mTlsAwsSecrets.mTlsKeySecretName());
                         }
-
+                        LOG.info("FHIRService :: validate cert through openssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        validateCertificate(CERTIFICATE, interactionId);
+                        LOG.info("FHIRService :: Openssl success - certificate is valid -END for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService :: validate KEY through openssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        validatePrivateKey(PRIVATE_KEY, interactionId);
+                        LOG.info("FHIRService :: kEY IS Successful through openssl for interactionId : {}",
+                                        interactionId);
                         LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Certificate and Key Details fetched successfully for interactionId : {}",
                                         interactionId);
 
@@ -641,11 +659,21 @@ public class FHIRService {
                                 Files.writeString(certFile, CERTIFICATE);
                                 LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Write to  tempC -END for interactionId : {}",
                                                 interactionId);
+                                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                                byte[] certHashBytes = digest.digest();
+                                String certFileHash = HexFormat.of().formatHex(certHashBytes);
+                                LOG.info("FHIRService :: Hash for certfile : {} -END for interactionId : {}",
+                                                certFileHash, interactionId);
                                 LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Write to  tempK -BEGIN for interactionId : {}",
                                                 interactionId);
                                 Files.writeString(keyFile, PRIVATE_KEY);
                                 LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Write to  tempK -END for interactionId : {}",
                                                 interactionId);
+                                MessageDigest digestKey = MessageDigest.getInstance("SHA-256");
+                                byte[] keyHashBytes = digestKey.digest();
+                                String keyFileHash = HexFormat.of().formatHex(keyHashBytes);
+                                LOG.info("FHIRService :: Hash for key file : {} -END for interactionId : {}",
+                                                keyFileHash, interactionId);
                                 LOG.info("FHIRService :: handleAwsSecretsTemporaryFile Create SSL context with tempC and tempK -BEGIN for interactionId : {}",
                                                 interactionId);
                                 final var sslContext = SslContextBuilder.forClient()
@@ -706,10 +734,21 @@ public class FHIRService {
                         }
                 } catch (Exception ex) {
                         LOG.error("ERROR:: FHIRService :: handleAwsSecrets Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
-                                        ex.getMessage(), interactionId, tenantId);
+                                        ex.getMessage(), interactionId, tenantId,ex);
                         registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(), provenance);
                 }
                 LOG.info("FHIRService :: handleAwsSecrets -END for interactionId : {}", interactionId);
+        }
+
+        public static String hashString(String input) throws NoSuchAlgorithmException {
+                // Initialize the SHA-256 message digest
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+
+                // Compute the hash
+                byte[] hashBytes = digest.digest(input.getBytes());
+
+                // Convert the hash to a hex string
+                return HexFormat.of().formatHex(hashBytes);
         }
 
         private void handleAwsSecrets(MTlsAwsSecrets mTlsAwsSecrets, String interactionId, String tenantId,
@@ -733,19 +772,37 @@ public class FHIRService {
                                         mTlsAwsSecrets.mTlsCertSecretName());
                         final String CERTIFICATE = keyDetails.cert();
                         final String PRIVATE_KEY = keyDetails.key();
-                        if (null == CERTIFICATE) {
+
+                        if (StringUtils.isEmpty(CERTIFICATE)) {
 
                                 throw new IllegalArgumentException(
                                                 "Certifcate read from secrets manager with certficate secret name : {} is null "
                                                                 + mTlsAwsSecrets.mTlsCertSecretName());
                         }
 
-                        if (null == PRIVATE_KEY) {
+                        if (StringUtils.isEmpty(PRIVATE_KEY)) {
 
                                 throw new IllegalArgumentException(
                                                 "Private key read from secrets manager with key secret name : {} is null "
                                                                 + mTlsAwsSecrets.mTlsKeySecretName());
                         }
+                        LOG.info("FHIRService :: validate cert through openssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        validateCertificate(CERTIFICATE, interactionId);
+                        LOG.info("FHIRService :: Openssl success - certificate is valid -END for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService ::Hash value for cert : {} -END for interactionId : {}",
+                                        hashString(CERTIFICATE), interactionId);
+
+                        LOG.info("FHIRService :: validate KEY through openssl -BEGIN for interactionId : {}",
+                                        interactionId);
+                        validatePrivateKey(PRIVATE_KEY, interactionId);
+                        LOG.info("FHIRService :: kEY IS Successful through openssl for interactionId : {}",
+                                        interactionId);
+                        LOG.info("FHIRService ::Hash value for key : {} -END for interactionId : {}",
+                                        hashString(PRIVATE_KEY), interactionId);
+                        LOG.info("FHIRService :: handleAwsSecrets -BEGIN for interactionId : {}",
+                                        interactionId);
                         LOG.info("FHIRService :: handleAwsSecrets Certificate and Key Details fetched successfully for interactionId : {}",
                                         interactionId);
 
@@ -801,7 +858,7 @@ public class FHIRService {
                 } catch (Exception ex) {
                         LOG.error("ERROR:: FHIRService :: handleAwsSecrets Post to scoring engine FAILED with error :{} for interactionId :{} tenantId:{}",
                                         ex.getMessage(),
-                                        interactionId, tenantId);
+                                        interactionId, tenantId,ex);
                         registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, ex.getMessage(),
                                         provenance);
                 }
@@ -1422,7 +1479,7 @@ public class FHIRService {
                                 errorMap.put("headers", responseHeaders);
                                 errorMap.put("statusText", webClientResponseException
                                                 .getStatusText());
-                        }
+                        } 
                         errorRIHR.setPayload((JsonNode) Configuration.objectMapper
                                         .valueToTree(errorMap));
                         errorRIHR.setFromState("FORWARD");
@@ -1486,5 +1543,78 @@ public class FHIRService {
         }
 
         public record PostToNyecExternalResponse(boolean completed, String processOutput, String errorOutput) {
+        }
+
+        private void validateCertificate(String certificate, String interactionId) throws Exception {
+                File certFile = null; // Declare certFile outside the try block for finally access
+                try {
+                        LOG.info("Inside validate Certificate key - Begin for interactionId : {}", interactionId);
+                        certFile = File.createTempFile("tempCert", ".pem");
+                        LOG.info("Inside validate Temp File Created for interactionId : {}", interactionId);
+                        Files.write(certFile.toPath(), certificate.getBytes(StandardCharsets.UTF_8));
+                        LOG.info("Inside validatewrite to path completed for interactionId : {}", interactionId);
+                        // Execute the OpenSSL command to verify the certificate
+                        String[] command = { "openssl", "x509", "-in", certFile.getAbsolutePath(), "-noout", "-text" };
+                        executeOpenSSLCommand(command, interactionId);
+                        LOG.info("Inside validate executeOpenSSLCommand executed : {}", interactionId);
+                } catch (Exception ex) {
+                        LOG.error("Exception while executing openssl on certificate  " + ex.getMessage(), ex);
+                } finally {
+                        if (certFile != null) {
+                                // Clean up the temporary file
+                                certFile.delete();
+                                LOG.info("Temporary certificate file deleted: {}", certFile.getAbsolutePath());
+                        }
+                        LOG.info("Inside validate Certificate key - End");
+                }
+        }
+
+        private void validatePrivateKey(String privateKey, String interactionId) throws Exception {
+                File keyFile = null; // Declare keyFile outside the try block for finally access
+                try {
+                        LOG.info("Inside validate Private Key - Begin for interaction id : {} ", interactionId);
+                        keyFile = File.createTempFile("tempKey", ".pem");
+                        LOG.info("Inside validate Private Key -Temp file created interaction id : {} ", interactionId);
+                        Files.write(keyFile.toPath(), privateKey.getBytes(StandardCharsets.UTF_8));
+                        LOG.info("Inside validate Private Key - Write file completed interaction id : {} ",
+                                        interactionId);
+                        // Execute the OpenSSL command to verify the private key
+                        String[] command = { "openssl", "rsa", "-in", keyFile.getAbsolutePath(), "-check" };
+                        executeOpenSSLCommand(command, interactionId);
+                        LOG.info("Inside validate Private Key  Execute openssl completed for certificate interaction id : {} ",
+                                        interactionId);
+                } catch (Exception ex) {
+                        LOG.error("Exception while executing openssl on key  " + ex.getMessage(), ex);
+                } finally {
+                        if (keyFile != null) {
+                                // Clean up the temporary file
+                                keyFile.delete();
+                                LOG.info("Temporary private key file deleted: {}", keyFile.getAbsolutePath());
+                        }
+                        LOG.info("Inside validate Private Key - End");
+                }
+        }
+
+        private void executeOpenSSLCommand(String[] command, String interactionId)
+                        throws IOException, InterruptedException {
+                LOG.info("Inside executeOpenSSLCommand - Begin for interaction id : {} ", interactionId);
+                ProcessBuilder processBuilder = new ProcessBuilder(command);
+                LOG.info("Inside executeOpenSSLCommand - Process builder created : {} ", interactionId);
+                processBuilder.redirectErrorStream(true); // Redirect error stream to output
+                LOG.info("Inside executeOpenSSLCommand - redirectErrorStream  interaction id : {} ", interactionId);
+                Process process = processBuilder.start();
+                LOG.info("Inside executeOpenSSLCommand - processBuilder.start  interaction id : {} ", interactionId);
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                                LOG.info(line);
+                        }
+                }
+                LOG.info("Inside executeOpenSSLCommand - before process.waitFor  interaction id : {} ", interactionId);
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                        throw new IOException("OpenSSL command failed with exit code" + exitCode);
+                }
+                LOG.info("Inside executeOpenSSLCommand - End for interaction id : {} ", interactionId);
         }
 }
