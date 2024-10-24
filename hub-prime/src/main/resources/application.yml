@@ -104,6 +104,7 @@ org:
                     sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
             defaultSdohFhirProfileUrl: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
+            fhirUmlsApiKey: umls_api_key
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:

@@ -303,12 +303,15 @@ public class FHIRService {
                 LOG.info("Getting structure definition Urls from config - Before: ");
                 final var igPackages = appConfig.getIgPackages();
                 final var igVersion = appConfig.getIgVersion();
+                final var fhirUmlsApiKey = appConfig.getFhirUmlsApiKey();
+                final var fhirUmlsApiValue = getUmlsApiKeyFromSecretManager(fhirUmlsApiKey);
                 final var sessionBuilder = engine.session()
                                 .onDevice(Device.createDefault())
                                 .withPayloads(List.of(payload))
                                 .withFhirProfileUrl(fhirProfileUrl)
                                 .withFhirIGPackages(igPackages)
                                 .withIgVersion(igVersion)
+                                .withFhirUmlsApiKeyValue(fhirUmlsApiValue)
                                 .addHapiValidationEngine() // by default
                                 // clearExisting is set to true so engines can be fully supplied through header
                                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
@@ -1616,5 +1619,26 @@ public class FHIRService {
                         throw new IOException("OpenSSL command failed with exit code" + exitCode);
                 }
                 LOG.info("Inside executeOpenSSLCommand - End for interaction id : {} ", interactionId);
+        }
+
+        public String getUmlsApiKeyFromSecretManager(String keyName) {
+            Region region = Region.US_EAST_1;
+            LOG.info("keyName {} " , keyName);
+            LOG.warn(
+                    "FHIRService:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} BEGIN for interaction id: {}",
+                    region);
+        
+            SecretsManagerClient secretsClient = SecretsManagerClient.builder()
+                    .region(region)
+                    .build();
+
+            String umlsApiKey = getValue(secretsClient, keyName);
+            secretsClient.close();
+        
+            LOG.warn(
+                    "FHIRService:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} END for interaction id: {}",
+                    region);
+            LOG.info("umlsApiKey : {} " , umlsApiKey);
+            return umlsApiKey;
         }
 }
