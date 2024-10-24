@@ -119,7 +119,7 @@ AS
     max(org_id) AS org_id,
     max(created_at) as created_at
    FROM techbd_udi_ingress.sat_interaction_fhir_screening_patient 
-  GROUP BY qe_name, patient_mrn, org_id
+  GROUP BY qe_name, patient_mrn
   ORDER BY created_at DESC;
 
 
