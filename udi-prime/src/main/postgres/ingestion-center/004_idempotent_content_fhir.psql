@@ -119,7 +119,7 @@ AS
     max(org_id) AS org_id,
     max(created_at) as created_at
    FROM techbd_udi_ingress.sat_interaction_fhir_screening_patient 
-  GROUP BY qe_name, patient_mrn
+  GROUP BY qe_name, patient_mrn, org_id
   ORDER BY created_at DESC;
 
 
@@ -129,19 +129,29 @@ AS
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_organization CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_organization
 AS 
- SELECT  qe_name,
-     org_id,
-    max(org_type) AS org_type,
-    max(org_name) AS org_name,
-    max(org_active) AS org_active,
-    max(org_address) AS org_address,
-    max(org_city) AS org_city,
-    max(org_state) AS org_state,
-    max(org_postal_code) AS org_postal_code,
-    max(created_at) AS created_at
-   FROM techbd_udi_ingress.sat_interaction_fhir_screening_organization 
-  GROUP BY qe_name, org_id
-  ORDER BY created_at DESC;
+  select
+	sifso.qe_name,
+	sifso.org_id,
+	max(sifso.org_type) as org_type,
+	max(sifso.org_name) as org_name,
+	max(sifso.org_active) as org_active,
+	max(sifso.org_address) as org_address,
+	max(sifso.org_city) as org_city,
+	max(sifso.org_state) as org_state,
+	max(sifso.org_postal_code) as org_postal_code,
+	max(sifso.created_at) as created_at
+from
+	techbd_udi_ingress.sat_interaction_fhir_screening_organization as sifso
+join techbd_udi_ingress.sat_interaction_fhir_request as sifr   
+ on
+	sifso.hub_interaction_id = sifr.hub_interaction_id
+where
+	sifso.org_id = sifr.organization_id
+group by
+	sifso.qe_name,
+	sifso.org_id
+order by
+	(created_at) desc;
 
 
 DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_mat CASCADE;
