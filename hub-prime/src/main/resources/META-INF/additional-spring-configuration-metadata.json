@@ -443,5 +443,10 @@
     "name": "org.techbd.service.http.hub.prime.igVersion",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.igVersion'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.fhirUmlsApiKey",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.fhirUmlsApiKey'"
   }
 ]}
