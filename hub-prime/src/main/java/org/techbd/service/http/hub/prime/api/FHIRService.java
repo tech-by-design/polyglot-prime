@@ -45,6 +45,8 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
+import org.techbd.service.constants.ErrorCode;
+import org.techbd.service.exception.JsonValidationException;
 import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.Interactions;
@@ -112,42 +114,75 @@ public class FHIRService {
                         HttpServletRequest request, HttpServletResponse response, String provenance,
                         boolean includeOperationOutcome, String mtlsStrategy)
                         throws IOException {
-                if (null == dataLakeApiContentType) {
-                        dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
-                }
-                final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
-                                : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
-                                                : appConfig.getDefaultSdohFhirProfileUrl();
-                final var immediateResult = validate(request, payload, fhirProfileUrl,
-                                uaValidationStrategyJson,
-                                includeRequestInOutcome);
-                final var result = Map.of("OperationOutcome", immediateResult);
-                // Check for the X-TechBD-HealthCheck header
-                if ("true".equals(healthCheck)) {
-                        LOG.info("%s is true, skipping Scoring Engine submission."
-                                        .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
-                        return result; // Return without proceeding to scoring engine submission
-                }
+                final var interactionId = getBundleInteractionId(request);
                 final var dslContext = udiPrimeJpaConfig.dsl();
                 final var jooqCfg = dslContext.configuration();
-                addObservabilityHeadersToResponse(request, response);
-                Map<String, Object> payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
-                                response, payload, result);
-                if (null == payloadWithDisposition) {
-                        LOG.warn("FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
-                                        getBundleInteractionId(request));
-                        sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
-                                        includeIncomingPayloadInDB, tenantId, payload,
-                                        provenance, null, includeOperationOutcome, mtlsStrategy);
-                        return result;
-                } else {
-                        LOG.warn("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
-                                        getBundleInteractionId(request));
-                        sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
-                                        includeIncomingPayloadInDB, tenantId, payload,
-                                        provenance, payloadWithDisposition, includeOperationOutcome, mtlsStrategy);
-                        return payloadWithDisposition;
+                Map<String, Object> payloadWithDisposition = null;
+                try {
+                        validateJson(payload, interactionId);
+                        if (null == dataLakeApiContentType) {
+                                dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
+                        }
+                        final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
+                                        : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
+                                                        : appConfig.getDefaultSdohFhirProfileUrl();
+                        final var immediateResult = validate(request, payload, fhirProfileUrl,
+                                        uaValidationStrategyJson,
+                                        includeRequestInOutcome);
+                        final var result = Map.of("OperationOutcome", immediateResult);
+                        // Check for the X-TechBD-HealthCheck header
+                        if ("true".equals(healthCheck)) {
+                                LOG.info("%s is true, skipping Scoring Engine submission."
+                                                .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
+                                return result; // Return without proceeding to scoring engine submission
+                        }
+                        addObservabilityHeadersToResponse(request, response);
+                        payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
+                                        response, payload, result);
+                        if (null == payloadWithDisposition) {
+                                LOG.warn("FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
+                                                getBundleInteractionId(request));
+                                sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
+                                                includeIncomingPayloadInDB, tenantId, payload,
+                                                provenance, null, includeOperationOutcome, mtlsStrategy);
+                                return result;
+                        } else {
+                                LOG.warn("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
+                                                interactionId);
+                                sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
+                                                includeIncomingPayloadInDB, tenantId, payload,
+                                                provenance, payloadWithDisposition, includeOperationOutcome,
+                                                mtlsStrategy);
+                                return payloadWithDisposition;
+                        }
+                } catch (JsonValidationException ex) {
+                        payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
+                                        response, payload, buildOperationOutcome(ex, interactionId));
                 }
+                return payloadWithDisposition;
+        }
+
+        public void validateJson(String jsonString, String interactionId) {
+                try {
+                        Configuration.objectMapper.readTree(jsonString);
+                } catch (JsonProcessingException e) {
+                        throw new JsonValidationException(ErrorCode.INVALID_JSON);
+                }
+        }
+
+        public static Map<String, Map<String, Object>> buildOperationOutcome(JsonValidationException ex,
+                        String interactionId) {
+                var validationResult = Map.of(
+                                "valid", false,
+                                "issues", List.of(Map.of(
+                                                "message", ex.getErrorCode() + ": " + ex.getMessage(),
+                                                "severity", "FATAL")));
+                var operationOutcome = new HashMap<String, Object>(Map.of(
+                                "resourceType", "OperationOutcome",
+                                "bundleSessionId", interactionId,
+                                "validationResults", List.of(validationResult)));
+                return Map.of("OperationOutcome", operationOutcome);
+
         }
 
         private void addObservabilityHeadersToResponse(HttpServletRequest request, HttpServletResponse response) {
@@ -583,6 +618,7 @@ public class FHIRService {
                 LOG.info("FHIRService:: sendPostRequest END for interaction id: {} tenantid :{} ", interactionId,
                                 tenantId);
         }
+
         private void handleAwsSecrets(MTlsAwsSecrets mTlsAwsSecrets, String interactionId, String tenantId,
                         String dataLakeApiBaseURL, String dataLakeApiContentType,
                         Map<String, Object> bundlePayloadWithDisposition,
@@ -600,7 +636,7 @@ public class FHIRService {
                                 throw new IllegalArgumentException(
                                                 "######## Strategy defined is aws-secrets but mTlsKeySecretName and mTlsCertSecretName is not correctly configured. ######### ");
                         }
-                         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+                        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
                                 Security.addProvider(new BouncyCastleProvider());
                         }
                         KeyDetails keyDetails = getSecretsFromAWSSecretManager(mTlsAwsSecrets.mTlsKeySecretName(),
@@ -619,7 +655,7 @@ public class FHIRService {
                                                 "Private key read from secrets manager with key secret name : {} is null "
                                                                 + mTlsAwsSecrets.mTlsKeySecretName());
                         }
-                       
+
                         LOG.info("FHIRService :: handleAwsSecrets Certificate and Key Details fetched successfully for interactionId : {}",
                                         interactionId);
 
@@ -1368,23 +1404,23 @@ public class FHIRService {
         }
 
         public String getUmlsApiKeyFromSecretManager(String keyName) {
-            Region region = Region.US_EAST_1;
-            LOG.info("keyName {} " , keyName);
-            LOG.warn(
-                    "FHIRService:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} BEGIN for interaction id: {}",
-                    region);
-        
-            SecretsManagerClient secretsClient = SecretsManagerClient.builder()
-                    .region(region)
-                    .build();
+                Region region = Region.US_EAST_1;
+                LOG.info("keyName {} ", keyName);
+                LOG.warn(
+                                "FHIRService:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} BEGIN for interaction id: {}",
+                                region);
 
-            String umlsApiKey = getValue(secretsClient, keyName);
-            secretsClient.close();
-        
-            LOG.warn(
-                    "FHIRService:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} END for interaction id: {}",
-                    region);
-            LOG.info("umlsApiKey : {} " , umlsApiKey);
-            return umlsApiKey;
+                SecretsManagerClient secretsClient = SecretsManagerClient.builder()
+                                .region(region)
+                                .build();
+
+                String umlsApiKey = getValue(secretsClient, keyName);
+                secretsClient.close();
+
+                LOG.warn(
+                                "FHIRService:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} END for interaction id: {}",
+                                region);
+                LOG.info("umlsApiKey : {} ", umlsApiKey);
+                return umlsApiKey;
         }
 }
