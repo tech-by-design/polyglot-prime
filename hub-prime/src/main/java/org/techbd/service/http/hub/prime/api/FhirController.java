@@ -1,7 +1,5 @@
 package org.techbd.service.http.hub.prime.api;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -38,6 +36,7 @@ import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
+import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -149,18 +148,38 @@ public class FhirController {
             // "profile" is the same name that HL7 validator uses
             @Parameter(description = "Profile URL for the API.", required = false) @RequestParam(value = "profile", required = false) String fhirProfileUrlParam,
             @Parameter(description = "Optional header to specify the Structure definition profile URL. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
-            @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
+            @Parameter(description = """
+                    Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.
+                    Example for validation strategy JSON:
+                    <code>
+                    {
+                      "engines": [
+                        "HAPI",
+                        "HL7-Official-API",
+                        "HL7-Official-Embedded"
+                      ]
+                    }
+                    </code> """, required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
             @Parameter(description = "Optional header to specify the Datalake API content type.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
             @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
             @Parameter(description = "Optional parameter to decide whether the Datalake submission to be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false) boolean isSync,
             @Parameter(description = "Optional parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
-            @Parameter(hidden =true,description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false) @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
-            @RequestParam(value = "include-operation-outcome", required = false, defaultValue = "true") boolean includeOperationOutcome,
-            @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
+            @Parameter(hidden = true, description = "Optional parameter to decide whether the incoming payload is to be saved in the database.", required = false) @RequestParam(value = "include-incoming-payload-in-db", required = false) boolean includeIncomingPayloadInDB,
+            @Parameter(description = "An optional parameter determines whether validation results are sent to the scoring engine. If set to <code>false</code>, only the bundle is sent; if <code>true</code>, the operation outcome is also sent.", required = false) @RequestParam(value = "include-operation-outcome", required = false, defaultValue = "true") boolean includeOperationOutcome,
+            @Parameter(description = """
+                    An optional parameter specifies whether the scoring engine API should be called with or without mTLS.<br>
+                    The allowed values for <code>mTlsStrategy</code> are:
+                    <ul>
+                        <li><code>no-mTls</code>: No mTLS is used. The WebClient sends a standard HTTP POST request to the scoring engine API without mutual TLS (mTLS).</li>
+                        <li><code>mTlsResources</code>: mTLS is enabled. The WebClient reads the TLS key and certificate from a local folder, and then sends an HTTPS POST request to the scoring engine API with mutual TLS authentication.</li>
+                        <li><code>aws-secrets</code>: mTLS is enabled. The WebClient retrieves the TLS key and certificate from AWS Secrets Manager, and then sends an HTTPS POST request to the scoring engine API with mutual TLS authentication.</li>
+                        <li><code>post-stdin-payload-to-nyec-datalake-external</code>: This option runs a bash script via ProcessBuilder. The payload is passed through standard input (STDIN) to the script, which uses <code>curl</code> to send the request to the scoring engine API. In the <b>PHI-QA</b> environment, mTLS is enabled for this request. In other environments, mTLS is disabled for this script.</li>
+                    </ul>
+                    """, required = false) @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
 
-        if (tenantId == null ||  tenantId.trim().isEmpty()) {
+        if (tenantId == null || tenantId.trim().isEmpty()) {
             LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
             throw new IllegalArgumentException("Tenant ID must be provided");
         }
@@ -171,7 +190,7 @@ public class FhirController {
                 uaValidationStrategyJson,
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
-                request, response, provenance, includeOperationOutcome,mtlsStrategy);
+                request, response, provenance, includeOperationOutcome, mtlsStrategy);
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
@@ -179,13 +198,8 @@ public class FhirController {
             AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
     @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.", description = "Endpoint to validate but not store or forward a payload to SHIN-NY.")
     @ApiResponses(value = {
-            @ApiResponse(
-                        responseCode = "200", 
-                        description = "Request processed successfully", 
-                        content = @Content(
-                            mediaType = "application/json", 
-                            examples = @ExampleObject(
-                                value = "{\n" +
+            @ApiResponse(responseCode = "200", description = "Request processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
+                    +
                     "  \"OperationOutcome\": {\n" +
                     "    \"validationResults\": [\n" +
                     "      {\n" +
@@ -196,7 +210,8 @@ public class FhirController {
                     "              \"severity\": \"error\",\n" +
                     "              \"diagnostics\": \"Error Message\",\n" +
                     "              \"location\": [\n" +
-                    "                \"Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\",\n" +
+                    "                \"Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\",\n"
+                    +
                     "                \"Line[1] Col[5190]\"\n" +
                     "              ]\n" +
                     "            }\n" +
@@ -205,10 +220,7 @@ public class FhirController {
                     "      }\n" +
                     "    ]\n" +
                     "  }\n" +
-                    "}"
-                            )
-                        )
-                    ),
+                    "}"))),
             @ApiResponse(responseCode = "400", description = "Validation Error: Missing or invalid parameter", content = @Content(mediaType = "application/json", examples = {
                     @ExampleObject(value = "{\n" +
                             "  \"status\": \"Error\",\n" +
@@ -237,8 +249,8 @@ public class FhirController {
             @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @Parameter(description = "Parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             HttpServletRequest request) {
-                
-        if (tenantId == null ||  tenantId.trim().isEmpty()) {
+
+        if (tenantId == null || tenantId.trim().isEmpty()) {
             LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
             throw new IllegalArgumentException("Tenant ID must be provided");
         }
