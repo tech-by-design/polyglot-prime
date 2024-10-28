@@ -2429,7 +2429,8 @@ $$;
 * update operation, the exception details are captured, and the issue is logged in a diagnostic table using the * register_issue function.
 */
 DROP FUNCTION IF EXISTS techbd_udi_ingress.json_action_rule_upserted(text, text, text, text, jsonb, jsonb, jsonb, int4, text, text, text);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.json_action_rule_upserted(action_rule_id text, namespace text, json_path text, action text, condition jsonb, reject_json jsonb, modify_json jsonb, priority integer, updated_by text, created_by text, provenance text)
+DROP FUNCTION IF EXISTS techbd_udi_ingress.json_action_rule_upserted(text, text, text, text, jsonb, jsonb, jsonb, int4, text, text, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.json_action_rule_upserted(action_rule_id text, namespace text, json_path text, action text, condition jsonb, reject_json jsonb, modify_json jsonb, priority integer, description text, updated_by text, created_by text, provenance text)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
@@ -2448,7 +2449,20 @@ DECLARE
     v_return                    TEXT;
     
 BEGIN
+	/**
+	* The function techbd_udi_ingress.json_action_rule_upserted is designed to either insert a new record or 
+	* update an existing record in the json_action_rule table, depending on whether the action_rule_id is provided. 
+	* If the action_rule_id is not NULL, the function attempts to update the existing record. If action_rule_id is NULL, 
+	* a new record is inserted with a randomly generated UUID as the primary key.
 	
+	* The function also handles exception logging. In the event of an error during the execution of an insert or 
+	* update operation, the exception details are captured, and the issue is logged in a diagnostic table using the * register_issue function.
+	*/
+	
+	-- Check whether the json rule specified in 'json_path' is a valid path or not. If not then, raise exception
+	IF techbd_udi_ingress.is_valid_jsonpath(json_action_rule_upserted.json_path) = FALSE THEN 
+		RAISE EXCEPTION 'Invalid json_path.';
+	END IF;
 	
     -- First, attempt to update the record if it exists
 	IF(json_action_rule_upserted.action_rule_id IS NOT null) THEN
@@ -2465,14 +2479,15 @@ BEGIN
 			updated_at          = CURRENT_TIMESTAMP,
 			updated_by          = v_updated_by,
 			last_applied_at     = CURRENT_TIMESTAMP,
-			provenance          = json_action_rule_upserted.provenance
+			provenance          = json_action_rule_upserted.provenance,
+			description 		= json_action_rule_upserted.description
 			WHERE techbd_udi_ingress.json_action_rule.action_rule_id = json_action_rule_upserted.action_rule_id
 			RETURNING techbd_udi_ingress.json_action_rule.action_rule_id INTO v_return 
 		;	
 
 		RETURN v_return;
 	END IF;
-   
+
    	INSERT INTO techbd_udi_ingress.json_action_rule (
         action_rule_id,
         "namespace",
@@ -2482,6 +2497,7 @@ BEGIN
         reject_json,
         modify_json,
         priority,
+        description,
         updated_at,
         updated_by,
         last_applied_at,
@@ -2497,6 +2513,7 @@ BEGIN
         json_action_rule_upserted.reject_json,
         json_action_rule_upserted.modify_json,
         json_action_rule_upserted.priority,
+        json_action_rule_upserted.description,
         CURRENT_TIMESTAMP,
         v_updated_by,
         CURRENT_TIMESTAMP,
@@ -2504,7 +2521,7 @@ BEGIN
         json_action_rule_upserted.created_by,
         json_action_rule_upserted.provenance
     ) RETURNING json_action_rule.action_rule_id INTO v_return;
-   
+
     -- Return a success message
     RETURN v_return;
 EXCEPTION
@@ -2537,6 +2554,26 @@ EXCEPTION
 END;
 $function$
 ;
+
+/*====================================================================================================*/
+ 
+DROP FUNCTION IF EXISTS techbd_udi_ingress.is_valid_jsonpath(TEXT);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.is_valid_jsonpath(json_path TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE 
+	is_exists boolean := false;
+BEGIN
+    -- Attempt to apply the JSONPath to the dummy JSON
+    is_exists := jsonb_path_exists('{}'::jsonb, json_path::jsonpath);
+    RETURN TRUE;  -- If no error, the JSONPath is valid
+EXCEPTION
+    WHEN others THEN
+    	RETURN FALSE;  -- If an error occurs, the JSONPath is invalid
+END;
+$$ LANGUAGE plpgsql;
+/*====================================================================================================*/
+
 
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_patient(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb);
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_patient(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb,text);

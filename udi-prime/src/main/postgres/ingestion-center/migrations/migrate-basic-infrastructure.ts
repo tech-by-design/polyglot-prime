@@ -901,10 +901,9 @@ const migrateSP = pgSQLa.storedProcedure(
       ANALYZE techbd_udi_ingress.sat_interaction_http_request;
 
       ${jsonActionRule}
+      ALTER TABLE techbd_udi_ingress.json_action_rule ADD COLUMN IF NOT EXISTS description TEXT NULL;
       ALTER TABLE techbd_udi_ingress.json_action_rule DROP CONSTRAINT IF EXISTS json_action_rule_action_check;
-      ALTER TABLE techbd_udi_ingress.json_action_rule
-        ADD CONSTRAINT json_action_rule_action_check
-        CHECK (action = ANY (ARRAY['accept'::text, 'reject'::text, 'modify'::text]));
+      ALTER TABLE techbd_udi_ingress.json_action_rule ADD CONSTRAINT json_action_rule_action_check CHECK ((action = ANY (ARRAY['accept'::text, 'reject'::text, 'modify'::text, 'discard'::text])));
 
       ALTER TABLE techbd_udi_ingress.json_action_rule DROP CONSTRAINT IF EXISTS json_action_rule_action_rule_id_pkey;
       ALTER TABLE techbd_udi_ingress.json_action_rule
@@ -976,6 +975,42 @@ const migrateSP = pgSQLa.storedProcedure(
         current_user,
         '{"Key" : "value"}'
       ) ON CONFLICT (action_rule_id) DO NOTHING;
+
+      INSERT INTO techbd_udi_ingress.json_action_rule (
+        action_rule_id,
+        "namespace",
+        json_path,
+        "action",
+        "condition",
+        reject_json,
+        modify_json,
+        priority,
+        updated_at,
+        updated_by,
+        last_applied_at,
+        created_at,
+        created_by,
+        provenance
+      )
+      VALUES (
+        'eeeb6342-3797-459f-9a4a-b8a71015f082',
+        'NYeC Rule',
+        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1000: Invalid or Partial JSON.*")',
+        'discard',
+        NULL,
+        NULL,
+        NULL,
+        5000,
+        current_timestamp,
+        current_user,
+        current_timestamp,
+        current_timestamp,
+        current_user,
+        '{"Key" : "value"}'
+      )
+      ON CONFLICT (action_rule_id) DO NOTHING;
+
+
 
       CREATE INDEX IF NOT exists json_action_rule_action_idx ON techbd_udi_ingress.json_action_rule USING btree (action);
       CREATE INDEX IF NOT EXISTS json_action_rule_json_path_idx ON techbd_udi_ingress.json_action_rule USING btree (json_path);
