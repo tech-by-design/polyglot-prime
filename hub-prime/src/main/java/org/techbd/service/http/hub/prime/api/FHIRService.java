@@ -139,6 +139,9 @@ public class FHIRService {
                         addObservabilityHeadersToResponse(request, response);
                         payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                         response, payload, result);
+                        if (isActionDiscard(payloadWithDisposition)) {
+                                return payloadWithDisposition;
+                        }
                         if (null == payloadWithDisposition) {
                                 LOG.warn("FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
                                                 getBundleInteractionId(request));
@@ -161,7 +164,18 @@ public class FHIRService {
                 }
                 return payloadWithDisposition;
         }
-
+        @SuppressWarnings("unchecked")
+        public static boolean isActionDiscard(Map<String, Object> payloadWithDisposition) {
+                return Optional.ofNullable(payloadWithDisposition)
+                        .map(map -> (Map<String, Object>) map.get("OperationOutcome"))
+                        .map(outcome -> (List<Map<String, Object>>) outcome.get("techByDesignDisposition"))
+                        .flatMap(dispositions -> dispositions.stream()
+                                .map(disposition -> (String) disposition.get("action"))
+                                .filter(TechByDesignDisposition.DISCARD.action::equals)
+                                .findFirst()
+                        )
+                        .isPresent();
+            }
         public void validateJson(String jsonString, String interactionId) {
                 try {
                         Configuration.objectMapper.readTree(jsonString);
@@ -1402,7 +1416,22 @@ public class FHIRService {
 
         public record PostToNyecExternalResponse(boolean completed, String processOutput, String errorOutput) {
         }
-
+        public enum TechByDesignDisposition {
+                ACCEPT("accept"),
+                REJECT("reject"),
+                DISCARD("discard");
+            
+                private final String action;
+            
+                TechByDesignDisposition(String action) {
+                    this.action = action;
+                }
+            
+                public String getAction() {
+                    return action;
+                }
+            }
+            
         public String getUmlsApiKeyFromSecretManager(String keyName) {
                 Region region = Region.US_EAST_1;
                 LOG.info("keyName {} ", keyName);
