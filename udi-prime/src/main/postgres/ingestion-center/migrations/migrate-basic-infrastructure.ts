@@ -850,11 +850,23 @@ const migrateSP = pgSQLa.storedProcedure(
 
         -- Check and add 'primary_org_id' column if it does not exist
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='sat_interaction_fhir_screening_organization' 
+                      WHERE table_name='sat_interaction_fhir_screening_patient' 
                       AND column_name='primary_org_id') THEN
-            ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
+            ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient
             ADD COLUMN primary_org_id TEXT  NULL;
         END IF;
+
+         -- Check and add 'primary_org_id' column if it does not exist and drop it if it exists
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'sat_interaction_fhir_screening_organization'
+                AND column_name = 'primary_org_id'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
+              DROP COLUMN primary_org_id;
+          END IF;
         
 
       CREATE INDEX IF NOT EXISTS sat_interaction_http_request_hub_interaction_id_idx 

@@ -1850,7 +1850,8 @@ BEGIN
                     payload,
                     created_by, 
                     provenance,
-                    sat_interaction_fhir_request_upserted.elaboration
+                    sat_interaction_fhir_request_upserted.elaboration,
+                    v_organization_id
                 );
                 CALL techbd_udi_ingress.insert_fhir_screening_organization(
                     hub_interaction_id, 
@@ -1860,8 +1861,7 @@ BEGIN
                     payload,
                     created_by, 
                     provenance,
-                    sat_interaction_fhir_request_upserted.elaboration,
-                    v_organization_id
+                    sat_interaction_fhir_request_upserted.elaboration 
                 );
             END IF;                  
         END IF;         
@@ -2539,6 +2539,7 @@ $function$
 ;
 
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_patient(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb);
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_screening_patient(text,text,text,TIMESTAMPTZ,jsonb,text,text,jsonb,text);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_patient (
     IN hub_interaction_id TEXT,
     IN tenant_id TEXT,
@@ -2547,7 +2548,8 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_patient (
     IN payload JSONB,
     IN created_by TEXT,
     IN provenance TEXT,
-    IN elaboration JSONB
+    IN elaboration JSONB,
+    IN primary_org_id TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -2586,10 +2588,13 @@ BEGIN
                 ((((((entry.value -> 'resource') -> 'communication') -> 0) -> 'language') -> 'coding') -> 0) ->> 'code' AS language,
                 (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value' AS medical_record_number,
                 (((entry.value -> 'resource') -> 'identifier') -> 3) ->> 'value' AS social_security_number,
-                array_to_string(ARRAY(
-                    SELECT replace((jsonb_array_elements((entry.value -> 'resource') -> 'identifier') -> 'assigner') ->> 'reference', 'Organization/', '')
-                    FROM jsonb_array_elements((entry.value -> 'resource') -> 'identifier')
-                ), ', ') AS organization_ids
+                array_to_string(
+                    ARRAY(
+                        SELECT (org_entry.value -> 'resource') ->> 'id'
+                        FROM jsonb_array_elements(insert_fhir_screening_patient.payload -> 'entry') AS org_entry
+                        WHERE (org_entry.value -> 'resource' ->> 'resourceType') = 'Organization'
+                    ), ', '
+                ) AS organization_ids 
         FROM LATERAL jsonb_array_elements(insert_fhir_screening_patient.payload -> 'entry') entry
         WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Patient'
     )
@@ -2614,7 +2619,8 @@ BEGIN
         org_id,
         elaboration,
         created_by,
-        provenance
+        provenance,
+        primary_org_id
     )
     SELECT gen_random_uuid()::TEXT,
         filtered_data.hub_interaction_id,
@@ -2636,7 +2642,8 @@ BEGIN
         filtered_data.organization_ids,
         filtered_data.elaboration,
         filtered_data.v_created_by,
-        filtered_data.v_provenance
+        filtered_data.v_provenance,
+        primary_org_id
     FROM filtered_data;
 EXCEPTION
    WHEN OTHERS THEN
@@ -2676,8 +2683,7 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_screening_organizatio
     IN payload JSONB,
     IN created_by TEXT,
     IN provenance TEXT,
-    IN elaboration JSONB,
-    IN p_organization_id TEXT
+    IN elaboration JSONB
 )
 LANGUAGE plpgsql
 AS $$
@@ -2707,8 +2713,7 @@ BEGIN
                 (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'text'::text AS org_address,
                 (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'city'::text AS org_city,
                 (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'state'::text AS org_state,
-                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'postalCode'::text AS org_postal_code,
-                insert_fhir_screening_organization.p_organization_id AS primary_org_id
+                (((entry.value -> 'resource'::text) -> 'address'::text) -> 0) ->> 'postalCode'::text AS org_postal_code 
         FROM LATERAL jsonb_array_elements(insert_fhir_screening_organization.payload -> 'entry') entry
         WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Organization'
     )
@@ -2726,8 +2731,7 @@ BEGIN
         org_postal_code,
         elaboration,
         created_by,
-        provenance,
-        primary_org_id
+        provenance 
     )
     SELECT gen_random_uuid()::TEXT,
         filtered_data.hub_interaction_id,
@@ -2742,8 +2746,7 @@ BEGIN
         filtered_data.org_postal_code,
         filtered_data.elaboration,
         filtered_data.v_created_by,
-        filtered_data.v_provenance,
-        primary_org_id
+        filtered_data.v_provenance 
     FROM filtered_data;
 EXCEPTION
    WHEN OTHERS THEN
