@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,7 +21,6 @@ import lib.aide.paths.PathsHtml;
 import lib.aide.paths.PathsVisuals;
 
 @Controller
-@Profile("sandbox")
 @Tag(name = "Tech by Design Hub UX Presentation Shell")
 public class ShellController {
 
