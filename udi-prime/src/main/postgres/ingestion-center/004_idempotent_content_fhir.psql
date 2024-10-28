@@ -220,6 +220,7 @@ AND (issue ~~ '%has not been checked because it is unknown%'::text
             OR issue ~~ '%Unknown profile%'::text 
             OR issue ~~ '%Unknown extension%'::text 
             OR issue ~~ '%Unknown Code System%'::text 
-            OR issue ~~ '%not found%'::text)
+            OR issue ~~ '%not found%'::text
+            OR issue ~~ '%has not been checked because it could not be found%'::text)
 GROUP BY validation_engine, TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY'), COALESCE(ig_version, 'Unknown')
 ORDER BY issue_date DESC;
