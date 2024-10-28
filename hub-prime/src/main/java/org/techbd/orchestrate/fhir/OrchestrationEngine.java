@@ -374,40 +374,6 @@ public class OrchestrationEngine {
             supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
             supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
             supportChain.addValidationSupport(createVsacTerminologySupport());
-            // final var prePopulatedSupport = new
-            // PrePopulatedValidationSupport(fhirContext);
-            // final var jsonContent = readJsonFromUrl(fhirProfileUrl);
-            // LOG.info("Bundle profile Json parse -BEGIN");
-            // final var structureDefinition =
-            // fhirContext.newJsonParser().parseResource(StructureDefinition.class,
-            // jsonContent);
-            // LOG.info("Bundle profile Json parse -END");
-            // igVersion = structureDefinition.getVersion();
-            // // Add Shinny Bundle Profile structure definitions Url
-            // prePopulatedSupport.addStructureDefinition(structureDefinition);
-            // // Add all resource profile structure definitions from local
-            // LOG.info("Add structure definition of shinny IG -BEGIN");
-            // addStructureDefinitions(prePopulatedSupport);
-            // LOG.info("Add structure definition of shinny IG -END");
-            // // Add all resource profile structure definitions
-            // LOG.info("Add structure definition from Local Folder -BEGIN");
-            // addStructureDefinitionsFromLocal(prePopulatedSupport);
-            // LOG.info("Add structure definition from Local Folder -END");
-            // // Add all resource profile code systems
-            // LOG.info("Add code systems of shinny IG -BEGIN");
-            // addCodeSystems(prePopulatedSupport);
-            // LOG.info("Add code systems of shinny IG -END");
-            // // Add all resource profile code systems from local
-            // LOG.info("Add code systems from local -BEGIN");
-            // addCodesSystemsFromLocal(prePopulatedSupport);
-            // LOG.info("Add code systems from local -END");
-            // // Add all resource profile value sets
-            // LOG.info("Add value sets of shinny IG -BEGIN");
-            // addValueSets(prePopulatedSupport);
-            // LOG.info("Add value sets of shinny IG -END");
-            // LOG.info("Add value sets from local -BEGIN");
-            // addValueSetsFromLocal(prePopulatedSupport);
-            // LOG.info("Add value sets from local -END");
 
             // supportChain.addValidationSupport(prePopulatedSupport);
             // final var cache = new CachingValidationSupport(supportChain);
