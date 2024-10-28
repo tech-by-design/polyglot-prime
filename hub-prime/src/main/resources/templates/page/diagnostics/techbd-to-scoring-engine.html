@@ -143,7 +143,7 @@
                     //         const responseBodyDetails = params.data.response_body_details || ''; // Default to an empty string if no value
                     //         return error && responseBodyDetails ? `${error}, ${responseBodyDetails}` : error || responseBodyDetails;
                     //     } },
-                    { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter" },
+                    { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter", filter: "agDateColumnFilter" },
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
