@@ -263,7 +263,6 @@ public class OrchestrationEngine {
         private final String igVersion;
         private final FhirValidator fhirValidator;
         private final String fhirUmlsApiKeyValue;
-        private final String fhirUmlsApiKeyValueHard;
 
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
@@ -280,8 +279,6 @@ public class OrchestrationEngine {
             this.fhirValidator = initializeFhirValidator();
             this.fhirUmlsApiKeyValue = builder.fhirUmlsApiKeyValue;
             LOG.info("In constructor -  fhirUmlsApiKeyValue", fhirUmlsApiKeyValue);
-            this.fhirUmlsApiKeyValueHard = getUmlsApiKeyFromSecretManager("umls_api_key");
-            LOG.info("In constructor -  fhirUmlsApiKeyValueHard", fhirUmlsApiKeyValue);
         }
 
         private IValidationSupport createVsacTerminologySupport() {
@@ -304,8 +301,7 @@ public class OrchestrationEngine {
 
                         // Add Basic Authentication header with the UMLS API Key
                         LOG.info("fhirUmlsApiKeyValue   {}: ", fhirUmlsApiKeyValue);
-                        LOG.info("fhirUmlsApiKeyValueHard   {}: ", fhirUmlsApiKeyValueHard);
-                        String auth = "apikey:" + fhirUmlsApiKeyValueHard;
+                        String auth = "apikey:" + fhirUmlsApiKeyValue;
                         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
                         request.setHeader("Authorization", "Basic " + encodedAuth);
 
@@ -417,27 +413,6 @@ public class OrchestrationEngine {
             // final var cache = new CachingValidationSupport(supportChain);
             final var instanceValidator = new FhirInstanceValidator(supportChain);
             return fhirContext.newValidator().registerValidatorModule(instanceValidator);
-        }
-
-        public String getUmlsApiKeyFromSecretManager(String keyName) {
-            Region region = Region.US_EAST_1;
-            LOG.info("OrchestrationEngine - keyName {} ", keyName);
-            LOG.warn(
-                    "OrchestrationEngine:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} BEGIN for interaction id: {}",
-                    region);
-
-            SecretsManagerClient secretsClient = SecretsManagerClient.builder()
-                    .region(region)
-                    .build();
-
-            String umlsApiKey = FHIRService.getValue(secretsClient, keyName);
-            secretsClient.close();
-
-            LOG.warn(
-                    "OrchestrationEngine:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} END for interaction id: {}",
-                    region);
-            LOG.info("OrchestrationEngine - umlsApiKey : {} ", umlsApiKey);
-            return umlsApiKey;
         }
 
         @Override
