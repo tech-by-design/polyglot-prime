@@ -161,7 +161,11 @@ public class FhirController {
                     }
                     </code> """, required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
-            @Parameter(description = "Optional header to specify the Datalake API content type.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
+            @Parameter(description = """
+                    Optional header to specify the Datalake API content type.
+                    Value provided with this header will be used to set the <code>Content-Type</code> header while invoking the Datalake API.
+                    If the header is not provided, <code>application/json</code> will be used.
+                    """, required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
             @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
             @Parameter(description = "Optional parameter to decide whether the Datalake submission to be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false) boolean isSync,
             @Parameter(description = "Optional parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
