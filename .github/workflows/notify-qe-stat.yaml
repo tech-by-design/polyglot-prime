@@ -190,4 +190,4 @@ jobs:
               ${{ env.formatted_hixny_data }}
           content_type: "text/html"
           from: "Tech by Design FHIR Submission Status Notification <no-reply@tx.techbd.org>"
-          to: patrick.johnson@techbd.org
+          to: patrick.johnson@techbd.org,ratheeshkumar-kr@netspective.in
