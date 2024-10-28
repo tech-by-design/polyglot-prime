@@ -1988,7 +1988,7 @@ BEGIN
 			CONTINUE;
 		END IF; 
 	
-		IF v_current_rule.action = 'reject' THEN  					                                    	         
+		IF v_current_rule.action = 'reject' OR v_current_rule.action = 'discard' THEN  					                                    	         
 		
 			-- Dynamically build the path to extract the "message" based on v_json_path
             v_message_path := v_json_path || '.message';          
@@ -2005,7 +2005,7 @@ BEGIN
             v_action_payload := jsonb_build_object('description', v_current_rule."namespace", 'message', v_issue_message);
 		
             v_new_action := jsonb_build_object(
-                'action', 'reject',
+                'action', v_current_rule.action, --'reject',
                 'actionPayload', COALESCE(v_current_rule.reject_json, v_action_payload) -- Including reject_json as JSONB
             );           
            	
@@ -2036,6 +2036,11 @@ BEGIN
 				WHERE json_path = v_current_rule.json_path 
 					AND namespace = process_json_action_rules.rule_namespace;
 				
+		-- If the action is discard then, no need to continue with other rules, just return.
+		IF v_current_rule.action = 'discard' THEN 
+			RETURN v_temp_json;
+		END IF; 
+	
 		-- Initialize the varible with default values; 
 		v_found_flag 		:= FALSE;
 		v_json_path			:= NULL;
@@ -2080,7 +2085,7 @@ EXCEPTION
 	        v_pg_context = PG_EXCEPTION_CONTEXT;
 	        v_error_type = 'SQL';
 	
-	    RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	    --RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
 	       
 	    -- Log the exception, reusing the previous exception ID if it exists
 		PERFORM techbd_udi_ingress.register_issue(
