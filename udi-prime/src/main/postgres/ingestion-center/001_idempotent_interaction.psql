@@ -2310,7 +2310,11 @@ BEGIN
          LIMIT 1) AS total_safety_score,
         insert_fhir_screening_info.elaboration,
         insert_fhir_screening_info.created_by,
-        insert_fhir_screening_info.provenance;
+        insert_fhir_screening_info.provenance
+    WHERE (SELECT (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value'
+           FROM jsonb_array_elements(payload -> 'entry') entry(value)
+          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
+         LIMIT 1) IS NOT NULL;
 EXCEPTION
    WHEN OTHERS THEN
 	    -- Capture exception details
