@@ -84,7 +84,7 @@
         function getPatientGridData(params) {
             const orgId = params.data.org_id;
             const qeName = params.data.qe_name;
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${patientDetailsView}/qe_name/${qeName}/org_id/${orgId}.json`))
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${patientDetailsView}/qe_name/${qeName}/primary_org_id/${orgId}.json`))
                 .then(response => response.json())
                 .then(response => {
                     params.successCallback(response);
