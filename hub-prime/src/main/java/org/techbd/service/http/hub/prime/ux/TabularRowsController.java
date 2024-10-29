@@ -142,14 +142,14 @@ public class TabularRowsController {
                 || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(columnName2).matches()) {
             throw new IllegalArgumentException("Invalid schema or table or column name.");
         }
-        String columnValue2LikePattern = "%" + columnValue2 + "%";
+        // String columnValue2LikePattern = "%" + columnValue2 + "%";
 
         final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
                 masterTableNameOrViewName);
 
         List<Map<String, Object>> result = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
                 .where(DSL.field(typableTable.column(columnName)).eq(DSL.val(columnValue))
-                        .and(DSL.field(typableTable.column(columnName2)).like(DSL.val(columnValue2LikePattern))))
+                        .and(DSL.field(typableTable.column(columnName2)).eq(DSL.val(columnValue2))))
                 .fetch()
                 .intoMaps();
 
