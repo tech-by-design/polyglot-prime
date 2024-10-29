@@ -1592,6 +1592,7 @@ DECLARE
    	v_duration_millisecs 			TEXT 	:= NULL;
    	v_response_status				TEXT 	:= NULL;
    	v_return 						TEXT 	:= NULL;
+    v_techbd_disposition_action		TEXT 	:= NULL;
 
 BEGIN
 
@@ -1699,6 +1700,11 @@ BEGIN
 		WHERE entry ? 'resource';		
 	
 	END IF; /*End of : org.techbd.service.http.Interactions$RequestResponseEncountered*/
+	
+	-- Save the action from the OperationOutcome->techByDesignDisposition
+	IF LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('techByDesignDisposition') THEN 
+		v_techbd_disposition_action	:= sat_interaction_fhir_request_upserted.payload->'OperationOutcome'->'techByDesignDisposition'->0->>'action';
+	END IF;
 
 	IF(LOWER(sat_interaction_fhir_request_upserted.nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'))) THEN
 		
@@ -1769,7 +1775,8 @@ BEGIN
         passed,
         medicaid_cin,
         interaction_start_time,
-        interaction_end_time
+        interaction_end_time,
+        techbd_disposition_action
     )
     VALUES (
         gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
@@ -1806,7 +1813,8 @@ BEGIN
         v_passed,
         v_medicaid_cin,
         COALESCE(v_interaction_start_time::TIMESTAMPTZ,NULL),
-        COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL)
+        COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL),
+        v_techbd_disposition_action
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     IF (v_return IS NOT NULL) THEN
