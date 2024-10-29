@@ -57,21 +57,21 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ApiResponse(responseCode = "400", description = "Validation Error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"${message}\"}")))
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return handleException(ex, ex.getMessage());
+        return handleException(ex, ex.getMessage(),HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ApiResponse(responseCode = "400", description = "Validation Error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"${message}\"}")))
     public ResponseEntity<ErrorResponse> handleMissingRequestHeaderException(MissingRequestHeaderException ex) {
-        return handleException(ex, ex.getMessage());
+        return handleException(ex, ex.getMessage(),HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MissingRequestValueException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ApiResponse(responseCode = "400", description = "Validation Error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"${message}\"}")))
     public ResponseEntity<ErrorResponse> handleMissingRequestValueException(MissingRequestValueException ex) {
-        return handleException(ex, ex.getMessage());
+        return handleException(ex, ex.getMessage(),HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
@@ -94,13 +94,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(responseBody, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
-    private ResponseEntity<ErrorResponse> handleException(Exception ex, String customMessage) {
+    private ResponseEntity<ErrorResponse> handleException(Exception ex, String customMessage,HttpStatus status) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         String tenantId = request.getHeader("X-Tenant-ID"); // Use your actual header name
 
         LOG.error("Validation Error: {}. Tenant ID: {}", customMessage, tenantId, ex);
         ErrorResponse response = new ErrorResponse("Error", String.format("Validation Error: %s", customMessage));
-        
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    
+        return new ResponseEntity<>(response, status);
     }
 }
