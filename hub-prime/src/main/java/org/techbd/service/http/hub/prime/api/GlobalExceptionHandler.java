@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -73,6 +74,12 @@ public class GlobalExceptionHandler {
         return handleException(ex, ex.getMessage());
     }
 
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Unsupported media type\"}")))
+    public ResponseEntity<ErrorResponse> handleMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
+        return handleException(ex, "Unsupported media type");
+    }
     @ExceptionHandler(Exception.class) // Catch all other exceptions
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Internal Server Error\"}")))
