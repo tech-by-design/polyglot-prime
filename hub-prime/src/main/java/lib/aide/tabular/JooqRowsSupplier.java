@@ -40,21 +40,20 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     public record TypableTable(Table<?> table, boolean stronglyTyped) {
 
         static public TypableTable fromTablesRegistry(@Nonnull Class<?> tablesRegistry, @Nullable String schemaName,
-                @Nonnull String tableLikeName) {
-            // Attempt to find a generated table reference using reflection;
-            // when we can use a jOOQ-generated class it means that special
-            // column types like JSON will work (otherwise pure dynamic without
-            // generated jOOQ assistance may treat certain columns incorrectly).
+                                                      @Nonnull String tableLikeName) {
+    
+            // Attempt to find a generated table reference using reflection
             try {
+                String qualifiedTableName = schemaName != null ? schemaName.toUpperCase() + "_" + tableLikeName.toUpperCase() : tableLikeName.toUpperCase();
                 // looking for Tables.TABLISH_NAME ("tablish" means table or view)
-                final var field = tablesRegistry.getField(tableLikeName.toUpperCase());
+                final var field = tablesRegistry.getField(qualifiedTableName);
                 return new TypableTable((Table<?>) field.get(null), true);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName, tableLikeName)
                         : DSL.name(tableLikeName)), false);
             }
         }
-
+    
         public Field<Object> column(final String columnName) {
             if (this.stronglyTyped) {
                 try {
@@ -159,8 +158,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             if (logger != null) {
                 logger.error("JooqRowsSupplier error", e);
             }
-            return new TabularRowsResponse<>(includeGeneratedSqlInErrorResp ? provenance : null, null, -1,
-                    e.getMessage());
+            return new TabularRowsResponse<>(includeGeneratedSqlInResp ? provenance : null, null, -1,
+            includeGeneratedSqlInErrorResp ? e.getMessage() : null);
         }
     }
 
