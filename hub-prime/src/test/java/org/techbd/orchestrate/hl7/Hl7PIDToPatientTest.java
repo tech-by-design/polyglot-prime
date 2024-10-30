@@ -13,7 +13,6 @@ import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Patient;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.ibm.icu.text.SimpleDateFormat;
@@ -30,7 +29,7 @@ import ca.uhn.hl7v2.parser.PipeParser;
 public class Hl7PIDToPatientTest {
 
     @Test
-    void testHl7ToFhirConversion() throws Exception {
+    public void testHl7ToFhirConversion() throws Exception {
         HapiContext context = new DefaultHapiContext();
         String hl7Message = "MSH|^~\\&|HIS|RIH|EKG|EKG|202310190830||ORU^R01|MSG00001|P|2.7\r" +
                 "PID|||12345^^^Hospital^MR||Doe^John^Bob^Jr.^Dr.||19700101|M";
@@ -103,7 +102,6 @@ public class Hl7PIDToPatientTest {
     }
 
     @Test
-    @Disabled("Test is just for viewing generated json")
     public void testViewGeneratedJson() throws Exception {
         // Parse the HL7 message
         String hl7Message = "MSH|^~\\&|HIS|RIH|EKG|EKG|202310190830||ORU^R01|MSG00001|P|2.7\r" +
