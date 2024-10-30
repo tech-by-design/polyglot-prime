@@ -25,6 +25,7 @@ import java.util.stream.StreamSupport;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -55,6 +56,7 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
 import ca.uhn.fhir.context.support.IValidationSupport;
 import ca.uhn.fhir.context.support.ValidationSupportContext;
+import ca.uhn.fhir.rest.client.apache.ApacheRestfulClientFactory;
 import ca.uhn.fhir.validation.FhirValidator;
 import jakarta.validation.constraints.NotNull;
 
@@ -341,6 +343,20 @@ public class OrchestrationEngine {
         public FhirValidator initializeFhirValidator() {
             final var supportChain = new ValidationSupportChain();
             final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
+            
+            int minutes = 5; 
+            RequestConfig config = RequestConfig.custom()
+                    .setConnectTimeout(minutes * 60 * 1000)
+                    .setSocketTimeout(minutes * 60 * 1000)
+                    .build();
+
+            CloseableHttpClient httpClient = HttpClients.custom()
+                    .setDefaultRequestConfig(config)
+                    .build();
+
+            ApacheRestfulClientFactory clientFactory = new ApacheRestfulClientFactory(fhirContext);
+            clientFactory.setHttpClient(httpClient);
+            fhirContext.setRestfulClientFactory(clientFactory);
 
             LOG.info("Version of igPackage - " + igVersion);
             LOG.info("Add IG Packages to npmPackageValidationSupport -BEGIN");
