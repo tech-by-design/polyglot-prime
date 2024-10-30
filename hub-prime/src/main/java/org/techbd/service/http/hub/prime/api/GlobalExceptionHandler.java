@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
     @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Unsupported media type\"}")))
     public ResponseEntity<ErrorResponse> handleMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
-        return handleException(ex, "Unsupported media type");
+        return handleException(ex, "Unsupported media type",HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
     @ExceptionHandler(Exception.class) // Catch all other exceptions
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
