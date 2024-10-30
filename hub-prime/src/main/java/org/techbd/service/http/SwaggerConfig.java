@@ -1,6 +1,7 @@
 package org.techbd.service.http;
 
 import org.springdoc.core.customizers.OperationCustomizer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.HandlerMethod;
@@ -14,10 +15,14 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
 public class SwaggerConfig {
     private final AppConfig appConfig;
+
+    @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
+    private String serverUrl;
 
     public SwaggerConfig(final AppConfig appConfig) {
         this.appConfig = appConfig;
@@ -27,11 +32,13 @@ public class SwaggerConfig {
     public OpenAPI springOpenAPI() {
         return new OpenAPI()
                 .info(new Info().title("Tech by Design FHIR Server")
-                        .description("Public REST API Endpoints").version(appConfig.getVersion())
+                        .description("Public REST API Endpoints")
+                        .version(appConfig.getVersion())
                         .license(new License().name("GitHub Repository")
                                 .url("https://github.com/tech-by-design/polyglot-prime")))
                 .externalDocs(new ExternalDocumentation().description("Tech by Design Technical Documents Microsite")
-                        .url("https://tech-by-design.github.io/docs.techbd.org/"));
+                        .url("https://tech-by-design.github.io/docs.techbd.org/"))
+                .addServersItem(new Server().url(serverUrl).description("Environment-specific server URL"));
     }
 
     @Bean
@@ -62,7 +69,7 @@ public class SwaggerConfig {
                             Interactions.Servlet.HeaderName.PREFIX))
                     .required(false);
 
-                final var interactionProvenance = new Parameter()
+            final var interactionProvenance = new Parameter()
                     .in(ParameterIn.HEADER.toString())
                     .schema(new StringSchema())
                     .name(Interactions.Servlet.HeaderName.Request.PROVENANCE)
