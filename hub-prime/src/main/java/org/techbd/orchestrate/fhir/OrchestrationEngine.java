@@ -370,7 +370,7 @@ public class OrchestrationEngine {
             supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
             supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
             supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
-            supportChain.addValidationSupport(new RemoteTerminologyServiceValidationSupport(fhirContext,"http://tx.fhir.org/r4"));
+            supportChain.addValidationSupport(new RemoteTerminologyServiceValidationSupport(fhirContext,"https://tx.fhir.org/r4"));
             supportChain.addValidationSupport(createVsacTerminologySupport());
 
             // supportChain.addValidationSupport(prePopulatedSupport);
