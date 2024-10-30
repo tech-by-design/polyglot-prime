@@ -1,0 +1,28 @@
+{
+  "resourceType": "Patient",
+  "meta": {
+    "lastUpdated": "2023-10-19T08:30:00Z",
+    "profile": [ "http://shinny.org/ImplementationGuide/HRSN/StructureDefinition/shinny-patient" ]
+  },
+  "identifier": [ {
+    "type": {
+      "coding": [ {
+        "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+        "code": "MR"
+      } ]
+    },
+    "value": "12345"
+  } ],
+  "name": [ {
+    "extension": [ {
+      "url": "http://shinny.org/ImplementationGuide/HRSN/StructureDefinition/middle-name",
+      "valueString": "Bob"
+    } ],
+    "family": "Doe",
+    "given": [ "John" ],
+    "prefix": [ "Jr." ],
+    "suffix": [ "Dr." ]
+  } ],
+  "gender": "female",
+  "birthDate": "1970-01-01"
+}

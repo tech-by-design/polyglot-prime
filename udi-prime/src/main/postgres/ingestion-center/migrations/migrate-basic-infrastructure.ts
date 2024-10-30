@@ -909,6 +909,7 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.json_action_rule
         ADD CONSTRAINT json_action_rule_action_rule_id_pkey
         PRIMARY KEY (action_rule_id);
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_disposition_action TEXT NULL;        
 
       INSERT INTO techbd_udi_ingress.json_action_rule(
         action_rule_id,
