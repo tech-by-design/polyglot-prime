@@ -21,7 +21,7 @@ public class BundleHealthIndicator implements HealthIndicator {
 
     private RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${TECHBD_HUB_PRIME_BASE_URL:#{null}}")
+    @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
     private String baseUrl;
 
     @Override
