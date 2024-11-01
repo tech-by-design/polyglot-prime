@@ -155,13 +155,10 @@ order by
 	(created_at) desc;
 
 
-DROP MATERIALIZED VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_mat CASCADE;
-
-
 /****************************************************************************************
  * This view, fhir_validation_issue_details, provides detailed insights into FHIR validation 
- * issues from the materialized view fhir_validation_issue_mat. It aggregates the data by 
- * validation engine, specific issue, IG (Implementation Guide) version, and issue date. 
+ * issues . It aggregates the data by validation engine, specific issue, IG (Implementation Guide) 
+ * version, and issue date. 
  * The view includes the following key fields:
  * 
  * - validation_engine: The name of the validation engine that processed the interaction.
@@ -198,12 +195,11 @@ AS SELECT validation_engine,
 
 
 /****************************************************************************************
- * This view provides a straightforward way to access consolidated validation issues from 
- * the materialized view fhir_validation_issue_mat. It includes key fields related to FHIR 
- * validation issues, such as the validation engine, formatted issue date, most recent 
- * timestamp of the issue, IG (Implementation Guide) version, and the count of distinct 
- * issues. This view helps in quickly identifying and analyzing validation issues over the 
- * past 7 days, sorted by the most recent issue date.
+ * This view provides a straightforward way to access consolidated validation issues. 
+ * It includes key fields related to FHIR validation issues, such as the validation engine, 
+ * formatted issue date, most recent timestamp of the issue, IG (Implementation Guide) version, 
+ * and the count of distinct issues. This view helps in quickly identifying and analyzing validation 
+ * issues over the past 7 days, sorted by the most recent issue date.
 ****************************************************************************************/
 
 
@@ -222,6 +218,11 @@ AND (issue ~~ '%has not been checked because it is unknown%'::text
             OR issue ~~ '%Unknown extension%'::text 
             OR issue ~~ '%Unknown Code System%'::text 
             OR issue ~~ '%not found%'::text
-            OR issue ~~ '%has not been checked because it could not be found%'::text)
+            OR issue ~~ '%has not been checked because it could not be found%'::text
+            OR issue ~~ '%Unable to find a match for profile%'::text
+            OR issue ~~ '%None of the codings provided%'::text
+            OR issue ~~ '%Unable to expand ValueSet%'::text
+            OR issue ~~ '%Slicing cannot be evaluated%'::text
+            OR issue ~~ '%could not be resolved%'::text)
 GROUP BY validation_engine, TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY'), COALESCE(ig_version, 'Unknown')
 ORDER BY issue_date DESC;
