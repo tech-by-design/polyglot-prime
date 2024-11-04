@@ -46,7 +46,6 @@ import org.hl7.fhir.r4.model.ValueSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -279,7 +278,7 @@ public class OrchestrationEngine {
             this.igVersion = builder.igVersion;
             this.fhirValidator = initializeFhirValidator();
             this.fhirUmlsApiKeyValue = builder.fhirUmlsApiKeyValue;
-            LOG.info("In constructor -  fhirUmlsApiKeyValue", fhirUmlsApiKeyValue);
+            LOG.debug("In constructor -  fhirUmlsApiKeyValue", fhirUmlsApiKeyValue);
         }
 
         private IValidationSupport createVsacTerminologySupport() {
@@ -301,7 +300,7 @@ public class OrchestrationEngine {
                         HttpGet request = new HttpGet(uri + "?_format=json");
 
                         // Add Basic Authentication header with the UMLS API Key
-                        LOG.info("fhirUmlsApiKeyValue   {}: ", fhirUmlsApiKeyValue);
+                        LOG.debug("fhirUmlsApiKeyValue   {}: ", fhirUmlsApiKeyValue);
                         String auth = "apikey:" + fhirUmlsApiKeyValue;
                         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
                         request.setHeader("Authorization", "Basic " + encodedAuth);
@@ -309,9 +308,7 @@ public class OrchestrationEngine {
                         try (CloseableHttpResponse response = httpClient.execute(request)) {
                             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                                 String responseBody = EntityUtils.toString(response.getEntity());
-                                LOG.info("VSAC BEGIN");
-                                LOG.info(responseBody);
-                                LOG.info("VSAC END");
+                                LOG.info("Response received from VSAC : {}" ,null  == response ? "Response is null" : "Response is not null");
                                 return fhirContext.newJsonParser().parseResource(ValueSet.class, responseBody);
                             } else {
                                 LOG.error("Failed to fetch ValueSet from VSAC. Status: {}",
@@ -400,9 +397,9 @@ public class OrchestrationEngine {
             final var initiatedAt = Instant.now();
             try {
                 LOG.info("VALIDATOR -BEGIN initiated At : {} ", initiatedAt);
-                LOG.info("BUNDLE PAYLOAD parse -BEGIN ");
+                LOG.debug("BUNDLE PAYLOAD parse -BEGIN ");
                 final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
-                LOG.info("BUNDLE PAYLOAD parse -END");
+                LOG.debug("BUNDLE PAYLOAD parse -END");
                 final var hapiVR = fhirValidator.validateWithResult(bundle);
                 final var completedAt = Instant.now();
                 LOG.info("VALIDATOR -END completed at :{} ", completedAt);
