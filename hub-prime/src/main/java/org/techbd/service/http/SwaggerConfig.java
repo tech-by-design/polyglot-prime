@@ -38,7 +38,8 @@ public class SwaggerConfig {
                                 .url("https://github.com/tech-by-design/polyglot-prime")))
                 .externalDocs(new ExternalDocumentation().description("Tech by Design Technical Documents Microsite")
                         .url("https://tech-by-design.github.io/docs.techbd.org/"))
-                .addServersItem(new Server().url(serverUrl).description("Environment-specific server URL"));
+                //.addServersItem(new Server().url(serverUrl).description("Environment-specific server URL"))
+                ;
     }
 
     @Bean

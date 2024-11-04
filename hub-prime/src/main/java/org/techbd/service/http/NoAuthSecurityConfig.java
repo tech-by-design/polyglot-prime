@@ -44,17 +44,13 @@ public class NoAuthSecurityConfig {
 
     @Bean
     public CorsFilter corsFilter() {
+        // primarily setup for Swagger UI and OpenAPI integration
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-
-        List<String> allowedOrigins = List.of(uiUrl, apiUrl);
-        config.setAllowedOrigins(allowedOrigins); // Set allowed origins
-        // Configure methods and headers applicable to both UI and API requests
-        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
-        //config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
-        config.setAllowCredentials(true);
-        source.registerCorsConfiguration("/**", config); // Apply this configuration to all endpoints
-
+        config.addAllowedOriginPattern("*"); // Customize as needed
+        config.addAllowedMethod("*");
+        config.addAllowedHeader("*");
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 
