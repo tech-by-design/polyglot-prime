@@ -46,3 +46,5 @@ export ORG_TECHBD_HUB_PRIME_LOG_FILE= #Path to the log file with file name (${HO
 
 ## Set the API base URL
 export TECHBD_HUB_PRIME_FHIR_API_BASE_URL=http://localhost:8080
+## Set the UI base URL
+export TECHBD_HUB_PRIME_FHIR_UI_BASE_URL=http://localhost:8080
