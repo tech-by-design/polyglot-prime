@@ -32,6 +32,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.hl7.fhir.common.hapi.validation.support.BaseValidationSupport;
+import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
 import org.hl7.fhir.common.hapi.validation.support.InMemoryTerminologyServerValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.NpmPackageValidationSupport;
@@ -45,6 +46,7 @@ import org.hl7.fhir.r4.model.ValueSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -384,14 +386,12 @@ public class OrchestrationEngine {
 
             supportChain.addValidationSupport(defaultSupport);
             supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
-            supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
             supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
             supportChain.addValidationSupport(new RemoteTerminologyServiceValidationSupport(fhirContext,"https://tx.fhir.org/r4"));
             supportChain.addValidationSupport(createVsacTerminologySupport());
 
-            // supportChain.addValidationSupport(prePopulatedSupport);
-            // final var cache = new CachingValidationSupport(supportChain);
-            final var instanceValidator = new FhirInstanceValidator(supportChain);
+            final var cache = new CachingValidationSupport(supportChain);
+            final var instanceValidator = new FhirInstanceValidator(cache);
             return fhirContext.newValidator().registerValidatorModule(instanceValidator);
         }
 
