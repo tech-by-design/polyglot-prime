@@ -1,9 +1,10 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +32,12 @@ public class SecurityConfig {
 
     @Autowired
     private GitHubUserAuthorizationFilter authzFilter;
+
+    @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
+    private String apiUrl;
+
+    @Value("${TECHBD_HUB_PRIME_FHIR_UI_BASE_URL:#{null}}")
+    private String uiUrl;
 
     @Bean
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
@@ -67,13 +74,17 @@ public class SecurityConfig {
 
     @Bean
     public CorsFilter corsFilter() {
-        // primarily setup for Swagger UI and OpenAPI integration
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOriginPattern("*"); // Customize as needed
-        config.addAllowedMethod("*");
-        config.addAllowedHeader("*");
-        source.registerCorsConfiguration("/**", config);
+
+        List<String> allowedOrigins = List.of(uiUrl, apiUrl);
+        config.setAllowedOrigins(allowedOrigins); // Set allowed origins
+        // Configure methods and headers applicable to both UI and API requests
+        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        //config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        config.setAllowCredentials(true);
+        source.registerCorsConfiguration("/**", config); // Apply this configuration to all endpoints
+
         return new CorsFilter(source);
     }
 
