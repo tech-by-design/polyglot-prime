@@ -154,6 +154,11 @@ public class OrchestrationEngine {
             this.sessions.add(session);
         }
     }
+    public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
+        for (final OrchestrationSession sessionToRemove : sessionsToRemove) {
+            this.sessions.removeIf(session -> session.getSessionId().equals(sessionToRemove.getSessionId()));
+        }
+    }
 
     public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, Map<String, String>> igPackages,
@@ -839,6 +844,7 @@ public class OrchestrationEngine {
     }
 
     public static class OrchestrationSession {
+        private final String sessionId;
         private final Device device;
         private final List<String> payloads;
         private final List<ValidationEngine> validationEngines;
@@ -847,6 +853,7 @@ public class OrchestrationEngine {
         private String igVersion;
 
         private OrchestrationSession(final Builder builder) {
+            this.sessionId = builder.sessionId;
             this.payloads = Collections.unmodifiableList(builder.payloads);
             this.validationEngines = Collections.unmodifiableList(builder.validationEngines);
             this.validationResults = new ArrayList<>();
@@ -878,6 +885,10 @@ public class OrchestrationEngine {
             return igVersion;
         }
 
+        public String getSessionId() {
+            return sessionId;
+        }
+
         public void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
@@ -897,6 +908,7 @@ public class OrchestrationEngine {
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
             private String fhirUmlsApiKeyValue;
+            private String sessionId;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
@@ -918,6 +930,11 @@ public class OrchestrationEngine {
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
+                return this;
+            }
+
+            public Builder withSessionId(@NotNull final String sessionId) {
+                this.sessionId = sessionId;
                 return this;
             }
 
