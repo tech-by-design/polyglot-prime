@@ -349,6 +349,7 @@ public class FHIRService {
                 final var fhirUmlsApiKey = appConfig.getFhirUmlsApiKey();
                 final var fhirUmlsApiValue = getUmlsApiKeyFromSecretManager(fhirUmlsApiKey);
                 final var sessionBuilder = engine.session()
+                                .withSessionId(UUID.randomUUID().toString())
                                 .onDevice(Device.createDefault())
                                 .withPayloads(List.of(payload))
                                 .withFhirProfileUrl(fhirProfileUrl)
@@ -385,6 +386,7 @@ public class FHIRService {
                 if (includeRequestInOutcome) {
                         immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
                 }
+                engine.clear(session);
                 return immediateResult;
         }
 

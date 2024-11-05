@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -270,6 +271,7 @@ public class FhirController {
         final var fhirUmlsApiKey = appConfig.getFhirUmlsApiKey();
         final var fhirUmlsApiValue = fhirService.getUmlsApiKeyFromSecretManager(fhirUmlsApiKey);
         final var sessionBuilder = engine.session()
+                .withSessionId(UUID.randomUUID().toString())
                 .onDevice(Device.createDefault())
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
@@ -295,6 +297,7 @@ public class FhirController {
         if (includeRequestInOutcome) {
             opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
         }
+        engine.clear(session);
         LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");
         return result;
     }
