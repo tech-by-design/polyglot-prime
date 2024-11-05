@@ -44,9 +44,11 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
     
             // Attempt to find a generated table reference using reflection
             try {
-                String qualifiedTableName = schemaName != null ? schemaName.toUpperCase() + "_" + tableLikeName.toUpperCase() : tableLikeName.toUpperCase();
+                // String qualifiedTableName = schemaName != null ? schemaName.toUpperCase() + "." + tableLikeName.toUpperCase() : tableLikeName.toUpperCase();
+                // final var field = tablesRegistry.getField(qualifiedTableName);
+
                 // looking for Tables.TABLISH_NAME ("tablish" means table or view)
-                final var field = tablesRegistry.getField(qualifiedTableName);
+                final var field = tablesRegistry.getField(tableLikeName.toUpperCase());
                 return new TypableTable((Table<?>) field.get(null), true);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 return new TypableTable(DSL.table(schemaName != null ? DSL.name(schemaName, tableLikeName)
