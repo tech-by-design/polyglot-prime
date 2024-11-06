@@ -29,9 +29,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator;
+import org.techbd.service.http.hub.prime.ux.validator.Validator;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
-import org.techbd.udi.auto.jooq.ingress.routines.IsValidJsonpath;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -263,29 +264,38 @@ public class TabularRowsController {
             try {
                 // Define the table based on schema and table name
                 var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
-                String jsonPath = rowData.get("json_path");
-                
-            if (jsonPath != null) {
-                IsValidJsonpath isValidJsonpath = new IsValidJsonpath();
-                final var jooqCfg = udiPrimeJpaConfig.dsl().configuration();
-                try {
-                    isValidJsonpath.setJsonPath(jsonPath);
-                    isValidJsonpath.execute(jooqCfg);
-                    boolean execResult = isValidJsonpath.getReturnValue();
-                    LOG.info("saveOrUpdateRow - isValidJsonpath : {}" + execResult);
 
-                    if (!execResult) {
-                        Map<String, Object> responseBody = new HashMap<>();
-                        responseBody.put("message", "Invalid JSON Path.");
-                        return ResponseEntity.badRequest().body(responseBody);
-                    }
-                } catch (Exception e) {
-                    LOG.error("Error validating JSON path: {}", e.getMessage());
-                    Map<String, Object> responseBody = new HashMap<>();
-                    responseBody.put("message", "An error occurred while validating the JSON path.");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+                Map<String, Validator> validators = new HashMap<>();
+                validators.put("json_path", new JsonPathValidator());
+
+                final var jooqCfg = udiPrimeJpaConfig.dsl().configuration();
+
+                for (Map.Entry<String, String> entry : rowData.entrySet()) {
+                    String columnName = entry.getKey();
+                    String columnValue = entry.getValue();
+
+                    Validator validator = validators.get(columnName);
+
+                    if (validator != null) {
+
+                        boolean isValid = false;
+
+                        if (validator instanceof  JsonPathValidator)
+                        {
+                            isValid = validator.isValid(columnName, columnValue, jooqCfg);
+                        }
+
+                        if (!isValid) {
+                              if (validator instanceof JsonPathValidator jsonPathValidator){
+                                return jsonPathValidator.handleInvalidJsonPath();
+                              } else {
+                                 Map<String, Object> responseBody = new HashMap<>();
+                                 responseBody.put("message", "Invalid value for: " + columnName);
+                                 return ResponseEntity.badRequest().body(responseBody);
+                               }
+                         }
+                     }
                 }
-            }
 
                 // Check if the primary key or unique identifier is provided for updating the existing record
                 String primaryKeyValue = rowData.get("action_rule_id");
