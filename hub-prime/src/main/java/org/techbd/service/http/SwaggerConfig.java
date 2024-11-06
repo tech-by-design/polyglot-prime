@@ -1,6 +1,10 @@
 package org.techbd.service.http;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springdoc.core.customizers.OperationCustomizer;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,10 +23,14 @@ import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
 public class SwaggerConfig {
+
     private final AppConfig appConfig;
 
+    @Value("${TECHBD_HUB_PRIME_FHIR_UI_BASE_URL:#{null}}")
+    private String hubApiUrl;
+
     @Value("${TECHBD_HUB_PRIME_FHIR_API_BASE_URL:#{null}}")
-    private String serverUrl;
+    private String fhirApiUrl;
 
     public SwaggerConfig(final AppConfig appConfig) {
         this.appConfig = appConfig;
@@ -91,4 +99,41 @@ public class SwaggerConfig {
         };
     }
 
+    @Bean
+    public GroupedOpenApi techByDesignHubApiGroup() {
+        return GroupedOpenApi.builder()
+                .group("Hub Self-Service UI API")
+                .pathsToMatch("/api/ux/**",
+                        "/actuator", "/actuator/**",
+                        "/presentation/shell/**",
+                        "/support/interaction/**",
+                        "/interactions/**"
+                )
+                .addOpenApiCustomizer(openApi -> {
+                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
+                    servers.add(new Server()
+                            .url(hubApiUrl)
+                            .description("Tech by Design Hub Self-Service UI API Server"));
+                    openApi.setServers(servers);
+                })
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi techByDesignFhirApiGroup() {
+        return GroupedOpenApi.builder()
+                .group("FHIR API")
+                .pathsToMatch("/metadata", "/Bundle", "/Bundle/**",
+                        "/api/expect/fhir/**",
+                        "/mock/shinny-data-lake/**"
+                )
+                .addOpenApiCustomizer(openApi -> {
+                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
+                    servers.add(new Server()
+                            .url(fhirApiUrl)
+                            .description("Tech by Design FHIR API Server"));
+                    openApi.setServers(servers);
+                })
+                .build();
+    }
 }

@@ -181,17 +181,22 @@ AS SELECT validation_engine,
     count(*) AS issue_count,
     max(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown'::text) AS ig_version,
-    to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text) AS issue_date
-   	FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
- 	WHERE date_time >= (CURRENT_DATE - '7 days'::interval)
-   	AND (issue ILIKE '%valueset%' OR issue ILIKE '%extension%' OR issue ILIKE '%profile%')
+    to_char(date_trunc('day'::text,	date_time),	'MM-DD-YYYY'::text) AS issue_date
+      FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
+   WHERE date_time >= CURRENT_DATE - INTERVAL '7 days'
       AND (issue ~~ '%has not been checked because it is unknown%'::text 
             OR issue ~~ '%Unknown profile%'::text 
             OR issue ~~ '%Unknown extension%'::text 
             OR issue ~~ '%Unknown Code System%'::text 
-            OR issue ~~ '%not found%'::text)
-  	GROUP BY validation_engine, issue, (COALESCE(ig_version, 'Unknown'::text)), (date(date_time)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
-  	ORDER BY (max(date_time)) DESC;
+            OR issue ~~ '%not found%'::text
+            OR issue ~~ '%has not been checked because it could not be found%'::text
+            OR issue ~~ '%Unable to find a match for profile%'::text
+            OR issue ~~ '%None of the codings provided%'::text
+            OR issue ~~ '%Unable to expand ValueSet%'::text
+            OR issue ~~ '%Slicing cannot be evaluated%'::text
+            OR issue ~~ '%could not be resolved%'::text)
+   GROUP BY validation_engine, issue, (COALESCE(ig_version, 'Unknown'::text)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
+   ORDER BY	(max(date_time)) DESC;
 
 
 /****************************************************************************************
