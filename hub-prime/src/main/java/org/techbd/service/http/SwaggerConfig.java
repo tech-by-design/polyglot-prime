@@ -1,5 +1,8 @@
 package org.techbd.service.http;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
@@ -106,10 +109,13 @@ public class SwaggerConfig {
                         "/support/interaction/**",
                         "/interactions/**"
                 )
-                .addOpenApiCustomizer(openApi -> openApi
-                .addServersItem(new Server()
-                        .url(hubApiUrl)
-                        .description("Tech by Design Hub Self-Service UI API Server")))
+                .addOpenApiCustomizer(openApi -> {
+                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
+                    servers.add(new Server()
+                            .url(hubApiUrl)
+                            .description("Tech by Design Hub Self-Service UI API Server"));
+                    openApi.setServers(servers);
+                })
                 .build();
     }
 
@@ -121,10 +127,13 @@ public class SwaggerConfig {
                         "/api/expect/fhir/**",
                         "/mock/shinny-data-lake/**"
                 )
-                .addOpenApiCustomizer(openApi -> openApi
-                .addServersItem(new Server()
-                        .url(fhirApiUrl)
-                        .description("Tech by Design FHIR API Server")))
+                .addOpenApiCustomizer(openApi -> {
+                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
+                    servers.add(new Server()
+                            .url(fhirApiUrl)
+                            .description("Tech by Design FHIR API Server"));
+                    openApi.setServers(servers);
+                })
                 .build();
     }
 }
