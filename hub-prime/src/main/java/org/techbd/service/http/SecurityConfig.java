@@ -1,7 +1,6 @@
 package org.techbd.service.http;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,6 +60,9 @@ public class SecurityConfig {
                 .invalidateHttpSession(true)
                 .permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sessionManagement -> sessionManagement
+                .invalidSessionUrl("/?timeout=true")
+                )
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
