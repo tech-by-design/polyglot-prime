@@ -794,6 +794,10 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_inter_hl7_req_nature_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (nature);
       CREATE INDEX IF NOT EXISTS sat_inter_hl7_req_payload_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING gin (payload);
       CREATE INDEX IF NOT EXISTS sat_inter_hl7_req_to_state_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (to_state);
+      
+      CREATE INDEX IF NOT EXISTS sat_interaction_fhir_validation_issue_idx_date_issue ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (date_time, issue);
+
+
 
       BEGIN
         ${fileExchangeProtocol.seedDML}
