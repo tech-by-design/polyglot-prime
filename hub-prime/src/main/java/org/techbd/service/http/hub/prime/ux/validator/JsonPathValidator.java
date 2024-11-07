@@ -6,34 +6,40 @@ import java.util.Map;
 import org.jooq.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.techbd.udi.auto.jooq.ingress.routines.IsValidJsonpath;
 
+@Component
 public class JsonPathValidator implements Validator {
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(JsonPathValidator.class);
 
     @Override
-    public boolean isValid(String columnName, String columnValue, Configuration jooqConfig) {
+    public String getTableName() {
+        return "json_action_rule";
+    }
 
-        if (columnName == null || columnValue == null) {
+    @Override
+    public boolean isValid(Map<String, String> rowData, Configuration jooqConfig) {
+
+        String jsonPath = rowData.get("json_path");
+        
+        if (jsonPath == null) {
             return false;
         }
 
-        if (columnName.equals("json_path")) {
-            IsValidJsonpath isValidJsonpath = new IsValidJsonpath();
+        IsValidJsonpath isValidJsonpath = new IsValidJsonpath();
 
-            try {
-                isValidJsonpath.setJsonPath(columnValue);
-                isValidJsonpath.execute(jooqConfig);
-                boolean execResult = isValidJsonpath.getReturnValue();
-                LOG.info("isValid - isValidJsonpath : {}", execResult);
-                return execResult;
-            } catch (Exception e) {
-                LOG.error("Error validating JSON path: {}", e.getMessage());
-                return false;
-            }
+        try {
+            isValidJsonpath.setJsonPath(jsonPath);
+            isValidJsonpath.execute(jooqConfig);
+            boolean execResult = isValidJsonpath.getReturnValue();
+            LOG.info("isValid - isValidJsonpath : {}", execResult);
+            return execResult;
+        } catch (Exception e) {
+            LOG.error("Error validating JSON path: {}", e.getMessage());
+            return false;
         }
-        return true;
     }
 
     public ResponseEntity<Map<String, Object>> handleInvalidJsonPath() {
