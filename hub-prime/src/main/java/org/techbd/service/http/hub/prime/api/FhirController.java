@@ -73,7 +73,7 @@ public class FhirController {
         this.engine = orchestrationEngine;
     }
 
-    @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
+    @GetMapping(value = "/metadata", produces = {MediaType.APPLICATION_XML_VALUE})
     @Operation(summary = "FHIR server's conformance statement")
     public String metadata(final Model model, HttpServletRequest request) {
         final var baseUrl = Helpers.getBaseUrl(request);
@@ -85,61 +85,56 @@ public class FhirController {
         return "metadata.xml";
     }
 
-    @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
-            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
+    @PostMapping(value = {"/Bundle", "/Bundle/"}, consumes = {MediaType.APPLICATION_JSON_VALUE,
+        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
     @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.", description = "Endpoint to to validate, store, and then forward a payload to SHIN-NY.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
-                    +
-                    "  \"OperationOutcome\": {\n" +
-                    "    \"validationResults\": [\n" +
-                    "      {\n" +
-                    "        \"operationOutcome\": {\n" +
-                    "          \"resourceType\": \"OperationOutcome\",\n" +
-                    "          \"issue\": [\n" +
-                    "            {\n" +
-                    "              \"severity\": \"error\",\n" +
-                    "              \"diagnostics\": \"Error Message\",\n" +
-                    "              \"location\": [\n" +
-                    "                \"Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\",\n"
-                    +
-                    "                \"Line[1] Col[5190]\"\n" +
-                    "              ]\n" +
-                    "            }\n" +
-                    "          ]\n" +
-                    "        }\n" +
-                    "      }\n" +
-                    "    ],\n" +
-                    "    \"techByDesignDisposition\": [\n" +
-                    "      {\n" +
-                    "        \"action\": \"reject\",\n" +
-                    "        \"actionPayload\": {\n" +
-                    "          \"message\": \"reject message\",\n" +
-                    "          \"description\": \"rule name\"\n" +
-                    "        }\n" +
-                    "      }\n" +
-                    "    ],\n" +
-                    "    \"resourceType\": \"OperationOutcome\"\n" +
-                    "  }\n" +
-                    "}"))),
+        @ApiResponse(responseCode = "200", description = "Request processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
+                + "  \"OperationOutcome\": {\n"
+                + "    \"validationResults\": [\n"
+                + "      {\n"
+                + "        \"operationOutcome\": {\n"
+                + "          \"resourceType\": \"OperationOutcome\",\n"
+                + "          \"issue\": [\n"
+                + "            {\n"
+                + "              \"severity\": \"error\",\n"
+                + "              \"diagnostics\": \"Error Message\",\n"
+                + "              \"location\": [\n"
+                + "                \"Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\",\n"
+                + "                \"Line[1] Col[5190]\"\n"
+                + "              ]\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      }\n"
+                + "    ],\n"
+                + "    \"techByDesignDisposition\": [\n"
+                + "      {\n"
+                + "        \"action\": \"reject\",\n"
+                + "        \"actionPayload\": {\n"
+                + "          \"message\": \"reject message\",\n"
+                + "          \"description\": \"rule name\"\n"
+                + "        }\n"
+                + "      }\n"
+                + "    ],\n"
+                + "    \"resourceType\": \"OperationOutcome\"\n"
+                + "  }\n"
+                + "}"))),
 
-            @ApiResponse(responseCode = "400", description = "Validation Error: Missing or invalid parameter", content = @Content(mediaType = "application/json", examples = {
-                    @ExampleObject(value = "{\n" +
-                            "  \"status\": \"Error\",\n" +
-                            "  \"message\": \"Validation Error: Required request body is missing.\"\n"
-                            +
-                            "}"),
-                    @ExampleObject(value = "{\n" +
-                            "  \"status\": \"Error\",\n" +
-                            "  \"message\": \"Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\"\n"
-                            +
-                            "}")
-            })),
-            @ApiResponse(responseCode = "500", description = "An unexpected system error occurred", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
-                    +
-                    "  \"status\": \"Error\",\n" +
-                    "  \"message\": \"An unexpected system error occurred.\"\n" +
-                    "}")))
+        @ApiResponse(responseCode = "400", description = "Validation Error: Missing or invalid parameter", content = @Content(mediaType = "application/json", examples = {
+            @ExampleObject(value = "{\n"
+                    + "  \"status\": \"Error\",\n"
+                    + "  \"message\": \"Validation Error: Required request body is missing.\"\n"
+                    + "}"),
+            @ExampleObject(value = "{\n"
+                    + "  \"status\": \"Error\",\n"
+                    + "  \"message\": \"Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\"\n"
+                    + "}")
+        })),
+        @ApiResponse(responseCode = "500", description = "An unexpected system error occurred", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
+                + "  \"status\": \"Error\",\n"
+                + "  \"message\": \"An unexpected system error occurred.\"\n"
+                + "}")))
     })
     @ResponseBody
     @Async
@@ -198,51 +193,46 @@ public class FhirController {
                 request, response, provenance, includeOperationOutcome, mtlsStrategy);
     }
 
-    @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
-            MediaType.APPLICATION_JSON_VALUE,
-            AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
+    @PostMapping(value = {"/Bundle/$validate", "/Bundle/$validate/"}, consumes = {
+        MediaType.APPLICATION_JSON_VALUE,
+        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE})
     @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.", description = "Endpoint to validate but not store or forward a payload to SHIN-NY.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
-                    +
-                    "  \"OperationOutcome\": {\n" +
-                    "    \"validationResults\": [\n" +
-                    "      {\n" +
-                    "        \"operationOutcome\": {\n" +
-                    "          \"resourceType\": \"OperationOutcome\",\n" +
-                    "          \"issue\": [\n" +
-                    "            {\n" +
-                    "              \"severity\": \"error\",\n" +
-                    "              \"diagnostics\": \"Error Message\",\n" +
-                    "              \"location\": [\n" +
-                    "                \"Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\",\n"
-                    +
-                    "                \"Line[1] Col[5190]\"\n" +
-                    "              ]\n" +
-                    "            }\n" +
-                    "          ]\n" +
-                    "        }\n" +
-                    "      }\n" +
-                    "    ]\n" +
-                    "  }\n" +
-                    "}"))),
-            @ApiResponse(responseCode = "400", description = "Validation Error: Missing or invalid parameter", content = @Content(mediaType = "application/json", examples = {
-                    @ExampleObject(value = "{\n" +
-                            "  \"status\": \"Error\",\n" +
-                            "  \"message\": \"Validation Error: Required request body is missing.\"\n"
-                            +
-                            "}"),
-                    @ExampleObject(value = "{\n" +
-                            "  \"status\": \"Error\",\n" +
-                            "  \"message\": \"Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\"\n"
-                            +
-                            "}")
-            })),
-            @ApiResponse(responseCode = "500", description = "An unexpected system error occurred", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
-                    +
-                    "  \"status\": \"Error\",\n" +
-                    "  \"message\": \"An unexpected system error occurred.\"\n" +
-                    "}")))
+        @ApiResponse(responseCode = "200", description = "Request processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
+                + "  \"OperationOutcome\": {\n"
+                + "    \"validationResults\": [\n"
+                + "      {\n"
+                + "        \"operationOutcome\": {\n"
+                + "          \"resourceType\": \"OperationOutcome\",\n"
+                + "          \"issue\": [\n"
+                + "            {\n"
+                + "              \"severity\": \"error\",\n"
+                + "              \"diagnostics\": \"Error Message\",\n"
+                + "              \"location\": [\n"
+                + "                \"Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)\",\n"
+                + "                \"Line[1] Col[5190]\"\n"
+                + "              ]\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}"))),
+        @ApiResponse(responseCode = "400", description = "Validation Error: Missing or invalid parameter", content = @Content(mediaType = "application/json", examples = {
+            @ExampleObject(value = "{\n"
+                    + "  \"status\": \"Error\",\n"
+                    + "  \"message\": \"Validation Error: Required request body is missing.\"\n"
+                    + "}"),
+            @ExampleObject(value = "{\n"
+                    + "  \"status\": \"Error\",\n"
+                    + "  \"message\": \"Validation Error: Required request header 'X-TechBD-Tenant-ID' for method parameter type String is not present.\"\n"
+                    + "}")
+        })),
+        @ApiResponse(responseCode = "500", description = "An unexpected system error occurred", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
+                + "  \"status\": \"Error\",\n"
+                + "  \"message\": \"An unexpected system error occurred.\"\n"
+                + "}")))
     })
     @ResponseBody
     public Object validateBundle(
@@ -302,7 +292,7 @@ public class FhirController {
         return result;
     }
 
-    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
+    @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = {"application/json", "text/html"})
     @ResponseBody
     @Operation(summary = "Check the state/status of async operation")
     public Object bundleStatus(
@@ -328,8 +318,21 @@ public class FhirController {
     @Operation(summary = "Send mock JSON payloads pretending to be from SHIN-NY Data Lake 1115 Waiver validation (scorecard) server.")
     @GetMapping("/mock/shinny-data-lake/1115-validate/{resourcePath}.json")
     public ResponseEntity<String> getJsonFile(
-            @Parameter(description = "Mandatory path variable.", required = true) @PathVariable String resourcePath,
-            @Parameter(description = "Parameter to specify lifetime simulation in milli seconds. The default value is 0.", required = false) @RequestParam(required = false, defaultValue = "0") long simulateLifetimeMs) {
+            @Parameter(description = """
+            Mandatory path variable.
+            Possible values are:
+            <ul>
+                <li><code>fhir-result-healthelink-20240327-testcase2-MRN-healthelinkV7W7BQTTJS</code></li>
+                <li><code>fhir-result-healthelink-20240327-testcase2-MRN-healthelinkZNTS7DGCIK</code></li>
+                <li><code>fhir-result-healthelink-20240523-testcase1-MRN-healthelinkCZ8BSG71LI</code></li>
+                <li><code>fhir-result-healthelink-20240523-testcase1-MRN-healthelinkS8KXK30S8W</code></li>
+                <li><code>fhir-result-rochester-20240405-testcase1-MRN-rochesterBICFYAK7QF</code></li>
+                <li><code>fhir-result-rochester-20240405-testcase1-MRN-rochesterOKNSL0ZX7C</code></li>
+            </ul>
+            The API will wait for the number of milliseconds specified in the <code>simulateLifetimeMs</code> parameter
+            and then return the content of the JSON file specified in the <code>resourcePath</code> parameter.
+            """, required = true) @PathVariable String resourcePath,
+            @Parameter(description = "Parameter to specify lifetime simulation in milli seconds. The default value is 0, meaning no waiting", required = false) @RequestParam(required = false, defaultValue = "0") long simulateLifetimeMs) {
         final var cpResourceName = "templates/mock/shinny-data-lake/1115-validate/" + resourcePath + ".json";
         try {
             if (simulateLifetimeMs > 0) {
