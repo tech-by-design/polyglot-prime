@@ -107,7 +107,8 @@ public class SwaggerConfig {
                         "/actuator", "/actuator/**",
                         "/presentation/shell/**",
                         "/support/interaction/**",
-                        "/interactions/**"
+                        "/interactions/**",
+                        "/mock/shinny-data-lake/**"
                 )
                 .addOpenApiCustomizer(openApi -> {
                     List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
@@ -123,9 +124,9 @@ public class SwaggerConfig {
     public GroupedOpenApi techByDesignFhirApiGroup() {
         return GroupedOpenApi.builder()
                 .group("FHIR API")
-                .pathsToMatch("/metadata", "/Bundle", "/Bundle/**",
-                        "/api/expect/fhir/**",
-                        "/mock/shinny-data-lake/**"
+                .pathsToMatch("/metadata",
+                        "/Bundle", "/Bundle/**",
+                        "/api/expect/fhir/**"
                 )
                 .addOpenApiCustomizer(openApi -> {
                     List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
