@@ -7,21 +7,30 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator;
+import org.techbd.service.http.hub.prime.ux.validator.Validator;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
 
@@ -231,5 +240,169 @@ public class TabularRowsController {
 
         return result;
     }
+
+    @Operation(summary = "Save or update data in a specified table", description = """
+        Saves new records or updates existing records in the specified table within an optional schema.
+        The request body should contain the data to be saved or updated.
+        If a primary key or unique identifier is provided, it will attempt to update the existing record.
+        Otherwise, it will insert a new record.
+        """)
+    @PostMapping(value = {"/api/ux/tabular/jooq/save/{schemaName}/{tableName}.json"},
+        consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveOrUpdateRow(
+            @Parameter(description = "Optional schema name.", required = false) @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Mandatory table name.", required = true) @PathVariable String tableName,
+            @Parameter(description = "Data to be saved or updated.", required = true) @RequestBody Map<String, String> rowData) {
+
+            // Validate schema and table name
+            if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(tableName).matches() ||
+                (schemaName != null && !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches())) {
+                throw new IllegalArgumentException("Invalid schema or table name.");
+            }
+
+            try {
+                // Define the table based on schema and table name
+                var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
+
+                Map<String, Validator> validators = new HashMap<>();
+                validators.put("json_path", new JsonPathValidator());
+
+                final var jooqCfg = udiPrimeJpaConfig.dsl().configuration();
+
+                for (Map.Entry<String, String> entry : rowData.entrySet()) {
+                    String columnName = entry.getKey();
+                    String columnValue = entry.getValue();
+
+                    Validator validator = validators.get(columnName);
+
+                    if (validator != null) {
+
+                        boolean isValid = false;
+
+                        if (validator instanceof  JsonPathValidator)
+                        {
+                            isValid = validator.isValid(columnName, columnValue, jooqCfg);
+                        }
+
+                        if (!isValid) {
+                              if (validator instanceof JsonPathValidator jsonPathValidator){
+                                return jsonPathValidator.handleInvalidJsonPath();
+                              } else {
+                                 Map<String, Object> responseBody = new HashMap<>();
+                                 responseBody.put("message", "Invalid value for: " + columnName);
+                                 return ResponseEntity.badRequest().body(responseBody);
+                               }
+                         }
+                     }
+                }
+
+                // Check if the primary key or unique identifier is provided for updating the existing record
+                String primaryKeyValue = rowData.get("action_rule_id");
+                LOG.info("action_rule_id: {}", primaryKeyValue);
+                final var provenance = "%s.doFilterInternal".formatted(TabularRowsController.class.getName());
+
+                if (primaryKeyValue != null) {
+                    // Update statement
+                    var updateStep = udiPrimeJpaConfig.dsl().update(typableTable.table())
+                            .set(rowData.entrySet().stream()
+                                    .collect(Collectors.toMap(
+                                            e -> DSL.field(typableTable.column(e.getKey())),
+                                            Map.Entry::getValue
+                                    )))
+                            .set(DSL.field(typableTable.column("updated_at")), OffsetDateTime.now())
+                            .set(DSL.field(typableTable.column("updated_by")), TabularRowsController.class.getName());
+
+                    // Perform the update
+                    int updatedRows = updateStep
+                            .where(DSL.field(typableTable.column("action_rule_id")).eq(DSL.val(primaryKeyValue)))
+                            .execute();
+
+                    if (updatedRows > 0) {
+                        Map<String, Object> responseBody = new HashMap<>();
+                        responseBody.put("message", "Record updated successfully.");
+                        return ResponseEntity.ok(responseBody);
+                    } else {
+                        Map<String, Object> responseBody = new HashMap<>();
+                        responseBody.put("message", "Record not found.");
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
+                    }
+                } else {
+                    // Perform an insert if no primary key value is provided
+                    DSLContext dsl = udiPrimeJpaConfig.dsl();
+
+                    // Prepare the data for insertion
+                    Map<org.jooq.Field<?>, Object> dataToInsert = rowData.entrySet().stream()
+                        .collect(Collectors.toMap(
+                            e -> DSL.field(typableTable.column(e.getKey())),
+                            Map.Entry::getValue
+                        ));
+
+                    dataToInsert.put(DSL.field(typableTable.column("action_rule_id")), UUID.randomUUID());
+                    dataToInsert.put(DSL.field(typableTable.column("priority")), 0);
+                    dataToInsert.put(DSL.field(typableTable.column("updated_at")), OffsetDateTime.now());
+                    dataToInsert.put(DSL.field(typableTable.column("updated_by")), TabularRowsController.class.getName());
+                    dataToInsert.put(DSL.field(typableTable.column("last_applied_at")), OffsetDateTime.now());
+                    dataToInsert.put(DSL.field(typableTable.column("created_at")), OffsetDateTime.now());
+                    dataToInsert.put(DSL.field(typableTable.column("created_by")), TabularRowsController.class.getName());
+                    dataToInsert.put(DSL.field(typableTable.column("provenance")), provenance);
+
+                    dsl.insertInto(typableTable.table())
+                        .set(dataToInsert)
+                        .execute();
+
+                    Map<String, Object> responseBody = new HashMap<>();
+                    responseBody.put("message", "Record inserted successfully.");
+                    return ResponseEntity.status(HttpStatus.CREATED).body(responseBody);
+                }
+                
+            } catch (Exception e) {
+                LOG.error("Error saving or updating the row: {}", e.getMessage());
+                Map<String, Object> responseBody = new HashMap<>();
+                responseBody.put("message", "An error occurred while saving the data.");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+            }
+        }
+
+    @Operation(summary = "Delete data in a specified table", description = """
+            Delete existing records in the specified table within an optional schema.
+            The request body should contain the primary key.
+            """)
+    @DeleteMapping(value = {"/api/ux/tabular/jooq/delete/{schemaName}/{tableName}/{columnName}/{primaryKey}"}, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteRow(
+            @Parameter(description = "Mandatory path variable to mention schema name.", required = true) final @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Mandatory path variable to mention the table or view name.", required = true) final @PathVariable String tableName,
+            @Parameter(description = "Mandatory path variable to mention the column name.", required = true) final @PathVariable String columnName,
+            @Parameter(description = "Mandatory path variable to mention the column value.", required = true) final @PathVariable String primaryKey) {
+
+            // Validate schema and table name
+            if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(tableName).matches() ||
+                (schemaName != null && !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches())) {
+                throw new IllegalArgumentException("Invalid schema or table name.");
+            }
+
+            try {
+                var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
+                int deletedRows = udiPrimeJpaConfig.dsl().deleteFrom(typableTable.table())
+                        .where(DSL.field(typableTable.column(columnName)).eq(primaryKey))
+                        .execute();
+
+                if (deletedRows > 0) {
+                    Map<String, Object> responseBody = new HashMap<>();
+                    responseBody.put("message", "Record deleted successfully.");
+                    return ResponseEntity.ok(responseBody);
+                } else {
+                    Map<String, Object> responseBody = new HashMap<>();
+                    responseBody.put("message", "Record not found.");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
+                }
+            } catch (Exception e) {
+                LOG.error("Error deleting row: {}", e.getMessage());
+                Map<String, Object> responseBody = new HashMap<>();
+                responseBody.put("message", "An error occurred while deleting the data.");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
+            }
+        }
 
 }
