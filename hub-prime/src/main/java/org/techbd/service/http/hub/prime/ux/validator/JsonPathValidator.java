@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jooq.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.techbd.udi.auto.jooq.ingress.routines.IsValidJsonpath;
@@ -20,12 +19,14 @@ public class JsonPathValidator implements Validator {
     }
 
     @Override
-    public boolean isValid(Map<String, String> rowData, Configuration jooqConfig) {
+    public ResponseEntity<Map<String, Object>> validate(Map<String, String> rowData, Configuration jooqConfig) {
 
         String jsonPath = rowData.get("json_path");
+        Map<String, Object> responseBody = new HashMap<>();
         
-        if (jsonPath == null) {
-            return false;
+        if (jsonPath == null) { 
+            responseBody.put("message", "Invalid JSON Path.");
+            return ResponseEntity.badRequest().body(responseBody);
         }
 
         IsValidJsonpath isValidJsonpath = new IsValidJsonpath();
@@ -35,23 +36,16 @@ public class JsonPathValidator implements Validator {
             isValidJsonpath.execute(jooqConfig);
             boolean execResult = isValidJsonpath.getReturnValue();
             LOG.info("isValid - isValidJsonpath : {}", execResult);
-            return execResult;
+            if(!execResult){
+                responseBody.put("message", "Invalid JSON Path.");
+                return ResponseEntity.badRequest().body(responseBody);
+            } else{
+                return ResponseEntity.noContent().build();
+            }
         } catch (Exception e) {
-            LOG.error("Error validating JSON path: {}", e.getMessage());
-            return false;
+            responseBody.put("message", "Error validating JSON path");
+            return ResponseEntity.badRequest().body(responseBody);
         }
-    }
-
-    public ResponseEntity<Map<String, Object>> handleInvalidJsonPath() {
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("message", "Invalid JSON Path.");
-        return ResponseEntity.badRequest().body(responseBody);
-    }
-
-     public ResponseEntity<Map<String, Object>> handleJsonPathValidationError() {
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("message", "An error occurred while validating the JSON path.");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(responseBody);
     }
     
 }
