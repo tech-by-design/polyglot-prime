@@ -183,7 +183,7 @@ AS SELECT validation_engine,
     COALESCE(ig_version, 'Unknown'::text) AS ig_version,
     to_char(date_trunc('day'::text,	date_time),	'MM-DD-YYYY'::text) AS issue_date
       FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
-   WHERE date_time >= CURRENT_DATE - INTERVAL '7 days'
+   WHERE date_time >= (CURRENT_TIMESTAMP - INTERVAL '2 days') 
       AND (issue ~~ '%has not been checked because it is unknown%'::text 
             OR issue ~~ '%Unknown profile%'::text 
             OR issue ~~ '%Unknown extension%'::text 
@@ -217,7 +217,7 @@ AS SELECT
   COALESCE(ig_version, 'Unknown') AS ig_version,
   COUNT(DISTINCT issue) AS distinct_issue_count
 FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
-WHERE date_time >= CURRENT_DATE - INTERVAL '7 days'
+WHERE date_time >= (CURRENT_TIMESTAMP - INTERVAL '2 days') 
 AND (issue ~~ '%has not been checked because it is unknown%'::text 
             OR issue ~~ '%Unknown profile%'::text 
             OR issue ~~ '%Unknown extension%'::text 
