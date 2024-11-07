@@ -18,6 +18,7 @@ org.techbd.service.http.hub.prime.route
 org.techbd.service.http.hub.prime
 org.techbd.service.http.hub.prime.api
 org.techbd.service.http.hub.prime.ux
+org.techbd.service.http.hub.prime.ux.validator
 org.techbd.service.http.hub
 org.techbd.util
 org.techbd.controller.http.hub.prime.api
