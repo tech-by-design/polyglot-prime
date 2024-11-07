@@ -181,10 +181,8 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-title"> <span id="tenant"> </span></div>
-        <div class="grid-description">
-            <!-- <h1 class="assemtion">Between TechBD and Scoring Engine</h1> -->
-            This widget displays details about data that has not been received by the Scoring Engine from Tech by Design, as
-            well as records with errors that have not been processed or passed on to the Scoring Engine.</br>
+        <div class="grid-description"> 
+            This widget displays data interactions that failed to receive a 200 response from the SHIN-NY Data Lake, highlighting potential issues in processing, delivery, or encountered errors.</br>
             Click on an interaction, a popup will open containing the error details.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
