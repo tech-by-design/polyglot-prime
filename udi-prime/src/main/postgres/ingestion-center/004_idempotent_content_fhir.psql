@@ -210,24 +210,34 @@ AS SELECT validation_engine,
 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
-AS SELECT
-  validation_engine,
-  max(date_time::date) AS issue_date,
-  MAX(date_time) AS most_recent_date,
-  COALESCE(ig_version, 'Unknown') AS ig_version,
-  COUNT(DISTINCT issue) AS distinct_issue_count
-FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
-WHERE date_time >= (CURRENT_TIMESTAMP - INTERVAL '2 days') 
-AND (issue ~~ '%has not been checked because it is unknown%'::text 
-            OR issue ~~ '%Unknown profile%'::text 
-            OR issue ~~ '%Unknown extension%'::text 
-            OR issue ~~ '%Unknown Code System%'::text 
-            OR issue ~~ '%not found%'::text
-            OR issue ~~ '%has not been checked because it could not be found%'::text
-            OR issue ~~ '%Unable to find a match for profile%'::text
-            OR issue ~~ '%None of the codings provided%'::text
-            OR issue ~~ '%Unable to expand ValueSet%'::text
-            OR issue ~~ '%Slicing cannot be evaluated%'::text
-            OR issue ~~ '%could not be resolved%'::text)
-GROUP BY validation_engine, TO_CHAR(date_trunc('day', date_time), 'MM-DD-YYYY'), COALESCE(ig_version, 'Unknown')
-ORDER BY issue_date DESC;
+AS 
+   SELECT
+    validation_engine,
+    MAX(date_time::date) AS issue_date,
+    MAX(date_time) AS most_recent_date,
+    COALESCE(ig_version, 'Unknown') AS ig_version,
+    COUNT(DISTINCT issue) AS distinct_issue_count
+FROM
+    techbd_udi_ingress.sat_interaction_fhir_validation_issue
+WHERE
+    date_time >= CURRENT_TIMESTAMP - INTERVAL '2 days'
+    AND (
+        issue LIKE '%has not been checked because it is unknown%'
+        OR issue LIKE '%Unknown profile%'
+        OR issue LIKE '%Unknown extension%'
+        OR issue LIKE '%Unknown Code System%'
+        OR issue LIKE '%not found%'
+        OR issue LIKE '%has not been checked because it could not be found%'
+        OR issue LIKE '%Unable to find a match for profile%'
+        OR issue LIKE '%None of the codings provided%'
+        OR issue LIKE '%Unable to expand ValueSet%'
+        OR issue LIKE '%Slicing cannot be evaluated%'
+        OR issue LIKE '%could not be resolved%'
+    )
+GROUP BY
+    validation_engine,
+    COALESCE(ig_version, 'Unknown'),
+    date_time::date
+ORDER BY
+    issue_date DESC;
+
