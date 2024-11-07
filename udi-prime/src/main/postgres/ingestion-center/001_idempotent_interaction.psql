@@ -243,6 +243,7 @@ DECLARE
    	v_return 					JSONB := NULL;
    	v_disposition_json			JSONB := NULL;
    	v_payload					JSONB := NULL;
+    v_elaboration 				JSONB := NULL;
    
 BEGIN 
     -- Attempt to insert into hub_interaction
@@ -448,12 +449,21 @@ BEGIN
                 v_pg_hint = PG_EXCEPTION_HINT,
                 v_pg_context = PG_EXCEPTION_CONTEXT;
                 v_error_type = 'SQL';
-               
-         	--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+
+         	--RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/ 
+         	v_elaboration := jsonb_build_object(
+         						'interaction_id', interaction_id,
+         						'interaction_key', interaction_key,
+         						'payload', payload::text,
+         						'payload_text', payload_text,
+         						'nature', nature::text,
+         						'from_state', from_state,
+         						'to_state', to_state
+         						);        
                
             -- Log the exception, reusing the previous exception ID if it exists
             v_exception_id := techbd_udi_ingress.register_issue(
-                COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
             );
            v_return := NULL;
     END;
