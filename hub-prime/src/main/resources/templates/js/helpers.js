@@ -22,8 +22,8 @@ export class Helpers {
     }
 
     // Function to inject date range text into an element
-    injectDateRangeText(elementId, templateText) {
-        const { todayFormatted, pastDateFormatted } = this.getDateRange();
+    injectDateRangeText(elementId, templateText, daysAgo = 7) {
+        const { todayFormatted, pastDateFormatted } = this.getDateRange(daysAgo);
         const text = templateText.replace('{startDate}', pastDateFormatted).replace('{endDate}', todayFormatted);
         document.getElementById(elementId).innerHTML = text;
     }
