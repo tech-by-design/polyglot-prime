@@ -233,50 +233,41 @@
                         }
                     };
 
-                    // Extract counts using the helper function
-                    const crossRoadsScn = getCountByLabel('total_cross_roads_scn'); 
+                    // Extract counts using the helper function 
                     const healthelink = getCountByLabel('healthelink_total_submissions');
                     const healtheconnections = getCountByLabel('healtheconnections_total_submissions');
                     const healthix = getCountByLabel('healthix_total_submissions');
                     const grrhio = getCountByLabel('grrhio_total_submissions');
                     const hixny = getCountByLabel('hixny_total_submissions');
-                    const healthelink_scoring_engine_submissions = getCountByLabel('healthelink_scoring_engine_submissions');
-                    const healtheconnections_scoring_engine_submissions = getCountByLabel('healtheconnections_scoring_engine_submissions');
-                    const healthix_scoring_engine_submissions = getCountByLabel('healthix_scoring_engine_submissions');
-                    const grrhio_scoring_engine_submissions = getCountByLabel('grrhio_scoring_engine_submissions');
-                    const hixny_scoring_engine_submissions = getCountByLabel('hixny_scoring_engine_submissions');
+                    const healthelink_shinny_datalake_submissions = getCountByLabel('healthelink_shinny_datalake_submissions');
+                    const healtheconnections_shinny_datalake_submissions = getCountByLabel('healtheconnections_shinny_datalake_submissions');
+                    const healthix_shinny_datalake_submissions = getCountByLabel('healthix_shinny_datalake_submissions');
+                    const grrhio_shinny_datalake_submissions = getCountByLabel('grrhio_shinny_datalake_submissions');
+                    const hixny_shinny_datalake_submissions = getCountByLabel('hixny_shinny_datalake_submissions');
 
                     // Construct Mermaid diagram code with fetched data
                     const mermaidCode = `
-            sequenceDiagram
-                participant CrossroadsSCN as Crossroads SCN
+            sequenceDiagram 
                 participant QE as QE
                 participant Tech by Design as Tech by Design
-                participant ScoringEngine as Scoring Engine
-                participant SHINNY as SHIN-NY Data Lake
+                participant SHIN-NY Data Lake as SHIN-NY Data Lake
                 participant MDW as MDW
 
-                CrossroadsSCN ->> QE: Send Test JSON (${crossRoadsScn})
                 QE ->> Tech by Design: HEALTHeLINK Proxy FHIR JSON (${healthelink})
                 QE ->> Tech by Design: Healtheconnections Proxy FHIR JSON (${healtheconnections})
                 QE ->> Tech by Design: Healthix Proxy FHIR JSON (${healthix})
                 QE ->> Tech by Design: Rochester Proxy FHIR JSON (${grrhio})
                 QE ->> Tech by Design: HixNY Proxy FHIR JSON (${hixny}) 
-                Tech by Design ->> ScoringEngine: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_scoring_engine_submissions})
-                Tech by Design ->> ScoringEngine: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_scoring_engine_submissions})
-                Tech by Design ->> ScoringEngine: Healthix Proxy Validated FHIR JSON (${healthix_scoring_engine_submissions})
-                Tech by Design ->> ScoringEngine: Rochester Proxy Validated FHIR JSON (${grrhio_scoring_engine_submissions})
-                Tech by Design ->> ScoringEngine: HixNY Proxy Validated FHIR JSON (${hixny_scoring_engine_submissions})
-                ScoringEngine ->> SHINNY: HEALTHeLINK Proxy Submit to Data lake (?)
-                ScoringEngine ->> SHINNY: Healtheconnections Proxy Submit to Data lake (?)
-                ScoringEngine ->> SHINNY: Healthix Proxy Submit to Data lake (?)
-                ScoringEngine ->> SHINNY: Rochester Proxy Submit to Data lake (?)
-                ScoringEngine ->> SHINNY: HixNY Proxy Submit to Data lake (?)
-                SHINNY ->> MDW: HEALTHeLINK Proxy Submit to MDW (?)
-                SHINNY ->> MDW: Healtheconnections Proxy Submit to MDW (?)
-                SHINNY ->> MDW: Healthix Proxy Submit to MDW (?)
-                SHINNY ->> MDW: Rochester Proxy Submit to MDW (?)
-                SHINNY ->> MDW: HixNY Proxy Submit to MDW (?)
+                Tech by Design ->> SHIN-NY Data Lake: HEALTHeLINK Proxy Validated FHIR JSON (${healthelink_shinny_datalake_submissions})
+                Tech by Design ->> SHIN-NY Data Lake: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_shinny_datalake_submissions})
+                Tech by Design ->> SHIN-NY Data Lake: Healthix Proxy Validated FHIR JSON (${healthix_shinny_datalake_submissions})
+                Tech by Design ->> SHIN-NY Data Lake: Rochester Proxy Validated FHIR JSON (${grrhio_shinny_datalake_submissions})
+                Tech by Design ->> SHIN-NY Data Lake: HixNY Proxy Validated FHIR JSON (${hixny_shinny_datalake_submissions})
+                SHIN-NY Data Lake ->> MDW: HEALTHeLINK Proxy Submit to MDW (?)
+                SHIN-NY Data Lake ->> MDW: Healtheconnections Proxy Submit to MDW (?)
+                SHIN-NY Data Lake ->> MDW: Healthix Proxy Submit to MDW (?)
+                SHIN-NY Data Lake ->> MDW: Rochester Proxy Submit to MDW (?)
+                SHIN-NY Data Lake ->> MDW: HixNY Proxy Submit to MDW (?)
         `;
 
                     // Inject the Mermaid code into the HTML

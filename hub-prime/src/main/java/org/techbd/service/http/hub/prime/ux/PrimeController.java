@@ -269,9 +269,7 @@ public class PrimeController {
         if (fhirSubmission != null && !fhirSubmission.isEmpty()) {
             Map<String, Object> data = fhirSubmission.get(0); 
 
-            // Populate the list with data
-            interactions.add(new InteractionData("total_cross_roads_scn",
-                    getSafeIntegerValue(data.get("total_cross_roads_scn"))));
+            // Populate the list with data 
             interactions.add(new InteractionData("healthelink_total_submissions",
                     getSafeIntegerValue(data.get("healthelink_total_submissions"))));
             interactions.add(new InteractionData("healtheconnections_total_submissions",
@@ -283,30 +281,29 @@ public class PrimeController {
             interactions.add(new InteractionData("hixny_total_submissions",
                     getSafeIntegerValue(data.get("hixny_total_submissions"))));
 
-            interactions.add(new InteractionData("healthelink_scoring_engine_submissions",
-                    getSafeIntegerValue(data.get("healthelink_scoring_engine_submissions"))));
-            interactions.add(new InteractionData("healtheconnections_scoring_engine_submissions",
-                    getSafeIntegerValue(data.get("healtheconnections_scoring_engine_submissions"))));                    
-            interactions.add(new InteractionData("healthix_scoring_engine_submissions",
-                    getSafeIntegerValue(data.get("healthix_scoring_engine_submissions"))));
-            interactions.add(new InteractionData("grrhio_scoring_engine_submissions",
-                    getSafeIntegerValue(data.get("grrhio_scoring_engine_submissions"))));
-            interactions.add(new InteractionData("hixny_scoring_engine_submissions",
-                    getSafeIntegerValue(data.get("hixny_scoring_engine_submissions"))));        
+            interactions.add(new InteractionData("healthelink_shinny_datalake_submissions",
+                    getSafeIntegerValue(data.get("healthelink_shinny_datalake_submissions"))));
+            interactions.add(new InteractionData("healtheconnections_shinny_datalake_submissions",
+                    getSafeIntegerValue(data.get("healtheconnections_shinny_datalake_submissions"))));                    
+            interactions.add(new InteractionData("healthix_shinny_datalake_submissions",
+                    getSafeIntegerValue(data.get("healthix_shinny_datalake_submissions"))));
+            interactions.add(new InteractionData("grrhio_shinny_datalake_submissions",
+                    getSafeIntegerValue(data.get("grrhio_shinny_datalake_submissions"))));
+            interactions.add(new InteractionData("hixny_shinny_datalake_submissions",
+                    getSafeIntegerValue(data.get("hixny_shinny_datalake_submissions"))));        
         } else {
-            // Default values if no data found
-            interactions.add(new InteractionData("total_cross_roads_scn", 0)); 
+            // Default values if no data found 
             interactions.add(new InteractionData("healthelink_total_submissions", 0));
             interactions.add(new InteractionData("healtheconnections_total_submissions", 0));
             interactions.add(new InteractionData("healthix_total_submissions", 0));
             interactions.add(new InteractionData("grrhio_total_submissions", 0));
             interactions.add(new InteractionData("hixny_total_submissions", 0));
 
-            interactions.add(new InteractionData("healthelink_scoring_engine_submissions", 0));
-            interactions.add(new InteractionData("healtheconnections_scoring_engine_submissions", 0));
-            interactions.add(new InteractionData("healthix_scoring_engine_submissions", 0));
-            interactions.add(new InteractionData("grrhio_scoring_engine_submissions", 0));
-            interactions.add(new InteractionData("hixny_scoring_engine_submissions", 0));
+            interactions.add(new InteractionData("healthelink_shinny_datalake_submissions", 0));
+            interactions.add(new InteractionData("healtheconnections_shinny_datalake_submissions", 0));
+            interactions.add(new InteractionData("healthix_shinny_datalake_submissions", 0));
+            interactions.add(new InteractionData("grrhio_shinny_datalake_submissions", 0));
+            interactions.add(new InteractionData("hixny_shinny_datalake_submissions", 0));
 
         }
 

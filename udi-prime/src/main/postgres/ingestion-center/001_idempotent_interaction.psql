@@ -878,313 +878,98 @@ where
 order by
 	created_at desc;
 
-/**
- * View to generate a dashboard overview of FHIR (Fast Healthcare Interoperability Resources)
- * interactions that need attention, focusing on key performance metrics across different tenants.
- * The dashboard aggregates counts of submissions and responses related to FHIR Bundle transactions,
- * specifically targeting organizations such as HealtheLink, HealtheConnections, Healthix, GRRHIO, 
- * and HIXNY. This view provides a summarized view of submissions, forwarding actions, and the 
- * success of scoring engine responses.
- *
- * The view performs the following steps:
- * 1. A Common Table Expression (CTE) named `combined_counts` is used to calculate the following 
- *    metrics for each tenant (qe_name):
- *    - `qe_total_submissions`: Count of total submissions from the tenants.
- *    - `techbd_total_submissions`: Count of total forward HTTP requests made to TechBD.
- *    - `total_scoring_engine_submissions`: Count of total forwarded HTTP responses that were processed
- *      by the scoring engine.
- *    - `scoring_engine_submission_passed`: Count of scoring engine responses that included a scorecard 
- *      response, indicating successful validation.
- *    - `cross_roads_scn`: Count of interactions involving the Cross Roads SCN API endpoint.
- * 2. The main SELECT query aggregates the counts across all tenants to generate the following metrics:
- *    - `total_cross_roads_scn`: Total count of Cross Roads SCN interactions across all tenants.
- *    - `total_techbd_total_submissions`: Total count of TechBD submissions across all tenants.
- *    - `total_total_scoring_engine_submissions`: Total count of scoring engine submissions across all tenants.
- *    - `total_scoring_engine_submission_passed`: Total count of successful scoring engine submissions 
- *      across all tenants.
- *    - Additionally, the query provides individual tenant metrics for HealtheLink, HealtheConnections, 
- *      Healthix, GRRHIO, and HIXNY, including total submissions and successful scoring engine submissions.
- *
- * The view is designed to be queried by the dashboard for a quick and comprehensive summary of the 
- * performance and issues related to FHIR Bundle submissions over the past 7 days.
- *
- * @return VIEW - A view named `fhir_needs_attention_dashbaord`, providing aggregated metrics 
- * for FHIR interactions that require attention, across specific tenants.
- */
-
+/****************************************************************************************
+ * Summary of recent FHIR interactions for key tenants.
+ * 
+ * This view provides a breakdown of HTTP interactions for the past 7 days, grouped by
+ * tenant (qe_name), focusing on:
+ * - Total submissions by tenant, filtered by specific URI patterns.
+ * - Submissions forwarded to Shinny Datalake by tenant.
+ * 
+ * Purpose:
+ * - To monitor recent FHIR-related activity across specific tenants.
+ * - Enables tracking of each tenant's submissions, including those forwarded to
+ *   the Shinny Datalake.
+ * - Useful for identifying trends and ensuring consistent data ingestion.
+ ****************************************************************************************/
 
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_needs_attention_dashbaord CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_needs_attention_dashbaord AS     
 WITH combined_counts AS (
-    SELECT 
-        sihr.tenant_id_lower AS qe_name,
-        
-        -- Calculate total submissions for the QE
-        count(
-            CASE 
-                WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
-                ELSE NULL::integer 
-            END
-        ) AS qe_total_submissions,
-
-        -- Scoring engine submissions (Forwarded HTTP Response and Forwarded HTTP Response Error)
-        count(
-            CASE 
-                WHEN ((sihr.nature) = 'Forwarded HTTP Response' 
-                     OR (sihr.nature) = 'Forwarded HTTP Response Error') THEN 1
-                ELSE NULL::integer 
-            END
-        ) AS scoring_engine_submissions, 
-        max(sihr.created_at) AS recently_created_at
-    FROM 
-         techbd_udi_ingress.sat_interaction_fhir_request sihr
-    WHERE 
-        sihr.created_at >= (CURRENT_DATE - '7 days'::interval) 
-        AND (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text]))
-        AND sihr.tenant_id_lower::text = ANY (
-            ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text  ]
-        )
-    GROUP BY 
-        sihr.tenant_id_lower::text
-)
-
-SELECT 
-( SELECT ( SELECT count(*) AS count
+         SELECT sihr.tenant_id_lower AS qe_name,
+            count(
+                CASE
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
+                    ELSE NULL::integer
+                END) AS qe_total_submissions,
+            count(
+                CASE
+                    WHEN sihr.nature = 'Forwarded HTTP Response'::text THEN 1
+                    ELSE NULL::integer
+                END) AS shinny_datalake_submissions,
+            max(sihr.created_at) AS recently_created_at
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE sihr.tenant_id_lower  = ANY (
-            ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text  ]
+          WHERE sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) AND (sihr.tenant_id_lower = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]))
+          GROUP BY sihr.tenant_id_lower
         )
-          AND sihr.uri = '/api/expect/fhir/bundle' AND 
-          sihr.created_at >= (CURRENT_DATE - '7 days'::interval))) AS total_cross_roads_scn,
-  
+ SELECT  
+    sum(
+        CASE
+            WHEN qe_name = 'healthelink'::text THEN qe_total_submissions
+            ELSE 0::bigint
+        END) AS healthelink_total_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'healtheconn'::text THEN qe_total_submissions
+            ELSE 0::bigint
+        END) AS healtheconnections_total_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'healthix'::text THEN qe_total_submissions
+            ELSE 0::bigint
+        END) AS healthix_total_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'grrhio'::text THEN qe_total_submissions
+            ELSE 0::bigint
+        END) AS grrhio_total_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'hixny'::text THEN qe_total_submissions
+            ELSE 0::bigint
+        END) AS hixny_total_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'healthelink'::text THEN shinny_datalake_submissions
+            ELSE 0::bigint
+        END) AS healthelink_shinny_datalake_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'healtheconn'::text THEN shinny_datalake_submissions
+            ELSE 0::bigint
+        END) AS healtheconnections_shinny_datalake_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'healthix'::text THEN shinny_datalake_submissions
+            ELSE 0::bigint
+        END) AS healthix_shinny_datalake_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'grrhio'::text THEN shinny_datalake_submissions
+            ELSE 0::bigint
+        END) AS grrhio_shinny_datalake_submissions,
+    sum(
+        CASE
+            WHEN qe_name = 'hixny'::text THEN shinny_datalake_submissions
+            ELSE 0::bigint
+        END) AS hixny_shinny_datalake_submissions
+   FROM combined_counts
+  WHERE qe_name = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]);
 
-    -- QE total submissions per tenant
-    sum(
-        CASE 
-            WHEN qe_name = 'healthelink'::text THEN qe_total_submissions 
-            ELSE 0::bigint 
-        END
-    ) AS healthelink_total_submissions,
-    sum(
-        CASE 
-            WHEN qe_name = 'healtheconn'::text THEN qe_total_submissions 
-            ELSE 0::bigint 
-        END
-    ) AS healtheconnections_total_submissions,
-    sum(
-        CASE 
-            WHEN qe_name = 'healthix'::text THEN qe_total_submissions 
-            ELSE 0::bigint 
-        END
-    ) AS healthix_total_submissions,
-    sum(
-        CASE 
-            WHEN qe_name = 'grrhio'::text THEN qe_total_submissions 
-            ELSE 0::bigint 
-        END
-    ) AS grrhio_total_submissions,
-    sum(
-        CASE 
-            WHEN qe_name = 'hixny'::text THEN qe_total_submissions 
-            ELSE 0::bigint 
-        END
-    ) AS hixny_total_submissions, 
-
-    -- Missed scoring engine submissions for each tenant
-    sum(
-        CASE 
-            WHEN qe_name = 'healthelink'::text THEN  scoring_engine_submissions 
-            ELSE 0::bigint 
-        END
-    ) AS healthelink_scoring_engine_submissions,
-    sum(
-        CASE 
-            WHEN qe_name = 'healtheconn'::text THEN scoring_engine_submissions
-            ELSE 0::bigint 
-        END
-    ) AS healtheconnections_scoring_engine_submissions,
-    sum(
-        CASE 
-            WHEN qe_name = 'healthix'::text THEN scoring_engine_submissions
-            ELSE 0::bigint 
-        END
-    ) AS healthix_scoring_engine_submissions,
-    sum(
-        CASE 
-            WHEN qe_name = 'grrhio'::text THEN  scoring_engine_submissions
-            ELSE 0::bigint 
-        END
-    ) AS grrhio_scoring_engine_submissions,
-    sum(
-        CASE 
-            WHEN qe_name = 'hixny'::text THEN scoring_engine_submissions
-            ELSE 0::bigint 
-        END
-    ) AS hixny_scoring_engine_submissions 
- 
-
-FROM 
-    combined_counts
-WHERE 
-    qe_name = ANY (
-        ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text ]
-    );
-
-/**
- * View to identify and analyze failed HTTP request interactions that need attention.
- * This view aggregates details of HTTP requests that transitioned to a 'FAIL' state,
- * providing insights into the nature of the errors encountered, the associated error
- * messages, and the potential reasons for failure.
- *
- * The view performs the following:
- * 1. Extracts core information from the `interaction_http_request_mat` table, 
- *    including the error type (`nature`), error message (`payload ->> 'error'`), 
- *    and the timestamp when the request was created (`request_created_at`).
- * 2. Joins with `interaction_http_request_resource_type_mat` to include resource 
- *    type data related to the failed request.
- * 3. Joins with `interaction_http_request_observe_mat` to incorporate observability 
- *    metrics if available.
- *
- * The result set includes:
- * - `error_type`: The nature of the failure.
- * - `error_message`: The specific error message extracted from the request payload.
- * - `date`: The timestamp when the HTTP request was created.
- * - `sat_interaction_http_request_id`: The unique identifier for the HTTP request.
- * - `failure_reason`: A predefined explanation for the failure, guiding troubleshooting.
- *
- * The view filters requests that have transitioned to the 'FAIL' state, indicating
- * that they failed during processing. The included `failure_reason` provides context
- * and potential solutions to address the error.
- *
- * @return VIEW - A view named `interaction_http_request_failed_needs_attention`, 
- * providing details of HTTP requests that failed and require attention.
- */
  
 -- techbd_udi_ingress.interaction_fhir_request_failed_needs_attention source
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_failed_needs_attention CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_failed_needs_attention
-AS SELECT nature AS error_type,
-    payload ->> 'error'::text AS error_message,
-    created_at AS date,
-    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
-    'This error occurs when the server cannot process the request due to invalid syntax. Ensure the request format, headers, and endpoint are correct.'::text AS failure_reason,
-    '<ol>
-        <li><strong>Resolution Steps:</strong></li>
-        <li><strong>1. Verify Request Format:</strong>
-            <ol>
-                <li>Ensure that the request payload (body) is correctly formatted according to the API documentation.</li>
-                <li>Check that all required parameters are included and correctly formatted.</li>
-            </ol>
-        </li>
-        <li><strong>2. Validate Data:</strong>
-            <ol>
-                <li>Double-check the data being sent in the request to ensure it adheres to the API''s expectations (e.g., data types, mandatory fields).</li>
-            </ol>
-        </li>
-        <li><strong>3. Check Headers:</strong>
-            <ol>
-                <li>Ensure that the correct Content-Type header is set (e.g., <code>application/json</code> for JSON payloads).</li>
-                <li>Confirm that any other required headers are present and correctly set.</li>
-            </ol>
-        </li>
-        <li><strong>4. Review Endpoint:</strong>
-            <ol>
-                <li>Verify that the endpoint URL is correct and matches the API''s documentation.</li>
-                <li>Check if there have been any updates or changes to the API that could affect the request.</li>
-                <li>Use tools like Postman or cURL to manually test the endpoint and compare results.</li>
-            </ol>
-        </li> 
-        <li>
-         If these steps do not resolve the issue, consider reaching out to the support.
-        </li>
-    </ol>'::text AS resolution_steps
-   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
-  WHERE upper(to_state) = 'FAIL'::text;
-
- 
-/**
- * View to identify and analyze failed FHIR-related HTTP request interactions that need attention.
- * This view focuses on HTTP requests that involve FHIR (Fast Healthcare Interoperability Resources)
- * interactions, specifically those targeting the `/Bundle` endpoint, which may have encountered issues 
- * related to invalid or incomplete data submissions.
- *
- * The view performs the following:
- * 1. Extracts key information from the `interaction_http_request_mat` table, including:
- *    - The nature of the error (`nature`).
- *    - The specific error message from the 'insertScreeningsResponse' field in the payload.
- *    - The timestamp of the request (`request_created_at`).
- *    - The unique identifier of the HTTP request (`sat_interaction_http_request_id`).
- * 2. Joins with `interaction_http_request_resource_type_mat` to include relevant resource 
- *    type information for the failed request.
- * 3. Joins with `interaction_http_request_observe_mat` to incorporate observability metrics if available.
- *
- * The result set includes:
- * - `error_type`: The nature or category of the error encountered.
- * - `error_message`: The specific error message extracted from the request's payload.
- * - `date`: The timestamp when the HTTP request was created.
- * - `sat_interaction_http_request_id`: The unique identifier for the HTTP request.
- * - `failure_reason`: A predefined explanation for the failure, guiding troubleshooting.
- *
- * The view filters for requests directed to the `/Bundle` endpoint, indicating interactions
- * related to FHIR Bundle submissions that need attention due to potential issues with data format or completeness.
- * 
- * The `failure_reason` provides context and recommendations, ensuring that the data aligns with 
- * the required format and includes all necessary fields to avoid such errors in future submissions.
- *
- * @return VIEW - A view named `interaction_http_fhir_request_needs_attention`, 
- * providing details of FHIR-related HTTP requests that failed and require attention.
- */
-
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_needs_attention CASCADE; 
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request_needs_attention
-AS SELECT 
-htt_req.nature as error_type,
-CONCAT_WS(' , ', 
-    htt_req.error_message, 
-    (SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ') 
-     FROM jsonb_each_text((htt_req.payload->>'responseBody')::jsonb) AS json_data(key, value))
-) AS error_message,
-htt_req.created_at AS date,
-htt_req.sat_interaction_fhir_request_id as sat_interaction_http_request_id,
-'This error occurs when the server cannot process the request due to invalid syntax or data issues. Ensure that the request format, headers, endpoint, and data adhere to the API and IG specifications.'::text AS failure_reason,
-'<ol>
-    <li><strong>Resolution Steps:</strong></li>
-    <li><strong>1. Verify Request Format:</strong>
-        <ol>
-            <li>Ensure that the request payload (body) is correctly formatted according to the API documentation and SHIN-NY IG specification (e.g., date formats, string lengths, numeric values).</li>
-            <li>Check that all required parameters and fields are included and correctly formatted.</li>
-        </ol>
-    </li>
-    <li><strong>2. Validate Data:</strong>
-        <ol>
-            <li>Double-check the data being sent in the request to ensure it matches the required data types and adheres to API expectations (e.g., integers, strings, booleans).</li>
-            <li>Confirm that all mandatory fields are present in the FHIR payload to prevent submission errors.</li>
-        </ol>
-    </li>
-    <li><strong>3. Check Headers:</strong>
-        <ol>
-            <li>Ensure the correct Content-Type header is set (e.g., <code>application/json</code> for JSON payloads).</li>
-            <li>Confirm that any other required headers are present and correctly set.</li>
-        </ol>
-    </li>
-    <li><strong>4. Review Endpoint and API Documentation:</strong>
-        <ol>
-            <li>Verify that the endpoint URL is correct and matches the APIs documentation.</li>
-            <li>Cross-check the FHIR payload with the SHIN-NY IG specification to ensure compliance.</li>
-            <li>Check for any updates or changes to the API that could affect the request.</li>
-            <li>Use tools like Postman or cURL to manually test the endpoint and compare results.</li>
-        </ol>
-    </li>
-    <li><strong>5. Use Validation Tools:</strong>
-        <ol>
-            <li>Consider using validation libraries or tools to catch data issues before sending the request.</li>
-            <li>Test the request using tools like Postman to validate the payload against the API.</li>
-        </ol>
-    </li>
-    <li>If these steps do not resolve the issue, consider reaching out to the support team.</li>
-</ol>'::text AS resolution_steps
-FROM
-techbd_udi_ingress.sat_interaction_fhir_request htt_req;
 
 
 /**
