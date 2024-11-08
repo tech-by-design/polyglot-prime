@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator;
 import org.techbd.service.http.hub.prime.ux.validator.Validator;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.Tables;
@@ -52,8 +51,11 @@ public class TabularRowsController {
 
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
-    public TabularRowsController(final UdiPrimeJpaConfig udiPrimeJpaConfig) {
+    private final List<Validator> validators;
+
+    public TabularRowsController(final UdiPrimeJpaConfig udiPrimeJpaConfig, List<Validator> validators) {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.validators = validators;
     }
 
     @Operation(summary = "Fetch SQL rows from a master table or view with schema specification", description = """
@@ -264,37 +266,17 @@ public class TabularRowsController {
             try {
                 // Define the table based on schema and table name
                 var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName, tableName);
-
-                Map<String, Validator> validators = new HashMap<>();
-                validators.put("json_path", new JsonPathValidator());
-
                 final var jooqCfg = udiPrimeJpaConfig.dsl().configuration();
 
-                for (Map.Entry<String, String> entry : rowData.entrySet()) {
-                    String columnName = entry.getKey();
-                    String columnValue = entry.getValue();
+                // Filter validators based on the table name
+                Validator tableValidator = validators.stream()
+                     .filter(v -> v.getTableName().equals(tableName))
+                     .findFirst()
+                     .orElse(null);
 
-                    Validator validator = validators.get(columnName);
-
-                    if (validator != null) {
-
-                        boolean isValid = false;
-
-                        if (validator instanceof  JsonPathValidator)
-                        {
-                            isValid = validator.isValid(columnName, columnValue, jooqCfg);
-                        }
-
-                        if (!isValid) {
-                              if (validator instanceof JsonPathValidator jsonPathValidator){
-                                return jsonPathValidator.handleInvalidJsonPath();
-                              } else {
-                                 Map<String, Object> responseBody = new HashMap<>();
-                                 responseBody.put("message", "Invalid value for: " + columnName);
-                                 return ResponseEntity.badRequest().body(responseBody);
-                               }
-                         }
-                     }
+                ResponseEntity<Map<String, Object>> validationResult = tableValidator.validate(rowData, jooqCfg);
+                if (validationResult.hasBody()) {
+                    return validationResult;
                 }
 
                 // Check if the primary key or unique identifier is provided for updating the existing record
