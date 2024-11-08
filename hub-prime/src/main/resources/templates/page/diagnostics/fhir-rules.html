@@ -31,6 +31,15 @@
                         });
                 }
 
+                // ---Clear JSON Path Error Function---
+                function clearJsonPathError() {
+                    const jsonPathError = document.getElementById('jsonPathError');
+                    if (jsonPathError) {
+                        jsonPathError.textContent = '';
+                        jsonPathError.style.display = 'none';
+                    }
+                }
+
                 window.handleEditRow = function(primaryKey) {
                     editRow(schemaName, viewName, primaryKeyColumn, primaryKey, agGridInstance.gridOptions.columnDefs)
                         .then(data => {
@@ -84,6 +93,9 @@
                                     }
                                 }
                             });
+
+                            // ---Clear the error when opening the edit modal---
+                            clearJsonPathError();
 
                             addNewModal.style.display = 'block';
                         })
@@ -236,6 +248,9 @@
                             }
                         });
 
+                        // ---Clear the error when opening the add new modal---
+                        clearJsonPathError();
+
                         addNewModal.style.display = 'block';
                     });
 
@@ -377,19 +392,19 @@
                         <label for="description">Rule Description:</label>
                         <input type="text" name="description" id="description" placeholder="Rule Description" th:value="${currentRowData?.description}">
         
-                    <label for="namespace">Name Space:</label>
+                        <label for="namespace">Name Space:</label>
                         <input type="text" name="namespace" id="namespace" placeholder="Name Space" th:value="${currentRowData?.namespace}">
         
-                    <label for="json_path">Json Path:</label>
+                        <label for="json_path">Json Path:</label>
                         <input type="text" name="json_path" id="json_path" placeholder="Json Path" required th:value="${currentRowData?.json_path}">
                         <div id="jsonPathError"></div>
         
-                    <label for="action">Action:</label>
-                    <select name="action" id="action">
-                        <option value="accept" th:selected="${currentRowData?.action == 'accept'}">Accept</option>
-                        <option value="reject" th:selected="${currentRowData?.action == 'reject'}">Reject</option>
-                        <option value="discard" th:selected="${currentRowData?.action == 'discard'}">Discard</option>
-                    </select>
+                        <label for="action">Action:</label>
+                        <select name="action" id="action">
+                            <option value="accept" th:selected="${currentRowData?.action == 'accept'}">Accept</option>
+                            <option value="reject" th:selected="${currentRowData?.action == 'reject'}">Reject</option>
+                            <option value="discard" th:selected="${currentRowData?.action == 'discard'}">Discard</option>
+                        </select>
                     </form>
         
                     <button id="saveButton">Save</button>

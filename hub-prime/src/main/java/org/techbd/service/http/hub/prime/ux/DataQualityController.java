@@ -77,10 +77,10 @@ public class DataQualityController {
         return presentation.populateModel("page/diagnostics/ig-publication-issues", model, request);
     }
 
-    // @GetMapping("/data-quality/fhir-rules")
-    // @RouteMapping(label = "FHIR Rules", title = "FHIR rules", siblingOrder = 50)
-    // public String fhirRules(final Model model, final HttpServletRequest request) {
-    //     return presentation.populateModel("page/diagnostics/fhir-rules", model, request);
-    // }
+    @GetMapping("/data-quality/fhir-rules")
+    @RouteMapping(label = "FHIR Rules", title = "FHIR rules", siblingOrder = 50)
+    public String fhirRules(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/fhir-rules", model, request);
+    }
 
 }
