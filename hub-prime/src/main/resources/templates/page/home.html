@@ -250,8 +250,7 @@
             sequenceDiagram 
                 participant QE as QE
                 participant Tech by Design as Tech by Design
-                participant SHIN-NY Data Lake as SHIN-NY Data Lake
-                participant MDW as MDW
+                participant SHIN-NY Data Lake as SHIN-NY Data Lake 
 
                 QE ->> Tech by Design: HEALTHeLINK Proxy FHIR JSON (${healthelink})
                 QE ->> Tech by Design: Healtheconnections Proxy FHIR JSON (${healtheconnections})
@@ -262,12 +261,7 @@
                 Tech by Design ->> SHIN-NY Data Lake: Healtheconnections Proxy Validated FHIR JSON (${healtheconnections_shinny_datalake_submissions})
                 Tech by Design ->> SHIN-NY Data Lake: Healthix Proxy Validated FHIR JSON (${healthix_shinny_datalake_submissions})
                 Tech by Design ->> SHIN-NY Data Lake: Rochester Proxy Validated FHIR JSON (${grrhio_shinny_datalake_submissions})
-                Tech by Design ->> SHIN-NY Data Lake: HixNY Proxy Validated FHIR JSON (${hixny_shinny_datalake_submissions})
-                SHIN-NY Data Lake ->> MDW: HEALTHeLINK Proxy Submit to MDW (?)
-                SHIN-NY Data Lake ->> MDW: Healtheconnections Proxy Submit to MDW (?)
-                SHIN-NY Data Lake ->> MDW: Healthix Proxy Submit to MDW (?)
-                SHIN-NY Data Lake ->> MDW: Rochester Proxy Submit to MDW (?)
-                SHIN-NY Data Lake ->> MDW: HixNY Proxy Submit to MDW (?)
+                Tech by Design ->> SHIN-NY Data Lake: HixNY Proxy Validated FHIR JSON (${hixny_shinny_datalake_submissions}) 
         `;
 
                     // Inject the Mermaid code into the HTML

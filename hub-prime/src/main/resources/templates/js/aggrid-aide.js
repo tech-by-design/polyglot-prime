@@ -78,8 +78,8 @@ export class AGGridAide {
         return function (params) {
             if (params.value) {
                 let date = new Date(params.value);
-                let month = date.getMonth()+1;
-                let formattedDate = month+'/'+date.getDate()+'/'+date.getFullYear();
+                let month = date.getMonth() + 1;
+                let formattedDate = month + '/' + date.getDate() + '/' + date.getFullYear();
                 return formattedDate;
             }
             return '';
@@ -176,7 +176,7 @@ export class AGGridAideBuilder {
             tooltipShowDelay: 500,
             masterDetail: false,
             detailCellRendererParams: null,
-            detailRowAutoHeight:false
+            detailRowAutoHeight: false
         };
         this.gridDivStyles = { height: "750px" };
     }
@@ -307,6 +307,11 @@ export class AGGridAideBuilder {
                     if (respMetrics && window.layout?.observability?.metricsCollection) {
                         window.layout.addIdentifiableMetrics(`fetch-${dataSourceUrl}`, respMetrics);
                     }
+                    // Check if the URL or content indicates a session timeout
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return; // Stop further processing
+                    }
                     if (response.ok) {
                         const serverRespPayload = await response.json();
                         if (withSecondaryColumns) {
@@ -348,40 +353,40 @@ export class AGGridAideBuilder {
                 const {
                     includeGeneratedSqlInResp = true,
                     includeGeneratedSqlInErrorResp = true,
-    
+
                     secondaryColsError = async (dataSourceUrl, serverRespPayload, error, respMetrics) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, result: serverRespPayload, error, respMetrics }),
                     resultServerError = async (dataSourceUrl, serverRespPayload, respMetrics) => console.warn("[ServerDatasource] Error in server result:", { dataSourceUrl, result: serverRespPayload, respMetrics }),
                     fetchRespNotOK = async (dataSourceUrl, response, respMetrics) => console.error(`[ServerDatasource] Fetched response not OK: ${response.statusText}`, { dataSourceUrl, response, respMetrics }),
                     fetchError = async (dataSourceUrl, error) => console.error(`[ServerDatasource] Fetch error: ${error}`, { dataSourceUrl, error }),
-    
+
                     beforeRequest = async (dataSourceUrl) => { },
                     beforeSuccess = async (serverRespPayload, respMetrics, dataSourceUrl) => {
                         console.log('Full Server Response:', serverRespPayload);
-    
+
                         const data = serverRespPayload;
-    
+
                         if (!Array.isArray(data)) {
                             console.error('Error: serverRespPayload is not an array.');
                             params.fail();
                             return;
                         }
-    
+
                         console.log('Extracted data:', data);
-    
+
                         const valueCols = data.length > 0 ? Object.keys(data[0]).map(key => ({
                             headerName: key.replace(/_/g, ' ').toUpperCase(),
                             field: key
                         })) : [];
-    
+
                         console.log('Generated valueCols:', valueCols);
                     },
-    
+
                     customizedContent = async (success, serverRespPayload, respMetrics, dataSourceUrl) => success,
                 } = inspect;
-    
+
                 try {
                     await beforeRequest?.(dataSourceUrl);
-    
+
                     // Directly fetch data from the provided URL without adding parameters
                     const response = await fetch(dataSourceUrl, {
                         method: 'GET',
@@ -390,29 +395,29 @@ export class AGGridAideBuilder {
                             'X-Include-Generated-SQL-In-Error-Response': includeGeneratedSqlInErrorResp,
                         }
                     });
-    
+
                     const respMetrics = response.headers ? {
                         startTime: response.headers.get("X-Observability-Metric-Interaction-Start-Time"),
                         finishTime: response.headers.get("X-Observability-Metric-Interaction-Finish-Time"),
                         durationMillisecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Nanosecs"),
                         durationNanosecs: response.headers.get("X-Observability-Metric-Interaction-Duration-Millisecs"),
                     } : {};
-    
+
                     if (respMetrics && window.layout?.observability?.metricsCollection) {
                         window.layout.addIdentifiableMetrics(`fetch-${dataSourceUrl}`, respMetrics);
                     }
-    
+
                     if (response.ok) {
                         const serverRespPayload = await response.json();
-    
+
                         await beforeSuccess?.(serverRespPayload, respMetrics, dataSourceUrl);
-    
+
                         const data = Array.isArray(serverRespPayload) ? serverRespPayload : [];
                         const valueCols = data.length > 0 ? Object.keys(data[0]).map(key => ({
                             headerName: key.replace(/_/g, ' ').toUpperCase(),
                             field: key
                         })) : [];
-    
+
                         if (data.length > 0) {
                             params.success({
                                 rowData: data,
@@ -434,8 +439,8 @@ export class AGGridAideBuilder {
         };
         return this;
     }
-    
-    
+
+
 
     /**
      * Sets the ModalAide instance to be used for rendering modal popups.
