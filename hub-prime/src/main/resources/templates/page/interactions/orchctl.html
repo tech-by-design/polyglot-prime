@@ -52,7 +52,13 @@
                         // gridContent.rowData contains server side PostgreSQL result from `/api/ux/tabular/jooq/${schemaName}/${viewName}.json`
                         // but we also need `published_fhir_count` from `/support/interaction/sftp/recent.json` so let's join them.
                         await fetch(window.shell.serverSideUrl(`/support/interaction/sftp/recent.json`))
-                            .then(response => response.json())
+                            .then(response => {
+                                if (response.url.includes('/?timeout=true')) {
+                                    window.location.href = '/?timeout=true'; // Redirect to login page
+                                    return null; // Prevent further processing of the response
+                                }
+                                return response.json();
+                            })
                             .then(sftpData => {
                                 /**
                                  * Update `gridContent.rowData` with the `published_fhir_count` based on matching `sessionId` in `sftpData`.

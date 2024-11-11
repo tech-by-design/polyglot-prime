@@ -117,7 +117,13 @@
 
                 function fetchPageData(page, size) {
                     fetch(window.shell.serverSideUrl(`/diagnostics.json?page=${page}&size=${size}`))
-                        .then(response => response.json())
+                        .then(response => {
+                            if (response.url.includes('/?timeout=true')) {
+                                window.location.href = '/?timeout=true'; // Redirect to login page
+                                return null; // Prevent further processing of the response
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             originalData = data;
                             totalRecords = data.totalElements;

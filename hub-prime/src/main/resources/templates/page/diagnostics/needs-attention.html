@@ -163,7 +163,13 @@
                             getDetailRowData: function (params) {
                                 const value = params.data.qe_name;
                                 fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${detailTableViewName}/qe_name/${value}.json`))
-                                    .then(response => response.json())
+                                    .then(response => {
+                                        if (response.url.includes('/?timeout=true')) {
+                                            window.location.href = '/?timeout=true'; // Redirect to login page
+                                            return null; // Prevent further processing of the response
+                                        }
+                                        return response.json();
+                                    })
                                     .then(data => {
                                         params.successCallback(data);
                                     });

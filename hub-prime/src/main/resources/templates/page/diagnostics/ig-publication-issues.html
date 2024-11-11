@@ -35,7 +35,13 @@
             const issue_date = encodeURIComponent(params.data.issue_date) || params.data.issue_date;
 
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/multiparam/${schemaName}/${igPublication}/ig_version/${ig_version}/validation_engine/${validation_engine}/issue_date/${issue_date}.json`))
-                .then(response => response.json())
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
                 .then(response => {
                     params.successCallback(response);
                 })

@@ -32,7 +32,13 @@
             const user_agent = params.data.user_agent;
             const tenant_id_lower = params.data.tenant_id_lower;
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${provenanceDetView}/tenant_id_lower/${tenant_id_lower}/client_ip_address/${client_ip_address}.json`))
-                .then(response => response.json())
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
                 .then(response => {
                     params.successCallback(response);
                 })

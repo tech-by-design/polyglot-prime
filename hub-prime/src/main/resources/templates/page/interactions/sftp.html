@@ -158,7 +158,13 @@
                 eGridDiv.style.height = "750px"
 
                 fetch(window.shell.serverSideUrl(`/support/interaction/sftp/recent.json`))
-                    .then(response => response.json())
+                    .then(response => {
+                        if (response.url.includes('/?timeout=true')) {
+                            window.location.href = '/?timeout=true'; // Redirect to login page
+                            return null; // Prevent further processing of the response
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         originalData = data;
                         const rowData = data.map(row => {
