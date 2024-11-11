@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -244,7 +245,7 @@ public class TabularRowsController {
     }
 
     @Operation(summary = "Save or update data in a specified table", description = """
-        Saves new records or updates existing records in the specified table within an optional schema.
+        Saves new records or updates existing records in the specified table within a schema.
         The request body should contain the data to be saved or updated.
         If a primary key or unique identifier is provided, it will attempt to update the existing record.
         Otherwise, it will insert a new record.
@@ -253,8 +254,8 @@ public class TabularRowsController {
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<Map<String, Object>> saveOrUpdateRow(
-            @Parameter(description = "Optional schema name.", required = false) @PathVariable(required = false) String schemaName,
-            @Parameter(description = "Mandatory table name.", required = true) @PathVariable String tableName,
+            @Parameter(description = "Path variable to mention the schema name.", required = true) @PathVariable(required = false) String schemaName,
+            @Parameter(description = "Path variable to mention the table name.", required = true) @PathVariable String tableName,
             @Parameter(description = "Data to be saved or updated.", required = true) @RequestBody Map<String, String> rowData) {
 
             // Validate schema and table name
@@ -283,6 +284,14 @@ public class TabularRowsController {
                 String primaryKeyValue = rowData.get("action_rule_id");
                 LOG.info("action_rule_id: {}", primaryKeyValue);
                 final var provenance = "%s.doFilterInternal".formatted(TabularRowsController.class.getName());
+
+                 // Ensure empty strings are present for specific columns if not provided
+                List<String> emptyStringColumns = Arrays.asList("description", "namespace");
+                for (String column : emptyStringColumns) {
+                    if (!rowData.containsKey(column)) {
+                        rowData.put(column, "");  // Explicitly set to empty string
+                    }
+                }
 
                 if (primaryKeyValue != null) {
                     // Update statement
@@ -347,7 +356,7 @@ public class TabularRowsController {
         }
 
     @Operation(summary = "Delete data in a specified table", description = """
-            Delete existing records in the specified table within an optional schema.
+            Delete existing records in the specified table within a schema.
             The request body should contain the primary key.
             """)
     @DeleteMapping(value = {"/api/ux/tabular/jooq/delete/{schemaName}/{tableName}/{columnName}/{primaryKey}"}, produces = MediaType.APPLICATION_JSON_VALUE)

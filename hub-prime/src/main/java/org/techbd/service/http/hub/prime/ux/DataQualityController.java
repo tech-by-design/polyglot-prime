@@ -78,7 +78,7 @@ public class DataQualityController {
     }
 
     @GetMapping("/data-quality/fhir-rules")
-    @RouteMapping(label = "FHIR Rules", title = "FHIR rules", siblingOrder = 50)
+    @RouteMapping(label = "FHIR Rules", title = "FHIR Rules", siblingOrder = 50)
     public String fhirRules(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/fhir-rules", model, request);
     }
