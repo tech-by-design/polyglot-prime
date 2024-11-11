@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script src="https://www.jsviews.com/download/jsrender.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
+        import { FhirViewer } from '@presentation/shell/fhir-view.js';
+        customElements.define('fhir-viewer', FhirViewer);
+
+        const schemaName = 'techbd_udi_ingress';
+        const scnView = 'fhir_scn_submission'; 
+        const scnDetailView = 'fhir_scn_submission_details';
+        const expanColumnDefn = [
+            { headerName: "Org Name", field: "qe_name", filter: "agTextColumnFilter" },
+            {
+                headerName: "Total Msgs", field: "qe_total_submissions", filter: "agTextColumnFilter", filter: "agTextColumnFilter" 
+            },
+            { headerName: "Successful Msgs", field: "success_submissions", filter: "agTextColumnFilter" }, 
+            { headerName: "Failed Msgs", field: "faield_submissions", filter: "agTextColumnFilter" },
+        ];
+        function getExpandGridData(params) { 
+            const organization_id = params.data.organization_id;
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${scnDetailView}/organization_id/${organization_id}.json`))
+                .then(response => response.json())
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const helpers = new Helpers();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    { headerName: "SCN Name", field: "organization_id", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' }, 
+                    { headerName: "Total Msgs", field: "qe_total_submissions", filter: "agTextColumnFilter" },
+                    { headerName: "Successful Msgs", field: "success_submissions", filter: "agTextColumnFilter" }, 
+                    { headerName: "Failed Msgs", field: "faield_submissions", filter: "agTextColumnFilter" } 
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${scnView}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withMasterDetail(true)
+                .withDetailCellRendererParams({
+                    detailGridOptions: {
+                        columnDefs: expanColumnDefn,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getExpandGridData(params);
+                    }
+                })
+                .withDetailRowAutoHeight(false)
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+             // Inject the date range into the HTML
+             helpers.injectDateRangeText('date-range', 'This Widget provides an overview of message interactions from Screening/Referral/Assessment Centers (SCNs) sent to Tech By Design from <b>{startDate}</b> to <b>{endDate}</b>. The grid presents a breakdown of message activity by SCN, displaying distinct SCN names and message counts across various statuses.');           
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="text-lg font-bold my-3 ml-4" >  Report for Messages by SCN </div>
+        <div class="grid-description pt-1 pb-2 pl-4">  
+            <div id="date-range">
+                <!-- The date range will be injected here -->
+            </div>
+            
+        
+        <ul class="list-disc pl-4"> 
+            <li>Column 1 lists unique SCNs that have submitted screenings, referrals, or assessments.
+            </li>
+            <li>Column 2 shows the total number of messages sent by each SCN.
+            </li>
+            <li>Column 3 displays the count of successfully processed messages.
+            </li>
+            <li>Column 4 indicates the count of failed messages.
+            </li> 
+        </ul> 
+        Each row in the grid is expandable, similar to the existing Organization grid, allowing a detailed view of message routing through different Qualified Entities (QEs) for each SCN.
+         Expanded rows provide a breakdown of message totals for each QE, with the SCN row acting as a "totals" row for the corresponding QE breakdown beneath it.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

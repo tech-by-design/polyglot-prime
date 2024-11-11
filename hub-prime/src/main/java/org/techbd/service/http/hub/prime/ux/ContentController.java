@@ -61,4 +61,11 @@ public class ContentController {
         return presentation.populateModel("page/content/organizations", model, request);
     }
 
+
+    @GetMapping("/content/scn")
+    @RouteMapping(label = "SCN", title = "SCN", siblingOrder = 30)
+    public String scn(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/content/scn", model, request);
+    }    
+
 }
