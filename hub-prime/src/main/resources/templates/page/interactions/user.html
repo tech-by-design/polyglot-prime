@@ -37,7 +37,13 @@
             const user_session = encodeURIComponent(params.data.user_session) || params.data.user_session;
 
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewDetailsName}/user_session/${user_session}.json`))
-                .then(response => response.json())
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
                 .then(response => {
                     params.successCallback(response);
                 })
