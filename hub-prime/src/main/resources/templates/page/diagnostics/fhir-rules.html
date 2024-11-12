@@ -250,17 +250,21 @@
 
                     function displayJsonPathError(message) {
                         let jsonPathError = document.getElementById('jsonPathError');
-                        const jsonPathInput = document.getElementById('json_path');
+                        const jsonPathInput = document.querySelector('input[name="json_path"]');
 
                         if (!jsonPathError) {
                             jsonPathError = document.createElement('div');
                             jsonPathError.id = 'jsonPathError';
                             jsonPathError.style.color = 'red';
 
-                            if (jsonPathInput) {  // Check if json_path input exists
-                                jsonPathInput.parentNode.insertBefore(jsonPathError, jsonPathInput.nextSibling); // Insert after input
-                            } else {
-                                // If 'json_path' input is not found, append to modal content:
+                            if (jsonPathInput.parentNode.querySelector('#jsonPathError') != null) {
+                                console.warn("#jsonPathError element not found.");
+                                return;
+                            }
+
+                            jsonPathInput.parentNode.insertBefore(jsonPathError, jsonPathInput.nextSibling);
+
+                            if (!jsonPathInput.parentNode.contains(jsonPathError)) {
                                 const modalContent = document.querySelector('.modal-content'); // Or a more specific selector
                                 if (modalContent) {
                                     modalContent.appendChild(jsonPathError);
@@ -270,6 +274,13 @@
                                     return; 
                                 }
                             }
+                            jsonPathInput.addEventListener('focusout', (event) => {
+                                const current_path = jsonPathInput.value.trim();
+                                if (current_path == null || current_path.isEmpty() ){
+                                    addNewModal.style.display = 'block';
+                                    displayJsonPathError('Json Path is required');
+                                }
+                            })
                         }
                         jsonPathError.textContent = message;
                         jsonPathError.style.display = 'block';
@@ -290,6 +301,7 @@
                         }
 
                         if (!formData.json_path) {
+                            addNewModal.style.display = 'block';
                             displayJsonPathError("Json Path is required.");
                             return;
                         }
