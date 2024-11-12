@@ -129,7 +129,16 @@ AS SELECT hub_interaction_id AS interaction_id,
     patient_mrn,
     organization_id,
     organization_name,
-    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
+    CASE
+        WHEN 'ServiceRequest' = ANY(string_to_array(resource_type_set, ', ')) OR 'Task' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Referral'
+        WHEN 'Consent' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Screening'
+        WHEN 'Condition' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Assessment'
+        ELSE NULL
+    END AS bundle_resource_type
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE uri != '/api/expect/fhir/bundle'; 
 
@@ -2947,3 +2956,47 @@ where
     )
 order by
 	sihr.created_at desc;
+
+
+
+/****************************************************************************************
+ * This view, `organization_interaction_summary`, provides a consolidated count of FHIR 
+ * interactions for each organization, focusing on specific types of interactions:
+ * 
+ * - **count_screenings**: Aggregates the count of interactions categorized as "Screening." 
+ *   This count includes records where `resource_type_set` contains "Consent."
+ * 
+ * - **count_referrals**: Aggregates the count of interactions categorized as "Referral." 
+ *   This count includes records where `resource_type_set` contains either "ServiceRequest" 
+ *   or "Task."
+ * 
+ * - **count_assessments**: Aggregates the count of interactions categorized as "Assessment." 
+ *   Similar to screenings, this count includes records where `resource_type_set` contains "Consent."
+ * 
+ * The view is filtered to include only specific URIs (`/Bundle` or `/Bundle/`) and excludes records 
+ * where `organization_id` is empty. Grouped by `organization_id` and `organization_name`, this view 
+ * facilitates quick access to interaction summaries by organization, enabling efficient tracking and 
+ * analysis of FHIR resources across different organizations.
+ ****************************************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.organization_interaction_summary CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.organization_interaction_summary AS 
+SELECT 
+    organization_id,
+    organization_name,
+    COUNT(CASE 
+            WHEN resource_type_set LIKE '%Consent%' THEN 1 
+         END) AS count_screenings,
+    COUNT(CASE 
+            WHEN resource_type_set LIKE '%ServiceRequest%' OR resource_type_set LIKE '%Task%' THEN 1 
+         END) AS count_referrals,
+    COUNT(CASE 
+            WHEN resource_type_set LIKE '%Consent%' THEN 1 
+         END) AS count_assessments
+FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+WHERE  
+  uri IN ('/Bundle', '/Bundle/')
+and organization_id != ''
+GROUP BY 
+    organization_id,
+    organization_name;  

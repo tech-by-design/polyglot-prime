@@ -6,6 +6,22 @@
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
 
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+
+        </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
@@ -86,7 +102,7 @@
 <body>
     <div layout:fragment="content">
         <div class="text-lg font-bold my-3 ml-4" >  Report for Messages by SCN </div>
-        <div class="grid-description pt-1 pb-2 pl-4">  
+        <div class="grid-description  ">  
             <div id="date-range">
                 <!-- The date range will be injected here -->
             </div>
