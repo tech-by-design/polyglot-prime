@@ -2991,7 +2991,7 @@ SELECT
             WHEN resource_type_set LIKE '%ServiceRequest%' OR resource_type_set LIKE '%Task%' THEN 1 
          END) AS count_referrals,
     COUNT(CASE 
-            WHEN resource_type_set LIKE '%Consent%' THEN 1 
+            WHEN resource_type_set LIKE '%Condition%' THEN 1 
          END) AS count_assessments
 FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
 WHERE  
