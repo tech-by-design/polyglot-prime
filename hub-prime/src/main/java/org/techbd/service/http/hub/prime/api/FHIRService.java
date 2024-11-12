@@ -130,7 +130,6 @@ public class FHIRService {
                                         uaValidationStrategyJson,
                                         includeRequestInOutcome);
                         final var result = Map.of("OperationOutcome", immediateResult);
-                        // Check for the X-TechBD-HealthCheck header
                         if ("true".equals(healthCheck)) {
                                 LOG.info("%s is true, skipping Scoring Engine submission."
                                                 .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
@@ -261,7 +260,10 @@ public class FHIRService {
 
                 try {
                         prepareRequest(rihr, rre, provenance, request);
+                        final var start = Instant.now();
                         rihr.execute(jooqCfg);
+                        final var end = Instant.now();
+                        LOG.info("FHIRService  - Time taken : {} milliseconds for DB call to REGISTER State None, Accept, Disposition: for interaction id: {} " ,Duration.between(start, end).toMillis(),rre.interactionId().toString());
                         JsonNode payloadWithDisposition = rihr.getReturnValue();
                         LOG.info("REGISTER State None, Accept, Disposition: END for interaction id: {} ",
                                         rre.interactionId().toString());
@@ -343,7 +345,9 @@ public class FHIRService {
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
                         String uaValidationStrategyJson,
                         boolean includeRequestInOutcome) {
-                LOG.debug("Getting structure definition Urls from config - Before: ");
+                final var start = Instant.now();
+                String interactionId = getBundleInteractionId(request);
+                LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} " ,interactionId);
                 final var igPackages = appConfig.getIgPackages();
                 final var igVersion = appConfig.getIgVersion();
                 final var fhirUmlsApiKey = appConfig.getFhirUmlsApiKey();
@@ -387,6 +391,9 @@ public class FHIRService {
                         immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
                 }
                 engine.clear(session);
+                Instant end = Instant.now();
+                Duration timeElapsed = Duration.between(start, end);
+                LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds" ,interactionId,timeElapsed.toMillis());
                 return immediateResult;
         }
 
@@ -1189,9 +1196,11 @@ public class FHIRService {
                         // time
                         initRIHR.setCreatedBy(FHIRService.class.getName());
                         initRIHR.setProvenance(provenance);
+                        final var start = Instant.now();
                         final var execResult = initRIHR.execute(jooqCfg);
-                        LOG.info("REGISTER State Forward : END for interaction id : {} tenant id : {}" + execResult,
-                                        bundleAsyncInteractionId, tenantId);
+                        final var end = Instant.now();
+                        LOG.info("REGISTER State Forward : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds" + execResult,
+                                        bundleAsyncInteractionId, tenantId,Duration.between(start, end).toMillis());
                 } catch (Exception e) {
                         LOG.error("ERROR:: REGISTER State Forward CALL for interaction id : {} tenant id : {}"
                                         + initRIHR.getName() + " initRIHR error", bundleAsyncInteractionId, tenantId,
@@ -1225,13 +1234,13 @@ public class FHIRService {
                         forwardRIHR.setFromState("FORWARD");
                         forwardRIHR.setToState("COMPLETE");
                         forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB
-                        // set this, use
-                        // app time
                         forwardRIHR.setCreatedBy(FHIRService.class.getName());
                         forwardRIHR.setProvenance(provenance);
+                        final var start = Instant.now();
                         final var execResult = forwardRIHR.execute(jooqCfg);
-                        LOG.info("REGISTER State Complete : END for interaction id : {} tenant id : {}" + execResult,
-                                        bundleAsyncInteractionId, tenantId);
+                        final var end = Instant.now();
+                        LOG.info("REGISTER State Complete : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds" + execResult,
+                                        bundleAsyncInteractionId, tenantId,Duration.between(start, end).toMillis());
                 } catch (Exception e) {
                         LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
                                         + forwardRIHR.getName()
@@ -1269,9 +1278,11 @@ public class FHIRService {
                         // app time
                         forwardRIHR.setCreatedBy(FHIRService.class.getName());
                         forwardRIHR.setProvenance(provenance);
+                        final var start = Instant.now();
                         final var execResult = forwardRIHR.execute(jooqCfg);
-                        LOG.info("REGISTER State Fail : END for interaction id : {} tenant id : {}" + execResult,
-                                        bundleAsyncInteractionId, tenantId);
+                        final var end = Instant.now();
+                        LOG.info("REGISTER State Fail : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds" + execResult,
+                                        bundleAsyncInteractionId, tenantId,Duration.between(start, end).toMillis());
                 } catch (Exception e) {
                         LOG.error("ERROR:: REGISTER State Fail CALL for interaction id : {} tenant id : {} "
                                         + forwardRIHR.getName()
@@ -1353,9 +1364,11 @@ public class FHIRService {
                         errorRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
                         errorRIHR.setCreatedBy(FHIRService.class.getName());
                         errorRIHR.setProvenance(provenance);
+                        final var start = Instant.now();
                         final var execResult = errorRIHR.execute(jooqCfg);
+                        final var end = Instant.now();
                         LOG.error("Register State Failure - END for interaction id : {} tenant id : {} forwardRIHR execResult"
-                                        + execResult, bundleAsyncInteractionId, tenantId);
+                                        + execResult + ". Time Taken : {} milliseconds ", bundleAsyncInteractionId, tenantId,Duration.between(start, end).toMillis());
                 } catch (Exception e) {
                         LOG.error("ERROR :: Register State Failure - for interaction id : {} tenant id : {} CALL "
                                         + errorRIHR.getName() + " errorRIHR error", bundleAsyncInteractionId, tenantId,
