@@ -129,7 +129,16 @@ AS SELECT hub_interaction_id AS interaction_id,
     patient_mrn,
     organization_id,
     organization_name,
-    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
+    CASE
+        WHEN 'ServiceRequest' = ANY(string_to_array(resource_type_set, ', ')) OR 'Task' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Referral'
+        WHEN 'Consent' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Screening'
+        WHEN 'Condition' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Assessment'
+        ELSE NULL
+    END AS bundle_resource_type
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE uri != '/api/expect/fhir/bundle'; 
 
