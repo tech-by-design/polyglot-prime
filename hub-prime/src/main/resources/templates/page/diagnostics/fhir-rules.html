@@ -27,7 +27,7 @@
                             location.reload();
                         })
                         .catch(error => {
-                            alert('An error occurred while deleting the row: ' + error.message);
+                            alert(error.message);
                         });
                 }
 
@@ -62,12 +62,6 @@
                                     const select = document.createElement('select');
                                     select.name = colDef.field;
                                     select.style = 'display: block; margin-bottom: 10px; width: 100%;';
-
-                                    // Add options for accept, reject, and discard
-                                    const acceptOption = document.createElement('option');
-                                    acceptOption.value = 'accept';
-                                    acceptOption.text = 'Accept';
-                                    select.appendChild(acceptOption);
 
                                     const rejectOption = document.createElement('option');
                                     rejectOption.value = 'reject';
@@ -122,12 +116,10 @@
                         filter: false,
                         cellEditor: 'agSelectCellEditor',
                         cellEditorParams: {
-                            values: ['accept', 'reject', 'discard']
+                            values: ['reject', 'discard']
                         },
                         valueFormatter: (params) => {
                             switch (params.value) {
-                            case 'accept':
-                                return 'Accept';
                             case 'reject':
                                 return 'Reject';
                             case 'discard':
@@ -138,8 +130,6 @@
                         },
                         valueParser: (params) => {
                             switch (params.newValue) {
-                            case 'Accept':
-                                return 'accept';
                             case 'Reject':
                                 return 'reject';
                             case 'Discard':
@@ -220,12 +210,6 @@
                                     select.name = colDef.field;
                                     select.style = 'display: block; margin-bottom: 10px; width: 100%;';
 
-
-                                    const acceptOption = document.createElement('option');
-                                    acceptOption.value = 'accept';
-                                    acceptOption.text = 'Accept';
-                                    select.appendChild(acceptOption);
-
                                     const rejectOption = document.createElement('option');
                                     rejectOption.value = 'reject';
                                     rejectOption.text = 'Reject';
@@ -256,12 +240,6 @@
 
                     closeModal.addEventListener('click', () => {
                         addNewModal.style.display = 'none';
-                    });
-
-                    window.addEventListener('click', (event) => {
-                        if (event.target === addNewModal) {
-                            addNewModal.style.display = 'none';
-                        }
                     });
 
                     window.addEventListener('keydown', (event) => {
@@ -369,7 +347,7 @@
                                 alert("An error occurred: " + (error.message || "Unknown error"));
                             }
                         });
-                    });
+                    }); 
                 });
         </script>
 
@@ -401,7 +379,6 @@
         
                         <label for="action">Action:</label>
                         <select name="action" id="action">
-                            <option value="accept" th:selected="${currentRowData?.action == 'accept'}">Accept</option>
                             <option value="reject" th:selected="${currentRowData?.action == 'reject'}">Reject</option>
                             <option value="discard" th:selected="${currentRowData?.action == 'discard'}">Discard</option>
                         </select>
