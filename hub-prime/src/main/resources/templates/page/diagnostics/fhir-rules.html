@@ -202,7 +202,7 @@
                             if (colDef.editable) {
                                 const label = document.createElement('label');
                                 label.htmlFor = colDef.field;
-                                label.textContent = colDef.headerName + ':';
+                                label.textContent = colDef.headerName;
                                 addNewForm.appendChild(label); 
 
                                 if (colDef.field === 'action') {
@@ -371,17 +371,17 @@
                     <span class="close">×</span>
                     <h1 id="modalHeading" th:text="${currentRowData != null} ? 'Edit Rule' : 'Add New Rule'"></h1>
                     <form id="addNewForm">
-                        <label for="description">Rule Description:</label>
+                        <label for="description">Rule Description</label>
                         <input type="text" name="description" id="description" placeholder="Rule Description" th:value="${currentRowData?.description}">
         
-                        <label for="namespace">Name Space:</label>
+                        <label for="namespace">Name Space</label>
                         <input type="text" name="namespace" id="namespace" placeholder="Name Space" th:value="${currentRowData?.namespace}">
         
-                        <label for="json_path">Json Path:</label>
+                        <label for="json_path">Json Path</label>
                         <input type="text" name="json_path" id="json_path" placeholder="Json Path" required th:value="${currentRowData?.json_path}">
                         <div id="jsonPathError"></div>
         
-                        <label for="action">Action:</label>
+                        <label for="action">Action</label>
                         <select name="action" id="action">
                             <option value="reject" th:selected="${currentRowData?.action == 'reject'}">Reject</option>
                             <option value="discard" th:selected="${currentRowData?.action == 'discard'}">Discard</option>
