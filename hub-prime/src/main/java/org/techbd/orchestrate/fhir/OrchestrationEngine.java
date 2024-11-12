@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -154,9 +155,17 @@ public class OrchestrationEngine {
             this.sessions.add(session);
         }
     }
+
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
-        for (final OrchestrationSession sessionToRemove : sessionsToRemove) {
-            this.sessions.removeIf(session -> session.getSessionId().equals(sessionToRemove.getSessionId()));
+        Iterator<OrchestrationSession> iterator = this.sessions.iterator();
+        while (iterator.hasNext()) {
+            OrchestrationSession session = iterator.next();
+            for (OrchestrationSession sessionToRemove : sessionsToRemove) {
+                if (session.getSessionId().equals(sessionToRemove.getSessionId())) {
+                    iterator.remove();
+                    break;
+                }
+            }
         }
     }
 
@@ -347,8 +356,8 @@ public class OrchestrationEngine {
         public FhirValidator initializeFhirValidator() {
             final var supportChain = new ValidationSupportChain();
             final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
-            
-            int minutes = 5; 
+
+            int minutes = 5;
             RequestConfig config = RequestConfig.custom()
                     .setConnectTimeout(minutes * 60 * 1000)
                     .setSocketTimeout(minutes * 60 * 1000)
@@ -389,7 +398,7 @@ public class OrchestrationEngine {
             supportChain.addValidationSupport(defaultSupport);
             supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
             supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
-            supportChain.addValidationSupport(new RemoteTerminologyServiceValidationSupport(fhirContext,"https://tx.fhir.org/r4"));
+            //supportChain.addValidationSupport(new RemoteTerminologyServiceValidationSupport(fhirContext,"https://tx.fhir.org/r4"));
             supportChain.addValidationSupport(createVsacTerminologySupport());
 
             final var cache = new CachingValidationSupport(supportChain);
