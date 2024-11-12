@@ -389,7 +389,7 @@ public class OrchestrationEngine {
             supportChain.addValidationSupport(defaultSupport);
             supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
             supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
-            supportChain.addValidationSupport(new RemoteTerminologyServiceValidationSupport(fhirContext,"https://tx.fhir.org/r4"));
+            //supportChain.addValidationSupport(new RemoteTerminologyServiceValidationSupport(fhirContext,"https://tx.fhir.org/r4"));
             supportChain.addValidationSupport(createVsacTerminologySupport());
 
             final var cache = new CachingValidationSupport(supportChain);

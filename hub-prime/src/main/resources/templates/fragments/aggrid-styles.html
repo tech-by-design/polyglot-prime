@@ -32,20 +32,23 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            font-size: 20px;
+            font-size: 40px;
             color: #aaa;
             cursor: pointer;
             transition: color 0.3s ease; /* Add a smooth transition */
         }
 
         .close:hover {
-            color: #333;
+            color: #ec0000;
         }
 
         h1 {
             margin-top: 0; /* Remove top margin for h1 */
-            text-align: center; /* Center the title */
             color: #333; /* Darken the title color */
+        }
+
+        #addNewModal h1{
+            text-align: center;
         }
 
         #addNewForm input {
@@ -129,6 +132,21 @@
 
         .edit-button:hover svg {
             fill: #218838; /* Darker green on hover */
+        }
+        #addNewModal label {
+            position: relative;
+        }
+        #addNewModal input[type=text] + label + input[type=text] + label:after {
+            position: absolute;
+            content: '*';
+            width: 10px;
+            height: 10px;
+            right: -12px;
+            top: 0px;
+            color: #ff0000;
+        }
+        #addNewModal input[type=text] + label + input[type=text] + label + input[type=text] + label:after {
+            display: none;
         }
     </style>
 </html>
