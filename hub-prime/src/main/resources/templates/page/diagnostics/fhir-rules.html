@@ -316,6 +316,10 @@
                             body: JSON.stringify(formData)
                         })
                         .then(response => {
+                            if (response.url.includes('/?timeout=true')) {
+                                window.location.href = '/?timeout=true';
+                                return null;
+                            }
                             if (!response.ok) {
                                 return response.json().then(errData => {
                                     if (errData.message === "Invalid JSON Path.") {
