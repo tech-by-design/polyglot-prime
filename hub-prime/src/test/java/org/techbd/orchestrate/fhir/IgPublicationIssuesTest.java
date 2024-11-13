@@ -324,9 +324,9 @@ public class IgPublicationIssuesTest {
         final Map<String, Map<String, String>> igPackages = new HashMap<>();
 
         Map<String, String> igMap = new HashMap<>();
-        igMap.put("shinNy", "ig-packages/shin-ny-ig/v0.13.0/package.tgz");
-        igMap.put("usCore", "ig-packages/fhir-v4/us-core/stu-7.0.0/package.tgz");
-        igMap.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0/package.tgz");
+        igMap.put("shinNy", "ig-packages/shin-ny-ig/v1.1.0");
+        igMap.put("usCore", "ig-packages/fhir-v4/us-core/stu-7.0.0");
+        igMap.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0");
         igPackages.put("fhir-v4", igMap);
 
         return igPackages;
