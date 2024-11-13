@@ -241,7 +241,7 @@ DECLARE
     v_created_at 		TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
     v_created_by 		TEXT 		:= COALESCE(created_by, current_user);
     v_provenance 		TEXT 		:= COALESCE(provenance, 'unknown');
-    v_exception_id 		TEXT;
+    v_exception_id 		TEXT		:= gen_random_uuid()::text;
    	v_nature_denorm 	TEXT;
    	v_tenant_id_denorm 	TEXT;
    
@@ -269,7 +269,7 @@ BEGIN
          						'to_state', to_state,
          						'step', '1. Insert into hub_interaction'
          						);
-        CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
         /*------------------------------*/   
     EXCEPTION
@@ -286,7 +286,7 @@ BEGIN
 
                 -- Call register_issue to log the exception and get the exception ID
                 v_exception_id := techbd_udi_ingress.register_issue(
-                    NULL, interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
+                    COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
                 );
             END IF; 
        WHEN OTHERS THEN
@@ -312,7 +312,7 @@ BEGIN
             v_exception_id := techbd_udi_ingress.register_issue(
                 COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
             );
-           --v_return := NULL;
+           RETURN NULL;
     END;
       
     -- Attempt to insert into sat_interaction_http_request
@@ -341,7 +341,7 @@ BEGIN
          						'to_state', to_state,
          						'step', '2. Insert into sat_interaction_http_request'
          						);
-        CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+        CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
@@ -372,7 +372,7 @@ BEGIN
          						'to_state', to_state,
          						'step', '3. Insert into user info'
          						);
-         CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+         CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	      /*------------------------------*/
 	    END IF;
@@ -404,7 +404,7 @@ BEGIN
          						'to_state', to_state,
          						'step', '4. Insert into sat_interaction_fhir_request'
          						);
-          CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+          CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
        	  /*------------------------------*/															
 	      --2) Call the function with the defined parameters to upsert interaction HL7 request info.
@@ -432,7 +432,7 @@ BEGIN
          						'to_state', to_state,
          						'step', '5. Insert into sat_interaction_hl7_request'
          						);
-           CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+           CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_hl7_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
        	   /*------------------------------*/
 	    END IF;	
@@ -456,7 +456,7 @@ BEGIN
          						'to_state', to_state,
          						'step', '6. Insert into sat_interaction_http_request - in recursive call'
          						);
-           		CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+           		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
        	   		/*------------------------------*/
 			
@@ -512,7 +512,7 @@ BEGIN
          						'v_disposition_json', v_disposition_json::TEXT,
          						'step', '7. Insert into sat_interaction_http_request - in recursive call after process_json_action_rules'
          						);
-           		CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+           		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
        	   		/*------------------------------*/
 			
@@ -565,7 +565,7 @@ BEGIN
          						'v_disposition_json', v_disposition_json::TEXT,
          						'step', '8. Insert into sat_interaction_http_request - in recursive call techByDesignDisposition'
          						);
-           		CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+           		CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
        	   		/*------------------------------*/
 			

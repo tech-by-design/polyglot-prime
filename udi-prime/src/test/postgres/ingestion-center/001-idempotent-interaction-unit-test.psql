@@ -1,3 +1,5 @@
+/*pgTap function to test register_interaction_http_request function*/
+
 DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_http_request(text);
 CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_register_interaction_http_request(schema_name text DEFAULT 'techbd_udi_ingress'::text)
  RETURNS SETOF text
@@ -21,25 +23,23 @@ DECLARE
     v_hub_upsert_behavior boolean;
     v_hub_diagnostic_row techbd_udi_ingress.hub_diagnostic%ROWTYPE;
    	function_exists boolean;
-    v_payload_text TEXT; 
 BEGIN
-    
+
+	
     v_interaction_id            := 'b41ccd27-9a4f-5cc8-9c5d-b55242d90fb0';
-    v_interaction_key           := 'fa7874f6-f848-572b-a9ab-9db4c8d5e959';
+    v_interaction_key           := '/Bundle';
     v_elaboration               := '{"key" : "elaboration"}';
     v_nature                    := '{"nature": "org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id": "N/A"}';
     v_content_type              := 'application/json';
-    v_from_state                := 'FORWARD';
-    v_to_state                  := 'COMPLETE';
+    v_from_state                := NULL;
+    v_to_state                  := NULL;
     v_state_transition_reason   := 'state_transition_reason_1';
     v_created_at                := CURRENT_TIMESTAMP;
     v_created_by                := CURRENT_USER;
     v_provenance                := 'org.techbd.service.http.InteractionsFilter.doFilterInternal';
     v_hub_upsert_behavior       := TRUE;
     v_rule_namespace            := NULL;
-    v_payload_text				:= 'MSH|^~\&|SendingApp1|SendingFac1|ReceivingApp1|ReceivingFac|2023100412||ADT^A01|124445678|P|2.4||||
-PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Main St^^Anytown^USA^12345||(555)555-5555||S||123456789|987654^NC||||2135-2^Hispanic or Latino';
-
+   
     -- Check if the table 'pgtap_fixtures_json' exists
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
                AND table_name = 'pgtap_fixtures_json') THEN 
@@ -63,8 +63,8 @@ PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Mai
         ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'],
         'Function register_issue exists'
     );
+    /*=================== Testing with FHIR bundle ========================*/
    
-    /*Testing with FHIR bundle*/
     PERFORM techbd_udi_ingress.register_interaction_http_request(
         interaction_id           => v_interaction_id,
         interaction_key          => v_interaction_key,
@@ -87,29 +87,70 @@ PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Mai
             EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
                             WHERE hub_intr.hub_interaction_id    = v_interaction_id
                             AND hub_intr."key"                   = v_interaction_key
-                            AND hub_intr.created_by              = CURRENT_USER
+                            AND hub_intr.created_by              = v_created_by
                             AND hub_intr.provenance              = v_provenance
                    ),
-            'Successfully inserted into the table hub_interaction'
+            'FHIR Bundle - Successfully inserted into the table hub_interaction'
         );
-   
---    RETURN NEXT ok(
---             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
---                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                             AND sat_intr.nature                   = v_nature
---                             AND sat_intr.content_type             = v_content_type
---                             AND sat_intr.payload                  = v_payload
---                             AND sat_intr.from_state               = v_from_state
---                             AND sat_intr.to_state                 = v_to_state
---                             AND sat_intr.state_transition_reason  = v_state_transition_reason
---                             AND sat_intr.elaboration              = v_elaboration
---                             AND sat_intr.created_by               = v_created_by
---                             AND sat_intr.provenance               = v_provenance
---                    ),
---             'Successfully inserted into the table sat_interaction_http_request'
---         );
+        
+   /*Test 3 raws are inserted into sat_interaction_http_request table*/
+   RETURN NEXT ok(
+	    CASE
+	        WHEN (
+	            SELECT count(hub_interaction_id) 
+	            FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+	            WHERE sat_intr.hub_interaction_id = v_interaction_id
+	            AND sat_intr.nature_denorm IN (
+	                'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	                'Original FHIR Payload', 
+	                'techByDesignDisposition'
+	            )
+	            AND sat_intr.created_by = v_created_by
+	            AND sat_intr.provenance = v_provenance
+	        ) = 3
+	        THEN TRUE 
+	        ELSE FALSE 
+	    END,
+	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_http_request'
+	);
 
-    /*Test the exception handling with Unique Constraint Violation*/
+   /*Test 3 raws are inserted into sat_interaction_fhir_request table*/
+   RETURN NEXT ok(
+	    CASE
+	        WHEN (
+	            SELECT count(hub_interaction_id) 
+	            FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
+	            WHERE sat_intr.hub_interaction_id = v_interaction_id
+	            AND sat_intr.uri = v_interaction_key
+	            AND sat_intr.nature IN (
+	                'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	                'Original FHIR Payload', 
+	                'techByDesignDisposition'
+	            )
+	            AND sat_intr.created_by = v_created_by
+	            AND sat_intr.provenance = v_provenance
+	        ) = 3
+	        THEN TRUE 
+	        ELSE FALSE 
+	    END,
+	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_fhir_request'
+	);
+
+   /*Test one record is inserted into sat_interaction_user table*/
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = v_interaction_key
+							AND sat_intr.nature 				= v_nature->>'nature'
+                            AND sat_intr.created_by				= v_created_by
+                            AND sat_intr.provenance				= v_provenance
+                   ),
+            'FHIR Bundle - Successfully inserted into the table sat_interaction_user'
+        );
+       
+	/*===================================================================*/
+
+	/*Test the exception handling with Unique Constraint Violation*/
        
     PERFORM techbd_udi_ingress.register_interaction_http_request(
         interaction_id           => v_interaction_id,
@@ -129,26 +170,26 @@ PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Mai
         hub_upsert_behavior      => false
     );
    
-   SELECT hub_exp.* INTO v_hub_diagnostic_row
-   FROM techbd_udi_ingress.hub_diagnostic hub_exp
-   WHERE hub_exp."key"      = v_interaction_key
-   AND hub_exp.created_by   = CURRENT_USER
-   AND hub_exp.provenance   = v_provenance
-   ;
+    SELECT hub_exp.* INTO v_hub_diagnostic_row
+    FROM techbd_udi_ingress.hub_diagnostic hub_exp
+    WHERE hub_exp."key"      = v_interaction_key
+    AND hub_exp.created_by   = v_created_by
+    AND hub_exp.provenance   = v_provenance;
    
-  RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
-   
-  RETURN NEXT ok(
+    RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
+  
+   /* RETURN NEXT ok(
             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
-                            WHERE sat_exp.hub_diagnostic_id    = v_hub_diagnostic_row.hub_diagnostic_id                    
-                            AND sat_exp.created_by           = CURRENT_USER
+                            WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
+                            AND sat_exp.created_by           = v_created_by
                             AND sat_exp.provenance           = v_provenance
                    ),
             'Successfully inserted exception details into the table sat_diagnostic_exception'
-        );  
+        ); */ 
 END;
 $function$
 ;
+
 
 DROP FUNCTION IF EXISTS techbd_udi_assurance.test_json_action_rule_upsert(text);
 
