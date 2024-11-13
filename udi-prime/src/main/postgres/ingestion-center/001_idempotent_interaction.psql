@@ -253,12 +253,25 @@ DECLARE
    	v_disposition_json			JSONB := NULL;
    	v_payload					JSONB := NULL;
     v_elaboration 				JSONB := NULL;
+    v_diagnostic_id 			TEXT  := gen_random_uuid()::text;
+    v_user_id 					TEXT  := COALESCE(register_interaction_http_request.user_id, current_user);	
    
 BEGIN 
-    -- Attempt to insert into hub_interaction
-    BEGIN	   	    
+	BEGIN	   	    
         INSERT INTO techbd_udi_ingress.hub_interaction (hub_interaction_id, key, created_at, created_by, provenance)
         VALUES (register_interaction_http_request.interaction_id, interaction_key, v_created_at, v_created_by, v_provenance);
+        /*---register diagnostic log---*/
+       	v_elaboration := jsonb_build_object(
+         						'interaction_id', register_interaction_http_request.interaction_id,
+         						'interaction_key', interaction_key,
+         						'nature', nature->>'nature',
+         						'from_state', from_state,
+         						'to_state', to_state,
+         						'step', '1. Insert into hub_interaction'
+         						);
+        CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+       																'Insert into hub_interaction'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+        /*------------------------------*/   
     EXCEPTION
         WHEN unique_violation THEN
             IF NOT hub_upsert_behavior THEN
@@ -275,13 +288,37 @@ BEGIN
                 v_exception_id := techbd_udi_ingress.register_issue(
                     NULL, interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance
                 );
-            END IF;  
+            END IF; 
+       WHEN OTHERS THEN
+        	GET STACKED DIAGNOSTICS
+                v_error_msg = MESSAGE_TEXT,
+                v_sqlstate = RETURNED_SQLSTATE,
+                v_pg_detail = PG_EXCEPTION_DETAIL,
+                v_pg_hint = PG_EXCEPTION_HINT,
+                v_pg_context = PG_EXCEPTION_CONTEXT;
+                v_error_type = 'SQL';
+
+         	v_elaboration := jsonb_build_object(
+         						'interaction_id', interaction_id,
+         						'interaction_key', interaction_key,
+         						'payload', payload,
+         						'payload_text', payload_text,
+         						'nature', nature,
+         						'from_state', from_state,
+         						'to_state', to_state
+         						);        
+               
+            -- Log the exception, reusing the previous exception ID if it exists
+            v_exception_id := techbd_udi_ingress.register_issue(
+                COALESCE(v_exception_id, NULL), interaction_key, v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, v_created_by, v_provenance, v_elaboration
+            );
+           --v_return := NULL;
     END;
       
     -- Attempt to insert into sat_interaction_http_request
     BEGIN
   
-	    v_nature_denorm = nature->>'nature';
+	    v_nature_denorm = trim(nature->>'nature');
 	   	v_tenant_id_denorm = nature->>'tenant_id';
 	   	/*INSERT INTO techbd_udi_assurance.pgtap_fixtures_json("name","jsonb")
 	   	values(gen_random_uuid()::TEXT, register_interaction_http_request.payload);*/
@@ -295,11 +332,21 @@ BEGIN
             gen_random_uuid()::text, register_interaction_http_request.interaction_id, nature, content_type, payload, payload_text, from_state, to_state, 
             state_transition_reason, elaboration, v_created_at, v_created_by, v_provenance, v_nature_denorm, v_tenant_id_denorm
         );
-       
-       
+        /*---register diagnostic log---*/
+       	v_elaboration := jsonb_build_object(
+         						'interaction_id', register_interaction_http_request.interaction_id,
+         						'interaction_key', interaction_key,
+         						'nature', nature->>'nature',
+         						'from_state', from_state,
+         						'to_state', to_state,
+         						'step', '2. Insert into sat_interaction_http_request'
+         						);
+        CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+        /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
-       	IF((v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND register_interaction_http_request.interaction_key NOT IN ('/Hl7/v2')) /*fhir bundle*/
-       	   OR (v_nature_denorm = 'Original HL7 Payload'	AND register_interaction_http_request.interaction_key = '/Hl7/v2')   /*hl7*/	
+       	IF((v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(register_interaction_http_request.interaction_key) NOT IN ('/Hl7/v2')) /*fhir bundle*/
+       	   OR (v_nature_denorm = 'Original HL7 Payload'	AND trim(register_interaction_http_request.interaction_key) = '/Hl7/v2')   /*hl7*/	
        	  ) THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 	        register_interaction_http_request.interaction_id, 
@@ -316,11 +363,22 @@ BEGIN
 	        v_created_by, 
 	        v_provenance
 	       );  
-	      
+	      /*---register diagnostic log---*/
+	      v_elaboration := jsonb_build_object(
+         						'interaction_id', register_interaction_http_request.interaction_id,
+         						'interaction_key', interaction_key,
+         						'nature', nature->>'nature',
+         						'from_state', from_state,
+         						'to_state', to_state,
+         						'step', '3. Insert into user info'
+         						);
+         CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+       																'Insert into user info'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+	      /*------------------------------*/
 	    END IF;
 	   
 	    --2) Call the function with the defined parameters to upsert interaction FHIR request info.
-	   	IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle', '/Hl7/v2')
+	   	IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle', '/Hl7/v2')
 	   		AND v_nature_denorm != 'Original HL7 Payload' THEN
 	   		
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
@@ -336,9 +394,21 @@ BEGIN
 	        v_created_by,
 	        v_provenance,
 	      	register_interaction_http_request.elaboration
-	       );	
+	       );
+	      /*---register diagnostic log---*/
+	      v_elaboration := jsonb_build_object(
+         						'interaction_id', register_interaction_http_request.interaction_id,
+         						'interaction_key', interaction_key,
+         						'nature', nature->>'nature',
+         						'from_state', from_state,
+         						'to_state', to_state,
+         						'step', '4. Insert into sat_interaction_fhir_request'
+         						);
+          CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+       																'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       	  /*------------------------------*/															
 	      --2) Call the function with the defined parameters to upsert interaction HL7 request info.
-	    ELSIF register_interaction_http_request.interaction_key = '/Hl7/v2' AND v_nature_denorm = 'Original HL7 Payload' THEN
+	    ELSIF trim(register_interaction_http_request.interaction_key) = '/Hl7/v2' AND v_nature_denorm = 'Original HL7 Payload' THEN
 	   		PERFORM techbd_udi_ingress.sat_interaction_hl7_request_upserted(
 	        register_interaction_http_request.interaction_id,
 	        v_tenant_id_denorm,
@@ -352,18 +422,44 @@ BEGIN
 	        v_created_by,
 	        v_provenance,
 	        register_interaction_http_request.elaboration
-	       );	
+	       );
+	       /*---register diagnostic log---*/
+	       v_elaboration := jsonb_build_object(
+         						'interaction_id', register_interaction_http_request.interaction_id,
+         						'interaction_key', interaction_key,
+         						'nature', nature->>'nature',
+         						'from_state', from_state,
+         						'to_state', to_state,
+         						'step', '5. Insert into sat_interaction_hl7_request'
+         						);
+           CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+       																'Insert into sat_interaction_hl7_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       	   /*------------------------------*/
 	    END IF;	
 	   
 		/*==============================================================================================================================*/
 		--RECURSIVE FUNCTION CALL
 	   	/*----------------------------- FHIR Bundle inserts into sat_interaction_http_request ----------------------*/
-		IF register_interaction_http_request.interaction_key IN ('/Bundle', '/Bundle/', '/Hl7/v2') THEN  
+		IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Hl7/v2') THEN  
 			IF (v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN	--Check previous nature				
 				v_from_state 	:= 'NONE';
 				v_to_state 		:= 'ACCEPT_FHIR_BUNDLE';
 				v_nature 		:= jsonb_build_object('nature', 'Original FHIR Payload', 'tenant_id', v_tenant_id_denorm);
 				v_payload 		:= COALESCE(register_interaction_http_request.payload->'request'->'requestBody', 'null'::jsonb);
+			
+			   	/*---register diagnostic log---*/
+	       		v_elaboration := jsonb_build_object(
+         						'interaction_id', register_interaction_http_request.interaction_id,
+         						'interaction_key', interaction_key,
+         						'nature', nature->>'nature',
+         						'from_state', from_state,
+         						'to_state', to_state,
+         						'step', '6. Insert into sat_interaction_http_request - in recursive call'
+         						);
+           		CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       	   		/*------------------------------*/
+			
 				   
 				-- Recursive call with adjusted parameters
 				v_return := techbd_udi_ingress.register_interaction_http_request(
@@ -406,6 +502,20 @@ BEGIN
 					register_interaction_http_request.interaction_key
 				);
 			
+				/*---register diagnostic log---*/
+	       		v_elaboration := jsonb_build_object(
+         						'interaction_id', register_interaction_http_request.interaction_id,
+         						'interaction_key', interaction_key,
+         						'nature', nature->>'nature',
+         						'from_state', from_state,
+         						'to_state', to_state,
+         						'v_disposition_json', v_disposition_json::TEXT,
+         						'step', '7. Insert into sat_interaction_http_request - in recursive call after process_json_action_rules'
+         						);
+           		CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       	   		/*------------------------------*/
+			
 				v_disposition_json := v_disposition_json-> 'response'->'responseBody';
 			
 					
@@ -445,6 +555,20 @@ BEGIN
 	
 				v_return := v_payload;
 			
+				/*---register diagnostic log---*/
+	       		v_elaboration := jsonb_build_object(
+         						'interaction_id', register_interaction_http_request.interaction_id,
+         						'interaction_key', interaction_key,
+         						'nature', nature->>'nature',
+         						'from_state', from_state,
+         						'to_state', to_state,
+         						'v_disposition_json', v_disposition_json::TEXT,
+         						'step', '8. Insert into sat_interaction_http_request - in recursive call techByDesignDisposition'
+         						);
+           		CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, interaction_key, v_created_by, v_provenance, 'info'::text, 
+       																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+       	   		/*------------------------------*/
+			
 			END IF;			
 		END IF;	
 	/*==============================================================================================================================*/	 	
@@ -463,9 +587,9 @@ BEGIN
          	v_elaboration := jsonb_build_object(
          						'interaction_id', interaction_id,
          						'interaction_key', interaction_key,
-         						'payload', payload::text,
+         						'payload', payload,
          						'payload_text', payload_text,
-         						'nature', nature::text,
+         						'nature', nature,
          						'from_state', from_state,
          						'to_state', to_state
          						);        
@@ -480,6 +604,7 @@ BEGIN
 END;
 $function$
 ;
+
 
 
 
@@ -1321,6 +1446,7 @@ Procedure to handle the insertion or update of FHIR interaction data, managing d
 @returns TEXT - A textual representation of the result of the operation, typically used to convey success or error messages. 
  *******************************************************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_fhir_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb);
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_fhir_request_upserted(hub_interaction_id text, tenant_id text, uri text, nature text, from_state text, to_state text, payload jsonb, state_transition_reason text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb)
  RETURNS text
  LANGUAGE plpgsql
@@ -1367,14 +1493,40 @@ DECLARE
    	v_response_status				TEXT 	:= NULL;
    	v_return 						TEXT 	:= NULL;
     v_techbd_disposition_action		TEXT 	:= NULL;
+    v_elaboration 					JSONB 	:= NULL;
+    v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
 
 BEGIN
 
-   	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
+   	/*---register diagnostic log---*/
+  	v_elaboration := jsonb_build_object(
+ 						'interaction_id', sat_interaction_fhir_request_upserted.hub_interaction_id,
+ 						'interaction_key', sat_interaction_fhir_request_upserted.uri,
+ 						'nature', sat_interaction_fhir_request_upserted.nature,
+ 						'from_state', sat_interaction_fhir_request_upserted.from_state,
+ 						'to_state', sat_interaction_fhir_request_upserted.to_state,
+ 						'step', '- In sat_interaction_fhir_request_upserted function'
+ 						);
+ 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, sat_interaction_fhir_request_upserted.uri, sat_interaction_fhir_request_upserted.created_by, sat_interaction_fhir_request_upserted.provenance, 'info'::text, 
+															'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
+  	/*------------------------------*/
+	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
   		WHERE t.hub_interaction_id = sat_interaction_fhir_request_upserted.hub_interaction_id 
   		AND t."key" = sat_interaction_fhir_request_upserted.uri) THEN
   		RETURN NULL;	
   	END IF;
+    /*---register diagnostic log---*/
+  	v_elaboration := jsonb_build_object(
+ 						'interaction_id', sat_interaction_fhir_request_upserted.hub_interaction_id,
+ 						'interaction_key', sat_interaction_fhir_request_upserted.uri,
+ 						'nature', sat_interaction_fhir_request_upserted.nature,
+ 						'from_state', sat_interaction_fhir_request_upserted.from_state,
+ 						'to_state', sat_interaction_fhir_request_upserted.to_state,
+ 						'step', '- Insert into sat_interaction_fhir_request'
+ 						);
+ 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, sat_interaction_fhir_request_upserted.uri, sat_interaction_fhir_request_upserted.created_by, sat_interaction_fhir_request_upserted.provenance, 'info'::text, 
+															'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
+  	/*------------------------------*/
   
   	IF(LOWER(sat_interaction_fhir_request_upserted.nature) <> LOWER('org.techbd.service.http.Interactions$RequestResponseEncountered')) THEN
 		SELECT 
