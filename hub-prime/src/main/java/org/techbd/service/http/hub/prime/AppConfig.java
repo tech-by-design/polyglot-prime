@@ -47,7 +47,6 @@ public class AppConfig {
     private String fhirVersion;
     private Map<String, Map<String, String>> igPackages;
     private String igVersion;
-    private String fhirUmlsApiKey;
 
     public String getVersion() {
         return version;
@@ -149,13 +148,5 @@ public class AppConfig {
 
     public String getIgVersion() {
         return igVersion;
-    }
-
-    public String getFhirUmlsApiKey() {
-        return fhirUmlsApiKey;
-    }
-
-    public void setFhirUmlsApiKey(String fhirUmlsApiKey) {
-        this.fhirUmlsApiKey = fhirUmlsApiKey;
     }
 }

@@ -89,14 +89,13 @@ class OrchestrationEngineTest {
         engine.orchestrate(session1, session2);
         Map<String, Map<String, String>> igPackages = new HashMap<>();
         String igVersion = new String();
-        String fhirUmlsApiKeyValue = new String();
         Map<String, String> codeSystemMap = new HashMap<>();
         codeSystemMap.put("shinnyConsentProvisionTypesVS", "http://example.com/shinnyConsentProvision");
         assertThat(engine.getSessions()).hasSize(2);
         assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                "http://example.com/fhirProfile", igPackages, igVersion, fhirUmlsApiKeyValue))
+                "http://example.com/fhirProfile", igPackages, igVersion))
                 .isSameAs(engine.getValidationEngine(
                         OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                        "http://example.com/fhirProfile", igPackages, igVersion,fhirUmlsApiKeyValue));
+                        "http://example.com/fhirProfile", igPackages, igVersion));
     }
 }

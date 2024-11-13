@@ -86,7 +86,7 @@ org:
           prime:
             version: @project.version@
             fhirVersion: r4
-            igVersion: 1.0.0
+            igVersion: 1.1.0
             igPackages:
                 fhir-v4:
                     # Path to SHIN-NY IG package downloaded from URL: https://shinny.org/ImplementationGuide/HRSN/downloads.html
@@ -95,6 +95,8 @@ org:
                     usCore: ig-packages/fhir-v4/us-core/stu-7.0.0
                     # Path to SDOH Clinical Care IG package downloaded from URL: https://hl7.org/fhir/us/sdoh-clinicalcare/downloads.html
                     sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
+                    # Path to UV-SDC IG package downloaded from URL: https://hl7.org/fhir/uv/sdc/downloads.html
+                    uvSdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
             defaultSdohFhirProfileUrl: https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
             fhirUmlsApiKey: umls_api_key

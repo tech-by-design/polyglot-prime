@@ -9,11 +9,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,25 +23,18 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-import org.hl7.fhir.common.hapi.validation.support.BaseValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
 import org.hl7.fhir.common.hapi.validation.support.InMemoryTerminologyServerValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.NpmPackageValidationSupport;
-import org.hl7.fhir.common.hapi.validation.support.RemoteTerminologyServiceValidationSupport;
+import org.hl7.fhir.common.hapi.validation.support.PrePopulatedValidationSupport;
+import org.hl7.fhir.common.hapi.validation.support.SnapshotGeneratingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
-import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.CodeSystem;
-import org.hl7.fhir.r4.model.ValueSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -56,8 +47,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
-import ca.uhn.fhir.context.support.IValidationSupport;
-import ca.uhn.fhir.context.support.ValidationSupportContext;
 import ca.uhn.fhir.rest.client.apache.ApacheRestfulClientFactory;
 import ca.uhn.fhir.validation.FhirValidator;
 import jakarta.validation.constraints.NotNull;
@@ -171,7 +160,7 @@ public class OrchestrationEngine {
 
     public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, Map<String, String>> igPackages,
-            final String igVersion, final String fhirUmlsApiKeyValue) {
+            final String igVersion) {
         final ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
         return validationEngineCache.computeIfAbsent(key, k -> {
             switch (type) {
@@ -179,7 +168,6 @@ public class OrchestrationEngine {
                     return new HapiValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl)
                             .withIgPackages(igPackages)
                             .withIgVersion(igVersion)
-                            .withFhirUmlsApiKeyValue(fhirUmlsApiKeyValue)
                             .build();
                 case HL7_EMBEDDED:
                     return new Hl7ValidationEngineEmbedded.Builder().withFhirProfileUrl(fhirProfileUrl).build();
@@ -276,7 +264,6 @@ public class OrchestrationEngine {
         private final Map<String, Map<String, String>> igPackages;
         private final String igVersion;
         private final FhirValidator fhirValidator;
-        private final String fhirUmlsApiKeyValue;
 
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
@@ -291,85 +278,11 @@ public class OrchestrationEngine {
             this.igPackages = builder.igPackages;
             this.igVersion = builder.igVersion;
             this.fhirValidator = initializeFhirValidator();
-            this.fhirUmlsApiKeyValue = builder.fhirUmlsApiKeyValue;
-            LOG.debug("In constructor -  fhirUmlsApiKeyValue", fhirUmlsApiKeyValue);
-        }
-
-        private IValidationSupport createVsacTerminologySupport() {
-            return new BaseValidationSupport(fhirContext) { // Extending BaseValidationSupport
-                @Override
-                public ValueSet fetchValueSet(String uri) {
-                    // Check if the URI starts with the expected prefix
-                    boolean isValidUri = uri.startsWith("https://cts.nlm.nih.gov/")
-                            || uri.startsWith("http://cts.nlm.nih.gov/");
-                    if (!isValidUri) {
-                        LOG.error(
-                                "Invalid URI: {}. URI must start with https://cts.nlm.nih.gov/ or http://cts.nlm.nih.gov/",
-                                uri);
-                        return null; // Or throw an exception if preferred
-                    }
-
-                    LOG.info("Fetching ValueSet from VSAC: {}", uri);
-                    try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-                        HttpGet request = new HttpGet(uri + "?_format=json");
-
-                        // Add Basic Authentication header with the UMLS API Key
-                        LOG.debug("fhirUmlsApiKeyValue   {}: ", fhirUmlsApiKeyValue);
-                        String auth = "apikey:" + fhirUmlsApiKeyValue;
-                        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-                        request.setHeader("Authorization", "Basic " + encodedAuth);
-
-                        try (CloseableHttpResponse response = httpClient.execute(request)) {
-                            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                                String responseBody = EntityUtils.toString(response.getEntity());
-                                LOG.info("Response received from VSAC : {}" ,null  == response ? "Response is null" : "Response is not null");
-                                return fhirContext.newJsonParser().parseResource(ValueSet.class, responseBody);
-                            } else {
-                                LOG.error("Failed to fetch ValueSet from VSAC. Status: {}",
-                                        response.getStatusLine().getStatusCode());
-                            }
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Error fetching ValueSet from VSAC", e);
-                    }
-                    return null;
-                }
-
-                @Override
-                public List<IBaseResource> fetchAllConformanceResources() {
-                    return Collections.emptyList();
-                }
-
-                @Override
-                public CodeSystem fetchCodeSystem(String system) {
-                    return null;
-                }
-
-                @Override
-                public boolean isCodeSystemSupported(ValidationSupportContext theValidationSupportContext,
-                        String theSystem) {
-                    return false;
-                }
-            };
         }
 
         public FhirValidator initializeFhirValidator() {
             final var supportChain = new ValidationSupportChain();
             final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
-
-            int minutes = 5;
-            RequestConfig config = RequestConfig.custom()
-                    .setConnectTimeout(minutes * 60 * 1000)
-                    .setSocketTimeout(minutes * 60 * 1000)
-                    .build();
-
-            CloseableHttpClient httpClient = HttpClients.custom()
-                    .setDefaultRequestConfig(config)
-                    .build();
-
-            ApacheRestfulClientFactory clientFactory = new ApacheRestfulClientFactory(fhirContext);
-            clientFactory.setHttpClient(httpClient);
-            fhirContext.setRestfulClientFactory(clientFactory);
 
             LOG.info("Version of igPackage - " + igVersion);
             LOG.info("Add IG Packages to npmPackageValidationSupport -BEGIN");
@@ -397,9 +310,17 @@ public class OrchestrationEngine {
 
             supportChain.addValidationSupport(defaultSupport);
             supportChain.addValidationSupport(new CommonCodeSystemsTerminologyService(fhirContext));
+            supportChain.addValidationSupport(new SnapshotGeneratingValidationSupport(fhirContext));
             supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
-            //supportChain.addValidationSupport(new RemoteTerminologyServiceValidationSupport(fhirContext,"https://tx.fhir.org/r4"));
-            supportChain.addValidationSupport(createVsacTerminologySupport());
+
+            PrePopulateSupport prePopulateSupport = new PrePopulateSupport();
+            PrePopulatedValidationSupport prePopulatedValidationSupport = new PrePopulateSupport().build(fhirContext);
+            prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
+
+            supportChain.addValidationSupport(prePopulatedValidationSupport);
+
+            PostPopulateSupport postPopulateSupport = new PostPopulateSupport();
+            postPopulateSupport.update(supportChain);
 
             final var cache = new CachingValidationSupport(supportChain);
             final var instanceValidator = new FhirInstanceValidator(cache);
@@ -546,7 +467,6 @@ public class OrchestrationEngine {
             private String fhirProfileUrl;
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
-            private String fhirUmlsApiKeyValue;
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
@@ -560,11 +480,6 @@ public class OrchestrationEngine {
 
             public Builder withIgVersion(@NotNull final String igVersion) {
                 this.igVersion = igVersion;
-                return this;
-            }
-
-            public Builder withFhirUmlsApiKeyValue(@NotNull final String fhirUmlsApiKeyValue) {
-                this.fhirUmlsApiKeyValue = fhirUmlsApiKeyValue;
                 return this;
             }
 
@@ -916,7 +831,6 @@ public class OrchestrationEngine {
             private final List<String> uaStrategyJsonIssues = new ArrayList<>();
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
-            private String fhirUmlsApiKeyValue;
             private String sessionId;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
@@ -954,11 +868,6 @@ public class OrchestrationEngine {
 
             public Builder withIgVersion(@NotNull final String igVersion) {
                 this.igVersion = igVersion;
-                return this;
-            }
-
-            public Builder withFhirUmlsApiKeyValue(@NotNull final String fhirUmlsApiKeyValue) {
-                this.fhirUmlsApiKeyValue = fhirUmlsApiKeyValue;
                 return this;
             }
 
@@ -1019,21 +928,21 @@ public class OrchestrationEngine {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,
                                 this.igPackages,
-                                this.igVersion, fhirUmlsApiKeyValue));
+                                this.igVersion));
                 return this;
             }
 
             public Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,
-                                null, null, null));
+                                null, null));
                 return this;
             }
 
             public Builder addHl7ValidationApiEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null,
-                                null, null));
+                                null));
                 return this;
             }
 
