@@ -24,7 +24,7 @@ DECLARE
     v_hub_diagnostic_row techbd_udi_ingress.hub_diagnostic%ROWTYPE;
    	function_exists boolean;
 BEGIN
-
+	
 	
     v_interaction_id            := 'b41ccd27-9a4f-5cc8-9c5d-b55242d90fb0';
     v_interaction_key           := '/Bundle';
@@ -166,7 +166,7 @@ BEGIN
         state_transition_reason  => v_state_transition_reason,
         created_at               => v_created_at,
         created_by               => v_created_by,
-        provenance               => v_provenance,
+        provenance               => 'ucv_provenance',
         hub_upsert_behavior      => false
     );
    
@@ -174,18 +174,18 @@ BEGIN
     FROM techbd_udi_ingress.hub_diagnostic hub_exp
     WHERE hub_exp."key"      = v_interaction_key
     AND hub_exp.created_by   = v_created_by
-    AND hub_exp.provenance   = v_provenance;
-   
+    AND hub_exp.provenance   = 'ucv_provenance';
+    
     RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
-  
-   /* RETURN NEXT ok(
+   
+    RETURN NEXT ok(
             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
                             WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
                             AND sat_exp.created_by           = v_created_by
-                            AND sat_exp.provenance           = v_provenance
+                            AND sat_exp.provenance           = 'ucv_provenance'
                    ),
             'Successfully inserted exception details into the table sat_diagnostic_exception'
-        ); */ 
+        ); 
 END;
 $function$
 ;
