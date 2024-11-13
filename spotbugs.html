@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-11-13<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.331.0</li>
+          <li id="projectVersion">Version: 0.332.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>259</td>
-<td>15</td>
+<td>262</td>
+<td>18</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -95,11 +95,17 @@
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine">org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</a></td>
 <td>1</td></tr>
 <tr class="a">
-<td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine$1">org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine$1</a></td>
-<td>1</td></tr>
-<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</a></td>
 <td>1</td></tr>
+<tr class="b">
+<td><a href="#org.techbd.orchestrate.fhir.PostPopulateSupport">org.techbd.orchestrate.fhir.PostPopulateSupport</a></td>
+<td>1</td></tr>
+<tr class="a">
+<td><a href="#org.techbd.orchestrate.fhir.PrePopulateSupport">org.techbd.orchestrate.fhir.PrePopulateSupport</a></td>
+<td>1</td></tr>
+<tr class="b">
+<td><a href="#org.techbd.orchestrate.fhir.util.FileUtils">org.techbd.orchestrate.fhir.util.FileUtils</a></td>
+<td>2</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.service.converters.shinny.BaseConverter">org.techbd.service.converters.shinny.BaseConverter</a></td>
 <td>1</td></tr>
@@ -146,22 +152,8 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine.initializeFhirValidator() makes inefficient use of keySet iterator instead of entrySet iterator</td>
 <td>PERFORMANCE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#WMI_WRONG_MAP_ITERATOR">WMI_WRONG_MAP_ITERATOR</a></td>
-<td>382</td>
-<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine$1"></a><section>
-<h2>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine$1</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>Nullcheck of response at line 323 of value previously dereferenced in org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine$1.fetchValueSet(String)</td>
-<td>CORRECTNESS</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE">RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE</a></td>
-<td>323</td>
-<td>High</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession"></a><section>
+<td>295</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -174,7 +166,55 @@
 <td>Unwritten field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession.igVersion</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UWF_UNWRITTEN_FIELD">UWF_UNWRITTEN_FIELD</a></td>
-<td>894</td>
+<td>809</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.PostPopulateSupport"></a><section>
+<h2>org.techbd.orchestrate.fhir.PostPopulateSupport</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Unread field: org.techbd.orchestrate.fhir.PostPopulateSupport.reference_codes_path; should this field be static?</td>
+<td>PERFORMANCE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SS_SHOULD_BE_STATIC">SS_SHOULD_BE_STATIC</a></td>
+<td>9</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.PrePopulateSupport"></a><section>
+<h2>org.techbd.orchestrate.fhir.PrePopulateSupport</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Unread field: org.techbd.orchestrate.fhir.PrePopulateSupport.reference_codes_path; should this field be static?</td>
+<td>PERFORMANCE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SS_SHOULD_BE_STATIC">SS_SHOULD_BE_STATIC</a></td>
+<td>18</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.util.FileUtils"></a><section>
+<h2>org.techbd.orchestrate.fhir.util.FileUtils</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Found reliance on default encoding in org.techbd.orchestrate.fhir.util.FileUtils.readFile1(String): new String(byte[])</td>
+<td>I18N</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
+<td>19</td>
+<td>High</td></tr>
+<tr class="a">
+<td>org.techbd.orchestrate.fhir.util.FileUtils.readFile(String) may fail to close stream</td>
+<td>BAD_PRACTICE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#OS_OPEN_STREAM">OS_OPEN_STREAM</a></td>
+<td>12</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.BaseConverter"></a><section>
 <h2>org.techbd.service.converters.shinny.BaseConverter</h2>
 <table class="table table-striped">
@@ -222,13 +262,13 @@
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>686</td>
+<td>683</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>553</td>
+<td>550</td>
 <td>High</td></tr>
 <tr class="b">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map): String.getBytes()</td>
@@ -240,19 +280,19 @@
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>731</td>
+<td>728</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>596</td>
+<td>593</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>1372</td>
+<td>1369</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator"></a><section>
 <h2>org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator</h2>
 <table class="table table-striped">
