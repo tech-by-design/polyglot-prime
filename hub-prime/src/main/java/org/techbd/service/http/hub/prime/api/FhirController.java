@@ -258,8 +258,6 @@ public class FhirController {
         LOG.info("FHIRController:Bundle Validate :: Getting shinny Urls from config - Before: ");
         final var igPackages = appConfig.getIgPackages();
         final var igVersion = appConfig.getIgVersion();
-        final var fhirUmlsApiKey = appConfig.getFhirUmlsApiKey();
-        final var fhirUmlsApiValue = fhirService.getUmlsApiKeyFromSecretManager(fhirUmlsApiKey);
         final var sessionBuilder = engine.session()
                 .withSessionId(UUID.randomUUID().toString())
                 .onDevice(Device.createDefault())
@@ -267,7 +265,6 @@ public class FhirController {
                 .withFhirProfileUrl(fhirProfileUrl)
                 .withFhirIGPackages(igPackages)
                 .withIgVersion(igVersion)
-                .withFhirUmlsApiKeyValue(fhirUmlsApiValue)
                 .addHapiValidationEngine() // by default
                 // clearExisting is set to true so engines can be fully supplied through header
                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);

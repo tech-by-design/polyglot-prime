@@ -350,8 +350,6 @@ public class FHIRService {
                 LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} " ,interactionId);
                 final var igPackages = appConfig.getIgPackages();
                 final var igVersion = appConfig.getIgVersion();
-                final var fhirUmlsApiKey = appConfig.getFhirUmlsApiKey();
-                final var fhirUmlsApiValue = getUmlsApiKeyFromSecretManager(fhirUmlsApiKey);
                 final var sessionBuilder = engine.session()
                                 .withSessionId(UUID.randomUUID().toString())
                                 .onDevice(Device.createDefault())
@@ -359,7 +357,6 @@ public class FHIRService {
                                 .withFhirProfileUrl(fhirProfileUrl)
                                 .withFhirIGPackages(igPackages)
                                 .withIgVersion(igVersion)
-                                .withFhirUmlsApiKeyValue(fhirUmlsApiValue)
                                 .addHapiValidationEngine() // by default
                                 // clearExisting is set to true so engines can be fully supplied through header
                                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
@@ -1444,24 +1441,4 @@ public class FHIRService {
                 }
             }
             
-        public String getUmlsApiKeyFromSecretManager(String keyName) {
-                Region region = Region.US_EAST_1;
-                LOG.debug("keyName {} ", keyName);
-                LOG.debug(
-                                "FHIRService:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} BEGIN for interaction id: {}",
-                                region);
-
-                SecretsManagerClient secretsClient = SecretsManagerClient.builder()
-                                .region(region)
-                                .build();
-
-                String umlsApiKey = getValue(secretsClient, keyName);
-                secretsClient.close();
-
-                LOG.debug(
-                                "FHIRService:: getUmlsApiKeyFromSecretManager - Get Secrets Client Manager for region : {} END for interaction id: {}",
-                                region);
-                LOG.info("umlsApiKey : {} ", null == umlsApiKey? "Api Key is null" : "Api Key is not null");
-                return umlsApiKey;
-        }
 }
