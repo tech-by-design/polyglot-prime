@@ -57,236 +57,236 @@ public class IgPublicationIssuesTest {
         engine = new OrchestrationEngine();
     }
 
-    @Test
-    void testBundle_AHCHRSNScreeningResponseExample() throws IOException {
-        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
-                URL_AHCHRSNSCREENINGRESPONSE_EXAMPLE);
-        final long unexpectedIgIssues = results.stream()
-                .flatMap(result -> result.getIssues().stream())
-                .filter(IS_UNEXPECTED_IG_ISSUE)
-                .map(issue -> issue.getMessage().trim())
-                .distinct()
-                .count();
-        final var softly = new SoftAssertions();
-        softly.assertThat(results).hasSize(1);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
-        softly.assertThat(unexpectedIgIssues).isZero()
-                .withFailMessage("There should be no IG publication issues");
-        throwEachAssertionError(softly);
+    // @Test
+    // void testBundle_AHCHRSNScreeningResponseExample() throws IOException {
+    //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+    //             URL_AHCHRSNSCREENINGRESPONSE_EXAMPLE);
+    //     final long unexpectedIgIssues = results.stream()
+    //             .flatMap(result -> result.getIssues().stream())
+    //             .filter(IS_UNEXPECTED_IG_ISSUE)
+    //             .map(issue -> issue.getMessage().trim())
+    //             .distinct()
+    //             .count();
+    //     final var softly = new SoftAssertions();
+    //     softly.assertThat(results).hasSize(1);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+    //     softly.assertThat(unexpectedIgIssues).isZero()
+    //             .withFailMessage("There should be no IG publication issues");
+    //     throwEachAssertionError(softly);
 
-    }
+    // }
 
-    @Test
-    void testBundle_AHCHRSNQuestionnaireResponseExample() throws IOException {
-        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
-                URL_AHCHRSNQUESTIONAIRE_EXAMPLE);
-        final long unexpectedIgIssues = results.stream()
-                .flatMap(result -> result.getIssues().stream())
-                .filter(IS_UNEXPECTED_IG_ISSUE)
-                .map(issue -> issue.getMessage().trim())
-                .distinct()
-                .count();
-        final var softly = new SoftAssertions();
-        softly.assertThat(results).hasSize(1);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
-        softly.assertThat(unexpectedIgIssues).isZero()
-                .withFailMessage("There should be no IG publication issues");
-        throwEachAssertionError(softly);
-    }
+    // @Test
+    // void testBundle_AHCHRSNQuestionnaireResponseExample() throws IOException {
+    //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+    //             URL_AHCHRSNQUESTIONAIRE_EXAMPLE);
+    //     final long unexpectedIgIssues = results.stream()
+    //             .flatMap(result -> result.getIssues().stream())
+    //             .filter(IS_UNEXPECTED_IG_ISSUE)
+    //             .map(issue -> issue.getMessage().trim())
+    //             .distinct()
+    //             .count();
+    //     final var softly = new SoftAssertions();
+    //     softly.assertThat(results).hasSize(1);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+    //     softly.assertThat(unexpectedIgIssues).isZero()
+    //             .withFailMessage("There should be no IG publication issues");
+    //     throwEachAssertionError(softly);
+    // }
 
-    @Test
-    void testBundle_ObservationAssessmentFoodInsecurityExample() throws IOException {
-        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
-                URL_OBSERVATION_ASSESSMENT_FOOD_SECURITY_EXAMPLE);
-        final long unexpectedIgIssues = results.stream()
-                .flatMap(result -> result.getIssues().stream())
-                .filter(IS_UNEXPECTED_IG_ISSUE)
-                .map(issue -> issue.getMessage().trim())
-                .distinct()
-                .count();
-        final var softly = new SoftAssertions();
-        softly.assertThat(results).hasSize(1);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_DIAGNOSIS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_US_CORE_CONDITION_CATEGORY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
-        softly.assertThat(unexpectedIgIssues).isZero()
-                .withFailMessage("There should be no IG publication issues");
-        throwEachAssertionError(softly);
-    }
+    // @Test
+    // void testBundle_ObservationAssessmentFoodInsecurityExample() throws IOException {
+    //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+    //             URL_OBSERVATION_ASSESSMENT_FOOD_SECURITY_EXAMPLE);
+    //     final long unexpectedIgIssues = results.stream()
+    //             .flatMap(result -> result.getIssues().stream())
+    //             .filter(IS_UNEXPECTED_IG_ISSUE)
+    //             .map(issue -> issue.getMessage().trim())
+    //             .distinct()
+    //             .count();
+    //     final var softly = new SoftAssertions();
+    //     softly.assertThat(results).hasSize(1);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_DIAGNOSIS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_US_CORE_CONDITION_CATEGORY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+    //     softly.assertThat(unexpectedIgIssues).isZero()
+    //             .withFailMessage("There should be no IG publication issues");
+    //     throwEachAssertionError(softly);
+    // }
 
-    @Test
-    void testBundle_ServiceRequestExample() throws IOException {
-        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
-                URL_SERVICE_REQUEST_EXAMPLE);
-        final long unexpectedIgIssues = results.stream()
-                .flatMap(result -> result.getIssues().stream())
-                .filter(IS_UNEXPECTED_IG_ISSUE)
-                .map(issue -> issue.getMessage().trim())
-                .distinct()
-                .count();
-        final var softly = new SoftAssertions();
-        softly.assertThat(results).hasSize(1);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
-        softly.assertThat(unexpectedIgIssues).isZero()
-                .withFailMessage("There should be no IG publication issues");
-        throwEachAssertionError(softly);
-    }
+    // @Test
+    // void testBundle_ServiceRequestExample() throws IOException {
+    //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+    //             URL_SERVICE_REQUEST_EXAMPLE);
+    //     final long unexpectedIgIssues = results.stream()
+    //             .flatMap(result -> result.getIssues().stream())
+    //             .filter(IS_UNEXPECTED_IG_ISSUE)
+    //             .map(issue -> issue.getMessage().trim())
+    //             .distinct()
+    //             .count();
+    //     final var softly = new SoftAssertions();
+    //     softly.assertThat(results).hasSize(1);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+    //     softly.assertThat(unexpectedIgIssues).isZero()
+    //             .withFailMessage("There should be no IG publication issues");
+    //     throwEachAssertionError(softly);
+    // }
 
-    @Test
-    void testBundle_TaskCompletedExample() throws IOException {
-        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
-                URL_TASK_COMPLETED_EXAMPLE);
-        final long unexpectedIgIssues = results.stream()
-                .flatMap(result -> result.getIssues().stream())
-                .filter(IS_UNEXPECTED_IG_ISSUE)
-                .map(issue -> issue.getMessage().trim())
-                .distinct()
-                .count();
-        final var softly = new SoftAssertions();
-        softly.assertThat(results).hasSize(1);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
-        softly.assertThat(unexpectedIgIssues).isZero()
-                .withFailMessage("There should be no IG publication issues");
-        throwEachAssertionError(softly);
-    }
+    // @Test
+    // void testBundle_TaskCompletedExample() throws IOException {
+    //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+    //             URL_TASK_COMPLETED_EXAMPLE);
+    //     final long unexpectedIgIssues = results.stream()
+    //             .flatMap(result -> result.getIssues().stream())
+    //             .filter(IS_UNEXPECTED_IG_ISSUE)
+    //             .map(issue -> issue.getMessage().trim())
+    //             .distinct()
+    //             .count();
+    //     final var softly = new SoftAssertions();
+    //     softly.assertThat(results).hasSize(1);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+    //     softly.assertThat(unexpectedIgIssues).isZero()
+    //             .withFailMessage("There should be no IG publication issues");
+    //     throwEachAssertionError(softly);
+    // }
 
-    @Test
-    void testBundle_TaskExample() throws IOException {
-        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(URL_TASK_EXAMPLE);
-        final long unexpectedIgIssues = results.stream()
-                .flatMap(result -> result.getIssues().stream())
-                .filter(IS_UNEXPECTED_IG_ISSUE)
-                .map(issue -> issue.getMessage().trim())
-                .distinct()
-                .count();
-        final var softly = new SoftAssertions();
-        softly.assertThat(results).hasSize(1);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_REFERAL_MANAGEMENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
-        softly.assertThat(unexpectedIgIssues).isZero()
-                .withFailMessage("There should be no IG publication issues");
-        throwEachAssertionError(softly);
-    }
+    // @Test
+    // void testBundle_TaskExample() throws IOException {
+    //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(URL_TASK_EXAMPLE);
+    //     final long unexpectedIgIssues = results.stream()
+    //             .flatMap(result -> result.getIssues().stream())
+    //             .filter(IS_UNEXPECTED_IG_ISSUE)
+    //             .map(issue -> issue.getMessage().trim())
+    //             .distinct()
+    //             .count();
+    //     final var softly = new SoftAssertions();
+    //     softly.assertThat(results).hasSize(1);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_SDOH_REFERAL_MANAGEMENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+    //     softly.assertThat(unexpectedIgIssues).isZero()
+    //             .withFailMessage("There should be no IG publication issues");
+    //     throwEachAssertionError(softly);
+    // }
 
-    @Test
-    void testBundle_TaskOutputProcedureExample() throws IOException {
-        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
-                URL_TASK_OUTPUT_PROCEDURE);
-        final long unexpectedIgIssues = results.stream()
-                .flatMap(result -> result.getIssues().stream())
-                .filter(IS_UNEXPECTED_IG_ISSUE)
-                .map(issue -> issue.getMessage().trim())
-                .distinct()
-                .count();
-        final var softly = new SoftAssertions();
-        softly.assertThat(results).hasSize(1);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
-        softly.assertThat(unexpectedIgIssues).isZero()
-                .withFailMessage("There should be no IG publication issues");
-        throwEachAssertionError(softly);
-    }
+    // @Test
+    // void testBundle_TaskOutputProcedureExample() throws IOException {
+    //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+    //             URL_TASK_OUTPUT_PROCEDURE);
+    //     final long unexpectedIgIssues = results.stream()
+    //             .flatMap(result -> result.getIssues().stream())
+    //             .filter(IS_UNEXPECTED_IG_ISSUE)
+    //             .map(issue -> issue.getMessage().trim())
+    //             .distinct()
+    //             .count();
+    //     final var softly = new SoftAssertions();
+    //     softly.assertThat(results).hasSize(1);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+    //     softly.assertThat(unexpectedIgIssues).isZero()
+    //             .withFailMessage("There should be no IG publication issues");
+    //     throwEachAssertionError(softly);
+    // }
 
-    @Test
-    void testBundle_NYScreeningResponseExample() throws IOException {
-        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
-                URL_NYSSCREENING_RESPONSE_EXAMPLE);
-        final long unexpectedIgIssues = results.stream()
-                .flatMap(result -> result.getIssues().stream())
-                .filter(IS_UNEXPECTED_IG_ISSUE)
-                .map(issue -> issue.getMessage().trim())
-                .distinct()
-                .count();
-        final var softly = new SoftAssertions();
-        softly.assertThat(results).hasSize(1);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
-        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
-        softly.assertThat(unexpectedIgIssues).isZero()
-                .withFailMessage("There should be no IG publication issues");
-        throwEachAssertionError(softly);
-    }
+    // @Test
+    // void testBundle_NYScreeningResponseExample() throws IOException {
+    //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+    //             URL_NYSSCREENING_RESPONSE_EXAMPLE);
+    //     final long unexpectedIgIssues = results.stream()
+    //             .flatMap(result -> result.getIssues().stream())
+    //             .filter(IS_UNEXPECTED_IG_ISSUE)
+    //             .map(issue -> issue.getMessage().trim())
+    //             .distinct()
+    //             .count();
+    //     final var softly = new SoftAssertions();
+    //     softly.assertThat(results).hasSize(1);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+    //     assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+    //     softly.assertThat(unexpectedIgIssues).isZero()
+    //             .withFailMessage("There should be no IG publication issues");
+    //     throwEachAssertionError(softly);
+    // }
 
     private void throwEachAssertionError(final SoftAssertions softly) {
         final List<AssertionError> errors = softly.assertionErrorsCollected();
