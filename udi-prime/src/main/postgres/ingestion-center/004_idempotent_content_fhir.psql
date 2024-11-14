@@ -197,6 +197,7 @@ AS SELECT validation_engine,
             OR issue ~~ '%Unable to expand ValueSet%'::text
             OR issue ~~ '%Slicing cannot be evaluated%'::text
             OR issue ~~ '%could not be resolved%'::text)
+            AND severity !=''
    GROUP BY validation_engine,
     issue, severity,
      (COALESCE(ig_version, 'Unknown'::text)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
@@ -238,6 +239,7 @@ WHERE
         OR issue LIKE '%Slicing cannot be evaluated%'
         OR issue LIKE '%could not be resolved%'
     )
+    AND severity !=''
 GROUP BY
     validation_engine,
     COALESCE(ig_version, 'Unknown'),
