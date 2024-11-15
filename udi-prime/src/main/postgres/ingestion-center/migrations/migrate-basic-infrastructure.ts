@@ -1072,7 +1072,7 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
 
-      ALTER TABLE techbd_udi_ingress.hub_interaction ADD CONSTRAINT hub_interaction_id_unique UNIQUE (hub_interaction_id);
+      --ALTER TABLE techbd_udi_ingress.hub_interaction ADD CONSTRAINT hub_interaction_id_unique UNIQUE (hub_interaction_id);
 
       IF NOT EXISTS (
           SELECT 1
