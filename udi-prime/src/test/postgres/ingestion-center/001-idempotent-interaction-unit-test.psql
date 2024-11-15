@@ -97,7 +97,7 @@ BEGIN
                             AND hub_intr.created_by              = v_created_by
                             AND hub_intr.provenance              = v_provenance
                    ),
-            'FHIR Bundle - Successfully inserted into the table hub_interaction'
+            'FHIR Bundle - Successfully inserted into the table hub_interaction'::text
         );
         
    /*Test 3 raws are inserted into sat_interaction_http_request table*/
@@ -140,7 +140,7 @@ BEGIN
 	        THEN TRUE 
 	        ELSE FALSE 
 	    END,
-	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_fhir_request'
+	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_fhir_request'::text
 	);
 
    /*Test one record is inserted into sat_interaction_user table*/
@@ -152,7 +152,7 @@ BEGIN
                             AND sat_intr.created_by				= v_created_by
                             AND sat_intr.provenance				= v_provenance
                    ),
-            'FHIR Bundle - Successfully inserted into the table sat_interaction_user'
+            'FHIR Bundle - Successfully inserted into the table sat_interaction_user'::text
         );
        
 	/*===================================================================*/
@@ -183,7 +183,7 @@ BEGIN
     AND hub_exp.created_by   = v_created_by
     AND hub_exp.provenance   = v_provenance;
    
-   	RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
+   	RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic'::text);
     RETURN NEXT ok(
             EXISTS((SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
                             WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
@@ -194,7 +194,7 @@ BEGIN
                             WHERE sat_log.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
                             AND sat_log.created_by           = v_created_by
                             AND sat_log.provenance           = v_provenance)),
-            'Successfully inserted exception details into the table sat_diagnostic_exception'
+            'Successfully inserted exception details into the table sat_diagnostic_exception'::text
         ); 
 END;
 $function$
