@@ -83,70 +83,70 @@ BEGIN
         hub_upsert_behavior      => true
     );
     
-    -- RETURN NEXT ok(
-    --         EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
-    --                         WHERE hub_intr.hub_interaction_id    = v_interaction_id
-    --                         AND hub_intr."key"                   = v_interaction_key
-    --                         AND hub_intr.created_by              = v_created_by
-    --                         AND hub_intr.provenance              = v_provenance
-    --                ),
-    --         'FHIR Bundle - Successfully inserted into the table hub_interaction'
-    --     );
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = v_interaction_key
+                            AND hub_intr.created_by              = v_created_by
+                            AND hub_intr.provenance              = v_provenance
+                   ),
+            'FHIR Bundle - Successfully inserted into the table hub_interaction'
+        );
         
    /*Test 3 raws are inserted into sat_interaction_http_request table*/
---    RETURN NEXT ok(
--- 	    CASE
--- 	        WHEN (
--- 	            SELECT count(hub_interaction_id) 
--- 	            FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
--- 	            WHERE sat_intr.hub_interaction_id = v_interaction_id
--- 	            AND sat_intr.nature_denorm IN (
--- 	                'org.techbd.service.http.Interactions$RequestResponseEncountered', 
--- 	                'Original FHIR Payload', 
--- 	                'techByDesignDisposition'
--- 	            )
--- 	            AND sat_intr.created_by = v_created_by
--- 	            AND sat_intr.provenance = v_provenance
--- 	        ) = 3
--- 	        THEN TRUE 
--- 	        ELSE FALSE 
--- 	    END,
--- 	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_http_request'
--- 	);
+   RETURN NEXT ok(
+	    CASE
+	        WHEN (
+	            SELECT count(hub_interaction_id) 
+	            FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+	            WHERE sat_intr.hub_interaction_id = v_interaction_id
+	            AND sat_intr.nature_denorm IN (
+	                'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	                'Original FHIR Payload', 
+	                'techByDesignDisposition'
+	            )
+	            AND sat_intr.created_by = v_created_by
+	            AND sat_intr.provenance = v_provenance
+	        ) = 3
+	        THEN TRUE 
+	        ELSE FALSE 
+	    END,
+	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_http_request'
+	);
 
    /*Test 3 raws are inserted into sat_interaction_fhir_request table*/
---    RETURN NEXT ok(
--- 	    CASE
--- 	        WHEN (
--- 	            SELECT count(hub_interaction_id) 
--- 	            FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
--- 	            WHERE sat_intr.hub_interaction_id = v_interaction_id
--- 	            AND sat_intr.uri = v_interaction_key
--- 	            AND sat_intr.nature IN (
--- 	                'org.techbd.service.http.Interactions$RequestResponseEncountered', 
--- 	                'Original FHIR Payload', 
--- 	                'techByDesignDisposition'
--- 	            )
--- 	            AND sat_intr.created_by = v_created_by
--- 	            AND sat_intr.provenance = v_provenance
--- 	        ) = 3
--- 	        THEN TRUE 
--- 	        ELSE FALSE 
--- 	    END,
--- 	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_fhir_request'
--- 	);
+   RETURN NEXT ok(
+	    CASE
+	        WHEN (
+	            SELECT count(hub_interaction_id) 
+	            FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
+	            WHERE sat_intr.hub_interaction_id = v_interaction_id
+	            AND sat_intr.uri = v_interaction_key
+	            AND sat_intr.nature IN (
+	                'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	                'Original FHIR Payload', 
+	                'techByDesignDisposition'
+	            )
+	            AND sat_intr.created_by = v_created_by
+	            AND sat_intr.provenance = v_provenance
+	        ) = 3
+	        THEN TRUE 
+	        ELSE FALSE 
+	    END,
+	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_fhir_request'
+	);
 
    /*Test one record is inserted into sat_interaction_user table*/
---    RETURN NEXT ok(
---             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
---                             WHERE sat_intr.hub_interaction_id	= v_interaction_id
---                             AND sat_intr.uri                    = v_interaction_key
--- 							AND sat_intr.nature 				= v_nature->>'nature'
---                             AND sat_intr.created_by				= v_created_by
---                             AND sat_intr.provenance				= v_provenance
---                    ),
---             'FHIR Bundle - Successfully inserted into the table sat_interaction_user'
---         );
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = v_interaction_key
+							AND sat_intr.nature 				= v_nature->>'nature'
+                            AND sat_intr.created_by				= v_created_by
+                            AND sat_intr.provenance				= v_provenance
+                   ),
+            'FHIR Bundle - Successfully inserted into the table sat_interaction_user'
+        );
        
 	/*===================================================================*/
 
@@ -176,16 +176,16 @@ BEGIN
     AND hub_exp.created_by   = v_created_by
     AND hub_exp.provenance   = 'ucv_provenance';
     
-    -- RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
+    RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
    
-    -- RETURN NEXT ok(
-    --         EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
-    --                         WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
-    --                         AND sat_exp.created_by           = v_created_by
-    --                         AND sat_exp.provenance           = 'ucv_provenance'
-    --                ),
-    --         'Successfully inserted exception details into the table sat_diagnostic_exception'
-    --     ); 
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
+                            WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
+                            AND sat_exp.created_by           = v_created_by
+                            AND sat_exp.provenance           = 'ucv_provenance'
+                   ),
+            'Successfully inserted exception details into the table sat_diagnostic_exception'
+        ); 
 END;
 $function$
 ;
