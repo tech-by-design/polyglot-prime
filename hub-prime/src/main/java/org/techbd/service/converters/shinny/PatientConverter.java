@@ -10,6 +10,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.InstantType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class PatientConverter extends BaseConverter {
+public class PatientConverter extends BaseConverter implements IPatientConverter {
     private static final Logger LOG = LoggerFactory.getLogger(PatientConverter.class.getName());
 
       /**
@@ -81,6 +82,11 @@ public class PatientConverter extends BaseConverter {
     //     patient.setGender(gender.equals("M") ? org.hl7.fhir.r4.model.Enumerations.AdministrativeGender.MALE
     //             : org.hl7.fhir.r4.model.Enumerations.AdministrativeGender.FEMALE);
     //    patient.setMeta(meta);
+    //github.com/qe-collaborative-services/1115-hub
+    //https://chatgpt.com/share/67318a9f-d0d4-800e-829b-b26e7476bec4
+    //https://shinny.org/us/ny/hrsn/downloads.html
+    //https://github.com/Shreeja-dev/polyglot-prime/blob/main/support/specifications/datapackage-ig.json
+    //https://github.com/tech-by-design/polyglot-prime/issues/745
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(patient);
         return bundleEntryComponent;
@@ -122,6 +128,55 @@ public class PatientConverter extends BaseConverter {
                 .filter(date -> date != null)  // Filter out null Date values
                 .max(Comparator.naturalOrder())  // Get the maximum Date
                 .orElse(null);  // Return null if no valid date is found
+    }
+
+
+    @Override
+    public String getId() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getId'");
+    }
+
+
+    @Override
+    public String getFirstName() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getFirstName'");
+    }
+
+
+    @Override
+    public String getLastName() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getLastName'");
+    }
+
+
+    @Override
+    public String getMiddleName() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getMiddleName'");
+    }
+
+
+    @Override
+    public Identifier getMRN(String system, String value, String assigner) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getMRN'");
+    }
+
+
+    @Override
+    public Identifier getMPIID(String system, String value, String assigner) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getMPIID'");
+    }
+
+
+    @Override
+    public Identifier getSSN(String system, String value, String assigner) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getSSN'");
     }
 
 
