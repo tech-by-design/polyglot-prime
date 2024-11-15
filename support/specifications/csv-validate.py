@@ -60,6 +60,8 @@ def validate_package(spec_path, output_path):
         ("SEX_AT_BIRTH_CODE", "sex_at_birth_code"),
         ("SEX_AT_BIRTH_CODE_DESCRIPTION", "sex_at_birth_code_description"),
         ("SEX_AT_BIRTH_CODE_SYSTEM", "sex_at_birth_code_system"),
+        ("RELATIONSHIP_PERSON_CODE", "relationship_person_code"),
+        ("RELATIONSHIP_PERSON_DESCRIPTION", "relationship_person_description"),
         ("STATE", "state"),
         ("GENDER_IDENTITY_CODE", "gender_identity_code"),
         ("GENDER_IDENTITY_CODE_DESCRIPTION", "gender_identity_code_description"),

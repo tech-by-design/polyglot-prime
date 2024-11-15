@@ -74,6 +74,11 @@
         - `reference`
           - `resource` qe_admin_data
           - `fields` ['PARENT_MR_ID']
+    - `relationships`
+      - [1]
+        - `fields` ['ENCOUNTER_CLASS_CODE', 'ENCOUNTER_CLASS_CODE_DESCRIPTION']
+        - `description` is the ENCOUNTER_CLASS_CODE,  ENCOUNTER_CLASS_CODE_DESCRIPTION of
+        - `link` coupled
 ### `PATIENT_MR_ID`
   - `type` string
   - `constraints`:
@@ -181,7 +186,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['accountable health communities (ahc) health-related social needs (hrsn) supplemental questions', 'accountable health communities (ahc) health-related social needs (hrsn) supplemental questions', 'accountable health communities (ahc) health-related social needs screening (hrsn) tool', 'accountable health communities (ahc) health-related social needs screening (hrsn) tool', 'nys ahc hrsn screening']
+    - `enum` ['accountable health communities (ahc) health-related social needs screening (hrsn) tool', 'accountable health communities (ahc) health-related social needs (hrsn) supplemental questions']
 ### `SCREENING_CODE_SYSTEM_NAME`
   - `type` string
   - `constraints`:
@@ -405,10 +410,16 @@
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `RELATIONSHIP_PERSON_CODE`
   - `type` string
+  - `constraints`:
+    - `enum` ['sel', 'spo', 'dom', 'chd', 'gch', 'nch', 'sch', 'fch', 'dep', 'wrd', 'par', 'mth', 'fth', 'cgv', 'grd', 'grp', 'exf', 'sib', 'bro', 'sis', 'fnd', 'oad', 'eme', 'emr', 'asc', 'emc', 'own', 'tra', 'mgr', 'non', 'unk', 'oth']
 ### `RELATIONSHIP_PERSON_DESCRIPTION`
   - `type` string
+  - `constraints`:
+    - `enum` ['self', 'spouse', 'life partner', 'child', 'grandchild', 'natural child', 'stepchild', 'foster child', 'handicapped dependent', 'ward of court', 'parent', 'mother', 'father', 'care giver', 'guardian', 'grandparent', 'extended family', 'sibling', 'brother', 'sister', 'friend', 'other adult', 'employee', 'employer', 'associate', 'emergency contact', 'owner', 'trainer', 'manager', 'none', 'unknown', 'other']
 ### `RELATIONSHIP_PERSON_SYSTEM`
   - `type` string
+  - `constraints`:
+    - `enum` ['http://terminology.hl7.org/CodeSystem/v2-0063']
 ### `RELATIONSHIP_PERSON_GIVEN_NAME`
   - `type` string
 ### `RELATIONSHIP_PERSON_FAMILY_NAME`
