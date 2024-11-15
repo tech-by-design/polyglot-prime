@@ -311,6 +311,11 @@
             <artifactId>hapi-fhir-client</artifactId>
         <version>7.4.0</version>
         </dependency>
+		<dependency>
+    		<groupId>com.opencsv</groupId>
+    		<artifactId>opencsv</artifactId>
+    		<version>5.8</version>  <!-- Use the latest version -->
+		</dependency>
 	</dependencies>
 
 	<build>

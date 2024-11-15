@@ -92,7 +92,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                         "^/api/expect/.*",
                                         "^/metadata",
                                         List.of("^/Hl7.*", "POST", "persistReqPayload persistRespPayload"),
-                                        List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload"))
+                                        List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload"),
+                                        List.of("^/flatfile.*", "POST", "persistReqPayload persistRespPayload"))
                                 : regexAndMethods)
                 .build();
         LOG.info("setPersistInDbMatchers %s".formatted(this.iprDB.toString()));
@@ -205,6 +206,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
         if (persistInteractionDB && !requestURI.equals("/Bundle") && !requestURI.equals("/Bundle/")
         && !requestURI.equals("/Hl7/v2")  && !requestURI.equals("/Hl7/v2/")
+        && !requestURI.equals("/flatfile/csv")  && !requestURI.equals("/flatfile/csv/")
         ) {
             final var rihr = new RegisterInteractionHttpRequest();
             try {
