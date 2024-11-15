@@ -24,7 +24,7 @@ DECLARE
     v_hub_diagnostic_row techbd_udi_ingress.hub_diagnostic%ROWTYPE;
    	function_exists boolean;
 BEGIN
-	
+	SET SEARCH_PATH TO techbd_udi_assurance;
 	
     v_interaction_id            := 'b41ccd27-9a4f-5cc8-9c5d-b55242d90fb0';
     v_interaction_key           := '/Bundle';
@@ -196,6 +196,7 @@ BEGIN
                             AND sat_log.provenance           = v_provenance)),
             'Successfully inserted exception details into the table sat_diagnostic_exception'::text
         ); 
+        SET SEARCH_PATH TO techbd_udi_ingress;
 END;
 $function$
 ;
