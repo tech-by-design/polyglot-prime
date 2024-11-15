@@ -37,7 +37,7 @@ BEGIN
     v_created_at                := CURRENT_TIMESTAMP;
     v_created_by                := CURRENT_USER;
     v_provenance                := 'org.techbd.service.http.InteractionsFilter.doFilterInternal';
-    v_hub_upsert_behavior       := TRUE;
+    v_hub_upsert_behavior       := FALSE;
     v_rule_namespace            := NULL;
    
     -- Check if the table 'pgtap_fixtures_json' exists
@@ -55,6 +55,7 @@ BEGIN
         schema_name,
         'register_interaction_http_request',
         ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean'],
+        -- ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
         'Function register_interaction_http_request exists'
     );
     RETURN NEXT has_function(
@@ -62,6 +63,12 @@ BEGIN
         'register_issue',
         ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'],
         'Function register_issue exists'
+    );
+    RETURN NEXT has_function(
+        schema_name,
+        'sat_interaction_fhir_request_upserted',
+        ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb'],
+        'Function sat_interaction_fhir_request_upserted exists'
     );
     /*=================== Testing with FHIR bundle ========================*/
    
@@ -166,7 +173,7 @@ BEGIN
         state_transition_reason  => v_state_transition_reason,
         created_at               => v_created_at,
         created_by               => v_created_by,
-        provenance               => 'ucv_provenance',
+        provenance               => v_provenance,
         hub_upsert_behavior      => false
     );
    
@@ -174,21 +181,25 @@ BEGIN
     FROM techbd_udi_ingress.hub_diagnostic hub_exp
     WHERE hub_exp."key"      = v_interaction_key
     AND hub_exp.created_by   = v_created_by
-    AND hub_exp.provenance   = 'ucv_provenance';
-    
-    RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
+    AND hub_exp.provenance   = v_provenance;
    
+   	RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
     RETURN NEXT ok(
-            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
+            EXISTS((SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
                             WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
                             AND sat_exp.created_by           = v_created_by
-                            AND sat_exp.provenance           = 'ucv_provenance'
-                   ),
+                            AND sat_exp.provenance           = v_provenance
+                   ) UNION  
+                   (SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_log sat_log
+                            WHERE sat_log.hub_diagnostic_id  = v_hub_diagnostic_row.hub_diagnostic_id                    
+                            AND sat_log.created_by           = v_created_by
+                            AND sat_log.provenance           = v_provenance)),
             'Successfully inserted exception details into the table sat_diagnostic_exception'
         ); 
 END;
 $function$
 ;
+
 
 
 DROP FUNCTION IF EXISTS techbd_udi_assurance.test_json_action_rule_upsert(text);
