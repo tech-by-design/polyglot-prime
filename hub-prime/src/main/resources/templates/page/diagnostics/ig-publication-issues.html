@@ -27,6 +27,7 @@
         const igPublication = 'fhir_validation_issue_details';
         const igPublicationColumnDefs = [
             { headerName: "IG Publication Issue", field: "issue", filter: "agTextColumnFilter", tooltipValueGetter: (params) => `${params.value}`, headerTooltip: "A list of specific validation issues detected during the publication process, such as unknown profiles or unrecognized extensions." },
+            { headerName: "Severity", field: "issue_severity", filter: "agTextColumnFilter"  },
             { headerName: "Count", field: "issue_count", filter: "agNumberColumnFilter", headerTooltip: "The number of times this specific issue has been encountered across different interactions within a particular IG version." }
         ];
         function getIgPublicationGridData(params) {

@@ -797,7 +797,7 @@ const migrateSP = pgSQLa.storedProcedure(
       
       DROP INDEX IF EXISTS sat_interaction_fhir_validation_issue_idx_date_issue ;
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_validation_idx_date_time ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (date_time);
-      CREATE INDEX sat_interaction_fhir_validation_idx_issue_partial ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (issue) WHERE issue LIKE '%has not been checked because it is unknown%' OR issue LIKE '%Unknown profile%' OR issue LIKE '%Unknown extension%' OR issue LIKE '%Unknown Code System%' OR issue LIKE '%not found%' OR issue LIKE '%has not been checked because it could not be found%' OR issue LIKE '%Unable to find a match for profile%' OR issue LIKE '%None of the codings provided%' OR issue LIKE '%Unable to expand ValueSet%' OR issue LIKE '%Slicing cannot be evaluated%' OR issue LIKE '%could not be resolved%';
+      CREATE INDEX IF NOT EXISTS sat_interaction_fhir_validation_idx_issue_partial ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (issue) WHERE issue LIKE '%has not been checked because it is unknown%' OR issue LIKE '%Unknown profile%' OR issue LIKE '%Unknown extension%' OR issue LIKE '%Unknown Code System%' OR issue LIKE '%not found%' OR issue LIKE '%has not been checked because it could not be found%' OR issue LIKE '%Unable to find a match for profile%' OR issue LIKE '%None of the codings provided%' OR issue LIKE '%Unable to expand ValueSet%' OR issue LIKE '%Slicing cannot be evaluated%' OR issue LIKE '%could not be resolved%';
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_idx_encountered_at ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic (encountered_at);
 
 
@@ -917,7 +917,9 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.json_action_rule
         ADD CONSTRAINT json_action_rule_action_rule_id_pkey
         PRIMARY KEY (action_rule_id);
-      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_disposition_action TEXT NULL;        
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_disposition_action TEXT NULL;  
+      
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS severity TEXT NULL;     
 
       INSERT INTO techbd_udi_ingress.json_action_rule(
         action_rule_id,

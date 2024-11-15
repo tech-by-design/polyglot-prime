@@ -2313,7 +2313,7 @@ BEGIN
         FROM LATERAL jsonb_array_elements(insert_validation_issues.payload -> 'OperationOutcome'-> 'validationResults'::text) validation_result
     LOOP
         -- Insert the extracted data into the target table
-        INSERT INTO techbd_udi_ingress.sat_interaction_fhir_validation_issue (
+       INSERT INTO techbd_udi_ingress.sat_interaction_fhir_validation_issue (
             sat_interaction_fhir_validation_issue_id,
             hub_interaction_id,
             issue,
@@ -2322,7 +2322,8 @@ BEGIN
             ig_version,
             elaboration,
             created_by,
-            provenance
+            provenance,
+            severity
         )
         VALUES (
             gen_random_uuid()::TEXT, 
@@ -2333,7 +2334,8 @@ BEGIN
             issue_set.ig_version,
             insert_validation_issues.elaboration,
             v_created_by,
-            insert_validation_issues.provenance
+            insert_validation_issues.provenance,
+            issue_set.issue ->> 'severity'::text
         );
     END LOOP;
 EXCEPTION
@@ -3149,6 +3151,7 @@ FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
 WHERE  
   uri IN ('/Bundle', '/Bundle/')
 and organization_id != ''
+ and created_at  >= (CURRENT_DATE - '7 days'::interval)
 GROUP BY 
     organization_id,
     organization_name;  

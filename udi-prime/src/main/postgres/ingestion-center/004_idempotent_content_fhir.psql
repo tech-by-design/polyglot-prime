@@ -179,6 +179,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_details CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue_details
 AS SELECT validation_engine,
     issue,
+    severity as issue_severity,
     count(*) AS issue_count,
     max(date_time) AS most_recent_date,
     COALESCE(ig_version, 'Unknown'::text) AS ig_version,
@@ -196,7 +197,10 @@ AS SELECT validation_engine,
             OR issue ~~ '%Unable to expand ValueSet%'::text
             OR issue ~~ '%Slicing cannot be evaluated%'::text
             OR issue ~~ '%could not be resolved%'::text)
-   GROUP BY validation_engine, issue, (COALESCE(ig_version, 'Unknown'::text)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
+            AND severity !=''
+   GROUP BY validation_engine,
+    issue, severity,
+     (COALESCE(ig_version, 'Unknown'::text)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
    ORDER BY	(max(date_time)) DESC;
 
 
@@ -235,6 +239,7 @@ WHERE
         OR issue LIKE '%Slicing cannot be evaluated%'
         OR issue LIKE '%could not be resolved%'
     )
+    AND severity !=''
 GROUP BY
     validation_engine,
     COALESCE(ig_version, 'Unknown'),
