@@ -15,7 +15,6 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
 import org.techbd.service.converters.csv.CsvToFhirConverter;
-import org.techbd.service.http.hub.prime.api.Hl7Service;
 
 import com.opencsv.bean.CsvToBeanBuilder;
 
