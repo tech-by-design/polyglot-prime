@@ -474,6 +474,34 @@ const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
   },
 );
 
+
+const interactionCsvRequestSat = interactionHub.satelliteTable(
+  "csv_request",
+  {
+    sat_interaction_csv_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: textNullable(),
+    nature: textNullable(),
+    group_id: textNullable(),
+    status: textNullable(),
+    validation_result_payload: jsonbNullable(),
+    screening_data_payload_text: textNullable(),
+    demographic_data_payload_text: textNullable(),
+    qe_admin_data_payload_text: textNullable(),
+    screening_data_file_name: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: text(),
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
 enum EnumFileExchangeProtocol {
   SFTP = "SFTP",
   S3 = "S3",
@@ -783,6 +811,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${interactionFhirValidationIssueSat}
 
+      ${interactionCsvRequestSat}
+
       ${fileExchangeProtocol}
       
       ${interactionHl7RequestSat}    
@@ -1030,6 +1060,31 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS json_action_rule_priority_idx ON techbd_udi_ingress.json_action_rule USING btree (priority);
 
 
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'sat_interaction_csv_request_hub_interaction_id_fkey'
+      ) THEN
+          ALTER TABLE sat_interaction_csv_request
+          ADD CONSTRAINT sat_interaction_csv_request_hub_interaction_id_fkey
+          FOREIGN KEY (hub_interaction_id)
+          REFERENCES hub_interaction(id);
+      END IF;
+
+
+      --ALTER TABLE techbd_udi_ingress.hub_interaction ADD CONSTRAINT hub_interaction_id_unique UNIQUE (hub_interaction_id);
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'sat_interaction_csv_request_hub_interaction_id_fkey'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD CONSTRAINT sat_interaction_hl7_request_hub_interaction_id_fkey FOREIGN KEY (hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
+      END IF;
+
+      
+
+
 
       ${dependenciesSQL}
 
@@ -1043,11 +1098,11 @@ const migrateSP = pgSQLa.storedProcedure(
         test_result BOOLEAN;
         line TEXT;
       BEGIN
-          PERFORM * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_http_request');
+          PERFORM * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_http_request'::text);
           test_result = TRUE;
 
           FOR line IN
-              SELECT * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_http_request')
+              SELECT * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_http_request'::text)
           LOOP
               tap_op := tap_op || line || E'\n';
 
