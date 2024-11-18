@@ -53,8 +53,8 @@ BEGIN
    RETURN NEXT has_function(
         schema_name,
         'register_interaction_http_request',
-        ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean'],
-         --ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+        -- ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean'],
+         ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
         'Function register_interaction_http_request exists'
     );
     RETURN NEXT has_function(
