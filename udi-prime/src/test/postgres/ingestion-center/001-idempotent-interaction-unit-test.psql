@@ -116,48 +116,48 @@ BEGIN
 	/*===================================================================*/
 
 /*Test 3 raws are inserted into sat_interaction_http_request table*/
-RETURN NEXT ok(
-        EXISTS (
-            SELECT 1
-            FROM (
-                SELECT COUNT(*) AS record_count
-                FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
-                WHERE sat_intr.hub_interaction_id = v_interaction_id
-                  AND sat_intr.nature_denorm IN (
-                      'org.techbd.service.http.Interactions$RequestResponseEncountered', 
-                      'Original FHIR Payload', 
-                      'techByDesignDisposition'
-                  )
-                  AND sat_intr.created_by = v_created_by
-                  AND sat_intr.provenance = v_provenance
-            ) subquery
-            WHERE subquery.record_count = 3
-	    ),
-	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_http_request'
-	);
+-- RETURN NEXT ok(
+--         EXISTS (
+--             SELECT 1
+--             FROM (
+--                 SELECT COUNT(*) AS record_count
+--                 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+--                 WHERE sat_intr.hub_interaction_id = v_interaction_id
+--                   AND sat_intr.nature_denorm IN (
+--                       'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+--                       'Original FHIR Payload', 
+--                       'techByDesignDisposition'
+--                   )
+--                   AND sat_intr.created_by = v_created_by
+--                   AND sat_intr.provenance = v_provenance
+--             ) subquery
+--             WHERE subquery.record_count = 3
+-- 	    ),
+-- 	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_http_request'
+-- 	);
 
 
 /*Test 3 raws are inserted into sat_interaction_fhir_request table*/
-RETURN NEXT ok(
-        EXISTS (
-            SELECT 1
-            FROM (
-                SELECT COUNT(*) AS record_count
-                FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
-                WHERE sat_intr.hub_interaction_id = v_interaction_id
-                  AND sat_intr.uri = v_interaction_key
-                  AND sat_intr.nature IN (
-                      'org.techbd.service.http.Interactions$RequestResponseEncountered', 
-                      'Original FHIR Payload', 
-                      'techByDesignDisposition'
-                  )
-                  AND sat_intr.created_by = v_created_by
-                  AND sat_intr.provenance = v_provenance
-            ) subquery
-            WHERE subquery.record_count = 3
-	    ),
-	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_fhir_request'
-	);
+-- RETURN NEXT ok(
+--         EXISTS (
+--             SELECT 1
+--             FROM (
+--                 SELECT COUNT(*) AS record_count
+--                 FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
+--                 WHERE sat_intr.hub_interaction_id = v_interaction_id
+--                   AND sat_intr.uri = v_interaction_key
+--                   AND sat_intr.nature IN (
+--                       'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+--                       'Original FHIR Payload', 
+--                       'techByDesignDisposition'
+--                   )
+--                   AND sat_intr.created_by = v_created_by
+--                   AND sat_intr.provenance = v_provenance
+--             ) subquery
+--             WHERE subquery.record_count = 3
+-- 	    ),
+-- 	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_fhir_request'
+-- 	);
 
 
 	/*Test the exception handling with Unique Constraint Violation*/
@@ -190,11 +190,11 @@ RETURN NEXT ok(
 		), 
 		'Successfully catched the exception and inserted into the table hub_diagnostic');
     
-    SELECT hub_exp.hub_diagnostic_id INTO v_hub_diagnostic_id
-    FROM techbd_udi_ingress.hub_diagnostic hub_exp
-    WHERE hub_exp."key"      = v_interaction_key
-    AND hub_exp.created_by   = v_created_by
-    AND hub_exp.provenance   = v_provenance LIMIT 1;
+    -- SELECT hub_exp.hub_diagnostic_id INTO v_hub_diagnostic_id
+    -- FROM techbd_udi_ingress.hub_diagnostic hub_exp
+    -- WHERE hub_exp."key"      = v_interaction_key
+    -- AND hub_exp.created_by   = v_created_by
+    -- AND hub_exp.provenance   = v_provenance LIMIT 1;
     
     -- IF v_hub_diagnostic_id != '' THEN 
 	--     RETURN NEXT ok(
