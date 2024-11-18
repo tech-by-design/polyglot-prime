@@ -190,26 +190,26 @@ BEGIN
 		), 
 		'Successfully catched the exception and inserted into the table hub_diagnostic');
     
-    -- SELECT hub_exp.hub_diagnostic_id INTO v_hub_diagnostic_id
-    -- FROM techbd_udi_ingress.hub_diagnostic hub_exp
-    -- WHERE hub_exp."key"      = v_interaction_key
-    -- AND hub_exp.created_by   = v_created_by
-    -- AND hub_exp.provenance   = v_provenance LIMIT 1;
+    SELECT hub_exp.hub_diagnostic_id INTO v_hub_diagnostic_id
+    FROM techbd_udi_ingress.hub_diagnostic hub_exp
+    WHERE hub_exp."key"      = v_interaction_key
+    AND hub_exp.created_by   = v_created_by
+    AND hub_exp.provenance   = v_provenance LIMIT 1;
     
-    -- IF v_hub_diagnostic_id != '' THEN 
-	--     RETURN NEXT ok(
-	--             EXISTS((SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
-	--                             WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_id--v_hub_diagnostic_row.hub_diagnostic_id                    
-	--                             AND sat_exp.created_by           = v_created_by
-	--                             AND sat_exp.provenance           = v_provenance
-	--                    ) UNION  
-	--                    (SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_log sat_log
-	--                             WHERE sat_log.hub_diagnostic_id  = v_hub_diagnostic_id--v_hub_diagnostic_row.hub_diagnostic_id                    
-	--                             AND sat_log.created_by           = v_created_by
-	--                             AND sat_log.provenance           = v_provenance)),
-	--             'Successfully inserted exception details into the table sat_diagnostic_exception or sat_diagnostic_log'
-	--         ); 
-    -- END IF;
+    IF v_hub_diagnostic_id != '' THEN 
+	    RETURN NEXT ok(
+	            EXISTS((SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
+	                            WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_id--v_hub_diagnostic_row.hub_diagnostic_id                    
+	                            AND sat_exp.created_by           = v_created_by
+	                            AND sat_exp.provenance           = v_provenance
+	                   ) UNION  
+	                   (SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_log sat_log
+	                            WHERE sat_log.hub_diagnostic_id  = v_hub_diagnostic_id--v_hub_diagnostic_row.hub_diagnostic_id                    
+	                            AND sat_log.created_by           = v_created_by
+	                            AND sat_log.provenance           = v_provenance)),
+	            'Successfully inserted exception details into the table sat_diagnostic_exception or sat_diagnostic_log'
+	        ); 
+    END IF;
 
 
 
