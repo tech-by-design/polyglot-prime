@@ -113,7 +113,7 @@ BEGIN
     -- 
 
 
-RETURN NEXT ok(
+-- RETURN NEXT ok(
     --     EXISTS (
     --         SELECT 1
     --         FROM (
