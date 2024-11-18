@@ -252,7 +252,7 @@
 		<dependency>
 			<groupId>io.github.wimdeblauwe</groupId>
 			<artifactId>htmx-spring-boot</artifactId>
-			<version>3.4.1</version>
+			<version>3.6.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.wimdeblauwe</groupId>
