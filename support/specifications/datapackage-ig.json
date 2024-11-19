@@ -5,7 +5,7 @@
         "name": "qe_admin_data",  
         "schema": {
           "fields": [
-            {"name": "PARENT_MR_ID", "type": "string", "constraints": {"required": true, "unique": true, "pattern": "^[A-Za-z0-9\\-\\.]{1,64}$" }},
+            {"name": "PATIENT_MR_ID", "type": "string", "constraints": {"required": true, "unique": true, "pattern": "^[A-Za-z0-9\\-\\.]{1,64}$" }},
             {"name": "FACILITY_ID", "type": "string", "constraints": {"required": true}}, 
             {"name": "FACILITY_LONG_NAME", "type": "string", "constraints": {"required": true}},
             {"name": "ORGANIZATION_TYPE", "type": "string", "constraints": { "required": true, "enum": [
@@ -38,7 +38,7 @@
             {"name": "FACILITY_CMS_IDENTIFIER_TYPE_VALUE", "type": "string"},
             {"name": "FACILITY_CMS_IDENTIFIER_TYPE_SYSTEM", "type": "string", "constraints": {  "pattern": "^http://www.medicaid.gov/.+"  }, "format": "uri"} 
           ],
-          "primaryKey": ["PARENT_MR_ID"]
+          "primaryKey": ["PATIENT_MR_ID"]
         },
         "dialect": {
           "delimiter": "|"
@@ -181,8 +181,8 @@
             }},
             {"name": "QUESTION_CODE_SYSTEM_NAME", "type": "string", "constraints": {"required": true, "enum": ["http://loinc.org"]}},
             {"name": "UCUM_UNITS", "type": "string"  },
-            {"name": "SDOH_DOMAIN", "type": "string", "constraints": {      "pattern": "^(sdoh-category-unspecified|food-insecurity|housing-instability|homelessness|inadequate-housing|transportation-insecurity|financial-insecurity|material-hardship|educational-attainment|employment-status|veteran-status|stress|social-connection|intimate-partner-violence|elder-abuse|personal-health-literacy|health-insurance-coverage-status|medical-cost-burden|digital-literacy|digital-access|utility-insecurity)(,\\s*(sdoh-category-unspecified|food-insecurity|housing-instability|homelessness|inadequate-housing|transportation-insecurity|financial-insecurity|material-hardship|educational-attainment|employment-status|veteran-status|stress|social-connection|intimate-partner-violence|elder-abuse|personal-health-literacy|health-insurance-coverage-status|medical-cost-burden|digital-literacy|digital-access|utility-insecurity))*$"
-              }},
+            {"name": "SDOH_DOMAIN", "type": "string", "constraints": { "pattern": "^(sdoh category unspecified|food insecurity|housing instability|homelessness|inadequate housing|transportation insecurity|financial insecurity|material hardship|educational attainment|employment status|veteran status|stress|social connection|intimate partner violence|elder abuse|personal health literacy|health insurance coverage status|medical cost burden|digital literacy|digital access|utility insecurity|resulting activity|current condition category from sdoh category|coverage by payer organization|general information|make contact|review material|risk questionnaire|feedback questionnaire)(,\\s*(sdoh category unspecified|food insecurity|housing instability|homelessness|inadequate housing|transportation insecurity|financial insecurity|material hardship|educational attainment|employment status|veteran status|stress|social connection|intimate partner violence|elder abuse|personal health literacy|health insurance coverage status|medical cost burden|digital literacy|digital access|utility insecurity|resulting activity|current condition category from sdoh category|coverage by payer organization|general information|make contact|review material|risk questionnaire|feedback questionnaire))*$"
+            }},
             {"name": "PARENT_QUESTION_CODE", "type": "string","constraints": { "enum": ["96777-8", "71802-3", "96778-6", "88122-7", "88123-5", "93030-5", 
             "96779-4", "95618-5", "95617-7", "95616-9", "95615-1",
              "95614-4", "76513-1", "96780-2", "96781-0", "93159-2",
@@ -225,7 +225,7 @@
               "fields": ["PATIENT_MR_ID"],
               "reference": {
                 "resource": "qe_admin_data",
-                "fields": ["PARENT_MR_ID"]
+                "fields": ["PATIENT_MR_ID"]
               }
             }
           ],
@@ -554,7 +554,7 @@
               "fields": ["PATIENT_MR_ID"],
               "reference": {
                 "resource": "qe_admin_data",
-                "fields": ["PARENT_MR_ID"]
+                "fields": ["PATIENT_MR_ID"]
               }
             }
           ]
