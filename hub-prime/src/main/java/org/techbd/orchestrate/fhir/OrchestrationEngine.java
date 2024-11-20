@@ -23,14 +23,10 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
 import org.hl7.fhir.common.hapi.validation.support.InMemoryTerminologyServerValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.NpmPackageValidationSupport;
-import org.hl7.fhir.common.hapi.validation.support.PrePopulatedValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.SnapshotGeneratingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.common.hapi.validation.validator.FhirInstanceValidator;
@@ -38,6 +34,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -47,7 +44,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
-import ca.uhn.fhir.rest.client.apache.ApacheRestfulClientFactory;
 import ca.uhn.fhir.validation.FhirValidator;
 import jakarta.validation.constraints.NotNull;
 
@@ -313,13 +309,14 @@ public class OrchestrationEngine {
             supportChain.addValidationSupport(new SnapshotGeneratingValidationSupport(fhirContext));
             supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
 
-            PrePopulateSupport prePopulateSupport = new PrePopulateSupport();
-            PrePopulatedValidationSupport prePopulatedValidationSupport = new PrePopulateSupport().build(fhirContext);
+            final var prePopulateSupport = new PrePopulateSupport();
+            var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
             prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
 
             supportChain.addValidationSupport(prePopulatedValidationSupport);
+            prePopulatedValidationSupport = null;
 
-            PostPopulateSupport postPopulateSupport = new PostPopulateSupport();
+            final var postPopulateSupport = new PostPopulateSupport();
             postPopulateSupport.update(supportChain);
 
             final var cache = new CachingValidationSupport(supportChain);

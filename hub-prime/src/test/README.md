@@ -29,7 +29,7 @@ The FHIR v4 Implementation Guide you provided primarily defines the "SHINNY Bund
 
 **StructureDefinition:**
 The SHINNY Bundle Profile extends the base FHIR Bundle resource, imposing additional constraints to ensure interoperability and adherence to specific healthcare use cases.
-The profile is in the draft stage and is identified by the URL `https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json`
+The profile is in the draft stage and is identified by the URL `https://shinny.org/us/ny/hrsn/StructureDefinition-SHINNYBundleProfile.json`
 
 **Constraints:**
 The profile defines several constraints on the Bundle resource, such as ensuring that the total element is only present when the bundle is a search set or history, and specific constraints on the use of entry.request and entry.response elements depending on the type of bundle.
