@@ -24,6 +24,7 @@ DECLARE
     v_hub_diagnostic_row techbd_udi_ingress.hub_diagnostic%ROWTYPE;
    	function_exists boolean;
     v_hub_diagnostic_id TEXT;
+    v_record_count numeric;
 BEGIN
 	
     v_interaction_id            := 'b41ccd27-9a4f-5cc8-9c5d-b55242d90fb0';
@@ -40,6 +41,7 @@ BEGIN
     v_hub_upsert_behavior       := FALSE;
     v_rule_namespace            := NULL;
     v_hub_diagnostic_id         := NULL;
+    v_record_count              := 0;
    
     -- Check if the table 'pgtap_fixtures_json' exists
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
@@ -115,49 +117,41 @@ BEGIN
        
 	/*===================================================================*/
 
-/*Test 3 raws are inserted into sat_interaction_http_request table*/
--- RETURN NEXT ok(
---         EXISTS (
---             SELECT 1
---             FROM (
---                 SELECT COUNT(*) AS record_count
---                 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
---                 WHERE sat_intr.hub_interaction_id = v_interaction_id
---                   AND sat_intr.nature_denorm IN (
---                       'org.techbd.service.http.Interactions$RequestResponseEncountered', 
---                       'Original FHIR Payload', 
---                       'techByDesignDisposition'
---                   )
---                   AND sat_intr.created_by = v_created_by
---                   AND sat_intr.provenance = v_provenance
---             ) subquery
---             WHERE subquery.record_count = 3
--- 	    ),
--- 	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_http_request'
--- 	);
-
-
 /*Test 3 raws are inserted into sat_interaction_fhir_request table*/
--- RETURN NEXT ok(
---         EXISTS (
---             SELECT 1
---             FROM (
---                 SELECT COUNT(*) AS record_count
---                 FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
---                 WHERE sat_intr.hub_interaction_id = v_interaction_id
---                   AND sat_intr.uri = v_interaction_key
---                   AND sat_intr.nature IN (
---                       'org.techbd.service.http.Interactions$RequestResponseEncountered', 
---                       'Original FHIR Payload', 
---                       'techByDesignDisposition'
---                   )
---                   AND sat_intr.created_by = v_created_by
---                   AND sat_intr.provenance = v_provenance
---             ) subquery
---             WHERE subquery.record_count = 3
--- 	    ),
--- 	    'FHIR Bundle - Successfully inserted 3 records into sat_interaction_fhir_request'
--- 	);
+	SELECT COUNT(1) INTO v_record_count
+	FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
+	WHERE COALESCE(sat_intr.hub_interaction_id, '') = v_interaction_id
+	  AND COALESCE(sat_intr.uri, '') = v_interaction_key
+	  AND COALESCE(sat_intr.nature, '') IN (
+	      'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	      'Original FHIR Payload', 
+	      'techByDesignDisposition'
+	  )
+	  AND COALESCE(sat_intr.created_by, '') = v_created_by
+	  AND COALESCE(sat_intr.provenance, '') = v_provenance;
+	
+	RETURN NEXT ok(
+	    v_record_count = 3,
+	    'Successfully validated that 3 records exist in sat_interaction_fhir_request'
+	);
+
+
+/*Test 3 raws are inserted into sat_interaction_http_request table*/
+   	SELECT COUNT(1) INTO v_record_count
+	FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+	WHERE COALESCE(sat_intr.hub_interaction_id, '') = v_interaction_id
+	  AND COALESCE(sat_intr.nature_denorm, '') IN (
+	      'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	      'Original FHIR Payload', 
+	      'techByDesignDisposition'
+	  )
+	  AND COALESCE(sat_intr.created_by, '') = v_created_by
+	  AND COALESCE(sat_intr.provenance, '') = v_provenance;
+	
+	RETURN NEXT ok(
+	    v_record_count = 3,
+	    'Successfully validated that 3 records exist in sat_interaction_http_request'
+	);
 
 
 	/*Test the exception handling with Unique Constraint Violation*/
