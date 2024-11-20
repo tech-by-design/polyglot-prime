@@ -1,12 +1,13 @@
 package org.techbd.util;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.Optional;
-
 public class DateUtil {
 
     /**
@@ -59,6 +60,16 @@ public class DateUtil {
             return Date.from(instant);
         } catch (Exception e) {
             // Handle invalid format or parsing issues
+            return null;
+        }
+    }
+
+    public static Date parseDate(String dateString) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            return dateFormat.parse(dateString);
+        } catch (ParseException e) {
+            e.printStackTrace(); // Handle parsing error (log it, or return null, etc.)
             return null;
         }
     }

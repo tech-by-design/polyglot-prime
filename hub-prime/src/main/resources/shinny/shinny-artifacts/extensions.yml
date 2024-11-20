@@ -1,0 +1,3 @@
+personalPronouns: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYPersonalPronounsVS
+name: http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name
+genderIdentity: http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity

@@ -16,7 +16,7 @@ public class YamlUtil {
     private static final Logger LOG = LoggerFactory.getLogger(YamlUtil.class.getName());
 
     public static Map<String, String> getYamlResourceAsMap(String filePath) {
-        LOG.info("YamlUtil::getProfileUrlMap reading profile urls from src/main/resources/shinny/profile.yml -BEGIN");
+        LOG.info("YamlUtil::getProfileUrlMap reading profile urls from {} -BEGIN",filePath);
         try {
             String content = Files.readString(Path.of(filePath));
             Yaml yaml = new Yaml();
@@ -27,9 +27,9 @@ public class YamlUtil {
                             Map.Entry::getKey,
                             entry -> String.valueOf(entry.getValue())));
         } catch (IOException ex) {
-            LOG.error("Exception during reading profile urls from src/main/resources/shinny/profile.yml", ex);
+            LOG.error("Exception during reading profile urls from {}", filePath,ex);
         }
-        LOG.info("YamlUtil::getProfileUrlMap reading profile urls from src/main/resources/shinny/profile.yml -END");
+        LOG.info("YamlUtil::getProfileUrlMap reading profile urls from {} -END",filePath);
         return Collections.emptyMap();
     }
 }

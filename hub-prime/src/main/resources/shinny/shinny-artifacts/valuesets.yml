@@ -1,0 +1,17 @@
+shinnyContentProvisionTypeVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYConsentProvisionTypeVS
+shinnyDetailedEthinicityVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYDetailedEthnicityVS
+shinnyDetailedRaceVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYDetailedRaceVS
+shinnyEncounterTypeVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYEncounterTypeVS
+shinnyHrsnScreeningsVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYHRSNScreeningVS
+shinnyHttpVerbsVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYHTTPVerbsVS
+shinnyIdentifierTypeVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYIdentiferTypeVS
+shinnyOmbEthinicityVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYOMBEthnicityVS
+shinnyOmbRaceVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYOMBRaceVS
+shinnyRelationshipVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYRelationshipVS
+shinnyScreeningsVS: http://shinny.org/us/ny/hrsn/ValueSet/SHINNYScreeningVS
+shinnyNysHrsnQuestionnaire: http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire
+shinnyQuestionnaires: http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYQuestionnaires
+hl7UsCoreBirthSex: http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex
+hl7UsCoreEthinicity: http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity
+hl7UsCoreRace: http://hl7.org/fhir/us/core/StructureDefinition/us-core-race
+patientIdentifier: http://terminology.hl7.org/CodeSystem/v2-0203

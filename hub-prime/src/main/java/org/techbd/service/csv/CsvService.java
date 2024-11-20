@@ -1,9 +1,5 @@
 package org.techbd.service.csv;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -15,8 +11,7 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
 import org.techbd.service.converters.csv.CsvToFhirConverter;
-
-import com.opencsv.bean.CsvToBeanBuilder;
+import org.techbd.util.CsvConversionUtil;
 
 @Service
 public class CsvService {
@@ -35,18 +30,17 @@ public class CsvService {
      *                   parsing.
      */
     public void processZipFile(MultipartFile file) throws Exception {
-        String qeAdminDataStr = getQeAdminCsvData();
-        String screeningDataStr = getScreeningCsv();
-        String demographicDataStr = getDemographicData();
+        String qeAdminDataStr = getQeAdminCsvData(); //TODO - integrate vfs to unzip and read actual data
+        String screeningDataStr = getScreeningCsv(); //TODO - integrate vfs to unzip and read actual data
+        String demographicDataStr = getDemographicData();//TODO - integrate vfs to unzip and read actual data
 
-        List<DemographicData> demographicData = convertCsvStringToDemographicData(demographicDataStr);
-        List<ScreeningData> screeningData = convertCsvStringToScreeningData(screeningDataStr);
-        List<QeAdminData> qeAdminData = convertCsvStringToQeAdminData(qeAdminDataStr);
+        List<DemographicData> demographicData = CsvConversionUtil.convertCsvStringToDemographicData(demographicDataStr);
+        List<ScreeningData> screeningData = CsvConversionUtil.convertCsvStringToScreeningData(screeningDataStr);
+        List<QeAdminData> qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(qeAdminDataStr);
         if (CollectionUtils.isEmpty(demographicData) || CollectionUtils.isEmpty(screeningData) || CollectionUtils.isEmpty(qeAdminData)) {
             throw new IllegalArgumentException("Invalid Zip File"); //TODO later change with custom exception
         }
         csvToFhirConverter.convert(demographicData.get(0),screeningData,qeAdminData.get(0), "int-id");//TODO -pass interaction id
-
     }
     private String getQeAdminCsvData() {
         return """
@@ -66,60 +60,4 @@ public class CsvService {
                "11223344|CUMC|active|2024-02-23T00:00:00Z|Jon|Bob|Doe|male|M|Male|http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex|1981-07-16|115 Broadway Apt2||New York|MANHATTAN|NY|10032|1234567890|999-34-2964|LA29518-0|he/him/his/his/himself|http://loinc.org|LA22878-5|Identifies as male|http://loinc.org|LA4489-6|Unknown|http://loinc.org|en|English|urn:ietf:bcp:47|2028-9|Asian|urn:oid:2.16.840.1.113883.6.238|2135-2|Hispanic or Latino|urn:oid:2.16.840.1.113883.6.238|AA12345C|2024-02-23T00:00:00.00Z|MTH|Mother|http://terminology.hl7.org/CodeSystem/v2-0063|Joyce|Doe|Phone|1234567890";
     }
     
-    /**
-     * Converts a CSV string to a list of objects of the specified type.
-     *
-     * @param csvData The CSV string containing the data.
-     * @param clazz   The class type to which the data should be converted.
-     * @param separator The separator used in the CSV string (e.g., '|').
-     * @param <T> The type of the object to convert the CSV to (DemographicData, ScreeningData, etc.).
-     * @return List of objects of the specified type.
-     * @throws IOException If an I/O error occurs during CSV reading.
-     */
-    public static <T> List<T> convertCsvStringToObjectList(String csvData, Class<T> clazz, char separator) throws IOException {
-        List<T> dataList = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new StringReader(csvData))) {
-            dataList = new CsvToBeanBuilder<T>(reader)
-                    .withType(clazz)
-                    .withSeparator(separator) // Specify the separator
-                    .withIgnoreLeadingWhiteSpace(true)
-                    .build()
-                    .parse();
-        }
-        return dataList;
-    }
-
-    /**
-     * Converts a CSV string to a list of DemographicData objects.
-     *
-     * @param csvData The CSV string containing the demographic data.
-     * @return List of DemographicData objects.
-     * @throws IOException If an I/O error occurs during CSV reading.
-     */
-    public static List<DemographicData> convertCsvStringToDemographicData(String csvData) throws IOException {
-        return convertCsvStringToObjectList(csvData, DemographicData.class, '|');
-    }
-
-    /**
-     * Converts a CSV string to a list of ScreeningData objects.
-     *
-     * @param csvData The CSV string containing the screening data.
-     * @return List of ScreeningData objects.
-     * @throws IOException If an I/O error occurs during CSV reading.
-     */
-    public static List<ScreeningData> convertCsvStringToScreeningData(String csvData) throws IOException {
-        return convertCsvStringToObjectList(csvData, ScreeningData.class, '|');
-    }
-
-    /**
-     * Converts a CSV string to a list of QeAdminData objects.
-     *
-     * @param csvData The CSV string containing the QeAdmin data.
-     * @return List of QeAdminData objects.
-     * @throws IOException If an I/O error occurs during CSV reading.
-     */
-    public static List<QeAdminData> convertCsvStringToQeAdminData(String csvData) throws IOException {
-        return convertCsvStringToObjectList(csvData, QeAdminData.class, '|');
-    }
-
 }
