@@ -12,62 +12,80 @@ import lombok.Getter;
  */
 @Getter
 public class QeAdminData {
-    @CsvBindByName(column = "PARENT_MR_ID")
-    String parentMrId;
+    @CsvBindByName(column = "PATIENT_MR_ID_VALUE")
+    private String patientMrIdValue;
+
+    @CsvBindByName(column = "FACILITY_ACTIVE")
+    private String facilityActive;
 
     @CsvBindByName(column = "FACILITY_ID")
-    String facilityId;
+    private String facilityId;
 
-    @CsvBindByName(column = "FACILITY_LONG_NAME")
-    String facilityLongName;
+    @CsvBindByName(column = "FACILITY_NAME")
+    private String facilityName;
 
-    @CsvBindByName(column = "ORGANIZATION_TYPE")
-    String organizationType;
+    @CsvBindByName(column = "ORGANIZATION_TYPE_DISPLAY")
+    private String organizationTypeDisplay;
+
+    @CsvBindByName(column = "ORGANIZATION_TYPE_CODE")
+    private String organizationTypeCode;
+
+    @CsvBindByName(column = "ORGANIZATION_TYPE_SYSTEM")
+    private String organizationTypeSystem;
 
     @CsvBindByName(column = "FACILITY_ADDRESS1")
-    String facilityAddress1;
+    private String facilityAddress1;
 
     @CsvBindByName(column = "FACILITY_ADDRESS2")
-    String facilityAddress2;
+    private String facilityAddress2;
 
     @CsvBindByName(column = "FACILITY_CITY")
-    String facilityCity;
+    private String facilityCity;
 
     @CsvBindByName(column = "FACILITY_STATE")
-    String facilityState;
+    private String facilityState;
+
+    @CsvBindByName(column = "FACILITY_DISTRICT")
+    private String facilityDistrict;
 
     @CsvBindByName(column = "FACILITY_ZIP")
-    String facilityZip;
+    private String facilityZip;
 
     @CsvBindByName(column = "FACILITY_LAST_UPDATED")
-    String facilityLastUpdated;
+    private String facilityLastUpdated;
 
-    @CsvBindByName(column = "FACILITY_SCN_IDENTIFIER_TYPE_CODE")
-    String facilityScnIdentifierTypeCode;
+    @CsvBindByName(column = "FACILITY_PROFILE")
+    private String facilityProfile;
+
+    @CsvBindByName(column = "FACILITY_SCN_IDENTIFIER_TYPE_DISPLAY")
+    private String facilityScnIdentifierTypeDisplay;
 
     @CsvBindByName(column = "FACILITY_SCN_IDENTIFIER_TYPE_VALUE")
-    String facilityScnIdentifierTypeValue;
+    private String facilityScnIdentifierTypeValue;
 
     @CsvBindByName(column = "FACILITY_SCN_IDENTIFIER_TYPE_SYSTEM")
-    String facilityScnIdentifierTypeSystem;
+    private String facilityScnIdentifierTypeSystem;
 
     @CsvBindByName(column = "FACILITY_NPI_IDENTIFIER_TYPE_CODE")
-    String facilityNpiIdentifierTypeCode;
+    private String facilityNpiIdentifierTypeCode;
 
     @CsvBindByName(column = "FACILITY_NPI_IDENTIFIER_TYPE_VALUE")
-    String facilityNpiIdentifierTypeValue;
+    private String facilityNpiIdentifierTypeValue;
 
     @CsvBindByName(column = "FACILITY_NPI_IDENTIFIER_TYPE_SYSTEM")
-    String facilityNpiIdentifierTypeSystem;
+    private String facilityNpiIdentifierTypeSystem;
 
     @CsvBindByName(column = "FACILITY_CMS_IDENTIFIER_TYPE_CODE")
-    String facilityCmsIdentifierTypeCode;
+    private String facilityCmsIdentifierTypeCode;
 
     @CsvBindByName(column = "FACILITY_CMS_IDENTIFIER_TYPE_VALUE")
-    String facilityCmsIdentifierTypeValue;
+    private String facilityCmsIdentifierTypeValue;
 
     @CsvBindByName(column = "FACILITY_CMS_IDENTIFIER_TYPE_SYSTEM")
-    String facilityCmsIdentifierTypeSystem;
+    private String facilityCmsIdentifierTypeSystem;
+
+    @CsvBindByName(column = "FACILITY_TEXT_STATUS")
+    private String facilityTextStatus;
     /**
      * Default constructor for OpenCSV to create an instance of QeAdminData.
      */
