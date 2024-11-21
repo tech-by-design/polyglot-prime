@@ -125,3 +125,13 @@ org:
           idleTimeout: 300000
           connectionTimeout: 30000
           maxLifetime: 1800000
+    csv:
+      validation:
+        python-script-path: /home/jewel/workspaces/github.com/jewelbonnie/polyglot-prime/hub-prime/src/main/java/org/techbd/javapythonjunit/validate_csvs.py
+        python-executable: python3
+        package-path: /home/jewel/workspaces/github.com/jewelbonnie/polyglot-prime/hub-prime/src/main/java/org/techbd/javapythonjunit/datapackage-ig.json
+        output-path: /home/jewel/workspaces/github.com/jewelbonnie/polyglot-prime/hub-prime/src/main/java/org/techbd/javapythonjunit/output/output.json
+        base-path: /home/jewel/workspaces/github.com/jewelbonnie/polyglot-prime/hub-prime/
+        file1: src/main/java/org/techbd/javapythonjunit/data/DEMOGRAPHIC_DATA.csv
+        file2: src/main/java/org/techbd/javapythonjunit/data/QE_ADMIN_DATA.csv
+        file3: src/main/java/org/techbd/javapythonjunit/data/SCREENING_DATA.csv
