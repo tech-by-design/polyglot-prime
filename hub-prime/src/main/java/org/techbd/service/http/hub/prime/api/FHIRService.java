@@ -343,8 +343,8 @@ public class FHIRService {
         }
 
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
-        String uaValidationStrategyJson,
-        boolean includeRequestInOutcome) {
+                String uaValidationStrategyJson,
+                boolean includeRequestInOutcome) {
             final var start = Instant.now();
             String interactionId = getBundleInteractionId(request);
             LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} " ,interactionId);
@@ -358,7 +358,7 @@ public class FHIRService {
                     .withFhirIGPackages(igPackages)
                     .withIgVersion(igVersion)
                     .addHapiValidationEngine() // by default
-                                // clearExisting is set to true so engines can be fully supplied through header
+                    // clearExisting is set to true so engines can be fully supplied through header
                     .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
             final var session = sessionBuilder.build();
             final var bundleAsyncInteractionId = getBundleInteractionId(request);
@@ -375,15 +375,15 @@ public class FHIRService {
                         "isAsync", true,
                         "validationResults", session.getValidationResults(),
                         "statusUrl",
-                                getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
+                        getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
                         "device", session.getDevice()));
 
-                                if (uaValidationStrategyJson != null) {
+                if (uaValidationStrategyJson != null) {
                     immediateResult.put("uaValidationStrategy",
-                                        Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
-                                                        uaValidationStrategyJson,
-                            "issues",
-                                                        sessionBuilder.getUaStrategyJsonIssues()));
+                            Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+                                    uaValidationStrategyJson,
+                                    "issues",
+                                    sessionBuilder.getUaStrategyJsonIssues()));
                 }
                 if (includeRequestInOutcome) {
                     immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
