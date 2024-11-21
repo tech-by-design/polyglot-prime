@@ -1,7 +1,5 @@
 package org.techbd.service.converters.shinny;
 
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,36 +7,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.CodeableConcept;
-import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
-import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Patient.PatientCommunicationComponent;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.techbd.model.CodeSystem;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
-import org.techbd.service.CodeSystemLookupService;
 import org.techbd.util.DateUtil;
 
 @Component
 public class PatientConverter extends BaseConverter implements IPatientConverter {
     private static final Logger LOG = LoggerFactory.getLogger(PatientConverter.class.getName());
-    private final CodeSystemLookupService codeSystemLookupService;
-
-    public PatientConverter(CodeSystemLookupService codeSystemLookupService) {
-        this.codeSystemLookupService = codeSystemLookupService;
-    }
-
+ 
     /**
      * Returns the resource type associated with this converter.
      *
@@ -124,24 +110,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                 .toString();
     }
 
-    /**
-     * Returns the maximum lastUpdatedDate from a list of ScreeningData objects as a
-     * java.util.Date.
-     * If no valid date is found, returns null.
-     *
-     * @param screeningDataList List of ScreeningData objects.
-     * @return Maximum lastUpdatedDate as a java.util.Date or null if no valid dates
-     *         are found.
-     */
-    private static Date getMaxLastUpdatedDate(List<ScreeningData> screeningDataList) {
-        return screeningDataList.stream()
-                .map(ScreeningData::getEncounterLastUpdated)
-                .filter(dateStr -> dateStr != null && !dateStr.isEmpty())
-                .map(DateUtil::convertStringToDate)
-                .filter(date -> date != null)
-                .max(Comparator.naturalOrder())
-                .orElse(null);
-    }
+
 
     /**
      * Adds extensions to a Patient object based on the demographic data.
@@ -161,20 +130,20 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      *                        populate the extensions
      */
     private void populateExtensions(Patient patient, DemographicData demographicData) {
-        final var sexAtBirthExtension = getSexAtBirthExtension(demographicData.getSexAtBirthCode(),
-                demographicData.getSexAtBirthCodeDescription(), demographicData.getSexAtBirthCodeSystem());
-        if (null != sexAtBirthExtension) {
-            patient.addExtension(sexAtBirthExtension);
-        }
-        final var ethinicityExtension = createEthnicityExtension(demographicData);
-        if (null != ethinicityExtension) {
-            patient.addExtension(VALUESETS_MAP.get("hl7UsCoreEthinicity"),
-                    ethinicityExtension);
-        }
-        final var raceExtension = createRaceExtension(demographicData);
-        if (null != raceExtension) {
-            patient.addExtension(VALUESETS_MAP.get("hl7UsCoreRace"), raceExtension);
-        }
+        // final var sexAtBirthExtension = getSexAtBirthExtension(demographicData.getSexAtBirthCode(),
+        //         demographicData.getSexAtBirthCodeDescription(), demographicData.getSexAtBirthCodeSystem());
+        // if (null != sexAtBirthExtension) {
+        //     patient.addExtension(sexAtBirthExtension);
+        // }
+        // final var ethinicityExtension = createEthnicityExtension(demographicData);
+        // if (null != ethinicityExtension) {
+        //     patient.addExtension(VALUESETS_MAP.get("hl7UsCoreEthinicity"),
+        //             ethinicityExtension);
+        // }
+        // final var raceExtension = createRaceExtension(demographicData);
+        // if (null != raceExtension) {
+        //     patient.addExtension(VALUESETS_MAP.get("hl7UsCoreRace"), raceExtension);
+        // }
     }
 
     /**
@@ -215,12 +184,12 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      */
     @Override
     public Extension getSexAtBirthExtension(String code, String description, String system) {
-        if (code != null) {
-            Extension sexAtBirthExtension = new Extension()
-                    .setUrl(VALUESETS_MAP.get("hl7UsCoreBirthSex")) // TODO - revisit
-                    .setValue(new org.hl7.fhir.r4.model.CodeType(code));
-            return sexAtBirthExtension;
-        }
+        // if (code != null) {
+        //     Extension sexAtBirthExtension = new Extension()
+        //             .setUrl(VALUESETS_MAP.get("hl7UsCoreBirthSex")) // TODO - revisit
+        //             .setValue(new org.hl7.fhir.r4.model.CodeType(code));
+        //     return sexAtBirthExtension;
+        // }
         return null;
     }
 
@@ -270,24 +239,25 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      */
     @Override
     public Extension getRaceOmbExtension(String code, String description, String system) {
-        Optional<CodeSystem> codeSystem = codeSystemLookupService.lookupCodeInFile(MASTER_DATA_PATH_MAP.get("ombRace"),
-                code);
-        if (codeSystem.isPresent()) {
-            if (system == null) {
-                system = codeSystem.get().getSystem();
-            }
-            if (description == null) {
-                description = codeSystem.get().getDisplay();
-            }
-        }
-        Coding coding = new Coding()
-                .setSystem(system)// TODO : check if system will be provided always
-                .setCode(code)
-                .setDisplay(description);
-        Extension ombCategoryExtension = new Extension()
-                .setUrl("ombCategory")
-                .setValue(coding);
-        return ombCategoryExtension;
+        // Optional<CodeSystem> codeSystem = codeSystemLookupService.lookupCodeInFile(MASTER_DATA_PATH_MAP.get("ombRace"),
+        //         code);
+        // if (codeSystem.isPresent()) {
+        //     if (system == null) {
+        //         system = codeSystem.get().getSystem();
+        //     }
+        //     if (description == null) {
+        //         description = codeSystem.get().getDisplay();
+        //     }
+        // }
+        // Coding coding = new Coding()
+        //         .setSystem(system)// TODO : check if system will be provided always
+        //         .setCode(code)
+        //         .setDisplay(description);
+        // Extension ombCategoryExtension = new Extension()
+        //         .setUrl("ombCategory")
+        //         .setValue(coding);
+        // return ombCategoryExtension;
+        return null;
     }
 
     /**
@@ -337,24 +307,25 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      */
     @Override
     public Extension getRaceDetailedExtension(String code, String description, String system) {
-        Optional<CodeSystem> codeSystem = codeSystemLookupService
-                .lookupCodeInFile(MASTER_DATA_PATH_MAP.get("detiledRace"), code);
-        if (codeSystem.isPresent()) {
-            if (system == null) {
-                system = codeSystem.get().getSystem();
-            }
-            if (description == null) {
-                description = codeSystem.get().getDisplay();
-            }
-        }
-        Coding coding = new Coding()
-                .setSystem(system) // TODO : check if system will be provided always
-                .setCode(code)
-                .setDisplay(description);
-        Extension detailedExtension = new Extension()
-                .setUrl("detailed") // TODO -verify what value comes here
-                .setValue(coding);
-        return detailedExtension;
+        // Optional<CodeSystem> codeSystem = codeSystemLookupService
+        //         .lookupCodeInFile(MASTER_DATA_PATH_MAP.get("detiledRace"), code);
+        // if (codeSystem.isPresent()) {
+        //     if (system == null) {
+        //         system = codeSystem.get().getSystem();
+        //     }
+        //     if (description == null) {
+        //         description = codeSystem.get().getDisplay();
+        //     }
+        // }
+        // Coding coding = new Coding()
+        //         .setSystem(system) // TODO : check if system will be provided always
+        //         .setCode(code)
+        //         .setDisplay(description);
+        // Extension detailedExtension = new Extension()
+        //         .setUrl("detailed") // TODO -verify what value comes here
+        //         .setValue(coding);
+        // return detailedExtension;
+        return null;
     }
 
     /**
@@ -402,24 +373,25 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      */
     @Override
     public Extension getEthinicityOmbExtension(String code, String description, String system) {
-        Optional<CodeSystem> codeSystem = codeSystemLookupService
-                .lookupCodeInFile(MASTER_DATA_PATH_MAP.get("ombEthinicity"), code);
-        if (codeSystem.isPresent()) {
-            if (system == null) {
-                system = codeSystem.get().getSystem();
-            }
-            if (description == null) {
-                description = codeSystem.get().getDisplay();
-            }
-        }
-        Coding coding = new Coding()
-                .setSystem(system) // TODO : check if system will be provided always
-                .setCode(code)
-                .setDisplay(description);
-        Extension ombCategoryExtension = new Extension()
-                .setUrl("ombCategory") // TODO : check and move to enum
-                .setValue(coding);
-        return ombCategoryExtension;
+        // Optional<CodeSystem> codeSystem = codeSystemLookupService
+        //         .lookupCodeInFile(MASTER_DATA_PATH_MAP.get("ombEthinicity"), code);
+        // if (codeSystem.isPresent()) {
+        //     if (system == null) {
+        //         system = codeSystem.get().getSystem();
+        //     }
+        //     if (description == null) {
+        //         description = codeSystem.get().getDisplay();
+        //     }
+        // }
+        // Coding coding = new Coding()
+        //         .setSystem(system) // TODO : check if system will be provided always
+        //         .setCode(code)
+        //         .setDisplay(description);
+        // Extension ombCategoryExtension = new Extension()
+        //         .setUrl("ombCategory") // TODO : check and move to enum
+        //         .setValue(coding);
+        // return ombCategoryExtension;
+        return null;
     }
 
     /**
@@ -467,24 +439,25 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      */
     @Override
     public Extension getEthinicityDetailedExtension(String code, String description, String system) {
-        Optional<CodeSystem> codeSystem = codeSystemLookupService
-                .lookupCodeInFile(MASTER_DATA_PATH_MAP.get("detiledEthinicity"), code);
-        if (codeSystem.isPresent()) {
-            if (system == null) {
-                system = codeSystem.get().getSystem();
-            }
-            if (description == null) {
-                description = codeSystem.get().getDisplay();
-            }
-        }
-        Coding coding = new Coding()
-                .setSystem(system)// TODO : check if system will be provided always
-                .setCode(code)
-                .setDisplay(description);
-        Extension detailedExtension = new Extension()
-                .setUrl("detailed")// TODO : check and move to enum
-                .setValue(coding);
-        return detailedExtension;
+        // Optional<CodeSystem> codeSystem = codeSystemLookupService
+        //         .lookupCodeInFile(MASTER_DATA_PATH_MAP.get("detiledEthinicity"), code);
+        // if (codeSystem.isPresent()) {
+        //     if (system == null) {
+        //         system = codeSystem.get().getSystem();
+        //     }
+        //     if (description == null) {
+        //         description = codeSystem.get().getDisplay();
+        //     }
+        // }
+        // Coding coding = new Coding()
+        //         .setSystem(system)// TODO : check if system will be provided always
+        //         .setCode(code)
+        //         .setDisplay(description);
+        // Extension detailedExtension = new Extension()
+        //         .setUrl("detailed")// TODO : check and move to enum
+        //         .setValue(coding);
+        // return detailedExtension;
+        return null;
     }
 
     /**
@@ -507,19 +480,19 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      *         `null` if the necessary data is not available
      */
     private Extension createEthnicityExtension(DemographicData data) {
-        if (data.getEthnicityCode() != null && data.getEthnicityCodeDescription() != null
-                && data.getEthnicityCodeSystemName() != null) {
-            return switch (data.getEthnicityCode()) {
-                case "2135-2", "2186-5" -> getEthinicityOmbExtension(data.getEthnicityCode(),
-                        data.getEthnicityCodeDescription(), data.getEthnicityCodeSystemName()); // TODO - revisit which
-                                                                                                // all are omb
-                                                                                                // ethinicity
-                                                                                                // extensions and which
-                                                                                                // are detailed
-                default -> getEthinicityDetailedExtension(data.getEthnicityCode(), data.getEthnicityCodeDescription(),
-                        data.getEthnicityCodeSystemName());
-            };
-        }
+        // if (data.getEthnicityCode() != null && data.getEthnicityCodeDescription() != null
+        //         && data.getEthnicityCodeSystemName() != null) {
+        //     return switch (data.getEthnicityCode()) {
+        //         case "2135-2", "2186-5" -> getEthinicityOmbExtension(data.getEthnicityCode(),
+        //                 data.getEthnicityCodeDescription(), data.getEthnicityCodeSystemName()); // TODO - revisit which
+        //                                                                                         // all are omb
+        //                                                                                         // ethinicity
+        //                                                                                         // extensions and which
+        //                                                                                         // are detailed
+        //         default -> getEthinicityDetailedExtension(data.getEthnicityCode(), data.getEthnicityCodeDescription(),
+        //                 data.getEthnicityCodeSystemName());
+        //     };
+        // }
         return null;
     }
 
@@ -543,16 +516,16 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      *         the necessary data is not available
      */
     private Extension createRaceExtension(DemographicData data) {
-        if (data.getRaceCode() != null && data.getRaceCodeDescription() != null
-                && data.getRaceCodeSystemName() != null) {
-            return switch (data.getRaceCode()) {
-                case "1002-5", "2028-9", "2054-5", "2076-8", "2106-3" -> getRaceOmbExtension(data.getRaceCode(),
-                        data.getRaceCodeDescription(), data.getRaceCodeSystemName()); // TODO - revisit which allare omb
-                                                                                      // race extensions
-                default -> getRaceDetailedExtension(data.getRaceCode(), data.getRaceCodeDescription(),
-                        data.getRaceCodeSystemName());
-            };
-        }
+        // if (data.getRaceCode() != null && data.getRaceCodeDescription() != null
+        //         && data.getRaceCodeSystemName() != null) {
+        //     return switch (data.getRaceCode()) {
+        //         case "1002-5", "2028-9", "2054-5", "2076-8", "2106-3" -> getRaceOmbExtension(data.getRaceCode(),
+        //                 data.getRaceCodeDescription(), data.getRaceCodeSystemName()); // TODO - revisit which allare omb
+        //                                                                               // race extensions
+        //         default -> getRaceDetailedExtension(data.getRaceCode(), data.getRaceCodeDescription(),
+        //                 data.getRaceCodeSystemName());
+        //     };
+        // }
         return null;
     }
 
@@ -584,26 +557,26 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      *         }
      */
     private static void populateMrIdentifier(Patient patient, DemographicData data) {
-        if (StringUtils.isNotEmpty(data.getPatientMrId())) {
-            Identifier identifier = new Identifier();
-            Coding coding = new Coding();
-            coding.setSystem(VALUESETS_MAP.get("patientIdentifier"));
-            coding.setCode("MR");
-            CodeableConcept type = new CodeableConcept();
-            type.addCoding(coding);
-            identifier.setType(type);
-            identifier.setSystem(IDENTIFIER_SYSTEM_MAP.get("scnGovFacility") + "/" + data.getFacilityId());
-            identifier.setValue(data.getPatientMrId());
+        // if (StringUtils.isNotEmpty(data.getPatientMrId())) {
+        //     Identifier identifier = new Identifier();
+        //     Coding coding = new Coding();
+        //     coding.setSystem(VALUESETS_MAP.get("patientIdentifier"));
+        //     coding.setCode("MR");
+        //     CodeableConcept type = new CodeableConcept();
+        //     type.addCoding(coding);
+        //     identifier.setType(type);
+        //     identifier.setSystem(IDENTIFIER_SYSTEM_MAP.get("scnGovFacility") + "/" + data.getFacilityId());
+        //     identifier.setValue(data.getPatientMrId());
 
-            // Optional: Add assigner if needed (uncomment if required)
-            // Reference assigner = new Reference();
-            // assigner.setReference("Organization/OrganizationExampleOther-SCN1"); //TODO -
-            // populate while organization is populated
-            // identifier.setAssigner(assigner);
+        //     // Optional: Add assigner if needed (uncomment if required)
+        //     // Reference assigner = new Reference();
+        //     // assigner.setReference("Organization/OrganizationExampleOther-SCN1"); //TODO -
+        //     // populate while organization is populated
+        //     // identifier.setAssigner(assigner);
 
-            // Set the identifier on the Patient object
-            patient.addIdentifier(identifier);
-        }
+        //     // Set the identifier on the Patient object
+        //     patient.addIdentifier(identifier);
+        // }
     }
 
     /**
@@ -634,18 +607,18 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      *         }
      */
     private static void populateMaIdentifier(Patient patient, DemographicData data) {
-        if (StringUtils.isNotEmpty(data.getMedicaidCin())) {
-            Identifier identifier = new Identifier();
-            Coding coding = new Coding();
-            coding.setSystem(VALUESETS_MAP.get("patientIdentifier"));
-            coding.setCode("MA");
-            CodeableConcept type = new CodeableConcept();
-            type.addCoding(coding);
-            identifier.setType(type);
-            identifier.setSystem(IDENTIFIER_SYSTEM_MAP.get("medicaidGov"));
-            identifier.setValue(data.getMedicaidCin());
-            patient.addIdentifier(identifier);
-        }
+        // if (StringUtils.isNotEmpty(data.getMedicaidCin())) {
+        //     Identifier identifier = new Identifier();
+        //     Coding coding = new Coding();
+        //     coding.setSystem(VALUESETS_MAP.get("patientIdentifier"));
+        //     coding.setCode("MA");
+        //     CodeableConcept type = new CodeableConcept();
+        //     type.addCoding(coding);
+        //     identifier.setType(type);
+        //     identifier.setSystem(IDENTIFIER_SYSTEM_MAP.get("medicaidGov"));
+        //     identifier.setValue(data.getMedicaidCin());
+        //     patient.addIdentifier(identifier);
+        // }
     }
 
     /**
@@ -677,18 +650,18 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      *         }
      */
     private static void populateSsnIdentifier(Patient patient, DemographicData data) {
-        if (StringUtils.isNotEmpty(data.getSsn())) {
-            Identifier identifier = new Identifier();
-            Coding coding = new Coding();
-            coding.setSystem(VALUESETS_MAP.get("patientIdentifier"));
-            coding.setCode("SSN");
-            CodeableConcept type = new CodeableConcept();
-            type.addCoding(coding);
-            identifier.setType(type);
-            identifier.setSystem(IDENTIFIER_SYSTEM_MAP.get("ssaGov"));
-            identifier.setValue(data.getSsn());
-            patient.addIdentifier(identifier);
-        }
+        // if (StringUtils.isNotEmpty(data.getSsn())) {
+        //     Identifier identifier = new Identifier();
+        //     Coding coding = new Coding();
+        //     coding.setSystem(VALUESETS_MAP.get("patientIdentifier"));
+        //     coding.setCode("SSN");
+        //     CodeableConcept type = new CodeableConcept();
+        //     type.addCoding(coding);
+        //     identifier.setType(type);
+        //     identifier.setSystem(IDENTIFIER_SYSTEM_MAP.get("ssaGov"));
+        //     identifier.setValue(data.getSsn());
+        //     patient.addIdentifier(identifier);
+        // }
     }
 
     private static void populateAdministrativeSex(Patient patient, DemographicData demographicData) {
@@ -699,7 +672,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                     case "other", "O" -> AdministrativeGender.OTHER; 
                     default -> AdministrativeGender.UNKNOWN; 
                 })
-                .ifPresent(patient::setGender); // Set the gender if a value is present
+                .ifPresent(patient::setGender); 
     }
 
     private static void populateBirthDate(Patient patient,DemographicData demographicData) {
@@ -710,10 +683,10 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
     // Private method to populate phone from DemographicData
     private static void populatePhone(Patient patient, DemographicData demographicData) {
-        Optional.ofNullable(demographicData.getPhone())
-                .ifPresent(phone -> patient.addTelecom(new ContactPoint()
-                        .setSystem(ContactPoint.ContactPointSystem.PHONE)
-                        .setValue(phone))); // Adds phone number to telecom if present
+        // Optional.ofNullable(demographicData.getPhone())
+        //         .ifPresent(phone -> patient.addTelecom(new ContactPoint()
+        //                 .setSystem(ContactPoint.ContactPointSystem.PHONE)
+        //                 .setValue(phone))); // Adds phone number to telecom if present
     }
 
     private static void populateAddress(Patient patient, DemographicData data) {
@@ -736,20 +709,20 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
     }
 
     private static void populatePreferredLanguage(Patient patient, DemographicData data) {
-        Optional.ofNullable(data.getPreferredLanguageCode())
-                .filter(StringUtils::isNotEmpty)
-                .ifPresent(languageCode -> {
-                    Coding coding = new Coding();
-                    coding.setCode(languageCode);
+        // Optional.ofNullable(data.getPreferredLanguageCode())
+        //         .filter(StringUtils::isNotEmpty)
+        //         .ifPresent(languageCode -> {
+        //             Coding coding = new Coding();
+        //             coding.setCode(languageCode);
 
-                    CodeableConcept language = new CodeableConcept();
-                    language.addCoding(coding);
+        //             CodeableConcept language = new CodeableConcept();
+        //             language.addCoding(coding);
 
-                    PatientCommunicationComponent communication = new PatientCommunicationComponent();
-                    communication.setLanguage(language);
-                    communication.setPreferred(true);
+        //             PatientCommunicationComponent communication = new PatientCommunicationComponent();
+        //             communication.setLanguage(language);
+        //             communication.setPreferred(true);
 
-                    patient.addCommunication(communication);
-                });
+        //             patient.addCommunication(communication);
+        //         });
     }
 }

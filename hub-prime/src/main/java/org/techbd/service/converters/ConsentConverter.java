@@ -24,11 +24,9 @@ public class ConsentConverter extends BaseConverter {
     public BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,List<ScreeningData> screeningDataList,QeAdminData qrAdminData,String interactionId) {
         Consent consent = new Consent();
         setMeta(consent);
-        consent.setId(CsvConversionUtil.sha256("consentFor" + demographicData.getPatientMrId());
+     //  consent.setId(CsvConversionUtil.sha256("consentFor" + demographicData.getPatientMrIdValueId());
         consent.getMeta().setLastUpdated(getMaxLastUpdatedDate(screeningDataList));
-       
 
-        // Wrap in a BundleEntryComponent
         Bundle.BundleEntryComponent bundleEntryComponent = new Bundle.BundleEntryComponent();
         bundleEntryComponent.setResource(consent);
 
