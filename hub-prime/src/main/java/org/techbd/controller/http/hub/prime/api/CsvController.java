@@ -33,7 +33,7 @@ public class CsvController {
         this.csvService = csvService;
     }
 
-    @PostMapping(value = {"/flatfile/csv", "/flatfile/csv/"}, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PostMapping(value = {"/flatfile/csv/Bundle", "/flatfile/csv/Bundle/"}, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @Operation(summary = "Endpoint to upload, process, and validate a CSV ZIP file",
                description = "Endpoint to upload a ZIP file containing CSVs for processing and validation.")
     @ApiResponses(value = {
