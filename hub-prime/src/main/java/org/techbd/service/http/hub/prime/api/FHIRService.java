@@ -343,25 +343,26 @@ public class FHIRService {
         }
 
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
-                        String uaValidationStrategyJson,
-                        boolean includeRequestInOutcome) {
-                final var start = Instant.now();
-                String interactionId = getBundleInteractionId(request);
-                LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} " ,interactionId);
-                final var igPackages = appConfig.getIgPackages();
-                final var igVersion = appConfig.getIgVersion();
-                final var sessionBuilder = engine.session()
-                                .withSessionId(UUID.randomUUID().toString())
-                                .onDevice(Device.createDefault())
-                                .withPayloads(List.of(payload))
-                                .withFhirProfileUrl(fhirProfileUrl)
-                                .withFhirIGPackages(igPackages)
-                                .withIgVersion(igVersion)
-                                .addHapiValidationEngine() // by default
+        String uaValidationStrategyJson,
+        boolean includeRequestInOutcome) {
+            final var start = Instant.now();
+            String interactionId = getBundleInteractionId(request);
+            LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} " ,interactionId);
+            final var igPackages = appConfig.getIgPackages();
+            final var igVersion = appConfig.getIgVersion();
+            final var sessionBuilder = engine.session()
+                    .withSessionId(UUID.randomUUID().toString())
+                    .onDevice(Device.createDefault())
+                    .withPayloads(List.of(payload))
+                    .withFhirProfileUrl(fhirProfileUrl)
+                    .withFhirIGPackages(igPackages)
+                    .withIgVersion(igVersion)
+                    .addHapiValidationEngine() // by default
                                 // clearExisting is set to true so engines can be fully supplied through header
-                                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-                final var session = sessionBuilder.build();
-                final var bundleAsyncInteractionId = getBundleInteractionId(request);
+                    .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+            final var session = sessionBuilder.build();
+            final var bundleAsyncInteractionId = getBundleInteractionId(request);
+            try {
                 engine.orchestrate(session);
                 // TODO: if there are errors that should prevent forwarding, stop here
                 // TODO: need to implement `immediate` (sync) webClient op, right now it's async
@@ -369,29 +370,39 @@ public class FHIRService {
                 // immediateResult is what's returned to the user while async operation
                 // continues
                 final var immediateResult = new HashMap<>(Map.of(
-                                "resourceType", "OperationOutcome",
-                                "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
-                                "isAsync", true,
-                                "validationResults", session.getValidationResults(),
-                                "statusUrl",
+                        "resourceType", "OperationOutcome",
+                        "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
+                        "isAsync", true,
+                        "validationResults", session.getValidationResults(),
+                        "statusUrl",
                                 getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
-                                "device", session.getDevice()));
+                        "device", session.getDevice()));
 
-                if (uaValidationStrategyJson != null) {
-                        immediateResult.put("uaValidationStrategy",
+                                if (uaValidationStrategyJson != null) {
+                    immediateResult.put("uaValidationStrategy",
                                         Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
                                                         uaValidationStrategyJson,
-                                                        "issues",
+                            "issues",
                                                         sessionBuilder.getUaStrategyJsonIssues()));
                 }
                 if (includeRequestInOutcome) {
-                        immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
+                    immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
                 }
+                return immediateResult; // Return the validation results
+            } catch (Exception e) {
+                // Log the error and create a failure response
+                LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
+                return Map.of(
+                        "resourceType", "OperationOutcome",
+                        "interactionId", interactionId,
+                        "error", "Validation failed: " + e.getMessage());
+            } finally {
+                // Ensure the session is cleared to avoid memory leaks
                 engine.clear(session);
                 Instant end = Instant.now();
                 Duration timeElapsed = Duration.between(start, end);
                 LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds" ,interactionId,timeElapsed.toMillis());
-                return immediateResult;
+            }
         }
 
         private void sendToScoringEngine(org.jooq.Configuration jooqCfg, HttpServletRequest request,
