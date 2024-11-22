@@ -92,8 +92,9 @@ public class InteractionsFilter extends OncePerRequestFilter {
                                         "^/api/expect/.*",
                                         "^/metadata",
                                         List.of("^/Hl7.*", "POST", "persistReqPayload persistRespPayload"),
-                                        List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload"))
-                                : regexAndMethods)
+                                        List.of("^/Bundle.*", "POST", "persistReqPayload persistRespPayload"),
+                                        List.of("^/flatfile.*", "POST", "persistReqPayload persistRespPayload"))
+                                        : regexAndMethods)
                 .build();
         LOG.info("setPersistInDbMatchers %s".formatted(this.iprDB.toString()));
     }
