@@ -127,11 +127,11 @@ org:
           maxLifetime: 1800000
     csv:
       validation:
-        python-script-path: /home/jewel/workspaces/github.com/jewelbonnie/polyglot-prime/hub-prime/src/main/java/org/techbd/javapythonjunit/validate_csvs.py
-        python-executable: python3
-        package-path: /home/jewel/workspaces/github.com/jewelbonnie/polyglot-prime/hub-prime/src/main/java/org/techbd/javapythonjunit/datapackage-ig.json
-        output-path: /home/jewel/workspaces/github.com/jewelbonnie/polyglot-prime/hub-prime/src/main/java/org/techbd/javapythonjunit/output/output.json
-        base-path: /home/jewel/workspaces/github.com/jewelbonnie/polyglot-prime/hub-prime/
-        file1: src/main/java/org/techbd/javapythonjunit/data/DEMOGRAPHIC_DATA.csv
-        file2: src/main/java/org/techbd/javapythonjunit/data/QE_ADMIN_DATA.csv
-        file3: src/main/java/org/techbd/javapythonjunit/data/SCREENING_DATA.csv
+        python-script-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PYTHON_SCRIPT_PATH:}
+        python-executable: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PYTHON_EXECUTABLE:python3}
+        package-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PACKAGE_PATH:}
+        output-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_OUTPUT_PATH:}
+        base-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_BASE_PATH:}
+        file1: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE1_PATH:}
+        file2: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE2_PATH:}
+        file3: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE3_PATH:}
