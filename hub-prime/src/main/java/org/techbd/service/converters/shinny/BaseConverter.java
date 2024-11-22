@@ -9,6 +9,7 @@ import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.StringType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.ScreeningData;
@@ -49,7 +50,7 @@ public abstract class BaseConverter implements IConverter {
     }
 
 
-    public static Extension createExtension(String url, String system, String code, String display) {
+    public static Extension createExtension(String url,String value, String system, String code, String display) {
         if (StringUtils.isEmpty(url)) {
             throw new IllegalArgumentException("Extension URL cannot be null or empty");
         }
@@ -69,6 +70,9 @@ public abstract class BaseConverter implements IConverter {
             CodeableConcept codeableConcept = new CodeableConcept();
             codeableConcept.addCoding(coding);
             extension.setValue(codeableConcept);
+        }
+        if (StringUtils.isNotEmpty(value)){
+            extension.setValue(new StringType(value));
         }
         return extension;
     }

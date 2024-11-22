@@ -92,7 +92,6 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
             name.addGiven(demographicData.getGivenName());
         }
         if (demographicData.getMiddleName() != null) {
-            name.addGiven(demographicData.getMiddleName());
             Extension middleNameExtension = new Extension();
             middleNameExtension.setUrl(demographicData.getMiddleNameExtensionUrl());
             middleNameExtension.setValue(new StringType(demographicData.getMiddleName()));
@@ -103,7 +102,6 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         }
         name.addPrefix(demographicData.getPrefixName());
         name.addSuffix(demographicData.getSuffixName());
-        name.addExtension(null, name);
         patient.addName(name);
         return patient;
     }
@@ -135,10 +133,11 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                 StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryRaceCodeSystemName())) {
             Extension raceOmbExtension = getRaceOmbExtension(
                     demographicData.getExtensionOmbCategoryRaceUrl(),
+                    null,
                     demographicData.getExtensionOmbCategoryRaceCodeSystemName(),
                     demographicData.getExtensionOmbCategoryRaceCode(),
                     demographicData.getExtensionOmbCategoryRaceCodeDescription());
-            patient.addExtension(raceOmbExtension);
+            patient.addExtension(demographicData.getExtensionRaceUrl(), raceOmbExtension);
         }
 
         if (StringUtils.isNotEmpty(demographicData.getExtensionTextRaceUrl()) ||
@@ -146,8 +145,9 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
             Extension raceDetailedExtension = getRaceDetailedExtension(
                     demographicData.getExtensionTextRaceUrl(),
-                    null,
                     demographicData.getExtensionTextRaceCodeValue(),
+                    null,
+                    null,
                     null);
             patient.addExtension(raceDetailedExtension);
         }
@@ -159,10 +159,11 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
             Extension ethnicityOmbExtension = getEthnicityOmbExtension(
                     demographicData.getExtensionOmbCategoryEthnicityUrl(),
+                    null,
                     demographicData.getExtensionOmbCategoryEthnicityCodeSystemName(),
                     demographicData.getExtensionOmbCategoryEthnicityCode(),
                     demographicData.getExtensionOmbCategoryEthnicityCodeDescription());
-            patient.addExtension(ethnicityOmbExtension);
+            patient.addExtension(demographicData.getExtensionEthnicityUrl(), ethnicityOmbExtension);
         }
 
         if (StringUtils.isNotEmpty(demographicData.getExtensionTextEthnicityUrl()) ||
@@ -170,9 +171,18 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
             Extension ethnicityDetailedExtension = getEthnicityDetailedExtension(
                     demographicData.getExtensionTextEthnicityUrl(),
-                    null,
                     demographicData.getExtensionTextEthnicityCodeValue(),
-                    null);
+                    null, null, null);
+            patient.addExtension(ethnicityDetailedExtension);
+        }
+
+        if (StringUtils.isNotEmpty(demographicData.getExtensionSexAtBirthCodeUrl()) ||
+                StringUtils.isNotEmpty(demographicData.getExtensionSexAtBirthCodeValue())) {
+
+            Extension ethnicityDetailedExtension = getEthnicityDetailedExtension(
+                    demographicData.getExtensionSexAtBirthCodeUrl(),
+                    demographicData.getExtensionSexAtBirthCodeValue(),
+                    null, null, null);
             patient.addExtension(ethnicityDetailedExtension);
         }
 
@@ -183,6 +193,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
             Extension personalPronounsExtension = getShinnyPersonalPronounsExtension(
                     demographicData.getExtensionPersonalPronounsUrl(),
+                    null,
                     demographicData.getExtensionPersonalPronounsSystem(),
                     demographicData.getExtensionPersonalPronounsCode(),
                     demographicData.getExtensionPersonalPronounsDisplay());
@@ -196,6 +207,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
             Extension genderIdentityExtension = getShinnyGenderIdentityExtension(
                     demographicData.getExtensionGenderIdentityUrl(),
+                    null,
                     demographicData.getExtensionGenderIdentitySystem(),
                     demographicData.getExtensionGenderIdentityCode(),
                     demographicData.getExtensionGenderIdentityDisplay());
@@ -207,12 +219,12 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         if (StringUtils.isNotEmpty(data.getPatientMrIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem(data.getPatientMrIdSystem());
+            coding.setSystem(data.getPatientMrIdTypeSystem());
             coding.setCode("MR");
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem(data.getPatientMrIdTypeSystem());
+            identifier.setSystem(data.getPatientMrIdSystem());
             identifier.setValue(data.getPatientMrIdValue());
 
             // Optional: Add assigner if needed (uncomment if required)
@@ -230,12 +242,12 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         if (StringUtils.isNotEmpty(data.getPatientMaIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem(data.getPatientMaIdSystem());
+            coding.setSystem(data.getPatientMaIdTypeSystem());
             coding.setCode("MA");
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem(data.getPatientMaIdTypeSystem());
+            identifier.setSystem(data.getPatientMaIdSystem());
             identifier.setValue(data.getPatientMaIdValue());
             patient.addIdentifier(identifier);
         }
@@ -245,12 +257,12 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         if (StringUtils.isNotEmpty(data.getPatientSsIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem(data.getPatientSsIdSystem());
+            coding.setSystem(data.getPatientSsIdTypeSystem());
             coding.setCode("SSN");
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem(data.getPatientSsIdTypeSystem());
+            identifier.setSystem(data.getPatientSsIdSystem());
             identifier.setValue(data.getPatientSsIdValue());
             patient.addIdentifier(identifier);
         }
@@ -292,6 +304,9 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                     .ifPresent(address::addLine);
             address.setCity(data.getCity());
             address.setState(data.getState());
+            Optional.ofNullable(data.getDistrict())
+                .filter(StringUtils::isNotEmpty)
+                .ifPresent(address::setDistrict);
             Optional.ofNullable(data.getZip())
                     .filter(StringUtils::isNotEmpty)
                     .ifPresent(address::setPostalCode);
@@ -316,8 +331,9 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
     }
 
     private static void populatePatientRelationContact(Patient patient, DemographicData data) {
-        if (patient == null || data == null) return;
-    
+        if (patient == null || data == null)
+            return;
+
         Optional.ofNullable(data.getRelationshipPersonCode())
                 .filter(StringUtils::isNotEmpty)
                 .ifPresent(relationshipCode -> {
@@ -326,32 +342,31 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                             .setSystem(data.getRelationshipPersonSystem())
                             .setCode(relationshipCode)
                             .setDisplay(data.getRelationshipPersonDescription());
-    
+
                     var relationship = new CodeableConcept().addCoding(coding);
-    
+
                     var name = new HumanName()
                             .setFamily(data.getRelationshipPersonFamilyName())
                             .addGiven(data.getRelationshipPersonGivenName());
-    
+
                     var telecomSystem = Optional.ofNullable(data.getRelationshipPersonTelecomSystem())
                             .filter(StringUtils::isNotEmpty)
                             .map(String::toLowerCase)
                             .map(ContactPoint.ContactPointSystem::fromCode)
                             .orElse(null);
-    
+
                     var telecom = new ContactPoint()
                             .setSystem(telecomSystem)
                             .setValue(data.getRelationshipPersonTelecomValue());
-    
+
                     var contact = new Patient.ContactComponent()
                             .setRelationship(List.of(relationship))
                             .setName(name)
                             .addTelecom(telecom);
-    
+
                     patient.addContact(contact);
                 });
     }
-    
 
     private static void populatePatientText(Patient patient, DemographicData data) {
         Optional.ofNullable(data.getPatientTextStatus())
@@ -363,38 +378,41 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
     }
 
     @Override
-    public Extension getRaceOmbExtension(String url, String system, String code, String display) {
-        return createExtension(url, system, code, display);
+    public Extension getRaceOmbExtension(String url, String value, String system, String code, String display) {
+        return createExtension(url, value, system, code, display);
     }
 
     @Override
-    public Extension getRaceDetailedExtension(String url, String system, String code, String display) {
-        return createExtension(url, system, code, display);
+    public Extension getRaceDetailedExtension(String url, String value, String system, String code, String display) {
+        return createExtension(url, value, system, code, display);
     }
 
     @Override
-    public Extension getEthnicityOmbExtension(String url, String system, String code, String display) {
-        return createExtension(url, system, code, display);
+    public Extension getEthnicityOmbExtension(String url, String value, String system, String code, String display) {
+        return createExtension(url, value, system, code, display);
     }
 
     @Override
-    public Extension getEthnicityDetailedExtension(String url, String system, String code, String display) {
-        return createExtension(url, system, code, display);
+    public Extension getEthnicityDetailedExtension(String url, String value, String system, String code,
+            String display) {
+        return createExtension(url, value, system, code, display);
     }
 
     @Override
-    public Extension getSexAtBirthExtension(String url, String system, String code, String display) {
-        return createExtension(url, system, code, display);
+    public Extension getSexAtBirthExtension(String url, String value, String system, String code, String display) {
+        return createExtension(url, value, system, code, display);
     }
 
     @Override
-    public Extension getShinnyPersonalPronounsExtension(String url, String system, String code, String display) {
-        return createExtension(url, system, code, display);
+    public Extension getShinnyPersonalPronounsExtension(String url, String value, String system, String code,
+            String display) {
+        return createExtension(url, value, system, code, display);
     }
 
     @Override
-    public Extension getShinnyGenderIdentityExtension(String url, String system, String code, String display) {
-        return createExtension(url, system, code, display);
+    public Extension getShinnyGenderIdentityExtension(String url, String value, String system, String code,
+            String display) {
+        return createExtension(url, value, system, code, display);
     }
 
 }
