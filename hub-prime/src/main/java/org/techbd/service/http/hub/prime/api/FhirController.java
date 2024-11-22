@@ -269,24 +269,36 @@ public class FhirController {
                 // clearExisting is set to true so engines can be fully supplied through header
                 .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
         final var session = sessionBuilder.build();
-        engine.orchestrate(session);
-        final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
-                session.getValidationResults(), "device",
+        try {
+            engine.orchestrate(session);
+            final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
+                    session.getValidationResults(), "device",
                 session.getDevice()));
-        final var result = Map.of("OperationOutcome", opOutcome);
-        if (uaValidationStrategyJson != null) {
-            opOutcome.put("uaValidationStrategy",
-                    Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
-                            uaValidationStrategyJson,
-                            "issues",
-                            sessionBuilder.getUaStrategyJsonIssues()));
+            final var result = Map.of("OperationOutcome", opOutcome);
+            if (uaValidationStrategyJson != null) {
+                opOutcome.put("uaValidationStrategy",
+                        Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+                                uaValidationStrategyJson,
+                                "issues",
+                                sessionBuilder.getUaStrategyJsonIssues()));
+            }
+            if (includeRequestInOutcome) {
+                opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
+            }
+            LOG.info("FHIRController: Bundle Validate:: Validation completed successfully");
+            return result;
+        } catch (Exception e) {
+            LOG.error("FHIRController: Bundle Validate:: Validation failed", e);
+            return Map.of(
+                    "resourceType", "OperationOutcome",
+                    "error", "Validation failed: " + e.getMessage());
+        } finally {
+            // Ensure the session is cleared to avoid memory leaks
+            if (session != null) {
+                engine.clear(session);
+                LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");
+            }
         }
-        if (includeRequestInOutcome) {
-            opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
-        }
-        engine.clear(session);
-        LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");
-        return result;
     }
 
     @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = {"application/json", "text/html"})
