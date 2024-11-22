@@ -137,6 +137,9 @@ public class DemographicData {
     @CsvBindByName(column = "PREFERRED_LANGUAGE_CODE_SYSTEM_NAME")
     private String preferredLanguageCodeSystemName;
 
+    @CsvBindByName(column = "PREFERRED_LANGUAGE_CODE_SYSTEM_CODE")
+    private String preferredLanguageCodeSystemCode;
+
     @CsvBindByName(column = "EXTENSION_RACE_URL")
     private String extensionRaceUrl;
 
