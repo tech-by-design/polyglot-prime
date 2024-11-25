@@ -60,6 +60,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
     public BundleEntryComponent convert(Bundle bundle, DemographicData demographicData,
             List<ScreeningData> screeningDataList,
             QeAdminData qrAdminData, String interactionId) {
+        LOG.info("PatientConverter :: convert  BEGIN for transaction id :{}", interactionId);
         Patient patient = new Patient();
         setMeta(patient);
         ScreeningData screeningData = screeningDataList.get(0);
@@ -83,6 +84,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         populatePatientText(patient, demographicData);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(patient);
+        LOG.info("PatientConverter :: convert  END for transaction id :{}", interactionId);
         return bundleEntryComponent;
     }
 
@@ -305,8 +307,8 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
             address.setCity(data.getCity());
             address.setState(data.getState());
             Optional.ofNullable(data.getDistrict())
-                .filter(StringUtils::isNotEmpty)
-                .ifPresent(address::setDistrict);
+                    .filter(StringUtils::isNotEmpty)
+                    .ifPresent(address::setDistrict);
             Optional.ofNullable(data.getZip())
                     .filter(StringUtils::isNotEmpty)
                     .ifPresent(address::setPostalCode);

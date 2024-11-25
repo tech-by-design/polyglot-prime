@@ -38,16 +38,20 @@ public class SexualOrientationObservationConverter extends BaseConverter {
     public BundleEntryComponent convert(Bundle bundle, DemographicData demographicData,
             List<ScreeningData> screeningDataList,
             QeAdminData qrAdminData, String interactionId) {
+        LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
         Observation observation = new Observation();
         setMeta(observation);
         Meta meta = observation.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode(demographicData.getSexualOrientationStatus()));
         CodeableConcept code = new CodeableConcept();
-        code.addCoding(new Coding(demographicData.getSexualOrientationCodeSystemName(), demographicData.getSexualOrientationCodeCode(), demographicData.getSexualOrientationCodeDisplay()));
+        code.addCoding(new Coding(demographicData.getSexualOrientationCodeSystemName(),
+                demographicData.getSexualOrientationCodeCode(), demographicData.getSexualOrientationCodeDisplay()));
         observation.setCode(code);
         CodeableConcept value = new CodeableConcept();
-        value.addCoding(new Coding(demographicData.getSexualOrientationValueCodeSystemName(), demographicData.getSexualOrientationValueCode(), demographicData.getSexualOrientationValueCodeDescription()));
+        value.addCoding(new Coding(demographicData.getSexualOrientationValueCodeSystemName(),
+                demographicData.getSexualOrientationValueCode(),
+                demographicData.getSexualOrientationValueCodeDescription()));
         observation.setValue(value);
         observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated()));
         Narrative text = new Narrative();
@@ -55,8 +59,8 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         observation.setText(text);
         BundleEntryComponent entry = new BundleEntryComponent();
         entry.setResource(observation);
+        LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
         return entry;
     }
-    
 
 }
