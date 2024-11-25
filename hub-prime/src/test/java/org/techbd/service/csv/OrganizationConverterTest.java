@@ -62,7 +62,7 @@ class OrganizationConverterTest {
         // Assert that the organization ID is not null or empty and matches expected
         // value
         softly.assertThat(organization.getId()).isNotEmpty();
-        softly.assertThat(organization.getId()).isEqualTo("Organization-CUMC");
+        softly.assertThat(organization.getId()).isEqualTo("401faef5898b5cf2724938b4369644bee72183c1c92f31d403a6b2538a069944");
 
         // Assert that the organization has a name and it matches the expected name
         softly.assertThat(organization.hasName()).isTrue();
