@@ -14,89 +14,10 @@ import lombok.Getter;
  * </p>
  */
 @Getter
-
 public class ScreeningData {
 
     @CsvBindByName(column = "PATIENT_MR_ID")
     String patientMrId;
-
-    @CsvBindByName(column = "FACILITY_ID")
-    String facilityId;
-
-    @CsvBindByName(column = "ENCOUNTER_ID")
-    String encounterId;
-
-    @CsvBindByName(column = "ENCOUNTER_CLASS_CODE")
-    String encounterClassCode;
-
-    @CsvBindByName(column = "ENCOUNTER_CLASS_CODE_DESCRIPTION")
-    String encounterClassCodeDescription;
-
-    @CsvBindByName(column = "ENCOUNTER_CLASS_CODE_SYSTEM")
-    String encounterClassCodeSystem;
-
-    @CsvBindByName(column = "ENCOUNTER_STATUS_CODE")
-    String encounterStatusCode;
-
-    @CsvBindByName(column = "ENCOUNTER_STATUS_CODE_DESCRIPTION")
-    String encounterStatusCodeDescription;
-
-    @CsvBindByName(column = "ENCOUNTER_STATUS_CODE_SYSTEM")
-    String encounterStatusCodeSystem;
-
-    @CsvBindByName(column = "ENCOUNTER_TYPE_CODE")
-    String encounterTypeCode;
-
-    @CsvBindByName(column = "ENCOUNTER_TYPE_CODE_DESCRIPTION")
-    String encounterTypeCodeDescription;
-
-    @CsvBindByName(column = "ENCOUNTER_TYPE_CODE_SYSTEM")
-    String encounterTypeCodeSystem;
-
-    @CsvBindByName(column = "ENCOUNTER_START_TIME")
-    String encounterStartTime;
-
-    @CsvBindByName(column = "ENCOUNTER_END_TIME")
-    String encounterEndTime;
-
-    @CsvBindByName(column = "ENCOUNTER_LAST_UPDATED")
-    String encounterLastUpdated;
-
-    @CsvBindByName(column = "LOCATION_NAME")
-    String locationName;
-
-    @CsvBindByName(column = "LOCATION_STATUS")
-    String locationStatus;
-
-    @CsvBindByName(column = "LOCATION_TYPE_CODE")
-    String locationTypeCode;
-
-    @CsvBindByName(column = "LOCATION_TYPE_SYSTEM")
-    String locationTypeSystem;
-
-    @CsvBindByName(column = "LOCATION_ADDRESS1")
-    String locationAddress1;
-
-    @CsvBindByName(column = "LOCATION_ADDRESS2")
-    String locationAddress2;
-
-    @CsvBindByName(column = "LOCATION_CITY")
-    String locationCity;
-
-    @CsvBindByName(column = "LOCATION_DISTRICT")
-    String locationDistrict;
-
-    @CsvBindByName(column = "LOCATION_STATE")
-    String locationState;
-
-    @CsvBindByName(column = "LOCATION_ZIP")
-    String locationZip;
-
-    @CsvBindByName(column = "LOCATION_PHYSICAL_TYPE_CODE")
-    String locationPhysicalTypeCode;
-
-    @CsvBindByName(column = "LOCATION_PHYSICAL_TYPE_SYSTEM")
-    String locationPhysicalTypeSystem;
 
     @CsvBindByName(column = "SCREENING_STATUS_CODE")
     String screeningStatusCode;
@@ -106,9 +27,6 @@ public class ScreeningData {
 
     @CsvBindByName(column = "SCREENING_CODE_DESCRIPTION")
     String screeningCodeDescription;
-
-    @CsvBindByName(column = "SCREENING_CODE_SYSTEM_NAME")
-    String screeningCodeSystemName;
 
     @CsvBindByName(column = "RECORDED_TIME")
     String recordedTime;
@@ -122,11 +40,23 @@ public class ScreeningData {
     @CsvBindByName(column = "QUESTION_CODE_SYSTEM_NAME")
     String questionCodeSystemName;
 
-    @CsvBindByName(column = "UCUM_UNITS")
-    String ucumUnits;
+    @CsvBindByName(column = "QUESTION_CODE_TEXT")
+    String questionCodeText;
 
-    @CsvBindByName(column = "SDOH_DOMAIN")
-    String sdohDomain;
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SDOH_TEXT")
+    String observationCategorySdohText;
+
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SDOH_CODE")
+    String observationCategorySdohCode;
+
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SDOH_DISPLAY")
+    String observationCategorySdohDisplay;
+
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SNOMED_CODE")
+    String observationCategorySnomedCode;
+
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SNOMED_DISPLAY")
+    String observationCategorySnomedDisplay;
 
     @CsvBindByName(column = "PARENT_QUESTION_CODE")
     String parentQuestionCode;
