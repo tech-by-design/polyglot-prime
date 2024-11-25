@@ -251,7 +251,7 @@ public class FhirController {
         }
         request = new CustomRequestWrapper(request, payload);
 
-        LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -BEGIN");
+        LOG.info("FHIRController:Bundle Validate::  -BEGIN");
         final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                         : appConfig.getDefaultSdohFhirProfileUrl();
@@ -296,7 +296,7 @@ public class FhirController {
             // Ensure the session is cleared to avoid memory leaks
             if (session != null) {
                 engine.clear(session);
-                LOG.info("FHIRController:Bundle Validate:: Inside Synchronized block -END");
+                LOG.info("FHIRController:Bundle Validate::  -END");
             }
         }
     }

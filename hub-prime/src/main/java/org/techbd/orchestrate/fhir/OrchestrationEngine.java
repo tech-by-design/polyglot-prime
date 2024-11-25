@@ -34,13 +34,13 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
@@ -142,13 +142,15 @@ public class OrchestrationEngine {
     }
 
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
-        Iterator<OrchestrationSession> iterator = this.sessions.iterator();
-        while (iterator.hasNext()) {
-            OrchestrationSession session = iterator.next();
-            for (OrchestrationSession sessionToRemove : sessionsToRemove) {
-                if (session.getSessionId().equals(sessionToRemove.getSessionId())) {
-                    iterator.remove();
-                    break;
+        if (CollectionUtils.isNotEmpty(sessions)) {
+            Iterator<OrchestrationSession> iterator = this.sessions.iterator();
+            while (iterator.hasNext()) {
+                OrchestrationSession session = iterator.next();
+                for (OrchestrationSession sessionToRemove : sessionsToRemove) {
+                    if (session.getSessionId().equals(sessionToRemove.getSessionId())) {
+                        iterator.remove();
+                        break;
+                    }
                 }
             }
         }
