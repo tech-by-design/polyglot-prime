@@ -7,177 +7,184 @@ import lombok.Getter;
 @Getter
 public class ScreeningResourceData {
 
-    @CsvBindByName
-    private String PATIENT_MR_ID_VALUE;
+    @CsvBindByName(column = "PATIENT_MR_ID_VALUE")
+    private String patientMrIdValue;
 
-    @CsvBindByName
-    private String FACILITY_ID;
+    @CsvBindByName(column = "FACILITY_ID")
+    private String facilityId;
 
-    @CsvBindByName
-    private String CONSENT_PROFILE;
+    @CsvBindByName(column = "CONSENT_PROFILE")
+    private String consentProfile;
 
-    @CsvBindByName
-    private String CONSENT_LAST_UPDATED;
+    @CsvBindByName(column = "CONSENT_LAST_UPDATED")
+    private String consentLastUpdated;
 
-    @CsvBindByName
-    private String CONSENT_TEXT_STATUS;
+    @CsvBindByName(column = "CONSENT_TEXT_STATUS")
+    private String consentTextStatus;
 
-    @CsvBindByName
-    private String CONSENT_STATUS;
+    @CsvBindByName(column = "CONSENT_STATUS")
+    private String consentStatus;
 
-    @CsvBindByName
-    private String CONSENT_SCOPE_CODE;
+    @CsvBindByName(column = "CONSENT_SCOPE_CODE")
+    private String consentScopeCode;
 
-    @CsvBindByName
-    private String CONSENT_SCOPE_TEXT;
+    @CsvBindByName(column = "CONSENT_SCOPE_TEXT")
+    private String consentScopeText;
 
-    @CsvBindByName
-    private String CONSENT_CATEGORY_IDSCL_CODE;
+    @CsvBindByName(column = "CONSENT_CATEGORY_IDSCL_CODE")
+    private String consentCategoryIdsclCode;
 
-    @CsvBindByName
-    private String CONSENT_CATEGORY_IDSCL_SYSTEM;
+    @CsvBindByName(column = "CONSENT_CATEGORY_IDSCL_SYSTEM")
+    private String consentCategoryIdsclSystem;
 
-    @CsvBindByName
-    private String CONSENT_CATEGORY_LOINC_CODE;
+    @CsvBindByName(column = "CONSENT_CATEGORY_LOINC_CODE")
+    private String consentCategoryLoincCode;
 
-    @CsvBindByName
-    private String CONSENT_CATEGORY_LOINC_SYSTEM;
+    @CsvBindByName(column = "CONSENT_CATEGORY_LOINC_SYSTEM")
+    private String consentCategoryLoincSystem;
 
-    @CsvBindByName
-    private String CONSENT_CATEGORY_LOINC_DISPLAY;
+    @CsvBindByName(column = "CONSENT_CATEGORY_LOINC_DISPLAY")
+    private String consentCategoryLoincDisplay;
 
-    @CsvBindByName
-    private String CONSENT_DATE_TIME;
+    @CsvBindByName(column = "CONSENT_DATE_TIME")
+    private String consentDateTime;
 
-    @CsvBindByName
-    private String CONSENT_POLICY_AUTHORITY;
+    @CsvBindByName(column = "CONSENT_POLICY_AUTHORITY")
+    private String consentPolicyAuthority;
 
-    @CsvBindByName
-    private String CONSENT_PROVISION_TYPE;
+    @CsvBindByName(column = "CONSENT_PROVISION_TYPE")
+    private String consentProvisionType;
 
-    @CsvBindByName
-    private String ENCOUNTER_ID;
+    @CsvBindByName(column = "ENCOUNTER_ID")
+    private String encounterId;
 
-    @CsvBindByName
-    private String ENCOUNTER_CLASS_CODE;
+    @CsvBindByName(column = "ENCOUNTER_CLASS_CODE")
+    private String encounterClassCode;
 
-    @CsvBindByName
-    private String ENCOUNTER_CLASS_CODE_DESCRIPTION;
+    @CsvBindByName(column = "ENCOUNTER_CLASS_CODE_DESCRIPTION")
+    private String encounterClassCodeDescription;
 
-    @CsvBindByName
-    private String ENCOUNTER_CLASS_CODE_SYSTEM;
+    @CsvBindByName(column = "ENCOUNTER_CLASS_CODE_SYSTEM")
+    private String encounterClassCodeSystem;
 
-    @CsvBindByName
-    private String ENCOUNTER_STATUS_CODE;
+    @CsvBindByName(column = "ENCOUNTER_STATUS_CODE")
+    private String encounterStatusCode;
 
-    @CsvBindByName
-    private String ENCOUNTER_STATUS_CODE_DESCRIPTION;
+    @CsvBindByName(column = "ENCOUNTER_STATUS_CODE_DESCRIPTION")
+    private String encounterStatusCodeDescription;
 
-    @CsvBindByName
-    private String ENCOUNTER_STATUS_CODE_SYSTEM;
+    @CsvBindByName(column = "ENCOUNTER_STATUS_CODE_SYSTEM")
+    private String encounterStatusCodeSystem;
 
-    @CsvBindByName
-    private String ENCOUNTER_TYPE_CODE;
+    @CsvBindByName(column = "ENCOUNTER_TYPE_CODE")
+    private String encounterTypeCode;
 
-    @CsvBindByName
-    private String ENCOUNTER_TYPE_CODE_DESCRIPTION;
+    @CsvBindByName(column = "ENCOUNTER_TYPE_CODE_DESCRIPTION")
+    private String encounterTypeCodeDescription;
 
-    @CsvBindByName
-    private String ENCOUNTER_TYPE_CODE_SYSTEM;
+    @CsvBindByName(column = "ENCOUNTER_TYPE_CODE_SYSTEM")
+    private String encounterTypeCodeSystem;
 
-    @CsvBindByName
-    private String ENCOUNTER_START_TIME;
+    @CsvBindByName(column = "ENCOUNTER_START_TIME")
+    private String encounterStartTime;
 
-    @CsvBindByName
-    private String ENCOUNTER_END_TIME;
+    @CsvBindByName(column = "ENCOUNTER_END_TIME")
+    private String encounterEndTime;
 
-    @CsvBindByName
-    private String ENCOUNTER_LAST_UPDATED;
+    @CsvBindByName(column = "ENCOUNTER_LAST_UPDATED")
+    private String encounterLastUpdated;
 
-    @CsvBindByName
-    private String ENCOUNTER_PROFILE;
+    @CsvBindByName(column = "ENCOUNTER_PROFILE")
+    private String encounterProfile;
 
-    @CsvBindByName
-    private String ENCOUNTER_TEXT_STATUS;
+    @CsvBindByName(column = "ENCOUNTER_TEXT_STATUS")
+    private String encounterTextStatus;
 
-    @CsvBindByName
-    private String LOCATION_NAME;
+    @CsvBindByName(column = "LOCATION_NAME")
+    private String locationName;
 
-    @CsvBindByName
-    private String LOCATION_STATUS;
+    @CsvBindByName(column = "LOCATION_STATUS")
+    private String locationStatus;
 
-    @CsvBindByName
-    private String LOCATION_TYPE_CODE;
+    @CsvBindByName(column = "LOCATION_TYPE_CODE")
+    private String locationTypeCode;
 
-    @CsvBindByName
-    private String LOCATION_TYPE_SYSTEM;
+    @CsvBindByName(column = "LOCATION_TYPE_SYSTEM")
+    private String locationTypeSystem;
 
-    @CsvBindByName
-    private String LOCATION_ADDRESS1;
+    @CsvBindByName(column = "LOCATION_ADDRESS1")
+    private String locationAddress1;
 
-    @CsvBindByName
-    private String LOCATION_ADDRESS2;
+    @CsvBindByName(column = "LOCATION_ADDRESS2")
+    private String locationAddress2;
 
-    @CsvBindByName
-    private String LOCATION_CITY;
+    @CsvBindByName(column = "LOCATION_CITY")
+    private String locationCity;
 
-    @CsvBindByName
-    private String LOCATION_DISTRICT;
+    @CsvBindByName(column = "LOCATION_DISTRICT")
+    private String locationDistrict;
 
-    @CsvBindByName
-    private String LOCATION_STATE;
+    @CsvBindByName(column = "LOCATION_STATE")
+    private String locationState;
 
-    @CsvBindByName
-    private String LOCATION_ZIP;
+    @CsvBindByName(column = "LOCATION_ZIP")
+    private String locationZip;
 
-    @CsvBindByName
-    private String LOCATION_PHYSICAL_TYPE_CODE;
+    @CsvBindByName(column = "LOCATION_PHYSICAL_TYPE_CODE")
+    private String locationPhysicalTypeCode;
 
-    @CsvBindByName
-    private String LOCATION_PHYSICAL_TYPE_SYSTEM;
+    @CsvBindByName(column = "LOCATION_PHYSICAL_TYPE_SYSTEM")
+    private String locationPhysicalTypeSystem;
 
-    @CsvBindByName
-    private String LOCATION_TEXT_STATUS;
+    @CsvBindByName(column = "LOCATION_TEXT_STATUS")
+    private String locationTextStatus;
 
-    @CsvBindByName
-    private String LOCATION_LAST_UPDATED;
+    @CsvBindByName(column = "LOCATION_LAST_UPDATED")
+    private String locationLastUpdated;
 
-    @CsvBindByName
-    private String SCREENING_LAST_UPDATED;
+    @CsvBindByName(column = "SCREENING_LAST_UPDATED")
+    private String screeningLastUpdated;
 
-    @CsvBindByName
-    private String SCREENING_PROFILE;
+    @CsvBindByName(column = "SCREENING_PROFILE")
+    private String screeningProfile;
 
-    @CsvBindByName
-    private String SCREENING_LANGUAGE;
+    @CsvBindByName(column = "SCREENING_LANGUAGE")
+    private String screeningLanguage;
 
-    @CsvBindByName
-    private String SCREENING_TEXT_STATUS;
+    @CsvBindByName(column = "SCREENING_TEXT_STATUS")
+    private String screeningTextStatus;
 
-    @CsvBindByName
-    private String SCREENING_CODE_SYSTEM_NAME;
+    @CsvBindByName(column = "SCREENING_CODE_SYSTEM_NAME")
+    private String screeningCodeSystemName;
 
-    @CsvBindByName
-    private String QUESTION_CODE_SYSTEM_NAME;
+    @CsvBindByName(column = "QUESTION_CODE_SYSTEM_NAME")
+    private String questionCodeSystemName;
 
-    @CsvBindByName
-    private String OBSERVATION_CATEGORY_SDOH_SYSTEM;
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SDOH_SYSTEM")
+    private String observationCategorySdoHSystem;
 
-    @CsvBindByName
-    private String OBSERVATION_CATEGORY_SOCIAL_HISTORY_CODE;
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SOCIAL_HISTORY_CODE")
+    private String observationCategorySocialHistoryCode;
 
-    @CsvBindByName
-    private String OBSERVATION_CATEGORY_SOCIAL_HISTORY_SYSTEM;
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SOCIAL_HISTORY_SYSTEM")
+    private String observationCategorySocialHistorySystem;
 
-    @CsvBindByName
-    private String OBSERVATION_CATEGORY_SURVEY_CODE;
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SURVEY_CODE")
+    private String observationCategorySurveyCode;
 
-    @CsvBindByName
-    private String OBSERVATION_CATEGORY_SURVEY_SYSTEM;
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SURVEY_SYSTEM")
+    private String observationCategorySurveySystem;
 
-    @CsvBindByName
-    private String OBSERVATION_CATEGORY_SNOMED_SYSTEM;
+    @CsvBindByName(column = "OBSERVATION_CATEGORY_SNOMED_SYSTEM")
+    private String observationCategorySnomedSystem;
 
-    @CsvBindByName
-    private String ANSWER_CODE_SYSTEM_NAME;
+    @CsvBindByName(column = "ANSWER_CODE_SYSTEM_NAME")
+    private String answerCodeSystemName;
+
+    /**
+     * Default constructor for OpenCSV to create an instance of
+     * ScreeningResourceData.
+     */
+    public ScreeningResourceData() {
+    }
 }

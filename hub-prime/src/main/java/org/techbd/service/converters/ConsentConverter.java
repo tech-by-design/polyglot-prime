@@ -11,6 +11,7 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
 import org.techbd.model.csv.ScreeningResourceData;
 import org.techbd.service.converters.shinny.BaseConverter;
+import org.techbd.util.DateUtil;
 
 public class ConsentConverter extends BaseConverter {
 
@@ -23,12 +24,9 @@ public class ConsentConverter extends BaseConverter {
     public BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,List<ScreeningData> screeningDataList,QeAdminData qrAdminData,ScreeningResourceData screeningResourceData,String interactionId) {
         Consent consent = new Consent();
         setMeta(consent);
-     //  consent.setId(CsvConversionUtil.sha256("consentFor" + demographicData.getPatientMrIdValueId());
-        consent.getMeta().setLastUpdated(getMaxLastUpdatedDate(screeningDataList));
-
+        consent.getMeta().setLastUpdated(DateUtil.convertStringToDate(screeningResourceData.getConsentLastUpdated()));
         Bundle.BundleEntryComponent bundleEntryComponent = new Bundle.BundleEntryComponent();
         bundleEntryComponent.setResource(consent);
-
         return bundleEntryComponent;
     }
 

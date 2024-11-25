@@ -65,7 +65,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         Patient patient = new Patient();
         setMeta(patient);
         ScreeningData screeningData = screeningDataList.get(0);
-        patient.setId(generateUniqueId(screeningData.getEncounterId(), screeningData.getFacilityId(),
+        patient.setId(generateUniqueId(screeningResourceData.getEncounterId(), screeningResourceData.getFacilityId(),
                 screeningData.getPatientMrId()));
         Meta meta = patient.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
