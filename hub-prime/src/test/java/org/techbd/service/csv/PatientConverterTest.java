@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
+import org.techbd.model.csv.ScreeningResourceData;
 import org.techbd.service.converters.shinny.PatientConverter;
 import org.techbd.util.CsvConversionUtil;
 
@@ -41,9 +42,9 @@ class PatientConverterTest {
                 final DemographicData demographicData = createDemographicData();
                 final List<ScreeningData> screeningDataList = createScreeningData();
                 final QeAdminData qrAdminData = createQeAdminData();
-
+                final ScreeningResourceData screeningResourceData = createScreeningResourceData();
                 final BundleEntryComponent result = patientConverter.convert(bundle, demographicData, screeningDataList,
-                                qrAdminData,
+                                qrAdminData, screeningResourceData,
                                 "interactionId");
                 final SoftAssertions softly = new SoftAssertions();
 
@@ -136,7 +137,8 @@ class PatientConverterTest {
                 final var demographicData = createDemographicData();
                 final var screeningDataList = createScreeningData();
                 final var qrAdminData = createQeAdminData();
-                final var result = patientConverter.convert(bundle, demographicData, screeningDataList, qrAdminData,
+                final ScreeningResourceData screeningResourceData = createScreeningResourceData();
+                final var result = patientConverter.convert(bundle, demographicData, screeningDataList, qrAdminData,screeningResourceData,
                                 "interactionId");
                 final Patient patient = (Patient) result.getResource();
                 final var filePath = "src/test/resources/org/techbd/csv/generated-json/patient.json";
@@ -146,6 +148,12 @@ class PatientConverterTest {
                 final Path outputPath = Paths.get(filePath);
                 Files.createDirectories(outputPath.getParent());
                 Files.writeString(outputPath, fhirResourceJson);
+        }
+
+        private ScreeningResourceData createScreeningResourceData() throws IOException {
+                final String csv = "PATIENT_MR_ID_VALUE|FACILITY_ID|CONSENT_PROFILE|CONSENT_LAST_UPDATED|CONSENT_TEXT_STATUS|CONSENT_STATUS|CONSENT_SCOPE_CODE|CONSENT_SCOPE_TEXT|CONSENT_CATEGORY_IDSCL_CODE|CONSENT_CATEGORY_IDSCL_SYSTEM|CONSENT_CATEGORY_LOINC_CODE|CONSENT_CATEGORY_LOINC_SYSTEM|CONSENT_CATEGORY_LOINC_DISPLAY|CONSENT_DATE_TIME|CONSENT_POLICY_AUTHORITY|CONSENT_PROVISION_TYPE|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|ENCOUNTER_START_TIME|ENCOUNTER_END_TIME|ENCOUNTER_LAST_UPDATED|ENCOUNTER_PROFILE|ENCOUNTER_TEXT_STATUS|LOCATION_NAME|LOCATION_STATUS|LOCATION_TYPE_CODE|LOCATION_TYPE_SYSTEM|LOCATION_ADDRESS1|LOCATION_ADDRESS2|LOCATION_CITY|LOCATION_DISTRICT|LOCATION_STATE|LOCATION_ZIP|LOCATION_PHYSICAL_TYPE_CODE|LOCATION_PHYSICAL_TYPE_SYSTEM|LOCATION_TEXT_STATUS|LOCATION_LAST_UPDATED|SCREENING_LAST_UPDATED|SCREENING_PROFILE|SCREENING_LANGUAGE|SCREENING_TEXT_STATUS|SCREENING_CODE_SYSTEM_NAME|QUESTION_CODE_SYSTEM_NAME|OBSERVATION_CATEGORY_SDOH_SYSTEM|OBSERVATION_CATEGORY_SOCIAL_HISTORY_CODE|OBSERVATION_CATEGORY_SOCIAL_HISTORY_SYSTEM|OBSERVATION_CATEGORY_SURVEY_CODE|OBSERVATION_CATEGORY_SURVEY_SYSTEM|OBSERVATION_CATEGORY_SNOMED_SYSTEM|ANSWER_CODE_SYSTEM_NAME\n"
+                                + "11223344|CUMC|http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent|2024-02-23T00:00:00Z|generated|active|treatment|treatment|IDSCL|http://terminology.hl7.org/CodeSystem/v3-ActCode|59284-0|http://loinc.org|Patient Consent|2024-02-23T00:00:00Z|urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5|permit|EncounterExample|FLD|field|http://terminology.hl7.org/CodeSystem/v3-ActCode|finished|Finished|http://terminology.hl7.org/CodeSystem/v3-ActCode|405672008|Direct questioning (procedure)|http://snomed.info/sct|2024-02-23T00:00:00Z|2024-02-23T00:00:00Z|2024-02-23T00:00:00Z|http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter|generated|downtown location|active|CSC|http://terminology.hl7.org/CodeSystem/v3-RoleCode|115 Broadway Suite #1601||New York|MANHATTAN|NY|10006|bu|http://terminology.hl7.org/CodeSystem/location-physical-type|generated|2024-02-23T00:00:00Z|2024-02-23T00:00:00Z|http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response|en|generated|http://loinc.org|http://loinc.org|http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes|social-history|http://terminology.hl7.org/CodeSystem/observation-category|survey|http://terminology.hl7.org/CodeSystem/observation-category|http://snomed.info/sct|http://loinc.org";
+                return CsvConversionUtil.convertCsvStringToScreeningResourceData(csv).get(0);
         }
 
         private DemographicData createDemographicData() throws IOException {
