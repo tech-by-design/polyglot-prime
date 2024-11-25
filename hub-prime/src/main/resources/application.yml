@@ -45,6 +45,12 @@ spring:
           auth: true
           starttls:
             enable: true
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      file-size-threshold: 2MB
 
 springdoc:
   api-docs:
@@ -61,7 +67,7 @@ server:
       cookie:
         secure: true
         http-only: true
-        same-site: LAX
+        same-site: LAX 
 
 org:
   techbd:
@@ -84,6 +90,16 @@ org:
       http:
         hub:
           prime:
+            csv:
+              validation:
+                python-script-path: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:src/main/java/org/techbd/csvvalidator/validate_csvs.py}
+                python-executable: ${TECHBD_CSV_PYTHON_EXECUTABLE:python3}
+                package-path: ${TECHBD_CSV_PACKAGE_PATH:src/main/java/org/techbd/csvvalidator/datapackage-ig.json}
+                output-path: ${TECHBD_CSV_OUTPUT_PATH:src/main/java/org/techbd/csvvalidator/output/output.json}
+                file1: ${TECHBD_CSV_FILE1_PATH:src/main/java/org/techbd/csvvalidator/data/DEMOGRAPHIC_DATA.csv}
+                file2: ${TECHBD_CSV_FILE2_PATH:src/main/java/org/techbd/csvvalidator/data/QE_ADMIN_DATA.csv}
+                file3: ${TECHBD_CSV_FILE3_PATH:src/main/java/org/techbd/csvvalidator/data/SCREENING_DATA.csv}
+
             version: @project.version@
             fhirVersion: r4
             igVersion: 1.1.0
@@ -125,13 +141,14 @@ org:
           idleTimeout: 300000
           connectionTimeout: 30000
           maxLifetime: 1800000
-    csv:
-      validation:
-        python-script-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PYTHON_SCRIPT_PATH:}
-        python-executable: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PYTHON_EXECUTABLE:python3}
-        package-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PACKAGE_PATH:}
-        output-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_OUTPUT_PATH:}
-        base-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_BASE_PATH:}
-        file1: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE1_PATH:}
-        file2: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE2_PATH:}
-        file3: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE3_PATH:}
+    # csv:
+    #   validation:
+    #     python-script-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PYTHON_SCRIPT_PATH:}
+    #     python-executable: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PYTHON_EXECUTABLE:python3}
+    #     package-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PACKAGE_PATH:}
+    #     output-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_OUTPUT_PATH:}
+    #     base-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_BASE_PATH:}
+    #     file1: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE1_PATH:}
+    #     file2: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE2_PATH:}
+    #     file3: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE3_PATH:}
+    

@@ -4,11 +4,13 @@ import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.techbd.conf.Configuration;
 
 @org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "org.techbd.service.http.hub.prime")
 @ConfigurationPropertiesScan
+@EnableConfigurationProperties
 public class AppConfig {
 
     public static class Servlet {
@@ -47,6 +49,7 @@ public class AppConfig {
     private String fhirVersion;
     private Map<String, Map<String, String>> igPackages;
     private String igVersion;
+    private CsvValidation csv;
 
     public String getVersion() {
         return version;
@@ -148,5 +151,27 @@ public class AppConfig {
 
     public String getIgVersion() {
         return igVersion;
+    }
+
+    public CsvValidation getCsv() { // getter
+        return csv;
+    }
+
+    public void setCsv(CsvValidation csv) { // setter
+        this.csv = csv;
+    }
+
+    public record CsvValidation(
+            Validation validation) {
+        public record Validation(
+                String pythonScriptPath,
+                String pythonExecutable,
+                String packagePath,
+                String outputPath,
+                String basePath,
+                String file1,
+                String file2,
+                String file3) {
+        }
     }
 }

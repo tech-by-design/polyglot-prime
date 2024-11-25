@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
-import org.techbd.javapythonjunit.CsvValidationService;
+import org.techbd.service.CsvValidationService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -86,9 +86,10 @@ public class CsvController {
                     "status", "Error",
                     "message", "Validation Error: " + e.getMessage()));
         } catch (Exception e) {
+                e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                     "status", "Error",
-                    "message", "An unexpected system error occurred: " + e.getMessage()));
+                    "message", "An unexpected system error occurred: " + e.getMessage()+ e.getMessage()));
         }
     }
 }
