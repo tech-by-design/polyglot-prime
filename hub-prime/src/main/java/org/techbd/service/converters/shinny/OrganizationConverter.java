@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
+import org.techbd.model.csv.ScreeningResourceData;
 
 /**
  * Converts data related to an Organization into a FHIR Organization resource.
@@ -62,7 +63,7 @@ public class OrganizationConverter extends BaseConverter {
      */
     @Override
     public BundleEntryComponent convert(Bundle bundle, DemographicData demographicData,
-            List<ScreeningData> screeningDataList, QeAdminData qrAdminData, String interactionId) {
+            List<ScreeningData> screeningDataList, QeAdminData qrAdminData, ScreeningResourceData screeningResourceData,String interactionId) {
         Organization organization = new Organization();
         setMeta(organization);
         organization.setId(generateUniqueId(qrAdminData.getFacilityId())); // Assuming qrAdminData contains orgId

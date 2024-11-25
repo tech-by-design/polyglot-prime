@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
+import org.techbd.model.csv.ScreeningResourceData;
 
 @Component
 public interface IConverter {
@@ -23,7 +24,7 @@ public interface IConverter {
         setMeta(resource);
     }
 
-    BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,List<ScreeningData> screeningDataList,QeAdminData qrAdminData,String interactionId);
+    BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,List<ScreeningData> screeningDataList,QeAdminData qrAdminData,ScreeningResourceData screeningResourceData,String interactionId);
 
     default void setMeta(Resource resource) {
         if (null != resource.getMeta()) {

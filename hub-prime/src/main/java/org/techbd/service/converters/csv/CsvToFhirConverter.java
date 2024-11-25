@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
+import org.techbd.model.csv.ScreeningResourceData;
 import org.techbd.service.converters.shinny.BundleConverter;
 import org.techbd.service.converters.shinny.IConverter;
 import org.techbd.service.http.hub.prime.AppConfig;
@@ -30,14 +31,14 @@ public class CsvToFhirConverter {
     }
 
     public String convert(DemographicData demographicData, List<ScreeningData> screeningDataList,
-            QeAdminData qeAdminData, String interactionId) {
+            QeAdminData qeAdminData, ScreeningResourceData screeningResourceData,String interactionId) {
         Bundle bundle = null;
         try {
             LOG.info("CsvToFhirConvereter::convert - BEGIN for interactionId :{}", interactionId);
             bundle = bundleConverter.generateEmptyBundle(interactionId, appConfig.getIgVersion());
             LOG.debug("CsvToFhirConvereter::convert - Bundle entry created :{}", interactionId);
             LOG.debug("Conversion of resources - BEGIN for interactionId :{}", interactionId);
-            addEntries(bundle, demographicData, screeningDataList, qeAdminData, interactionId);
+            addEntries(bundle, demographicData, screeningDataList, qeAdminData, screeningResourceData,interactionId);
             setReferences(bundle);
             LOG.debug("Conversion of resources - END for interactionId :{}", interactionId);
             LOG.info("CsvToFhirConvereter::convert - END for interactionId :{}", interactionId);
@@ -53,10 +54,10 @@ public class CsvToFhirConverter {
     }
 
     private void addEntries(Bundle bundle, DemographicData demographicData, List<ScreeningData> screeningDataList,
-            QeAdminData qeAdminData, String interactionId) {
+            QeAdminData qeAdminData,ScreeningResourceData screeningResourceData, String interactionId) {
         List<BundleEntryComponent> entries = new ArrayList<>();
         converters.stream().forEach(converter -> {
-            entries.add(converter.convert(bundle, demographicData, screeningDataList, qeAdminData, interactionId));
+            entries.add(converter.convert(bundle, demographicData, screeningDataList, qeAdminData,screeningResourceData, interactionId));
         });
     }
 

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
+import org.techbd.model.csv.ScreeningResourceData;
 import org.techbd.util.DateUtil;
 
 @Component
@@ -37,7 +38,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
     @Override
     public BundleEntryComponent convert(Bundle bundle, DemographicData demographicData,
             List<ScreeningData> screeningDataList,
-            QeAdminData qrAdminData, String interactionId) {
+            QeAdminData qrAdminData, ScreeningResourceData screeningResourceData,String interactionId) {
         LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
         Observation observation = new Observation();
         setMeta(observation);

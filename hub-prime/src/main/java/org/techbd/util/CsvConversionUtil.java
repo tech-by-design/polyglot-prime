@@ -11,6 +11,7 @@ import java.util.List;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
+import org.techbd.model.csv.ScreeningResourceData;
 
 import com.opencsv.bean.CsvToBeanBuilder;
 
@@ -74,6 +75,16 @@ public class CsvConversionUtil {
         return convertCsvStringToObjectList(csvData, QeAdminData.class, '|');
     }
 
+     /**
+     * Converts a CSV string to a list of Screening Resource objects.
+     *
+     * @param csvData The CSV string containing the Screening Resource data.
+     * @return List of QeAdminData objects.
+     * @throws IOException If an I/O error occurs during CSV reading.
+     */
+    public static List<ScreeningResourceData> convertCsvStringToScreeningResourceData(String csvData) throws IOException {
+        return convertCsvStringToObjectList(csvData, ScreeningResourceData.class, '|');
+    }
     public static String sha256(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
+import org.techbd.model.csv.ScreeningResourceData;
 
 @Component
 public class EncounterConverter  extends BaseConverter {
@@ -23,7 +24,7 @@ public class EncounterConverter  extends BaseConverter {
 
     @Override
     public BundleEntryComponent convert(Bundle bundle, DemographicData demographicData, List<ScreeningData> screeningDataList,
-            QeAdminData qrAdminData,String interactionId) {
+            QeAdminData qrAdminData,ScreeningResourceData screeningResourceData,String interactionId) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'convert'");
     }
