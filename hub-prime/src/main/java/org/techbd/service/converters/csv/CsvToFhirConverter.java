@@ -2,12 +2,9 @@ package org.techbd.service.converters.csv;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Meta;
-import org.hl7.fhir.r4.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.DemographicData;
@@ -38,15 +35,21 @@ public class CsvToFhirConverter {
         try {
             LOG.info("CsvToFhirConvereter::convert - BEGIN for interactionId :{}", interactionId);
             bundle = bundleConverter.generateEmptyBundle(interactionId, appConfig.getIgVersion());
-            LOG.info("CsvToFhirConvereter::convert - Bundle entry created :{}", interactionId);
-            LOG.info("Conversion of resources - BEGIN for interactionId :{}", interactionId);
+            LOG.debug("CsvToFhirConvereter::convert - Bundle entry created :{}", interactionId);
+            LOG.debug("Conversion of resources - BEGIN for interactionId :{}", interactionId);
             addEntries(bundle, demographicData, screeningDataList, qeAdminData, interactionId);
-            LOG.info("Conversion of resources - END for interactionId :{}", interactionId);
-            LOG.info("CsvToFhirConvereter::convert - BEGIN for interactionId :{}", interactionId);
+            setReferences(bundle);
+            LOG.debug("Conversion of resources - END for interactionId :{}", interactionId);
+            LOG.info("CsvToFhirConvereter::convert - END for interactionId :{}", interactionId);
         } catch (Exception ex) {
             LOG.error("Exception in Csv conversion for interaction id : {}", interactionId, ex);
         }
         return FhirContext.forR4().newJsonParser().encodeResourceToString(bundle);
+    }
+
+    private void setReferences(Bundle bundle) {
+        // TODO : after conversion.set generated ids of resources in other resources
+        throw new UnsupportedOperationException("Unimplemented method 'setReferences'");
     }
 
     private void addEntries(Bundle bundle, DemographicData demographicData, List<ScreeningData> screeningDataList,
