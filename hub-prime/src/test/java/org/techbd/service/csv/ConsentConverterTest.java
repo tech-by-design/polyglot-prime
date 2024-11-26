@@ -66,8 +66,8 @@ class ConsentConverterTest {
         softly.assertThat(consent.getStatus()).isEqualTo(Consent.ConsentState.ACTIVE);
 
         // Assert that the consent has the correct consent type
-        softly.assertThat(consent.getCategory()).hasSize(1);
-        softly.assertThat(consent.getCategoryFirstRep().getCodingFirstRep().getCode()).isEqualTo("IDSCL");
+        softly.assertThat(consent.getCategory()).hasSize(2);
+        softly.assertThat(consent.getCategoryFirstRep().getCodingFirstRep().getCode()).isEqualTo("59284-0");
 
         // Assert all soft assertions
         softly.assertAll();
