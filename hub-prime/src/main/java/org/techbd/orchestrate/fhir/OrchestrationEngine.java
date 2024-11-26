@@ -142,7 +142,7 @@ public class OrchestrationEngine {
     }
 
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
-        if (CollectionUtils.isNotEmpty(sessions)) {
+        if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
             Iterator<OrchestrationSession> iterator = this.sessions.iterator();
             while (iterator.hasNext()) {
                 OrchestrationSession session = iterator.next();
