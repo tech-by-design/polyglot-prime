@@ -73,7 +73,7 @@ public class ConsentConverter extends BaseConverter {
 
         // Set Meta Data
         Meta meta = consent.getMeta();
-        meta.setLastUpdated(getLastUpdatedDate(qrAdminData));
+        meta.setLastUpdated(getLastUpdatedDate(screeningResourceData));
 
         // Set consent scope
         populateConsentStatusAndScope(consent, screeningResourceData);
@@ -215,12 +215,12 @@ public class ConsentConverter extends BaseConverter {
      *                    updated date.
      * @return The last updated date.
      */
-    private Date getLastUpdatedDate(QeAdminData qrAdminData) {
-        if (qrAdminData != null && qrAdminData.getFacilityLastUpdated() != null
-                && !qrAdminData.getFacilityLastUpdated().isEmpty()) {
+    private Date getLastUpdatedDate(ScreeningResourceData screeningResourceData) {
+        if (screeningResourceData != null && screeningResourceData.getConsentLastUpdated() != null
+                && !screeningResourceData.getConsentLastUpdated().isEmpty()) {
             try {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                return dateFormat.parse(qrAdminData.getFacilityLastUpdated());
+                return dateFormat.parse(screeningResourceData.getConsentLastUpdated());
             } catch (ParseException e) {
                 LOG.error("Error parsing last updated date", e);
             }
