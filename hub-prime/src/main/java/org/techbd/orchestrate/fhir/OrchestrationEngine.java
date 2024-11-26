@@ -136,13 +136,14 @@ public class OrchestrationEngine {
 
     public void orchestrate(@NotNull final OrchestrationSession... sessions) {
         for (final OrchestrationSession session : sessions) {
-            session.validate();
             this.sessions.add(session);
+            session.validate();
         }
     }
 
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
-        if (CollectionUtils.isNotEmpty(sessions)) {
+        if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
+            LOG.info("No of sessions : {} "+sessions.size());
             Iterator<OrchestrationSession> iterator = this.sessions.iterator();
             while (iterator.hasNext()) {
                 OrchestrationSession session = iterator.next();
