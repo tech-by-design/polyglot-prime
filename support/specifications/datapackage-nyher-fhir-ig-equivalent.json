@@ -2,7 +2,7 @@
   "name": "csv-validation-using-ig",
   "resources": [
     {
-      "name": "qe_admin_data",
+      "name": "qe_admin_data", 
       "schema": {
         "fields": [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "constraints": {"required": true, "unique": true}},
@@ -177,7 +177,11 @@
           "weekly", "daily or almost daily", "never", "once or twice", "monthly", "weekly", "daily or almost daily",
           "not at all (0)", "several days (1)", "more than half the days (2)", "nearly every day (3)", "not at all (0)",
           "several days (1)", "more than half the days (2)", "nearly every day (3)", "not at all", "a little bit",
-          "somewhat", "quite a bit", "very much", "i choose not to answer this question", "yes", "no", "yes", "no"]}}            
+          "somewhat", "quite a bit", "very much", "i choose not to answer this question", "yes", "no", "yes", "no"]}},
+           {"name": "INTERPRETATION_CODE", "type": "string"},    
+           {"name": "INTERPRETATION_DISPLAY", "type": "string"},
+           {"name": "DATA_ABSENT_REASON_CODE", "type": "string"},
+           {"name": "DATA_ABSENT_REASON_DISPLAY", "type": "string"}       
         ],
         "foreignKeys": [
           {
@@ -194,7 +198,7 @@
       }
     },    
     {
-      "name": "screening_location_data",  
+      "name": "screening_location_data",   
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "constraints": {"required": true}},
@@ -231,7 +235,7 @@
       }
     },  
     {
-      "name": "screening_encounter_data",  
+      "name": "screening_encounter_data", 
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "constraints": {"required": true}},
@@ -303,7 +307,7 @@
       }
     },   
     {
-      "name": "screening_consent_data",  
+      "name": "screening_consent_data",   
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "constraints": {"required": true}},
@@ -387,7 +391,9 @@
       { "name": "OBSERVATION_CATEGORY_SURVEY_CODE", "type": "string", "constraints":{"required":true, "enum":["survey"]}},
       { "name": "OBSERVATION_CATEGORY_SURVEY_SYSTEM", "type": "string", "constraints":{"required":true, "enum":["http://terminology.hl7.org/CodeSystem/observation-category"]} },
       { "name": "OBSERVATION_CATEGORY_SNOMED_SYSTEM", "type": "string", "constraints":{"required":true, "enum":["http://snomed.info/sct"]} },
-      {"name": "ANSWER_CODE_SYSTEM_NAME", "type": "string", "constraints": {"required": true, "enum": ["http://loinc.org"]}}
+      {"name": "ANSWER_CODE_SYSTEM_NAME", "type": "string", "constraints": {"required": true, "enum": ["http://loinc.org"]}},
+      { "name": "INTERPRETATION_SYSTEM", "type": "string" , "constraints": { "enum": ["http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation"]}},
+      { "name": "DATA_ABSENT_REASON_SYSTEM", "type": "string" , "constraints": { "enum": ["https://terminology.hl7.org/6.0.2/CodeSystem-data-absent-reason"]}}
         ],
         "foreignKeys": [
           {
@@ -404,7 +410,7 @@
       }
     },                     
     {
-      "name": "demographic_data",  
+      "name": "demographic_data",   
       "schema": {
         "fields": [ 
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "constraints": {"required": true}},

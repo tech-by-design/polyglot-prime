@@ -1,6 +1,6 @@
 # `csv-validation-using-ig`
 ## `qe_admin_data`
-  - `path` data/QE_ADMIN_DATA.csv
+  - `path` flat-file/nyher-fhir-ig-example/QE_ADMIN_DATA.csv
   - `schema`
       - `primaryKey` ['PATIENT_MR_ID_VALUE']
     - `foreignKeys` []
@@ -82,7 +82,7 @@
 ### `FACILITY_TEXT_STATUS`
   - `type` string
 ## `screening_observation_data`
-  - `path` data/SCREENING_OBSERVATION_DATA.csv
+  - `path` flat-file/nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA.csv
   - `schema`
       - `foreignKeys`
       - [1]
@@ -145,8 +145,16 @@
   - `type` string
   - `constraints`:
     - `enum` ['i have a steady place to live', 'i have a place to live today, but i am worried about losing it in the future', 'i do not have a steady place to live (i am temporarily staying with others, in a hotel, in a shelter,living outside on the street, on a beach, in a car, abandoned building, bus or train station, or in a park)', 'pests such as bugs, ants, or mice', 'mold', 'lead paint or pipes', 'lack of heat', 'oven or stove not working', 'smoke detectors missing or not working', 'water leaks', 'none of the above', 'often true', 'sometimes true', 'never true', 'often true', 'sometimes true', 'never true', 'yes', 'no', 'yes', 'no', 'already shut off', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'very hard', 'somewhat hard', 'not hard at all', 'yes, help finding work', 'yes, help keeping work', 'i do not need or want help', "i don't need any help", 'i get all the help i need', 'i could use a little more help', 'i need a lot more help', 'never', 'rarely', 'sometimes', 'often', 'always', 'yes', 'no', 'yes', 'no', '0', '1', '2', '3', '4', '5', '6', '7', '0', '10', '20', '30', '40', '50', '60', '90', '120', '150 or greater', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'not at all (0)', 'several days (1)', 'more than half the days (2)', 'nearly every day (3)', 'not at all (0)', 'several days (1)', 'more than half the days (2)', 'nearly every day (3)', 'not at all', 'a little bit', 'somewhat', 'quite a bit', 'very much', 'i choose not to answer this question', 'yes', 'no', 'yes', 'no']
+### `INTERPRETATION_CODE`
+  - `type` string
+### `INTERPRETATION_DISPLAY`
+  - `type` string
+### `DATA_ABSENT_REASON_CODE`
+  - `type` string
+### `DATA_ABSENT_REASON_DISPLAY`
+  - `type` string
 ## `screening_location_data`
-  - `path` data/SCREENING_LOCATION_DATA.csv
+  - `path` flat-file/nyher-fhir-ig-example/SCREENING_LOCATION_DATA.csv
   - `schema`
       - `foreignKeys`
       - [1]
@@ -192,7 +200,7 @@
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ## `screening_encounter_data`
-  - `path` data/SCREENING_ENCOUNTER_DATA.csv
+  - `path` flat-file/nyher-fhir-ig-example/SCREENING_ENCOUNTER_DATA.csv
   - `schema`
       - `foreignKeys`
       - [1]
@@ -262,7 +270,7 @@
 ### `ENCOUNTER_TEXT_STATUS`
   - `type` string
 ## `screening_consent_data`
-  - `path` data/SCREENING_CONSENT_DATA.csv
+  - `path` flat-file/nyher-fhir-ig-example/SCREENING_CONSENT_DATA.csv
   - `schema`
       - `foreignKeys`
       - [1]
@@ -336,7 +344,7 @@
   - `constraints`:
     - `enum` ['deny', 'permit']
 ## `screening_resources_data`
-  - `path` data/SCREENING_RESOURCES_DATA.csv
+  - `path` flat-file/nyher-fhir-ig-example/SCREENING_RESOURCES_DATA.csv
   - `schema`
       - `foreignKeys`
       - [1]
@@ -414,8 +422,16 @@
   - `constraints`:
     - `required` True
     - `enum` ['http://loinc.org']
+### `INTERPRETATION_SYSTEM`
+  - `type` string
+  - `constraints`:
+    - `enum` ['http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation']
+### `DATA_ABSENT_REASON_SYSTEM`
+  - `type` string
+  - `constraints`:
+    - `enum` ['https://terminology.hl7.org/6.0.2/CodeSystem-data-absent-reason']
 ## `demographic_data`
-  - `path` data/DEMOGRAPHIC_DATA.csv
+  - `path` flat-file/nyher-fhir-ig-example/DEMOGRAPHIC_DATA.csv
   - `schema`
       - `foreignKeys`
       - [1]
