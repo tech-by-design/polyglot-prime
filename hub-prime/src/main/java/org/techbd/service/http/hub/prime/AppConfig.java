@@ -2,15 +2,15 @@ package org.techbd.service.http.hub.prime;
 
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.techbd.conf.Configuration;
 
 @org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "org.techbd.service.http.hub.prime")
 @ConfigurationPropertiesScan
-@EnableConfigurationProperties
+@EnableAutoConfiguration
 public class AppConfig {
 
     public static class Servlet {
