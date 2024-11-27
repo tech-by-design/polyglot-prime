@@ -18,6 +18,7 @@ This project uses Frictionless Data to validate CSV files against predefined sch
   - `SCREENING_ENCOUNTER_DATA.csv`: CSV file containing encounter-related screening data information.
   - `SCREENING_CONSENT_DATA.csv`: CSV file containing consent-related screening data information.
   - `SCREENING_RESOURCES_DATA.csv`: CSV file containing detailed screening data information.
+  - `Consolidated NYHER FHIR IG Examples.xlsx`: Excel file containing consolidated sheets of the above CSVs.
 
 ## Prerequisites
 
