@@ -13,6 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Service class for validating CSV files using an external Python validation
+ * script.
+ */
 @Service
 @RequiredArgsConstructor
 public class CsvValidationService {
@@ -20,15 +24,35 @@ public class CsvValidationService {
     private static final Logger log = LoggerFactory.getLogger(CsvValidationService.class);
     private final AppConfig appConfig;
 
+    /**
+     * Initialization method called after dependency injection.
+     * 
+     * Logs the loaded CSV configuration for debugging and informational purposes.
+     */
     @PostConstruct
     public void init() {
         log.info("CSV Configuration loaded: {}", appConfig.getCsv());
     }
 
+    /**
+     * Creates a new ProcessBuilder instance.
+     * 
+     * This method can be overridden for testing or custom process creation.
+     * 
+     * @return A new ProcessBuilder instance
+     */
     protected ProcessBuilder createProcessBuilder() {
         return new ProcessBuilder();
     }
 
+    /**
+     * Validates a group of CSV files using the configured Python validation script.
+     * Executes the Python script as a subprocess and collects the output and
+     * errors.
+     *
+     * @return a map containing the validation results.
+     * @throws Exception if the validation script fails or encounters an error.
+     */
     public Map<String, Object> validateCsvGroup() throws Exception {
         try {
             var config = appConfig.getCsv().validation();
@@ -44,6 +68,10 @@ public class CsvValidationService {
             command.add(config.file1());
             command.add(config.file2());
             command.add(config.file3());
+            command.add(config.file4());
+            command.add(config.file5());
+            command.add(config.file6());
+            command.add(config.file7());
             command.add(config.outputPath());
 
             log.info("Executing command: {}", String.join(" ", command));
@@ -74,6 +102,7 @@ public class CsvValidationService {
                 }
             }
 
+            // Wait for the process to complete and check exit code
             int exitCode = process.waitFor();
             if (exitCode != 0) {
                 String errorMessage = String.format(
@@ -82,7 +111,7 @@ public class CsvValidationService {
                 log.error(errorMessage);
                 throw new Exception(errorMessage);
             }
-
+            // Return the result of the validation
             String result = output.toString();
             log.info("Python validation script executed successfully: {}", result);
 
@@ -94,4 +123,3 @@ public class CsvValidationService {
         }
     }
 }
-

@@ -92,14 +92,17 @@ org:
           prime:
             csv:
               validation:
-                python-script-path: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:src/main/java/org/techbd/csvvalidator/validate_csvs.py}
+                python-script-path: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:src/main/java/org/techbd/csvvalidator/csv-validate.py}
                 python-executable: ${TECHBD_CSV_PYTHON_EXECUTABLE:python3}
                 package-path: ${TECHBD_CSV_PACKAGE_PATH:src/main/java/org/techbd/csvvalidator/datapackage-ig.json}
                 output-path: ${TECHBD_CSV_OUTPUT_PATH:src/main/java/org/techbd/csvvalidator/output/output.json}
-                file1: ${TECHBD_CSV_FILE1_PATH:src/main/java/org/techbd/csvvalidator/data/DEMOGRAPHIC_DATA.csv}
-                file2: ${TECHBD_CSV_FILE2_PATH:src/main/java/org/techbd/csvvalidator/data/QE_ADMIN_DATA.csv}
-                file3: ${TECHBD_CSV_FILE3_PATH:src/main/java/org/techbd/csvvalidator/data/SCREENING_DATA.csv}
-
+                file1: ${TECHBD_CSV_FILE1_PATH:src/main/java/org/techbd/csvvalidator/data/QE_ADMIN_DATA.csv}
+                file2: ${TECHBD_CSV_FILE2_PATH:src/main/java/org/techbd/csvvalidator/data/SCREENING_OBSERVATION_DATA.csv}
+                file3: ${TECHBD_CSV_FILE3_PATH:src/main/java/org/techbd/csvvalidator/data/SCREENING_LOCATION_DATA.csv}
+                file4: ${TECHBD_CSV_FILE4_PATH:src/main/java/org/techbd/csvvalidator/data/SCREENING_ENCOUNTER_DATA.csv}
+                file5: ${TECHBD_CSV_FILE5_PATH:src/main/java/org/techbd/csvvalidator/data/SCREENING_CONSENT_DATA.csv}
+                file6: ${TECHBD_CSV_FILE6_PATH:src/main/java/org/techbd/csvvalidator/data/SCREENING_RESOURCES_DATA.csv}
+                file7: ${TECHBD_CSV_FILE7_PATH:src/main/java/org/techbd/csvvalidator/data/DEMOGRAPHIC_DATA.csv}
             version: @project.version@
             fhirVersion: r4
             igVersion: 1.1.0
@@ -141,14 +144,4 @@ org:
           idleTimeout: 300000
           connectionTimeout: 30000
           maxLifetime: 1800000
-    # csv:
-    #   validation:
-    #     python-script-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PYTHON_SCRIPT_PATH:}
-    #     python-executable: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PYTHON_EXECUTABLE:python3}
-    #     package-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_PACKAGE_PATH:}
-    #     output-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_OUTPUT_PATH:}
-    #     base-path: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_BASE_PATH:}
-    #     file1: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE1_PATH:}
-    #     file2: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE2_PATH:}
-    #     file3: ${${SPRING_PROFILES_ACTIVE}_TECHBD_CSV_FILE3_PATH:}
-    
+   

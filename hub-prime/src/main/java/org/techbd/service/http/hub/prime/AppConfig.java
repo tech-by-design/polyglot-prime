@@ -171,7 +171,11 @@ public class AppConfig {
                 String basePath,
                 String file1,
                 String file2,
-                String file3) {
+                String file3,
+                String file4,
+                String file5,
+                String file6,
+                String file7) {
         }
     }
 }

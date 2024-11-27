@@ -1,4 +1,3 @@
-
 package org.techbd.service;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class CsvValidationServiceTest {
+
         private CsvValidationService csvValidationService;
         private AppConfig appConfig;
 
@@ -29,7 +29,11 @@ class CsvValidationServiceTest {
                                 "/mock/base", // basePath
                                 "file1.csv", // file1
                                 "file2.csv", // file2
-                                "file3.csv" // file3
+                                "file3.csv", // file3
+                                "file4.csv", // file4
+                                "file5.csv", // file5
+                                "file6.csv", // file6
+                                "file7.csv" // file7
                 );
 
                 // Create CsvValidation with the Validation record
@@ -77,5 +81,20 @@ class CsvValidationServiceTest {
                 verify(appConfig).getCsv();
         }
 
-}
+        @Test
+        void testCreateProcessBuilder() {
+                ProcessBuilder pb = csvValidationService.createProcessBuilder();
+                assertNotNull(pb);
+        }
 
+        @Test
+        void testValidateCsvGroup_NullConfig() {
+                // Mock null validation configuration
+                when(appConfig.getCsv().validation()).thenReturn(null);
+
+                // Verify that an IllegalStateException is thrown
+                assertThrows(Exception.class, () -> {
+                        csvValidationService.validateCsvGroup();
+                });
+        }
+}
