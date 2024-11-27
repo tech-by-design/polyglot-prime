@@ -8,9 +8,9 @@ This project uses Frictionless Data to validate CSV files against predefined sch
 ## Folder Structure
 
 - **`support/specifications`**
-  - `datapackage-ig.json`: Schema specification for CSV validation.
-  - `csv-validate.py`: Script to validate CSV files against `datapackage-ig.json`.
-- **`data/`**: Folder containing CSV files for validation.
+  - `datapackage-nyher-fhir-ig-equivalent.json`: Schema specification for CSV validation.
+  - `validate-nyher-fhir-ig-equivalent.py`: Script to validate CSV files against `datapackage-nyher-fhir-ig-equivalent.json`.
+- **`flat-file/nyher-fhir-ig-example/`**: Folder containing CSV files for validation.
   - `DEMOGRAPHIC_DATA.csv`: CSV file containing demographic information.
   - `QE_ADMIN_DATA.csv`: CSV file containing QE admin data.
   - `SCREENING_OBSERVATION_DATA.csv`: CSV file containing primary observation data information.
@@ -36,9 +36,9 @@ This project uses Frictionless Data to validate CSV files against predefined sch
    ```
 
 2. **Run the validation script**:
-   Use the `csv-validate.py` script to validate all CSV files in the `data/` folder:
+   Use the `validate-nyher-fhir-ig-equivalent.py` script to validate all CSV files in the `flat-file/nyher-fhir-ig-example/` folder:
    ```bash
-   python csv-validate.py datapackage-ig.json data/QE_ADMIN_DATA.csv data/SCREENING_OBSERVATION_DATA.csv data/SCREENING_LOCATION_DATA.csv data/CREENING_ENCOUNTER_DATA.csv data/SCREENING_CONSENT_DATA.csv data/SCREENING_RESOURCES_DATA.csv data/DEMOGRAPHIC_DATA.csv output.json
+   python validate-nyher-fhir-ig-equivalent.py datapackage-nyher-fhir-ig-equivalent.json flat-file/nyher-fhir-ig-example/QE_ADMIN_DATA.csv flat-file/nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA.csv flat-file/nyher-fhir-ig-example/SCREENING_LOCATION_DATA.csv flat-file/nyher-fhir-ig-example/SCREENING_ENCOUNTER_DATA.csv flat-file/nyher-fhir-ig-example/SCREENING_CONSENT_DATA.csv flat-file/nyher-fhir-ig-example/SCREENING_RESOURCES_DATA.csv flat-file/nyher-fhir-ig-example/DEMOGRAPHIC_DATA.csv output.json
    ```
 
 3. **View Validation Results**:
@@ -46,7 +46,7 @@ This project uses Frictionless Data to validate CSV files against predefined sch
 
 ## Notes
 
-- The `datapackage-ig.json` file defines the expected schema, including data types, constraints, and other validation rules for each CSV file.
-- The `csv-validate.py` script utilizes Frictionless to validate the CSV files and report any deviations from the schema and saved into `output.json` file.
+- The `datapackage-nyher-fhir-ig-equivalent.json` file defines the expected schema, including data types, constraints, and other validation rules for each CSV file.
+- The `validate-nyher-fhir-ig-equivalent.py` script utilizes Frictionless to validate the CSV files and report any deviations from the schema and saved into `output.json` file.
 
 For further assistance or questions, please refer to GitHub Issues.

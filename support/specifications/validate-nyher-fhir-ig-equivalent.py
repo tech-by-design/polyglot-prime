@@ -22,8 +22,7 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
             "screening_encounter_data": file4,
             "screening_consent_data": file5,
             "screening_resources_data": file6,
-            "demographic_data": file7, 
-            #"question_answer_reference": "data/QUEST_ANSW.csv", 
+            "demographic_data": file7,  
         } 
         # Check for missing files
         missing_files = {key: path for key, path in file_mappings.items() if not os.path.isfile(path)}
