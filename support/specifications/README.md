@@ -13,7 +13,11 @@ This project uses Frictionless Data to validate CSV files against predefined sch
 - **`data/`**: Folder containing CSV files for validation.
   - `DEMOGRAPHIC_DATA.csv`: CSV file containing demographic information.
   - `QE_ADMIN_DATA.csv`: CSV file containing QE admin data.
-  - `SCREENING_DATA.csv`: CSV file containing screening data.
+  - `SCREENING_OBSERVATION_DATA.csv`: CSV file containing primary observation data information.
+  - `SCREENING_LOCATION_DATA.csv`: CSV file containing location-related screening data information.
+  - `SCREENING_ENCOUNTER_DATA.csv`: CSV file containing encounter-related screening data information.
+  - `SCREENING_CONSENT_DATA.csv`: CSV file containing consent-related screening data information.
+  - `SCREENING_RESOURCES_DATA.csv`: CSV file containing detailed screening data information.
 
 ## Prerequisites
 
@@ -34,7 +38,7 @@ This project uses Frictionless Data to validate CSV files against predefined sch
 2. **Run the validation script**:
    Use the `csv-validate.py` script to validate all CSV files in the `data/` folder:
    ```bash
-   python csv-validate.py
+   python csv-validate.py datapackage-ig.json data/QE_ADMIN_DATA.csv data/SCREENING_OBSERVATION_DATA.csv data/SCREENING_LOCATION_DATA.csv data/CREENING_ENCOUNTER_DATA.csv data/SCREENING_CONSENT_DATA.csv data/SCREENING_RESOURCES_DATA.csv data/DEMOGRAPHIC_DATA.csv output.json
    ```
 
 3. **View Validation Results**:
@@ -43,6 +47,6 @@ This project uses Frictionless Data to validate CSV files against predefined sch
 ## Notes
 
 - The `datapackage-ig.json` file defines the expected schema, including data types, constraints, and other validation rules for each CSV file.
-- The `csv-validate.py` script utilizes Frictionless to validate the CSV files and report any deviations from the schema.
+- The `csv-validate.py` script utilizes Frictionless to validate the CSV files and report any deviations from the schema and saved into `output.json` file.
 
 For further assistance or questions, please refer to GitHub Issues.
