@@ -114,6 +114,9 @@ public class FHIRService {
                         HttpServletRequest request, HttpServletResponse response, String provenance,
                         boolean includeOperationOutcome, String mtlsStrategy)
                         throws IOException {
+                final var start = Instant.now();
+                LOG.info("Bundle processing start at {} for interaction id {}.",
+                                start, getBundleInteractionId(request));
                 final var interactionId = getBundleInteractionId(request);
                 final var dslContext = udiPrimeJpaConfig.dsl();
                 final var jooqCfg = dslContext.configuration();
@@ -147,6 +150,10 @@ public class FHIRService {
                                 sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                                 includeIncomingPayloadInDB, tenantId, payload,
                                                 provenance, null, includeOperationOutcome, mtlsStrategy);
+                                Instant end = Instant.now();
+                                Duration timeElapsed = Duration.between(start, end);
+                                LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+                                                interactionId, timeElapsed.toMillis());
                                 return result;
                         } else {
                                 LOG.info("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
@@ -155,26 +162,35 @@ public class FHIRService {
                                                 includeIncomingPayloadInDB, tenantId, payload,
                                                 provenance, payloadWithDisposition, includeOperationOutcome,
                                                 mtlsStrategy);
+                                Instant end = Instant.now();
+                                Duration timeElapsed = Duration.between(start, end);
+                                LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+                                                interactionId, timeElapsed.toMillis());
                                 return payloadWithDisposition;
                         }
                 } catch (JsonValidationException ex) {
                         payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                         response, payload, buildOperationOutcome(ex, interactionId));
                 }
+                Instant end = Instant.now();
+                Duration timeElapsed = Duration.between(start, end);
+                LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+                                interactionId, timeElapsed.toMillis());
                 return payloadWithDisposition;
         }
+
         @SuppressWarnings("unchecked")
         public static boolean isActionDiscard(Map<String, Object> payloadWithDisposition) {
                 return Optional.ofNullable(payloadWithDisposition)
-                        .map(map -> (Map<String, Object>) map.get("OperationOutcome"))
-                        .map(outcome -> (List<Map<String, Object>>) outcome.get("techByDesignDisposition"))
-                        .flatMap(dispositions -> dispositions.stream()
-                                .map(disposition -> (String) disposition.get("action"))
-                                .filter(TechByDesignDisposition.DISCARD.action::equals)
-                                .findFirst()
-                        )
-                        .isPresent();
-            }
+                                .map(map -> (Map<String, Object>) map.get("OperationOutcome"))
+                                .map(outcome -> (List<Map<String, Object>>) outcome.get("techByDesignDisposition"))
+                                .flatMap(dispositions -> dispositions.stream()
+                                                .map(disposition -> (String) disposition.get("action"))
+                                                .filter(TechByDesignDisposition.DISCARD.action::equals)
+                                                .findFirst())
+                                .isPresent();
+        }
+
         public void validateJson(String jsonString, String interactionId) {
                 try {
                         Configuration.objectMapper.readTree(jsonString);
@@ -263,7 +279,8 @@ public class FHIRService {
                         final var start = Instant.now();
                         rihr.execute(jooqCfg);
                         final var end = Instant.now();
-                        LOG.info("FHIRService  - Time taken : {} milliseconds for DB call to REGISTER State None, Accept, Disposition: for interaction id: {} " ,Duration.between(start, end).toMillis(),rre.interactionId().toString());
+                        LOG.info("FHIRService  - Time taken : {} milliseconds for DB call to REGISTER State None, Accept, Disposition: for interaction id: {} ",
+                                        Duration.between(start, end).toMillis(), rre.interactionId().toString());
                         JsonNode payloadWithDisposition = rihr.getReturnValue();
                         LOG.info("REGISTER State None, Accept, Disposition: END for interaction id: {} ",
                                         rre.interactionId().toString());
@@ -343,66 +360,67 @@ public class FHIRService {
         }
 
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
-                String uaValidationStrategyJson,
-                boolean includeRequestInOutcome) {
-            final var start = Instant.now();
-            String interactionId = getBundleInteractionId(request);
-            LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} " ,interactionId);
-            final var igPackages = appConfig.getIgPackages();
-            final var igVersion = appConfig.getIgVersion();
-            final var sessionBuilder = engine.session()
-                    .withSessionId(UUID.randomUUID().toString())
-                    .onDevice(Device.createDefault())
-                    .withPayloads(List.of(payload))
-                    .withFhirProfileUrl(fhirProfileUrl)
-                    .withFhirIGPackages(igPackages)
-                    .withIgVersion(igVersion)
-                    .addHapiValidationEngine() // by default
-                    // clearExisting is set to true so engines can be fully supplied through header
-                    .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-            final var session = sessionBuilder.build();
-            final var bundleAsyncInteractionId = getBundleInteractionId(request);
-            try {
-                engine.orchestrate(session);
-                // TODO: if there are errors that should prevent forwarding, stop here
-                // TODO: need to implement `immediate` (sync) webClient op, right now it's async
-                // only
-                // immediateResult is what's returned to the user while async operation
-                // continues
-                final var immediateResult = new HashMap<>(Map.of(
-                        "resourceType", "OperationOutcome",
-                        "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
-                        "isAsync", true,
-                        "validationResults", session.getValidationResults(),
-                        "statusUrl",
-                        getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
-                        "device", session.getDevice()));
+                        String uaValidationStrategyJson,
+                        boolean includeRequestInOutcome) {
+                final var start = Instant.now();
+                String interactionId = getBundleInteractionId(request);
+                LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
+                final var igPackages = appConfig.getIgPackages();
+                final var igVersion = appConfig.getIgVersion();
+                final var sessionBuilder = engine.session()
+                                .withSessionId(UUID.randomUUID().toString())
+                                .onDevice(Device.createDefault())
+                                .withPayloads(List.of(payload))
+                                .withFhirProfileUrl(fhirProfileUrl)
+                                .withFhirIGPackages(igPackages)
+                                .withIgVersion(igVersion)
+                                .addHapiValidationEngine() // by default
+                                // clearExisting is set to true so engines can be fully supplied through header
+                                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+                final var session = sessionBuilder.build();
+                final var bundleAsyncInteractionId = getBundleInteractionId(request);
+                try {
+                        engine.orchestrate(session);
+                        // TODO: if there are errors that should prevent forwarding, stop here
+                        // TODO: need to implement `immediate` (sync) webClient op, right now it's async
+                        // only
+                        // immediateResult is what's returned to the user while async operation
+                        // continues
+                        final var immediateResult = new HashMap<>(Map.of(
+                                        "resourceType", "OperationOutcome",
+                                        "bundleSessionId", bundleAsyncInteractionId, // for tracking in database, etc.
+                                        "isAsync", true,
+                                        "validationResults", session.getValidationResults(),
+                                        "statusUrl",
+                                        getBaseUrl(request) + "/Bundle/$status/" + bundleAsyncInteractionId.toString(),
+                                        "device", session.getDevice()));
 
-                if (uaValidationStrategyJson != null) {
-                    immediateResult.put("uaValidationStrategy",
-                            Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
-                                    uaValidationStrategyJson,
-                                    "issues",
-                                    sessionBuilder.getUaStrategyJsonIssues()));
+                        if (uaValidationStrategyJson != null) {
+                                immediateResult.put("uaValidationStrategy",
+                                                Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+                                                                uaValidationStrategyJson,
+                                                                "issues",
+                                                                sessionBuilder.getUaStrategyJsonIssues()));
+                        }
+                        if (includeRequestInOutcome) {
+                                immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
+                        }
+                        return immediateResult; // Return the validation results
+                } catch (Exception e) {
+                        // Log the error and create a failure response
+                        LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
+                        return Map.of(
+                                        "resourceType", "OperationOutcome",
+                                        "interactionId", interactionId,
+                                        "error", "Validation failed: " + e.getMessage());
+                } finally {
+                        // Ensure the session is cleared to avoid memory leaks
+                        engine.clear(session);
+                        Instant end = Instant.now();
+                        Duration timeElapsed = Duration.between(start, end);
+                        LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds",
+                                        interactionId, timeElapsed.toMillis());
                 }
-                if (includeRequestInOutcome) {
-                    immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
-                }
-                return immediateResult; // Return the validation results
-            } catch (Exception e) {
-                // Log the error and create a failure response
-                LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
-                return Map.of(
-                        "resourceType", "OperationOutcome",
-                        "interactionId", interactionId,
-                        "error", "Validation failed: " + e.getMessage());
-            } finally {
-                // Ensure the session is cleared to avoid memory leaks
-                engine.clear(session);
-                Instant end = Instant.now();
-                Duration timeElapsed = Duration.between(start, end);
-                LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds" ,interactionId,timeElapsed.toMillis());
-            }
         }
 
         private void sendToScoringEngine(org.jooq.Configuration jooqCfg, HttpServletRequest request,
@@ -1207,8 +1225,9 @@ public class FHIRService {
                         final var start = Instant.now();
                         final var execResult = initRIHR.execute(jooqCfg);
                         final var end = Instant.now();
-                        LOG.info("REGISTER State Forward : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds" + execResult,
-                                        bundleAsyncInteractionId, tenantId,Duration.between(start, end).toMillis());
+                        LOG.info("REGISTER State Forward : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
+                                        + execResult,
+                                        bundleAsyncInteractionId, tenantId, Duration.between(start, end).toMillis());
                 } catch (Exception e) {
                         LOG.error("ERROR:: REGISTER State Forward CALL for interaction id : {} tenant id : {}"
                                         + initRIHR.getName() + " initRIHR error", bundleAsyncInteractionId, tenantId,
@@ -1247,8 +1266,9 @@ public class FHIRService {
                         final var start = Instant.now();
                         final var execResult = forwardRIHR.execute(jooqCfg);
                         final var end = Instant.now();
-                        LOG.info("REGISTER State Complete : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds" + execResult,
-                                        bundleAsyncInteractionId, tenantId,Duration.between(start, end).toMillis());
+                        LOG.info("REGISTER State Complete : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds"
+                                        + execResult,
+                                        bundleAsyncInteractionId, tenantId, Duration.between(start, end).toMillis());
                 } catch (Exception e) {
                         LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
                                         + forwardRIHR.getName()
@@ -1289,8 +1309,9 @@ public class FHIRService {
                         final var start = Instant.now();
                         final var execResult = forwardRIHR.execute(jooqCfg);
                         final var end = Instant.now();
-                        LOG.info("REGISTER State Fail : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds" + execResult,
-                                        bundleAsyncInteractionId, tenantId,Duration.between(start, end).toMillis());
+                        LOG.info("REGISTER State Fail : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds"
+                                        + execResult,
+                                        bundleAsyncInteractionId, tenantId, Duration.between(start, end).toMillis());
                 } catch (Exception e) {
                         LOG.error("ERROR:: REGISTER State Fail CALL for interaction id : {} tenant id : {} "
                                         + forwardRIHR.getName()
@@ -1376,7 +1397,8 @@ public class FHIRService {
                         final var execResult = errorRIHR.execute(jooqCfg);
                         final var end = Instant.now();
                         LOG.error("Register State Failure - END for interaction id : {} tenant id : {} forwardRIHR execResult"
-                                        + execResult + ". Time Taken : {} milliseconds ", bundleAsyncInteractionId, tenantId,Duration.between(start, end).toMillis());
+                                        + execResult + ". Time Taken : {} milliseconds ", bundleAsyncInteractionId,
+                                        tenantId, Duration.between(start, end).toMillis());
                 } catch (Exception e) {
                         LOG.error("ERROR :: Register State Failure - for interaction id : {} tenant id : {} CALL "
                                         + errorRIHR.getName() + " errorRIHR error", bundleAsyncInteractionId, tenantId,
@@ -1436,20 +1458,21 @@ public class FHIRService {
 
         public record PostToNyecExternalResponse(boolean completed, String processOutput, String errorOutput) {
         }
+
         public enum TechByDesignDisposition {
                 ACCEPT("accept"),
                 REJECT("reject"),
                 DISCARD("discard");
-            
+
                 private final String action;
-            
+
                 TechByDesignDisposition(String action) {
-                    this.action = action;
+                        this.action = action;
                 }
-            
+
                 public String getAction() {
-                    return action;
+                        return action;
                 }
-            }
-            
+        }
+
 }
