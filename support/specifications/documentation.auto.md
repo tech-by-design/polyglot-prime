@@ -1,4 +1,8 @@
 # `csv-validation-using-ig`
+ `description` Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. For example: 
+
+  - PATIENT_MR_ID_VALUE: Extracted from Bundle.entry.resource where resourceType = 'Patient', identifier where type.coding.code = 'MR', and value. 
+  - FACILITY_ACTIVE: Extracted from Bundle.entry.resource where resourceType = 'Organization' and active.
 ## `qe_admin_data`
   - `path` flat-file/nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv
   - `schema`
