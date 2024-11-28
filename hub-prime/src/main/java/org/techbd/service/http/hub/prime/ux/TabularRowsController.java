@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.service.http.hub.prime.ux.validator.Validator;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -39,7 +40,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
 import lib.aide.tabular.JooqRowsSupplier;
+import lib.aide.tabular.JooqRowsSupplier.JooqProvenance;
+import lib.aide.tabular.JooqRowsSupplierForSP;
 import lib.aide.tabular.TabularRowsRequest;
+import lib.aide.tabular.TabularRowsRequestForSP;
 import lib.aide.tabular.TabularRowsResponse;
 
 @Controller
@@ -88,6 +92,64 @@ public class TabularRowsController {
                 .includeGeneratedSqlInErrorResp(includeGeneratedSqlInErrorResp)
                 .build()
                 .response();
+    }
+
+    @Operation(summary = "Fetch SQL rows from a <b>stored procedure</b> with schema specification", description = """
+        Retrieves rows from a <b>stored procedure</b>, within a specific schema.
+        """)
+    @PostMapping(value = {
+        "/api/ux/tabular/jooq/sp/{schemaName}/{storedProcName}.json"}, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public TabularRowsResponse<JooqProvenance> fetchDataFromStoredProc(
+            @Parameter(description = "<p><strong>Mandatory path variable</strong> specifies the schema name.</p>", required = true)
+            @PathVariable(required = true) String schemaName,
+            @Parameter(description = "<p><strong>Mandatory path variable</strong> specifies the stored procedure.</p>", required = true)
+            @PathVariable(required = true)
+            final String storedProcName,
+            @Parameter(description = """
+                <p><strong>Optional query parameter</strong> specifies the stored procedure parameters.</p>
+                <p>If provided, it must be a JSON object in the following format:</p>
+                <pre><code>{"param1":"value", "param2":"value"}</code></pre>
+                <p><strong>Note:</strong> The parameter names and their count may vary depending on the stored procedure.</p>
+                """, required = false)
+            @RequestParam(required = false)
+            final String storedProcparams,
+            @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true)
+            @RequestBody
+            @Nonnull
+            final TabularRowsRequestForSP payload,
+            @Parameter(description = "Header to mention whether the generated SQL to be included in the response.", required = false)
+            @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false, defaultValue = "false") boolean includeGeneratedSqlInResp,
+            @Parameter(description = """
+            Header to mention whether the generated SQL to be included in the error response.
+            This will be taken <code>true</code> by default.""", required = false)
+            @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
+
+        if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
+                || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(storedProcName).matches()) {
+            throw new IllegalArgumentException("Invalid schema or stored procedure name.");
+        }
+
+        try {
+            List<Map<String, Object>> data = JooqRowsSupplierForSP.builder(udiPrimeJpaConfig.dsl())
+                    .withSchemaName(schemaName)
+                    .withStoredProcName(storedProcName)
+                    .withParamsJson(storedProcparams)
+                    .withPayload(payload)
+                    .build()
+                    .fetchData();
+    
+            int lastRow = payload.startRow() + data.size();
+            if (data.size() < (payload.endRow() - payload.startRow())) {
+                lastRow = -1;
+            }
+    
+            return new TabularRowsResponse<>(null, data, lastRow, null);
+    
+        } catch (Exception e) {
+            LOG.error("Error fetching data from stored procedure", e);
+            return new TabularRowsResponse<>(null, null, -1, e.getMessage());
+        }
     }
 
     @Operation(summary = "Retrieve SQL rows from a master table or view for a specific column value", description = """
