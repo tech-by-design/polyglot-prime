@@ -3355,3 +3355,220 @@ END;
 $function$
 ;
 
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_scn_submission(DATE, DATE);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_scn_submission(
+    start_date DATE,
+    end_date DATE
+)
+RETURNS TABLE (
+    organization_id TEXT,
+    qe_total_submissions INTEGER,
+    success_submissions INTEGER,
+    failed_submissions INTEGER,
+    recently_created_at TIMESTAMP
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH submission_counts AS (
+        SELECT 
+            sihr.organization_id,
+            count(
+                CASE 
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' THEN 1 
+                    ELSE NULL 
+                END
+            )::INTEGER AS qe_total_submissions,
+            count(
+                CASE 
+                    WHEN sihr.nature = 'Forwarded HTTP Response' THEN 1 
+                    ELSE NULL 
+                END
+            )::INTEGER AS success_submissions,
+            count(
+                CASE 
+                    WHEN sihr.nature = 'Forwarded HTTP Response Error' THEN 1 
+                    ELSE NULL 
+                END
+            )::INTEGER AS failed_submissions,
+            max(sihr.created_at)::TIMESTAMP AS recently_created_at
+        FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+        WHERE 
+            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle']) 
+            AND sihr.created_at BETWEEN start_date AND end_date
+            AND sihr.tenant_id <> 'N/A' 
+            AND sihr.organization_id <> ''
+        GROUP BY sihr.organization_id
+    )
+    SELECT 
+        submission_counts.organization_id,
+        submission_counts.qe_total_submissions,
+        submission_counts.success_submissions,
+        submission_counts.failed_submissions,
+        submission_counts.recently_created_at
+    FROM submission_counts
+    ORDER BY submission_counts.recently_created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_needs_attention(date, date);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_needs_attention(start_date DATE, end_date DATE)
+RETURNS TABLE (
+    qe_name TEXT,
+    qe_total_submissions BIGINT,
+    shinny_datalake_submissions BIGINT,
+    shinny_datalake_submissions_failed BIGINT,
+    recently_created_at TIMESTAMPTZ
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH submission_counts AS (
+        SELECT 
+            sihr.tenant_id_lower AS qe_name,
+            count(
+                CASE
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' THEN 1
+                END) AS qe_total_submissions,
+            count(
+                CASE
+                    WHEN sihr.nature = 'Forwarded HTTP Response' THEN 1
+                END) AS shinny_datalake_submissions,
+            count(
+                CASE
+                    WHEN sihr.nature = 'Forwarded HTTP Response Error' THEN 1
+                END) AS shinny_datalake_submissions_failed,
+            max(sihr.created_at) AS recently_created_at
+        FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+        WHERE 
+            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle'])
+            AND sihr.created_at >= start_date
+            AND sihr.created_at <= end_date
+            AND sihr.tenant_id <> 'N/A'
+        GROUP BY sihr.tenant_id_lower
+    )
+    SELECT 
+        submission_counts.qe_name,
+        submission_counts.qe_total_submissions,
+        submission_counts.shinny_datalake_submissions,
+        submission_counts.shinny_datalake_submissions_failed,
+        submission_counts.recently_created_at
+    FROM submission_counts
+    ORDER BY submission_counts.recently_created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP FUNCTION if exists techbd_udi_ingress.get_interaction_http_request();
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_http_request()
+RETURNS TABLE (
+    interaction_id UUID,
+    uri TEXT,
+    interaction_created_at TIMESTAMPTZ,
+    interaction_created_by TEXT,
+    interaction_provenance TEXT,
+    sat_interaction_http_request_id UUID,
+    nature TEXT,
+    tenant_id TEXT,
+    user_agent TEXT,
+    client_ip_address TEXT,
+    content_type TEXT,
+    payload JSONB,
+    elaboration TEXT,
+    from_state TEXT,
+    to_state TEXT,
+    state_transition_reason TEXT,
+    request_created_at TIMESTAMPTZ,
+    request_created_by TEXT,
+    request_provenance TEXT,
+    issues_count INTEGER,
+    resource_types TEXT,
+    start_time TIMESTAMPTZ,
+    finish_time TIMESTAMPTZ,
+    duration_millisecs NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        combined_query.interaction_id::UUID,
+        combined_query.uri::TEXT,
+        combined_query.interaction_created_at::TIMESTAMPTZ,
+        combined_query.interaction_created_by::TEXT,
+        combined_query.interaction_provenance::TEXT,
+        combined_query.sat_interaction_http_request_id::UUID,
+        combined_query.nature::TEXT,
+        combined_query.tenant_id::TEXT,
+        combined_query.user_agent::TEXT,
+        combined_query.client_ip_address::TEXT,
+        combined_query.content_type::TEXT,
+        combined_query.payload::JSONB,
+        combined_query.elaboration::TEXT,
+        combined_query.from_state::TEXT,
+        combined_query.to_state::TEXT,
+        combined_query.state_transition_reason::TEXT,
+        combined_query.request_created_at::TIMESTAMPTZ,
+        combined_query.request_created_by::TEXT,
+        combined_query.request_provenance::TEXT,
+        combined_query.issues_count::INTEGER,
+        combined_query.resource_types::TEXT,
+        combined_query.start_time::TIMESTAMPTZ,
+        combined_query.finish_time::TIMESTAMPTZ,
+        combined_query.duration_millisecs::NUMERIC
+    FROM (
+        SELECT 
+            htt_req.hub_interaction_id AS interaction_id,
+            htt_req.uri,
+            htt_req.created_at AS interaction_created_at,
+            htt_req.created_by AS interaction_created_by,
+            htt_req.provenance AS interaction_provenance,
+            htt_req.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+            htt_req.nature,
+            htt_req.tenant_id,
+            htt_req.user_agent,
+            htt_req.client_ip_address,
+            'application/json'::text AS content_type,
+            htt_req.payload,
+            htt_req.elaboration,
+            htt_req.from_state,
+            htt_req.to_state,
+            htt_req.state_transition_reason,
+            htt_req.created_at AS request_created_at,
+            htt_req.created_by AS request_created_by,
+            htt_req.provenance AS request_provenance,
+            htt_req.issues_count,
+            htt_req.resource_type_set AS resource_types,
+            htt_req.interaction_start_time AS start_time,
+            htt_req.interaction_end_time AS finish_time,
+            EXTRACT(epoch FROM htt_req.interaction_end_time::timestamp without time zone - htt_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
+        FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+        
+        UNION ALL
+        
+        SELECT 
+            user_req.hub_interaction_id AS interaction_id,
+            user_req.uri,
+            user_req.created_at AS interaction_created_at,
+            user_req.created_by AS interaction_created_by,
+            user_req.provenance AS interaction_provenance,
+            user_req.sat_interaction_user_id AS sat_interaction_http_request_id,
+            user_req.nature,
+            user_req.tenant_id,
+            user_req.user_agent,
+            user_req.client_ip_address,
+            'application/json'::text AS content_type,
+            NULL::jsonb AS payload,
+            user_req.elaboration,
+            NULL::text AS from_state,
+            NULL::text AS to_state,
+            NULL::text AS state_transition_reason,
+            user_req.created_at AS request_created_at,
+            user_req.created_by AS request_created_by,
+            user_req.provenance AS request_provenance,
+            NULL::integer AS issues_count,
+            NULL::text AS resource_types,
+            user_req.interaction_start_time AS start_time,
+            user_req.interaction_end_time AS finish_time,
+            EXTRACT(epoch FROM user_req.interaction_end_time::timestamp without time zone - user_req.interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs
+        FROM techbd_udi_ingress.sat_interaction_user user_req
+        WHERE user_req.uri !~~* '%/Bundle%'::text AND user_req.uri !~~* '%/Hl7/v2%'::text
+    ) combined_query
+    ORDER BY combined_query.interaction_created_at DESC;
+END;
+$$ LANGUAGE plpgsql;

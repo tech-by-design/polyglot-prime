@@ -5,6 +5,7 @@
 <head>
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <style>
         .grid-description {
             font-size: 14px;
@@ -26,12 +27,44 @@
             font-weight: bold;
             margin: 12px 0px 11px 2px;
         }
+
+        #date-picker-container {
+            margin-top: 20px; /* Add some spacing */
+            display: flex;     /* Use flexbox for layout */
+            gap: 10px;  
+            align-items: center;  
+            justify-content: flex-start;    /* Add some spacing between elements */
+        }
+
+        .date-picker-label, #searchButton{      
+            width: 100px; /* Adjust width as needed */
+            line-height: 35px;  /* Vertically center the label */
+        }
+
+        .date-picker-label {
+            text-align: right;
+        }
+
+        #searchButton {
+            margin-left: 10px; /* Add some space to the left of the button */
+            background-color: #e7e7e7; /* Green */
+            border: none;
+            border-radius: 12px;
+            color: black;
+            padding: 15px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
       
     </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
@@ -39,6 +72,7 @@
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'fhir_needs_attention';
+        const storedProcName = 'get_fhir_needs_attention';
         const datalakeSubmissionDetails = 'fhir_needs_attention_details';
         const missingSubmissionDetails = 'missing_datalake_submission_details';
         document.addEventListener('DOMContentLoaded', function () {
@@ -153,13 +187,13 @@
                         //     }
                         //     return null;
                         // },
-                        filter: "agTextColumnFilter",
+                        filter: "agNumberColumnFilter",
                         headerTooltip: "FHIR File count from QE to Tech by Design"
                     },
                     {
                         headerName: "Tech by Design to SHIN-NY Data Lake", 
                         field: "shinny_datalake_submissions",
-                        filter: "agTextColumnFilter",
+                        filter: "agNumberColumnFilter",
                         cellRenderer: cellRenderer2,
                         cellStyle: function (params) {
                             if (params.data.qe_total_submissions !== params.data.shinny_datalake_submissions  ) {
@@ -215,29 +249,71 @@
                 }
             };
 
-            const agGridInstance = new AGGridAideBuilder()
-                .withGridOptions(gridOptions)
-                .withServerSideDatasource(
-                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
-                    (data, valueCols) => {
-                        return valueCols.map(col => ({
-                            headerName: col.displayName,
-                            field: col.field
-                        }));
-                    },
-                )
-                .withDetailCellRendererParams(gridOptions.detailCellRendererParams)
-                .withMasterDetail(true)
-                .withModalAide(modalAide)
-                .withGridDivStyles({ height: "750px", width: "100%" })
-                .build();
+            const today = new Date();
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(today.getDate() - 7);
 
-            agGridInstance.init('serverDataGrid');
+            // Format dates as "mm-dd-yyyy"
+            const formatDate = (date) => {
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${month}-${day}-${year}`;
+            };
 
+             // Datepicker Initialization: moved outside url fetch because those date format use only after click submit button       
+            $("#start-date, #end-date").datepicker({
+                dateFormat: "mm-dd-yy",
+            });
+            $("#start-date").datepicker("setDate", oneWeekAgo);
+            $("#end-date").datepicker("setDate", today);
 
-            // Add date-range text 
-            // Inject the date range into the HTML
-            helpers.injectDateRangeText('date-range', 'This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the QE to Tech by Design then to the SHIN-NY Data Lake from <b>{startDate}</b> to <b>{endDate}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.');
+            updateGridWithDates(oneWeekAgo, today);
+
+            // Search Button Click Handler
+            $('#searchButton').click(function() {
+                $('#serverDataGrid').empty();
+                const startDate = $('#start-date').datepicker('getDate');
+                const endDate = $('#end-date').datepicker('getDate');
+                updateGridWithDates(startDate, endDate);  // Call with or without validation
+            });
+
+            function updateGridWithDates(startDate, endDate) {
+
+                const formattedStartDate = formatDate(startDate);   //use formated date and avoid format unnessary date 
+                const formattedEndDate = formatDate(endDate);
+
+                const storedProcparams = {
+                    "start_date": formattedStartDate,
+                    "end_date": formattedEndDate,
+                };
+
+                const dateRangeDiv = document.getElementById('date-range');
+                dateRangeDiv.innerHTML = `This widget compares the count of incoming synthetic files at each stage in the data processing pipeline, from the QE to Tech by Design then to the SHIN-NY Data Lake from <b>${formattedStartDate}</b> to <b>${formattedEndDate}</b>. It provides a clear view of data movement and processing consistency, highlighting discrepancies or drop-offs in the number of files between stages. This comparison helps in identifying potential issues and ensures the integrity of the data flow across the system.`;
+
+                const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
+                const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
+
+                const agGridInstance = new AGGridAideBuilder()
+                    .withGridOptions(gridOptions)
+                    .withServerSideDatasource(
+                        window.shell.serverSideUrl(url),
+                        (data, valueCols) => {
+                            return valueCols.map(col => ({
+                                headerName: col.displayName,
+                                field: col.field
+                            }));
+                        },
+                    )
+                    .withDetailCellRendererParams(gridOptions.detailCellRendererParams)
+                    .withMasterDetail(true)
+                    .withModalAide(modalAide)
+                    .withGridDivStyles({ height: "750px", width: "100%" })
+                    .build();
+
+                agGridInstance.init('serverDataGrid');
+
+            }
         });
 
     </script>
@@ -261,6 +337,13 @@
                 <li>When viewing the numbers, clicking on them will open a popup containing the interaction details.</li>
             </ul>
 
+        </div>
+        <div id="date-picker-container">
+            <label for="start-date" class="date-picker-label">Start Date:</label>
+            <input type="text" id="start-date" name="start-date" readonly>
+            <label for="end-date" class="date-picker-label">End Date:</label>
+            <input type="text" id="end-date" name="end-date" readonly>
+            <button id="searchButton">Search</button>
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
