@@ -107,9 +107,11 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
             ("OBSERVATION_CATEGORY_SOCIAL_HISTORY_CODE","observation_category_social_history_code"),
             ("OBSERVATION_CATEGORY_SURVEY_CODE","observation_category_survey_code"),
             ("QUESTION_CODE_DISPLAY","question_code_display"),
-            ("LANGUAGE", "language")
-            # ("QUESTION_CODE_REFERENCE", "question_code_reference"), 
-            # ("ANSWER_CODE_REFERENCE", "answer_code_reference")
+            ("LANGUAGE", "language"), 
+            ("INTERPRETATION_CODE", "interpretation_code"), 
+            ("INTERPRETATION_DISPLAY", "interpretation_display"),
+            ("DATA_ABSENT_REASON_CODE", "data_absent_reason_code"),
+            ("DATA_ABSENT_REASON_DISPLAY", "data_absent_reason_display")
         ]
 
         for resource in package.resources:
