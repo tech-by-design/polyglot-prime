@@ -178,10 +178,42 @@
           "not at all (0)", "several days (1)", "more than half the days (2)", "nearly every day (3)", "not at all (0)",
           "several days (1)", "more than half the days (2)", "nearly every day (3)", "not at all", "a little bit",
           "somewhat", "quite a bit", "very much", "i choose not to answer this question", "yes", "no", "yes", "no"]}},
-           {"name": "INTERPRETATION_CODE", "type": "string"},    
+           {"name": "INTERPRETATION_CODE", "type": "string" },    
            {"name": "INTERPRETATION_DISPLAY", "type": "string"},
-           {"name": "DATA_ABSENT_REASON_CODE", "type": "string"},
-           {"name": "DATA_ABSENT_REASON_DISPLAY", "type": "string"}       
+           {"name": "DATA_ABSENT_REASON_CODE", "type": "string", "constraints":{"enum":[
+            "asked-unknown",
+            "temp-unknown",
+            "not-asked",
+            "asked-declined",
+            "masked",
+            "not-applicable",
+            "unsupported",
+            "as-text",
+            "error",
+            "not-a-number",
+            "negative-infinity",
+            "positive-infinity",
+            "not-performed",
+            "not-permitted"
+          ]
+          }},
+           {"name": "DATA_ABSENT_REASON_DISPLAY", "type": "string", "constraints":{"enum":[
+            "asked but unknown",
+            "temporarily unknown",
+            "not asked",
+            "asked but declined",
+            "masked",
+            "not applicable",
+            "unsupported",
+            "as text",
+            "error",
+            "not a number (nan)",
+            "negative infinity (ninf)",
+            "positive infinity (pinf)",
+            "not performed",
+            "not permitted"
+          ]
+          }}       
         ],
         "foreignKeys": [
           {
