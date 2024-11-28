@@ -67,6 +67,8 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
         # Transform and validate
         common_transform_steps = [
             ("ORGANIZATION_TYPE", "organization_type"),
+            ("ORGANIZATION_TYPE_DISPLAY", "organization_type_display"),
+            ("ORGANIZATION_TYPE_CODE", "organization_type_code"),
             ("FACILITY_STATE", "facility_state"),
             ("ENCOUNTER_CLASS_CODE", "encounter_class_code"),
             ("ENCOUNTER_CLASS_CODE_DESCRIPTION", "encounter_class_code_description"),
