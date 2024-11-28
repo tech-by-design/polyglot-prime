@@ -5,84 +5,105 @@
       - `primaryKey` ['PATIENT_MR_ID_VALUE']
     - `foreignKeys` []
 ### `PATIENT_MR_ID_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
   - `constraints`:
     - `required` True
     - `unique` True
 ### `FACILITY_ACTIVE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').active
   - `type` string
 ### `FACILITY_ID`
   - `type` string
   - `constraints`:
     - `required` True
 ### `FACILITY_NAME`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').name
   - `type` string
   - `constraints`:
     - `required` True
 ### `ORGANIZATION_TYPE_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').type.coding.display
   - `type` string
   - `constraints`:
-    - `enum` ['Healthcare Provider', 'Hospital Department', 'Organizational team', 'Government', 'Insurance Company', 'Payer', 'Educational Institute', 'Religious Institution', 'Clinical Research Sponsor', 'Community Group', 'Non-Healthcare Business or Corporation', 'Other']
+    - `pattern` `^(prov|dept|team|govt|ins|pay|edu|reli|crs|cg|bus|other)(,\s*(prov|dept|team|govt|ins|pay|edu|reli|crs|cg|bus|other))*$`
 ### `ORGANIZATION_TYPE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').type.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['prov', 'dept', 'team', 'govt', 'ins', 'pay', 'edu', 'reli', 'crs', 'cg', 'bus', 'other']
+    - `pattern` `^(prov|dept|team|govt|ins|pay|edu|reli|crs|cg|bus|other)(,\s*(prov|dept|team|govt|ins|pay|edu|reli|crs|cg|bus|other))*$`
 ### `ORGANIZATION_TYPE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').type.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://terminology.hl7.org/CodeSystem/organization-type']
 ### `FACILITY_ADDRESS1`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').address.text & Bundle.entry.resource.where(resourceType ='Organization').address.line
   - `type` string
   - `constraints`:
     - `required` True
 ### `FACILITY_ADDRESS2`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').address.text & Bundle.entry.resource.where(resourceType ='Organization').address.line
   - `type` string
 ### `FACILITY_CITY`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').address.city & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
 ### `FACILITY_STATE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').address.state & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
   - `constraints`:
     - `enum` ['ak', 'al', 'ar', 'as', 'az', 'ca', 'co', 'ct', 'dc', 'de', 'fl', 'fm', 'ga', 'gu', 'hi', 'ia', 'id', 'il', 'in', 'ks', 'ky', 'la', 'ma', 'md', 'me', 'mh', 'mi', 'mn', 'mo', 'mp', 'ms', 'mt', 'nc', 'nd', 'ne', 'nh', 'nj', 'nm', 'nv', 'ny', 'oh', 'ok', 'or', 'pa', 'pr', 'pw', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'va', 'vi', 'vt', 'wa', 'wi', 'wv', 'wy']
 ### `FACILITY_DISTRICT`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').address.district
   - `type` string
 ### `FACILITY_ZIP`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').address.postalCode & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
 ### `FACILITY_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resource = 'Organization').meta.lastUpdated
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `FACILITY_PROFILE`
-  - `description` Bundle.entry.resource.where(resource = 'Organization').meta.profile
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').meta.profile
   - `type` string
   - `constraints`:
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization']
 ### `FACILITY_SCN_IDENTIFIER_TYPE_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.scn.ny.gov/').type.coding.display
   - `type` string
 ### `FACILITY_SCN_IDENTIFIER_TYPE_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.scn.ny.gov/').value
   - `type` string
 ### `FACILITY_SCN_IDENTIFIER_TYPE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.scn.ny.gov/').system
   - `type` string
   - `constraints`:
     - `pattern` `^http://www\.scn\.gov/.+`
 ### `FACILITY_NPI_IDENTIFIER_TYPE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://hl7.org/fhir/sid/us-npi').type.coding.display
   - `type` string
 ### `FACILITY_NPI_IDENTIFIER_TYPE_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://hl7.org/fhir/sid/us-npi').value
   - `type` string
 ### `FACILITY_NPI_IDENTIFIER_TYPE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://hl7.org/fhir/sid/us-npi').system
   - `type` string
   - `constraints`:
     - `pattern` `^http://hl7.org/fhir/sid/us-npi/.+`
 ### `FACILITY_CMS_IDENTIFIER_TYPE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.medicaid.gov').type.coding.display
   - `type` string
 ### `FACILITY_CMS_IDENTIFIER_TYPE_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.medicaid.gov').value
   - `type` string
 ### `FACILITY_CMS_IDENTIFIER_TYPE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.medicaid.gov').system
   - `type` string
   - `constraints`:
     - `pattern` `^http://www.medicaid.gov/.+`
 ### `FACILITY_TEXT_STATUS`
-  - `description` Bundle.entry.resource.where(resource = 'Organization').text.status
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').text.status
   - `type` string
 ## `screening_observation_data`
   - `path` flat-file/nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv
@@ -94,6 +115,7 @@
           - `resource` qe_admin_data
           - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
   - `constraints`:
     - `required` True
@@ -170,6 +192,7 @@
           - `resource` qe_admin_data
           - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
   - `constraints`:
     - `required` True
@@ -200,10 +223,10 @@
 ### `LOCATION_PHYSICAL_TYPE_SYSTEM`
   - `type` string
 ### `LOCATION_TEXT_STATUS`
-  - `description` Bundle.entry.resource.where(resource = 'Location').text.status
+  - `description` Bundle.entry.resource.where(resourceType ='Location').text.status
   - `type` string
 ### `LOCATION_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resource = 'Location').meta.lastUpdated
+  - `description` Bundle.entry.resource.where(resourceType ='Location').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `required` True
@@ -218,6 +241,7 @@
           - `resource` qe_admin_data
           - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
   - `constraints`:
     - `required` True
@@ -267,19 +291,19 @@
   - `constraints`:
     - `pattern` `([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?`
 ### `ENCOUNTER_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resource = 'Encounter').meta.lastUpdated
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `ENCOUNTER_PROFILE`
-  - `description` Bundle.entry.resource.where(resource = 'Encounter').meta.profile
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').meta.profile
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter']
 ### `ENCOUNTER_TEXT_STATUS`
-  - `description` Bundle.entry.resource.where(resource = 'Encounter').text.status
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').text.status
   - `type` string
 ## `screening_consent_data`
   - `path` flat-file/nyher-fhir-ig-example/SCREENING_CONSENT_DATA_partner1-test-20241128-testcase1.csv
@@ -291,70 +315,82 @@
           - `resource` qe_admin_data
           - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
   - `constraints`:
     - `required` True
 ### `CONSENT_PROFILE`
-  - `description` Bundle.entry.resource.where(resource = 'Consent').meta.profile
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').meta.profile
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent']
 ### `CONSENT_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resource = 'Consent').meta.lastUpdated
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `CONSENT_TEXT_STATUS`
-  - `description` Bundle.entry.resource.where(resource = 'Consent').text.status
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').text.status
   - `type` string
 ### `CONSENT_STATUS`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').status
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['draft', 'proposed', 'active', 'rejected', 'inactive', 'entered-in-error']
 ### `CONSENT_SCOPE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').scope.coding.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['adr', 'research', 'patient-privacy', 'treatment']
 ### `CONSENT_SCOPE_TEXT`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').scope.text
   - `type` string
   - `constraints`:
     - `required` True
 ### `CONSENT_CATEGORY_IDSCL_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').category.coding.code.where(code='IDSCL')
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['idscl']
 ### `CONSENT_CATEGORY_IDSCL_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').category.coding.system.where(code='IDSCL')
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://terminology.hl7.org/CodeSystem/v3-ActCode']
 ### `CONSENT_CATEGORY_LOINC_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').category.coding.code.where(system='http://loinc.org')
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['59284-0', '57016-8', '57017-6', '64292-6']
 ### `CONSENT_CATEGORY_LOINC_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').category.coding.system.where(system='http://loinc.org')
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://loinc.org']
 ### `CONSENT_CATEGORY_LOINC_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').category.coding.display.where(system='http://loinc.org')
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['patient consent', 'privacy policy acknowledgement document', 'privacy policy organization document', 'release of information consent']
 ### `CONSENT_DATE_TIME`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
   - `type` string
   - `constraints`:
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `CONSENT_POLICY_AUTHORITY`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').policy.authority
   - `type` string
 ### `CONSENT_PROVISION_TYPE`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').provision.type
   - `type` string
   - `constraints`:
     - `enum` ['deny', 'permit']
@@ -368,6 +404,7 @@
           - `resource` qe_admin_data
           - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
   - `constraints`:
     - `required` True
@@ -377,25 +414,25 @@
     - `required` True
     - `enum` ['final', 'corrected', 'entered-in-error', 'unknown']
 ### `SCREENING_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resource = 'Observation').meta.lastUpdated
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `SCREENING_PROFILE`
-  - `description` Bundle.entry.resource.where(resource = 'Observation').meta.profile
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').meta.profile
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response']
 ### `SCREENING_LANGUAGE`
-  - `description` Bundle.entry.resource.where(resource = 'Observation').language
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').language
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-at', 'de-ch', 'de-de', 'el', 'en', 'en-au', 'en-ca', 'en-gb', 'en-in', 'en-nz', 'en-sg', 'en-us', 'es', 'es-ar', 'es-es', 'es-uy', 'fi', 'fr', 'fr-be', 'fr-ch', 'fr-fr', 'fy', 'fy-nl', 'hi', 'hr', 'it', 'it-ch', 'it-it', 'ja', 'ko', 'nl', 'nl-be', 'nl-nl', 'no', 'no-no', 'pa', 'pl', 'pt', 'pt-br', 'ru', 'ru-ru', 'sr', 'sr-rs', 'sv', 'sv-se', 'te', 'zh', 'zh-cn', 'zh-hk', 'zh-sg', 'zh-tw']
 ### `SCREENING_TEXT_STATUS`
-  - `description` Bundle.entry.resource.where(resource = 'Observation').text.status
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').text.status
   - `type` string
 ### `SCREENING_CODE_SYSTEM_NAME`
   - `type` string
@@ -459,332 +496,359 @@
           - `resource` qe_admin_data
           - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'MR').value
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
   - `constraints`:
     - `required` True
 ### `PATIENT_MR_ID_SYSTEM`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'MR').system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').system
   - `type` string
   - `constraints`:
     - `required` True
 ### `PATIENT_MR_ID_TYPE_CODE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'MR').type.coding.code
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').type.coding.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['MR']
 ### `PATIENT_MR_ID_TYPE_SYSTEM`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'MR').type.coding.system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').type.coding.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://terminology.hl7.org/CodeSystem/v2-0203']
 ### `PATIENT_MA_ID_VALUE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'MA').value
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MA').value
   - `type` string
 ### `PATIENT_MA_ID_SYSTEM`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'MA').system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MA').system
   - `type` string
 ### `PATIENT_MA_ID_TYPE_CODE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'MA').type.coding.code
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MA').type.coding.code
   - `type` string
   - `constraints`:
     - `enum` ['MA']
 ### `PATIENT_MA_ID_TYPE_SYSTEM`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'MA').type.coding.system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MA').type.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://terminology.hl7.org/CodeSystem/v2-0203']
 ### `PATIENT_SS_ID_VALUE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'SS').value
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'SS').value
   - `type` string
 ### `PATIENT_SS_ID_SYSTEM`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'SS').system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'SS').system
   - `type` string
 ### `PATIENT_SS_ID_TYPE_CODE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'SS').type.coding.code
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'SS').type.coding.code
   - `type` string
   - `constraints`:
     - `enum` ['SS']
 ### `PATIENT_SS_ID_TYPE_SYSTEM`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').identifier.where(type.coding.code = 'SS').type.coding.system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'SS').type.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://terminology.hl7.org/CodeSystem/v2-0203']
 ### `GIVEN_NAME`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').name.given
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').name.given
   - `type` string
   - `constraints`:
     - `required` True
     - `minLength` 1
     - `pattern` `^[A-Za-z]+$`
 ### `MIDDLE_NAME`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').name.extension.valueString
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').name.extension.valueString
   - `type` string
   - `constraints`:
     - `pattern` `^[A-Za-z]+$`
 ### `MIDDLE_NAME_EXTENSION_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').name.extension.url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').name.extension.url
   - `type` string
   - `constraints`:
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name']
 ### `FAMILY_NAME`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').name.family
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').name.family
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^[A-Za-z]+$`
 ### `PREFIX_NAME`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').name.prefix
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').name.prefix
   - `type` string
 ### `SUFFIX_NAME`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').name.suffix
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').name.suffix
   - `type` string
 ### `GENDER`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').gender
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['male', 'female', 'other', 'unknown']
 ### `EXTENSION_SEX_AT_BIRTH_CODE_VALUE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode
   - `type` string
   - `constraints`:
     - `enum` ['f', 'm', 'unk']
 ### `EXTENSION_SEX_AT_BIRTH_CODE_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.url
   - `type` string
   - `constraints`:
     - `enum` ['http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex']
 ### `PATIENT_BIRTH_DATE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').birthDate
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?$`
 ### `ADDRESS1`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').address.line & Bundle.entry.resource.where(resourceType ='Patient').address.text
   - `type` string
   - `constraints`:
     - `pattern` `.*\d.*`
 ### `ADDRESS2`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').address.line & Bundle.entry.resource.where(resourceType ='Patient').address.text
   - `type` string
 ### `CITY`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').address.city
   - `type` string
 ### `DISTRICT`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').address.district
   - `type` string
 ### `STATE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').address.state
   - `type` string
   - `constraints`:
     - `enum` ['ak', 'al', 'ar', 'as', 'az', 'ca', 'co', 'ct', 'dc', 'de', 'fl', 'fm', 'ga', 'gu', 'hi', 'ia', 'id', 'il', 'in', 'ks', 'ky', 'la', 'ma', 'md', 'me', 'mh', 'mi', 'mn', 'mo', 'mp', 'ms', 'mt', 'nc', 'nd', 'ne', 'nh', 'nj', 'nm', 'nv', 'ny', 'oh', 'ok', 'or', 'pa', 'pr', 'pw', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'va', 'vi', 'vt', 'wa', 'wi', 'wv', 'wy']
 ### `ZIP`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').address.postalCode
   - `type` string
   - `constraints`:
     - `pattern` `^\d{5}(\d{4})?$`
 ### `TELECOM_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.value
   - `type` string
 ### `TELECOM_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.system
   - `type` string
   - `constraints`:
     - `enum` ['phone', 'fax', 'email', 'pager', 'url', 'sms', 'other']
 ### `TELECOM_USE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.use
   - `type` string
   - `constraints`:
     - `enum` ['home', 'work', 'temp', 'old', 'mobile']
 ### `EXTENSION_PERSONAL_PRONOUNS_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.url
   - `type` string
   - `constraints`:
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns']
 ### `EXTENSION_PERSONAL_PRONOUNS_CODE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
     - `enum` ['LA29518-0', 'LA29519-8', 'LA29520-6', 'oth', 'unk']
 ### `EXTENSION_PERSONAL_PRONOUNS_DISPLAY`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.display
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.display
   - `type` string
   - `constraints`:
     - `enum` ['he/him/his/his/himself', 'she/her/her/hers/herself', 'they/them/their/theirs/themselves', 'other', 'unknown']
 ### `EXTENSION_PERSONAL_PRONOUNS_SYSTEM`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://loinc.org/', 'http://loinc.org', 'http://terminology.hl7.org/CodeSystem/v3-NullFlavor']
 ### `EXTENSION_GENDER_IDENTITY_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.url
   - `type` string
   - `constraints`:
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity']
 ### `EXTENSION_GENDER_IDENTITY_CODE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.code
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
     - `enum` ['33791000087105', '407376001', '407377005', '446131000124102', '446141000124107', '446151000124109', 'oth', 'unk', 'asked-declined']
 ### `EXTENSION_GENDER_IDENTITY_DISPLAY`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display
   - `type` string
   - `constraints`:
     - `enum` ['identifies as nonbinary gender (finding)', 'male-to-female transsexual (finding)', 'female-to-male transsexual (finding)', 'identifies as non-conforming gender (finding)', 'identifies as female gender (finding)', 'identifies as male gender (finding)', 'other', 'unknown', 'asked but declined']
 ### `EXTENSION_GENDER_IDENTITY_SYSTEM`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://terminology.hl7.org/CodeSystem/v3-NullFlavor', 'http://terminology.hl7.org/CodeSystem/data-absent-reason', 'http://snomed.info/sct', 'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity']
 ### `PREFERRED_LANGUAGE_CODE_SYSTEM_NAME`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['iso', 'iso 639-2', 'http://hl7.org/fhir/us/core/valueset/simple-language', 'urn:ietf:bcp:47']
 ### `PREFERRED_LANGUAGE_CODE_SYSTEM_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.code & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['aar', 'abk', 'ace', 'ach', 'ada', 'ady', 'afa', 'afh', 'afr', 'ain', 'aka', 'akk', 'alb (b)', 'sqi (t)', 'ale', 'alg', 'alt', 'amh', 'ang', 'anp', 'apa', 'ara', 'arc', 'arg', 'arm (b)', 'hye (t)', 'arn', 'arp', 'art', 'arw', 'asm', 'ast', 'ath', 'aus', 'ava', 'ave', 'awa', 'aym', 'aze', 'bad', 'bai', 'bak', 'bal', 'bam', 'ban', 'baq (b)', 'eus (t)', 'bas', 'bat', 'bej', 'bel', 'bem', 'ben', 'ber', 'bho', 'bih', 'bik', 'bin', 'bis', 'bla', 'bnt', 'tib (b)', 'bod (t)', 'bos', 'bra', 'bre', 'btk', 'bua', 'bug', 'bul', 'bur (b)', 'mya (t)', 'byn', 'cad', 'cai', 'car', 'cat', 'cau', 'ceb', 'cel', 'cze (b)', 'ces (t)', 'cha', 'chb', 'che', 'chg', 'chi (b)', 'zho (t)', 'chk', 'chm', 'chn', 'cho', 'chp', 'chr', 'chu', 'chv', 'chy', 'cmc', 'cnr', 'cop', 'cor', 'cos', 'cpe', 'cpf', 'cpp', 'cre', 'crh', 'crp', 'csb', 'cus', 'wel (b)', 'cym (t)', 'cze (b)', 'ces (t)', 'dak', 'dan', 'dar', 'day', 'del', 'den', 'ger (b)', 'deu (t)', 'dgr', 'din', 'div', 'doi', 'dra', 'dsb', 'dua', 'dum', 'dut (b)', 'nld (t)', 'dyu', 'dzo', 'efi', 'egy', 'eka', 'gre (b)', 'ell (t)', 'elx', 'eng', 'en', 'enm', 'epo', 'est', 'baq (b)', 'eus (t)', 'ewe', 'ewo', 'fan', 'fao', 'per (b)', 'fas (t)', 'fat', 'fij', 'fil', 'fin', 'fiu', 'fon', 'fre (b)', 'fra (t)', 'fre (b)', 'fra (t)', 'frm', 'fro', 'frr', 'frs', 'fry', 'ful', 'fur', 'gaa', 'gay', 'gba', 'gem', 'geo (b)', 'kat (t)', 'ger (b)', 'deu (t)', 'gez', 'gil', 'gla', 'gle', 'glg', 'glv', 'gmh', 'goh', 'gon', 'gor', 'got', 'grb', 'grc', 'gre (b)', 'ell (t)', 'grn', 'gsw', 'guj', 'gwi', 'hai', 'hat', 'hau', 'haw', 'heb', 'her', 'hil', 'him', 'hin', 'hit', 'hmn', 'hmo', 'hrv', 'hsb', 'hun', 'hup', 'arm (b)', 'hye (t)', 'iba', 'ibo', 'ice (b)', 'isl (t)', 'ido', 'iii', 'ijo', 'iku', 'ile', 'ilo', 'ina', 'inc', 'ind', 'ine', 'inh', 'ipk', 'ira', 'iro', 'ice (b)', 'isl (t)', 'ita', 'jav', 'jbo', 'jpn', 'jpr', 'jrb', 'kaa', 'kab', 'kac', 'kal', 'kam', 'kan', 'kar', 'kas', 'geo (b)', 'kat (t)', 'kau', 'kaw', 'kaz', 'kbd', 'kha', 'khi', 'khm', 'kho', 'kik', 'kin', 'kir', 'kmb', 'kok', 'kom', 'kon', 'kor', 'kos', 'kpe', 'krc', 'krl', 'kro', 'kru', 'kua', 'kum', 'kur', 'kut', 'lad', 'lah', 'lam', 'lao', 'lat', 'lav', 'lez', 'lim', 'lin', 'lit', 'lol', 'loz', 'ltz', 'lua', 'lub', 'lug', 'lui', 'lun', 'luo', 'lus', 'mac (b)', 'mkd (t)', 'mad', 'mag', 'mah', 'mai', 'mak', 'mal', 'man', 'mao (b)', 'mri (t)', 'map', 'mar', 'mas', 'may (b)', 'msa (t)', 'mdf', 'mdr', 'men', 'mga', 'mic', 'min', 'mis', 'mac (b)', 'mkd (t)', 'mkh', 'mlg', 'mlt', 'mnc', 'mni', 'mno', 'moh', 'mon', 'mos', 'mao (b)', 'mri (t)', 'may (b)', 'msa (t)', 'mul', 'mun', 'mus', 'mwl', 'mwr', 'bur (b)', 'mya (t)', 'myn', 'myv', 'nah', 'nai', 'nap', 'nau', 'nav', 'nbl', 'nde', 'ndo', 'nds', 'nep', 'new', 'nia', 'nic', 'niu', 'dut (b)', 'nld (t)', 'nno', 'nob', 'nog', 'non', 'nor', 'nqo', 'nso', 'nub', 'nwc', 'nya', 'nym', 'nyn', 'nyo', 'nzi', 'oci', 'oji', 'ori', 'orm', 'osa', 'oss', 'ota', 'oto', 'paa', 'pag', 'pal', 'pam', 'pan', 'pap', 'pau', 'peo', 'per (b)', 'fas (t)', 'phi', 'phn', 'pli', 'pol', 'pon', 'por', 'pra', 'pro', 'pus', 'qaa-qtz', 'que', 'raj', 'rap', 'rar', 'roa', 'roh', 'rom', 'rum (b)', 'ron (t)', 'rum (b)', 'ron (t)', 'run', 'rup', 'rus', 'sad', 'sag', 'sah', 'sai', 'sal', 'sam', 'san', 'sas', 'sat', 'scn', 'sco', 'sel', 'sem', 'sga', 'sgn', 'shn', 'sid', 'sin', 'sio', 'sit', 'sla', 'slo (b)', 'slk (t)', 'slo (b)', 'slk (t)', 'slv', 'sma', 'sme', 'smi', 'smj', 'smn', 'smo', 'sms', 'sna', 'snd', 'snk', 'sog', 'som', 'son', 'sot', 'spa', 'alb (b)', 'sqi (t)', 'srd', 'srn', 'srp', 'srr', 'ssa', 'ssw', 'suk', 'sun', 'sus', 'sux', 'swa', 'swe', 'syc', 'syr', 'tah', 'tai', 'tam', 'tat', 'tel', 'tem', 'ter', 'tet', 'tgk', 'tgl', 'tha', 'tib (b)', 'bod (t)', 'tig', 'tir', 'tiv', 'tkl', 'tlh', 'tli', 'tmh', 'tog', 'ton', 'tpi', 'tsi', 'tsn', 'tso', 'tuk', 'tum', 'tup', 'tur', 'tut', 'tvl', 'twi', 'tyv', 'udm', 'uga', 'uig', 'ukr', 'umb', 'und', 'urd', 'uzb', 'vai', 'ven', 'vie', 'vol', 'vot', 'wak', 'wal', 'war', 'was', 'wel (b)', 'cym (t)', 'wen', 'wln', 'wol', 'xal', 'xho', 'yao', 'yap', 'yid', 'yor', 'ypk', 'zap', 'zbl', 'zen', 'zgh', 'zha', 'chi (b)', 'zho (t)', 'znd', 'zul', 'zun', 'zxx', 'zza']
 ### `EXTENSION_RACE_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.url
   - `type` string
   - `constraints`:
     - `enum` ['http://hl7.org/fhir/us/core/StructureDefinition/us-core-race']
 ### `EXTENSION_OMBCATEGORY_RACE_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').url
   - `type` string
   - `constraints`:
     - `enum` ['ombCategory']
 ### `EXTENSION_OMBCATEGORY_RACE_CODE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.code
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
   - `constraints`:
     - `enum` ['1002-5', '2028-9', '2054-5', '2076-8', '2106-3', 'UNK', 'ASKU']
 ### `EXTENSION_OMBCATEGORY_RACE_CODE_DESCRIPTION`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.display
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.display
   - `type` string
   - `constraints`:
     - `enum` ['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Native Hawaiian or Other Pacific Islander', 'White', 'Unknown', 'Asked but no answer']
 ### `EXTENSION_OMBCATEGORY_RACE_CODE_SYSTEM_NAME`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.system
   - `type` string
   - `constraints`:
     - `enum` ['urn:oid:2.16.840.1.113883.6.238', 'http://terminology.hl7.org/CodeSystem/v3-NullFlavor']
 ### `EXTENSION_TEXT_RACE_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'text').url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'text').url
   - `type` string
   - `constraints`:
     - `enum` ['text']
 ### `EXTENSION_TEXT_RACE_CODE_VALUE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'text').valueString
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'text').valueString
   - `type` string
 ### `EXTENSION_ETHNICITY_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.url
   - `type` string
   - `constraints`:
     - `enum` ['http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity']
 ### `EXTENSION_OMBCATEGORY_ETHNICITY_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').url
   - `type` string
   - `constraints`:
     - `enum` ['ombCategory']
 ### `EXTENSION_OMBCATEGORY_ETHNICITY_CODE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
   - `constraints`:
     - `enum` ['2135-2', '2186-5']
 ### `EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display
   - `type` string
   - `constraints`:
     - `enum` ['hispanic or latino', 'non hispanic or latino']
 ### `EXTENSION_OMBCATEGORY_ETHNICITY_CODE_SYSTEM_NAME`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.system
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.system
   - `type` string
   - `constraints`:
     - `enum` ['urn:oid:2.16.840.1.113883.6.238']
 ### `EXTENSION_TEXT_ETHNICITY_URL`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'text').url
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'text').url
   - `type` string
   - `constraints`:
     - `enum` ['text']
 ### `EXTENSION_TEXT_ETHNICITY_CODE_VALUE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'text').valueString
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'text').valueString
   - `type` string
 ### `PATIENT_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').meta.lastUpdated
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `PATIENT_PROFILE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').meta.profile
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').meta.profile
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient']
 ### `RESOURCE_CONTENT_LANGUAGE`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').language
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').language
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-at', 'de-ch', 'de-de', 'el', 'en', 'en-au', 'en-ca', 'en-gb', 'en-in', 'en-nz', 'en-sg', 'en-us', 'es', 'es-ar', 'es-es', 'es-uy', 'fi', 'fr', 'fr-be', 'fr-ch', 'fr-fr', 'fy', 'fy-nl', 'hi', 'hr', 'it', 'it-ch', 'it-it', 'ja', 'ko', 'nl', 'nl-be', 'nl-nl', 'no', 'no-no', 'pa', 'pl', 'pt', 'pt-br', 'ru', 'ru-ru', 'sr', 'sr-rs', 'sv', 'sv-se', 'te', 'zh', 'zh-cn', 'zh-hk', 'zh-sg', 'zh-tw']
 ### `RELATIONSHIP_PERSON_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').contact.relationship.coding.code
   - `type` string
   - `constraints`:
     - `enum` ['sel', 'spo', 'dom', 'chd', 'gch', 'nch', 'sch', 'fch', 'dep', 'wrd', 'par', 'mth', 'fth', 'cgv', 'grd', 'grp', 'exf', 'sib', 'bro', 'sis', 'fnd', 'oad', 'eme', 'emr', 'asc', 'emc', 'own', 'tra', 'mgr', 'non', 'unk', 'oth']
 ### `RELATIONSHIP_PERSON_DESCRIPTION`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').contact.relationship.coding.display
   - `type` string
   - `constraints`:
     - `enum` ['self', 'spouse', 'life partner', 'child', 'grandchild', 'natural child', 'stepchild', 'foster child', 'handicapped dependent', 'ward of court', 'parent', 'mother', 'father', 'care giver', 'guardian', 'grandparent', 'extended family', 'sibling', 'brother', 'sister', 'friend', 'other adult', 'employee', 'employer', 'associate', 'emergency contact', 'owner', 'trainer', 'manager', 'none', 'unknown', 'other']
 ### `RELATIONSHIP_PERSON_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').contact.relationship.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://terminology.hl7.org/CodeSystem/v2-0063']
 ### `RELATIONSHIP_PERSON_GIVEN_NAME`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').contact.name.given
   - `type` string
 ### `RELATIONSHIP_PERSON_FAMILY_NAME`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').contact.name.family
   - `type` string
 ### `RELATIONSHIP_PERSON_TELECOM_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').contact.telecom.system
   - `type` string
 ### `RELATIONSHIP_PERSON_TELECOM_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').contact.telecom.value
   - `type` string
 ### `PATIENT_TEXT_STATUS`
-  - `description` Bundle.entry.resource.where(resource = 'Patient').text.status
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').text.status
   - `type` string
 ### `SEXUAL_ORIENTATION_VALUE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
     - `enum` ['20430005', '38628009', '42035005', '765288000', 'oth', 'unk', 'asked-declined']
 ### `SEXUAL_ORIENTATION_VALUE_CODE_DESCRIPTION`
+  - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.display
   - `type` string
   - `constraints`:
     - `enum` ['heterosexual (finding)', 'homosexual (finding)', 'bisexual (finding)', 'sexually attracted to neither male nor female sex (finding)', 'other', 'unknown', 'asked but declined']
 ### `SEXUAL_ORIENTATION_VALUE_CODE_SYSTEM_NAME`
+  - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://snomed.info/sct', 'http://terminology.hl7.org/CodeSystem/v3-NullFlavor']
 ### `SEXUAL_ORIENTATION_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resource = 'Observation').meta.lastUpdated
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `SEXUAL_ORIENTATION_PROFILE`
-  - `description` Bundle.entry.resource.where(resource = 'Observation').meta.profile
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').meta.profile
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation']
 ### `SEXUAL_ORIENTATION_STATUS`
+  - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').status
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['registered', 'preliminary', 'final', 'amended', 'corrected', 'cancelled', 'entered-in-error', 'unknown']
 ### `SEXUAL_ORIENTATION_TEXT_STATUS`
-  - `description` Bundle.entry.resource.where(resource = 'Observation').text.status
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').text.status
   - `type` string
 ### `SEXUAL_ORIENTATION_CODE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').code.coding.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['76690-7']
 ### `SEXUAL_ORIENTATION_CODE_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').code.coding.display
   - `type` string
 ### `SEXUAL_ORIENTATION_CODE_SYSTEM_NAME`
+  - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').code.coding.system
   - `type` string
   - `constraints`:
     - `required` True
