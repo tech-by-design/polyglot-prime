@@ -12,12 +12,14 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -34,13 +36,13 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
@@ -134,27 +136,32 @@ public class OrchestrationEngine {
         return Collections.unmodifiableList(sessions);
     }
 
-    public void orchestrate(@NotNull final OrchestrationSession... sessions) {
+    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
         for (final OrchestrationSession session : sessions) {
-            session.validate();
             this.sessions.add(session);
+            session.validate();
         }
     }
 
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
-        Iterator<OrchestrationSession> iterator = this.sessions.iterator();
-        while (iterator.hasNext()) {
-            OrchestrationSession session = iterator.next();
-            for (OrchestrationSession sessionToRemove : sessionsToRemove) {
-                if (session.getSessionId().equals(sessionToRemove.getSessionId())) {
-                    iterator.remove();
-                    break;
+        if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
+            synchronized (this) {
+                Set<String> sessionIdsToRemove = Arrays.stream(sessionsToRemove)
+                                                        .map(OrchestrationSession::getSessionId)
+                                                        .collect(Collectors.toSet());
+                Iterator<OrchestrationSession> iterator = this.sessions.iterator();
+                while (iterator.hasNext()) {
+                    OrchestrationSession session = iterator.next();
+                    if (sessionIdsToRemove.contains(session.getSessionId())) {
+                        iterator.remove();
+                    }
                 }
             }
         }
     }
+    
 
-    public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
+    public synchronized ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, Map<String, String>> igPackages,
             final String igVersion) {
         final ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
@@ -810,7 +817,7 @@ public class OrchestrationEngine {
             return sessionId;
         }
 
-        public void validate() {
+        public synchronized void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
                     final ValidationResult result = engine.validate(payload);
@@ -843,7 +850,7 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Builder withPayloads(@NotNull final List<String> payloads) {
+            public synchronized Builder withPayloads(@NotNull final List<String> payloads) {
                 this.payloads.addAll(payloads);
                 return this;
             }
@@ -916,12 +923,12 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Builder addValidationEngine(@NotNull final ValidationEngine validationEngine) {
+            public synchronized Builder addValidationEngine(@NotNull final ValidationEngine validationEngine) {
                 this.validationEngines.add(validationEngine);
                 return this;
             }
 
-            public Builder addHapiValidationEngine() {
+            public synchronized Builder addHapiValidationEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,
                                 this.igPackages,
@@ -929,14 +936,14 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Builder addHl7ValidationEmbeddedEngine() {
+            public synchronized Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,
                                 null, null));
                 return this;
             }
 
-            public Builder addHl7ValidationApiEngine() {
+            public synchronized Builder addHl7ValidationApiEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null,
                                 null));

@@ -54,11 +54,11 @@ const {
   jsonbNullable,
   jsonB,
   boolean,
-  booleanNullable,
   textNullable,
   dateTime,
   dateTimeNullable,
-  integer
+  integer,
+  blobTextNullable
 } = dvts.domains;
 const { ulidPrimaryKey: primaryKey } = dvts.keys;
 
@@ -476,9 +476,9 @@ const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
 
 
 const interactionCsvRequestSat = interactionHub.satelliteTable(
-  "csv_request",
+  "flat_file_csv_request",
   {
-    sat_interaction_csv_request_id: primaryKey(),
+    sat_interaction_flat_file_csv_request_id: primaryKey(),
     hub_interaction_id: interactionHub.references
       .hub_interaction_id(),
     tenant_id: text(),
@@ -492,11 +492,33 @@ const interactionCsvRequestSat = interactionHub.satelliteTable(
     demographic_data_payload_text: textNullable(),
     qe_admin_data_payload_text: textNullable(),
     screening_data_file_name: textNullable(),
+    demographic_data_file_name: textNullable(),
+    qe_admin_data_file_name: textNullable(),
     client_ip_address: textNullable(),
     user_agent: text(),
     from_state: textNullable(),
     to_state: textNullable(),
     state_transition_reason: textNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const interactionZipRequestSat = interactionHub.satelliteTable(
+  "zip_file_request",
+  {
+    sat_interaction_zip_file_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: textNullable(),
+    nature: textNullable(),
+    group_id: textNullable(),
+    status: textNullable(),
+    csv_zip_file_name: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: text(),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },
@@ -813,6 +835,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${interactionCsvRequestSat}
 
+      ${interactionZipRequestSat}
+
       ${fileExchangeProtocol}
       
       ${interactionHl7RequestSat}    
@@ -950,6 +974,8 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_disposition_action TEXT NULL;  
       
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS severity TEXT NULL;     
+      
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS csv_zip_file_content Bytea NULL;     
 
       INSERT INTO techbd_udi_ingress.json_action_rule(
         action_rule_id,
@@ -1063,26 +1089,31 @@ const migrateSP = pgSQLa.storedProcedure(
       IF NOT EXISTS (
           SELECT 1
           FROM pg_constraint
-          WHERE conname = 'sat_interaction_csv_request_hub_interaction_id_fkey'
+          WHERE conname = 'sat_interaction_flat_file_csv_request_hub_interaction_id_fkey'
       ) THEN
-          ALTER TABLE sat_interaction_csv_request
-          ADD CONSTRAINT sat_interaction_csv_request_hub_interaction_id_fkey
+          ALTER TABLE sat_interaction_flat_file_csv_request
+          ADD CONSTRAINT sat_interaction_flat_file_csv_request_hub_interaction_id_fkey
           FOREIGN KEY (hub_interaction_id)
           REFERENCES hub_interaction(id);
       END IF;
 
-
-      --ALTER TABLE techbd_udi_ingress.hub_interaction ADD CONSTRAINT hub_interaction_id_unique UNIQUE (hub_interaction_id);
-
       IF NOT EXISTS (
           SELECT 1
           FROM pg_constraint
-          WHERE conname = 'sat_interaction_csv_request_hub_interaction_id_fkey'
+          WHERE conname = 'sat_interaction_hl7_request_hub_interaction_id_fkey'
       ) THEN
           ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD CONSTRAINT sat_interaction_hl7_request_hub_interaction_id_fkey FOREIGN KEY (hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
       END IF;
 
-      
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'sat_interaction_zip_file_request_hub_interaction_id_fkey'
+      ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD CONSTRAINT sat_interaction_zip_file_request_hub_interaction_id_fkey FOREIGN KEY (hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
+      END IF;
+
+
 
 
 
