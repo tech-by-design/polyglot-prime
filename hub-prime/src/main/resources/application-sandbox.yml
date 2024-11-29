@@ -72,4 +72,4 @@ otel:
       authorizationTokenSecretName: null
       endpoint: http://10.10.11.248:5080/api/default/v1/traces
       headers:
-        Authorization: Basic Y2l0cnVzQGNpdHJ1cy5jb206Y2l0cnVz       
+        Authorization: null       
