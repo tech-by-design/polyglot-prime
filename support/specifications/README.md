@@ -25,8 +25,51 @@ This project leverages the [Frictionless Data](https://frictionlessdata.io/) lib
 
 ## Prerequisites
 
-- **Python**: Ensure Python 3.x is installed.
-- **Frictionless**: Install the Frictionless library using pip:
+
+Before you can use this tool, make sure you have the following installed on your system:
+
+- **Python 3.x**:
+  Ensure that Python 3 is installed on your system. You can check if Python 3 is already installed by running the following command:
+
+  ```bash
+  python3 --version
+  ```
+  If Python 3 is not installed, follow the instructions below to install it:
+    - Ubuntu/Debian-based systems:
+      ```bash
+      sudo apt update
+      sudo apt install python3
+      ```
+    - macOS (using Homebrew):
+      ```bash
+      brew install python
+    - Windows: Download and install the latest version of Python from the official website: https://www.python.org/downloads/
+
+- **pip (Python Package Installer)**: pip is the package manager for Python and is needed to install libraries like Frictionless.
+
+  Check if pip is installed by running:
+  ```bash
+  python3 -m pip --version
+  ```
+  If pip is not installed, follow these steps:
+    - On Ubuntu/Debian-based systems:
+      ```bash
+        sudo apt install python3-pip
+      ```
+    - On macOS (using Homebrew):
+      ```bash
+        brew install pip
+      ```
+    - On Windows: If pip isn't already installed with Python, you can get it from the [official Python pip installation guide](https://pip.pypa.io/en/stable/installation/).
+
+  ***Troubleshooting***: 
+    If you encounter errors like No module named ensurepip, it's possible that your Python installation is missing the ensurepip module, which is typically used to install pip. In this case, install pip manually using the package manager for your operating system, as described above. Alternatively, you can use the following command to install pip if it's missing:
+      ```bash
+        python3 -m ensurepip --upgrade
+      ```
+
+
+- **Frictionless**: Once Python 3 and pip are set up, you can install the Frictionless library by running the following command:
   ```bash
   pip install frictionless
   ```
