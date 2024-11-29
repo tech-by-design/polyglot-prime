@@ -46,8 +46,9 @@ public class OpenTelemetryConfig {
     public OpenTelemetrySdk openTelemetrySdk() {
         var headers = properties.getOtlp().getHeaders();
         var token = headers != null ? headers.get("Authorization") : null;
-        if (token == null && properties.getAuthorizationTokenSecretName() != null) {
-            token = AWSUtil.getValue(properties.getAuthorizationTokenSecretName());
+        if (token == null && properties.getOtlp().getAuthorizationTokenSecretName() != null) {
+            token = AWSUtil.getValue(properties.getOtlp().getAuthorizationTokenSecretName());
+            LOG.debug("Authorization AWS token {}.", token);
         }
 
         if (token == null) {
