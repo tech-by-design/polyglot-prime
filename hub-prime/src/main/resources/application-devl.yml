@@ -39,5 +39,5 @@ otel:
     otlp:
       enabled: true
       authorizationTokenSecretName: Open_observe
-      endpoint: http://10.10.11.248:5080/api/default/v1/traces
+      endpoint: https://observe.omnibus.techbd.org/api/default
      
