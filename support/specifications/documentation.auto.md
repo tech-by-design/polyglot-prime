@@ -18,6 +18,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').active
   - `type` string
 ### `FACILITY_ID`
+  - `description` Append to the Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').system URI
   - `type` string
   - `constraints`:
     - `required` True
@@ -84,7 +85,7 @@
   - `type` string
   - `constraints`:
     - `pattern` `^http://www\.scn\.gov/.+`
-### `FACILITY_NPI_IDENTIFIER_TYPE_CODE`
+### `FACILITY_NPI_IDENTIFIER_TYPE_DISPLAY`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://hl7.org/fhir/sid/us-npi').type.coding.display
   - `type` string
 ### `FACILITY_NPI_IDENTIFIER_TYPE_VALUE`
@@ -95,7 +96,7 @@
   - `type` string
   - `constraints`:
     - `pattern` `^http://hl7.org/fhir/sid/us-npi/.+`
-### `FACILITY_CMS_IDENTIFIER_TYPE_CODE`
+### `FACILITY_CMS_IDENTIFIER_TYPE_DISPLAY`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.medicaid.gov').type.coding.display
   - `type` string
 ### `FACILITY_CMS_IDENTIFIER_TYPE_VALUE`
@@ -124,65 +125,82 @@
   - `constraints`:
     - `required` True
 ### `SCREENING_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['96777-8', '97023-6']
 ### `SCREENING_CODE_DESCRIPTION`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['accountable health communities (ahc) health-related social needs screening (hrsn) tool', 'accountable health communities (ahc) health-related social needs (hrsn) supplemental questions']
 ### `RECORDED_TIME`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').effectiveDateTime
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `([0-9]{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))`
 ### `QUESTION_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['96777-8', '71802-3', '96778-6', '88122-7', '88123-5', '93030-5', '96779-4', '95618-5', '95617-7', '95616-9', '95615-1', '95614-4', '76513-1', '96780-2', '96781-0', '93159-2', '97027-7', '96782-8', '89555-7', '68516-4', '68517-2', '96842-0', '95530-2', '68524-8', '44250-9', '44255-8', '93038-8', '69858-9', '69861-3', '77594-0', '71969-0']
 ### `QUESTION_CODE_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.display
   - `type` string
   - `constraints`:
     - `required` True
 ### `QUESTION_CODE_TEXT`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.text
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['what is your living situation today?', 'think about the place you live. do you have problems with any of the following?', 'within the past 12 months, you worried that your food would run out before you got money to buy more.', "within the past 12 months, the food you bought just didn't last and you didn't have money to get more.", 'in the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?', 'in the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?', 'how often does anyone, including family and friends, physically hurt you?', 'how often does anyone, including family and friends, insult or talk down to you?', 'how often does anyone, including family and friends, threaten you with harm?', 'how often does anyone, including family and friends, scream or curse at you?', 'total safety score', 'how hard is it for you to pay for the very basics like food, housing, medical care, and heating? would you say it is', 'do you want help finding or keeping work or a job?', 'if for any reason you need help with day-to-day activities such as bathing, preparing meals, shopping, managing finances, etc., do you get the help you need?', 'how often do you feel lonely or isolated from those around you?', 'do you speak a language other than english at home?', 'do you want help with school or training? for example, starting or completing job training or getting a high school diploma, ged or equivalent.', 'in the last 30 days, other than the activities you did for work, on average, how many days per week did you engage in moderate exercise (like walking fast, running, jogging, dancing, swimming, biking, or other similar activities)', 'on average, how many minutes did you usually spend exercising at this level on one of those days?', 'how many times in the past 12 months have you had 5 or more drinks in a day (males) or 4 or more drinks in a day (females)?', 'how often have you used any tobacco product in past 12 months?', 'how many times in the past year have you used prescription drugs for non-medical reasons?', 'how many times in the past year have you used illegal drugs?', 'little interest or pleasure in doing things?', 'feeling down, depressed, or hopeless?', 'stress means a situation in which a person feels tense, restless, nervous, or anxious, or is unable to sleep at night because his or her mind is troubled all the time. do you feel this kind of stress these days?', 'because of a physical, mental, or emotional condition, do you have serious difficulty concentrating, remembering, or making decisions?', "because of a physical, mental, or emotional condition, do you have difficulty doing errands alone such as visiting a physician's office or shopping", 'calculated weekly physical activity', 'promis-10 global mental health (gmh) score t-score']
 ### `OBSERVATION_CATEGORY_SDOH_TEXT`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').text
   - `type` string
 ### `OBSERVATION_CATEGORY_SDOH_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').coding.code
   - `type` string
   - `constraints`:
     - `enum` ['sdoh-category-unspecified', 'food-insecurity', 'housing-instability', 'homelessness', 'inadequate-housing', 'transportation-insecurity', 'financial-insecurity', 'material-hardship', 'educational-attainment', 'employment-status', 'veteran-status', 'stress', 'social-connection', 'intimate-partner-violence', 'elder-abuse', 'personal-health-literacy', 'health-insurance-coverage-status', 'medical-cost-burden', 'digital-literacy', 'digital-access', 'utility-insecurity', 'resulting-activity', 'sdoh-condition-category', 'payer-coverage', 'general-information', 'make-contact', 'review-material', 'risk-questionnaire', 'feedback-questionnaire', 'application-questionnaire', 'personal-characteristics-questionnaire', 'contact-entity', 'general-information-response', 'questionnaire-category', 'questionnaire-pdf', 'questionnaire-url', 'questionnaire-pdf-completed', 'contacting-subject-prohibited', 'self-reported', 'reported-by-related-person', 'observed', 'administrative', 'derived-specify', 'other-specify', 'personal-characteristic', 'chosen-contact']
 ### `OBSERVATION_CATEGORY_SDOH_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').coding.display
   - `type` string
   - `constraints`:
     - `enum` ['sdoh category unspecified', 'food insecurity', 'housing instability', 'homelessness', 'inadequate housing', 'transportation insecurity', 'financial insecurity', 'material hardship', 'educational attainment', 'employment status', 'veteran status', 'stress', 'social connection', 'intimate partner violence', 'elder abuse', 'personal health literacy', 'health insurance coverage status', 'medical cost burden', 'digital literacy', 'digital access', 'utility insecurity', 'resulting activity', 'current condition category from sdoh category', 'coverage by payer organization', 'general information', 'make contact', 'review material', 'risk questionnaire', 'feedback questionnaire', 'application questionnaire', 'personal characteristics questionnaire', 'contact entity', 'general information response', 'questionnaire category', 'questionnaire pdf', 'questionnaire url', 'questionnaire pdf completed', 'contacting subject prohibited', 'self reported', 'reported by related person', 'observed', 'administrative', 'derived specify', 'other specify', 'personal characteristic', 'chosen contact']
 ### `OBSERVATION_CATEGORY_SNOMED_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.coding.code
   - `type` string
 ### `OBSERVATION_CATEGORY_SNOMED_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.coding.display
   - `type` string
 ### `ANSWER_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
     - `enum` ['la31993-1', 'la31994-9', 'la31995-6', 'la31996-4', 'la28580-1', 'la31997-2', 'la31998-0', 'la31999-8', 'la32000-4', 'la32001-2', 'la9-3', 'la28397-0', 'la6729-3', 'la28398-8', 'la28397-0', 'la6729-3', 'la28398-8', 'la33-6', 'la32-8', 'la33-6', 'la32-8', 'la32002-0', 'la6270-8', 'la10066-1', 'la10082-8', 'la16644-9', 'la6482-9', 'la6270-8', 'la10066-1', 'la10082-8', 'la16644-9', 'la6482-9', 'la6270-8', 'la10066-1', 'la10082-8', 'la16644-9', 'la6482-9', 'la6270-8', 'la10066-1', 'la10082-8', 'la16644-9', 'la6482-9', 'la15832-1', 'la22683-9', 'la31980-8', 'la31981-6', 'la31982-4', 'la31983-2', 'la31976-6', 'la31977-4', 'la31978-2', 'la31979-0', 'la6270-8', 'la10066-1', 'la10082-8', 'la10044-8', 'la9933-8', 'la33-6', 'la32-8', 'la33-6', 'la32-8', 'la6111-4', 'la6112-2', 'la6113-0', 'la6114-8', 'la6115-5', 'la10137-0', 'la10138-8', 'la10139-6', 'la6111-4', 'la13942-0', 'la19282-5', 'la28855-7', 'la28858-1', 'la28854-0', 'la28853-2', 'la28891-2', 'la32059-0', 'la32060-8', 'la6270-8', 'la26460-8', 'la18876-5', 'la18891-4', 'la18934-2', 'la6270-8', 'la26460-8', 'la18876-5', 'la18891-4', 'la18934-2', 'la6270-8', 'la26460-8', 'la18876-5', 'la18891-4', 'la18934-2', 'la6270-8', 'la26460-8', 'la18876-5', 'la18891-4', 'la18934-2', 'la6568-5', 'la6569-3', 'la6570-1', 'la6571-9', 'la6568-5', 'la6569-3', 'la6570-1', 'la6571-9', 'la6568-5', 'la13863-8', 'la13909-9', 'la13902-4', 'la13914-9', 'la30122-8', 'la33-6', 'la32-8', 'la33-6', 'la32-8']
 ### `ANSWER_CODE_DESCRIPTION`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).valueCodeableConcept.coding.display
   - `type` string
   - `constraints`:
     - `enum` ['i have a steady place to live', 'i have a place to live today, but i am worried about losing it in the future', 'i do not have a steady place to live (i am temporarily staying with others, in a hotel, in a shelter,living outside on the street, on a beach, in a car, abandoned building, bus or train station, or in a park)', 'pests such as bugs, ants, or mice', 'mold', 'lead paint or pipes', 'lack of heat', 'oven or stove not working', 'smoke detectors missing or not working', 'water leaks', 'none of the above', 'often true', 'sometimes true', 'never true', 'often true', 'sometimes true', 'never true', 'yes', 'no', 'yes', 'no', 'already shut off', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'very hard', 'somewhat hard', 'not hard at all', 'yes, help finding work', 'yes, help keeping work', 'i do not need or want help', "i don't need any help", 'i get all the help i need', 'i could use a little more help', 'i need a lot more help', 'never', 'rarely', 'sometimes', 'often', 'always', 'yes', 'no', 'yes', 'no', '0', '1', '2', '3', '4', '5', '6', '7', '0', '10', '20', '30', '40', '50', '60', '90', '120', '150 or greater', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'not at all (0)', 'several days (1)', 'more than half the days (2)', 'nearly every day (3)', 'not at all (0)', 'several days (1)', 'more than half the days (2)', 'nearly every day (3)', 'not at all', 'a little bit', 'somewhat', 'quite a bit', 'very much', 'i choose not to answer this question', 'yes', 'no', 'yes', 'no']
 ### `INTERPRETATION_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.code
   - `type` string
 ### `INTERPRETATION_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.display
   - `type` string
 ### `DATA_ABSENT_REASON_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.coding.code
   - `type` string
   - `constraints`:
     - `enum` ['asked-unknown', 'temp-unknown', 'not-asked', 'asked-declined', 'masked', 'not-applicable', 'unsupported', 'as-text', 'error', 'not-a-number', 'negative-infinity', 'positive-infinity', 'not-performed', 'not-permitted']
 ### `DATA_ABSENT_REASON_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.coding.display
   - `type` string
   - `constraints`:
     - `enum` ['asked but unknown', 'temporarily unknown', 'not asked', 'asked but declined', 'masked', 'not applicable', 'unsupported', 'as text', 'error', 'not a number (nan)', 'negative infinity (ninf)', 'positive infinity (pinf)', 'not performed', 'not permitted']
@@ -201,30 +219,43 @@
   - `constraints`:
     - `required` True
 ### `LOCATION_NAME`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').name
   - `type` string
 ### `LOCATION_STATUS`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').status
   - `type` string
 ### `LOCATION_TYPE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').type.coding.code
   - `type` string
 ### `LOCATION_TYPE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').type.coding.system
   - `type` string
 ### `LOCATION_ADDRESS_TYPE`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').address.type
   - `type` string
 ### `LOCATION_ADDRESS1`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').address.line
   - `type` string
 ### `LOCATION_ADDRESS2`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').address.line
   - `type` string
 ### `LOCATION_CITY`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').address.city
   - `type` string
 ### `LOCATION_DISTRICT`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').address.district
   - `type` string
 ### `LOCATION_STATE`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').address.state
   - `type` string
 ### `LOCATION_ZIP`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').address.zip
   - `type` string
 ### `LOCATION_PHYSICAL_TYPE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').physicalType.coding.code
   - `type` string
 ### `LOCATION_PHYSICAL_TYPE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Location').physicalType.coding.system
   - `type` string
 ### `LOCATION_TEXT_STATUS`
   - `description` Bundle.entry.resource.where(resourceType ='Location').text.status
@@ -250,47 +281,57 @@
   - `constraints`:
     - `required` True
 ### `ENCOUNTER_ID`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').id
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^[A-Za-z0-9\-\.]{1,64}$`
 ### `ENCOUNTER_CLASS_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['amb', 'emer', 'fld', 'hh', 'imp', 'acute', 'nonac', 'obsenc', 'prenc', 'ss', 'vr']
 ### `ENCOUNTER_CLASS_CODE_DESCRIPTION`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.display
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['ambulatory', 'emergency', 'field', 'home health', 'inpatient encounter', 'inpatient acute', 'inpatient non-acute', 'observation encounter', 'pre-admission', 'short stay', 'virtual']
 ### `ENCOUNTER_CLASS_CODE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://terminology.hl7.org/CodeSystem/v3-ActCode']
 ### `ENCOUNTER_STATUS_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').status
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['planned', 'arrived', 'triaged', 'in-progress', 'onleave', 'finished', 'cancelled', 'entered-in-error', 'unknown']
 ### `ENCOUNTER_TYPE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['405672008', '23918007']
 ### `ENCOUNTER_TYPE_CODE_DESCRIPTION`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.text
   - `type` string
 ### `ENCOUNTER_TYPE_CODE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://snomed.info/sct']
 ### `ENCOUNTER_START_TIME`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').period.start
   - `type` string
   - `constraints`:
     - `pattern` `([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?`
 ### `ENCOUNTER_END_TIME`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').period.end
   - `type` string
   - `constraints`:
     - `pattern` `([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?`
@@ -413,6 +454,7 @@
   - `constraints`:
     - `required` True
 ### `SCREENING_STATUS_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').status
   - `type` string
   - `constraints`:
     - `required` True
@@ -439,54 +481,65 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation').text.status
   - `type` string
 ### `SCREENING_CODE_SYSTEM_NAME`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://loinc.org']
 ### `QUESTION_CODE_SYSTEM_NAME`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://loinc.org']
 ### `OBSERVATION_CATEGORY_SDOH_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes']
 ### `OBSERVATION_CATEGORY_SOCIAL_HISTORY_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.code = 'social-history').coding.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['social-history']
 ### `OBSERVATION_CATEGORY_SOCIAL_HISTORY_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.code = 'social-history').coding.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://terminology.hl7.org/CodeSystem/observation-category']
 ### `OBSERVATION_CATEGORY_SURVEY_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.code = 'survey').coding.code
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['survey']
 ### `OBSERVATION_CATEGORY_SURVEY_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.code = 'survey').coding.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://terminology.hl7.org/CodeSystem/observation-category']
 ### `OBSERVATION_CATEGORY_SNOMED_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://snomed.info/sct').coding.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://snomed.info/sct']
 ### `ANSWER_CODE_SYSTEM_NAME`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).valueCodeableConcept.coding.system
   - `type` string
   - `constraints`:
     - `required` True
     - `enum` ['http://loinc.org']
 ### `INTERPRETATION_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation']
 ### `DATA_ABSENT_REASON_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.coding.system
   - `type` string
   - `constraints`:
     - `enum` ['https://terminology.hl7.org/6.0.2/CodeSystem-data-absent-reason']
