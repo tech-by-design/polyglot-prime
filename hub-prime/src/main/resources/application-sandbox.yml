@@ -64,4 +64,12 @@ management:
       enabled: true
     os:
       enabled: true
-       
+otel:
+  traces:
+    exporter: otlp
+    otlp:
+      enabled: true
+      authorizationTokenSecretName: null
+      endpoint: http://10.10.11.248:5080/api/default/v1/traces
+      headers:
+        Authorization: null       
