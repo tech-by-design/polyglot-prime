@@ -41,9 +41,10 @@ public class OpenTelemetryConfig {
     @SuppressWarnings("deprecation")
     @Bean
     public OpenTelemetrySdk openTelemetrySdk() {
-        var token = properties.getOtlp().getHeaders().get("Authorization");
+        var headers = properties.getOtlp().getHeaders();
+        var token = headers != null ? headers.get("Authorization") : null;
         if (null == token && null != properties.getAuthorizationTokenSecretName()) {
-            token = AWSUtil.getValue("authorizationTokenSecretName");
+            token = AWSUtil.getValue(properties.getAuthorizationTokenSecretName());
         }
         OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
                 .setEndpoint(properties.getOtlp().getEndpoint())
