@@ -46,15 +46,17 @@ public class OpenTelemetryConfig {
     public OpenTelemetrySdk openTelemetrySdk() {
         var headers = properties.getOtlp().getHeaders();
         var token = headers != null ? headers.get("Authorization") : null;
+        LOG.info("getEndpoint() - {})", properties.getOtlp().getEndpoint());
+        LOG.info("getAuthorizationTokenSecretName() - {})", properties.getOtlp().getAuthorizationTokenSecretName());
         if (token == null && properties.getOtlp().getAuthorizationTokenSecretName() != null) {
             token = AWSUtil.getValue(properties.getOtlp().getAuthorizationTokenSecretName());
-            LOG.debug("Authorization AWS token {}.", token);
+            LOG.info("Authorization AWS token {}.", token);
         }
 
         if (token == null) {
             LOG.error("Authorization token is missing. Please ensure it is set in headers or AWS Secrets.");
         } else {
-            LOG.debug("Authorization token retrieved: {}", token);
+            LOG.info("Authorization token retrieved: {}", token);
         }
 
         OtlpHttpSpanExporter spanExporter = null;
