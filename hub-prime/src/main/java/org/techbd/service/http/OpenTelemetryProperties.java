@@ -15,12 +15,12 @@ import java.util.Map;
 public class OpenTelemetryProperties {
     private String exporter;
     private OtlpProperties otlp;
-    private boolean enabled;
-    private String authorizationTokenSecretName;
-    @Getter
+       @Getter
     @Setter
     public static class OtlpProperties {
         private String endpoint;
         private Map<String, String> headers;
+        private boolean enabled;
+        private String authorizationTokenSecretName;
     }
 }
