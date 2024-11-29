@@ -1,5 +1,7 @@
 package org.techbd.service.http;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.techbd.util.AWSUtil;
@@ -18,6 +20,7 @@ import io.opentelemetry.semconv.ResourceAttributes;
 public class OpenTelemetryConfig {
 
     private final OpenTelemetryProperties properties;
+    private static final Logger LOG = LoggerFactory.getLogger(OpenTelemetryProperties.class.getName());
 
     public OpenTelemetryConfig(OpenTelemetryProperties properties) {
         this.properties = properties;
@@ -43,13 +46,30 @@ public class OpenTelemetryConfig {
     public OpenTelemetrySdk openTelemetrySdk() {
         var headers = properties.getOtlp().getHeaders();
         var token = headers != null ? headers.get("Authorization") : null;
-        if (null == token && null != properties.getAuthorizationTokenSecretName()) {
+        if (token == null && properties.getAuthorizationTokenSecretName() != null) {
             token = AWSUtil.getValue(properties.getAuthorizationTokenSecretName());
         }
-        OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
-                .setEndpoint(properties.getOtlp().getEndpoint())
-                .addHeader("Authorization", token)
-                .build();
+
+        if (token == null) {
+            LOG.error("Authorization token is missing. Please ensure it is set in headers or AWS Secrets.");
+        } else {
+            LOG.debug("Authorization token retrieved: {}", token);
+        }
+
+        OtlpHttpSpanExporter spanExporter = null;
+        if (token != null) {
+            spanExporter = OtlpHttpSpanExporter.builder()
+                    .setEndpoint(properties.getOtlp().getEndpoint())
+                    .addHeader("Authorization", token)
+                    .build();
+            LOG.info("Traces exported successfully.");
+        } else {
+            LOG.error("Failed to create span exporter without Authorization token.");
+            spanExporter = OtlpHttpSpanExporter.builder()
+                    .setEndpoint(properties.getOtlp().getEndpoint())
+                    .build();
+        }
+
         Resource resource = Resource.getDefault()
                 .merge(Resource.create(
                         Attributes.of(ResourceAttributes.SERVICE_NAME, "techbd-hub-prime")));
