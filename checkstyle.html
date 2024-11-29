@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-11-29<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.353.0</li>
+          <li id="projectVersion">Version: 0.354.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -75,7 +75,7 @@
 <tr class="b">
 <td style="text-align: left;">20</td>
 <td>0</td>
-<td>101</td>
+<td>102</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -137,7 +137,7 @@
 <tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2FOpenTelemetryProperties.java">org/techbd/service/http/OpenTelemetryProperties.java</a></td>
 <td>0</td>
-<td>1</td>
+<td>2</td>
 <td>0</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java">org/techbd/service/http/hub/prime/api/FHIRService.java</a></td>
@@ -191,6 +191,23 @@
 <th>Rule</th>
 <th>Violations</th>
 <th>Severity</th></tr>
+<tr class="b">
+<td style="text-align: left;">annotation</td>
+<td><a class="externalLink" href="https://checkstyle.org/config_annotation.html#AnnotationLocation">AnnotationLocation</a>
+<ul>
+<li>allowSamelineMultipleAnnotations: <code>&quot;true&quot;</code></li>
+<li>tokens: <code>&quot;VARIABLE_DEF&quot;</code></li>
+<li>id: <code>&quot;AnnotationLocationVariables&quot;</code></li></ul></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_annotation.html#AnnotationLocation">AnnotationLocation</a>
+<ul>
+<li>tokens: <code>&quot;CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF&quot;</code></li>
+<li>id: <code>&quot;AnnotationLocationMostCases&quot;</code></li></ul></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="b">
 <td style="text-align: left;">blocks</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_blocks.html#NeedBraces">NeedBraces</a></td>
@@ -727,7 +744,13 @@
 <td>whitespace</td>
 <td>EmptyLineSeparator</td>
 <td>'CLASS_DEF' should be separated from previous line.</td>
-<td>20</td></tr></table></section><section>
+<td>18</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>annotation</td>
+<td>AnnotationLocation</td>
+<td>Annotation 'Setter' have incorrect indentation level 4, expected level should be 7.</td>
+<td>19</td></tr></table></section><section>
 <h3>org/techbd/service/http/hub/prime/api/FHIRService.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2Fhub.2Fprime.2Fapi.2FFHIRService.java"></a>
 <table class="table table-striped">
 <tr class="a">
