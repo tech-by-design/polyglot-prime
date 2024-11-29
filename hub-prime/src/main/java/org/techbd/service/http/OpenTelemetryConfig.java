@@ -1,8 +1,8 @@
 package org.techbd.service.http;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.techbd.util.AWSUtil;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
@@ -15,8 +15,6 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.semconv.ResourceAttributes;
 
 @Configuration
-// @ConditionalOnProperty(prefix = "properties", name = "enabled", havingValue =
-// "true", matchIfMissing = false)
 public class OpenTelemetryConfig {
 
     private final OpenTelemetryProperties properties;
@@ -43,9 +41,13 @@ public class OpenTelemetryConfig {
     @SuppressWarnings("deprecation")
     @Bean
     public OpenTelemetrySdk openTelemetrySdk() {
+        var token = properties.getOtlp().getHeaders().get("Authorization");
+        if (null == token && null != properties.getAuthorizationTokenSecretName()) {
+            token = AWSUtil.getValue("authorizationTokenSecretName");
+        }
         OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
                 .setEndpoint(properties.getOtlp().getEndpoint())
-                .addHeader("Authorization", properties.getOtlp().getHeaders().get("Authorization"))
+                .addHeader("Authorization", token)
                 .build();
         Resource resource = Resource.getDefault()
                 .merge(Resource.create(

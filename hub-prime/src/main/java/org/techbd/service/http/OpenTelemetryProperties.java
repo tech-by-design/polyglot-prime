@@ -16,6 +16,7 @@ public class OpenTelemetryProperties {
     private String exporter;
     private OtlpProperties otlp;
     private boolean enabled;
+    private String authorizationTokenSecretName;
     @Getter
     @Setter
     public static class OtlpProperties {
