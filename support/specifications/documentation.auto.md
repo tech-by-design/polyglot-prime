@@ -204,6 +204,9 @@
   - `type` string
   - `constraints`:
     - `enum` ['asked but unknown', 'temporarily unknown', 'not asked', 'asked but declined', 'masked', 'not applicable', 'unsupported', 'as text', 'error', 'not a number (nan)', 'negative infinity (ninf)', 'positive infinity (pinf)', 'not performed', 'not permitted']
+### `DATA_ABSENT_REASON_TEXT`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.text
+  - `type` string
 ## `screening_location_data`
   - `path` flat-file/nyher-fhir-ig-example/SCREENING_LOCATION_DATA_partner1-test-20241128-testcase1.csv
   - `schema`

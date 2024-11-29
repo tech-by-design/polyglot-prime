@@ -206,7 +206,8 @@
             "not performed",
             "not permitted"
           ]
-          }}       
+          }},
+          {"name": "DATA_ABSENT_REASON_TEXT", "type": "string","description":"Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.text"}       
         ],
         "foreignKeys": [
           {
