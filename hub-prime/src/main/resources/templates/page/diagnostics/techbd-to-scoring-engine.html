@@ -56,6 +56,12 @@
         let fromDate = urlParams.get('fromDate');
         let toDate = urlParams.get('toDate');
 
+        const formatDateForStoredProc = (dateString) => {
+            if (!dateString) return null;
+            const [month, day, year] = dateString.split('-');
+            return `${month}-${day}-${year}`;
+        };
+
         // Function to format the date to 'YYYY-MM-DD'
         function formatDateToYYYYMMDD(date) {
             const year = date.getFullYear();
@@ -73,14 +79,16 @@
             fromDate = formatDateToYYYYMMDD(pastDate);
             toDate = formatDateToYYYYMMDD(currentDate);
         }
-       
+
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'fhir_needs_attention_details'; 
- 
+        const viewName = 'fhir_needs_attention_details';
+        const datalakeSubmissionDetailsSP = 'get_fhir_needs_attention_details';
+
         document.addEventListener('DOMContentLoaded', function () {
-            
+
             const helpers = new Helpers();
             const modalAide = new ModalAide();
+
             // Append parametrs at the end of ahref
             const urls = [
                 '/needs-attention/techbd-to-scoring-engine',
@@ -92,7 +100,14 @@
             const links = document.querySelectorAll('a');
             links.forEach(link => {
                 if (urls.some(url => link.href.endsWith(url))) {
-                    link.href += `?qeName=${qeName}`;
+                    let updatedHref = link.href + `?qeName=${qeName}`;
+                    if (fromDate) {
+                        updatedHref += `&fromDate=${fromDate}`;
+                    }
+                    if (toDate) {
+                        updatedHref += `&toDate=${toDate}`;
+                    }
+                    link.href = updatedHref;
                 }
             });
 
@@ -116,6 +131,28 @@
                 breadcrumbTerminal.textContent = breadcrumbTerminal.textContent.replace("Needs Attention -", qeName).trim();
             }
 
+            const storedProcparams = {
+                "tenant_id": qeName,
+                "start_date": formatDateForStoredProc(fromDate),
+                "end_date": formatDateForStoredProc(toDate)
+            };
+
+            const gridRequestBody = {
+                "startRow": 0,
+                "endRow": 100,
+                "rowGroupCols": [],
+                "valueCols": [],
+                "pivotCols": [],
+                "pivotMode": false,
+                "groupKeys": [],
+                "filterModel": {},
+                "sortModel": []
+            }
+
+            const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
+
+            const url = window.shell.serverSideUrl(`/api/ux/tabular/jooq/sp/${schemaName}/${datalakeSubmissionDetailsSP}.json?storedProcparams=${paramsJson}`);
+
 
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
@@ -123,7 +160,7 @@
                         headerName: "Interaction Id",
                         field: "hub_interaction_id",
                         filter: "agTextColumnFilter",
-                        cellRenderer: 'agGroupCellRenderer', 
+                        cellRenderer: 'agGroupCellRenderer',
                         cellRenderer: params => {
                             const hub_interaction_id = params.value;
                             const error_type = params.data.error_type;
@@ -131,8 +168,8 @@
                             const button = document.createElement('button');
                             button.innerText = hub_interaction_id;
                             button.style.textDecoration = 'underline';
-                            button.addEventListener('click', () => { 
-                                    modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));                                
+                            button.addEventListener('click', () => {
+                                modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/interaction_http_fhir_request/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`));
                             });
                             return button;
                         }
@@ -146,7 +183,7 @@
                     { headerName: "Submission Date", field: "created_at", filter: "agDateColumnFilter", filter: "agDateColumnFilter" },
                 ])
                 .withServerSideDatasource(
-                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    window.shell.serverSideUrl(url),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
                             headerName: col.displayName,
@@ -154,7 +191,7 @@
                         }));
                     },
                     {
-                    beforeRequest: async (reqPayload, dataSourceUrl) => {
+                        beforeRequest: async (reqPayload, dataSourceUrl) => {
                             // Forcefully add the filterModel for error_type
                             reqPayload.body.filterModel = {
                                 ...reqPayload.body.filterModel,
@@ -171,7 +208,7 @@
 
             agGridInstance.init('serverDataGrid');
 
- 
+
 
         });
 
@@ -181,8 +218,9 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-title"> <span id="tenant"> </span></div>
-        <div class="grid-description"> 
-            This widget displays data interactions that failed to receive a 200 response from the SHIN-NY Data Lake, highlighting potential issues in processing, delivery, or encountered errors.</br>
+        <div class="grid-description">
+            This widget displays data interactions that failed to receive a 200 response from the SHIN-NY Data Lake,
+            highlighting potential issues in processing, delivery, or encountered errors.</br>
             Click on an interaction, a popup will open containing the error details.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>

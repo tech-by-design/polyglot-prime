@@ -3572,3 +3572,71 @@ BEGIN
     ORDER BY combined_query.interaction_created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP FUNCTION if exists techbd_udi_ingress.get_fhir_needs_attention_details(text, date, date);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_needs_attention_details(
+    tenant_id TEXT,
+    start_date DATE,
+    end_date DATE
+)
+RETURNS TABLE (
+    hub_interaction_id TEXT,
+    sat_interaction_http_request_id TEXT,
+    qe_name TEXT,
+    created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY EXECUTE format(
+        'SELECT 
+            sihr.hub_interaction_id,
+            sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+            sihr.tenant_id_lower AS qe_name,
+            sihr.created_at
+         FROM 
+            techbd_udi_ingress.sat_interaction_fhir_request sihr
+         WHERE 
+            sihr.nature = ''Forwarded HTTP Response Error''
+            AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle''])
+            AND sihr.created_at BETWEEN $1 AND $2
+            AND sihr.tenant_id_lower = $3
+         ORDER BY sihr.created_at DESC'
+    )
+    USING start_date, end_date, tenant_id;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP FUNCTION if exists techbd_udi_ingress.get_missing_datalake_submission_details(text,date, date);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_missing_datalake_submission_details(
+    tenant_id_param TEXT,
+    start_date_param DATE,
+    end_date_param DATE
+)
+RETURNS TABLE (
+    hub_interaction_id text,
+    sat_interaction_http_request_id text,
+    qe_name TEXT,
+    created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        sihr.hub_interaction_id,
+        sihr.sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+        sihr.tenant_id_lower AS qe_name,
+        sihr.created_at
+    FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+    WHERE 
+        sihr.tenant_id_lower = tenant_id_param
+        AND sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
+        AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle'])
+        AND sihr.created_at >= start_date_param
+        AND sihr.created_at < end_date_param
+        AND NOT EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr2
+            WHERE sihr2.hub_interaction_id = sihr.hub_interaction_id
+              AND sihr2.nature = ANY (ARRAY['Forwarded HTTP Response', 'Forwarded HTTP Response Error'])
+        )
+    ORDER BY sihr.created_at DESC;
+END;
+$$ LANGUAGE plpgsql;

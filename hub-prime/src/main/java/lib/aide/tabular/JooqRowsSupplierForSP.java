@@ -23,8 +23,10 @@ import org.jooq.SelectJoinStep;
 import org.jooq.TableLike;
 import org.jooq.impl.DSL;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirNeedsAttention;
+import org.techbd.udi.auto.jooq.ingress.tables.GetFhirNeedsAttentionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmission;
 import org.techbd.udi.auto.jooq.ingress.tables.GetInteractionHttpRequest;
+import org.techbd.udi.auto.jooq.ingress.tables.GetMissingDatalakeSubmissionDetails;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,6 +41,7 @@ public class JooqRowsSupplierForSP {
     private static final Pattern VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN = Pattern.compile("^[a-zA-Z0-9_]+$");
     public static final String DATE_TIME_FORMAT_YMDHMS = "yyyy-MM-dd HH:mm:ss";
     public static final String DATE_TIME_FORMAT_MDYHMS = "MM-dd-yyyy HH:mm:ss";
+    public static final String DATE_TIME_FORMAT_MDY = "MM-dd-yyyy";
 
     private JooqRowsSupplierForSP(Builder builder) {
         this.dslContext = builder.dslContext;
@@ -70,18 +73,18 @@ public class JooqRowsSupplierForSP {
 
     private Condition buildConditions(TabularRowsRequestForSP payload) {
         Condition conditions = DSL.trueCondition();
-        
+
         if (payload.filterModel() != null && !payload.filterModel().isEmpty()) {
             for (Map.Entry<String, TabularRowsRequestForSP.FilterModel> entry : payload.filterModel().entrySet()) {
                 String column = entry.getKey();
                 TabularRowsRequestForSP.FilterModel filterModel = entry.getValue();
-    
+
                 if (filterModel.conditions() != null && !filterModel.conditions().isEmpty()) {
                     // Handle multiple conditions for the column
                     List<Condition> subConditions = filterModel.conditions().stream()
-                        .map(condition -> buildSingleCondition(column, condition))
-                        .collect(Collectors.toList());
-                    
+                            .map(condition -> buildSingleCondition(column, condition))
+                            .collect(Collectors.toList());
+
                     Condition combinedSubConditions = combineConditions(subConditions, filterModel.operator());
                     conditions = combineConditions(List.of(conditions, combinedSubConditions), "AND");
                 } else {
@@ -91,15 +94,15 @@ public class JooqRowsSupplierForSP {
                 }
             }
         }
-        
+
         return conditions;
-    }    
+    }
 
     private Condition combineConditions(List<Condition> conditions, String operator) {
         if (conditions == null || conditions.isEmpty()) {
             return DSL.trueCondition();
         }
-    
+
         return conditions.stream().reduce((cond1, cond2) -> {
             switch (operator.toUpperCase()) {
                 case "AND" -> {
@@ -108,11 +111,12 @@ public class JooqRowsSupplierForSP {
                 case "OR" -> {
                     return cond1.or(cond2);
                 }
-                default -> throw new IllegalArgumentException("Invalid operator in the payload: " + operator);
+                default ->
+                    throw new IllegalArgumentException("Invalid operator in the payload: " + operator);
             }
         }).orElse(DSL.trueCondition());
     }
-    
+
     private Condition buildSingleCondition(String column, TabularRowsRequestForSP.FilterCondition condition) {
         switch (condition.filterType()) {
             case "number" -> {
@@ -223,7 +227,7 @@ public class JooqRowsSupplierForSP {
                     case "notBlank" ->
                         DSL.field(column).isNotNull();
                     default ->
-                        throw new IllegalArgumentException("Unsupported condition type in payload: " +  filterModel.type());
+                        throw new IllegalArgumentException("Unsupported condition type in payload: " + filterModel.type());
                 };
             }
             case "text" -> { // Total 8 conditions for agTextColumnFilter
@@ -334,33 +338,45 @@ public class JooqRowsSupplierForSP {
     }
 
     TableLike<?> getDynamicTablelike(String storedProcName, String paramsJson) throws Exception {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT_MDY);
+
         switch (storedProcName) {
             case "get_fhir_scn_submission" -> {
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> dateMap = objectMapper.readValue(paramsJson, Map.class);
-
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-                LocalDate localStartDate = LocalDate.parse(dateMap.get("start_date"), formatter);
-                LocalDate localEndDate = LocalDate.parse(dateMap.get("end_date"), formatter);
-
-                return new GetFhirScnSubmission().call(localStartDate, localEndDate);
+                Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
+                return new GetFhirScnSubmission().call(paramMap.get("start_date"), paramMap.get("end_date"));
             }
             case "get_fhir_needs_attention" -> {
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> dateMap = objectMapper.readValue(paramsJson, Map.class);
-
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-                LocalDate localStartDate = LocalDate.parse(dateMap.get("start_date"), formatter);
-                LocalDate localEndDate = LocalDate.parse(dateMap.get("end_date"), formatter);
-
-                return new GetFhirNeedsAttention().call(localStartDate, localEndDate);
+                Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
+                return new GetFhirNeedsAttention().call(paramMap.get("start_date"), paramMap.get("end_date"));
             }
             case "get_interaction_http_request" -> {
                 return new GetInteractionHttpRequest().call();
             }
+            case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" -> {
+                Map<String, LocalDate> dateMap = parseDates(paramsJson, objectMapper, formatter);
+                Map<String, String> paramsMap = objectMapper.readValue(paramsJson, Map.class);
+                String tenantId = paramsMap.get("tenant_id").toLowerCase();
+
+                if (storedProcName.equals("get_fhir_needs_attention_details")) {
+                    return new GetFhirNeedsAttentionDetails().call(tenantId, dateMap.get("start_date"), dateMap.get("end_date"));
+                } else {
+                    return new GetMissingDatalakeSubmissionDetails().call(tenantId, dateMap.get("start_date"), dateMap.get("end_date"));
+                }
+            }
             default ->
                 throw new IllegalArgumentException("Invalid stored procedure name: " + storedProcName);
         }
+    }
+
+    private Map<String, LocalDate> parseDates(String paramsJson, ObjectMapper objectMapper, DateTimeFormatter formatter) throws Exception {
+        Map<String, String> stringMap = objectMapper.readValue(paramsJson, Map.class);
+        LocalDate startDate = LocalDate.parse(stringMap.get("start_date"), formatter);
+        LocalDate endDate = LocalDate.parse(stringMap.get("end_date"), formatter);
+        return Map.of(
+                "start_date", startDate,
+                "end_date", endDate
+        );
     }
 
     public static class Builder {
