@@ -30,7 +30,7 @@
             justify-content: flex-start;    /* Add some spacing between elements */
         }
 
-        .date-picker-label, #searchButton{      
+        .date-picker-label{      
             width: 100px; /* Adjust width as needed */
             line-height: 35px;  /* Vertically center the label */
         }
@@ -52,7 +52,20 @@
             font-size: 16px;
         }
 
-        </style>
+        #clearButton {
+            margin-left: 10px; /* Add some space to the left of the button */
+            background-color: #e7e7e7; /* Green */
+            border: none;
+            border-radius: 12px;
+            color: black;
+            padding: 15px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+    </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
@@ -123,18 +136,18 @@
                 updateGridWithDates(startDate, endDate);  // Call with or without validation
             });
 
+            $('#clearButton').click(function() {
+               location.reload();
+            });
+
             function updateGridWithDates(oneWeekAgo, today) {
 
-                const formattedStartDate = formatDate(oneWeekAgo);   //use formated date and avoid format unnessary date 
-                const formattedEndDate = formatDate(today);
-
                 const storedProcparams = {
-                    "start_date": formattedStartDate,
-                    "end_date": formattedEndDate
+                    "start_date": formatDate(oneWeekAgo),
+                    "end_date": formatDate(today)
                 };
 
-                const dateRangeDiv = document.getElementById('date-range');
-                dateRangeDiv.innerHTML = `This Widget provides an overview of message interactions from Screening/Referral/Assessment Centers (SCNs) sent to Tech By Design from <b>${formattedStartDate}</b> to <b>${formattedEndDate}</b>. The grid presents a breakdown of message activity by SCN, displaying distinct SCN names and message counts across various statuses.`;
+                helpers.injectDateRangeText('date-range', 'This Widget provides an overview of message interactions from Screening/Referral/Assessment Centers (SCNs) sent to Tech By Design from <b>{startDate}</b> to <b>{endDate}</b>. The grid presents a breakdown of message activity by SCN, displaying distinct SCN names and message counts across various statuses.');
 
                 const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
                 const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
@@ -206,6 +219,7 @@
             <label for="end-date" class="date-picker-label">End Date:</label>
             <input type="text" id="end-date" name="end-date" readonly>
             <button id="searchButton">Search</button>
+            <button id="clearButton">Clear</button>
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
