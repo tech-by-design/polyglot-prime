@@ -303,7 +303,7 @@
 		<dependency>
 			<groupId>net.sourceforge.pmd</groupId>
 			<artifactId>pmd-core</artifactId>
-			<version>6.36.0</version>
+			<version>7.8.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.spotbugs</groupId>
