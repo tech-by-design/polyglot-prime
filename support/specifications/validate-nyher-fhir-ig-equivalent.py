@@ -1,12 +1,22 @@
+import csv
 import sys
 import json
 import os
-from frictionless import Package, transform, steps
+from frictionless import Package, transform, steps, extract
+from datetime import datetime, date
+
+def custom_json_encoder(obj):
+    if isinstance(obj, (datetime, date)):
+        # Convert both datetime and date objects to ISO 8601 format
+        return obj.isoformat()
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
 
 def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, output_path):
     results = {
         "errorsSummary": [],
-        "report": None
+        "report": None,
+        "originalData": {}  # To store original processed data
     }
 
     try:
@@ -37,11 +47,19 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
                 })
 
             # Write errors to output.json and skip further processing
-            # with open(output_path, 'w') as json_file:
-            #     json.dump(results, json_file, indent=4)
             print(json.dumps(results, indent=4))
-            # print(f"Validation skipped due to missing files. Results saved to '{output_path}'.")
             return  # Skip Frictionless validation
+        
+        # # Parse CSV files into JSON format using `extract` and store in results["originalData"]
+        for resource_name, file_path in file_mappings.items():
+            rows = extract(file_path)  # Extract data from CSV
+            results["originalData"][resource_name] = rows
+
+        # Parse CSV files into JSON format and store in results["originalData"]
+        # for resource_name, file_path in file_mappings.items():
+        #     with open(file_path, mode="r") as csv_file:
+        #         csv_reader = csv.DictReader(csv_file)
+        #         results["originalData"][resource_name] = [row for row in csv_reader]            
 
         # Create the package descriptor dynamically, inserting paths from `file_mappings`
         resources = []
@@ -152,15 +170,10 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
 
     # Write the results to a JSON file
     with open(output_path, 'w') as json_file:
-        json.dump(results, json_file, indent=4)
+        #json.dump(results, json_file, indent=4)
+        json.dump(results, json_file, indent=4, default=custom_json_encoder)
     #print(json.dumps(results, indent=4))
 
-
-    # Print a success or error message to the console
-    # if results["errorsSummary"]:
-    #     print(f"Validation completed with errors. Results saved to '{output_path}'.")
-    # else:
-    #     print(f"Validation completed successfully. Results saved to '{output_path}'.")
 
 if __name__ == "__main__":
 
