@@ -5,6 +5,7 @@
 <head>
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
     <style>
         .grid-description {
@@ -21,12 +22,44 @@
             margin-bottom: 10px;
         }
 
+        #date-picker-container {
+            margin-top: 20px; /* Add some spacing */
+            display: flex;     /* Use flexbox for layout */
+            gap: 10px;  
+            align-items: center;  
+            justify-content: flex-start;    /* Add some spacing between elements */
+        }
+
+        .date-picker-label, #searchButton{      
+            width: 100px; /* Adjust width as needed */
+            line-height: 35px;  /* Vertically center the label */
+        }
+
+        .date-picker-label {
+            text-align: right;
+        }
+
+        #searchButton {
+            margin-left: 10px; /* Add some space to the left of the button */
+            background-color: #e7e7e7; /* Green */
+            border: none;
+            border-radius: 12px;
+            color: black;
+            padding: 15px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
         </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
     <script src="https://www.jsviews.com/download/jsrender.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
@@ -36,6 +69,7 @@
 
         const schemaName = 'techbd_udi_ingress';
         const scnView = 'fhir_scn_submission'; 
+        const storedProcName = 'get_fhir_scn_submission';
         const scnDetailView = 'fhir_scn_submission_details';
         const expanColumnDefn = [
             { headerName: "Org Name", field: "qe_name", filter: "agTextColumnFilter" },
@@ -59,15 +93,61 @@
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const helpers = new Helpers();
-            const agGridInstance = new AGGridAideBuilder()
+
+            const today = new Date();
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(today.getDate() - 7);
+
+            // Format dates as "mm-dd-yyyy"
+            const formatDate = (date) => {
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${month}-${day}-${year}`;
+            };
+
+            // Datepicker Initialization: moved outside url fetch because those date format use only after click submit button       
+            $("#start-date, #end-date").datepicker({
+                dateFormat: "mm-dd-yy",
+            });
+            $("#start-date").datepicker("setDate", oneWeekAgo);
+            $("#end-date").datepicker("setDate", today);
+
+            updateGridWithDates(oneWeekAgo, today);
+
+            // Search Button Click Handler
+            $('#searchButton').click(function() {
+                $('#serverDataGrid').empty();
+                const startDate = $('#start-date').datepicker('getDate');
+                const endDate = $('#end-date').datepicker('getDate');
+                updateGridWithDates(startDate, endDate);  // Call with or without validation
+            });
+
+            function updateGridWithDates(oneWeekAgo, today) {
+
+                const formattedStartDate = formatDate(oneWeekAgo);   //use formated date and avoid format unnessary date 
+                const formattedEndDate = formatDate(today);
+
+                const storedProcparams = {
+                    "start_date": formattedStartDate,
+                    "end_date": formattedEndDate
+                };
+
+                const dateRangeDiv = document.getElementById('date-range');
+                dateRangeDiv.innerHTML = `This Widget provides an overview of message interactions from Screening/Referral/Assessment Centers (SCNs) sent to Tech By Design from <b>${formattedStartDate}</b> to <b>${formattedEndDate}</b>. The grid presents a breakdown of message activity by SCN, displaying distinct SCN names and message counts across various statuses.`;
+
+                const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
+                const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
+
+                const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     { headerName: "SCN Name", field: "organization_id", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' }, 
-                    { headerName: "Total Msgs", field: "qe_total_submissions", filter: "agTextColumnFilter" },
-                    { headerName: "Successful Msgs", field: "success_submissions", filter: "agTextColumnFilter" }, 
-                    { headerName: "Failed Msgs", field: "faield_submissions", filter: "agTextColumnFilter" } 
+                    { headerName: "Total Msgs", field: "qe_total_submissions", filter: "agNumberColumnFilter" },
+                    { headerName: "Successful Msgs", field: "success_submissions", filter: "agNumberColumnFilter" }, 
+                    { headerName: "Failed Msgs", field: "faield_submissions", filter: "agNumberColumnFilter" } 
                 ])
                 .withServerSideDatasource(
-                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${scnView}.json`),
+                    window.shell.serverSideUrl(url),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
                             headerName: col.displayName,
@@ -93,8 +173,7 @@
                 .build();
 
             agGridInstance.init('serverDataGrid');
-             // Inject the date range into the HTML
-             helpers.injectDateRangeText('date-range', 'This Widget provides an overview of message interactions from Screening/Referral/Assessment Centers (SCNs) sent to Tech By Design from <b>{startDate}</b> to <b>{endDate}</b>. The grid presents a breakdown of message activity by SCN, displaying distinct SCN names and message counts across various statuses.');           
+            }
         });
     </script>
 </head>
@@ -120,6 +199,13 @@
         </ul> 
         Each row in the grid is expandable, similar to the existing Organization grid, allowing a detailed view of message routing through different Qualified Entities (QEs) for each SCN.
          Expanded rows provide a breakdown of message totals for each QE, with the SCN row acting as a "totals" row for the corresponding QE breakdown beneath it.
+        </div>
+        <div id="date-picker-container">
+            <label for="start-date" class="date-picker-label">Start Date:</label>
+            <input type="text" id="start-date" name="start-date" readonly>
+            <label for="end-date" class="date-picker-label">End Date:</label>
+            <input type="text" id="end-date" name="end-date" readonly>
+            <button id="searchButton">Search</button>
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
