@@ -44,15 +44,17 @@ public class OpenTelemetryConfig {
     @SuppressWarnings("deprecation")
     @Bean
     public OpenTelemetrySdk openTelemetrySdk() {
-        var headers = properties.getOtlp().getHeaders();
-        var token = headers != null ? headers.get("Authorization") : null;
-        LOG.info("getEndpoint() - {})", properties.getOtlp().getEndpoint());
-        LOG.info("getAuthorizationTokenSecretName() - {})", properties.getOtlp().getAuthorizationTokenSecretName());
-        if (token == null && properties.getOtlp().getAuthorizationTokenSecretName() != null) {
-            token = AWSUtil.getValue(properties.getOtlp().getAuthorizationTokenSecretName());
-            LOG.info("Authorization AWS token {}.", token);
+        String token = null;
+        if (null != properties.getOtlp()) {
+            var headers = properties.getOtlp().getHeaders();
+            token = headers != null ? headers.get("Authorization") : null;
+            LOG.info("getEndpoint() - {})", properties.getOtlp().getEndpoint());
+            LOG.info("getAuthorizationTokenSecretName() - {})", properties.getOtlp().getAuthorizationTokenSecretName());
+            if (token == null && properties.getOtlp().getAuthorizationTokenSecretName() != null) {
+                token = AWSUtil.getValue(properties.getOtlp().getAuthorizationTokenSecretName());
+                LOG.info("Authorization AWS token {}.", token);
+            }
         }
-
         if (token == null) {
             LOG.error("Authorization token is missing. Please ensure it is set in headers or AWS Secrets.");
         } else {
