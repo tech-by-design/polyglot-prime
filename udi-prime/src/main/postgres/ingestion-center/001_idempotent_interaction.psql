@@ -224,14 +224,14 @@ AS SELECT tenant_id,
  * If an error occurs during any step, the function logs the error using the `register_issue` procedure and returns NULL.
  *******************************************************************************************************************************/
 
-DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool);
-DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool, text, text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool, text, text, text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool, text, bytea, text, text, text, text, text, text, text, text);
 
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb DEFAULT NULL::jsonb, payload_text text DEFAULT NULL::text, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT TRUE,
 csv_zip_file_name TEXT DEFAULT NULL::text, csv_zip_file_content BYTEA DEFAULT NULL::BYTEA,
-csv_group_id TEXT DEFAULT NULL::text, csv_status TEXT DEFAULT NULL::text, csv_screening_data_payload_text text DEFAULT NULL::text, csv_demographic_data_payload_text text DEFAULT NULL::text, csv_qe_admin_data_payload_text text DEFAULT NULL::text, csv_screening_data_file_name text DEFAULT NULL::text, csv_demographic_data_file_name text DEFAULT NULL::text, csv_qe_admin_data_file_name text DEFAULT NULL::text)
+csv_group_id TEXT DEFAULT NULL::text, csv_status TEXT DEFAULT NULL::text, 
+csv_screening_consent_data_payload_text text DEFAULT NULL::text, csv_screening_encounter_data_payload_text text DEFAULT NULL::text, csv_screening_location_data_payload_text text DEFAULT NULL::text, csv_screening_observation_data_payload_text text DEFAULT NULL::text, csv_screening_resources_data_payload_text text DEFAULT NULL::text, csv_demographic_data_payload_text text DEFAULT NULL::text, csv_qe_admin_data_payload_text text DEFAULT NULL::text, 
+csv_screening_consent_data_file_name text DEFAULT NULL::text, csv_screening_encounter_data_file_name text DEFAULT NULL::text, csv_screening_location_data_file_name text DEFAULT NULL::text, csv_screening_observation_data_file_name text DEFAULT NULL::text, csv_screening_resources_data_file_name text DEFAULT NULL::text, csv_demographic_data_file_name text DEFAULT NULL::text, csv_qe_admin_data_file_name text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -349,7 +349,7 @@ BEGIN
        	--1) Call the function with the defined parameters to upsert user info
        	IF((v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(register_interaction_http_request.interaction_key) NOT IN ('/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/$validate')) /*fhir bundle*/
        	   OR (v_nature_denorm = 'Original HL7 Payload'	AND trim(register_interaction_http_request.interaction_key) IN ('/Hl7/v2', '/Hl7/v2/'))			/*hl7*/
-       	   OR (v_nature_denorm = 'Original CSV Zip Archive' AND trim(register_interaction_http_request.interaction_key) IN ('/flatfile/csv/Bundle'))   	/*csv*/
+       	   OR (v_nature_denorm = 'Original CSV Zip Archive' AND trim(register_interaction_http_request.interaction_key) IN ('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/$validate'))   	/*csv*/
        	  ) THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 		        register_interaction_http_request.interaction_id, 
@@ -448,12 +448,8 @@ BEGIN
 		        register_interaction_http_request.csv_zip_file_content,
 		        register_interaction_http_request.csv_group_id,
 		        register_interaction_http_request.csv_status,
-		        register_interaction_http_request.csv_screening_data_payload_text,
-		        register_interaction_http_request.csv_demographic_data_payload_text,
-		        register_interaction_http_request.csv_qe_admin_data_payload_text,
-		        register_interaction_http_request.csv_screening_data_file_name,
-		        register_interaction_http_request.csv_demographic_data_file_name,
-		        register_interaction_http_request.csv_qe_admin_data_file_name,
+		        register_interaction_http_request.csv_screening_consent_data_payload_text, register_interaction_http_request.csv_screening_encounter_data_payload_text, register_interaction_http_request.csv_screening_location_data_payload_text, register_interaction_http_request.csv_screening_observation_data_payload_text, register_interaction_http_request.csv_screening_resources_data_payload_text , register_interaction_http_request.csv_demographic_data_payload_text, register_interaction_http_request.csv_qe_admin_data_payload_text, 
+				register_interaction_http_request.csv_screening_consent_data_file_name, register_interaction_http_request.csv_screening_encounter_data_file_name, register_interaction_http_request.csv_screening_location_data_file_name, register_interaction_http_request.csv_screening_observation_data_file_name, register_interaction_http_request.csv_screening_resources_data_file_name, register_interaction_http_request.csv_demographic_data_file_name, register_interaction_http_request.csv_qe_admin_data_file_name,
 		        register_interaction_http_request.payload,		        
 		        register_interaction_http_request.from_state,
 		        register_interaction_http_request.to_state,
@@ -3199,11 +3195,14 @@ GROUP BY
     organization_name;  
 
 
-DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, text, text, text, bytea, text, text, text, text, text, text, text, text, jsonb, text, text, text, timestamptz, text, text, jsonb);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, text, text, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text, timestamptz, text, text, jsonb);
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_csv_request_upserted(interaction_id text, uri text, nature text, tenant_id text, 
 	csv_zip_file_name TEXT DEFAULT NULL::text, csv_zip_file_content BYTEA DEFAULT NULL::BYTEA,
-	group_id text DEFAULT NULL::text, status text DEFAULT NULL::text, screening_data_payload_text text DEFAULT NULL::text, demographic_data_payload_text text DEFAULT NULL::text, qe_admin_data_payload_text text DEFAULT NULL::text, screening_data_file_name text DEFAULT NULL::text, demographic_data_file_name text DEFAULT NULL::text, qe_admin_data_file_name text DEFAULT NULL::text, 
+	group_id text DEFAULT NULL::text, status text DEFAULT NULL::text, 
+	csv_screening_consent_data_payload_text text DEFAULT NULL::text, csv_screening_encounter_data_payload_text text DEFAULT NULL::text, csv_screening_location_data_payload_text text DEFAULT NULL::text, csv_screening_observation_data_payload_text text DEFAULT NULL::text, csv_screening_resources_data_payload_text text DEFAULT NULL::text, csv_demographic_data_payload_text text DEFAULT NULL::text, csv_qe_admin_data_payload_text text DEFAULT NULL::text, 
+	csv_screening_consent_data_file_name text DEFAULT NULL::text, csv_screening_encounter_data_file_name text DEFAULT NULL::text, csv_screening_location_data_file_name text DEFAULT NULL::text, csv_screening_observation_data_file_name text DEFAULT NULL::text, csv_screening_resources_data_file_name text DEFAULT NULL::text, csv_demographic_data_file_name text DEFAULT NULL::text, csv_qe_admin_data_file_name text DEFAULT NULL::text,
 	validation_result_payload jsonb DEFAULT NULL::jsonb, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::TEXT, state_transition_reason text DEFAULT NULL::TEXT,
 	created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::TEXT, elaboration jsonb DEFAULT NULL::jsonb)
  RETURNS text
@@ -3226,6 +3225,7 @@ DECLARE
    	v_return 						TEXT 	:= NULL;
     v_elaboration 					JSONB 	:= NULL;
     v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
+    --lo_id 							OID;
 
 BEGIN	
 	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
@@ -3235,9 +3235,13 @@ BEGIN
   	END IF;
 
     IF nature = 'Original CSV Zip Archive' THEN 
+    	/*lo_id := lo_create(0); -- Create a new large OBJECT
+    	PERFORM lo_open(lo_id, 131072); -- Open the large object in write MODE
+    	PERFORM lo_import('/path/to/example.zip', lo_id); -- Write file contents to the large OBJECT*/
+    
     	-- The INSERT statement inserts a new record (insert the csv zip file) into the sat_interaction_zip_file_request table, generating a UUID for the primary key.
 	    INSERT INTO techbd_udi_ingress.sat_interaction_zip_file_request (
-	        sat_interaction_zip_file_request_id, hub_interaction_id, tenant_id, uri, nature,
+	        sat_interaction_zip_file_request_id, hub_interaction_id, tenant_id, tenant_id_lower, uri, nature,
 	        group_id, status, csv_zip_file_name, csv_zip_file_content,
 			client_ip_address, user_agent,
 			elaboration, created_at, created_by, provenance
@@ -3246,12 +3250,14 @@ BEGIN
 	        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
 	        interaction_id,
 	        tenant_id, 
+	        LOWER(tenant_id), 
 	        uri, 
 	        nature,
 	        group_id, 
 	        status, 
 	        csv_zip_file_name,
 	        csv_zip_file_content, 
+	        --lo_id, -- Insert the reference (OID) into the table
 			null, null,
 			NULL, v_created_at, v_created_by, v_provenance
 	    ) RETURNING sat_interaction_zip_file_request_id INTO v_return;  -- Return the generated UUID
@@ -3272,10 +3278,10 @@ BEGIN
     ELSE 
 	   	-- The INSERT statement inserts a new record into the sat_interaction_flat_file_csv_request table, generating a UUID for the primary key.
 	    INSERT INTO techbd_udi_ingress.sat_interaction_flat_file_csv_request (
-	        sat_interaction_flat_file_csv_request_id, hub_interaction_id, tenant_id, uri, nature,
+	        sat_interaction_flat_file_csv_request_id, hub_interaction_id, tenant_id, tenant_id_lower, uri, nature,
 	        group_id, status, validation_result_payload, 
-			screening_data_payload_text, demographic_data_payload_text, qe_admin_data_payload_text,
-			screening_data_file_name, demographic_data_file_name, qe_admin_data_file_name,
+			screening_consent_data_payload_text, screening_encounter_data_payload_text, screening_location_data_payload_text, screening_observation_data_payload_text, screening_resources_data_payload_text , demographic_data_payload_text, qe_admin_data_payload_text, 
+			screening_consent_data_file_name, screening_encounter_data_file_name, screening_location_data_file_name, screening_observation_data_file_name, screening_resources_data_file_name, demographic_data_file_name, qe_admin_data_file_name,
 			client_ip_address, user_agent,
 			from_state, to_state, state_transition_reason,
 			elaboration, created_at, created_by, provenance
@@ -3284,17 +3290,14 @@ BEGIN
 	        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
 	        interaction_id,
 	        tenant_id, 
+	        LOWER(tenant_id), 
 	        uri, 
 	        nature,
 	        group_id, 
 	        status, 
 	        validation_result_payload,
-	        screening_data_payload_text, 
-	        demographic_data_payload_text, 
-	        qe_admin_data_payload_text,
-			screening_data_file_name, 
-			demographic_data_file_name, 
-			qe_admin_data_file_name, 
+	        csv_screening_consent_data_payload_text, csv_screening_encounter_data_payload_text, csv_screening_location_data_payload_text, csv_screening_observation_data_payload_text, csv_screening_resources_data_payload_text , csv_demographic_data_payload_text, csv_qe_admin_data_payload_text, 
+			csv_screening_consent_data_file_name, csv_screening_encounter_data_file_name, csv_screening_location_data_file_name, csv_screening_observation_data_file_name, csv_screening_resources_data_file_name, csv_demographic_data_file_name, csv_qe_admin_data_file_name,
 			null, null,
 			from_state, 
 			to_state, 
@@ -3314,7 +3317,7 @@ BEGIN
 	 						);
 	 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, uri, created_by, provenance, 'info'::text, 
 																'Insert into sat_interaction_flat_file_csv_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
-	  	/*------------------------------*/
+	  	-- /*------------------------------*/
     END IF;
     
     RETURN v_return;

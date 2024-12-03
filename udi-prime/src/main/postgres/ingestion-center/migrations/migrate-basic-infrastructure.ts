@@ -495,7 +495,7 @@ const interactionCsvRequestSat = interactionHub.satelliteTable(
     demographic_data_file_name: textNullable(),
     qe_admin_data_file_name: textNullable(),
     client_ip_address: textNullable(),
-    user_agent: text(),
+    user_agent: textNullable(),
     from_state: textNullable(),
     to_state: textNullable(),
     state_transition_reason: textNullable(),
@@ -518,7 +518,7 @@ const interactionZipRequestSat = interactionHub.satelliteTable(
     status: textNullable(),
     csv_zip_file_name: textNullable(),
     client_ip_address: textNullable(),
-    user_agent: text(),
+    user_agent: textNullable(),
     elaboration: jsonbNullable(),
     ...dvts.housekeeping.columns,
   },
@@ -803,6 +803,7 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionFhirRequestSat}
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN passed DROP NOT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL;
 
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
       ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
@@ -840,6 +841,10 @@ const migrateSP = pgSQLa.storedProcedure(
       ${fileExchangeProtocol}
       
       ${interactionHl7RequestSat}    
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ALTER COLUMN user_agent DROP NOT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ALTER COLUMN user_agent DROP NOT NULL;
       
       CREATE UNIQUE INDEX IF NOT EXISTS sat_int_hl7_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id, tenant_id, nature);
       CREATE INDEX IF NOT EXISTS sat_inter_hl7_req_created_at_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (created_at DESC);
@@ -1112,6 +1117,22 @@ const migrateSP = pgSQLa.storedProcedure(
       ) THEN
         ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD CONSTRAINT sat_interaction_zip_file_request_hub_interaction_id_fkey FOREIGN KEY (hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
       END IF;
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+        ADD COLUMN IF NOT EXISTS screening_consent_data_payload_text text NULL,  
+        ADD COLUMN IF NOT EXISTS screening_encounter_data_payload_text text NULL,  
+        ADD COLUMN IF NOT EXISTS screening_location_data_payload_text text NULL,  
+        ADD COLUMN IF NOT EXISTS screening_observation_data_payload_text text NULL,  
+        ADD COLUMN IF NOT EXISTS screening_resources_data_payload_text text NULL, 
+        ADD COLUMN IF NOT EXISTS screening_consent_data_file_name text NULL, 
+        ADD COLUMN IF NOT EXISTS screening_encounter_data_file_name text NULL, 
+        ADD COLUMN IF NOT EXISTS screening_location_data_file_name text NULL, 
+        ADD COLUMN IF NOT EXISTS screening_observation_data_file_name text NULL, 
+        ADD COLUMN IF NOT EXISTS screening_resources_data_file_name text NULL;
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+        DROP COLUMN IF EXISTS screening_data_payload_text,
+        DROP COLUMN IF EXISTS screening_data_file_name;
 
 
 
