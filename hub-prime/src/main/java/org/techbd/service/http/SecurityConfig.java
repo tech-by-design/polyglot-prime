@@ -74,7 +74,7 @@ public class SecurityConfig {
                 //         sessionManagement -> sessionManagement
                 //                 .invalidSessionUrl("/?timeout=true")
                 // )
-                .requestCache(requestCache -> requestCache.requestCache(new HttpSessionRequestCache()))
+                //.requestCache(requestCache -> requestCache.requestCache(new HttpSessionRequestCache()))
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
