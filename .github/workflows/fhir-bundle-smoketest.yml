@@ -98,7 +98,6 @@ jobs:
             This is an automated notification for the FHIR Bundle scheduled SmokeTest results.  
 
             Test Summary:
-            - Development Report: Attached
             - Staging Report: Attached
             - QA Report: Attached
 
