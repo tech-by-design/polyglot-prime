@@ -27,14 +27,24 @@ DECLARE
     v_record_count numeric;
     v_group_id TEXT;				
 	v_status TEXT;
-	v_screening_data_payload_text TEXT;
-	v_demographic_data_payload_text TEXT;
-	v_qe_admin_data_payload_text TEXT;
-	v_screening_data_file_name TEXT;
-	v_demographic_data_file_name TEXT;
-	v_qe_admin_data_file_name TEXT;
+
 	v_csv_zip_file_name TEXT;
 	v_csv_zip_file_content bytea;
+	v_csv_screening_consent_data_payload_text TEXT;
+	v_csv_screening_encounter_data_payload_text TEXT;
+	v_csv_screening_location_data_payload_text TEXT;
+	v_csv_screening_observation_data_payload_text TEXT;
+	v_csv_screening_resources_data_payload_text TEXT;
+	v_csv_demographic_data_payload_text TEXT;
+	v_csv_qe_admin_data_payload_text TEXT; 
+	v_csv_screening_consent_data_file_name TEXT; 
+	v_csv_screening_encounter_data_file_name TEXT;
+	v_csv_screening_location_data_file_name TEXT;
+	v_csv_screening_observation_data_file_name TEXT;
+	v_csv_screening_resources_data_file_name TEXT;
+	v_csv_demographic_data_file_name TEXT;
+	v_csv_qe_admin_data_file_name TEXT;
+
 BEGIN
 	
     v_interaction_id            := 'b41ccd27-9a4f-5cc8-9c5d-b55242d90fb0';
@@ -65,42 +75,45 @@ BEGIN
     
     -- Check existence of required functions     
     RETURN NEXT has_function(schema_name, 'register_interaction_http_request',
-        ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+        ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'boolean', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
         'Function register_interaction_http_request exists');
        
     RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 'Function register_issue exists');
     
     RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb'], 'Function sat_interaction_fhir_request_upserted exists');
     
-    RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb'], 
+    RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb'], 
    		'Function sat_interaction_csv_request_upserted exists');
    
     RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
 
     RETURN NEXT has_pk(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should have a primary key.');
 
-    RETURN NEXT col_is_fk(schema_name::name,
-        'sat_interaction_flat_file_csv_request'::name, 
-        'hub_interaction_id'::name, 
-        'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.'
-    );
+    -- RETURN NEXT col_is_fk(schema_name::name,
+    --     'sat_interaction_flat_file_csv_request'::name, 
+    --     'hub_interaction_id'::name, 
+    --     'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.'
+    -- );
 
     RETURN NEXT columns_are(schema_name, 'sat_interaction_flat_file_csv_request',
         ARRAY['sat_interaction_flat_file_csv_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
-            'validation_result_payload', 'screening_data_payload_text', 'demographic_data_payload_text', 'qe_admin_data_payload_text',
-            'screening_data_file_name', 'demographic_data_file_name', 'qe_admin_data_file_name', 'client_ip_address', 'user_agent',
-            'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'created_at', 'created_by', 'provenance'],
+            'validation_result_payload', 'client_ip_address', 'user_agent',
+            'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'created_at', 'created_by', 'provenance',
+            'screening_consent_data_payload_text', 'screening_encounter_data_payload_text', 'screening_location_data_payload_text', 'screening_observation_data_payload_text', 'screening_resources_data_payload_text',
+            'demographic_data_payload_text', 'qe_admin_data_payload_text',
+            'screening_consent_data_file_name', 'screening_encounter_data_file_name', 'screening_location_data_file_name', 'screening_observation_data_file_name', 'screening_resources_data_file_name',
+            'demographic_data_file_name', 'qe_admin_data_file_name'],
         'The columns of techbd_udi_ingress.sat_interaction_flat_file_csv_request should match the expected structure.'
     );
-   
+  
     RETURN NEXT has_table(schema_name, 'sat_interaction_zip_file_request', 'The table techbd_udi_ingress.sat_interaction_zip_file_request should exist.');
 
     RETURN NEXT has_pk(schema_name, 'sat_interaction_zip_file_request', 'The table techbd_udi_ingress.sat_interaction_zip_file_request should have a primary key.');
 
-    RETURN NEXT col_is_fk(schema_name,
-        'sat_interaction_zip_file_request', 
-        'hub_interaction_id', 
-        'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+    -- RETURN NEXT col_is_fk(schema_name,
+    --     'sat_interaction_zip_file_request', 
+    --     'hub_interaction_id', 
+    --     'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
 
     RETURN NEXT columns_are(schema_name, 'sat_interaction_zip_file_request',
         ARRAY['sat_interaction_zip_file_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
@@ -193,373 +206,435 @@ BEGIN
     /*====================Testing with CSV File=========================*/
        
     /* First call to insert CSV files into sat_interaction_http_request and sat_interaction_zip_file_request */
---     v_interaction_id            	:= 'b55ccd45-9a4f-5cc8-9c5d-b45245d90fb0';
---     v_interaction_key           	:= '/flatfile/csv/Bundle'; 
---     v_nature                    	:= '{"nature":"Original CSV Zip Archive", "tenant_id":"N/A"}';
---     v_from_state                	:= NULL::text; 
---     v_to_state                  	:= NULL::text;
--- 	v_group_id						:= 'test';				
--- 	v_status						:= 'test_status';
--- 	v_csv_zip_file_name				:= '123_abc_rochester-20240911-testcase2.zip'; 
--- 	v_csv_zip_file_content			:= E'\\x5468697320697320612062696e6172792064617461';
--- 	v_screening_data_payload_text 	:= 'PAT_MRN_ID|FACILITY_ID|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|SCREENING_STATUS_CODE|SCREENING_STATUS_CODE_DESCRIPTION|SCREENING_STATUS_CODE_SYSTEM|SCREENING_CODE|SCREENING_CODE_DESCRIPTION|SCREENING_CODE_SYSTEM_NAME|RECORDED_TIME|QUESTION_CODE|QUESTION_CODE_DESCRIPTION|QUESTION_CODE_SYSTEM_NAME|UCUM_UNITS|SDOH_DOMAIN|PARENT_QUESTION_CODE|ANSWER_CODE|ANSWER_CODE_DESCRIPTION|ANSWER_CODE_SYSTEM_NAME|POTENTIAL_NEED_INDICATED
--- test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|71802-3|What is your living situation today?|http://loinc.org||Homelessness, Housing Instability||LA31993-1|I have a steady place to live|http://loinc.org|No
--- test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|96778-6|Think about the place you live. Do you have problems with any of the following?|http://loinc.org||Inadequate Housng||LA32001-2|Water leaks|http://loinc.org|Yes';
--- 	v_demographic_data_payload_text := 'MPI_ID|PAT_MRN_ID|FACILITY_ID|CONSENT|FIRST_NAME|MIDDLE_NAME|LAST_NAME|ADMINISTRATIVE_SEX_CODE|ADMINISTRATIVE_SEX_CODE_DESCRIPTION|ADMINISTRATIVE_SEX_CODE_SYSTEM|SEX_AT_BIRTH_CODE|SEX_AT_BIRTH_CODE_DESCRIPTION|SEX_AT_BIRTH_CODE_SYSTEM|PAT_BIRTH_DATE|ADDRESS1|ADDRESS2|CITY|STATE|ZIP|PHONE|SSN|GENDER_IDENTITY_CODE|GENDER_IDENTITY_CODE_DESCRIPTION|GENDER_IDENTITY_CODE_SYSTEM_NAME|SEXUAL_ORIENTATION_CODE|SEXUAL_ORIENTATION_CODE_DESCRIPTION|SEXUAL_ORIENTATION_CODE_SYSTEM_NAME|PREFERRED_LANGUAGE_CODE|PREFERRED_LANGUAGE_CODE_DESCRIPTION|PREFERRED_LANGUAGE_CODE_SYSTEM_NAME|RACE_CODE|RACE_CODE_DESCRIPTION|RACE_CODE_SYSTEM_NAME|ETHNICITY_CODE|ETHNICITY_CODE_DESCRIPTION|ETHNICITY_CODE_SYSTEM_NAME|MEDICAID_CIN
--- 7778047133|test-MRN|CNYSCN|Yes|James|Gary|Rodriguez|ASKU|Asked but Unknown|http://terminology.hl7.org/CodeSystem/v3-NullFlavor|M|Male|http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender|1998-03-09|969 Daniel Manors Apt. 454|Suite 11|Binghamton|NY|13901|001-837-697-5431x13565|436-99-8619|ASKU|Asked but unknown|http://snomed.info/sct|38628009|Homosexual|http://snomed.info/sct|cnr|Montenegrin|ISO|1244-3|Southeastern Indians|urn:oid:2.16.840.1.113883.6.238|2161-8|Salvadoran|urn:oid:2.16.840.1.113883.6.238|AB53156E';
--- 	v_qe_admin_data_payload_text 	:= 'PAT_MRN_ID|FACILITY_ID|FACILITY_LONG_NAME|ORGANIZATION_TYPE|FACILITY_ADDRESS1|FACILITY_ADDRESS2|FACILITY_CITY|FACILITY_STATE|FACILITY_ZIP|VISIT_PART_2_FLAG|VISIT_OMH_FLAG|VISIT_OPWDD_FLAG
--- test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New York|New York|10036|No|No|No';
--- 	v_screening_data_file_name 		:= 'SCREENING_test.csv';
--- 	v_demographic_data_file_name 	:= 'DEMOGRAPHIC_DATA_test.csv';
--- 	v_qe_admin_data_file_name 		:= 'QE_ADMIN_DATA_test.csv'; 
-
-
---     PERFORM techbd_udi_ingress.register_interaction_http_request(
---         interaction_id           => v_interaction_id,
---         interaction_key          => v_interaction_key,
---         payload                  => NULL::jsonb,
---         payload_text             => NULL::text,
---         rule_namespace           => v_rule_namespace,
---         elaboration              => v_elaboration,
---         nature                   => v_nature,
---         content_type             => v_content_type,
---         from_state               => v_from_state,
---         to_state                 => v_to_state,
---         state_transition_reason  => v_state_transition_reason,
---         created_at               => v_created_at,
---         created_by               => v_created_by,
---         provenance               => v_provenance,
---         hub_upsert_behavior      => TRUE,
---         csv_group_id				 		=> v_group_id,
---         csv_status					 		=> v_status,
---         csv_screening_data_payload_text 	=> v_screening_data_payload_text,
---         csv_demographic_data_payload_text 	=> v_demographic_data_payload_text,
---         csv_qe_admin_data_payload_text 		=> v_qe_admin_data_payload_text,
---         csv_screening_data_file_name 		=> v_screening_data_file_name,
--- 		csv_demographic_data_file_name 		=> v_demographic_data_file_name,
--- 		csv_qe_admin_data_file_name 		=> v_qe_admin_data_file_name,
--- 		csv_zip_file_name					=> v_csv_zip_file_name,
--- 		csv_zip_file_content				=> v_csv_zip_file_content
---     );
-    
---     RETURN NEXT ok(
---             EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
---                             WHERE hub_intr.hub_interaction_id    = v_interaction_id
---                             AND hub_intr."key"                   = v_interaction_key
---                             AND hub_intr.created_by              = v_created_by
---                             AND hub_intr.provenance              = v_provenance
---                    ),
---             'CSV - Successfully inserted into the table hub_interaction'
---         );
-        
---    /*Test 1 raw is inserted into sat_interaction_http_request table*/
---     RETURN NEXT ok(
---              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
---                              WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                              AND sat_intr.nature                   = v_nature
---                              AND sat_intr.nature_denorm            = v_nature->>'nature'
---                              AND sat_intr.created_by               = v_created_by
---                              AND sat_intr.provenance               = v_provenance
---                     ),
---              'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Original CSV Zip Archive" as nature'
---          );
-        
---     /*Test 1 raw is inserted into sat_interaction_zip_file_request table*/
---     RETURN NEXT ok(
---              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_zip_file_request sat_intr
---                              WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                              AND sat_intr.uri                      = v_interaction_key
---                              AND sat_intr.nature                   = v_nature->>'nature'
---                              AND sat_intr.created_by               = v_created_by
---                              AND sat_intr.provenance               = v_provenance
---                          	 AND group_id				 		   = v_group_id
---         					 AND status					 		   = v_status
---                     ),
---              'CSV - Successfully inserted one record into the table sat_interaction_zip_file_request with "Original CSV Zip Archive" as nature'
---          );
-
---    /*Test one record is inserted into sat_interaction_user table*/
---    RETURN NEXT ok(
---             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
---                             WHERE sat_intr.hub_interaction_id	= v_interaction_id
---                             AND sat_intr.uri                    = v_interaction_key
--- 							AND sat_intr.nature 				= v_nature->>'nature'
---                             AND sat_intr.created_by				= v_created_by
---                             AND sat_intr.provenance				= v_provenance
---                    ),
---             'CSV - Successfully inserted into the table sat_interaction_user'
---         );
-   
---     /*Second call from NULL to CSV_ACCEPT and insert into sat_interaction_flat_file_csv_request and sat_interaction_http_request*/    
--- 	v_nature                    := '{"nature": "Original Flat File CSV", "tenant_id": "N/A"}';
--- 	v_from_state				:= NULL;
---     v_to_state                  := 'CSV_ACCEPT'; 
-   
---     PERFORM techbd_udi_ingress.register_interaction_http_request(
---         interaction_id           => v_interaction_id,
---         interaction_key          => v_interaction_key,
---         payload                  => NULL::jsonb,
---         payload_text             => NULL::text,
---         rule_namespace           => v_rule_namespace,
---         elaboration              => v_elaboration,
---         nature                   => v_nature,
---         content_type             => v_content_type,
---         from_state               => v_from_state,
---         to_state                 => v_to_state,
---         state_transition_reason  => v_state_transition_reason,
---         created_at               => v_created_at,
---         created_by               => v_created_by,
---         provenance               => v_provenance,
---         hub_upsert_behavior      => TRUE,
---         csv_group_id				 		=> v_group_id,
---         csv_status					 		=> v_status,
---         csv_screening_data_payload_text 	=> v_screening_data_payload_text,
---         csv_demographic_data_payload_text 	=> v_demographic_data_payload_text,
---         csv_qe_admin_data_payload_text 		=> v_qe_admin_data_payload_text,
---         csv_screening_data_file_name 		=> v_screening_data_file_name,
--- 		csv_demographic_data_file_name 		=> v_demographic_data_file_name,
--- 		csv_qe_admin_data_file_name 		=> v_qe_admin_data_file_name,
--- 		csv_zip_file_name					=> v_csv_zip_file_name,
--- 		csv_zip_file_content				=> v_csv_zip_file_content
---     );
-       
---     /*Test 1 raw is inserted into sat_interaction_http_request table*/
---     RETURN NEXT ok(
---              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
---                              WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                              AND sat_intr.nature                   = v_nature
---                              AND sat_intr.nature_denorm            = v_nature->>'nature'
---                              AND sat_intr.content_type             = v_content_type
---                              AND sat_intr.to_state                 = v_to_state
---                              AND sat_intr.created_by               = v_created_by
---                              AND sat_intr.provenance               = v_provenance
---                     ),
---              'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Original Flat File CSV" as nature'
---          );
-    
---     /*Test 1 raw is inserted into sat_interaction_flat_file_csv_request table*/
---     RETURN NEXT ok(
---              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sat_intr
---                              WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                              AND sat_intr.uri                      = v_interaction_key
---                              AND sat_intr.nature                   = v_nature->>'nature'
---                              AND sat_intr.to_state                 = v_to_state
---                              AND sat_intr.created_by               = v_created_by
---                              AND sat_intr.provenance               = v_provenance
---                          	 AND group_id				 		   = v_group_id
---         					 AND status					 		   = v_status
---         					 AND screening_data_payload_text 	   = v_screening_data_payload_text
---         					 AND demographic_data_payload_text 	   = v_demographic_data_payload_text
---         					 AND qe_admin_data_payload_text 	   = v_qe_admin_data_payload_text
---         					 AND screening_data_file_name 		   = v_screening_data_file_name
--- 							 AND demographic_data_file_name 	   = v_demographic_data_file_name
--- 							 AND qe_admin_data_file_name 		   = v_qe_admin_data_file_name
-                             
---                     ),
---              'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "Original Flat File CSV" as nature'
---          );
-        
---     /*Third call from CSV_ACCEPT to VALIDATION_SUCCESS/VALIDATION_FAILED and insert into sat_interaction_flat_file_csv_request and sat_interaction_http_request*/    
--- 	v_nature                    := '{"nature": "CSV Validation Result", "tenant_id": "N/A"}';
--- 	v_from_state				:= 'CSV_ACCEPT';
---     v_to_state                  := 'VALIDATION_SUCCESS'; 
-   
---     PERFORM techbd_udi_ingress.register_interaction_http_request(
---         interaction_id           => v_interaction_id,
---         interaction_key          => v_interaction_key,
---         payload                  => NULL::jsonb,
---         payload_text             => NULL::text,
---         rule_namespace           => v_rule_namespace,
---         elaboration              => v_elaboration,
---         nature                   => v_nature,
---         content_type             => v_content_type,
---         from_state               => v_from_state,
---         to_state                 => v_to_state,
---         state_transition_reason  => v_state_transition_reason,
---         created_at               => v_created_at,
---         created_by               => v_created_by,
---         provenance               => v_provenance,
---         hub_upsert_behavior      => TRUE,
---         csv_group_id				 		=> v_group_id,
---         csv_status					 		=> v_status,
---         csv_screening_data_payload_text 	=> v_screening_data_payload_text,
---         csv_demographic_data_payload_text 	=> v_demographic_data_payload_text,
---         csv_qe_admin_data_payload_text 		=> v_qe_admin_data_payload_text,
---         csv_screening_data_file_name 		=> v_screening_data_file_name,
--- 		csv_demographic_data_file_name 		=> v_demographic_data_file_name,
--- 		csv_qe_admin_data_file_name 		=> v_qe_admin_data_file_name,
--- 		csv_zip_file_name					=> v_csv_zip_file_name,
--- 		csv_zip_file_content				=> v_csv_zip_file_content
---     );
-       
---     /*Test 1 raw is inserted into sat_interaction_http_request table*/
---     RETURN NEXT ok(
---              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
---                              WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                              AND sat_intr.nature                   = v_nature
---                              AND sat_intr.nature_denorm            = v_nature->>'nature'
---                              AND sat_intr.content_type             = v_content_type
---                              AND sat_intr.from_state               = v_from_state
---                              AND sat_intr.to_state                 = v_to_state
---                              AND sat_intr.state_transition_reason  = v_state_transition_reason
---                              AND sat_intr.created_by               = v_created_by
---                              AND sat_intr.provenance               = v_provenance
---                     ),
---              'CSV - Successfully inserted one record into the table sat_interaction_http_request with "CSV Validation Result" as nature'
---          );
-    
---     /*Test 1 raw is inserted into sat_interaction_flat_file_csv_request table*/
---     RETURN NEXT ok(
---              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sat_intr
---                              WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                              AND sat_intr.uri                      = v_interaction_key
---                              AND sat_intr.nature                   = v_nature->>'nature'
---                              AND sat_intr.from_state               = v_from_state
---                              AND sat_intr.to_state                 = v_to_state
---                              AND sat_intr.created_by               = v_created_by
---                              AND sat_intr.provenance               = v_provenance
---                          	 AND group_id				 		   = v_group_id
---         					 AND status					 		   = v_status
---         					 AND screening_data_payload_text 	   = v_screening_data_payload_text
---         					 AND demographic_data_payload_text 	   = v_demographic_data_payload_text
---         					 AND qe_admin_data_payload_text 	   = v_qe_admin_data_payload_text
---         					 AND screening_data_file_name 		   = v_screening_data_file_name
--- 							 AND demographic_data_file_name 	   = v_demographic_data_file_name
--- 							 AND qe_admin_data_file_name 		   = v_qe_admin_data_file_name
-                             
---                     ),
---              'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "CSV Validation Result" as nature'
---          );
-        
---     /*Fourth call from VALIDATION_SUCCESS/VALIDATION_FAILED to CONVERTED_TO_FHIR/FHIR_CONVERTION_FAILED and insert into sat_interaction_flat_file_csv_request and sat_interaction_http_request*/ 
---     v_nature                    := '{"nature": "Converted to FHIR", "tenant_id": "N/A"}';
--- 	v_from_state				:= 'VALIDATION_SUCCESS';
---     v_to_state                  := 'CONVERTED_TO_FHIR'; 
-   
---     PERFORM techbd_udi_ingress.register_interaction_http_request(
---         interaction_id           => v_interaction_id,
---         interaction_key          => v_interaction_key,
---         payload                  => NULL::jsonb,
---         payload_text             => NULL::text,
---         rule_namespace           => v_rule_namespace,
---         elaboration              => v_elaboration,
---         nature                   => v_nature,
---         content_type             => v_content_type,
---         from_state               => v_from_state,
---         to_state                 => v_to_state,
---         state_transition_reason  => v_state_transition_reason,
---         created_at               => v_created_at,
---         created_by               => v_created_by,
---         provenance               => v_provenance,
---         hub_upsert_behavior      => TRUE,
---         csv_group_id				 		=> v_group_id,
---         csv_status					 		=> v_status,
---         csv_screening_data_payload_text 	=> v_screening_data_payload_text,
---         csv_demographic_data_payload_text 	=> v_demographic_data_payload_text,
---         csv_qe_admin_data_payload_text 		=> v_qe_admin_data_payload_text,
---         csv_screening_data_file_name 		=> v_screening_data_file_name,
--- 		csv_demographic_data_file_name 		=> v_demographic_data_file_name,
--- 		csv_qe_admin_data_file_name 		=> v_qe_admin_data_file_name,
--- 		csv_zip_file_name					=> v_csv_zip_file_name,
--- 		csv_zip_file_content				=> v_csv_zip_file_content
---     );
-       
---     /*Test 1 raw is inserted into sat_interaction_http_request table*/
---     RETURN NEXT ok(
---              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
---                              WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                              AND sat_intr.nature                   = v_nature
---                              AND sat_intr.nature_denorm            = v_nature->>'nature'
---                              AND sat_intr.content_type             = v_content_type
---                              AND sat_intr.from_state               = v_from_state
---                              AND sat_intr.to_state                 = v_to_state
---                              AND sat_intr.state_transition_reason  = v_state_transition_reason
---                              AND sat_intr.created_by               = v_created_by
---                              AND sat_intr.provenance               = v_provenance
---                     ),
---              'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Converted to FHIR" as nature'
---          );
-    
---     /*Test 1 raw is inserted into sat_interaction_flat_file_csv_request table*/
---     RETURN NEXT ok(
---              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sat_intr
---                              WHERE sat_intr.hub_interaction_id     = v_interaction_id
---                              AND sat_intr.uri                      = v_interaction_key
---                              AND sat_intr.nature                   = v_nature->>'nature'
---                              AND sat_intr.from_state               = v_from_state
---                              AND sat_intr.to_state                 = v_to_state
---                              AND sat_intr.created_by               = v_created_by
---                              AND sat_intr.provenance               = v_provenance
---                          	 AND group_id				 		   = v_group_id
---         					 AND status					 		   = v_status
---         					 AND screening_data_payload_text 	   = v_screening_data_payload_text
---         					 AND demographic_data_payload_text 	   = v_demographic_data_payload_text
---         					 AND qe_admin_data_payload_text 	   = v_qe_admin_data_payload_text
---         					 AND screening_data_file_name 		   = v_screening_data_file_name
--- 							 AND demographic_data_file_name 	   = v_demographic_data_file_name
--- 							 AND qe_admin_data_file_name 		   = v_qe_admin_data_file_name
-                             
---                     ),
---              'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "Converted to FHIR" as nature'
---          );    
-       
---    /* Last call to insert the FHIR bundle which is generated from CSV file with interaction_key = '/flatfile/csv/Bundle'*/
---     v_nature                    := '{"nature": "org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id": "N/A"}';
---     v_to_state                  := NULL; 
---     v_from_state                := NULL; 
-
---     PERFORM techbd_udi_ingress.register_interaction_http_request(
---         interaction_id           => v_interaction_id,
---         interaction_key          => v_interaction_key,
---         payload                  => v_payload,
---         payload_text             => NULL::text,
---         rule_namespace           => v_rule_namespace,
---         elaboration              => v_elaboration,
---         nature                   => v_nature,
---         content_type             => v_content_type,
---         from_state               => v_from_state,
---         to_state                 => v_to_state,
---         state_transition_reason  => v_state_transition_reason,
---         created_at               => v_created_at,
---         created_by               => v_created_by,
---         provenance               => v_provenance,
---         hub_upsert_behavior      => false
---     );
-   
---    /*Test 3 raws are inserted into sat_interaction_http_request table*/
---    SELECT COUNT(1) INTO v_record_count
--- 	 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
--- 	WHERE COALESCE(sat_intr.hub_interaction_id, '') = v_interaction_id
--- 	  AND COALESCE(sat_intr.nature_denorm, '') IN (
--- 	      'org.techbd.service.http.Interactions$RequestResponseEncountered', 
--- 	      'Original FHIR Payload', 
--- 	      'techByDesignDisposition'
--- 	  )
--- 	  AND COALESCE(sat_intr.created_by, '') = v_created_by
--- 	  AND COALESCE(sat_intr.provenance, '') = v_provenance;
+    v_interaction_id            	:= 'b55ccd45-9a4f-5cc8-9c5d-b45245d90fb0';
+    v_interaction_key           	:= '/flatfile/csv/Bundle'; 
+    v_nature                    	:= '{"nature":"Original CSV Zip Archive", "tenant_id":"N/A"}';
+    v_from_state                	:= NULL::text; 
+    v_to_state                  	:= NULL::text;
+	v_group_id						:= 'test';	
+	v_provenance					:= 'csv';
+	v_status						:= 'test_status';
+	v_csv_zip_file_name				:= '123_abc_rochester-20240911-testcase2.zip'; 
+	v_csv_zip_file_content			:= E'\\x5468697320697320612062696e6172792064617461';
+	v_csv_screening_consent_data_payload_text 		:= 'PAT_MRN_ID|FACILITY_ID|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|SCREENING_STATUS_CODE|SCREENING_STATUS_CODE_DESCRIPTION|SCREENING_STATUS_CODE_SYSTEM|SCREENING_CODE|SCREENING_CODE_DESCRIPTION|SCREENING_CODE_SYSTEM_NAME|RECORDED_TIME|QUESTION_CODE|QUESTION_CODE_DESCRIPTION|QUESTION_CODE_SYSTEM_NAME|UCUM_UNITS|SDOH_DOMAIN|PARENT_QUESTION_CODE|ANSWER_CODE|ANSWER_CODE_DESCRIPTION|ANSWER_CODE_SYSTEM_NAME|POTENTIAL_NEED_INDICATED
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|71802-3|What is your living situation today?|http://loinc.org||Homelessness, Housing Instability||LA31993-1|I have a steady place to live|http://loinc.org|No
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|96778-6|Think about the place you live. Do you have problems with any of the following?|http://loinc.org||Inadequate Housng||LA32001-2|Water leaks|http://loinc.org|Yes';
+	v_csv_screening_encounter_data_payload_text 	:= 'PAT_MRN_ID|FACILITY_ID|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|SCREENING_STATUS_CODE|SCREENING_STATUS_CODE_DESCRIPTION|SCREENING_STATUS_CODE_SYSTEM|SCREENING_CODE|SCREENING_CODE_DESCRIPTION|SCREENING_CODE_SYSTEM_NAME|RECORDED_TIME|QUESTION_CODE|QUESTION_CODE_DESCRIPTION|QUESTION_CODE_SYSTEM_NAME|UCUM_UNITS|SDOH_DOMAIN|PARENT_QUESTION_CODE|ANSWER_CODE|ANSWER_CODE_DESCRIPTION|ANSWER_CODE_SYSTEM_NAME|POTENTIAL_NEED_INDICATED
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|71802-3|What is your living situation today?|http://loinc.org||Homelessness, Housing Instability||LA31993-1|I have a steady place to live|http://loinc.org|No
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|96778-6|Think about the place you live. Do you have problems with any of the following?|http://loinc.org||Inadequate Housng||LA32001-2|Water leaks|http://loinc.org|Yes';
+	v_csv_screening_location_data_payload_text 		:= 'PAT_MRN_ID|FACILITY_ID|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|SCREENING_STATUS_CODE|SCREENING_STATUS_CODE_DESCRIPTION|SCREENING_STATUS_CODE_SYSTEM|SCREENING_CODE|SCREENING_CODE_DESCRIPTION|SCREENING_CODE_SYSTEM_NAME|RECORDED_TIME|QUESTION_CODE|QUESTION_CODE_DESCRIPTION|QUESTION_CODE_SYSTEM_NAME|UCUM_UNITS|SDOH_DOMAIN|PARENT_QUESTION_CODE|ANSWER_CODE|ANSWER_CODE_DESCRIPTION|ANSWER_CODE_SYSTEM_NAME|POTENTIAL_NEED_INDICATED
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|71802-3|What is your living situation today?|http://loinc.org||Homelessness, Housing Instability||LA31993-1|I have a steady place to live|http://loinc.org|No
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|96778-6|Think about the place you live. Do you have problems with any of the following?|http://loinc.org||Inadequate Housng||LA32001-2|Water leaks|http://loinc.org|Yes';
+	v_csv_screening_observation_data_payload_text 	:= 'PAT_MRN_ID|FACILITY_ID|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|SCREENING_STATUS_CODE|SCREENING_STATUS_CODE_DESCRIPTION|SCREENING_STATUS_CODE_SYSTEM|SCREENING_CODE|SCREENING_CODE_DESCRIPTION|SCREENING_CODE_SYSTEM_NAME|RECORDED_TIME|QUESTION_CODE|QUESTION_CODE_DESCRIPTION|QUESTION_CODE_SYSTEM_NAME|UCUM_UNITS|SDOH_DOMAIN|PARENT_QUESTION_CODE|ANSWER_CODE|ANSWER_CODE_DESCRIPTION|ANSWER_CODE_SYSTEM_NAME|POTENTIAL_NEED_INDICATED
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|71802-3|What is your living situation today?|http://loinc.org||Homelessness, Housing Instability||LA31993-1|I have a steady place to live|http://loinc.org|No
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|96778-6|Think about the place you live. Do you have problems with any of the following?|http://loinc.org||Inadequate Housng||LA32001-2|Water leaks|http://loinc.org|Yes';
+	v_csv_screening_resources_data_payload_text 	:= 'PAT_MRN_ID|FACILITY_ID|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|SCREENING_STATUS_CODE|SCREENING_STATUS_CODE_DESCRIPTION|SCREENING_STATUS_CODE_SYSTEM|SCREENING_CODE|SCREENING_CODE_DESCRIPTION|SCREENING_CODE_SYSTEM_NAME|RECORDED_TIME|QUESTION_CODE|QUESTION_CODE_DESCRIPTION|QUESTION_CODE_SYSTEM_NAME|UCUM_UNITS|SDOH_DOMAIN|PARENT_QUESTION_CODE|ANSWER_CODE|ANSWER_CODE_DESCRIPTION|ANSWER_CODE_SYSTEM_NAME|POTENTIAL_NEED_INDICATED
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|71802-3|What is your living situation today?|http://loinc.org||Homelessness, Housing Instability||LA31993-1|I have a steady place to live|http://loinc.org|No
+test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|96778-6|Think about the place you live. Do you have problems with any of the following?|http://loinc.org||Inadequate Housng||LA32001-2|Water leaks|http://loinc.org|Yes';
 	
--- 	RETURN NEXT ok(
--- 	    v_record_count = 3,
--- 	    'CSV - Successfully inserted 3 records into the table sat_interaction_http_request'
--- 	);
+	v_csv_demographic_data_payload_text := 'MPI_ID|PAT_MRN_ID|FACILITY_ID|CONSENT|FIRST_NAME|MIDDLE_NAME|LAST_NAME|ADMINISTRATIVE_SEX_CODE|ADMINISTRATIVE_SEX_CODE_DESCRIPTION|ADMINISTRATIVE_SEX_CODE_SYSTEM|SEX_AT_BIRTH_CODE|SEX_AT_BIRTH_CODE_DESCRIPTION|SEX_AT_BIRTH_CODE_SYSTEM|PAT_BIRTH_DATE|ADDRESS1|ADDRESS2|CITY|STATE|ZIP|PHONE|SSN|GENDER_IDENTITY_CODE|GENDER_IDENTITY_CODE_DESCRIPTION|GENDER_IDENTITY_CODE_SYSTEM_NAME|SEXUAL_ORIENTATION_CODE|SEXUAL_ORIENTATION_CODE_DESCRIPTION|SEXUAL_ORIENTATION_CODE_SYSTEM_NAME|PREFERRED_LANGUAGE_CODE|PREFERRED_LANGUAGE_CODE_DESCRIPTION|PREFERRED_LANGUAGE_CODE_SYSTEM_NAME|RACE_CODE|RACE_CODE_DESCRIPTION|RACE_CODE_SYSTEM_NAME|ETHNICITY_CODE|ETHNICITY_CODE_DESCRIPTION|ETHNICITY_CODE_SYSTEM_NAME|MEDICAID_CIN
+7778047133|test-MRN|CNYSCN|Yes|James|Gary|Rodriguez|ASKU|Asked but Unknown|http://terminology.hl7.org/CodeSystem/v3-NullFlavor|M|Male|http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender|1998-03-09|969 Daniel Manors Apt. 454|Suite 11|Binghamton|NY|13901|001-837-697-5431x13565|436-99-8619|ASKU|Asked but unknown|http://snomed.info/sct|38628009|Homosexual|http://snomed.info/sct|cnr|Montenegrin|ISO|1244-3|Southeastern Indians|urn:oid:2.16.840.1.113883.6.238|2161-8|Salvadoran|urn:oid:2.16.840.1.113883.6.238|AB53156E';
+	v_csv_qe_admin_data_payload_text 	:= 'PAT_MRN_ID|FACILITY_ID|FACILITY_LONG_NAME|ORGANIZATION_TYPE|FACILITY_ADDRESS1|FACILITY_ADDRESS2|FACILITY_CITY|FACILITY_STATE|FACILITY_ZIP|VISIT_PART_2_FLAG|VISIT_OMH_FLAG|VISIT_OPWDD_FLAG
+test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New York|New York|10036|No|No|No';
 
---    /*Test 3 raws are inserted into sat_interaction_fhir_request table*/
---    SELECT COUNT(1) INTO v_record_count
---      FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
---     WHERE COALESCE(sat_intr.hub_interaction_id, '') = v_interaction_id
--- 	  AND COALESCE(sat_intr.uri, '') = v_interaction_key
--- 	  AND COALESCE(sat_intr.nature, '') IN (
--- 	      'org.techbd.service.http.Interactions$RequestResponseEncountered', 
--- 	      'Original FHIR Payload', 
--- 	      'techByDesignDisposition'
--- 	  )
--- 	  AND COALESCE(sat_intr.created_by, '') = v_created_by
--- 	  AND COALESCE(sat_intr.provenance, '') = v_provenance;
+	v_csv_screening_consent_data_file_name 			:= 'SCREENING_consent_test.csv';
+	v_csv_screening_encounter_data_file_name 		:= 'SCREENING_encounter_test.csv';
+	v_csv_screening_location_data_file_name 		:= 'SCREENING_location_test.csv';
+	v_csv_screening_observation_data_file_name 		:= 'SCREENING_observation_test.csv';
+	v_csv_screening_resources_data_file_name 		:= 'SCREENING_resources_test.csv';
+
+	v_csv_demographic_data_file_name 				:= 'DEMOGRAPHIC_DATA_test.csv';
+	v_csv_qe_admin_data_file_name 					:= 'QE_ADMIN_DATA_test.csv'; 
+
+    PERFORM techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => NULL::jsonb,
+        payload_text             => NULL::text,
+        rule_namespace           => v_rule_namespace,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => TRUE,
+        csv_group_id			 => v_group_id,
+        csv_status				 => v_status,        		
+		csv_zip_file_name		 => v_csv_zip_file_name,
+		csv_zip_file_content	 => v_csv_zip_file_content
+    );
+    
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = v_interaction_key
+                            AND hub_intr.created_by              = v_created_by
+                            AND hub_intr.provenance              = v_provenance
+                   ),
+            'CSV - Successfully inserted into the table hub_interaction'
+        );
+        
+   /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.nature                   = v_nature
+                             AND sat_intr.nature_denorm            = v_nature->>'nature'
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Original CSV Zip Archive" as nature'
+         );
+        
+    /*Test 1 raw is inserted into sat_interaction_zip_file_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_zip_file_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.uri                      = v_interaction_key
+                             AND sat_intr.nature                   = v_nature->>'nature'
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                         	 AND group_id				 		   = v_group_id
+        					 AND status					 		   = v_status
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_zip_file_request with "Original CSV Zip Archive" as nature'
+         );
+
+   /*Test one record is inserted into sat_interaction_user table*/
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = v_interaction_key
+							AND sat_intr.nature 				= v_nature->>'nature'
+                            AND sat_intr.created_by				= v_created_by
+                            AND sat_intr.provenance				= v_provenance
+                   ),
+            'CSV - Successfully inserted into the table sat_interaction_user'
+        );
+   
+    /*Second call from NULL to CSV_ACCEPT and insert into sat_interaction_flat_file_csv_request and sat_interaction_http_request*/    
+	v_nature                    := '{"nature": "Original Flat File CSV", "tenant_id": "N/A"}';
+	v_from_state				:= NULL;
+    v_to_state                  := 'CSV_ACCEPT'; 
+   
+    PERFORM techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => NULL::jsonb,
+        payload_text             => NULL::text,
+        rule_namespace           => v_rule_namespace,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => TRUE,
+        csv_group_id			 => v_group_id,
+        csv_status				 => v_status,
+		csv_zip_file_name		 => v_csv_zip_file_name,
+		csv_zip_file_content	 => v_csv_zip_file_content,
+		csv_screening_consent_data_payload_text		=> v_csv_screening_consent_data_payload_text,
+		csv_screening_encounter_data_payload_text	=> v_csv_screening_encounter_data_payload_text,
+		csv_screening_location_data_payload_text	=> v_csv_screening_location_data_payload_text,
+		csv_screening_observation_data_payload_text	=> v_csv_screening_observation_data_payload_text,
+		csv_screening_resources_data_payload_text	=> v_csv_screening_resources_data_payload_text,		
+		csv_demographic_data_payload_text			=> v_csv_demographic_data_payload_text,
+		csv_qe_admin_data_payload_text				=> v_csv_qe_admin_data_payload_text,		
+		csv_screening_consent_data_file_name		=> v_csv_screening_consent_data_file_name,
+		csv_screening_encounter_data_file_name		=> v_csv_screening_encounter_data_file_name,
+		csv_screening_location_data_file_name		=> v_csv_screening_location_data_file_name,
+		csv_screening_observation_data_file_name	=> v_csv_screening_observation_data_file_name,
+		csv_screening_resources_data_file_name		=> v_csv_screening_resources_data_file_name,		
+		csv_demographic_data_file_name				=> v_csv_demographic_data_file_name,
+		csv_qe_admin_data_file_name					=> v_csv_qe_admin_data_file_name
+    );
+       
+    /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.nature                   = v_nature
+                             AND sat_intr.nature_denorm            = v_nature->>'nature'
+                             AND sat_intr.content_type             = v_content_type
+                             AND sat_intr.to_state                 = v_to_state
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Original Flat File CSV" as nature'
+         );
+    
+    /*Test 1 raw is inserted into sat_interaction_flat_file_csv_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.uri                      = v_interaction_key
+                             AND sat_intr.nature                   = v_nature->>'nature'
+                             AND sat_intr.to_state                 = v_to_state
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                         	 AND group_id				 		   = v_group_id
+        					 AND status					 		   = v_status
+        					 AND demographic_data_payload_text 	   = v_csv_demographic_data_payload_text
+        					 AND qe_admin_data_payload_text 	   = v_csv_qe_admin_data_payload_text
+        					 AND demographic_data_file_name 	   = v_csv_demographic_data_file_name
+							 AND qe_admin_data_file_name 		   = v_csv_qe_admin_data_file_name
+							 AND screening_consent_data_payload_text 	= v_csv_screening_consent_data_payload_text
+        					 AND screening_encounter_data_payload_text	= v_csv_screening_encounter_data_payload_text 
+							 AND screening_location_data_payload_text	= v_csv_screening_location_data_payload_text 
+							 AND screening_observation_data_payload_text= v_csv_screening_observation_data_payload_text 
+							 AND screening_resources_data_payload_text	= v_csv_screening_resources_data_payload_text 		
+							 AND screening_consent_data_file_name		= v_csv_screening_consent_data_file_name 
+							 AND screening_encounter_data_file_name		= v_csv_screening_encounter_data_file_name 
+							 AND screening_location_data_file_name		= v_csv_screening_location_data_file_name 
+							 AND screening_observation_data_file_name	= v_csv_screening_observation_data_file_name 
+							 AND screening_resources_data_file_name		= v_csv_screening_resources_data_file_name
+                             
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "Original Flat File CSV" as nature'
+         );
+        
+    /*Third call from CSV_ACCEPT to VALIDATION_SUCCESS/VALIDATION_FAILED and insert into sat_interaction_flat_file_csv_request and sat_interaction_http_request*/    
+	v_nature                    := '{"nature": "CSV Validation Result", "tenant_id": "N/A"}';
+	v_from_state				:= 'CSV_ACCEPT';
+    v_to_state                  := 'VALIDATION_SUCCESS'; 
+   
+    PERFORM techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => NULL::jsonb,
+        payload_text             => NULL::text,
+        rule_namespace           => v_rule_namespace,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => TRUE,
+        csv_group_id			 => v_group_id,
+        csv_status				 => v_status,
+        csv_zip_file_name		 => v_csv_zip_file_name,
+		csv_zip_file_content	 => v_csv_zip_file_content,
+		csv_screening_consent_data_payload_text		=> v_csv_screening_consent_data_payload_text,
+		csv_screening_encounter_data_payload_text	=> v_csv_screening_encounter_data_payload_text,
+		csv_screening_location_data_payload_text	=> v_csv_screening_location_data_payload_text,
+		csv_screening_observation_data_payload_text	=> v_csv_screening_observation_data_payload_text,
+		csv_screening_resources_data_payload_text	=> v_csv_screening_resources_data_payload_text,		
+		csv_demographic_data_payload_text			=> v_csv_demographic_data_payload_text,
+		csv_qe_admin_data_payload_text				=> v_csv_qe_admin_data_payload_text,		
+		csv_screening_consent_data_file_name		=> v_csv_screening_consent_data_file_name,
+		csv_screening_encounter_data_file_name		=> v_csv_screening_encounter_data_file_name,
+		csv_screening_location_data_file_name		=> v_csv_screening_location_data_file_name,
+		csv_screening_observation_data_file_name	=> v_csv_screening_observation_data_file_name,
+		csv_screening_resources_data_file_name		=> v_csv_screening_resources_data_file_name,		
+		csv_demographic_data_file_name				=> v_csv_demographic_data_file_name,
+		csv_qe_admin_data_file_name					=> v_csv_qe_admin_data_file_name
+    );
+       
+    /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.nature                   = v_nature
+                             AND sat_intr.nature_denorm            = v_nature->>'nature'
+                             AND sat_intr.content_type             = v_content_type
+                             AND sat_intr.from_state               = v_from_state
+                             AND sat_intr.to_state                 = v_to_state
+                             AND sat_intr.state_transition_reason  = v_state_transition_reason
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_http_request with "CSV Validation Result" as nature'
+         );
+    
+    /*Test 1 raw is inserted into sat_interaction_flat_file_csv_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.uri                      = v_interaction_key
+                             AND sat_intr.nature                   = v_nature->>'nature'
+                             AND sat_intr.from_state               = v_from_state
+                             AND sat_intr.to_state                 = v_to_state
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                         	 AND group_id				 		   = v_group_id
+        					 AND status					 		   = v_status
+        					 AND demographic_data_payload_text 	   = v_csv_demographic_data_payload_text
+        					 AND qe_admin_data_payload_text 	   = v_csv_qe_admin_data_payload_text
+        					 AND demographic_data_file_name 	   = v_csv_demographic_data_file_name
+							 AND qe_admin_data_file_name 		   = v_csv_qe_admin_data_file_name
+							 AND screening_consent_data_payload_text 	= v_csv_screening_consent_data_payload_text
+        					 AND screening_encounter_data_payload_text	= v_csv_screening_encounter_data_payload_text 
+							 AND screening_location_data_payload_text	= v_csv_screening_location_data_payload_text 
+							 AND screening_observation_data_payload_text= v_csv_screening_observation_data_payload_text 
+							 AND screening_resources_data_payload_text	= v_csv_screening_resources_data_payload_text 		
+							 AND screening_consent_data_file_name		= v_csv_screening_consent_data_file_name 
+							 AND screening_encounter_data_file_name		= v_csv_screening_encounter_data_file_name 
+							 AND screening_location_data_file_name		= v_csv_screening_location_data_file_name 
+							 AND screening_observation_data_file_name	= v_csv_screening_observation_data_file_name 
+							 AND screening_resources_data_file_name		= v_csv_screening_resources_data_file_name
+                             
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "CSV Validation Result" as nature'
+         );
+        
+    /*Fourth call from VALIDATION_SUCCESS/VALIDATION_FAILED to CONVERTED_TO_FHIR/FHIR_CONVERTION_FAILED and insert into sat_interaction_flat_file_csv_request and sat_interaction_http_request*/ 
+    v_nature                    := '{"nature": "Converted to FHIR", "tenant_id": "N/A"}';
+	v_from_state				:= 'VALIDATION_SUCCESS';
+    v_to_state                  := 'CONVERTED_TO_FHIR'; 
+   
+    PERFORM techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => NULL::jsonb,
+        payload_text             => NULL::text,
+        rule_namespace           => v_rule_namespace,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => TRUE,
+        csv_group_id			 => v_group_id,
+        csv_status				 => v_status,
+		csv_zip_file_name		 => v_csv_zip_file_name,
+		csv_zip_file_content	 => v_csv_zip_file_content,
+		csv_screening_consent_data_payload_text		=> v_csv_screening_consent_data_payload_text,
+		csv_screening_encounter_data_payload_text	=> v_csv_screening_encounter_data_payload_text,
+		csv_screening_location_data_payload_text	=> v_csv_screening_location_data_payload_text,
+		csv_screening_observation_data_payload_text	=> v_csv_screening_observation_data_payload_text,
+		csv_screening_resources_data_payload_text	=> v_csv_screening_resources_data_payload_text,		
+		csv_demographic_data_payload_text			=> v_csv_demographic_data_payload_text,
+		csv_qe_admin_data_payload_text				=> v_csv_qe_admin_data_payload_text,		
+		csv_screening_consent_data_file_name		=> v_csv_screening_consent_data_file_name,
+		csv_screening_encounter_data_file_name		=> v_csv_screening_encounter_data_file_name,
+		csv_screening_location_data_file_name		=> v_csv_screening_location_data_file_name,
+		csv_screening_observation_data_file_name	=> v_csv_screening_observation_data_file_name,
+		csv_screening_resources_data_file_name		=> v_csv_screening_resources_data_file_name,		
+		csv_demographic_data_file_name				=> v_csv_demographic_data_file_name,
+		csv_qe_admin_data_file_name					=> v_csv_qe_admin_data_file_name
+
+    );
+       
+    /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.nature                   = v_nature
+                             AND sat_intr.nature_denorm            = v_nature->>'nature'
+                             AND sat_intr.content_type             = v_content_type
+                             AND sat_intr.from_state               = v_from_state
+                             AND sat_intr.to_state                 = v_to_state
+                             AND sat_intr.state_transition_reason  = v_state_transition_reason
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Converted to FHIR" as nature'
+         );
+    
+    /*Test 1 raw is inserted into sat_interaction_flat_file_csv_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.uri                      = v_interaction_key
+                             AND sat_intr.nature                   = v_nature->>'nature'
+                             AND sat_intr.from_state               = v_from_state
+                             AND sat_intr.to_state                 = v_to_state
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                         	 AND group_id				 		   = v_group_id
+        					 AND status					 		   = v_status
+        					 AND demographic_data_payload_text 	   = v_csv_demographic_data_payload_text
+        					 AND qe_admin_data_payload_text 	   = v_csv_qe_admin_data_payload_text
+        					 AND demographic_data_file_name 	   = v_csv_demographic_data_file_name
+							 AND qe_admin_data_file_name 		   = v_csv_qe_admin_data_file_name
+							 AND screening_consent_data_payload_text 	= v_csv_screening_consent_data_payload_text
+        					 AND screening_encounter_data_payload_text	= v_csv_screening_encounter_data_payload_text 
+							 AND screening_location_data_payload_text	= v_csv_screening_location_data_payload_text 
+							 AND screening_observation_data_payload_text= v_csv_screening_observation_data_payload_text 
+							 AND screening_resources_data_payload_text	= v_csv_screening_resources_data_payload_text 		
+							 AND screening_consent_data_file_name		= v_csv_screening_consent_data_file_name 
+							 AND screening_encounter_data_file_name		= v_csv_screening_encounter_data_file_name 
+							 AND screening_location_data_file_name		= v_csv_screening_location_data_file_name 
+							 AND screening_observation_data_file_name	= v_csv_screening_observation_data_file_name 
+							 AND screening_resources_data_file_name		= v_csv_screening_resources_data_file_name
+                             
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "Converted to FHIR" as nature'
+         );    
+       
+   /* Last call to insert the FHIR bundle which is generated from CSV file with interaction_key = '/flatfile/csv/Bundle'*/
+    v_nature                    := '{"nature": "org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id": "N/A"}';
+    v_to_state                  := NULL; 
+    v_from_state                := NULL; 
+
+    PERFORM techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => v_payload,
+        payload_text             => NULL::text,
+        rule_namespace           => v_rule_namespace,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => false
+    );
+   
+   /*Test 3 raws are inserted into sat_interaction_http_request table*/
+   SELECT COUNT(1) INTO v_record_count
+	 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+	WHERE COALESCE(sat_intr.hub_interaction_id, '') = v_interaction_id
+	  AND COALESCE(sat_intr.nature_denorm, '') IN (
+	      'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	      'Original FHIR Payload', 
+	      'techByDesignDisposition'
+	  )
+	  AND COALESCE(sat_intr.created_by, '') = v_created_by
+	  AND COALESCE(sat_intr.provenance, '') = v_provenance;
 	
--- 	RETURN NEXT ok(
--- 	    v_record_count = 3,
--- 	    'CSV - Successfully inserted 3 records into the table sat_interaction_fhir_request'
--- 	);
+	RETURN NEXT ok(
+	    v_record_count = 3,
+	    'CSV - Successfully inserted 3 records into the table sat_interaction_http_request'
+	);
+
+   /*Test 3 raws are inserted into sat_interaction_fhir_request table*/
+   SELECT COUNT(1) INTO v_record_count
+     FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
+    WHERE COALESCE(sat_intr.hub_interaction_id, '') = v_interaction_id
+	  AND COALESCE(sat_intr.uri, '') = v_interaction_key
+	  AND COALESCE(sat_intr.nature, '') IN (
+	      'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	      'Original FHIR Payload', 
+	      'techByDesignDisposition'
+	  )
+	  AND COALESCE(sat_intr.created_by, '') = v_created_by
+	  AND COALESCE(sat_intr.provenance, '') = v_provenance;
+	
+	RETURN NEXT ok(
+	    v_record_count = 3,
+	    'CSV - Successfully inserted 3 records into the table sat_interaction_fhir_request'
+	);
 
 	/*=====================END of CSV Testing============================*/
 
@@ -583,8 +658,7 @@ BEGIN
         provenance               => v_provenance,
         hub_upsert_behavior      => false
     );
-         
-   	--RETURN NEXT ok(v_hub_diagnostic_row IS NOT NULL, 'Successfully catched the exception and inserted into the table hub_diagnostic');
+   
     RETURN NEXT ok(
     	EXISTS(SELECT 1 
 		    FROM techbd_udi_ingress.hub_diagnostic hub_exp
@@ -614,9 +688,6 @@ BEGIN
 	            'Successfully inserted exception details into the table sat_diagnostic_exception or sat_diagnostic_log'
 	        ); 
     END IF;
-
-
-
 END;
 $function$
 ;
