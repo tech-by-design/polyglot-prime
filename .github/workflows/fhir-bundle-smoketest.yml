@@ -27,7 +27,7 @@ jobs:
 
     - name: Decode the .p12 file
       env:
-        P12_FILE_BASE64: ${{ secrets.TECHBD_THI_QA_KEY_BASE64 }}
+        P12_FILE_BASE64: ${{ secrets.TECHBD_PHI_QA_KEY_BASE64 }}
       run: |
           CERT_DIR="./test-automation/Certificates"
           mkdir -p $CERT_DIR
@@ -36,7 +36,7 @@ jobs:
     - name: Update SSL paths in JMeter configuration files
       run: |
           CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
-          CERT_PATH="./test-automation/Certificates/techbd-temp-HUB-key.p12"
+          CERT_PATH="./test-automation/Certificates/techbd-phi-QA-key.p12"
 
           echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
           echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
