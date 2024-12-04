@@ -49,7 +49,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(
                         authorize -> authorize
-                                .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**", "/Hl7/v2", "/Hl7/v2/", "/metadata",
+                                .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**",  "/flatfile/csv/Bundle","/flatfile/csv/Bundle/**","/Hl7/v2", "/Hl7/v2/", "/metadata",
                                         "/api/expect/**",
                                         "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**",
                                         "/docs/api/openapi/**",
