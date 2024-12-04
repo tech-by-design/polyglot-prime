@@ -23,16 +23,16 @@
         }
 
         #date-picker-container {
-            margin-top: 20px; /* Add some spacing */
-            display: flex;     /* Use flexbox for layout */
+            margin-top: 20px;
+            display: flex;
             gap: 10px;  
             align-items: center;  
-            justify-content: flex-start;    /* Add some spacing between elements */
+            justify-content: flex-start;
         }
 
         .date-picker-label{      
-            width: 100px; /* Adjust width as needed */
-            line-height: 35px;  /* Vertically center the label */
+            width: 100px;
+            line-height: 35px;
         }
 
         .date-picker-label {
@@ -40,8 +40,8 @@
         }
 
         #searchButton {
-            margin-left: 10px; /* Add some space to the left of the button */
-            background-color: #e7e7e7; /* Green */
+            margin-left: 10px;
+            background-color: #e7e7e7;
             border: none;
             border-radius: 12px;
             color: black;
@@ -53,8 +53,8 @@
         }
 
         #clearButton {
-            margin-left: 10px; /* Add some space to the left of the button */
-            background-color: #e7e7e7; /* Green */
+            margin-left: 10px;
+            background-color: #e7e7e7;
             border: none;
             border-radius: 12px;
             color: black;
@@ -63,9 +63,10 @@
             text-decoration: none;
             display: inline-block;
             font-size: 16px;
+            display: none;
         }
 
-    </style>
+        </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
@@ -83,6 +84,7 @@
         const schemaName = 'techbd_udi_ingress';
         const scnView = 'fhir_scn_submission'; 
         const storedProcName = 'get_fhir_scn_submission';
+        const scnSubmissionDetailsSP = 'get_fhir_scn_submission_details';
         const scnDetailView = 'fhir_scn_submission_details';
         const expanColumnDefn = [
             { headerName: "Org Name", field: "qe_name", filter: "agTextColumnFilter" },
@@ -92,16 +94,77 @@
             { headerName: "Successful Msgs", field: "success_submissions", filter: "agTextColumnFilter" }, 
             { headerName: "Failed Msgs", field: "faield_submissions", filter: "agTextColumnFilter" },
         ];
+
+        // Format dates as "mm-dd-yyyy"
+        const formatDate = (date) => {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month}-${day}-${year}`;
+        };
+
         function getExpandGridData(params) { 
             const organization_id = params.data.organization_id;
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${scnDetailView}/organization_id/${organization_id}.json`))
-                .then(response => response.json())
-                .then(response => {
-                    params.successCallback(response);
-                })
-                .catch(error => {
-                    console.error('Error fetching details data' + error);
-                });
+            const startDate = $('#start-date').datepicker('getDate');
+            const endDate = $('#end-date').datepicker('getDate');
+            const formattedStartDate = formatDate(startDate); 
+            const formattedEndDate = formatDate(endDate);
+            
+            const storedProcparams = {
+                "tenant_id": organization_id,
+                "start_date": formattedStartDate,
+                "end_date": formattedEndDate,
+            };
+
+            const gridRequestBody = {
+                "startRow": 0,
+                "endRow": 100,
+                "rowGroupCols": [],
+                "valueCols": [],
+                "pivotCols": [],
+                "pivotMode": false,
+                "groupKeys": [],
+                "filterModel": {},
+                "sortModel": []
+            }
+
+            const paramsJson = encodeURIComponent(JSON.stringify(storedProcparams));
+
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/sp/${schemaName}/${scnSubmissionDetailsSP}.json?storedProcparams=${paramsJson}`), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(gridRequestBody)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(response => {
+                let rowData = response;
+
+                if (!Array.isArray(rowData)) {
+                    if (rowData && rowData.rows && Array.isArray(rowData.rows)) {
+                      rowData = rowData.rows;
+                      } else if(rowData && rowData.data && Array.isArray(rowData.data)){
+                        rowData = rowData.data; 
+                      } else {
+                        console.error("Unexpected response format:", response);
+                        rowData = [];
+                        alert('Unexpected response format from API call!');
+                        }
+
+                }
+                params.successCallback(rowData , rowData.length);
+            })
+            .catch(error => {
+                console.error('Error fetching details data: ' + error);
+                params.failCallback();
+                modalAide.showMessage('Error', 'Failed to load details. Please try again later.' , 'danger'); 
+            });
         }
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
@@ -111,18 +174,26 @@
             const oneWeekAgo = new Date(today);
             oneWeekAgo.setDate(today.getDate() - 7);
 
-            // Format dates as "mm-dd-yyyy"
-            const formatDate = (date) => {
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${month}-${day}-${year}`;
-            };
+            let initialStartDate = formatDate(oneWeekAgo);
+            let initialEndDate = formatDate(today);
 
             // Datepicker Initialization: moved outside url fetch because those date format use only after click submit button       
             $("#start-date, #end-date").datepicker({
                 dateFormat: "mm-dd-yy",
+                onSelect: function() {
+                    const startDate = $('#start-date').datepicker('getDate');
+                    const endDate = $('#end-date').datepicker('getDate');
+                    const formattedStartDate = formatDate(startDate);
+                    const formattedEndDate = formatDate(endDate);
+
+                    if (formattedStartDate !== initialStartDate || formattedEndDate !== initialEndDate) {
+                        $('#clearButton').show();
+                    } else {
+                        $('#clearButton').hide();
+                    }
+                }
             });
+
             $("#start-date").datepicker("setDate", oneWeekAgo);
             $("#end-date").datepicker("setDate", today);
 
@@ -133,7 +204,7 @@
                 $('#serverDataGrid').empty();
                 const startDate = $('#start-date').datepicker('getDate');
                 const endDate = $('#end-date').datepicker('getDate');
-                updateGridWithDates(startDate, endDate);  // Call with or without validation
+                updateGridWithDates(startDate, endDate);
             });
 
             $('#clearButton').click(function() {
@@ -142,9 +213,12 @@
 
             function updateGridWithDates(oneWeekAgo, today) {
 
+                const formattedStartDate = formatDate(oneWeekAgo);
+                const formattedEndDate = formatDate(today);
+
                 const storedProcparams = {
-                    "start_date": formatDate(oneWeekAgo),
-                    "end_date": formatDate(today)
+                    "start_date": formattedStartDate,
+                    "end_date": formattedEndDate
                 };
 
                 helpers.injectDateRangeText('date-range', 'This Widget provides an overview of message interactions from Screening/Referral/Assessment Centers (SCNs) sent to Tech By Design from <b>{startDate}</b> to <b>{endDate}</b>. The grid presents a breakdown of message activity by SCN, displaying distinct SCN names and message counts across various statuses.');
@@ -157,7 +231,7 @@
                     { headerName: "SCN Name", field: "organization_id", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' }, 
                     { headerName: "Total Msgs", field: "qe_total_submissions", filter: "agNumberColumnFilter" },
                     { headerName: "Successful Msgs", field: "success_submissions", filter: "agNumberColumnFilter" }, 
-                    { headerName: "Failed Msgs", field: "faield_submissions", filter: "agNumberColumnFilter" } 
+                    { headerName: "Failed Msgs", field: "failed_submissions", filter: "agNumberColumnFilter" } 
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(url),

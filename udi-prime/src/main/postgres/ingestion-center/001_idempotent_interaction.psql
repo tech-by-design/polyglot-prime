@@ -3643,3 +3643,52 @@ BEGIN
     ORDER BY sihr.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP FUNCTION if exists techbd_udi_ingress.get_fhir_scn_submission_details(text, date, date);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_scn_submission_details(
+    organization_id_param TEXT,
+    start_date DATE,
+    end_date DATE
+)
+RETURNS TABLE (
+    organization_id TEXT,
+    qe_name TEXT,
+    qe_total_submissions BIGINT,
+    success_submissions BIGINT,
+    faield_submissions BIGINT,
+    recently_created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY EXECUTE format(
+        'WITH submission_counts AS (
+             SELECT 
+                sihr.organization_id,
+                sihr.tenant_id_lower AS qe_name,
+                count(CASE WHEN sihr.nature = ''org.techbd.service.http.Interactions$RequestResponseEncountered'' THEN 1 ELSE NULL END) AS qe_total_submissions,
+                count(CASE WHEN sihr.nature = ''Forwarded HTTP Response'' THEN 1 ELSE NULL END) AS success_submissions,
+                count(CASE WHEN sihr.nature = ''Forwarded HTTP Response Error'' THEN 1 ELSE NULL END) AS faield_submissions,
+                max(sihr.created_at) AS recently_created_at
+             FROM 
+                techbd_udi_ingress.sat_interaction_fhir_request sihr
+             WHERE 
+                sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle''])
+                AND sihr.created_at BETWEEN $2 AND $3  -- Parameters shifted by one
+                AND sihr.tenant_id <> ''N/A''
+                AND sihr.organization_id = $1  -- Organization ID filter
+             GROUP BY 
+                sihr.organization_id, sihr.tenant_id_lower
+        )
+        SELECT 
+            organization_id,
+            qe_name,
+            qe_total_submissions,
+            success_submissions,
+            faield_submissions,
+            recently_created_at
+        FROM 
+            submission_counts sc
+        ORDER BY 
+            recently_created_at DESC'
+    ) USING organization_id_param, start_date, end_date;  -- Pass all parameters
+END;
+$$ LANGUAGE plpgsql;
