@@ -25,6 +25,7 @@ import org.jooq.impl.DSL;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirNeedsAttention;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirNeedsAttentionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmission;
+import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingDatalakeSubmissionDetails;
 
@@ -338,13 +339,24 @@ public class JooqRowsSupplierForSP {
     }
 
     TableLike<?> getDynamicTablelike(String storedProcName, String paramsJson) throws Exception {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT_MDY);
+        ObjectMapper objectMapper = new ObjectMapper();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT_MDY);
 
         switch (storedProcName) {
             case "get_fhir_scn_submission" -> {
                 Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
                 return new GetFhirScnSubmission().call(paramMap.get("start_date"), paramMap.get("end_date"));
+            }
+            case "get_fhir_scn_submission_details" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> dateMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String tenantId = dateMap.get("tenant_id");
+                formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+                LocalDate localStartDate = LocalDate.parse(dateMap.get("start_date"), formatter);
+                LocalDate localEndDate = LocalDate.parse(dateMap.get("end_date"), formatter);
+
+                return new GetFhirScnSubmissionDetails().call(tenantId, localStartDate, localEndDate);
             }
             case "get_fhir_needs_attention" -> {
                 Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
