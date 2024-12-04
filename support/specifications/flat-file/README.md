@@ -22,7 +22,7 @@ This project leverages the [Frictionless Data](https://frictionlessdata.io/) lib
 #### How to Use:
 1. **Install Data Curator**: Download it [here](https://github.com/qcif/data-curator) and follow the instructions for your operating system.
 2. **Load the Example Data Package**: 
-   - Access the example data package from our repository: [Data Package Examples](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/).
+   - Access the example data package from our repository: [Data Package Examples](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/flat-file).
    - The data package contains only the Frictionless JSON schema (`datapackage-nyher-fhir-ig-equivalent.json`) and the CSV data folder. Other files (e.g., Python scripts or markdown documentation) have been removed for clarity.
    - Download and zip the `specifications` folder for easy sharing or validation in Data Curator.
 3. **Validate and Save**:
