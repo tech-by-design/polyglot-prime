@@ -28,7 +28,7 @@ public class CsvService {
                     .withFile(file)
                     .withRequest(request)
                     .build();
-            session.validate();
+            engine.orchestrate(session);
             return session.getValidationResults();
         } catch (Exception ex) {
             log.error("Exception while processing file : {} ", file.getOriginalFilename(), ex);

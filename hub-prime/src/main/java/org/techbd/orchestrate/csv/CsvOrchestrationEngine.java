@@ -246,33 +246,32 @@ public class CsvOrchestrationEngine {
                     "userAgent", userAgent,
                     "device", Map.of(
                             "deviceId", device.deviceId(),
-                            "deviceName", device.deviceName()),
-                    "initiatedAt", ZonedDateTime.now().minusMinutes(10).toString(), // Example initiated time
-                    "completedAt", ZonedDateTime.now().toString() // Example completed time
-            );
+                            "deviceName", device.deviceName()
+            //         "initiatedAt", ZonedDateTime.now().minusMinutes(10).toString(), // Example initiated time
+            //         "completedAt", ZonedDateTime.now().toString() // Example completed time
+            ));
         }
 
         private static Map<String, Object> populateProvenance(final String interactionId, final List<String> fileNames,
                 final Instant initiatedAt, final Instant completedAt,final String originalFileName) {
             return Map.of(
                     "resourceType", "Provenance",
-                    "recorded", ZonedDateTime.now().toString(),
+                    // "recorded", ZonedDateTime.now().toString(),
                     "interactionId", interactionId,
                     "agent", List.of(Map.of(
-                            "type", Map.of(
-                                    "coding", List.of(Map.of(
-                                            "system", "http://hl7.org/fhir/provenance-participant-type",
-                                            "code", "author",
-                                            "display", "Author"))),
-                            "role", List.of(Map.of(
-                                    "coding", List.of(Map.of(
-                                            "system", "http://hl7.org/fhir/provenance-agent-role",
-                                            "code", "validator",
-                                            "display", "Validator")))),
                             "who", Map.of(
-                                    "identifier", Map.of(
-                                            "value", "TechByDesignPythonValidator v1.0.0"),
-                                    "display", "TechByDesignPythonValidator"))),
+                                    "coding", List.of(Map.of(
+                                            "system", "Validator",
+                                             "display", "frictionless version 5.18.0"))))),
+                            // "role", List.of(Map.of(
+                            //         "coding", List.of(Map.of(
+                            //                 "system", "http://hl7.org/fhir/provenance-agent-role",
+                            //                 "code", "validator",
+                            //                 "display", "Validator")))),
+                            // "who", Map.of(
+                            //         "identifier", Map.of(
+                            //                 "value", "Validator"),
+                            //         "display", "frictionless version 5.18.0"))),
                     "initiatedAt", initiatedAt,
                     "completedAt", completedAt,
                     "description", "Validation of  files in " + originalFileName,
@@ -537,7 +536,7 @@ public class CsvOrchestrationEngine {
             if (!CollectionUtils.isEmpty(filePaths)) {
                 final Path path = Paths.get(filePaths.get(0));
                 final Path parentPath = path.getParent();
-                pythonScriptPath = parentPath.resolve("validate-nyher-fhir-ig-equivalent-j.py").toString();
+                pythonScriptPath = parentPath.resolve("validate-nyher-fhir-ig-equivalent.py").toString();
                 packagePath = parentPath.resolve("datapackage-nyher-fhir-ig-equivalent.json").toString();
                 outputJsonPath = parentPath.resolve("datapackage-nyher-fhir-ig-equivalent.json").toString();
             }
