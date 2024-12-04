@@ -1,6 +1,6 @@
 # HL7 CCD Schema Customization and Data Mapping for 1115 Waiver
 
-This repository focuses on the preparation, customization, and validation of the HL7 CCD (Continuity of Care Document) XSD schema, specifically tailored to the 1115 Waiver data elements. Below is an overview of the key objectives and files in this project.
+This repository focuses on the preparation, customization, and validation of the HL7 CCDA (Consolidated Clinical Document Architecture) XSD schema, specifically tailored to the 1115 Waiver data elements. Below is an overview of the key objectives and files in this project.
 
 ## Preparation of HL7 CCD XSD Schema
 
