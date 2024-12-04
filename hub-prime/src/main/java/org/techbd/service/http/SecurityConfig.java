@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -48,11 +47,6 @@ public class SecurityConfig {
         // allow authentication for security
         // and turn off CSRF to allow POST methods
         http
-                // Disable session creation and invalidation for specific URLs
-                // .securityContext(securityContext -> securityContext
-                // .securityContextRepository(new NullSecurityContextRepository())
-                // .requireExplicitSave(true)
-                // )
                 .authorizeHttpRequests(
                         authorize -> authorize
                                 .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**",  "/flatfile/csv/Bundle","/flatfile/csv/Bundle/**","/Hl7/v2", "/Hl7/v2/", "/metadata",
@@ -77,12 +71,11 @@ public class SecurityConfig {
                                 .permitAll()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(
-                        sessionManagement -> sessionManagement
-                                .invalidSessionUrl("/?timeout=true")
-                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                )
-                //.requestCache(requestCache -> requestCache.requestCache(new HttpSessionRequestCache()))
+                // .sessionManagement(
+                //         sessionManagement -> sessionManagement
+                //                 .invalidSessionUrl("/?timeout=true")
+                //                 //.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) //TODO As this method is not working, remove it.
+                // )
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {

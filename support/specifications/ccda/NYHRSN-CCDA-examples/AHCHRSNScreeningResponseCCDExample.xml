@@ -1,0 +1,210 @@
+<?xml version="1.0"?>
+<ClinicalDocument
+	xmlns="urn:hl7-org:v3"
+	xmlns:voc="urn:hl7-org:v3/voc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 CDA.xsd">
+	<!-- 
+********************************************************
+  CDA Header
+********************************************************
+-->
+	<typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
+	<templateId root="2.16.840.1.113883.19.1000.1"/>
+	<id root="379a3d1e-71ca-4c11-9051-a72adcdacd32"/>
+	<code code="temp1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="AHC-HRSN modified screening tool response"/>
+	<title>AAHC-HRSN modified screening tool</title>
+	<effectiveTime value="20000407"/>
+	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
+	<recordTarget>
+		<patientRole>
+			<id root="PatientExample" />
+			<addr>115 Broadway Apt2</addr>
+			<telecom value="555-120-6047" />
+			<patient>
+				<name>
+					<given>Jon</given>
+					<family>Doe</family>
+				</name>
+			</patient>
+		</patientRole>
+	</recordTarget>
+	<!-- Author -->
+	<author>
+    <time value="20240223"/>
+    <assignedAuthor>
+        <id root="2.16.840.1.113883.3.564" extension="SCNExample"/>
+        <representedOrganization>
+            <id root="2.16.840.1.113883.3.564" extension="SCNExample"/>
+            <name>Care Ridge SCN</name>
+            <addr>
+                <streetAddressLine>111 Care Ridge St</streetAddressLine>
+                <city>Plainview</city>
+                <state>NY</state>
+                <postalCode>11803</postalCode>
+                <county>Nassau County</county>
+            </addr>
+        </representedOrganization>
+    </assignedAuthor>
+</author>
+
+
+	<!-- Custodian -->
+	<custodian>
+		<assignedCustodian>
+			<representedCustodianOrganization>
+				<id root="2.16.840.1.113883.19.5.99999.3"/>
+				<name>General Hospital Health Records</name>
+			</representedCustodianOrganization>
+		</assignedCustodian>
+	</custodian>
+	<authorization>
+    <consent>
+        <code code="59284-0" codeSystem="2.16.840.1.113883.6.1" displayName="Consent Document"/>
+        <statusCode code="completed"/>
+    </consent>
+</authorization>
+
+
+<componentOf>
+    <encompassingEncounter>
+        <id root="EncounterExample" extension="2.16.840.1.113883.19.1000.3.2"/>
+        <code code="405672008" codeSystem="2.16.840.1.113883.6.96" displayName="Direct questioning (procedure)">
+            <originalText>Direct questioning (procedure)</originalText>
+        </code>
+        <effectiveTime>
+            <low value="20240223"/>
+            <high value="20240223"/>
+        </effectiveTime>
+    </encompassingEncounter>
+</componentOf>
+
+	<component>
+		<structuredBody>
+			<component>
+				<section>
+					<title>Observations</title>
+				
+					
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
+							<code code="76690-7" displayName="Sexual orientation" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Sexual orientation</originalText>
+							</code>
+							<value xsi:type="CD" code="UNK" displayName="Unknown" codeSystem="2.16.840.1.113883.5.4"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
+							<code code="71802-3" displayName="Housing status" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>What is your living situation today?</originalText>
+							</code>
+							<value xsi:type="CD" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
+							<code code="96778-6" displayName="Problems with place where you live" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Think about the place you live. Do you have problems with any of the following?</originalText>
+							</code>
+							<value xsi:type="CO" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.2"/>
+							<code code="88122-7" displayName="Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]</originalText>
+							</code>
+							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.3"/>
+							<code code="88123-5" displayName="Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]</originalText>
+							</code>
+							<value xsi:type="CO" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.4"/>
+							<code code="93030-5" displayName="Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living</originalText>
+							</code>
+							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.5"/>
+							<code code="96779-4" displayName="Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months</originalText>
+							</code>
+							<value xsi:type="CO" code="LA32002-0" displayName="Already shut off" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.6"/>
+							<code code="95618-5" displayName="Physically hurt you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Physically hurt you [HITS]</originalText>
+							</code>
+							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.7"/>
+							<code code="95617-7" displayName="Insult you or talk down to you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Insult you or talk down to you [HITS]</originalText>
+							</code>
+							<value xsi:type="CO" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.8"/>
+							<code code="95616-9" displayName="Threaten you with physical harm [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Threaten you with physical harm [HITS]</originalText>
+							</code>
+							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.9"/>
+							<code code="95615-1" displayName="Scream or curse at you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Scream or curse at you [HITS]</originalText>
+							</code>
+							<value xsi:type="CO" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.10"/>
+							<code code="95614-4" displayName="Total score [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Total score [HITS]</originalText>
+							</code>
+							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<!--			<entry><observation classCode="OBS" moodCode="EVN"><templateId root="2.16.840.1.113883.19.1000.3.1"/><code code="96777-8" displayName="Accountable health communities (AHC) health-related social needs screening (HRSN) tool" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"><originalText>Accountable health communities (AHC) health-related social needs screening (HRSN) tool</originalText></code><value xsi:type="PQ" value="unknown" unit="unknown"/></observation></entry> -->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.2"/>
+							<code code="76513-1" displayName="How hard is it for you to pay for the very basics like food, housing, medical care, and heating" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>How hard is it for you to pay for the very basics like food, housing, medical care, and heating?</originalText>
+							</code>
+							<value xsi:type="CD" code="LA22683-9" displayName="Somewhat Hard" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+		</structuredBody>
+	</component>
+</ClinicalDocument>
