@@ -4,7 +4,7 @@
   "resources": [
     {
       "name": "qe_admin_data", 
-      "path": "flat-file/nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv",
+      "path": "nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv",
       "schema": {
         "fields": [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true, "unique": true}},
@@ -46,7 +46,7 @@
     },     
     {
       "name": "screening_observation_data",  
-      "path": "flat-file/nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv",
+      "path": "nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv",
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},
@@ -218,7 +218,7 @@
     },    
     {
       "name": "screening_location_data",  
-      "path": "flat-file/nyher-fhir-ig-example/SCREENING_LOCATION_DATA_partner1-test-20241128-testcase1.csv", 
+      "path": "nyher-fhir-ig-example/SCREENING_LOCATION_DATA_partner1-test-20241128-testcase1.csv", 
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},
@@ -253,7 +253,7 @@
     },  
     {
       "name": "screening_encounter_data", 
-      "path": "flat-file/nyher-fhir-ig-example/SCREENING_ENCOUNTER_DATA_partner1-test-20241128-testcase1.csv",
+      "path": "nyher-fhir-ig-example/SCREENING_ENCOUNTER_DATA_partner1-test-20241128-testcase1.csv",
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},
@@ -323,7 +323,7 @@
     },   
     {
       "name": "screening_consent_data",   
-      "path": "flat-file/nyher-fhir-ig-example/SCREENING_CONSENT_DATA_partner1-test-20241128-testcase1.csv",
+      "path": "nyher-fhir-ig-example/SCREENING_CONSENT_DATA_partner1-test-20241128-testcase1.csv",
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},          
@@ -355,7 +355,7 @@
     }, 
     {
       "name": "screening_resources_data",  
-      "path": "flat-file/nyher-fhir-ig-example/SCREENING_RESOURCES_DATA_partner1-test-20241128-testcase1.csv",
+      "path": "nyher-fhir-ig-example/SCREENING_RESOURCES_DATA_partner1-test-20241128-testcase1.csv",
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}}, 
@@ -394,7 +394,7 @@
     },                     
     {
       "name": "demographic_data",   
-      "path": "flat-file/nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv", 
+      "path": "nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv", 
       "schema": {
         "fields": [ 
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},
