@@ -5,6 +5,62 @@
 
 This project leverages the [Frictionless Data](https://frictionlessdata.io/) library to validate CSV files against predefined schemas, ensuring data quality and consistency. The validation process checks data integrity, format adherence, and schema compliance to streamline data workflows.
 
+## Tools for Data Validation and Exploration
+
+### Data Curator
+
+[Data Curator](https://github.com/qcif/data-curator) is a simple desktop data editor designed to help describe, validate, and share usable open data. It is a lightweight and user-friendly tool that provides a graphical interface for editing tabular data while ensuring adherence to data standards.
+
+#### Key Features:
+- **Schema Editing**: Easily modify Frictionless JSON schemas to suit your project's requirements.
+- **Load and Preview Data**: Visualize CSV files and inspect their contents in a user-friendly interface.
+- **Validate Against Schema**: Perform schema validation using the Frictionless JSON specification provided in this repository.
+- **Edit and Save**: Correct errors directly in the application and save validated data.
+- **Metadata Management**: Add metadata for enhanced data usability.
+- **Export Options**: Share validated datasets as clean CSVs or complete data packages.
+
+#### How to Use:
+1. **Install Data Curator**: Download it [here](https://github.com/qcif/data-curator) and follow the instructions for your operating system.
+2. **Load the Example Data Package**: 
+   - Access the example data package from our repository: [Data Package Examples](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/).
+   - The data package contains only the Frictionless JSON schema (`datapackage-nyher-fhir-ig-equivalent.json`) and the CSV data folder. Other files (e.g., Python scripts or markdown documentation) have been removed for clarity.
+   - Download and zip the `specifications` folder for easy sharing or validation in Data Curator.
+3. **Validate and Save**:
+   - Load the zipped data package in Data Curator.
+   - Fix any errors identified during validation and save the updated files.
+
+
+### Open Data Editor (ODE)
+
+The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getting-started/) is an online tool designed for non-technical data practitioners to explore, validate, and detect errors in tabular datasets. It provides an intuitive web-based interface for identifying and correcting issues in open data.
+
+#### Key Features:
+- **Online Access**: No installation required—access it directly through your browser.
+- **Error Detection**: Quickly identify errors in table formatting and data values.
+- **Schema Validation**: Validate datasets against predefined schemas such as the Frictionless JSON schema.
+- **Interactive Editing**: Fix errors and inconsistencies in real time within the web interface.
+- **Export Options**: Save corrected files for further use or sharing.
+
+#### How to Use:
+1. Visit the [Open Data Editor website](https://opendataeditor.okfn.org/documentation/getting-started/) and install it.
+2. Upload your dataset (CSV files) from the example folder: [Example Data Package](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/flat-file/nyher-fhir-ig-example).
+3. Apply the Frictionless JSON schema for validation.
+4. Review and correct any issues detected.
+5. Download the validated and corrected dataset.
+
+### Choosing Between Data Curator and ODE
+
+| Feature                  | Data Curator                      | Open Data Editor (ODE)           |
+|--------------------------|------------------------------------|-----------------------------------|
+| **Platform**             | Desktop application               | Web-based                        |
+| **Installation**         | Required                          | None                             |
+| **Schema Validation**    | Yes                               | Yes                              |
+| **Error Correction**     | Yes                               | Yes                              |
+| **Metadata Management**  | Supported                         | Limited                          |
+| **Ideal for**            | Offline workflows, detailed editing | Online workflows, quick validation |
+
+---
+
 ## Folder Structure
 
 - **`support/specifications`**
