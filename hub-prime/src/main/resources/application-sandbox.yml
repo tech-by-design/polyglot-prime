@@ -7,6 +7,14 @@ org:
           saveUserDataToInteractions: true
         hub:
           prime:
+            csv:
+              validation:
+                pythonScriptPath: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:../support/specifications/validate-nyher-fhir-ig-equivalent-j.py}
+                pythonExecutable: ${TECHBD_CSV_PYTHON_EXECUTABLE:python3}
+                packagePath: ${TECHBD_CSV_PACKAGE_PATH:../support/specifications/datapackage-nyher-fhir-ig-equivalent.json}
+                inboundPath: ${TECHBD_CSV_INBOUND_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/inbound
+                outputPath: ${TECHBD_CSV_INBOUND_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/outbound
+                ingessHomePath: ${TECHBD_CSV_INGRESS_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/ingress
             defaultDataLakeApiAuthn:
               # The allowed values for mTlsStrategy are as follows:
               # - no-mTls: No mTLS is used. The WebClient sends a standard HTTP POST request to the scoring engine API without mutual TLS (mTLS).
