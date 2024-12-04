@@ -169,10 +169,9 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
         })
 
     # Write the results to a JSON file
-    with open(output_path, 'w') as json_file:
-        #json.dump(results, json_file, indent=4)
+    with open(output_path, 'w') as json_file: 
         json.dump(results, json_file, indent=4, default=custom_json_encoder)
-    #print(json.dumps(results, indent=4))
+    #print(json.dumps(results, indent=4, default=custom_json_encoder))
 
 
 if __name__ == "__main__":
@@ -206,7 +205,7 @@ if __name__ == "__main__":
     file5 = sys.argv[6]
     file6 = sys.argv[7]
     file7 = sys.argv[8]
-    output_path = sys.argv[9]
+    output_path = sys.argv[9] if len(sys.argv) > 9 else "output.json"
 
     # Check if output path is valid
     if not output_path.endswith('.json'):
