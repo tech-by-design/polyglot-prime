@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import org.techbd.conf.Configuration;
 import org.techbd.service.VfsCoreService;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.hub.prime.AppConfig;
@@ -73,12 +74,12 @@ public class CsvOrchestrationEngine {
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
         if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
             synchronized (this) {
-                Set<String> sessionIdsToRemove = Arrays.stream(sessionsToRemove)
+                final Set<String> sessionIdsToRemove = Arrays.stream(sessionsToRemove)
                         .map(OrchestrationSession::getSessionId)
                         .collect(Collectors.toSet());
-                Iterator<OrchestrationSession> iterator = this.sessions.iterator();
+                final Iterator<OrchestrationSession> iterator = this.sessions.iterator();
                 while (iterator.hasNext()) {
-                    OrchestrationSession session = iterator.next();
+                    final OrchestrationSession session = iterator.next();
                     if (sessionIdsToRemove.contains(session.getSessionId())) {
                         iterator.remove();
                     }
@@ -101,27 +102,27 @@ public class CsvOrchestrationEngine {
         private String masterInteractionId;
         private HttpServletRequest request;
 
-        public OrchestrationSessionBuilder withSessionId(String sessionId) {
+        public OrchestrationSessionBuilder withSessionId(final String sessionId) {
             this.sessionId = sessionId;
             return this;
         }
 
-        public OrchestrationSessionBuilder withDevice(Device device) {
+        public OrchestrationSessionBuilder withDevice(final Device device) {
             this.device = device;
             return this;
         }
 
-        public OrchestrationSessionBuilder withFile(MultipartFile file) {
+        public OrchestrationSessionBuilder withFile(final MultipartFile file) {
             this.file = file;
             return this;
         }
 
-        public OrchestrationSessionBuilder withMasterInteractionId(String masterInteractionId) {
+        public OrchestrationSessionBuilder withMasterInteractionId(final String masterInteractionId) {
             this.masterInteractionId = masterInteractionId;
             return this;
         }
 
-        public OrchestrationSessionBuilder withRequest(HttpServletRequest request) {
+        public OrchestrationSessionBuilder withRequest(final HttpServletRequest request) {
             this.request = request;
             return this;
         }
@@ -164,8 +165,8 @@ public class CsvOrchestrationEngine {
         private Map<String, Object> validationResults;
         HttpServletRequest request;
 
-        public OrchestrationSession(String sessionId, Device device, MultipartFile file, String masterInteractionId,
-                HttpServletRequest request) {
+        public OrchestrationSession(final String sessionId, final Device device, final MultipartFile file, final String masterInteractionId,
+                final HttpServletRequest request) {
             this.sessionId = sessionId;
             this.device = device;
             this.file = file;
@@ -197,12 +198,12 @@ public class CsvOrchestrationEngine {
         public void validate() {
             log.info("CsvOrchestrationEngine : validate - file : {} BEGIN for interaction id : {}" ,file.getOriginalFilename(), masterInteractionId);
             try {
-                Instant intiatedAt = Instant.now();
+                final Instant intiatedAt = Instant.now();
                 // TODO - DB CALL TO SAVE TO THE DB ARCHIVE FILE WITH masterInteractionId
-                String originalFilename = file.getOriginalFilename();
-                String uniqueFilename = masterInteractionId + "_"
+                final String originalFilename = file.getOriginalFilename();
+                final String uniqueFilename = masterInteractionId + "_"
                         + (originalFilename != null ? originalFilename : "upload.zip");
-                Path destinationPath = Path.of(appConfig.getCsv().validation().inboundPath(), uniqueFilename);
+                final Path destinationPath = Path.of(appConfig.getCsv().validation().inboundPath(), uniqueFilename);
                 Files.createDirectories(destinationPath.getParent());
 
                 // Save the uploaded file to the inbound folder
@@ -211,12 +212,12 @@ public class CsvOrchestrationEngine {
 
                 // Trigger CSV processing and validation
                 this.validationResults =  processScreenings(masterInteractionId,intiatedAt,originalFilename);
-            } catch (IllegalArgumentException e) {
+            } catch (final IllegalArgumentException e) {
                 log.error("Validation Error", e);
                 this.validationResults = Map.of(
                         "status", "Error",
                         "message", "Validation Error: " + e.getMessage());
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.error("Unexpected system error", e);
                 this.validationResults = Map.of(
                         "status", "Error",
@@ -224,21 +225,21 @@ public class CsvOrchestrationEngine {
             }
         }
 
-        private static Map<String, Object> createOperationOutcome(String interactionId,
-                String validationResults,
-                List<String> fileNames, HttpServletRequest request, long zipFileSize,Instant initiatedAt,Instant completedAt,String originalFileName) {
+        private static Map<String, Object> createOperationOutcome(final String interactionId,
+                final String validationResults,
+                final List<String> fileNames, final HttpServletRequest request, final long zipFileSize,final Instant initiatedAt,final Instant completedAt,final String originalFileName) throws Exception {
             // Populate provenance with additional details like user agent, device, and URI
-            Map<String, Object> provenance = populateProvenance(interactionId, fileNames, initiatedAt, completedAt,originalFileName);
+            final Map<String, Object> provenance = populateProvenance(interactionId, fileNames, initiatedAt, completedAt,originalFileName);
 
             // Get user agent and device details
-            String userAgent = request.getHeader("User-Agent");
-            Device device = Device.INSTANCE; // Assuming Device class returns device details
+            final String userAgent = request.getHeader("User-Agent");
+            final Device device = Device.INSTANCE; // Assuming Device class returns device details
 
             // Populate the outer map with additional details
             return Map.of(
                     "resourceType", "OperationOutcome",
                     "bundleSessionId", interactionId,
-                    "validationResults", List.of(validationResults),
+                    "validationResults", Configuration.objectMapper.readTree(validationResults),
                     "provenance", provenance,
                     "requestUri", request.getRequestURI(),
                     "zipFileSize", zipFileSize,
@@ -251,8 +252,8 @@ public class CsvOrchestrationEngine {
             );
         }
 
-        private static Map<String, Object> populateProvenance(String interactionId, List<String> fileNames,
-                Instant initiatedAt, Instant completedAt,String originalFileName) {
+        private static Map<String, Object> populateProvenance(final String interactionId, final List<String> fileNames,
+                final Instant initiatedAt, final Instant completedAt,final String originalFileName) {
             return Map.of(
                     "resourceType", "Provenance",
                     "recorded", ZonedDateTime.now().toString(),
@@ -278,16 +279,16 @@ public class CsvOrchestrationEngine {
                     "validatedFiles", fileNames);
         }
 
-        public Map<String, Object> processScreenings(String interactionId,Instant initiatedAt,String originalFileName) {
+        public Map<String, Object> processScreenings(final String interactionId,final Instant initiatedAt,final String originalFileName) {
             try {
                 log.debug("Inbound Folder Path: {}", appConfig.getCsv().validation().inboundPath());
                 log.debug("Ingress Home Path: {}", appConfig.getCsv().validation().ingessHomePath());
                 // Process ZIP files and get the session ID
-                UUID processId = processZipFilesFromInbound(interactionId);
+                final UUID processId = processZipFilesFromInbound(interactionId);
                 log.info("ZIP files processed with session ID: {}", processId);
 
                 // Construct processed directory path
-                String processedDirPath = appConfig.getCsv().validation().ingessHomePath() + "/" + processId
+                final String processedDirPath = appConfig.getCsv().validation().ingessHomePath() + "/" + processId
                         + "/ingress";
 
                 copyFilesToProcessedDir(processedDirPath);
@@ -295,7 +296,7 @@ public class CsvOrchestrationEngine {
                 log.info("Attempting to resolve processed directory: {}", processedDirPath);
 
                 // Get processed files for validation
-                FileObject processedDir = vfsCoreService
+                final FileObject processedDir = vfsCoreService
                         .resolveFile(Paths.get(processedDirPath).toAbsolutePath().toString());
 
                 if (!vfsCoreService.fileExists(processedDir)) {
@@ -304,7 +305,7 @@ public class CsvOrchestrationEngine {
                 }
 
                 // Collect CSV files for validation
-                List<String> csvFiles = scanForCsvFiles(processedDir);
+                final List<String> csvFiles = scanForCsvFiles(processedDir);
                 log.info("Found {} CSV files for validation", csvFiles.size());
 
                 if (csvFiles.isEmpty()) {
@@ -313,28 +314,28 @@ public class CsvOrchestrationEngine {
                 }
 
                 // Validate CSV files
-                String validationResults = validateCsvUsingPython(csvFiles, interactionId);
-                Instant completedAt = Instant.now();
+                final String validationResults = validateCsvUsingPython(csvFiles, interactionId);
+                final Instant completedAt = Instant.now();
                 return createOperationOutcome(interactionId, validationResults, csvFiles, request, file.getSize(),initiatedAt,completedAt,originalFileName);
 
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.error("Error in ZIP processing tasklet: {}", e.getMessage(), e);
                 throw new RuntimeException("Error processing ZIP files: " + e.getMessage(), e);
             }
         }
 
-        private void createOutputFileInProcessedDir(String processedDirPathStr) throws IOException {
-            Path processedDirPath = Paths.get(processedDirPathStr);
-            Path outputJsonPath = processedDirPath.resolve("output.json");
+        private void createOutputFileInProcessedDir(final String processedDirPathStr) throws IOException {
+            final Path processedDirPath = Paths.get(processedDirPathStr);
+            final Path outputJsonPath = processedDirPath.resolve("output.json");
             if (Files.notExists(outputJsonPath)) {
                 Files.createFile(outputJsonPath);
             }
         }
 
-        public void copyFilesToProcessedDir(String processedDirPathStr) throws IOException {
-            Path processedDirPath = Paths.get(processedDirPathStr);
-            Path pathToPythonExecutable = Paths.get(appConfig.getCsv().validation().packagePath());
-            Path pathToPythonScript = Paths.get(appConfig.getCsv().validation().pythonScriptPath());
+        public void copyFilesToProcessedDir(final String processedDirPathStr) throws IOException {
+            final Path processedDirPath = Paths.get(processedDirPathStr);
+            final Path pathToPythonExecutable = Paths.get(appConfig.getCsv().validation().packagePath());
+            final Path pathToPythonScript = Paths.get(appConfig.getCsv().validation().pythonScriptPath());
             if (Files.notExists(processedDirPath)) {
                 Files.createDirectories(processedDirPath);
             }
@@ -344,12 +345,12 @@ public class CsvOrchestrationEngine {
                     StandardCopyOption.REPLACE_EXISTING);
         }
 
-        private UUID processZipFilesFromInbound(String interactionId)
+        private UUID processZipFilesFromInbound(final String interactionId)
                 throws FileSystemException, org.apache.commons.vfs2.FileSystemException {
             log.info("CsvService : processZipFilesFromInbound - BEGIN for interactionId :{}" + interactionId);
-            FileObject inboundFO = vfsCoreService
+            final FileObject inboundFO = vfsCoreService
                     .resolveFile(Paths.get(appConfig.getCsv().validation().inboundPath()).toAbsolutePath().toString());
-            FileObject ingresshomeFO = vfsCoreService
+            final FileObject ingresshomeFO = vfsCoreService
                     .resolveFile(
                             Paths.get(appConfig.getCsv().validation().ingessHomePath()).toAbsolutePath().toString());
             if (!vfsCoreService.fileExists(inboundFO)) {
@@ -357,29 +358,29 @@ public class CsvOrchestrationEngine {
                 throw new FileSystemException("Inbound folder does not exist: " + inboundFO.getName().getPath());
             }
             vfsCoreService.validateAndCreateDirectories(ingresshomeFO);
-            VfsIngressConsumer consumer = vfsCoreService.createConsumer(
+            final VfsIngressConsumer consumer = vfsCoreService.createConsumer(
                     inboundFO,
                     this::extractGroupId,
                     this::isGroupComplete);
 
             // Important: Capture the returned session UUID and processed file paths
-            UUID processId = vfsCoreService.processFiles(consumer, ingresshomeFO);
+            final UUID processId = vfsCoreService.processFiles(consumer, ingresshomeFO);
             log.info("CsvService : processZipFilesFromInbound - BEGIN for interactionId :{}" + interactionId);
             return processId;
         }
 
-        private List<String> scanForCsvFiles(FileObject processedDir) throws FileSystemException {
-            List<String> csvFiles = new ArrayList<>();
+        private List<String> scanForCsvFiles(final FileObject processedDir) throws FileSystemException {
+            final List<String> csvFiles = new ArrayList<>();
 
             try {
-                FileObject[] children = processedDir.getChildren();
+                final FileObject[] children = processedDir.getChildren();
 
                 if (children == null) {
                     log.warn("No children found in processed directory: {}", processedDir.getName().getPath());
                     return csvFiles;
                 }
 
-                for (FileObject child : children) {
+                for (final FileObject child : children) {
                     // Enhanced null and extension checking
                     if (child != null
                             && child.getName() != null
@@ -392,7 +393,7 @@ public class CsvOrchestrationEngine {
                 if (csvFiles.isEmpty()) {
                     log.warn("No CSV files found in directory: {}", processedDir.getName().getPath());
                 }
-            } catch (org.apache.commons.vfs2.FileSystemException e) {
+            } catch (final org.apache.commons.vfs2.FileSystemException e) {
                 log.error("Error collecting CSV files from directory {}: {}",
                         processedDir.getName().getPath(), e.getMessage(), e);
             }
@@ -450,11 +451,11 @@ public class CsvOrchestrationEngine {
         // return validationResults;
         // }
 
-        public String validateCsvUsingPython(List<String> filePaths, String interactionId)
+        public String validateCsvUsingPython(final List<String> filePaths, final String interactionId)
                 throws Exception {
             log.info("CsvService : validateCsvUsingPython BEGIN for interactionId :{} " + interactionId);
             try {
-                var config = appConfig.getCsv().validation();
+                final var config = appConfig.getCsv().validation();
                 if (config == null) {
                     throw new IllegalStateException("CSV validation configuration is null");
                 }
@@ -466,10 +467,10 @@ public class CsvOrchestrationEngine {
                 }
 
                 // Ensure the files exist and are valid using VFS before running the validation
-                List<FileObject> fileObjects = new ArrayList<>();
-                for (String filePath : filePaths) {
+                final List<FileObject> fileObjects = new ArrayList<>();
+                for (final String filePath : filePaths) {
                     log.info("Validating file: {}", filePath);
-                    FileObject file = vfsCoreService.resolveFile(filePath);
+                    final FileObject file = vfsCoreService.resolveFile(filePath);
                     if (!vfsCoreService.fileExists(file)) {
                         log.error("File not found: {}", filePath);
                         throw new FileNotFoundException("File not found: " + filePath);
@@ -481,19 +482,19 @@ public class CsvOrchestrationEngine {
                 vfsCoreService.validateAndCreateDirectories(fileObjects.toArray(new FileObject[0]));
 
                 // Build command to run Python script
-                List<String> command = buildValidationCommand(config, filePaths);
+                final List<String> command = buildValidationCommand(config, filePaths);
 
                 log.info("Executing validation command: {}", String.join(" ", command));
 
-                ProcessBuilder processBuilder = new ProcessBuilder();
+                final ProcessBuilder processBuilder = new ProcessBuilder();
                 processBuilder.command(command);
                 processBuilder.redirectErrorStream(true);
 
-                Process process = processBuilder.start();
+                final Process process = processBuilder.start();
 
                 // Capture and handle output/error streams
-                StringBuilder output = new StringBuilder();
-                StringBuilder errorOutput = new StringBuilder();
+                final StringBuilder output = new StringBuilder();
+                final StringBuilder errorOutput = new StringBuilder();
 
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String line;
@@ -511,7 +512,7 @@ public class CsvOrchestrationEngine {
                     }
                 }
 
-                int exitCode = process.waitFor();
+                final int exitCode = process.waitFor();
                 if (exitCode != 0) {
                     log.error("Python script execution failed. Exit code: {}, Error: {}",
                             exitCode, errorOutput.toString());
@@ -528,14 +529,14 @@ public class CsvOrchestrationEngine {
             }
         }
 
-        private List<String> buildValidationCommand(AppConfig.CsvValidation.Validation config, List<String> filePaths) {
-            List<String> command = new ArrayList<>();
+        private List<String> buildValidationCommand(final AppConfig.CsvValidation.Validation config, final List<String> filePaths) {
+            final List<String> command = new ArrayList<>();
             var pythonScriptPath = "";
             var packagePath = "";
             var outputJsonPath = "";
             if (!CollectionUtils.isEmpty(filePaths)) {
-                Path path = Paths.get(filePaths.get(0));
-                Path parentPath = path.getParent();
+                final Path path = Paths.get(filePaths.get(0));
+                final Path parentPath = path.getParent();
                 pythonScriptPath = parentPath.resolve("validate-nyher-fhir-ig-equivalent-j.py").toString();
                 packagePath = parentPath.resolve("datapackage-nyher-fhir-ig-equivalent.json").toString();
                 outputJsonPath = parentPath.resolve("datapackage-nyher-fhir-ig-equivalent.json").toString();
@@ -559,13 +560,13 @@ public class CsvOrchestrationEngine {
             return command;
         }
 
-        private String extractGroupId(FileObject file) {
-            String fileName = file.getName().getBaseName();
-            var matcher = FILE_PATTERN.matcher(fileName);
+        private String extractGroupId(final FileObject file) {
+            final String fileName = file.getName().getBaseName();
+            final var matcher = FILE_PATTERN.matcher(fileName);
             return matcher.matches() ? matcher.group(2) : null;
         }
 
-        private boolean isGroupComplete(VfsIngressConsumer.IngressGroup group) {
+        private boolean isGroupComplete(final VfsIngressConsumer.IngressGroup group) {
             if (group == null || group.groupedEntries().isEmpty()) {
                 return false;
             }
@@ -575,8 +576,8 @@ public class CsvOrchestrationEngine {
             boolean hasScreening = false;
             // please add other files also according to command
 
-            for (VfsIngressConsumer.IngressIndividual entry : group.groupedEntries()) {
-                String fileName = entry.entry().getName().getBaseName();
+            for (final VfsIngressConsumer.IngressIndividual entry : group.groupedEntries()) {
+                final String fileName = entry.entry().getName().getBaseName();
                 if (fileName.startsWith("DEMOGRAPHIC_DATA")) {
                     hasDemographic = true;
                 } else if (fileName.startsWith("QE_ADMIN_DATA")) {
@@ -590,7 +591,7 @@ public class CsvOrchestrationEngine {
             // please add the other files according to the command
         }
 
-        private String getBundleInteractionId(HttpServletRequest request) {
+        private String getBundleInteractionId(final HttpServletRequest request) {
             return InteractionsFilter.getActiveRequestEnc(request).requestId()
                     .toString();
         }
