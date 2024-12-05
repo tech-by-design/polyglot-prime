@@ -7,13 +7,16 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.lang.NonNull;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -202,6 +205,44 @@ public class Interactions {
         public RequestResponseEncountered(RequestEncountered request, ResponseEncountered response) {
             this(request.requestId(), request.tenant(), request, response);
         }
+    }
+    public static void setUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
+        var curUserName = "API_USER";
+        var gitHubLoginId = "N/A";
+        final var sessionId = request.getRequestedSessionId();
+        var userRole = "API_ROLE";
+        final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
+        if (curUser.isPresent()) {
+            final var ghUser = curUser.get().ghUser();
+            if (ghUser != null) {
+                curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
+                gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
+                userRole = curUser.get().principal().getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.joining(","));
+                userRole = "DEFAULT_ROLE"; // TODO -set user role
+            }
+        }
+        rihr.setUserName(curUserName);
+        rihr.setUserId(gitHubLoginId);
+        rihr.setUserSession(sessionId);
+        rihr.setUserRole(userRole);
+    }
+
+    public static void setActiveInteraction(final @NonNull HttpServletRequest request,
+            final @NonNull Interactions.RequestResponseEncountered rre) {
+        request.setAttribute("activeHttpInteraction", rre);
+    }
+
+    public static void setActiveRequestEnc(final @NonNull HttpServletRequest request,
+            final @NonNull Interactions.RequestEncountered re) {
+        request.setAttribute("activeHttpRequestEncountered", re);
+        setActiveRequestTenant(request, re.tenant());
+    }
+
+    public static final void setActiveRequestTenant(final @NonNull HttpServletRequest request,
+            final @NonNull Interactions.Tenant tenant) {
+        request.setAttribute("activeHttpRequestTenant", tenant);
     }
 
 }
