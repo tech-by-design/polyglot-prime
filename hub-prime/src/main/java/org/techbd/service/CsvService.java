@@ -33,7 +33,7 @@ public class CsvService {
    @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
     private boolean saveUserDataToInteractions;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
-    
+
     public CsvService ( final CsvOrchestrationEngine engine,final UdiPrimeJpaConfig udiPrimeJpaConfig) {
         this.engine =engine;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
@@ -87,7 +87,7 @@ public class CsvService {
             initRIHR.setCsvZipFileName(file.getOriginalFilename());
             initRIHR.setCreatedAt(forwardedAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
-            final var provenance = "%s.CsvService.saveArchiveInteraction".formatted(CsvService.class.getName());
+            final var provenance = "%s.saveArchiveInteraction".formatted(CsvService.class.getName());
             initRIHR.setProvenance(provenance);
             initRIHR.setCsvGroupId(interactionId);
             if (saveUserDataToInteractions) {
