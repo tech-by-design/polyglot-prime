@@ -74,6 +74,6 @@ public class CsvController {
                         log.error("CsvController: handleCsvUpload:: Tenant ID is missing or empty");
                         throw new IllegalArgumentException("Tenant ID must be provided");
                 }
-                return csvService.validateCsvFile(file,request);
+                return csvService.validateCsvFile(file,request, response, tenantId);
         }
 }
