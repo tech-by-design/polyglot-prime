@@ -49,9 +49,9 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 5MB
-      max-request-size: 5MB          
-
+      max-file-size: 10MB
+      max-request-size: 10MB
+      file-size-threshold: 2MB
 springdoc:
   api-docs:
     path: /docs/api/openapi
@@ -68,6 +68,7 @@ server:
         secure: true
         http-only: true
         same-site: LAX
+      timeout: 60m
 
 org:
   techbd:

@@ -206,7 +206,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
         if (persistInteractionDB && !requestURI.equals("/Bundle") && !requestURI.equals("/Bundle/")
         && !requestURI.equals("/Hl7/v2")  && !requestURI.equals("/Hl7/v2/")
-        && !requestURI.equals("/flatfile/csv")  && !requestURI.equals("/flatfile/csv/")
+        && !requestURI.startsWith("/flatfile/csv")  && !requestURI.startsWith("/flatfile/csv/")
         ) {
             final var rihr = new RegisterInteractionHttpRequest();
             try {

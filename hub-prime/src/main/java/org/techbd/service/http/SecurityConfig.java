@@ -2,6 +2,8 @@ package org.techbd.service.http;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -29,6 +31,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @Profile("!localopen")
 public class SecurityConfig {
 
+    private static final Logger LOG = LoggerFactory.getLogger(SecurityConfig.class.getName());
+
     @Autowired
     private GitHubUserAuthorizationFilter authzFilter;
 
@@ -42,34 +46,45 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
         // allow authentication for security
         // and turn off CSRF to allow POST methods
-        http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**", "/flatfile/csv/Bundle","/flatfile/csv/Bundle/**","/Hl7/v2", "/Hl7/v2/", "/metadata",
-                        "/api/expect/**",
-                        "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**",
-                        "/docs/api/openapi/**",
-                        "/error", "/error/**")
-                .permitAll()
-                .anyRequest().authenticated())
-                .oauth2Login(oauth2Login -> oauth2Login
-                .successHandler(gitHubLoginSuccessHandler())
-                .defaultSuccessUrl("/home")
-                .loginPage("/login"))
-                .logout(logout -> logout
-                .deleteCookies("JSESSIONID")
-                .logoutSuccessUrl("/")
-                .invalidateHttpSession(true)
-                .permitAll())
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(sessionManagement -> sessionManagement
-                .invalidSessionUrl("/?timeout=true")
+        http
+                .authorizeHttpRequests(
+                        authorize -> authorize
+                                .requestMatchers("/login/**", "/oauth2/**", "/", "/Bundle", "/Bundle/**",  "/flatfile/csv/Bundle","/flatfile/csv/Bundle/**","/Hl7/v2", "/Hl7/v2/", "/metadata",
+                                        "/api/expect/**",
+                                        "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**",
+                                        "/docs/api/openapi/**",
+                                        "/error", "/error/**")
+                                .permitAll()
+                                .anyRequest().authenticated()
                 )
+                .oauth2Login(
+                        oauth2Login -> oauth2Login
+                                .successHandler(gitHubLoginSuccessHandler())
+                                .defaultSuccessUrl("/home")
+                                .loginPage("/login")
+                )
+                .logout(
+                        logout -> logout
+                                .deleteCookies("JSESSIONID")
+                                .logoutSuccessUrl("/")
+                                .invalidateHttpSession(true)
+                                .permitAll()
+                )
+                .csrf(AbstractHttpConfigurer::disable)
+                // .sessionManagement(
+                //         sessionManagement -> sessionManagement
+                //                 .invalidSessionUrl("/?timeout=true")
+                //                 //.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) //TODO As this method is not working, remove it.
+                // )
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
             headers.frameOptions(frameOptions -> frameOptions.sameOrigin());
-            headers.httpStrictTransportSecurity(hsts -> hsts
-                    .includeSubDomains(true)
-                    .maxAgeInSeconds(31536000)); // Enable HSTS for 1 year
+            headers.httpStrictTransportSecurity(
+                    hsts -> hsts
+                            .includeSubDomains(true)
+                            .maxAgeInSeconds(31536000)
+            ); // Enable HSTS for 1 year
         });
         return http.build();
     }

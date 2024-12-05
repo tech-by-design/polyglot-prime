@@ -453,5 +453,65 @@
     "name": "org.techbd.service.http.hub.prime.igPackages.fhir-v4.uvSdc",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.igPackages.fhir-v4.uvSdc'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.csv.validation.python-script-path",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.csv.validation.python-script-path'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.csv.validation.python-executable",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.csv.validation.python-executable'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.csv.validation.package-path",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.csv.validation.package-path'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.csv.validation.inboundPath",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.csv.validation.inboundPath'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.csv.validation.ingessHomePath",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.csv.validation.ingessHomePath'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.csv.validation.outputPath",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.csv.validation.outputPath'"
+  },
+  {
+    "name": "org.techbd.service.hub.prime.csv.validation.python-script-path",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.hub.prime.csv.validation.python-script-path'"
+  },
+  {
+    "name": "org.techbd.service.hub.prime.csv.validation.pythonExecutable",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.hub.prime.csv.validation.pythonExecutable'"
+  },
+  {
+    "name": "org.techbd.service.hub.prime.csv.validation.packagePath",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.hub.prime.csv.validation.packagePath'"
+  },
+  {
+    "name": "org.techbd.service.hub.prime.csv.validation.inboundPath",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.hub.prime.csv.validation.inboundPath'"
+  },
+  {
+    "name": "org.techbd.service.hub.prime.csv.validation.outputPath",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.hub.prime.csv.validation.outputPath'"
+  },
+  {
+    "name": "org.techbd.service.hub.prime.csv.validation.ingessHomePath",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.hub.prime.csv.validation.ingessHomePath'"
   }
 ]}
