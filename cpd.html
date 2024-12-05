@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-12-05<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.366.0</li>
+          <li id="projectVersion">Version: 0.367.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -72,10 +72,10 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/Interactions.java</td>
-<td>100</td></tr>
+<td>103</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/Interactions.java</td>
-<td>127</td></tr>
+<td>130</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>UUID.randomUUID(),
@@ -239,6 +239,35 @@
             }
         } catch (final Exception e) {
             return Health.down(e).withDetail(&quot;Error&quot;, &quot;Bundle endpoint is not responding correctly&quot;).build();</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/Interactions.java</td>
+<td>209</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>340</td></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
+<td>196</td></tr>
+<tr class="a">
+<td colspan="2" style="text-align: left;">
+<pre>public static void setUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
+        var curUserName = &quot;API_USER&quot;;
+        var gitHubLoginId = &quot;N/A&quot;;
+        final var sessionId = request.getRequestedSessionId();
+        var userRole = &quot;API_ROLE&quot;;
+        final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
+        if (curUser.isPresent()) {
+            final var ghUser = curUser.get().ghUser();
+            if (ghUser != null) {
+                curUserName = Optional.ofNullable(ghUser.name()).orElse(&quot;NO_DATA&quot;);
+                gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse(&quot;NO_DATA&quot;);
+                userRole = curUser.get().principal().getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.joining(&quot;,&quot;));</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>

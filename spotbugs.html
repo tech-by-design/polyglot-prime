@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-12-05<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.366.0</li>
+          <li id="projectVersion">Version: 0.367.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>284</td>
-<td>24</td>
+<td>286</td>
+<td>26</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -92,28 +92,34 @@
 <td><a href="#lib.aide.tabular.JooqRowsSupplier">lib.aide.tabular.JooqRowsSupplier</a></td>
 <td>1</td></tr>
 <tr class="b">
+<td><a href="#org.techbd.orchestrate.csv.CsvOrchestrationEngine">org.techbd.orchestrate.csv.CsvOrchestrationEngine</a></td>
+<td>1</td></tr>
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession</a></td>
 <td>3</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine">org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder</a></td>
 <td>3</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.PostPopulateSupport">org.techbd.orchestrate.fhir.PostPopulateSupport</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.PrePopulateSupport">org.techbd.orchestrate.fhir.PrePopulateSupport</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.util.FileUtils">org.techbd.orchestrate.fhir.util.FileUtils</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.converters.shinny.BaseConverter">org.techbd.service.converters.shinny.BaseConverter</a></td>
+<td>1</td></tr>
+<tr class="a">
+<td><a href="#org.techbd.service.http.Interactions">org.techbd.service.http.Interactions</a></td>
 <td>1</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.http.InteractionsFilter">org.techbd.service.http.InteractionsFilter</a></td>
@@ -145,6 +151,20 @@
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SF_SWITCH_NO_DEFAULT">SF_SWITCH_NO_DEFAULT</a></td>
 <td>322</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.csv.CsvOrchestrationEngine"></a><section>
+<h2>org.techbd.orchestrate.csv.CsvOrchestrationEngine</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Possible null pointer dereference in org.techbd.orchestrate.csv.CsvOrchestrationEngine.processFiles(List) due to return value of called method</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
+<td>777</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
@@ -158,19 +178,19 @@
 <td>Found reliance on default encoding in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.validateCsvUsingPython(List, String): new java.io.InputStreamReader(InputStream)</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>498</td>
+<td>670</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Possible null pointer dereference in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.buildValidationCommand(AppConfig$CsvValidation$Validation, List) due to return value of called method</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
-<td>539</td>
+<td>712</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Possible null pointer dereference in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.validate() due to return value of called method</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
-<td>207</td>
+<td>231</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</h2>
 <table class="table table-striped">
@@ -287,7 +307,21 @@
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_SHOULD_BE_FINAL">MS_SHOULD_BE_FINAL</a></td>
 <td>13</td>
-<td>High</td></tr></table></section><a name="org.techbd.service.http.InteractionsFilter"></a><section>
+<td>High</td></tr></table></section><a name="org.techbd.service.http.Interactions"></a><section>
+<h2>org.techbd.service.http.Interactions</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Method org.techbd.service.http.Interactions.setActiveRequestEnc(HttpServletRequest, Interactions$RequestEncountered) seems to be useless</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UC_USELESS_VOID_METHOD">UC_USELESS_VOID_METHOD</a></td>
+<td>241</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.http.InteractionsFilter"></a><section>
 <h2>org.techbd.service.http.InteractionsFilter</h2>
 <table class="table table-striped">
 <tr class="a">

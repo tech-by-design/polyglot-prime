@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-12-05<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.366.0</li>
+          <li id="projectVersion">Version: 0.367.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -73,9 +73,9 @@
 <th><img src="images/icon_warning_sml.gif" />&#160;Warnings</th>
 <th><img src="images/icon_error_sml.gif" />&#160;Errors</th></tr>
 <tr class="b">
-<td style="text-align: left;">23</td>
+<td style="text-align: left;">25</td>
 <td>0</td>
-<td>110</td>
+<td>114</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -135,12 +135,22 @@
 <td>1</td>
 <td>0</td></tr>
 <tr class="b">
+<td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2FCsvService.java">org/techbd/service/CsvService.java</a></td>
+<td>0</td>
+<td>3</td>
+<td>0</td></tr>
+<tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fconverters.2Fshinny.2FHl7FHIRToShinnyFHIRConverter.java">org/techbd/service/converters/shinny/Hl7FHIRToShinnyFHIRConverter.java</a></td>
 <td>0</td>
 <td>6</td>
 <td>0</td></tr>
-<tr class="a">
+<tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fconverters.2Fshinny.2FPatientConverter.java">org/techbd/service/converters/shinny/PatientConverter.java</a></td>
+<td>0</td>
+<td>1</td>
+<td>0</td></tr>
+<tr class="a">
+<td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fhttp.2FInteractions.java">org/techbd/service/http/Interactions.java</a></td>
 <td>0</td>
 <td>1</td>
 <td>0</td></tr>
@@ -241,7 +251,7 @@
 <tr class="a">
 <td style="text-align: left;">indentation</td>
 <td><a class="externalLink" href="https://checkstyle.org/config_indentation.html#CommentsIndentation">CommentsIndentation</a></td>
-<td>6</td>
+<td>5</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="b">
 <td style="text-align: left;">modifier</td>
@@ -278,23 +288,33 @@
 <li>allowNoEmptyLineBetweenFields: <code>&quot;true&quot;</code></li>
 <li>allowMultipleEmptyLines: <code>&quot;false&quot;</code></li>
 <li>allowMultipleEmptyLinesInsideClassMembers: <code>&quot;false&quot;</code></li></ul></td>
-<td>11</td>
+<td>15</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#MethodParamPad">MethodParamPad</a></td>
+<td>1</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="b">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#NoWhitespaceBefore">NoWhitespaceBefore</a>
 <ul>
 <li>tokens: <code>&quot;COMMA, SEMI, POST_INC, POST_DEC, DOT, ELLIPSIS, METHOD_REF&quot;</code></li>
 <li>allowLineBreaks: <code>&quot;true&quot;</code></li></ul></td>
-<td>4</td>
+<td>3</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
-<tr class="b">
+<tr class="a">
 <td style="text-align: left;"></td>
 <td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#OperatorWrap">OperatorWrap</a>
 <ul>
 <li>tokens: <code>&quot;BAND, BOR, BSR, BXOR, DIV, EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF, LOR,                     LT, MINUS, MOD, NOT_EQUAL, PLUS, QUESTION, SL, SR, STAR, METHOD_REF &quot;</code></li>
 <li>option: <code>&quot;NL&quot;</code></li></ul></td>
 <td>49</td>
+<td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
+<tr class="b">
+<td style="text-align: left;"></td>
+<td><a class="externalLink" href="https://checkstyle.org/config_whitespace.html#ParenPad">ParenPad</a></td>
+<td>1</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr>
 <tr class="a">
 <td style="text-align: left;"></td>
@@ -630,33 +650,33 @@
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
-<td>WhitespaceAround</td>
-<td>WhitespaceAround: '=' is not followed by whitespace. Empty blocks may only be represented as {} when not part of a multi-block statement (4.1.3)</td>
-<td>135</td></tr>
+<td>EmptyLineSeparator</td>
+<td>'METHOD_DEF' should be separated from previous line.</td>
+<td>122</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
-<td>NoWhitespaceBefore</td>
-<td>',' is preceded with whitespace.</td>
-<td>199</td></tr>
+<td>EmptyLineSeparator</td>
+<td>'METHOD_DEF' should be separated from previous line.</td>
+<td>126</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>indentation</td>
-<td>CommentsIndentation</td>
-<td>Comment has incorrect indentation level 28, expected is 20, indentation should be the same level as line 275.</td>
-<td>274</td></tr>
+<td>whitespace</td>
+<td>EmptyLineSeparator</td>
+<td>'METHOD_DEF' should be separated from previous line.</td>
+<td>498</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
 <td>OperatorWrap</td>
 <td>'+' should be on a new line.</td>
-<td>518</td></tr>
+<td>690</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>indentation</td>
 <td>CommentsIndentation</td>
-<td>Comment has incorrect indentation level 42, expected is 16, indentation should be the same level as line 553.</td>
-<td>552</td></tr></table></section><section>
+<td>Comment has incorrect indentation level 42, expected is 16, indentation should be the same level as line 726.</td>
+<td>725</td></tr></table></section><section>
 <h3>org/techbd/orchestrate/fhir/OrchestrationEngine.java</h3><a id="org.2Ftechbd.2Forchestrate.2Ffhir.2FOrchestrationEngine.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -745,6 +765,32 @@
 <td>SeparatorWrap</td>
 <td>',' should be on the previous line.</td>
 <td>13</td></tr></table></section><section>
+<h3>org/techbd/service/CsvService.java</h3><a id="org.2Ftechbd.2Fservice.2FCsvService.java"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>Severity</th>
+<th>Category</th>
+<th>Rule</th>
+<th>Message</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>ParenPad</td>
+<td>'(' is followed by whitespace.</td>
+<td>37</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>MethodParamPad</td>
+<td>'(' is preceded with whitespace.</td>
+<td>37</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>WhitespaceAround</td>
+<td>WhitespaceAround: '=' is not followed by whitespace. Empty blocks may only be represented as {} when not part of a multi-block statement (4.1.3)</td>
+<td>38</td></tr></table></section><section>
 <h3>org/techbd/service/converters/shinny/Hl7FHIRToShinnyFHIRConverter.java</h3><a id="org.2Ftechbd.2Fservice.2Fconverters.2Fshinny.2FHl7FHIRToShinnyFHIRConverter.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -803,6 +849,20 @@
 <td>WhitespaceAround</td>
 <td>WhitespaceAround: '{' is not preceded with whitespace.</td>
 <td>9</td></tr></table></section><section>
+<h3>org/techbd/service/http/Interactions.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2FInteractions.java"></a>
+<table class="table table-striped">
+<tr class="a">
+<th>Severity</th>
+<th>Category</th>
+<th>Rule</th>
+<th>Message</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>EmptyLineSeparator</td>
+<td>'METHOD_DEF' should be separated from previous line.</td>
+<td>209</td></tr></table></section><section>
 <h3>org/techbd/service/http/OpenTelemetryProperties.java</h3><a id="org.2Ftechbd.2Fservice.2Fhttp.2FOpenTelemetryProperties.java"></a>
 <table class="table table-striped">
 <tr class="a">
