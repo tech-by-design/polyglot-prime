@@ -38,9 +38,7 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
         missing_files = {key: path for key, path in file_mappings.items() if not os.path.isfile(path)}
         if missing_files:
             for resource_name, file_path in missing_files.items():
-                results["errorsSummary"].append({
-                    "rowNumber": None,
-                    "fieldNumber": None,
+                results["errorsSummary"].append({                                       
                     "fieldName": resource_name,
                     "message": f"File for resource '{resource_name}' not found: {file_path}",
                     "type": "file-missing-error"
@@ -50,10 +48,12 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
             print(json.dumps(results, indent=4))
             return  # Skip Frictionless validation
         
-        # # Parse CSV files into JSON format using `extract` and store in results["originalData"]
-        for resource_name, file_path in file_mappings.items():
-            rows = extract(file_path)  # Extract data from CSV
-            results["originalData"][resource_name] = rows
+                # Only extract data if there are no errors in the summary
+        if not results["errorsSummary"]:
+            # Parse CSV files into JSON format using `extract` and store in results["originalData"]
+            for resource_name, file_path in file_mappings.items():
+                rows = extract(file_path)  # Extract data from CSV
+                results["originalData"][resource_name] = rows
 
         # Parse CSV files into JSON format and store in results["originalData"]
         # for resource_name, file_path in file_mappings.items():
@@ -151,27 +151,27 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
         results["report"] = report.to_dict()
 
     except FileNotFoundError as e:
-        results["errorsSummary"].append({
-            "rowNumber": None,
-            "fieldNumber": None,
+        results["errorsSummary"].append({                        
             "fieldName": None,
             "message": str(e),
             "type": "file-missing-error"
         })
 
     except Exception as e:
-        results["errorsSummary"].append({
-            "rowNumber": None,
-            "fieldNumber": None,
+        results["errorsSummary"].append({                        
             "fieldName": None,
             "message": str(e),
             "type": "unexpected-error"
         })
 
-    # Write the results to a JSON file
-    with open(output_path, 'w') as json_file: 
-        json.dump(results, json_file, indent=4, default=custom_json_encoder)
-    #print(json.dumps(results, indent=4, default=custom_json_encoder))
+    # Write the results to a JSON file if output_path is provided, otherwise print to console
+    if output_path:
+        with open(output_path, 'w') as json_file:
+            json.dump(results, json_file, indent=4, default=custom_json_encoder)
+        print(f"Validation results written to '{output_path}'.")
+    else:
+        print(json.dumps(results, indent=4, default=custom_json_encoder))
+
 
 
 if __name__ == "__main__":
@@ -180,19 +180,15 @@ if __name__ == "__main__":
         "errorsSummary": [],
         "report": None
     }
-    # print(len(sys.argv))
+
     # Check for the correct number of arguments
-    if len(sys.argv) != 10: 
-        error_message = "Invalid number of arguments. Please provide the following arguments: <spec_path> <file1> <file2> <file3> <file4> <file5> <file6> <file7> <output_path>"
-        results["errorsSummary"].append({
-        "rowNumber": None,
-        "fieldNumber": None,
+    if len(sys.argv) < 9 or len(sys.argv) > 10: 
+        error_message = "Invalid number of arguments. Please provide the following arguments: <spec_path> <file1> <file2> <file3> <file4> <file5> <file6> <file7> [output_path]"
+        results["errorsSummary"].append({                
         "fieldName": None,
         "message": error_message,
         "type": "argument-error"
         })
-        # with open("output.json", 'w') as json_file:
-        #     json.dump(results, json_file, indent=4)
         print(json.dumps(results, indent=4))
         sys.exit(1)
 
@@ -205,25 +201,22 @@ if __name__ == "__main__":
     file5 = sys.argv[6]
     file6 = sys.argv[7]
     file7 = sys.argv[8]
-    output_path = sys.argv[9] if len(sys.argv) > 9 else "output.json"
+    output_path = sys.argv[9] if len(sys.argv) > 9 else None  # Allow no output_path
 
-    # Check if output path is valid
-    if not output_path.endswith('.json'):
-        print(f"Warning: Provided output path '{output_path}' is not a valid JSON file. Defaulting to 'output.json'.")
-        output_path = "output.json"
+    # Validate and adjust output_path
+    if output_path:  # If output_path is provided
+        if not output_path.endswith('.json'):
+            print(f"Warning: Provided output path '{output_path}' is not a valid JSON file. Defaulting to 'output.json'.")
+            output_path = "output.json"
 
     # Check if the paths exist
     if not os.path.isfile(spec_path):
         error_message = f"Error: Specification file '{spec_path}' not found."
-        results["errorsSummary"].append({
-            "rowNumber": None,
-            "fieldNumber": None,
+        results["errorsSummary"].append({                       
             "fieldName": None,
             "message": error_message,
             "type": "file-missing-error"
-        })
-        # with open(output_path, 'w') as json_file:
-        #     json.dump(results, json_file, indent=4) 
+        }) 
         print(json.dumps(results, indent=4))
         sys.exit(1)        
 
