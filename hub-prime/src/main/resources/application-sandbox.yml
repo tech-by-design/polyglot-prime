@@ -11,7 +11,7 @@ org:
               validation:
                 pythonScriptPath: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:src/main/resources/csv/validate-nyher-fhir-ig-equivalent.py}
                 pythonExecutable: ${TECHBD_CSV_PYTHON_EXECUTABLE:python3}
-                packagePath: ${TECHBD_CSV_PACKAGE_PATH:../support/specifications/datapackage-nyher-fhir-ig-equivalent.json}
+                packagePath: ${TECHBD_CSV_PACKAGE_PATH:../support/specifications/flat-file/datapackage-nyher-fhir-ig-equivalent.json}
                 inboundPath: ${TECHBD_CSV_INBOUND_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/inbound
                 outputPath: ${TECHBD_CSV_INBOUND_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/outbound
                 ingessHomePath: ${TECHBD_CSV_INGRESS_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/ingress
