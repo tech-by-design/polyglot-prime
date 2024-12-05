@@ -39,8 +39,8 @@ public class CsvService {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
     
-    public Object validateCsvFile(MultipartFile file, HttpServletRequest request, HttpServletResponse response,
-            String tenantId) throws Exception {
+    public Object validateCsvFile(final MultipartFile file, final HttpServletRequest request, final HttpServletResponse response,
+            final String tenantId) throws Exception {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final var dslContext = udiPrimeJpaConfig.dsl();
@@ -49,12 +49,13 @@ public class CsvService {
             session = engine.session()
                     .withMasterInteractionId(getBundleInteractionId(request))
                     .withSessionId(UUID.randomUUID().toString())
+                    .withTenantId(tenantId)
                     .withFile(file)
                     .withRequest(request)
                     .build();
             engine.orchestrate(session);
             return session.getValidationResults();
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             LOG.error("Exception while processing file : {} ", file.getOriginalFilename(), ex);
         } finally {
             if (null == session) {
@@ -64,13 +65,13 @@ public class CsvService {
         return null;
     }
 
-    private String getBundleInteractionId(HttpServletRequest request) {
+    private String getBundleInteractionId(final HttpServletRequest request) {
         return InteractionsFilter.getActiveRequestEnc(request).requestId()
                 .toString();
     }
     
-    private void saveArchiveInteraction(org.jooq.Configuration jooqCfg, HttpServletRequest request, MultipartFile file,
-            String tenantId) {
+    private void saveArchiveInteraction(final org.jooq.Configuration jooqCfg, final HttpServletRequest request, final MultipartFile file,
+            final String tenantId) {
         final var interactionId = getBundleInteractionId(request);
         LOG.info("REGISTER State NONE : BEGIN for inteaction id  : {} tenant id : {}",
                 interactionId, tenantId);
@@ -101,7 +102,7 @@ public class CsvService {
                             + execResult,
                     interactionId, tenantId,
                     Duration.between(start, end).toMillis());
-        } catch (Exception e) {
+        } catch (final Exception e) {
             LOG.error("ERROR:: REGISTER State NONE CALL for interaction id : {} tenant id : {}"
                     + initRIHR.getName() + " initRIHR error", interactionId,
                     tenantId,

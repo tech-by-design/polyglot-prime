@@ -45,6 +45,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
+import io.swagger.v3.core.util.Json;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import lib.aide.vfs.VfsIngressConsumer;
@@ -64,7 +65,7 @@ public class CsvOrchestrationEngine {
             "(DEMOGRAPHIC_DATA|QE_ADMIN_DATA|SCREENING)_(.+)");
 
     public CsvOrchestrationEngine(final AppConfig appConfig, final VfsCoreService vfsCoreService,
-    final UdiPrimeJpaConfig udiPrimeJpaConfig) {
+            final UdiPrimeJpaConfig udiPrimeJpaConfig) {
         this.sessions = new ArrayList<>();
         this.appConfig = appConfig;
         this.vfsCoreService = vfsCoreService;
@@ -108,6 +109,7 @@ public class CsvOrchestrationEngine {
      */
     public class OrchestrationSessionBuilder {
         private String sessionId;
+        private String tenantId;
         private Device device;
         private MultipartFile file;
         private String masterInteractionId;
@@ -117,7 +119,10 @@ public class CsvOrchestrationEngine {
             this.sessionId = sessionId;
             return this;
         }
-
+        public OrchestrationSessionBuilder withTenantId(final String tenantId) {
+            this.tenantId = tenantId;
+            return this;
+        }
         public OrchestrationSessionBuilder withDevice(final Device device) {
             this.device = device;
             return this;
@@ -148,7 +153,7 @@ public class CsvOrchestrationEngine {
             if (file == null) {
                 throw new IllegalArgumentException("File must not be null");
             }
-            return new OrchestrationSession(sessionId, device, file, masterInteractionId, request);
+            return new OrchestrationSession(sessionId, tenantId,device, file, masterInteractionId, request);
         }
     }
 
@@ -175,13 +180,14 @@ public class CsvOrchestrationEngine {
         private final MultipartFile file;
         private Map<String, Object> validationResults;
         private String tenantId;
-        
+
         HttpServletRequest request;
 
-        public OrchestrationSession(final String sessionId, final Device device, final MultipartFile file,
+        public OrchestrationSession(final String sessionId,final String tenantId,final Device device, final MultipartFile file,
                 final String masterInteractionId,
                 final HttpServletRequest request) {
             this.sessionId = sessionId;
+            this.tenantId = tenantId;
             this.device = device;
             this.file = file;
             this.validationResults = new HashMap<>();
@@ -192,6 +198,7 @@ public class CsvOrchestrationEngine {
         public String getSessionId() {
             return sessionId;
         }
+
         public String getTenantId() {
             return sessionId;
         }
@@ -228,8 +235,8 @@ public class CsvOrchestrationEngine {
                 log.info("File saved to: {}", destinationPath);
 
                 // Trigger CSV processing and validation
-                this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename,tenantId);
-
+                this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
+                saveValidationResults(this.validationResults,tenantId);
             } catch (final IllegalArgumentException e) {
                 log.error("Validation Error", e);
                 this.validationResults = Map.of(
@@ -243,13 +250,13 @@ public class CsvOrchestrationEngine {
             }
         }
 
-        private void saveScreeningGroup(HttpServletRequest request, 
-        MultipartFile file,Map<FileType, FileDetail>fileMap,String tenantId) {
+        private void saveScreeningGroup(final HttpServletRequest request,
+                final MultipartFile file, final Map<FileType, FileDetail> fileMap, final String tenantId) {
             final var interactionId = getBundleInteractionId(request);
             log.info("REGISTER State NONE : BEGIN for inteaction id  : {} tenant id : {}",
                     interactionId, tenantId);
-                    final var dslContext = udiPrimeJpaConfig.dsl();
-                    final var jooqCfg = dslContext.configuration();        
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            final var jooqCfg = dslContext.configuration();
             final var forwardedAt = OffsetDateTime.now();
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
@@ -260,7 +267,7 @@ public class CsvOrchestrationEngine {
                                 tenantId)));
                 initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 initRIHR.setCsvZipFileName(file.getOriginalFilename());
-                //initRIHR.set
+                // initRIHR.set
                 initRIHR.setCsvDemographicDataFileName(fileMap.get(FileType.DEMOGRAPHIC_DATA).filename);
                 initRIHR.setCsvDemographicDataPayloadText(fileMap.get(FileType.DEMOGRAPHIC_DATA).content);
                 initRIHR.setCsvQeAdminDataFileName(fileMap.get(FileType.QE_ADMIN_DATA).filename);
@@ -268,14 +275,19 @@ public class CsvOrchestrationEngine {
                 initRIHR.setCsvScreeningConsentDataFileName(fileMap.get(FileType.SCREENING_CONSENT_DATA).filename);
                 initRIHR.setCsvScreeningConsentDataPayloadText(fileMap.get(FileType.SCREENING_CONSENT_DATA).content);
                 initRIHR.setCsvScreeningEncounterDataFileName(fileMap.get(FileType.SCREENING_ENCOUNTER_DATA).filename);
-                initRIHR.setCsvScreeningEncounterDataPayloadText(fileMap.get(FileType.SCREENING_ENCOUNTER_DATA).content);
-                initRIHR.setCsvScreeningLocationDataFileName(fileMap.get(FileType.SCREENING_LOCATION_DATA).filename);                
-                initRIHR.setCsvScreeningLocationDataPayloadText(fileMap.get(FileType.SCREENING_LOCATION_DATA).content);   
-                initRIHR.setCsvScreeningObservationDataFileName(fileMap.get(FileType.SCREENING_OBSERVATION_DATA).filename);
-                initRIHR.setCsvScreeningObservationDataPayloadText(fileMap.get(FileType.SCREENING_OBSERVATION_DATA).content);
+                initRIHR.setCsvScreeningEncounterDataPayloadText(
+                        fileMap.get(FileType.SCREENING_ENCOUNTER_DATA).content);
+                initRIHR.setCsvScreeningLocationDataFileName(fileMap.get(FileType.SCREENING_LOCATION_DATA).filename);
+                initRIHR.setCsvScreeningLocationDataPayloadText(fileMap.get(FileType.SCREENING_LOCATION_DATA).content);
+                initRIHR.setCsvScreeningObservationDataFileName(
+                        fileMap.get(FileType.SCREENING_OBSERVATION_DATA).filename);
+                initRIHR.setCsvScreeningObservationDataPayloadText(
+                        fileMap.get(FileType.SCREENING_OBSERVATION_DATA).content);
                 initRIHR.setCsvScreeningResourcesDataFileName(fileMap.get(FileType.SCREENING_RESOURCES_DATA).filename);
-                initRIHR.setCsvScreeningResourcesDataPayloadText(fileMap.get(FileType.SCREENING_RESOURCES_DATA).content);
+                initRIHR.setCsvScreeningResourcesDataPayloadText(
+                        fileMap.get(FileType.SCREENING_RESOURCES_DATA).content);
                 initRIHR.setCreatedAt(forwardedAt);
+                //initRIHR.setPa
                 initRIHR.setCreatedBy(CsvService.class.getName());
                 initRIHR.setToState("CSV_ACCEPT");
                 final var provenance = "%s.saveScreeningGroup"
@@ -290,8 +302,87 @@ public class CsvOrchestrationEngine {
                                 + execResult,
                         interactionId, tenantId,
                         Duration.between(start, end).toMillis());
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 log.error("ERROR:: REGISTER State NONE CALL for interaction id : {} tenant id : {}"
+                        + initRIHR.getName() + " initRIHR error", interactionId,
+                        tenantId,
+                        e);
+            }
+        }
+
+        /**
+         * Checks if the "valid" field in "validationResults.report" is true.
+         *
+         * @param jsonMap The input JSON represented as a Map<String, Object>.
+         * @return true if "valid" is true; otherwise, false.
+         */
+        public static boolean isValid(final Map<String, Object> csvValidationResult) {
+            if (csvValidationResult == null || !csvValidationResult.containsKey("validationResults")) {
+                return false;
+            }
+
+            final Object validationResults = csvValidationResult.get("validationResults");
+            if (!(validationResults instanceof Map<?, ?>)) {
+                return false;
+            }
+
+            @SuppressWarnings("unchecked")
+            final
+            Map<String, Object> validationResultsMap = (Map<String, Object>) validationResults;
+            final Object report = validationResultsMap.get("report");
+
+            if (!(report instanceof Map<?, ?>)) {
+                return false;
+            }
+
+            @SuppressWarnings("unchecked")
+            final
+            Map<String, Object> reportMap = (Map<String, Object>) report;
+            final Object valid = reportMap.get("valid");
+
+            return Boolean.TRUE.equals(valid);
+        }
+
+        private void saveValidationResults(final Map<String, Object> validationResults,
+                final String tenantId) {
+            final var interactionId = getBundleInteractionId(request);
+            log.info("REGISTER State VALIDATION : BEGIN for inteaction id  : {} tenant id : {}",
+                    interactionId, tenantId);
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            final var jooqCfg = dslContext.configuration();
+            final var createdAt = OffsetDateTime.now();
+            final var initRIHR = new RegisterInteractionHttpRequest();
+            try {
+                initRIHR.setInteractionId(interactionId);
+                initRIHR.setInteractionKey(request.getRequestURI());
+                initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
+                        Map.of("nature", "CSV Validation Result", "tenant_id",
+                                tenantId)));
+                initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                initRIHR.setCreatedAt(createdAt);
+                initRIHR.setCreatedBy(CsvService.class.getName());
+                initRIHR.setPayload((JsonNode)Configuration.objectMapper.valueToTree(validationResults));
+                initRIHR.setFromState("CSV_ACCEPT");
+                if (isValid(validationResults)) {
+                    initRIHR.setToState("VALIDATION_SUCCESS");
+                } else {
+                    initRIHR.setToState("VALIDATION_FAILED");
+                }
+                //initRIHR.setValidation
+                final var provenance = "%s.saveValidationResults"
+                        .formatted(CsvService.class.getName());
+                initRIHR.setProvenance(provenance);
+                initRIHR.setCsvGroupId(interactionId);
+                final var start = Instant.now();
+                final var execResult = initRIHR.execute(jooqCfg);
+                final var end = Instant.now();
+                log.info(
+                        "REGISTER State VALIDATION : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
+                                + execResult,
+                        interactionId, tenantId,
+                        Duration.between(start, end).toMillis());
+            } catch (final Exception e) {
+                log.error("ERROR:: REGISTER State VALIDATION CALL for interaction id : {} tenant id : {}"
                         + initRIHR.getName() + " initRIHR error", interactionId,
                         tenantId,
                         e);
@@ -355,13 +446,13 @@ public class CsvOrchestrationEngine {
         }
 
         public Map<String, Object> processScreenings(final String interactionId, final Instant initiatedAt,
-                final String originalFileName,String tenantId) {
+                final String originalFileName, final String tenantId) {
             try {
-                log.debug("Inbound Folder Path: {}", appConfig.getCsv().validation().inboundPath());
-                log.debug("Ingress Home Path: {}", appConfig.getCsv().validation().ingessHomePath());
+                log.info("Inbound Folder Path: {} for interactionid :{} ", appConfig.getCsv().validation().inboundPath(),interactionId);
+                log.info("Ingress Home Path: {} for interactionId : {}", appConfig.getCsv().validation().ingessHomePath(),interactionId);
                 // Process ZIP files and get the session ID
                 final UUID processId = processZipFilesFromInbound(interactionId);
-                log.info("ZIP files processed with session ID: {}", processId);
+                log.info("ZIP files processed with session ID: {} for interaction id :{} ", processId,interactionId);
 
                 // Construct processed directory path
                 final String processedDirPath = appConfig.getCsv().validation().ingessHomePath() + "/" + processId
@@ -369,57 +460,41 @@ public class CsvOrchestrationEngine {
 
                 copyFilesToProcessedDir(processedDirPath);
                 createOutputFileInProcessedDir(processedDirPath);
-                log.info("Attempting to resolve processed directory: {}", processedDirPath);
+                log.info("Attempting to resolve processed directory: {} for interactionId : {}", processedDirPath,interactionId);
 
                 // Get processed files for validation
                 final FileObject processedDir = vfsCoreService
                         .resolveFile(Paths.get(processedDirPath).toAbsolutePath().toString());
 
                 if (!vfsCoreService.fileExists(processedDir)) {
-                    log.error("Processed directory does not exist: {}", processedDirPath);
+                    log.error("Processed directory does not exist: {} for interactionId : {}", processedDirPath,interactionId);
                     throw new FileSystemException("Processed directory not found: " + processedDirPath);
                 }
 
                 // Collect CSV files for validation
-                final List<String> csvFiles = scanForCsvFiles(processedDir);
+                final List<String> csvFiles = scanForCsvFiles(processedDir,interactionId);
 
-                Map<FileType, FileDetail> files = processFiles(csvFiles);
+                final Map<FileType, FileDetail> files = processFiles(csvFiles);
                 saveScreeningGroup(request, file, files, tenantId);
-                log.info("Found {} CSV files for validation", csvFiles.size());
+                log.info("Found {} CSV files for validation for interactionId :{}", csvFiles.size(),interactionId);
 
                 if (csvFiles.isEmpty()) {
-                    log.warn("No CSV files found for validation. Skipping validation.");
+                    log.warn("No CSV files found for validation. Skipping validation.for interactionId :{} ",interactionId);
                     return null;
                 }
 
                 // Validate CSV files
                 final String validationResults = validateCsvUsingPython(csvFiles, interactionId);
+
                 final Instant completedAt = Instant.now();
                 return createOperationOutcome(interactionId, validationResults, csvFiles, request, file.getSize(),
                         initiatedAt, completedAt, originalFileName);
 
             } catch (final Exception e) {
-                log.error("Error in ZIP processing tasklet: {}", e.getMessage(), e);
+                log.error("Error in ZIP processing tasklet: {} for interactionId :{} ", e.getMessage(), e);
                 throw new RuntimeException("Error processing ZIP files: " + e.getMessage(), e);
             }
         }
-
-        public static Map<String, String> readFiles(List<String> csvFiles) {
-            Map<String, String> fileContents = new HashMap<>();
-    
-            for (String filePath : csvFiles) {
-                try {
-                    Path path = Path.of(filePath);
-                    String content = Files.readString(path);
-                    fileContents.put(path.getFileName().toString(), content);
-                } catch (IOException e) {
-                    log.error("Error reading file: " + filePath + " - " + e.getMessage());
-                }
-            }
-    
-            return fileContents;
-        }
-
         private void createOutputFileInProcessedDir(final String processedDirPathStr) throws IOException {
             final Path processedDirPath = Paths.get(processedDirPathStr);
             final Path outputJsonPath = processedDirPath.resolve("output.json");
@@ -450,7 +525,7 @@ public class CsvOrchestrationEngine {
                     .resolveFile(
                             Paths.get(appConfig.getCsv().validation().ingessHomePath()).toAbsolutePath().toString());
             if (!vfsCoreService.fileExists(inboundFO)) {
-                log.error("Inbound folder does not exist: {}", inboundFO.getName().getPath());
+                log.error("Inbound folder does not exist: {} for interactionId :{} ", inboundFO.getName().getPath(),interactionId);
                 throw new FileSystemException("Inbound folder does not exist: " + inboundFO.getName().getPath());
             }
             vfsCoreService.validateAndCreateDirectories(ingresshomeFO);
@@ -465,14 +540,14 @@ public class CsvOrchestrationEngine {
             return processId;
         }
 
-        private List<String> scanForCsvFiles(final FileObject processedDir) throws FileSystemException {
+        private List<String> scanForCsvFiles(final FileObject processedDir,String interactionId) throws FileSystemException {
             final List<String> csvFiles = new ArrayList<>();
 
             try {
                 final FileObject[] children = processedDir.getChildren();
 
                 if (children == null) {
-                    log.warn("No children found in processed directory: {}", processedDir.getName().getPath());
+                    log.warn("No children found in processed directory: {} for interactionId :{}", processedDir.getName().getPath(),interactionId);
                     return csvFiles;
                 }
 
@@ -693,26 +768,27 @@ public class CsvOrchestrationEngine {
         }
     }
 
-    public static Map<FileType, FileDetail> processFiles(List<String> filePaths) {
-        Map<FileType, FileDetail> fileMap = new EnumMap<>(FileType.class);
+    public static Map<FileType, FileDetail> processFiles(final List<String> filePaths) {
+        final Map<FileType, FileDetail> fileMap = new EnumMap<>(FileType.class);
 
-        for (String filePath : filePaths) {
+        for (final String filePath : filePaths) {
             try {
-                Path path = Path.of(filePath);
-                String filename = path.getFileName().toString();
-                FileType fileType = FileType.fromFilename(filename);
-                String content = Files.readString(path);
-                FileDetail fileDetail = new FileDetail(filename, fileType, content);
+                final Path path = Path.of(filePath);
+                final String filename = path.getFileName().toString();
+                final FileType fileType = FileType.fromFilename(filename);
+                final String content = Files.readString(path);
+                final FileDetail fileDetail = new FileDetail(filename, fileType, content);
                 fileMap.put(fileType, fileDetail);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 log.error("Error reading file: " + filePath + " - " + e.getMessage());
-            } catch (IllegalArgumentException e) {
+            } catch (final IllegalArgumentException e) {
                 log.error("Error processing file type for: " + filePath + " - " + e.getMessage());
             }
         }
 
         return fileMap;
     }
+
     public enum FileType {
         DEMOGRAPHIC_DATA,
         QE_ADMIN_DATA,
@@ -722,8 +798,8 @@ public class CsvOrchestrationEngine {
         SCREENING_OBSERVATION_DATA,
         SCREENING_RESOURCES_DATA;
 
-        public static FileType fromFilename(String filename) {
-            for (FileType type : values()) {
+        public static FileType fromFilename(final String filename) {
+            for (final FileType type : values()) {
                 if (filename.startsWith(type.name())) {
                     return type;
                 }
