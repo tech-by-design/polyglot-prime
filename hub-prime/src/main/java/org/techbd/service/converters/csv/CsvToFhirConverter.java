@@ -7,6 +7,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningData;
@@ -17,6 +18,7 @@ import org.techbd.service.http.hub.prime.AppConfig;
 
 import ca.uhn.fhir.context.FhirContext;
 
+@Component
 public class CsvToFhirConverter {
 
     private final AppConfig appConfig;
