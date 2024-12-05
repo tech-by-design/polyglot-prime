@@ -47,6 +47,7 @@ public class AppConfig {
     private String fhirVersion;
     private Map<String, Map<String, String>> igPackages;
     private String igVersion;
+    private CsvValidation csv;
 
     public String getVersion() {
         return version;
@@ -125,7 +126,15 @@ public class AppConfig {
 
     public record PostStdinPayloadToNyecDataLakeExternal(String cmd, int timeout) {
     }
+    public record CsvValidation(Validation validation) { public record Validation(String pythonScriptPath, String pythonExecutable, String packagePath, String outputPath,  String inboundPath, String ingessHomePath) {} }
 
+    public CsvValidation getCsv() {
+        return csv;
+    }
+
+    public void setCsv(CsvValidation csv) {
+        this.csv = csv;
+    }
     public String getFhirVersion() {
         return fhirVersion;
     }
