@@ -36,8 +36,8 @@ public class CsvController {
                 this.csvService = csvService;
         }
 
-        @PostMapping(value = "/flatfile/csv/Bundle/$validate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        @Operation(summary = "Endpoint to upload, process, and validate a CSV ZIP file", description = "Upload a ZIP file containing CSVs for processing and validation.")
+        @PostMapping(value = "/flatfile/csv/Bundle/$validate,/flatfile/csv/Bundle/$validate/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @Operation(summary = "Endpoint to upload, and validate a CSV ZIP file", description = "Upload a ZIP file containing CSVs for validation.")
         @ApiResponses({
                         @ApiResponse(responseCode = "200", description = "CSV files processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
                                         {
@@ -77,12 +77,12 @@ public class CsvController {
                         log.error("CsvController: handleCsvUpload:: Tenant ID is missing or empty");
                         throw new IllegalArgumentException("Tenant ID must be provided");
                 }
-                return csvService.validateCsvFile(file, request);
+                return csvService.validateCsvFile(file,request, response, tenantId);
         }
 
         @PostMapping(value = { "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/" }, consumes = {
                         MediaType.MULTIPART_FORM_DATA_VALUE })
-        @Operation(summary = "Endpoint to upload, process, and validate a CSV ZIP file", description = "Endpoint to upload a ZIP file containing CSVs for processing and validation.")
+        @Operation(summary = "Endpoint to upload, process, and validate a CSV ZIP file", description = "Endpoint to upload a ZIP file containing CSVs for validation and conversiont to FHIR bundle")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "CSV files processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
                                         +
