@@ -48,7 +48,7 @@ org:
           prime:
             csv:
               validation:
-                pythonScriptPath: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:src/main/resources/csv/validate-nyher-fhir-ig-equivalent.py}
+                pythonScriptPath: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py}
                 pythonExecutable: ${TECHBD_CSV_PYTHON_EXECUTABLE:python3}
                 packagePath: ${TECHBD_CSV_PACKAGE_PATH:../support/specifications/flat-file/datapackage-nyher-fhir-ig-equivalent.json}
                 inboundPath: ${TECHBD_CSV_INBOUND_PATH:/app/techbyDesign/flatFile/inbound}
