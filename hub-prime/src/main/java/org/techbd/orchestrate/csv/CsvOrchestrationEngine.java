@@ -1,6 +1,7 @@
 package org.techbd.orchestrate.csv;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,7 +15,6 @@ import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +45,6 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
-import io.swagger.v3.core.util.Json;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import lib.aide.vfs.VfsIngressConsumer;
@@ -658,6 +657,7 @@ public class CsvOrchestrationEngine {
                 log.info("Executing validation command: {}", String.join(" ", command));
 
                 final ProcessBuilder processBuilder = new ProcessBuilder();
+                processBuilder.directory(new File(filePaths.get(0)).getParentFile());
                 processBuilder.command(command);
                 processBuilder.redirectErrorStream(true);
 
@@ -703,22 +703,22 @@ public class CsvOrchestrationEngine {
         private List<String> buildValidationCommand(final AppConfig.CsvValidation.Validation config,
                 final List<String> filePaths) {
             final List<String> command = new ArrayList<>();
-            var pythonScriptPath = "";
-            var packagePath = "";
-            var outputJsonPath = "";
-            if (!CollectionUtils.isEmpty(filePaths)) {
-                final Path path = Paths.get(filePaths.get(0));
-                final Path parentPath = path.getParent();
-                pythonScriptPath = parentPath.resolve("validate-nyher-fhir-ig-equivalent.py").toString();
-                packagePath = parentPath.resolve("datapackage-nyher-fhir-ig-equivalent.json").toString();
-                outputJsonPath = parentPath.resolve("datapackage-nyher-fhir-ig-equivalent.json").toString();
-            }
             command.add(config.pythonExecutable());
-            command.add(pythonScriptPath);
-            command.add(packagePath);
-
-            // Add file paths to the command
-            command.addAll(filePaths);
+            command.add("validate-nyher-fhir-ig-equivalent.py");
+            command.add("datapackage-nyher-fhir-ig-equivalent.json");
+            Map<FileType, String> fileTypeToFileNameMap = filePaths.stream()
+            .map(path -> path.substring(path.lastIndexOf("/") + 1)) 
+            .collect(Collectors.toMap(
+                FileType::fromFilename,
+                filename -> filename 
+            ));
+            command.add(fileTypeToFileNameMap.get(FileType.QE_ADMIN_DATA));
+            command.add(fileTypeToFileNameMap.get(FileType.SCREENING_OBSERVATION_DATA));
+            command.add(fileTypeToFileNameMap.get(FileType.SCREENING_LOCATION_DATA));
+            command.add(fileTypeToFileNameMap.get(FileType.SCREENING_ENCOUNTER_DATA));
+            command.add(fileTypeToFileNameMap.get(FileType.SCREENING_CONSENT_DATA));
+            command.add(fileTypeToFileNameMap.get(FileType.SCREENING_RESOURCES_DATA));
+            command.add(fileTypeToFileNameMap.get(FileType.DEMOGRAPHIC_DATA));
 
             // Pad with empty strings if fewer than 7 files
             while (command.size() < 10) { // 1 (python) + 1 (script) + 1 (package) + 7 (files) //TODO CHECK IF THIS IS
@@ -727,7 +727,7 @@ public class CsvOrchestrationEngine {
             }
 
             // Add output path
-            command.add(outputJsonPath);
+            // command.add("output.json");
 
             return command;
         }
