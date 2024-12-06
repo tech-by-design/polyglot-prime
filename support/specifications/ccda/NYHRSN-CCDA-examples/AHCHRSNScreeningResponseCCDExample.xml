@@ -17,35 +17,58 @@
 	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
 	<recordTarget>
 		<patientRole>
-			<id root="PatientExample" />
-			<addr>115 Broadway Apt2</addr>
-			<telecom value="555-120-6047" />
+			<id root="2.16.840.1.113883.19.1000.1" extension="CUMC" />
+			<addr>
+				<streetAddressLine>115 Broadway Apt2</streetAddressLine>
+				<city>New York</city>
+				<state>NY</state>
+				<postalCode>10032</postalCode>
+			</addr>
+			<telecom use="HP" value="tel:555-120-6047" />
 			<patient>
-				<name>
+				<name use="L">
+					<prefix>Mr.</prefix>
 					<given>Jon</given>
 					<family>Doe</family>
+					<suffix>Jr.</suffix>
 				</name>
+				<administrativeGenderCode code="male" />
+				<birthTime value="19810716" />
+				<raceCode 
+					code="2028-9" 
+					displayName="Asian" 
+					codeSystem="2.16.840.1.113883.6.238" 
+					codeSystemName="CDC Race and Ethnicity" />
+				<ethnicGroupCode 
+					code="2135-2" 
+					displayName="Hispanic or Latino" 
+					codeSystem="2.16.840.1.113883.6.238" 
+					codeSystemName="CDC Race and Ethnicity" />
+				<languageCommunication>
+					<languageCode code="en" />
+					<preferenceInd value="true" />
+				</languageCommunication>
 			</patient>
 		</patientRole>
 	</recordTarget>
 	<!-- Author -->
 	<author>
-    <time value="20240223"/>
-    <assignedAuthor>
-        <id root="2.16.840.1.113883.3.564" extension="SCNExample"/>
-        <representedOrganization>
-            <id root="2.16.840.1.113883.3.564" extension="SCNExample"/>
-            <name>Care Ridge SCN</name>
-            <addr>
-                <streetAddressLine>111 Care Ridge St</streetAddressLine>
-                <city>Plainview</city>
-                <state>NY</state>
-                <postalCode>11803</postalCode>
-                <county>Nassau County</county>
-            </addr>
-        </representedOrganization>
-    </assignedAuthor>
-</author>
+		<time value="20240223"/>
+		<assignedAuthor>
+			<id root="2.16.840.1.113883.3.564" extension="SCNExample"/>
+			<representedOrganization>
+				<id root="2.16.840.1.113883.3.564" extension="SCNExample"/>
+				<name>Care Ridge SCN</name>
+				<addr>
+					<streetAddressLine>111 Care Ridge St</streetAddressLine>
+					<city>Plainview</city>
+					<state>NY</state>
+					<postalCode>11803</postalCode>
+					<county>Nassau County</county>
+				</addr>
+			</representedOrganization>
+		</assignedAuthor>
+	</author>
 
 
 	<!-- Custodian -->
@@ -58,48 +81,41 @@
 		</assignedCustodian>
 	</custodian>
 	<authorization>
-    <consent>
-        <code code="59284-0" codeSystem="2.16.840.1.113883.6.1" displayName="Consent Document"/>
-        <statusCode code="completed"/>
-    </consent>
-</authorization>
+		<consent>
+			<code code="59284-0" codeSystem="2.16.840.1.113883.6.1" displayName="Consent Document"/>
+			<statusCode code="completed"/>
+		</consent>
+	</authorization>
 
 
-<componentOf>
-    <encompassingEncounter>
-        <id root="EncounterExample" extension="2.16.840.1.113883.19.1000.3.2"/>
-        <code code="405672008" codeSystem="2.16.840.1.113883.6.96" displayName="Direct questioning (procedure)">
-            <originalText>Direct questioning (procedure)</originalText>
-        </code>
-        <effectiveTime>
-            <low value="20240223"/>
-            <high value="20240223"/>
-        </effectiveTime>
-    </encompassingEncounter>
-</componentOf>
-
+	<componentOf>
+		<encompassingEncounter>
+			<id root="EncounterExample" extension="2.16.840.1.113883.19.1000.3.2"/>
+			<code code="405672008" codeSystem="2.16.840.1.113883.6.96" displayName="Direct questioning (procedure)">
+				<originalText>Direct questioning (procedure)</originalText>
+			</code>
+			<effectiveTime>
+				<low value="20240223"/>
+				<high value="20240223"/>
+			</effectiveTime>
+		</encompassingEncounter>
+	</componentOf>
 	<component>
 		<structuredBody>
+
+			<!-- Housing / Utilities Section -->
 			<component>
 				<section>
-					<title>Observations</title>
-				
-					
-					<entry>
-						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
-							<code code="76690-7" displayName="Sexual orientation" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Sexual orientation</originalText>
-							</code>
-							<value xsi:type="CD" code="UNK" displayName="Unknown" codeSystem="2.16.840.1.113883.5.4"/>
-						</observation>
-					</entry>
+					<templateId root="2.16.840.1.113883.19.1000.2.2"/>
+					<title>Housing / Utilities</title>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
 							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
 							<code code="71802-3" displayName="Housing status" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
 								<originalText>What is your living situation today?</originalText>
 							</code>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
 							<value xsi:type="CD" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
 						</observation>
 					</entry>
@@ -109,98 +125,202 @@
 							<code code="96778-6" displayName="Problems with place where you live" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
 								<originalText>Think about the place you live. Do you have problems with any of the following?</originalText>
 							</code>
-							<value xsi:type="CO" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
+							<interpretationCode code="POS" displayName="Positive" codeSystem="2.16.840.1.113883.6.96" codeSystemName="Observation Interpretation"/>
 						</observation>
 					</entry>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.2"/>
-							<code code="88122-7" displayName="Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]</originalText>
-							</code>
-							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
-						</observation>
-					</entry>
-					<entry>
-						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.3"/>
-							<code code="88123-5" displayName="Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]</originalText>
-							</code>
-							<value xsi:type="CO" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
-						</observation>
-					</entry>
-					<entry>
-						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.4"/>
-							<code code="93030-5" displayName="Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living</originalText>
-							</code>
-							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
-						</observation>
-					</entry>
-					<entry>
-						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.5"/>
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
 							<code code="96779-4" displayName="Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months</originalText>
+								<originalText>In the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?</originalText>
 							</code>
-							<value xsi:type="CO" code="LA32002-0" displayName="Already shut off" codeSystem="2.16.840.1.113883.6.1"/>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA32-8" displayName="No" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Food Security Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.19.1000.2.3"/>
+					<title>Food Security</title>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
+							<code code="88122-7" displayName="Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Within the past 12 months, you worried that your food would run out before you got money to buy more.</originalText>
+							</code>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA28397-0" displayName="Often true" codeSystem="2.16.840.1.113883.6.1"/>
+							<interpretationCode code="POS" displayName="Positive" codeSystem="2.16.840.1.113883.5.83"/>
 						</observation>
 					</entry>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.6"/>
-							<code code="95618-5" displayName="Physically hurt you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Physically hurt you [HITS]</originalText>
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
+							<code code="88123-5" displayName="Within the past 12 months, the food you bought just didn't last and you didn't have money to get more" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Within the past 12 months, the food you bought just didn't last and you didn't have money to get more.</originalText>
 							</code>
-							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA28397-0" displayName="Often true" codeSystem="2.16.840.1.113883.6.1"/>
+							<interpretationCode code="POS" displayName="Positive" codeSystem="2.16.840.1.113883.5.83" codeSystemName="ObservationInterpretation"/>
 						</observation>
 					</entry>
+				</section>
+			</component>
+			<!-- Transportation Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.19.1000.2.4"/>
+					<title>Transportation</title>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
+							<code code="93030-5" displayName="Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?</originalText>
+							</code>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA32-8" displayName="No" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Employment Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.19.1000.2.5"/>
+					<title>Employment</title>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
 							<templateId root="2.16.840.1.113883.19.1000.3.7"/>
-							<code code="95617-7" displayName="Insult you or talk down to you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Insult you or talk down to you [HITS]</originalText>
+							<code code="96780-2" displayName="Wants help finding or keeping work or a job" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Do you want help finding or keeping work or a job?</originalText>
 							</code>
-							<value xsi:type="CO" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
+							<value xsi:type="CO" code="LA32-8" displayName="No" codeSystem="2.16.840.1.113883.6.1"/>
 						</observation>
 					</entry>
+				</section>
+			</component>
+			<!-- Education Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.19.1000.2.6"/>
+					<title>Education</title>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
 							<templateId root="2.16.840.1.113883.19.1000.3.8"/>
+							<code code="96782-8" displayName="Wants help with school or training" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>Do you want help with school or training?</originalText>
+							</code>
+							<value xsi:type="CO" code="LA32-8" displayName="No" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Interpersonal Safety Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.19.1000.2.7"/>
+					<title>Interpersonal Safety</title>
+					<text>Because violence and abuse happens to a lot of people and affects their health we are asking the following questions. A score of 11 or more when the numerical values for answers to [the four questions] are added shows that the person might not be safe.</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
+							<code code="95618-5" displayName="Physically hurt you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>How often does anyone, including family and friends, physically hurt you?</originalText>
+							</code>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
+							<code code="95617-7" displayName="Insult you or talk down to you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>How often does anyone, including family and friends, insult or talk down to you?</originalText>
+							</code>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
 							<code code="95616-9" displayName="Threaten you with physical harm [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Threaten you with physical harm [HITS]</originalText>
+								<originalText>How often does anyone, including family and friends, threaten you with harm?</originalText>
 							</code>
-							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
 						</observation>
 					</entry>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.9"/>
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
 							<code code="95615-1" displayName="Scream or curse at you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Scream or curse at you [HITS]</originalText>
+								<originalText>How often does anyone, including family and friends, scream or curse at you?</originalText>
 							</code>
-							<value xsi:type="CO" code="LA28580-1" displayName="Mold" codeSystem="2.16.840.1.113883.6.1"/>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
 						</observation>
 					</entry>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.10"/>
+							<templateId root="2.16.840.1.113883.19.1000.3.1"/>
 							<code code="95614-4" displayName="Total score [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Total score [HITS]</originalText>
+								<originalText>Safety total score</originalText>
 							</code>
-							<value xsi:type="CO" code="LA31993-1" displayName="I have a steady place to live" codeSystem="2.16.840.1.113883.6.1"/>
-						</observation>
-					</entry>
-					<!--			<entry><observation classCode="OBS" moodCode="EVN"><templateId root="2.16.840.1.113883.19.1000.3.1"/><code code="96777-8" displayName="Accountable health communities (AHC) health-related social needs screening (HRSN) tool" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"><originalText>Accountable health communities (AHC) health-related social needs screening (HRSN) tool</originalText></code><value xsi:type="PQ" value="unknown" unit="unknown"/></observation></entry> -->
-					<entry>
-						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.2"/>
-							<code code="76513-1" displayName="How hard is it for you to pay for the very basics like food, housing, medical care, and heating" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>How hard is it for you to pay for the very basics like food, housing, medical care, and heating?</originalText>
-							</code>
-							<value xsi:type="CD" code="LA22683-9" displayName="Somewhat Hard" codeSystem="2.16.840.1.113883.6.1"/>
+							<statusCode code="final"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA6270-8" displayName="4" codeSystem="2.16.840.1.113883.6.1"/>
+							<!-- Using entryRelationship to link related observations -->
+							<entryRelationship typeCode="SUBJ">
+								<observation classCode="OBS" moodCode="EVN">
+									<id extension="InterpersonalSafety95618-5"/>
+									<code code="95618-5" displayName="Physically hurt you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+									<statusCode code="final"/>
+									<effectiveTime value="20230712160800+0000"/>
+									<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="SUBJ">
+								<observation classCode="OBS" moodCode="EVN">
+									<id extension="InterpersonalSafety95617-7"/>
+									<code code="95617-7" displayName="Insult you or talk down to you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+									<statusCode code="final"/>
+									<effectiveTime value="20230712160800+0000"/>
+									<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="SUBJ">
+								<observation classCode="OBS" moodCode="EVN">
+									<id extension="InterpersonalSafety95616-9"/>
+									<code code="95616-9" displayName="Threaten you with physical harm [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+									<statusCode code="final"/>
+									<effectiveTime value="20230712160800+0000"/>
+									<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="SUBJ">
+								<observation classCode="OBS" moodCode="EVN">
+									<id extension="InterpersonalSafety95615-1"/>
+									<code code="95615-1" displayName="Scream or curse at you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+									<statusCode code="final"/>
+									<effectiveTime value="20230712160800+0000"/>
+									<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
+								</observation>
+							</entryRelationship>
 						</observation>
 					</entry>
 				</section>
