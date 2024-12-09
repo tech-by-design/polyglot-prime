@@ -24,7 +24,7 @@
           <stringProp name="TestPlan.comments">Bundle API test</stringProp>
           <stringProp name="HTTPSampler.domain">phi.fhir.api.qa.techbd.org</stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
-          <stringProp name="HTTPSampler.path">/Bundle</stringProp>
+          <stringProp name="HTTPSampler.path">/Bundle1</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
