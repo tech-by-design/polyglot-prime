@@ -1,4 +1,4 @@
-name: FHIR Bundle SmokeTest (PLAIN)
+name: FHIR Bundle SmokeTest
 on:
   schedule:
     - cron: '0 */1 * * *'
