@@ -143,5 +143,5 @@ jobs:
           Tech by Design Automation Team
         content_type: "text/plain"
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
-        to: ratheeshkumar-kr@netspective.in, raphael-paily@netspective.in, roshni-kesavan@netspective.in
+        to: patrick.johnson@techbd.org, ratheeshkumar-kr@netspective.in, raphael-paily@netspective.in, roshni-kesavan@netspective.in
         attachments: ${{ env.failure_attachments }}
