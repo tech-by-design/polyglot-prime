@@ -69,8 +69,6 @@
 			</representedOrganization>
 		</assignedAuthor>
 	</author>
-
-
 	<!-- Custodian -->
 	<custodian>
 		<assignedCustodian>
@@ -86,8 +84,6 @@
 			<statusCode code="completed"/>
 		</consent>
 	</authorization>
-
-
 	<componentOf>
 		<encompassingEncounter>
 			<id root="EncounterExample" extension="2.16.840.1.113883.19.1000.3.2"/>
@@ -102,7 +98,98 @@
 	</componentOf>
 	<component>
 		<structuredBody>
-
+			<!-- 
+********************************************************
+  Details about source questionnaire
+********************************************************
+-->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.19.1000.2.1"/>
+					<title>Questionnaire Details</title>
+					<text>
+            The questionnaire is based on LOINC 96777-8 | Accountable health communities (AHC) health-related social needs screening (HRSN) tool.
+        </text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.19.1000.3.14"/>
+							<id root="AHCScreeningGroup96777-8"/>
+							<code code="96777-8" displayName="Accountable health communities (AHC) health-related social needs screening (HRSN) tool" 
+                    codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+							<statusCode code="final"/>
+							<effectiveTime value="20200910215654+0000"/>
+							<interpretationCode code="POS" displayName="Positive" 
+                    codeSystem="2.16.840.1.113883.5.83" codeSystemName="Observation Interpretation (HL7)"/>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="HousingInstability71802-3"/>
+									<code code="71802-3" displayName="Housing status" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="InadequateHousing96778-6"/>
+									<code code="96778-6" displayName="Problems with place where you live" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="FoodInsecurity88122-7"/>
+									<code code="88122-7" displayName="Worried food would run out before we got money" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="FoodInsecurity88123-5"/>
+									<code code="88123-5" displayName="Food didn’t last and no money to buy more" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="TransportationInsecurity93030-5"/>
+									<code code="93030-5" displayName="Lack of transportation kept you from medical appointments" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="UtilityInsecurity96779-4"/>
+									<code code="96779-4" displayName="Utility company threatened to shut off services" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="InterpersonalSafety95618-5"/>
+									<code code="95618-5" displayName="Physically hurt you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="InterpersonalSafety95617-7"/>
+									<code code="95617-7" displayName="Insult or talk down to you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="InterpersonalSafety95616-9"/>
+									<code code="95616-9" displayName="Threaten you with physical harm [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="InterpersonalSafety95615-1"/>
+									<code code="95615-1" displayName="Scream or curse at you [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="InterpersonalSafety95614-4"/>
+									<code code="95614-4" displayName="Total score [HITS]" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+						</observation>
+					</entry>
+				</section>
+			</component>
 			<!-- Housing / Utilities Section -->
 			<component>
 				<section>
@@ -200,27 +287,55 @@
 					<title>Employment</title>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.7"/>
-							<code code="96780-2" displayName="Wants help finding or keeping work or a job" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="EmploymentStatus96780-2"/>
+							<code code="96780-2" 
+                      displayName="Wants help finding or keeping work or a job" 
+                      codeSystem="2.16.840.1.113883.6.1" 
+                      codeSystemName="LOINC">
 								<originalText>Do you want help finding or keeping work or a job?</originalText>
 							</code>
-							<value xsi:type="CO" code="LA32-8" displayName="No" codeSystem="2.16.840.1.113883.6.1"/>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA31981-6" 
+                       displayName="Yes, help finding work" 
+                       codeSystem="2.16.840.1.113883.6.1" 
+                       codeSystemName="LOINC"/>
+							<interpretationCode code="POS" 
+                                    displayName="Positive" 
+                                    codeSystem="2.16.840.1.113883.5.83" 
+                                    codeSystemName="ObservationInterpretation"/>
 						</observation>
 					</entry>
 				</section>
 			</component>
-			<!-- Education Section -->
+			<!-- Education section -->
 			<component>
 				<section>
-					<templateId root="2.16.840.1.113883.19.1000.2.6"/>
 					<title>Education</title>
+					<text>
+					This section captures whether the patient wants help with school or training. For example, starting or completing job training or getting a high school diploma, GED, or equivalent.
+				</text>
 					<entry>
 						<observation classCode="OBS" moodCode="EVN">
-							<templateId root="2.16.840.1.113883.19.1000.3.8"/>
-							<code code="96782-8" displayName="Wants help with school or training" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
-								<originalText>Do you want help with school or training?</originalText>
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="Education96782-8"/>
+							<code code="96782-8" 
+							  displayName="Wants help with school or training" 
+							  codeSystem="2.16.840.1.113883.6.1" 
+							  codeSystemName="LOINC">
+								<originalText>Do you want help with school or training? For example, starting or completing job training or getting a high school diploma, GED or equivalent.</originalText>
 							</code>
-							<value xsi:type="CO" code="LA32-8" displayName="No" codeSystem="2.16.840.1.113883.6.1"/>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA33-6" 
+							   displayName="Yes" 
+							   codeSystem="2.16.840.1.113883.6.1" 
+							   codeSystemName="LOINC"/>
+							<interpretationCode code="POS" 
+											displayName="Positive" 
+											codeSystem="2.16.840.1.113883.5.83" 
+											codeSystemName="ObservationInterpretation"/>
 						</observation>
 					</entry>
 				</section>
@@ -319,6 +434,515 @@
 									<statusCode code="final"/>
 									<effectiveTime value="20230712160800+0000"/>
 									<value xsi:type="CD" code="LA6270-8" displayName="Never" codeSystem="2.16.840.1.113883.6.1"/>
+								</observation>
+							</entryRelationship>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Financial Insecurity section -->
+			<component>
+				<section>
+					<title>Financial Security Assessment</title>
+					<text>
+						This section contains an assessment of the patient's financial security, specifically their ability to pay for basic needs such as food, housing, medical care, and heating.
+					</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="FinancialInsecurity76513-1"/>
+							<code code="76513-1" displayName="How hard is it for you to pay for the very basics like food, housing, medical care, and heating" 
+								  codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+								<originalText>How hard is it for you to pay for the very basics like food, housing, medical care, and heating?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA22683-9" displayName="Somewhat Hard" 
+								   codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+							<interpretationCode code="POS" displayName="Positive" 
+												codeSystem="2.16.840.1.113883.5.83" codeSystemName="ObservationInterpretation"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Social Connection section -->
+			<component>
+				<section>
+					<title>Social Connection Assessment</title>
+					<text>
+					This section documents the assessment of the patient's ability to get help with daily activities 
+					such as bathing, preparing meals, shopping, managing finances, etc., when needed.
+				</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="SocialConnection96781-0"/>
+							<code code="96781-0" 
+							  displayName="Able to get help with daily activities when needed" 
+							  codeSystem="2.16.840.1.113883.6.1" 
+							  codeSystemName="LOINC">
+								<originalText>If for any reason you need help with day-to-day activities such as bathing, preparing meals, shopping, managing finances, etc., do you get the help you need?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA31976-6" 
+							   displayName="I don't need any help" 
+							   codeSystem="2.16.840.1.113883.6.1" 
+							   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Social History section -->
+			<component>
+				<section>
+					<title>Social History</title>
+					<text>
+				This section documents the patient's feelings of loneliness or isolation during the assessment period, 
+				based on the observation question "How often do you feel lonely or isolated from those around you?"
+			</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="SocialHistory93159-2"/>
+							<code code="93159-2" 
+						  displayName="How often do you feel lonely or isolated from those around you during assessment period [CMS Assessment]" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>How often do you feel lonely or isolated from those around you?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA6270-8" 
+						   displayName="Never" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Language Finding section -->
+			<component>
+				<section>
+					<title>Language Finding</title>
+					<text>
+				This section documents whether the patient speaks a language other than English at home, based on the observation question 
+				"Do you speak a language other than English at home?"
+			</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="LanguageFinding97027-7"/>
+							<code code="97027-7" 
+						  displayName="Speaks a language other than English at home" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>Do you speak a language other than English at home?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA33-6" 
+						   displayName="Yes" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Physical Activity section -->
+			<component>
+				<section>
+					<title>Physical Activity</title>
+					<text>
+				This section captures information about the patient’s physical activity, including:
+				- The number of days per week they engaged in moderate to strenuous exercise.
+				- The average time spent exercising per day.
+				- The total calculated weekly physical activity.
+			</text>
+					<!-- Entry for number of days per week -->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="PhysicalActivity89555-7"/>
+							<code code="89555-7" 
+						  displayName="How many days per week did you engage in moderate to strenuous physical activity in the last 30 days" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>In the last 30 days, other than the activities you did for work, on average, how many days per week did you engage in moderate exercise (like walking fast, running, jogging, dancing, swimming, biking, or other similar activities)?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA6114-8" 
+						   displayName="3" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+					<!-- Entry for average minutes spent -->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="PhysicalActivity68516-4"/>
+							<code code="68516-4" 
+						  displayName="On those days that you engage in moderate to strenuous exercise, how many minutes, on average, do you exercise" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>On average, how many minutes did you usually spend exercising at this level on one of those days?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA28858-1" 
+						   displayName="40" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+					<!-- Entry for calculated weekly physical activity -->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="PhysicalActivityWeekly"/>
+							<code code="77594-0" 
+				  displayName="Total physical activity [IPAQ]" 
+				  codeSystem="2.16.840.1.113883.6.1" 
+				  codeSystemName="LOINC">
+								<originalText>Calculated weekly physical activity</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="PQ" value="120" unit="min"/>
+							<!-- Use UCUM code for minutes -->
+							<!-- Referencing the observations it is derived from -->
+							<entryRelationship typeCode="REFR">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="PhysicalActivity89555-7"/>
+									<code code="89555-7" 
+						  displayName="How many days per week did you engage in moderate to strenuous physical activity in the last 30 days" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="REFR">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="PhysicalActivity68516-4"/>
+									<code code="68516-4" 
+						  displayName="On those days that you engage in moderate to strenuous exercise, how many minutes, on average, do you exercise" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Alcohol Use Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.10.20.22.2.17"/>
+					<code code="30954-2" displayName="Alcohol Use" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+					<title>Alcohol Use</title>
+					<text>
+				How many times in the past 12 months have you had 5 or more drinks in a day (males) or 4 or more drinks in a day (females)?
+			</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="AlcoholUse68517-2"/>
+							<code code="68517-2" 
+						  displayName="How many times in the past year have you had X or more drinks in a day" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>How many times in the past 12 months have you had 5 or more drinks in a day (males) or 4 or more drinks in a day (females)?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" 
+						   code="LA26460-8" 
+						   displayName="Once or twice" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Tobacco Use Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.10.20.22.2.17"/>
+					<code code="30954-2" displayName="Tobacco Use" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+					<title>Tobacco Use</title>
+					<text>
+				How often have you used any tobacco product in the past 12 months?
+			</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="TobaccoUse96842-0"/>
+							<code code="96842-0" 
+						  displayName="How often have you used any tobacco product in past 12 months" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>How often have you used any tobacco product in the past 12 months?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" 
+						   code="LA26460-8" 
+						   displayName="Once or twice" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Substance Use Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.10.20.22.2.17"/>
+					<code code="30954-2" displayName="Substance Use" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+					<title>Substance Use</title>
+					<text>
+				How many times in the past year have you used prescription drugs for non-medical reasons?
+			</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="SubstanceUse95530-2"/>
+							<code code="95530-2" 
+						  displayName="How many times in the past year have you used prescription drugs for non-medical reasons" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>How many times in the past year have you used prescription drugs for non-medical reasons?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" 
+						   code="LA26460-8" 
+						   displayName="Once or twice" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Drug Use Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.10.20.22.2.17"/>
+					<code code="30954-2" displayName="Substance Use" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+					<title>Drug Use</title>
+					<text>
+				How many times in the past year have you used illegal drugs?
+			</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="DrugUse68524-8"/>
+							<code code="68524-8" 
+						  displayName="How many times in the past year have you used illegal drugs" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>How many times in the past year have you used illegal drugs?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" 
+						   code="LA26460-8" 
+						   displayName="Once or twice" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Mental State Section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.10.20.22.2.17"/>
+					<code code="30954-2" displayName="Mental Health Assessment" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+					<title>Mental State</title>
+					<text>
+				This section contains the responses to questions regarding mental state, including depression, interest in activities, and overall mental health scores.
+			</text>
+					<!-- Observation 1: Feeling down, depressed, or hopeless -->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="MentalState44255-8"/>
+							<code code="44255-8" 
+						  displayName="Feeling down, depressed, or hopeless in last 2 weeks" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>Feeling down, depressed, or hopeless?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" 
+						   code="LA6568-5" 
+						   displayName="Not at all" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+					<!-- Observation 2: Little interest or pleasure in doing things -->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="MentalState44250-9"/>
+							<code code="44250-9" 
+						  displayName="Little interest or pleasure in doing things" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>Little interest or pleasure in doing things?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" 
+						   code="LA6568-5" 
+						   displayName="Not at all" 
+						   codeSystem="2.16.840.1.113883.6.1" 
+						   codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+					<!-- Observation 3: PROMIS-10 Global Mental Health Score -->
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="MentalStateScore"/>
+							<code code="71969-0" 
+						  displayName="PROMIS-10 Global Mental Health (GMH) score T-score" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>Calculated mental health score (PROMIS-10 T-score)</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="PQ" value="1" unit="score"/>
+							<!-- Replace <derivedFrom> with <entryRelationship> and add missing required elements -->
+							<entryRelationship typeCode="SUBJ">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="MentalState44250-9"/>
+									<code code="44250-9" 
+								  displayName="Little interest or pleasure in doing things in last 2 weeks" 
+								  codeSystem="2.16.840.1.113883.6.1" 
+								  codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+							<entryRelationship typeCode="SUBJ">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="MentalState44255-8"/>
+									<code code="44255-8" 
+								  displayName="Feeling down, depressed, or hopeless in last 2 weeks" 
+								  codeSystem="2.16.840.1.113883.6.1" 
+								  codeSystemName="LOINC"/>
+								</observation>
+							</entryRelationship>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Stress section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.10.20.22.2.2"/>
+					<title>Stress</title>
+					<text>
+				Stress means a situation in which a person feels tense, restless, nervous, or anxious, or is unable to sleep at night because his or her mind is troubled all the time. Do you feel this kind of stress these days?
+			</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="Stress93038-8"/>
+							<code code="93038-8" 
+						  displayName="Stress level" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>Stress means a situation in which a person feels tense, restless, nervous, or anxious, or is unable to sleep at night because his or her mind is troubled all the time. Do you feel this kind of stress these days?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA6568-5" displayName="Not at all" 
+						   codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<!-- Disability section -->
+			<component>
+				<section>
+					<templateId root="2.16.840.1.113883.10.20.22.2.2"/>
+					<title>Disability</title>
+					<text>
+				Due to a physical, mental, or emotional condition, do you have difficulty concentrating, remembering, making decisions, or doing errands such as visiting a physician's office or shopping?
+			</text>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="Disability69858-9"/>
+							<code code="69858-9" 
+						  displayName="Difficulty concentrating, remembering, or making decisions" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>Because of a physical, mental, or emotional condition, do you have serious difficulty concentrating, remembering, or making decisions?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA26460-8" displayName="Once or twice" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="Disability69861-3"/>
+							<code code="69861-3" 
+						  displayName="Difficulty doing errands such as visiting a physician's office or shopping" 
+						  codeSystem="2.16.840.1.113883.6.1" 
+						  codeSystemName="LOINC">
+								<originalText>Because of a physical, mental, or emotional condition, do you have difficulty doing errands alone such as visiting a physician's office or shopping?</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20230712160800+0000"/>
+							<value xsi:type="CD" code="LA32-8" displayName="No" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"/>
+						</observation>
+					</entry>
+				</section>
+			</component>
+			<component>
+				<section>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="SupplementalGroup97023-6"/>
+							<code code="97023-6" 
+              displayName="Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions" 
+              codeSystem="2.16.840.1.113883.6.1" 
+              codeSystemName="LOINC">
+								<originalText>Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions</originalText>
+							</code>
+							<statusCode code="completed"/>
+							<effectiveTime value="20200910215654+0000"/>
+							<value xsi:type="CD" code="LA6568-5" displayName="Not at all"/>
+							<subject>
+								<relatedSubject>
+									<subject>
+										<name>Jon Doe</name>
+										<administrativeGenderCode code="M"/>
+										<birthTime value="19810716"/>
+									</subject>
+								</relatedSubject>
+							</subject>
+							<entryRelationship typeCode="COMP">
+								<encounter classCode="ENC" moodCode="EVN">
+									<id root="123e4567-e89b-12d3-a456-426614174000"/>
+									<statusCode code="finished"/>
+									<effectiveTime value="20230712160800+0000"/>
+								</encounter>
+							</entryRelationship>
+							<entryRelationship typeCode="COMP">
+								<observation classCode="OBS" moodCode="EVN">
+									<id root="SomeRootCodeHere"/>
+									<code code="SomeCodeHere"/>
+									<value xsi:type="CD" code="SomeDisplayHere"/>
 								</observation>
 							</entryRelationship>
 						</observation>
