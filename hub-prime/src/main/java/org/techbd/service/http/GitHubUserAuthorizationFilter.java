@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
+
     private static final String AUTH_USER_SESSION_ATTR_NAME = "authenticatedUser";
     private static final String supportEmail = "help@techbd.org";
     private static final String supportEmailDisplayName = "Tech by Design Support <" + supportEmail + ">";
@@ -28,13 +29,13 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record AuthenticatedUser(OAuth2User principal, GitHubUsersService.AuthorizedUser ghUser)
             implements Serializable {
+
     }
 
     public static final Optional<AuthenticatedUser> getAuthenticatedUser(
             final @NonNull HttpServletRequest request) {
-        final var sessionUser = (AuthenticatedUser) request.getSession(true)
-                .getAttribute(AUTH_USER_SESSION_ATTR_NAME);
-        return Optional.ofNullable(sessionUser);
+        return Optional.ofNullable(request.getSession(false))
+                .map(session -> (AuthenticatedUser) session.getAttribute(AUTH_USER_SESSION_ATTR_NAME));
     }
 
     protected static final void setAuthenticatedUser(final @NonNull HttpServletRequest request,
