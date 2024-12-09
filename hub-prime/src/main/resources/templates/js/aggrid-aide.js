@@ -312,6 +312,11 @@ export class AGGridAideBuilder {
                         window.location.href = '/?timeout=true'; // Redirect to login page
                         return; // Stop further processing
                     }
+                    // Check if the Location header indicates a session timeout
+                    if (response.headers.get('Location')?.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return;
+                    }
                     if (response.ok) {
                         const serverRespPayload = await response.json();
                         if (withSecondaryColumns) {
