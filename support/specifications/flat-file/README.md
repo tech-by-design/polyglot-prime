@@ -143,7 +143,7 @@ Before you can use this tool, make sure you have the following installed on your
    Use the provided `validate-nyher-fhir-ig-equivalent.py` script to validate all CSV files in the `flat-file/nyher-fhir-ig-example/` directory. Replace filenames as necessary, but **ensure that the file order remains unchanged**. The order of files is mandatory for the validation process.
 
    ```bash
-   python validate-nyher-fhir-ig-equivalent.py datapackage-nyher-fhir-ig-equivalent.json flat-file/nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv flat-file/nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv flat-file/nyher-fhir-ig-example/SCREENING_LOCATION_DATA_partner1-test-20241128-testcase1.csv flat-file/nyher-fhir-ig-example/SCREENING_ENCOUNTER_DATA_partner1-test-20241128-testcase1.csv flat-file/nyher-fhir-ig-example/SCREENING_CONSENT_DATA_partner1-test-20241128-testcase1.csv flat-file/nyher-fhir-ig-example/SCREENING_RESOURCES_DATA_partner1-test-20241128-testcase1.csv flat-file/nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv output.json
+   python3 validate-nyher-fhir-ig-equivalent.py datapackage-nyher-fhir-ig-equivalent.json nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv  nyher-fhir-ig-example/SCREENING_DETAILS_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv output.json
    ```
 
 3. **Review Validation Results**:
@@ -171,12 +171,9 @@ The CSV file names in this project follow a strict naming convention to ensure c
    - This is the predefined and mandatory part of the file name. It indicates the type of data contained in the file and must remain unchanged.
    - Examples of valid values:
      - `DEMOGRAPHIC_DATA_`
-     - `QE_ADMIN_DATA_`
-     - `SCREENING_CONSENT_DATA_`
+     - `QE_ADMIN_DATA_` 
      - `SCREENING_OBSERVATION_DATA_`
-     - `SCREENING_LOCATION_DATA_`
-     - `SCREENING_ENCOUNTER_DATA_`
-     - `SCREENING_RESOURCES_DATA_`
+     - `SCREENING_DETAILS_DATA_` 
 
 2. **`<GROUP_IDENTIFIER>`**:
    - This part of the file name is flexible and includes the following components:
@@ -187,12 +184,9 @@ The CSV file names in this project follow a strict naming convention to ensure c
 ### Example File Names
 
 - `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`
-- `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv`
-- `SCREENING_CONSENT_DATA_partner1-test-20241128-testcase1.csv`
+- `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv` 
 - `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv`
-- `SCREENING_LOCATION_DATA_partner1-test-20241128-testcase1.csv`
-- `SCREENING_ENCOUNTER_DATA_partner1-test-20241128-testcase1.csv`
-- `SCREENING_RESOURCES_DATA_partner1-test-20241128-testcase1.csv`
+- `SCREENING_DETAILS_DATA_partner1-test-20241128-testcase1.csv`
 
 ### Notes
 
