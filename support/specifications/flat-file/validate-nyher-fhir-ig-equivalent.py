@@ -12,7 +12,7 @@ def custom_json_encoder(obj):
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 
-def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, output_path):
+def validate_package(spec_path, file1, file2, file3, file4, output_path):
     results = {
         "errorsSummary": [],
         "report": None,
@@ -28,11 +28,8 @@ def validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, 
         file_mappings = {
             "qe_admin_data": file1,
             "screening_observation_data": file2,
-            "screening_location_data": file3,
-            "screening_encounter_data": file4,
-            "screening_consent_data": file5,
-            "screening_resources_data": file6,
-            "demographic_data": file7,  
+            "screening_details_data": file3, 
+            "demographic_data": file4,  
         } 
         # Check for missing files
         missing_files = {key: path for key, path in file_mappings.items() if not os.path.isfile(path)}
@@ -182,7 +179,7 @@ if __name__ == "__main__":
     }
 
     # Check for the correct number of arguments
-    if len(sys.argv) < 9 or len(sys.argv) > 10: 
+    if len(sys.argv) < 6 or len(sys.argv) > 7: 
         error_message = "Invalid number of arguments. Please provide the following arguments: <spec_path> <file1> <file2> <file3> <file4> <file5> <file6> <file7> [output_path]"
         results["errorsSummary"].append({                
         "fieldName": None,
@@ -197,11 +194,8 @@ if __name__ == "__main__":
     file1 = sys.argv[2]
     file2 = sys.argv[3]
     file3 = sys.argv[4]
-    file4 = sys.argv[5]
-    file5 = sys.argv[6]
-    file6 = sys.argv[7]
-    file7 = sys.argv[8]
-    output_path = sys.argv[9] if len(sys.argv) > 9 else None  # Allow no output_path
+    file4 = sys.argv[5] 
+    output_path = sys.argv[6] if len(sys.argv) > 6 else None  # Allow no output_path
 
     # Validate and adjust output_path
     if output_path:  # If output_path is provided
@@ -221,4 +215,4 @@ if __name__ == "__main__":
         sys.exit(1)        
 
     # Run validation
-    validate_package(spec_path, file1, file2, file3, file4,file5, file6, file7, output_path)
+    validate_package(spec_path, file1, file2, file3, file4, output_path)

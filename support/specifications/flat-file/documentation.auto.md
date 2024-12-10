@@ -1,10 +1,9 @@
-# `csv-validation-using-ig`
- `description` Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. For example: 
+# `csv-validation-using-ig`- `description` Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. For example: 
 
   - PATIENT_MR_ID_VALUE: Extracted from Bundle.entry.resource where resourceType = 'Patient', identifier where type.coding.code = 'MR', and value. 
   - FACILITY_ACTIVE: Extracted from Bundle.entry.resource where resourceType = 'Organization' and active.
 ## `qe_admin_data`
-  - `path` flat-file/nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv
+  - `path` nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv
   - `schema`
       - `primaryKey` ['PATIENT_MR_ID_VALUE']
     - `foreignKeys` []
@@ -14,9 +13,6 @@
   - `constraints`:
     - `required` True
     - `unique` True
-### `FACILITY_ACTIVE`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').active
-  - `type` string
 ### `FACILITY_ID`
   - `description` Append to the Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').system URI
   - `type` string
@@ -40,11 +36,6 @@
 ### `FACILITY_ADDRESS1`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').address.text & Bundle.entry.resource.where(resourceType ='Organization').address.line
   - `type` string
-  - `constraints`:
-    - `required` True
-### `FACILITY_ADDRESS2`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').address.text & Bundle.entry.resource.where(resourceType ='Organization').address.line
-  - `type` string
 ### `FACILITY_CITY`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').address.city & Bundle.entry.resource.where(resourceType ='Organization').address.text
   - `type` string
@@ -63,27 +54,19 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').meta.lastUpdated
   - `type` string
   - `constraints`:
+    - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-### `FACILITY_SCN_IDENTIFIER_TYPE_DISPLAY`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.scn.ny.gov/').type.coding.display
+### `FACILITY_IDENTIFIER_TYPE_DISPLAY`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.type.coding.display
   - `type` string
-### `FACILITY_SCN_IDENTIFIER_TYPE_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.scn.ny.gov/').value
+### `FACILITY_IDENTIFIER_TYPE_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.value
   - `type` string
-### `FACILITY_NPI_IDENTIFIER_TYPE_DISPLAY`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://hl7.org/fhir/sid/us-npi').type.coding.display
-  - `type` string
-### `FACILITY_NPI_IDENTIFIER_TYPE_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://hl7.org/fhir/sid/us-npi').value
-  - `type` string
-### `FACILITY_CMS_IDENTIFIER_TYPE_DISPLAY`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.medicaid.gov').type.coding.display
-  - `type` string
-### `FACILITY_CMS_IDENTIFIER_TYPE_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.where(system = 'http://www.medicaid.gov').value
+### `FACILITY_IDENTIFIER_TYPE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.system
   - `type` string
 ## `screening_observation_data`
-  - `path` flat-file/nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv
+  - `path` nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv
   - `schema`
       - `foreignKeys`
       - [1]
@@ -160,12 +143,6 @@
   - `type` string
   - `constraints`:
     - `enum` ['i have a steady place to live', 'i have a place to live today, but i am worried about losing it in the future', 'i do not have a steady place to live (i am temporarily staying with others, in a hotel, in a shelter,living outside on the street, on a beach, in a car, abandoned building, bus or train station, or in a park)', 'pests such as bugs, ants, or mice', 'mold', 'lead paint or pipes', 'lack of heat', 'oven or stove not working', 'smoke detectors missing or not working', 'water leaks', 'none of the above', 'often true', 'sometimes true', 'never true', 'often true', 'sometimes true', 'never true', 'yes', 'no', 'yes', 'no', 'already shut off', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'never (1)', 'rarely (2)', 'sometimes (3)', 'fairly often (4)', 'frequently (5)', 'very hard', 'somewhat hard', 'not hard at all', 'yes, help finding work', 'yes, help keeping work', 'i do not need or want help', "i don't need any help", 'i get all the help i need', 'i could use a little more help', 'i need a lot more help', 'never', 'rarely', 'sometimes', 'often', 'always', 'yes', 'no', 'yes', 'no', '0', '1', '2', '3', '4', '5', '6', '7', '0', '10', '20', '30', '40', '50', '60', '90', '120', '150 or greater', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'never', 'once or twice', 'monthly', 'weekly', 'daily or almost daily', 'not at all (0)', 'several days (1)', 'more than half the days (2)', 'nearly every day (3)', 'not at all (0)', 'several days (1)', 'more than half the days (2)', 'nearly every day (3)', 'not at all', 'a little bit', 'somewhat', 'quite a bit', 'very much', 'i choose not to answer this question', 'yes', 'no', 'yes', 'no']
-### `INTERPRETATION_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.code
-  - `type` string
-### `INTERPRETATION_DISPLAY`
-  - `description` Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.display
-  - `type` string
 ### `DATA_ABSENT_REASON_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.coding.code
   - `type` string
@@ -179,61 +156,8 @@
 ### `DATA_ABSENT_REASON_TEXT`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.text
   - `type` string
-## `screening_location_data`
-  - `path` flat-file/nyher-fhir-ig-example/SCREENING_LOCATION_DATA_partner1-test-20241128-testcase1.csv
-  - `schema`
-      - `foreignKeys`
-      - [1]
-        - `fields` ['PATIENT_MR_ID_VALUE']
-        - `reference`
-          - `resource` qe_admin_data
-          - `fields` ['PATIENT_MR_ID_VALUE']
-### `PATIENT_MR_ID_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
-  - `type` string
-  - `constraints`:
-    - `required` True
-### `LOCATION_NAME`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').name
-  - `type` string
-### `LOCATION_STATUS`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').status
-  - `type` string
-### `LOCATION_TYPE_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').type.coding.code
-  - `type` string
-### `LOCATION_ADDRESS_TYPE`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').address.type
-  - `type` string
-### `LOCATION_ADDRESS1`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').address.line
-  - `type` string
-### `LOCATION_ADDRESS2`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').address.line
-  - `type` string
-### `LOCATION_CITY`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').address.city
-  - `type` string
-### `LOCATION_DISTRICT`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').address.district
-  - `type` string
-### `LOCATION_STATE`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').address.state
-  - `type` string
-### `LOCATION_ZIP`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').address.zip
-  - `type` string
-### `LOCATION_PHYSICAL_TYPE_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').physicalType.coding.code
-  - `type` string
-### `LOCATION_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resourceType ='Location').meta.lastUpdated
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-## `screening_encounter_data`
-  - `path` flat-file/nyher-fhir-ig-example/SCREENING_ENCOUNTER_DATA_partner1-test-20241128-testcase1.csv
+## `screening_details_data`
+  - `path` nyher-fhir-ig-example/SCREENING_DETAILS_DATA_partner1-test-20241128-testcase1.csv
   - `schema`
       - `foreignKeys`
       - [1]
@@ -258,12 +182,6 @@
   - `constraints`:
     - `required` True
     - `enum` ['amb', 'emer', 'fld', 'hh', 'imp', 'acute', 'nonac', 'obsenc', 'prenc', 'ss', 'vr']
-### `ENCOUNTER_CLASS_CODE_DESCRIPTION`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.display
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `enum` ['ambulatory', 'emergency', 'field', 'home health', 'inpatient encounter', 'inpatient acute', 'inpatient non-acute', 'observation encounter', 'pre-admission', 'short stay', 'virtual']
 ### `ENCOUNTER_STATUS_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').status
   - `type` string
@@ -274,7 +192,6 @@
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.code
   - `type` string
   - `constraints`:
-    - `required` True
     - `enum` ['405672008', '23918007']
 ### `ENCOUNTER_TYPE_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.text
@@ -283,61 +200,19 @@
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system
   - `type` string
   - `constraints`:
-    - `required` True
     - `enum` ['http://snomed.info/sct']
-### `ENCOUNTER_START_TIME`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').period.start
-  - `type` string
-  - `constraints`:
-    - `pattern` `([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?`
-### `ENCOUNTER_END_TIME`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').period.end
-  - `type` string
-  - `constraints`:
-    - `pattern` `([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?`
 ### `ENCOUNTER_LAST_UPDATED`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-## `screening_consent_data`
-  - `path` flat-file/nyher-fhir-ig-example/SCREENING_CONSENT_DATA_partner1-test-20241128-testcase1.csv
-  - `schema`
-      - `foreignKeys`
-      - [1]
-        - `fields` ['PATIENT_MR_ID_VALUE']
-        - `reference`
-          - `resource` qe_admin_data
-          - `fields` ['PATIENT_MR_ID_VALUE']
-### `PATIENT_MR_ID_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
-  - `type` string
-  - `constraints`:
-    - `required` True
 ### `CONSENT_LAST_UPDATED`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-### `CONSENT_STATUS`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').status
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `enum` ['draft', 'proposed', 'active', 'rejected', 'inactive', 'entered-in-error']
-### `CONSENT_SCOPE_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').scope.coding.code
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `enum` ['adr', 'research', 'patient-privacy', 'treatment']
-### `CONSENT_SCOPE_TEXT`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').scope.text
-  - `type` string
-  - `constraints`:
-    - `required` True
 ### `CONSENT_DATE_TIME`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
   - `type` string
@@ -351,40 +226,20 @@
   - `type` string
   - `constraints`:
     - `enum` ['deny', 'permit']
-## `screening_resources_data`
-  - `path` flat-file/nyher-fhir-ig-example/SCREENING_RESOURCES_DATA_partner1-test-20241128-testcase1.csv
-  - `schema`
-      - `foreignKeys`
-      - [1]
-        - `fields` ['PATIENT_MR_ID_VALUE']
-        - `reference`
-          - `resource` qe_admin_data
-          - `fields` ['PATIENT_MR_ID_VALUE']
-### `PATIENT_MR_ID_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
-  - `type` string
-  - `constraints`:
-    - `required` True
-### `SCREENING_STATUS_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Observation').status
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `enum` ['final', 'corrected', 'entered-in-error', 'unknown']
 ### `SCREENING_LAST_UPDATED`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').meta.lastUpdated
   - `type` string
   - `constraints`:
     - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-### `SCREENING_LANGUAGE`
-  - `description` Bundle.entry.resource.where(resourceType ='Observation').language
+### `SCREENING_STATUS_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').status
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-at', 'de-ch', 'de-de', 'el', 'en', 'en-au', 'en-ca', 'en-gb', 'en-in', 'en-nz', 'en-sg', 'en-us', 'es', 'es-ar', 'es-es', 'es-uy', 'fi', 'fr', 'fr-be', 'fr-ch', 'fr-fr', 'fy', 'fy-nl', 'hi', 'hr', 'it', 'it-ch', 'it-it', 'ja', 'ko', 'nl', 'nl-be', 'nl-nl', 'no', 'no-no', 'pa', 'pl', 'pt', 'pt-br', 'ru', 'ru-ru', 'sr', 'sr-rs', 'sv', 'sv-se', 'te', 'zh', 'zh-cn', 'zh-hk', 'zh-sg', 'zh-tw']
+    - `enum` ['final', 'corrected', 'entered-in-error', 'unknown']
 ## `demographic_data`
-  - `path` flat-file/nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv
+  - `path` nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv
   - `schema`
       - `foreignKeys`
       - [1]
@@ -394,11 +249,6 @@
           - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
-  - `type` string
-  - `constraints`:
-    - `required` True
-### `PATIENT_MR_ID_SYSTEM`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').system
   - `type` string
   - `constraints`:
     - `required` True
@@ -426,12 +276,6 @@
   - `constraints`:
     - `required` True
     - `pattern` `^[A-Za-z]+$`
-### `PREFIX_NAME`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').name.prefix
-  - `type` string
-### `SUFFIX_NAME`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').name.suffix
-  - `type` string
 ### `GENDER`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').gender
   - `type` string
@@ -454,9 +298,6 @@
   - `type` string
   - `constraints`:
     - `pattern` `.*\d.*`
-### `ADDRESS2`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').address.line & Bundle.entry.resource.where(resourceType ='Patient').address.text
-  - `type` string
 ### `CITY`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').address.city
   - `type` string
@@ -476,16 +317,8 @@
 ### `TELECOM_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.value
   - `type` string
-### `TELECOM_SYSTEM`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.system
-  - `type` string
   - `constraints`:
-    - `enum` ['phone', 'fax', 'email', 'pager', 'url', 'sms', 'other']
-### `TELECOM_USE`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.use
-  - `type` string
-  - `constraints`:
-    - `enum` ['home', 'work', 'temp', 'old', 'mobile']
+    - `required` True
 ### `EXTENSION_PERSONAL_PRONOUNS_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code
   - `type` string
@@ -543,9 +376,6 @@
   - `type` string
   - `constraints`:
     - `enum` ['urn:oid:2.16.840.1.113883.6.238', 'http://terminology.hl7.org/CodeSystem/v3-NullFlavor']
-### `EXTENSION_TEXT_RACE_CODE_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'text').valueString
-  - `type` string
 ### `EXTENSION_OMBCATEGORY_ETHNICITY_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
@@ -561,9 +391,6 @@
   - `type` string
   - `constraints`:
     - `enum` ['urn:oid:2.16.840.1.113883.6.238']
-### `EXTENSION_TEXT_ETHNICITY_CODE_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'text').valueString
-  - `type` string
 ### `PATIENT_LAST_UPDATED`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').meta.lastUpdated
   - `type` string
@@ -608,10 +435,5 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation').meta.lastUpdated
   - `type` string
   - `constraints`:
-    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-### `SEXUAL_ORIENTATION_STATUS`
-  - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').status
-  - `type` string
-  - `constraints`:
     - `required` True
-    - `enum` ['registered', 'preliminary', 'final', 'amended', 'corrected', 'cancelled', 'entered-in-error', 'unknown']
+    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
