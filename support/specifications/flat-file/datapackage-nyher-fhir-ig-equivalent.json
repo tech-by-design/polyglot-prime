@@ -31,7 +31,9 @@
           }},          
           {"name": "FACILITY_IDENTIFIER_TYPE_DISPLAY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.type.coding.display"},
           {"name": "FACILITY_IDENTIFIER_TYPE_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.value"},          
-          {"name": "FACILITY_IDENTIFIER_TYPE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.system"}
+          {"name": "FACILITY_IDENTIFIER_TYPE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.system", "constraints": {
+            "pattern": "^(https?:\\/\\/)(www\\.)?(hl7\\.org\\/fhir\\/sid\\/us-npi|medicaid\\.gov|scn\\.ny\\.gov|cbo\\.ny\\.gov|hl7\\.org\\/oid|irs\\.gov)(\\/)?$"
+          }}
         ],
         "primaryKey": ["PATIENT_MR_ID_VALUE"]
       },
