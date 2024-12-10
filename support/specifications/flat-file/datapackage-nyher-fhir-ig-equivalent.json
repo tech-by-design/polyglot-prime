@@ -44,6 +44,7 @@
       }
     },     
     {
+      "profile": "tabular-data-resource",
       "name": "screening_observation_data",  
       "path": "nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv",
       "schema": {
@@ -214,8 +215,9 @@
       }
     },    
     {
-      "name": "screening_details_data",  
-      "path": "nyher-fhir-ig-example/SCREENING_DETAILS_DATA_partner1-test-20241128-testcase1.csv",
+      "profile": "tabular-data-resource",
+      "name": "screening_profile_data",  
+      "path": "nyher-fhir-ig-example/SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv",
       "schema": {   
         "fields":  [
         {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},
@@ -282,6 +284,7 @@
       }
     },                      
     {
+      "profile": "tabular-data-resource",
       "name": "demographic_data",   
       "path": "nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv", 
       "schema": {

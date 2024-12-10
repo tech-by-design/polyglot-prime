@@ -28,7 +28,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
         file_mappings = {
             "qe_admin_data": file1,
             "screening_observation_data": file2,
-            "screening_details_data": file3, 
+            "screening_profile_data": file3, 
             "demographic_data": file4,  
         } 
         # Check for missing files
