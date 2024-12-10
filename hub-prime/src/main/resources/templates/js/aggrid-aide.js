@@ -308,12 +308,15 @@ export class AGGridAideBuilder {
                         window.layout.addIdentifiableMetrics(`fetch-${dataSourceUrl}`, respMetrics);
                     }
                     // Check if the URL or content indicates a session timeout
+                    console.log('Response URL:' + response.url);
+                    console.log('Location Header:' + response.headers.get('Location'));
                     if (response.url.includes('/?timeout=true')) {
                         window.location.href = '/?timeout=true'; // Redirect to login page
                         return; // Stop further processing
                     }
                     // Check if the Location header indicates a session timeout
-                    if (response.headers.get('Location')?.includes('/?timeout=true')) {
+                    if (response.headers.get('Location')?.includes('/?timeout=true') ||
+                        response.headers.get('Location')?.includes('/login')) {
                         window.location.href = '/?timeout=true'; // Redirect to login page
                         return;
                     }
