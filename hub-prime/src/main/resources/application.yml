@@ -67,7 +67,7 @@ server:
         secure: true
         http-only: true
         same-site: LAX
-      timeout: 5m
+      timeout: 60m
 
 org:
   techbd:
