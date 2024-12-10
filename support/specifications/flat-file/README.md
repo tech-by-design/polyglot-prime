@@ -70,10 +70,7 @@ The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getti
   - `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`: Demographic information data.
   - `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv`: QE administration data.
   - `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv`: Primary screening observation data.
-  - `SCREENING_LOCATION_DATA_partner1-test-20241128-testcase1.csv`: Location-related screening data.
-  - `SCREENING_ENCOUNTER_DATA_partner1-test-20241128-testcase1.csv`: Encounter-related screening data.
-  - `SCREENING_CONSENT_DATA_partner1-test-20241128-testcase1.csv`: Consent-related screening data.
-  - `SCREENING_RESOURCES_DATA_partner1-test-20241128-testcase1.csv`: Detailed screening resources data.
+  - `SCREENING_DETAILS_DATA_partner1-test-20241128-testcase1.csv`: Primary screening observation data.
   - `Consolidated NYHER FHIR IG Examples.xlsx`: Excel file with consolidated sheets of the CSV data above.
 
 - **`documentation.auto.md`**
