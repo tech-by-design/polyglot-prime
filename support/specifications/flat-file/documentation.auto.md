@@ -3,6 +3,7 @@
 
   - PATIENT_MR_ID_VALUE: Extracted from Bundle.entry.resource where resourceType = 'Patient', identifier where type.coding.code = 'MR', and value. 
   - FACILITY_ACTIVE: Extracted from Bundle.entry.resource where resourceType = 'Organization' and active.
+- `profile` tabular-data-package
 ## `qe_admin_data`
   - `path` nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv
   - `schema`
@@ -159,8 +160,8 @@
 ### `DATA_ABSENT_REASON_TEXT`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.text
   - `type` string
-## `screening_details_data`
-  - `path` nyher-fhir-ig-example/SCREENING_DETAILS_DATA_partner1-test-20241128-testcase1.csv
+## `screening_profile_data`
+  - `path` nyher-fhir-ig-example/SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv
   - `schema`
       - `foreignKeys`
       - [1]
