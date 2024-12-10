@@ -13,7 +13,7 @@
 	<id root="379a3d1e-71ca-4c11-9051-a72adcdacd32"/>
 	<code code="temp1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="AHC-HRSN modified screening tool response"/>
 	<title>AAHC-HRSN modified screening tool</title>
-	<effectiveTime value="20000407"/>
+	<effectiveTime value="20240203000000+0000"/>
 	<confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25"/>
 	<recordTarget>
 		<patientRole>
@@ -91,13 +91,44 @@
 				<originalText>Direct questioning (procedure)</originalText>
 			</code>
 			<effectiveTime>
-				<low value="20240223"/>
-				<high value="20240223"/>
+				<low value="20240223000000+0000"/>
+				<high value="20240223010000+0000"/>
 			</effectiveTime>
 		</encompassingEncounter>
 	</componentOf>
 	<component>
 		<structuredBody>
+			<!-- Component for Sexual Orientation Observation -->
+			<component>
+				<section>
+					<entry>
+						<observation classCode="OBS" moodCode="EVN">
+							<templateId root="2.16.840.1.113883.10.20.22.4.2"/>
+							<id root="SexualOrientationExample"/>
+							<code code="76690-7" 
+				  displayName="Sexual orientation" 
+				  codeSystem="2.16.840.1.113883.6.1" 
+				  codeSystemName="LOINC"/>
+							<statusCode code="completed"/>
+							<effectiveTime value="20240223000000+0000"/>
+							<value xsi:type="CD" 
+				   code="UNK" 
+				   displayName="Unknown" 
+				   codeSystem="2.16.840.1.113883.5.1008" 
+				   codeSystemName="HL7 Null Flavor"/>
+							<subject>
+								<relatedSubject>
+									<subject>
+										<name>Jon Doe</name>
+										<administrativeGenderCode code="M"/>
+										<birthTime value="19810716"/>
+									</subject>
+								</relatedSubject>
+							</subject>
+						</observation>
+					</entry>
+				</section>
+			</component>
 			<!-- 
 ********************************************************
   Details about source questionnaire
