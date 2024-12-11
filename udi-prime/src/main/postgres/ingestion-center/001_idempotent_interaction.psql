@@ -1517,6 +1517,7 @@ DECLARE
     v_organization_name 			TEXT 	:= NULL;
     v_patient_id 					TEXT 	:= NULL;
     v_patient_mrn 					TEXT 	:= NULL;
+    v_patient_mrn_source_system 	TEXT 	:= NULL;
    	v_medicaid_cin 					TEXT 	:= NULL;
    	v_ssn 							TEXT 	:= NULL;
     v_resource_type_set 			TEXT 	:= NULL;   
@@ -1580,7 +1581,8 @@ BEGIN
 		v_patient_id,						v_patient_mrn,						v_resource_type_set,
 		v_validation_initiated_at,			v_validation_completed_at,			v_validation_engine,
 		v_ig_version,						v_profile_url,						v_medicaid_cin,
-		v_interaction_start_time,			v_interaction_end_time,				v_bundle_session_id 	
+		v_interaction_start_time,			v_interaction_end_time,				v_bundle_session_id,
+        v_patient_mrn_source_system 	
 		FROM
 		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
 		WHERE 1 = 1
@@ -1627,8 +1629,9 @@ BEGIN
 	   	   		   
 	    SELECT 
 	    identifier_element->>'value', 
-	    regexp_replace(identifier_element->'assigner'->>'reference','^Organization/', '') 
-	    INTO v_patient_mrn, v_organization_id
+	    regexp_replace(identifier_element->'assigner'->>'reference','^Organization/', ''),
+        identifier_element->>'system'
+	    INTO v_patient_mrn, v_organization_id, v_patient_mrn_source_system
 	    FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry,
 	    jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
 	    WHERE entry->'resource'->>'resourceType' = 'Patient'
@@ -1740,7 +1743,8 @@ BEGIN
         medicaid_cin,
         interaction_start_time,
         interaction_end_time,
-        techbd_disposition_action
+        techbd_disposition_action,
+        patient_mrn_source_system
     )
     VALUES (
         gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
@@ -1778,7 +1782,8 @@ BEGIN
         v_medicaid_cin,
         COALESCE(v_interaction_start_time::TIMESTAMPTZ,NULL),
         COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL),
-        v_techbd_disposition_action
+        v_techbd_disposition_action,
+        v_patient_mrn_source_system
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     IF (v_return IS NOT NULL) THEN
