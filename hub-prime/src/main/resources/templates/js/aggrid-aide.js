@@ -13,7 +13,7 @@ export class AGGridAide {
      */
     constructor(gridOptions, gridDivStyles = { height: "750px" }, theme = 'legacy') {
         this.gridOptions = gridOptions;
-        this.gridOptions.theme = theme;
+        this.gridOptions.theme = theme; 
         this.gridDivStyles = gridDivStyles;
         this.setupDefaultStyles('agGridDefaultStyles');
     }
