@@ -111,7 +111,7 @@ schemaLocation="file:///path/to/ccda/folder/CDA.xsd"
 ```
 
 
-This ensures that the files are correctly placed in the same folder (`ccda/`), or it guides users to modify the `schemaLocation` in the CCDA file if necessary. Let me know if any further adjustments are needed!
+This ensures that the files are correctly placed in the same folder (`ccda/`), or it guides users to modify the `schemaLocation` in the CCDA file if necessary.
 
 
 
