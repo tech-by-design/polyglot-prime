@@ -1135,6 +1135,7 @@ const migrateSP = pgSQLa.storedProcedure(
         DROP COLUMN IF EXISTS screening_data_file_name;
 
 
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS patient_mrn_source_system TEXT NULL;
 
 
 
