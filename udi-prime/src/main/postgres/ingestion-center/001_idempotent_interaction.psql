@@ -1574,7 +1574,8 @@ BEGIN
 		fhir_req.patient_id, 				fhir_req.patient_mrn,				fhir_req.resource_type_set, 
 		fhir_req.validation_initiated_at, 	fhir_req.validation_completed_at,	fhir_req.validation_engine,
 		fhir_req.ig_version,				fhir_req.profile_url,				fhir_req.medicaid_cin,
-		fhir_req.interaction_start_time,	fhir_req.interaction_end_time,		fhir_req.bundle_session_id
+		fhir_req.interaction_start_time,	fhir_req.interaction_end_time,		fhir_req.bundle_session_id,
+        fhir_req.patient_mrn_source_system
 		INTO 		
 		v_client_ip_address,				v_user_agent,						v_bundle_id,
 		v_bundle_last_updated,				v_organization_id,					v_organization_name,
