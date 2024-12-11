@@ -28,7 +28,7 @@ The issue seems to be related to the `path` property in the data resource descri
 
 ---
 
-## 1. TechBD updates existing Summer'24 CSV transformer to include new IG v1.x content. For example:
+## 1. TechBD updates existing Summer'24 CSV transformer to include new IG v1.2 content. For example:
 ### Updates in FHIR JSON:
 - **Update the following values:**
 - `Bundle.fullUrl` for each resource type
@@ -39,7 +39,7 @@ The issue seems to be related to the `path` property in the data resource descri
 
 ---
 
-## 2. Data from submitter in existing Summer'24 CSV column must be using IG v1.x constraints (using NYHER value sets). For example:
+## 2. Data from submitter in existing Summer'24 CSV column must be using IG v1.2 constraints (using NYHER value sets). For example:
 1. **Observation Status:**
  - `Bundle.Observation.status` must use values from:  
    [SDOHCC-ValueSetObservationStatus](https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.2/ValueSet-SDOHCC-ValueSetObservationStatus.html)  
@@ -53,7 +53,7 @@ The issue seems to be related to the `path` property in the data resource descri
 
 ---
 
-## 3. Data from submitter in new CSV column that is not in Summer'24 using IG v1.x constraints (using NYHER value sets). For Example:
+## 3. Data from submitter in new CSV column that is not in Summer'24 using IG v1.2 constraints (using NYHER value sets). For Example:
 
 1. **Consent Resource Fields Required in CSV:**
  - `CONSENT_POLICY_AUTHORITY`
@@ -96,14 +96,14 @@ The issue seems to be related to the `path` property in the data resource descri
 ### Code Updates:
 - **Languages:** Update code from **Deno**, **TypeScript**, and **SQL** to **Java**.
 
-## 7. Winter'24 CSV schema updates include:
+## 7. Based on the above inferences Winter'24 CSV migration updates include:
 
 1. **Additional CSV files:**
   - To maintain the ordinality and cardinality of the data in alignment with the IG v1.2, we are using the following CSV files.
     - **demographic_data.csv**
     - **qe_admin_data.csv**
-    - **screening_observation.csv**
-    - **screening_profile.csv**
+    - **screening_observation_data.csv**
+    - **screening_profile_data.csv**
   
   - Updates pertaining to each of the files are given below.
 
@@ -171,7 +171,7 @@ The issue seems to be related to the `path` property in the data resource descri
     | FACILITY_IDENTIFIER_TYPE_DISPLAY | Optional | 0..1 |
     | FACILITY_IDENTIFIER_TYPE_VALUE | Optional | 0..1 |
     | FACILITY_IDENTIFIER_TYPE_SYSTEM | Optional | 0..1 |
-    
+
  - The following are the columns that were renamed from Summer'24 CSV to the Winter'24 CSV set along with its cardinality:
     | Summer'24 Column Name | Winter'24 Column Name | Required/Optional | Cardinality |
     |-------------|-------------------|-------------------|-------------|
@@ -179,9 +179,9 @@ The issue seems to be related to the `path` property in the data resource descri
     | **FACILITY_LONG_NAME** | **FACILITY_NAME** | **Required** | 1..1 |
     | ORGANIZATION_TYPE | ORGANIZATION_TYPE_DISPLAY | Optional | 0..1 |
 
-4. **screening.csv** file has been removed and the data from screening is covered under the files **screening_observation.csv** and **screening_profile.csv** 
+4. **screening.csv** file has been removed and the data from screening is covered under the files **screening_observation_data.csv** and **screening_profile_data.csv** 
 
-5.  **Column updates for screening_observation.csv:**
+5.  **Column updates for screening_observation_data.csv:**
  - The following are the columns that were added to the Winter'24 CSV set along with its cardinality:
     | Column Name | Required/Optional | Cardinality |
     |-------------|-------------------|-------------|
@@ -203,7 +203,7 @@ The issue seems to be related to the `path` property in the data resource descri
     | DATA_ABSENT_REASON_DISPLAY | Optional | 0..1 |
     | DATA_ABSENT_REASON_TEXT | Optional | 0..1 |
 
-6.  **Column updates for screening_profile.csv:**
+6.  **Column updates for screening_profile_data.csv:**
  - The following are the columns that were added to the Winter'24 CSV set along with its cardinality:
     | Column Name | Required/Optional | Cardinality |
     |-------------|-------------------|-------------|
