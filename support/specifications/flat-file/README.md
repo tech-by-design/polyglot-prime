@@ -185,6 +185,10 @@ The CSV file names in this project follow a strict naming convention to ensure c
 - `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv`
 - `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv`
 
+### Migration Plan
+
+The migration plan from Summer'24 CSV to Winter'24 CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/summer24-winter24-migration-document.md).
+
 ### Notes
 
 - **Mandatory Prefix**: The `<DATA_TYPE>` section of the file name is predefined and must not be altered.
