@@ -110,6 +110,7 @@
                     },
                     { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },
                     { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },
+                    { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },
                     {
                         headerName: "Interaction ID",
                         field: "interaction_id",
@@ -117,7 +118,7 @@
                         cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
                             modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
                         }, modalAide)
-                    },
+                    },                    
                     { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "ID of the tenant involved in the interaction" },
                     { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
                     { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The ID of the Bundle sent through the interaction" },
