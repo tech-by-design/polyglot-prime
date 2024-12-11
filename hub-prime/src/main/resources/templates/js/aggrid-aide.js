@@ -11,8 +11,9 @@ export class AGGridAide {
      * @param {Object} gridOptions - The configuration options for AG Grid.
      * @param {Object} [gridDivStyles={ height: "750px" }] - The CSS styles to be applied to the grid container.
      */
-    constructor(gridOptions, gridDivStyles = { height: "750px" }) {
+    constructor(gridOptions, gridDivStyles = { height: "750px" }, theme = 'legacy') {
         this.gridOptions = gridOptions;
+        this.gridOptions.theme = theme;
         this.gridDivStyles = gridDivStyles;
         this.setupDefaultStyles('agGridDefaultStyles');
     }
