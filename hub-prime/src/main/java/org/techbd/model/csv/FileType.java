@@ -3,11 +3,8 @@ package org.techbd.model.csv;
 public enum FileType {
     DEMOGRAPHIC_DATA,
     QE_ADMIN_DATA,
-    SCREENING_CONSENT_DATA,
-    SCREENING_ENCOUNTER_DATA,
-    SCREENING_LOCATION_DATA,
-    SCREENING_OBSERVATION_DATA,
-    SCREENING_RESOURCES_DATA;
+    SCREENING_PROFILE_DATA,
+    SCREENING_OBSERVATION_DATA;
 
     public static FileType fromFilename(final String filename) {
         if (filename == null) {

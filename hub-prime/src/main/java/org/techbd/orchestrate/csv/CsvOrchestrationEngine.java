@@ -125,10 +125,12 @@ public class CsvOrchestrationEngine {
             return this;
         }
 
+
         public OrchestrationSessionBuilder withTenantId(final String tenantId) {
             this.tenantId = tenantId;
             return this;
         }
+
 
         public OrchestrationSessionBuilder withDevice(final Device device) {
             this.device = device;
@@ -297,25 +299,13 @@ public class CsvOrchestrationEngine {
                             initRIHR.setCsvQeAdminDataFileName(fileDetail.filename());
                             initRIHR.setCsvQeAdminDataPayloadText(fileDetail.content());
                         }
-                        case FileType.SCREENING_CONSENT_DATA -> {
+                        case FileType.SCREENING_PROFILE_DATA -> {
                             initRIHR.setCsvScreeningConsentDataFileName(fileDetail.filename());
                             initRIHR.setCsvScreeningConsentDataPayloadText(fileDetail.content());
-                        }
-                        case FileType.SCREENING_ENCOUNTER_DATA -> {
-                            initRIHR.setCsvScreeningEncounterDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningEncounterDataPayloadText(fileDetail.content());
-                        }
-                        case FileType.SCREENING_LOCATION_DATA -> {
-                            initRIHR.setCsvScreeningLocationDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningLocationDataPayloadText(fileDetail.content());
                         }
                         case FileType.SCREENING_OBSERVATION_DATA -> {
                             initRIHR.setCsvScreeningObservationDataFileName(fileDetail.filename());
                             initRIHR.setCsvScreeningObservationDataPayloadText(fileDetail.content());
-                        }
-                        case FileType.SCREENING_RESOURCES_DATA -> {
-                            initRIHR.setCsvScreeningResourcesDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningResourcesDataPayloadText(fileDetail.content());
                         }
                     }
                 }
@@ -397,12 +387,14 @@ public class CsvOrchestrationEngine {
                 initRIHR.setCreatedAt(createdAt);
                 initRIHR.setCreatedBy(CsvService.class.getName());
                 initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
+                initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
                 initRIHR.setFromState("CSV_ACCEPT");
                 if (isValid(validationResults)) { // TODO -revisit this logic as per new validation json
                     initRIHR.setToState("VALIDATION_SUCCESS");
                 } else {
                     initRIHR.setToState("VALIDATION_FAILED");
                 }
+                // initRIHR.setValidation
                 // initRIHR.setValidation
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
@@ -633,6 +625,8 @@ public class CsvOrchestrationEngine {
             if (!vfsCoreService.fileExists(inboundFO)) {
                 log.error("Inbound folder does not exist: {} for interactionId :{} ", inboundFO.getName().getPath(),
                         interactionId);
+                log.error("Inbound folder does not exist: {} for interactionId :{} ", inboundFO.getName().getPath(),
+                        interactionId);
                 throw new FileSystemException("Inbound folder does not exist: " + inboundFO.getName().getPath());
             }
             vfsCoreService.validateAndCreateDirectories(ingresshomeFO);
@@ -655,6 +649,8 @@ public class CsvOrchestrationEngine {
                 final FileObject[] children = processedDir.getChildren();
 
                 if (children == null) {
+                    log.warn("No children found in processed directory: {} for interactionId :{}",
+                            processedDir.getName().getPath(), interactionId);
                     log.warn("No children found in processed directory: {} for interactionId :{}",
                             processedDir.getName().getPath(), interactionId);
                     return csvFiles;
@@ -816,25 +812,10 @@ public class CsvOrchestrationEngine {
             command.add(config.pythonExecutable());
             command.add("validate-nyher-fhir-ig-equivalent.py");
             command.add("datapackage-nyher-fhir-ig-equivalent.json");
-            // Map<FileType, String> fileTypeToFileNameMap = filePaths.stream()
-            // .map(path -> path.substring(path.lastIndexOf("/") + 1))
-            // .collect(Collectors.toMap(
-            // FileType::fromFilename,
-            // filename -> filename));
-            // command.add(fileTypeToFileNameMap.get(FileType.QE_ADMIN_DATA));
-            // command.add(fileTypeToFileNameMap.get(FileType.SCREENING_OBSERVATION_DATA));
-            // command.add(fileTypeToFileNameMap.get(FileType.SCREENING_LOCATION_DATA));
-            // command.add(fileTypeToFileNameMap.get(FileType.SCREENING_ENCOUNTER_DATA));
-            // command.add(fileTypeToFileNameMap.get(FileType.SCREENING_CONSENT_DATA));
-            // command.add(fileTypeToFileNameMap.get(FileType.SCREENING_RESOURCES_DATA));
-            // command.add(fileTypeToFileNameMap.get(FileType.DEMOGRAPHIC_DATA));
             List<FileType> fileTypeOrder = Arrays.asList(
                     FileType.QE_ADMIN_DATA,
                     FileType.SCREENING_OBSERVATION_DATA,
-                    FileType.SCREENING_LOCATION_DATA,
-                    FileType.SCREENING_ENCOUNTER_DATA,
-                    FileType.SCREENING_CONSENT_DATA,
-                    FileType.SCREENING_RESOURCES_DATA,
+                    FileType.SCREENING_PROFILE_DATA,
                     FileType.DEMOGRAPHIC_DATA);
             Map<FileType, String> fileTypeToFileNameMap = new HashMap<>();
             for (FileDetail fileDetail : fileDetails) {
@@ -845,8 +826,8 @@ public class CsvOrchestrationEngine {
             }
 
             // Pad with empty strings if fewer than 7 files
-            while (command.size() < 10) { // 1 (python) + 1 (script) + 1 (package) + 7 (files) //TODO CHECK IF THIS IS
-                                          // NEEDED
+            while (command.size() < 7) { // 1 (python) + 1 (script) + 1 (package) + 4 (files) //TODO CHECK IF THIS IS
+                                         // NEEDED ACCORDING TO NUMBER OF FILES.
                 command.add("");
             }
 
