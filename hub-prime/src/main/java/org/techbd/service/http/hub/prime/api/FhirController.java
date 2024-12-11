@@ -39,7 +39,6 @@ import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -183,8 +182,6 @@ public class FhirController {
                     </ul>
                     """, required = false) @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
-        Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
-        try {
             if (tenantId == null || tenantId.trim().isEmpty()) {
                 LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
                 throw new IllegalArgumentException("Tenant ID must be provided");
@@ -197,9 +194,6 @@ public class FhirController {
                     customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                     includeIncomingPayloadInDB,
                     request, response, provenance, includeOperationOutcome, mtlsStrategy);
-        } finally {
-            span.end();
-        }
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
