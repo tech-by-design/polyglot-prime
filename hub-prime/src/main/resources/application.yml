@@ -18,6 +18,10 @@ logging:
                 api: INFO
     ca:
       uhn: WARN
+    root: INFO
+    io:
+      opentelemetry: TRACE
+      micrometer: TRACE
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE}
@@ -131,3 +135,32 @@ org:
           idleTimeout: 300000
           connectionTimeout: 30000
           maxLifetime: 1800000
+
+management:
+  otlp:
+    metrics: 
+      export: 
+        url: http://10.10.11.248:5080/api/default/v1/metrics 
+        enabled: true 
+        step: 1m # Interval for pushing metrics 
+        headers: 
+          enabled: true 
+          Authorization: Basic ${${SPRING_PROFILES_ACTIVE}_TECHBD_OPEN_OBSERVE_PASSWORD}
+          organization: default
+          stream-name: default
+          service: 
+            name: default
+    tracing: 
+      export:
+        enabled: true
+        sampling:
+            probability: 1.0
+      endpoint: http://10.10.11.248:5080/api/default/v1/traces 
+      headers: 
+        active : true
+        enabled: true  
+        Authorization: Basic ${${SPRING_PROFILES_ACTIVE}_TECHBD_OPEN_OBSERVE_PASSWORD}
+        organization: default
+        stream-name: techBDtraces
+        service: 
+          name: default
