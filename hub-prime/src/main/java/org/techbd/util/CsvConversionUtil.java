@@ -10,8 +10,8 @@ import java.util.List;
 
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
-import org.techbd.model.csv.ScreeningData;
-import org.techbd.model.csv.ScreeningResourceData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 
 import com.opencsv.bean.CsvToBeanBuilder;
 
@@ -60,8 +60,8 @@ public class CsvConversionUtil {
      * @return List of ScreeningData objects.
      * @throws IOException If an I/O error occurs during CSV reading.
      */
-    public static List<ScreeningData> convertCsvStringToScreeningData(String csvData) throws IOException {
-        return convertCsvStringToObjectList(csvData, ScreeningData.class, '|');
+    public static List<ScreeningObservationData> convertCsvStringToScreeningData(String csvData) throws IOException {
+        return convertCsvStringToObjectList(csvData, ScreeningObservationData.class, '|');
     }
 
     /**
@@ -82,8 +82,8 @@ public class CsvConversionUtil {
      * @return List of QeAdminData objects.
      * @throws IOException If an I/O error occurs during CSV reading.
      */
-    public static List<ScreeningResourceData> convertCsvStringToScreeningResourceData(String csvData) throws IOException {
-        return convertCsvStringToObjectList(csvData, ScreeningResourceData.class, '|');
+    public static List<ScreeningProfileData> convertCsvStringToScreeningResourceData(String csvData) throws IOException {
+        return convertCsvStringToObjectList(csvData, ScreeningProfileData.class, '|');
     }
     public static String sha256(String input) {
         try {

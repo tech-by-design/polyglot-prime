@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
-import org.techbd.model.csv.ScreeningData;
-import org.techbd.model.csv.ScreeningResourceData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 
 /**
  * Converts data related to an Organization into a FHIR Organization resource.
@@ -62,30 +62,30 @@ public class OrganizationConverter extends BaseConverter {
      *         resource.
      */
     @Override
-    public BundleEntryComponent convert(Bundle bundle, DemographicData demographicData,
-            List<ScreeningData> screeningDataList, QeAdminData qrAdminData, ScreeningResourceData screeningResourceData,String interactionId) {
+    public BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
         Organization organization = new Organization();
         setMeta(organization);
-        organization.setId(generateUniqueId(qrAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
+        // organization.setId(generateUniqueId(qrAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
 
-        Meta meta = organization.getMeta();
-        meta.setLastUpdated(getLastUpdatedDate(qrAdminData));
+        // Meta meta = organization.getMeta();
+        // meta.setLastUpdated(getLastUpdatedDate(qrAdminData));
 
-        // Set organization name
-        populateOrganizationName(organization, qrAdminData);
+        // // Set organization name
+        // populateOrganizationName(organization, qrAdminData);
 
-        // Set organization identifier
-        populateOrganizationIdentifier(organization, qrAdminData);
+        // // Set organization identifier
+        // populateOrganizationIdentifier(organization, qrAdminData);
 
-        // Set organization status
-        populateIsActive(organization, qrAdminData);
+        // // Set organization status
+        // populateIsActive(organization, qrAdminData);
 
-        // Set organization type (This could be a coded value from DemographicData or QR
-        // admin data)
-        populateOrganizationType(organization, qrAdminData);
+        // // Set organization type (This could be a coded value from DemographicData or QR
+        // // admin data)
+        // populateOrganizationType(organization, qrAdminData);
 
-        // Set organization address (from DemographicData)
-        populateOrganizationAddress(organization, qrAdminData);
+        // // Set organization address (from DemographicData)
+        // populateOrganizationAddress(organization, qrAdminData);
 
         // Set contact information (from QR Admin Data)
         // populateOrganizationContact(organization, qrAdminData);
@@ -96,136 +96,136 @@ public class OrganizationConverter extends BaseConverter {
         return bundleEntryComponent;
     }
 
-    private static void populateOrganizationName(Organization organization, QeAdminData qrAdminData) {
-        if (qrAdminData.getFacilityName() != null) {
-            organization.setName(qrAdminData.getFacilityName());
-        }
-    }
+//     private static void populateOrganizationName(Organization organization, QeAdminData qrAdminData) {
+//         if (qrAdminData.getFacilityName() != null) {
+//             organization.setName(qrAdminData.getFacilityName());
+//         }
+//     }
 
-    private static void populateOrganizationIdentifier(Organization organization, QeAdminData data) {
-        if (StringUtils.isNotEmpty(data.getFacilityId())) {
-            Identifier identifier = new Identifier();
-            Coding coding = new Coding();
-            coding.setDisplay(data.getFacilityScnIdentifierTypeDisplay());
-            CodeableConcept type = new CodeableConcept();
-            type.addCoding(coding);
-            identifier.setType(type);
-            identifier.setSystem(data.getFacilityCmsIdentifierTypeSystem());
-            identifier.setValue(data.getFacilityName());
-            organization.addIdentifier(identifier);
-        }
-    }
+//     private static void populateOrganizationIdentifier(Organization organization, QeAdminData data) {
+//         if (StringUtils.isNotEmpty(data.getFacilityId())) {
+//             Identifier identifier = new Identifier();
+//             Coding coding = new Coding();
+//             coding.setDisplay(data.getFacilityScnIdentifierTypeDisplay());
+//             CodeableConcept type = new CodeableConcept();
+//             type.addCoding(coding);
+//             identifier.setType(type);
+//             identifier.setSystem(data.getFacilityCmsIdentifierTypeSystem());
+//             identifier.setValue(data.getFacilityName());
+//             organization.addIdentifier(identifier);
+//         }
+//     }
 
-    private static void populateOrganizationType(Organization organization, QeAdminData data) {
-        if (StringUtils.isNotEmpty(data.getFacilityCmsIdentifierTypeCode())) {
-            // Create a new CodeableConcept for type
-            CodeableConcept type = new CodeableConcept();
+//     private static void populateOrganizationType(Organization organization, QeAdminData data) {
+//         if (StringUtils.isNotEmpty(data.getFacilityCmsIdentifierTypeCode())) {
+//             // Create a new CodeableConcept for type
+//             CodeableConcept type = new CodeableConcept();
 
-            // Create a new Coding object
-            Coding coding = new Coding();
-            String system = data.getOrganizationTypeSystem();
-            coding.setSystem(system); // Set the system
-            coding.setCode(data.getOrganizationTypeCode()); // Set the code (e.g., "other")
-            coding.setDisplay(data.getOrganizationTypeDisplay()); // Set the display (e.g., "Other")
+//             // Create a new Coding object
+//             Coding coding = new Coding();
+//             String system = data.getOrganizationTypeSystem();
+//             coding.setSystem(system); // Set the system
+//             coding.setCode(data.getOrganizationTypeCode()); // Set the code (e.g., "other")
+//             coding.setDisplay(data.getOrganizationTypeDisplay()); // Set the display (e.g., "Other")
 
-            // Add the coding to the type
-            type.addCoding(coding);
+//             // Add the coding to the type
+//             type.addCoding(coding);
 
-            // Set the type on the Organization object
-            organization.setType(Collections.singletonList(type));
-        }
-    }
+//             // Set the type on the Organization object
+//             organization.setType(Collections.singletonList(type));
+//         }
+//     }
 
-    private static void populateOrganizationAddress(Organization organization, QeAdminData qrAdminData) {
-        if (qrAdminData.getFacilityAddress1() != null || qrAdminData.getFacilityCity() != null ||
-                qrAdminData.getFacilityState() != null || qrAdminData.getFacilityZip() != null) {
+//     private static void populateOrganizationAddress(Organization organization, QeAdminData qrAdminData) {
+//         if (qrAdminData.getFacilityAddress1() != null || qrAdminData.getFacilityCity() != null ||
+//                 qrAdminData.getFacilityState() != null || qrAdminData.getFacilityZip() != null) {
 
-            Address address = new Address();
+//             Address address = new Address();
 
-            // Set the full address text by concatenating address components
-            String fullAddressText = qrAdminData.getFacilityAddress1();
-            if (qrAdminData.getFacilityCity() != null) {
-                fullAddressText += ", " + qrAdminData.getFacilityCity();
-            }
-            if (qrAdminData.getFacilityState() != null) {
-                fullAddressText += ", " + qrAdminData.getFacilityState();
-            }
-            if (qrAdminData.getFacilityZip() != null) {
-                fullAddressText += " " + qrAdminData.getFacilityZip();
-            }
-            address.setText(fullAddressText);
+//             // Set the full address text by concatenating address components
+//             String fullAddressText = qrAdminData.getFacilityAddress1();
+//             if (qrAdminData.getFacilityCity() != null) {
+//                 fullAddressText += ", " + qrAdminData.getFacilityCity();
+//             }
+//             if (qrAdminData.getFacilityState() != null) {
+//                 fullAddressText += ", " + qrAdminData.getFacilityState();
+//             }
+//             if (qrAdminData.getFacilityZip() != null) {
+//                 fullAddressText += " " + qrAdminData.getFacilityZip();
+//             }
+//             address.setText(fullAddressText);
 
-            // Set the address line (address line 1 and possibly address line 2)
-            List<String> addressLines = new ArrayList<>();
-            addressLines.add(qrAdminData.getFacilityAddress1());
+//             // Set the address line (address line 1 and possibly address line 2)
+//             List<String> addressLines = new ArrayList<>();
+//             addressLines.add(qrAdminData.getFacilityAddress1());
 
-            // Add address line 2 if it's available
-            if (qrAdminData.getFacilityAddress2() != null) {
-                addressLines.add(qrAdminData.getFacilityAddress2());
-            }
+//             // Add address line 2 if it's available
+//             if (qrAdminData.getFacilityAddress2() != null) {
+//                 addressLines.add(qrAdminData.getFacilityAddress2());
+//             }
 
-            // address.setLine(addressLines);
+//             // address.setLine(addressLines);
 
-            // Set the city, district, state, and postal code
-            address.setCity(qrAdminData.getFacilityCity());
-            address.setDistrict(qrAdminData.getFacilityDistrict());
-            address.setState(qrAdminData.getFacilityState());
-            address.setPostalCode(qrAdminData.getFacilityZip());
+//             // Set the city, district, state, and postal code
+//             address.setCity(qrAdminData.getFacilityCity());
+//             address.setDistrict(qrAdminData.getFacilityDistrict());
+//             address.setState(qrAdminData.getFacilityState());
+//             address.setPostalCode(qrAdminData.getFacilityZip());
 
-            // Add the address to the organization
-            organization.addAddress(address);
-        }
-    }
+//             // Add the address to the organization
+//             organization.addAddress(address);
+//         }
+//     }
 
-    private static void populateIsActive(Organization organization, QeAdminData qrAdminData) {
-        if (StringUtils.isNotEmpty(qrAdminData.getFacilityActive())) {
-            organization.setActive(Boolean.parseBoolean(qrAdminData.getFacilityActive()));
-        }
-    }
+//     private static void populateIsActive(Organization organization, QeAdminData qrAdminData) {
+//         if (StringUtils.isNotEmpty(qrAdminData.getFacilityActive())) {
+//             organization.setActive(Boolean.parseBoolean(qrAdminData.getFacilityActive()));
+//         }
+//     }
 
-    /**
-     * Generate a unique ID for the organization based on its data.
-     * This could be a combination of organization name, type, and an identifier.
-     *
-     * @param organizationId The organization ID used to generate a unique
-     *                       identifier.
-     * @return A unique ID for the organization.
-     */
-    // TODO: need an update in the ID generation code
-    private String generateUniqueId(String organizationId) {
-    try {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hashBytes = digest.digest(organizationId.getBytes(StandardCharsets.UTF_8));
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hashBytes) {
-            hexString.append(String.format("%02x", b));
-        }
-        return hexString.toString();
-    } catch (NoSuchAlgorithmException e) {
-        throw new RuntimeException("SHA-256 algorithm not found", e);
-    }
-}
-    /**
-     * Get the last updated date for the organization based on its data from
-     * QeAdminData.
-     *
-     * @param qrAdminData The QeAdminData object containing the facility's last
-     *                    updated date.
-     * @return The last updated date.
-     */
-    private Date getLastUpdatedDate(QeAdminData qrAdminData) {
-        // Check if the facilityLastUpdated field in QeAdminData is not null or empty
-        if (qrAdminData != null && qrAdminData.getFacilityLastUpdated() != null
-                && !qrAdminData.getFacilityLastUpdated().isEmpty()) {
-            try {
-                // Example: Assuming the format is "yyyy-MM-dd'T'HH:mm:ss'Z'" (ISO 8601 format)
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                return dateFormat.parse(qrAdminData.getFacilityLastUpdated()); // Return the parsed date
-            } catch (ParseException e) {
-                return new Date();
-            }
-        }
-        return new Date();
-    }
+//     /**
+//      * Generate a unique ID for the organization based on its data.
+//      * This could be a combination of organization name, type, and an identifier.
+//      *
+//      * @param organizationId The organization ID used to generate a unique
+//      *                       identifier.
+//      * @return A unique ID for the organization.
+//      */
+//     // TODO: need an update in the ID generation code
+//     private String generateUniqueId(String organizationId) {
+//     try {
+//         MessageDigest digest = MessageDigest.getInstance("SHA-256");
+//         byte[] hashBytes = digest.digest(organizationId.getBytes(StandardCharsets.UTF_8));
+//         StringBuilder hexString = new StringBuilder();
+//         for (byte b : hashBytes) {
+//             hexString.append(String.format("%02x", b));
+//         }
+//         return hexString.toString();
+//     } catch (NoSuchAlgorithmException e) {
+//         throw new RuntimeException("SHA-256 algorithm not found", e);
+//     }
+// }
+//     /**
+//      * Get the last updated date for the organization based on its data from
+//      * QeAdminData.
+//      *
+//      * @param qrAdminData The QeAdminData object containing the facility's last
+//      *                    updated date.
+//      * @return The last updated date.
+//      */
+//     private Date getLastUpdatedDate(QeAdminData qrAdminData) {
+//         // Check if the facilityLastUpdated field in QeAdminData is not null or empty
+//         if (qrAdminData != null && qrAdminData.getFacilityLastUpdated() != null
+//                 && !qrAdminData.getFacilityLastUpdated().isEmpty()) {
+//             try {
+//                 // Example: Assuming the format is "yyyy-MM-dd'T'HH:mm:ss'Z'" (ISO 8601 format)
+//                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+//                 return dateFormat.parse(qrAdminData.getFacilityLastUpdated()); // Return the parsed date
+//             } catch (ParseException e) {
+//                 return new Date();
+//             }
+//         }
+//         return new Date();
+//     }
 
 }

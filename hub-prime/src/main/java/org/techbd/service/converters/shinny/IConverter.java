@@ -10,8 +10,8 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
-import org.techbd.model.csv.ScreeningData;
-import org.techbd.model.csv.ScreeningResourceData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 
 @Component
 public interface IConverter {
@@ -24,7 +24,8 @@ public interface IConverter {
         setMeta(resource);
     }
 
-    BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,List<ScreeningData> screeningDataList,QeAdminData qrAdminData,ScreeningResourceData screeningResourceData,String interactionId);
+    BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId);
 
     default void setMeta(Resource resource) {
         if (null != resource.getMeta()) {

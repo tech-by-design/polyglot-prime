@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
-import org.techbd.model.csv.ScreeningData;
-import org.techbd.model.csv.ScreeningResourceData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 
 @Component
 public class DiagnosticReportConverter  extends BaseConverter {
@@ -22,8 +22,8 @@ public class DiagnosticReportConverter  extends BaseConverter {
     }
 
     @Override
-    public BundleEntryComponent convert(Bundle bundle, DemographicData demographicData, List<ScreeningData> screeningDataList,
-            QeAdminData qrAdminData,ScreeningResourceData screeningResourceData,String interactionId) {
+    public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'convert'");
     }

@@ -17,8 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
-import org.techbd.model.csv.ScreeningData;
-import org.techbd.model.csv.ScreeningResourceData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.orchestrate.csv.CsvOrchestrationEngine;
 import org.techbd.service.converters.csv.CsvToFhirConverter;
 import org.techbd.service.http.Interactions;
@@ -134,9 +134,9 @@ public class CsvService {
         String demographicDataStr = getDemographicData();//TODO - integrate vfs to unzip and read actual data
         String screeningResourceDataStr = getScreeningResourceData(); //TODO -integrate vfx to unzip and read actual data
         List<DemographicData> demographicData = CsvConversionUtil.convertCsvStringToDemographicData(demographicDataStr);
-        List<ScreeningData> screeningData = CsvConversionUtil.convertCsvStringToScreeningData(screeningDataStr);
+        List<ScreeningObservationData> screeningData = CsvConversionUtil.convertCsvStringToScreeningData(screeningDataStr);
         List<QeAdminData> qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(qeAdminDataStr);
-        List<ScreeningResourceData> screeningResourceData = CsvConversionUtil.convertCsvStringToScreeningResourceData(screeningResourceDataStr);
+        List<ScreeningProfileData> screeningResourceData = CsvConversionUtil.convertCsvStringToScreeningResourceData(screeningResourceDataStr);
         if (CollectionUtils.isEmpty(demographicData) || CollectionUtils.isEmpty(screeningData) || CollectionUtils.isEmpty(qeAdminData)) {
             throw new IllegalArgumentException("Invalid Zip File"); //TODO later change with custom exception
         }
