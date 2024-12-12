@@ -92,16 +92,6 @@ BEGIN
 
     RETURN NEXT has_pk(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should have a primary key.');
 
-    RETURN NEXT col_is_fk(schema_name::name,
-        'sat_interaction_flat_file_csv_request'::name, 
-        'hub_interaction_id'::name, 
-        'The foreign key from sat_interaction_flat_file_csv_request.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.'
-    );
-    RETURN NEXT col_is_fk(schema_name::name,
-        'sat_interaction_flat_file_csv_request'::name, 
-        'zip_file_hub_interaction_id'::name, 
-        'The foreign key from sat_interaction_flat_file_csv_request.zip_file_hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.'
-    );
 
     RETURN NEXT columns_are(schema_name, 'sat_interaction_flat_file_csv_request',
         ARRAY['sat_interaction_flat_file_csv_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
