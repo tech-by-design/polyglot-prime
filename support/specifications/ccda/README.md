@@ -99,8 +99,8 @@ support/
 ### **Step 1: Prepare the Files**
 Ensure the following:
 1. **Example CCDA files** should be stored in the `ccda/NYHRSN-CCDA-examples` folder.
-   - For example, place the `AHCHRSNScreeningResponseCCDExample.xml` file in the `ccda/ccda-gravity-schema-files/` folder.
-2. **All XSD schema files** should also be placed in the same `ccda/` folder.
+
+2. **All XSD schema files** should also be placed in the same `ccda/ccda-gravity-schema-files/` folder.
 
 Alternatively, if the example CCDA files are stored in a different folder, ensure that you update the `schemaLocation` in the CCDA file to point to the correct location of the `CDA.xsd` file, like this:
 ```
