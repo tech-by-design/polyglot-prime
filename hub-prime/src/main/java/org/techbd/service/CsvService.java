@@ -89,6 +89,7 @@ public class CsvService {
         final var forwardedAt = OffsetDateTime.now();
         final var initRIHR = new RegisterInteractionHttpRequest();
         try {
+            initRIHR.setOrigin("http");
             initRIHR.setInteractionId(interactionId);
             initRIHR.setInteractionKey(request.getRequestURI());
             initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(

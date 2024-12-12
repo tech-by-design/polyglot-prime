@@ -289,6 +289,7 @@ public class CsvOrchestrationEngine {
                                 tenantId)));
                 initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 initRIHR.setCsvZipFileName(file.getOriginalFilename());
+                initRIHR.setSourceHubInteractionId(interactionId);
                 for (FileDetail fileDetail : fileDetailList) {
                     switch (fileDetail.fileType()) {
                         case FileType.DEMOGRAPHIC_DATA -> {
@@ -300,8 +301,8 @@ public class CsvOrchestrationEngine {
                             initRIHR.setCsvQeAdminDataPayloadText(fileDetail.content());
                         }
                         case FileType.SCREENING_PROFILE_DATA -> {
-                            initRIHR.setCsvScreeningConsentDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningConsentDataPayloadText(fileDetail.content());
+                            initRIHR.setCsvScreeningProfileDataFileName(fileDetail.filename());
+                            initRIHR.setCsvScreeningProfileDataPayloadText(fileDetail.content());
                         }
                         case FileType.SCREENING_OBSERVATION_DATA -> {
                             initRIHR.setCsvScreeningObservationDataFileName(fileDetail.filename());
@@ -311,7 +312,6 @@ public class CsvOrchestrationEngine {
                 }
 
                 initRIHR.setCreatedAt(forwardedAt);
-                // initRIHR.setPa
                 initRIHR.setCreatedBy(CsvService.class.getName());
                 initRIHR.setToState("CSV_ACCEPT");
                 final var provenance = "%s.saveScreeningGroup"
@@ -394,7 +394,7 @@ public class CsvOrchestrationEngine {
                 } else {
                     initRIHR.setToState("VALIDATION_FAILED");
                 }
-                // initRIHR.setValidation
+                
                 // initRIHR.setValidation
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
