@@ -25,10 +25,16 @@ This project leverages the [Frictionless Data](https://frictionlessdata.io/) lib
    - Access the example data package from our repository: [Data Package Examples](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/flat-file).
    - The data package contains only the Frictionless JSON schema (`datapackage-nyher-fhir-ig-equivalent.json`) and the CSV data folder. Other files (e.g., Python scripts or markdown documentation) have been removed for clarity.
    - Download and zip the `specifications` folder for easy sharing or validation in Data Curator.
-3. **Validate and Save**:
+3. **Ensure Correct CSV Order**
+   - After loading the CSV package into Data Curator, ensure that the files are listed and processed in the following order (due to the primary key reference in `QE_ADMIN_DATA`):
+     1. `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv` 
+     2. `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv` 
+     3. `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv` 
+     4. `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`
+   - This order is required because `QE_ADMIN_DATA` has the primary key `PATIENT_MR_ID_VALUE`, and the other datasets reference it.
+4. **Validate and Save**
    - Load the zipped data package in Data Curator.
    - Fix any errors identified during validation and save the updated files.
-
 
 ### Open Data Editor (ODE)
 
