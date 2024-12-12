@@ -54,10 +54,6 @@ A base schema file with foundational data types referenced by datatypes.xsd and 
 ### 7. `voc.xsd`
 A vocabulary schema containing controlled terminologies and code system references for CCDA elements.
 
-### 8. `SampleCDAQuestionnaireResponse.xml`
-A sample CCDA document showcasing how questionnaire response data is structured and represented in XML format.
-
-
 
 # CCDA Validation Using XML-Spy
 
@@ -73,7 +69,7 @@ This section explains XML-Spy and associated XSD schema files to validate CCDA (
 - Visual and structured editing of XML files.
 
 ### 2. **XSD Schema Files**
-The following schema files are required for validation and should be placed in the `ccda/` folder:
+The following schema files are required for validation and should be placed in the `ccda/ccda-gravity-schema-files/` folder:
 - **`POCD_MT000040.xsd`**: Main CCDA structure schema.
 - **`datatypes.xsd`**: Provides definitions for CCDA data types.
 - **`CDA.xsd`**: Schema for Clinical Document Architecture.
@@ -86,15 +82,16 @@ The following schema files are required for validation and should be placed in t
 support/
  └── specifications/
      └── ccda/
-         ├── POCD_MT000040.xsd  # Main schema for CCDA validation
-         ├── datatypes.xsd  # Schema for CCDA data types
-         ├── CDA.xsd  # Main schema for Clinical Document Architecture
-         ├── NarrativeBlock.xsd  # Defines human-readable sections in CCDA
-         ├── datatypes-base.xsd  # Base schema for foundational data types
-         └── voc.xsd  # Vocabulary schema for terminologies and code systems
-         ├── NYHRSN-CCDA-examples/  # Contains example CCDA files
-            │   ├── AHCHRSNScreeningResponseCCDExample.xml
-            │   └── Additional_CCDA_Examples.xml (in futur0)
+        └── ccda-gravity-schema-files/
+            ├── POCD_MT000040.xsd  # Main schema for CCDA validation
+            ├── datatypes.xsd  # Schema for CCDA data types
+            ├── CDA.xsd  # Main schema for Clinical Document Architecture
+            ├── NarrativeBlock.xsd  # Defines human-readable sections in CCDA
+            ├── datatypes-base.xsd  # Base schema for foundational data types
+            └── voc.xsd  # Vocabulary schema for terminologies and code systems
+            ├── NYHRSN-CCDA-examples/  # Contains example CCDA files
+                │   ├── AHCHRSNScreeningResponseCCDExample.xml
+                │   └── Additional_CCDA_Examples.xml (in futur0)
 ```
 
 ## How to Validate a CCDA File
@@ -102,7 +99,7 @@ support/
 ### **Step 1: Prepare the Files**
 Ensure the following:
 1. **Example CCDA files** should be stored in the `ccda/NYHRSN-CCDA-examples` folder.
-   - For example, place the `AHCHRSNScreeningResponseCCDExample.xml` file in the `ccda/` folder.
+   - For example, place the `AHCHRSNScreeningResponseCCDExample.xml` file in the `ccda/ccda-gravity-schema-files/` folder.
 2. **All XSD schema files** should also be placed in the same `ccda/` folder.
 
 Alternatively, if the example CCDA files are stored in a different folder, ensure that you update the `schemaLocation` in the CCDA file to point to the correct location of the `CDA.xsd` file, like this:
@@ -111,7 +108,7 @@ schemaLocation="file:///path/to/ccda/folder/CDA.xsd"
 ```
 
 
-This ensures that the files are correctly placed in the same folder (`ccda/`), or it guides users to modify the `schemaLocation` in the CCDA file if necessary.
+This ensures that the files are correctly placed in the same folder (`ccda/ccda-gravity-schema-files/`), or it guides users to modify the `schemaLocation` in the CCDA file if necessary.
 
 
 
@@ -132,7 +129,7 @@ This ensures that the files are correctly placed in the same folder (`ccda/`), o
 ## Example Validation Workflow
 1. Place the file `AHCHRSNScreeningResponseCCDExample.xml` in `ccda/`.
 2. Open XML-Spy and load the file.
-3. Link the XSD file `CDA.xsd` located in the `ccda/` folder.
+3. Link the XSD file `CDA.xsd` located in the `ccda/ccda-gravity-schema-files/` folder.
 4. Perform validation and review the results in the **Validation Results** pane.
 5. Address errors or warnings, and save the updated file in the same folder after validation.
 
