@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-12-12<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.378.0</li>
+          <li id="projectVersion">Version: 0.379.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>283</td>
-<td>25</td>
+<td>285</td>
+<td>29</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -92,11 +92,11 @@
 <td><a href="#lib.aide.tabular.JooqRowsSupplier">lib.aide.tabular.JooqRowsSupplier</a></td>
 <td>1</td></tr>
 <tr class="b">
-<td><a href="#org.techbd.orchestrate.csv.CsvOrchestrationEngine">org.techbd.orchestrate.csv.CsvOrchestrationEngine</a></td>
-<td>1</td></tr>
-<tr class="a">
 <td><a href="#org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession</a></td>
-<td>2</td></tr>
+<td>6</td></tr>
+<tr class="a">
+<td><a href="#org.techbd.orchestrate.csv.FileProcessor">org.techbd.orchestrate.csv.FileProcessor</a></td>
+<td>1</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine">org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</a></td>
 <td>1</td></tr>
@@ -151,20 +151,6 @@
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SF_SWITCH_NO_DEFAULT">SF_SWITCH_NO_DEFAULT</a></td>
 <td>322</td>
-<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.csv.CsvOrchestrationEngine"></a><section>
-<h2>org.techbd.orchestrate.csv.CsvOrchestrationEngine</h2>
-<table class="table table-striped">
-<tr class="a">
-<th>Bug</th>
-<th>Category</th>
-<th>Details</th>
-<th>Line</th>
-<th>Priority</th></tr>
-<tr class="b">
-<td>Possible null pointer dereference in org.techbd.orchestrate.csv.CsvOrchestrationEngine.processFiles(List) due to return value of called method</td>
-<td>STYLE</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
-<td>778</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
@@ -175,16 +161,54 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
+<td>Dead store to device in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.createOperationOutcome(String, String, String, List, HttpServletRequest, long, Instant, Instant, String)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>430</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>Dead store to userAgent in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.createOperationOutcome(String, String, String, List, HttpServletRequest, long, Instant, Instant, String)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>429</td>
+<td>Medium</td></tr>
+<tr class="b">
 <td>Found reliance on default encoding in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.validateCsvUsingPython(List, String): new java.io.InputStreamReader(InputStream)</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>675</td>
+<td>776</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Possible null pointer dereference in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.validate() due to return value of called method</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
-<td>233</td>
+<td>252</td>
+<td>Medium</td></tr>
+<tr class="b">
+<td>Self assignment of field CsvOrchestrationEngine$OrchestrationSession.bundleGenerate in new org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession(CsvOrchestrationEngine, String, String, CsvOrchestrationEngine$Device, MultipartFile, String, HttpServletRequest, boolean)</td>
+<td>CORRECTNESS</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SA_FIELD_SELF_ASSIGNMENT">SA_FIELD_SELF_ASSIGNMENT</a></td>
+<td>212</td>
+<td>High</td></tr>
+<tr class="a">
+<td>Uninitialized read of bundleGenerate in new org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession(CsvOrchestrationEngine, String, String, CsvOrchestrationEngine$Device, MultipartFile, String, HttpServletRequest, boolean)</td>
+<td>CORRECTNESS</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UR_UNINIT_READ">UR_UNINIT_READ</a></td>
+<td>212</td>
+<td>High</td></tr></table></section><a name="org.techbd.orchestrate.csv.FileProcessor"></a><section>
+<h2>org.techbd.orchestrate.csv.FileProcessor</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Possible null pointer dereference in org.techbd.orchestrate.csv.FileProcessor.processAndGroupFiles(List) due to return value of called method</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
+<td>28</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</h2>
 <table class="table table-striped">
