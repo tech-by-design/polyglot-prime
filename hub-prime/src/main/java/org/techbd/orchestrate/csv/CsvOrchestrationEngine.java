@@ -35,10 +35,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
+import org.techbd.model.csv.FileDetail;
+import org.techbd.model.csv.FileType;
 import org.techbd.service.CsvService;
 import org.techbd.service.VfsCoreService;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.hub.prime.AppConfig;
+import org.techbd.service.http.hub.prime.api.FHIRService;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
@@ -58,17 +61,19 @@ public class CsvOrchestrationEngine {
     private final List<OrchestrationSession> sessions;
     private final AppConfig appConfig;
     private final VfsCoreService vfsCoreService;
+    private final FHIRService fhirService;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private static final Logger log = LoggerFactory.getLogger(CsvOrchestrationEngine.class);
     private static final Pattern FILE_PATTERN = Pattern.compile(
             "(DEMOGRAPHIC_DATA|QE_ADMIN_DATA|SCREENING)_(.+)");
 
     public CsvOrchestrationEngine(final AppConfig appConfig, final VfsCoreService vfsCoreService,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig) {
+            final UdiPrimeJpaConfig udiPrimeJpaConfig,FHIRService fhirService) {
         this.sessions = new ArrayList<>();
         this.appConfig = appConfig;
         this.vfsCoreService = vfsCoreService;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.fhirService = fhirService;
     }
 
     public List<OrchestrationSession> getSessions() {
@@ -113,16 +118,19 @@ public class CsvOrchestrationEngine {
         private MultipartFile file;
         private String masterInteractionId;
         private HttpServletRequest request;
+        private boolean generateBundle;
 
         public OrchestrationSessionBuilder withSessionId(final String sessionId) {
             this.sessionId = sessionId;
             return this;
         }
 
+
         public OrchestrationSessionBuilder withTenantId(final String tenantId) {
             this.tenantId = tenantId;
             return this;
         }
+
 
         public OrchestrationSessionBuilder withDevice(final Device device) {
             this.device = device;
@@ -144,6 +152,11 @@ public class CsvOrchestrationEngine {
             return this;
         }
 
+        public OrchestrationSessionBuilder withGenerateBundle(boolean generateBundle) {
+            this.generateBundle = generateBundle;
+            return this;
+        }
+
         public OrchestrationSession build() {
             if (sessionId == null) {
                 sessionId = UUID.randomUUID().toString();
@@ -154,7 +167,8 @@ public class CsvOrchestrationEngine {
             if (file == null) {
                 throw new IllegalArgumentException("File must not be null");
             }
-            return new OrchestrationSession(sessionId, tenantId, device, file, masterInteractionId, request);
+            return new OrchestrationSession(sessionId, tenantId, device, file, masterInteractionId, request,
+                    generateBundle);
         }
     }
 
@@ -181,13 +195,13 @@ public class CsvOrchestrationEngine {
         private final MultipartFile file;
         private Map<String, Object> validationResults;
         private String tenantId;
-
+        private boolean bundleGenerate;
         HttpServletRequest request;
 
         public OrchestrationSession(final String sessionId, final String tenantId, final Device device,
                 final MultipartFile file,
                 final String masterInteractionId,
-                final HttpServletRequest request) {
+                final HttpServletRequest request, boolean generateBundle) {
             this.sessionId = sessionId;
             this.tenantId = tenantId;
             this.device = device;
@@ -195,6 +209,11 @@ public class CsvOrchestrationEngine {
             this.validationResults = new HashMap<>();
             this.masterInteractionId = masterInteractionId;
             this.request = request;
+            this.bundleGenerate = bundleGenerate;
+        }
+
+        public boolean isBundleGenerate() {
+            return bundleGenerate;
         }
 
         public String getSessionId() {
@@ -238,7 +257,7 @@ public class CsvOrchestrationEngine {
 
                 // Trigger CSV processing and validation
                 this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
-                saveValidationResults(this.validationResults, tenantId);
+                // TODO - SAVE COMBINED VALIDATION RESULTS UNDER MASTER INTERACTION ID??
             } catch (final IllegalArgumentException e) {
                 log.error("Validation Error", e);
                 this.validationResults = Map.of(
@@ -252,8 +271,8 @@ public class CsvOrchestrationEngine {
             }
         }
 
-        private void saveScreeningGroup(final HttpServletRequest request,
-                final MultipartFile file, final Map<FileType, FileDetail> fileMap, final String tenantId) {
+        private void saveScreeningGroup(String groupInteractionId, final HttpServletRequest request,
+                final MultipartFile file, List<FileDetail> fileDetailList, final String tenantId) {
             final var interactionId = getBundleInteractionId(request);
             log.info("REGISTER State NONE : BEGIN for inteaction id  : {} tenant id : {}",
                     interactionId, tenantId);
@@ -262,28 +281,35 @@ public class CsvOrchestrationEngine {
             final var forwardedAt = OffsetDateTime.now();
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
-                initRIHR.setInteractionId(interactionId);
+                initRIHR.setInteractionId(groupInteractionId);
+                // TODO - set master interaction id
                 initRIHR.setInteractionKey(request.getRequestURI());
                 initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", "Original Flat File CSV", "tenant_id",
                                 tenantId)));
                 initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 initRIHR.setCsvZipFileName(file.getOriginalFilename());
-                // initRIHR.set
-                initRIHR.setCsvDemographicDataFileName(fileMap.get(FileType.DEMOGRAPHIC_DATA).filename);
-                initRIHR.setCsvDemographicDataPayloadText(fileMap.get(FileType.DEMOGRAPHIC_DATA).content);
-                initRIHR.setCsvQeAdminDataFileName(fileMap.get(FileType.QE_ADMIN_DATA).filename);
-                initRIHR.setCsvQeAdminDataPayloadText(fileMap.get(FileType.QE_ADMIN_DATA).content);
+                for (FileDetail fileDetail : fileDetailList) {
+                    switch (fileDetail.fileType()) {
+                        case FileType.DEMOGRAPHIC_DATA -> {
+                            initRIHR.setCsvDemographicDataFileName(fileDetail.filename());
+                            initRIHR.setCsvDemographicDataPayloadText(fileDetail.content());
+                        }
+                        case FileType.QE_ADMIN_DATA -> {
+                            initRIHR.setCsvQeAdminDataFileName(fileDetail.filename());
+                            initRIHR.setCsvQeAdminDataPayloadText(fileDetail.content());
+                        }
+                        case FileType.SCREENING_PROFILE_DATA -> {
+                            initRIHR.setCsvScreeningConsentDataFileName(fileDetail.filename());
+                            initRIHR.setCsvScreeningConsentDataPayloadText(fileDetail.content());
+                        }
+                        case FileType.SCREENING_OBSERVATION_DATA -> {
+                            initRIHR.setCsvScreeningObservationDataFileName(fileDetail.filename());
+                            initRIHR.setCsvScreeningObservationDataPayloadText(fileDetail.content());
+                        }
+                    }
+                }
 
-                initRIHR.setCsvScreeningObservationDataFileName(
-                        fileMap.get(FileType.SCREENING_OBSERVATION_DATA).filename);
-                initRIHR.setCsvScreeningObservationDataPayloadText(
-                        fileMap.get(FileType.SCREENING_OBSERVATION_DATA).content);
-                // To-Do : setCsvScreeningResourcesDataFileName adeded with new file
-                // SCREENING_PROFILE_DATA
-                initRIHR.setCsvScreeningResourcesDataFileName(fileMap.get(FileType.SCREENING_PROFILE_DATA).filename);
-                initRIHR.setCsvScreeningResourcesDataPayloadText(
-                        fileMap.get(FileType.SCREENING_PROFILE_DATA).content);
                 initRIHR.setCreatedAt(forwardedAt);
                 initRIHR.setCreatedBy(CsvService.class.getName());
                 initRIHR.setToState("CSV_ACCEPT");
@@ -338,7 +364,8 @@ public class CsvOrchestrationEngine {
             return Boolean.TRUE.equals(valid);
         }
 
-        private void saveValidationResults(final Map<String, Object> validationResults,
+        private void saveValidationResults(final Map<String, Object> validationResults, String masterInteractionId,
+                String groupInteractionId,
                 final String tenantId) {
             final var interactionId = getBundleInteractionId(request);
             log.info("REGISTER State VALIDATION : BEGIN for inteaction id  : {} tenant id : {}",
@@ -348,7 +375,9 @@ public class CsvOrchestrationEngine {
             final var createdAt = OffsetDateTime.now();
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
-                initRIHR.setInteractionId(interactionId);
+                initRIHR.setInteractionId(groupInteractionId);
+                // TODO - set master interaction id while saving group for linking when new db
+                // changes available.
                 initRIHR.setInteractionKey(request.getRequestURI());
                 initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", "CSV Validation Result", "tenant_id",
@@ -357,12 +386,14 @@ public class CsvOrchestrationEngine {
                 initRIHR.setCreatedAt(createdAt);
                 initRIHR.setCreatedBy(CsvService.class.getName());
                 initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
+                initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
                 initRIHR.setFromState("CSV_ACCEPT");
-                if (isValid(validationResults)) {
+                if (isValid(validationResults)) { // TODO -revisit this logic as per new validation json
                     initRIHR.setToState("VALIDATION_SUCCESS");
                 } else {
                     initRIHR.setToState("VALIDATION_FAILED");
                 }
+                
                 // initRIHR.setValidation
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
@@ -384,12 +415,13 @@ public class CsvOrchestrationEngine {
             }
         }
 
-        private static Map<String, Object> createOperationOutcome(final String interactionId,
+        private static Map<String, Object> createOperationOutcome(final String masterInteractionId,
+                String groupInteractionId,
                 final String validationResults,
-                final List<String> fileNames, final HttpServletRequest request, final long zipFileSize,
+                final List<FileDetail> fileDetails, final HttpServletRequest request, final long zipFileSize,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) throws Exception {
             // Populate provenance with additional details like user agent, device, and URI
-            final Map<String, Object> provenance = populateProvenance(interactionId, fileNames, initiatedAt,
+            final Map<String, Object> provenance = populateProvenance(groupInteractionId, fileDetails, initiatedAt,
                     completedAt, originalFileName);
 
             // Get user agent and device details
@@ -399,23 +431,54 @@ public class CsvOrchestrationEngine {
             // Populate the outer map with additional details
             return Map.of(
                     "resourceType", "OperationOutcome",
-                    "bundleSessionId", interactionId,
+                    "interactionId", groupInteractionId,
                     "validationResults", Configuration.objectMapper.readTree(validationResults),
-                    "provenance", provenance,
-                    "requestUri", request.getRequestURI(),
-                    "zipFileSize", zipFileSize,
-                    "userAgent", userAgent,
-                    "device", Map.of(
-                            "deviceId", device.deviceId(),
-                            "deviceName", device.deviceName()
-                    // "initiatedAt", ZonedDateTime.now().minusMinutes(10).toString(), // Example
-                    // initiated time
-                    // "completedAt", ZonedDateTime.now().toString() // Example completed time
-                    ));
+                    "provenance", provenance
+            // "requestUri", request.getRequestURI()
+            // "zipFileSize", zipFileSize,
+            // "userAgent", userAgent,
+            // "device", Map.of(
+            // "deviceId", device.deviceId(),
+            // "deviceName", device.deviceName()
+            // "initiatedAt", ZonedDateTime.now().minusMinutes(10).toString(), // Example
+            // initiated time
+            // "completedAt", ZonedDateTime.now().toString() // Example completed time
+            // )
+            );
         }
 
-        private static Map<String, Object> populateProvenance(final String interactionId, final List<String> fileNames,
+        public Map<String, Object> generateValidationResults(final String masterInteractionId,
+                final HttpServletRequest request,
+                final long zipFileSize,
+                final Instant initiatedAt,
+                final Instant completedAt,
+                final String originalFileName, List<Map<String, Object>> combinedValidationResult) throws Exception {
+
+            Map<String, Object> result = new HashMap<>();
+
+            final String userAgent = request.getHeader("User-Agent");
+            final Device device = Device.INSTANCE;
+            result.put("resourceType", "OperationOutcome");
+            result.put("bundleSessionId", masterInteractionId);
+            result.put("validationResults", combinedValidationResult);
+            result.put("requestUri", request.getRequestURI());
+            result.put("zipFileSize", zipFileSize);
+            result.put("noOfScreenings", combinedValidationResult.size());
+            result.put("userAgent", userAgent);
+            result.put("device", Map.of(
+                    "deviceId", device.deviceId(),
+                    "deviceName", device.deviceName()));
+            result.put("initiatedAt", initiatedAt.toString());
+            result.put("completedAt", completedAt.toString());
+            return result;
+        }
+
+        private static Map<String, Object> populateProvenance(final String interactionId,
+                final List<FileDetail> fileDetails,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) {
+            List<String> fileNames = fileDetails.stream()
+                    .map(FileDetail::filename)
+                    .collect(Collectors.toList());
             return Map.of(
                     "resourceType", "Provenance",
                     // "recorded", ZonedDateTime.now().toString(),
@@ -440,16 +503,17 @@ public class CsvOrchestrationEngine {
                     "validatedFiles", fileNames);
         }
 
-        public Map<String, Object> processScreenings(final String interactionId, final Instant initiatedAt,
+        public Map<String, Object> processScreenings(final String masterInteractionId, final Instant initiatedAt,
                 final String originalFileName, final String tenantId) {
             try {
                 log.info("Inbound Folder Path: {} for interactionid :{} ",
-                        appConfig.getCsv().validation().inboundPath(), interactionId);
+                        appConfig.getCsv().validation().inboundPath(), masterInteractionId);
                 log.info("Ingress Home Path: {} for interactionId : {}",
-                        appConfig.getCsv().validation().ingessHomePath(), interactionId);
+                        appConfig.getCsv().validation().ingessHomePath(), masterInteractionId);
                 // Process ZIP files and get the session ID
-                final UUID processId = processZipFilesFromInbound(interactionId);
-                log.info("ZIP files processed with session ID: {} for interaction id :{} ", processId, interactionId);
+                final UUID processId = processZipFilesFromInbound(masterInteractionId);
+                log.info("ZIP files processed with session ID: {} for interaction id :{} ", processId,
+                        masterInteractionId);
 
                 // Construct processed directory path
                 final String processedDirPath = appConfig.getCsv().validation().ingessHomePath() + "/" + processId
@@ -458,7 +522,7 @@ public class CsvOrchestrationEngine {
                 copyFilesToProcessedDir(processedDirPath);
                 createOutputFileInProcessedDir(processedDirPath);
                 log.info("Attempting to resolve processed directory: {} for interactionId : {}", processedDirPath,
-                        interactionId);
+                        masterInteractionId);
 
                 // Get processed files for validation
                 final FileObject processedDir = vfsCoreService
@@ -466,34 +530,66 @@ public class CsvOrchestrationEngine {
 
                 if (!vfsCoreService.fileExists(processedDir)) {
                     log.error("Processed directory does not exist: {} for interactionId : {}", processedDirPath,
-                            interactionId);
+                            masterInteractionId);
                     throw new FileSystemException("Processed directory not found: " + processedDirPath);
                 }
 
                 // Collect CSV files for validation
-                final List<String> csvFiles = scanForCsvFiles(processedDir, interactionId);
+                final List<String> csvFiles = scanForCsvFiles(processedDir, masterInteractionId);
 
-                final Map<FileType, FileDetail> files = processFiles(csvFiles);
-                saveScreeningGroup(request, file, files, tenantId);
-                log.info("Found {} CSV files for validation for interactionId :{}", csvFiles.size(), interactionId);
-
-                if (csvFiles.isEmpty()) {
-                    log.warn("No CSV files found for validation. Skipping validation.for interactionId :{} ",
-                            interactionId);
-                    return null;
+                Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(csvFiles);
+                // final Map<FileType, FileDetail> files = processFiles(csvFiles);//TODO -CHECK
+                // AND REMOVE
+                // TODO -check if working for multiple screenings
+                List<Map<String, Object>> combinedValidationResults = new ArrayList<>();
+                for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
+                    String groupKey = entry.getKey(); // The group key (e.g., "_1")
+                    List<FileDetail> fileDetails = entry.getValue(); // The list of FileDetails in this group
+                    if (fileDetails.isEmpty()) {
+                        log.warn(
+                                "No CSV files found for validation in group {}. Skipping validation for interactionId: {}",
+                                groupKey, masterInteractionId);
+                        continue; // Skip empty groups
+                    }
+                    Map<String, Object> operationOutomeForThisGroup = validateScreeningGroup(groupKey, fileDetails,
+                            originalFileName);
+                    combinedValidationResults.add(operationOutomeForThisGroup);
+                    if (bundleGenerate) {
+                        //TODO  - invoke fhir conversion and submission.
+                    }
                 }
-
-                // Validate CSV files
-                final String validationResults = validateCsvUsingPython(csvFiles, interactionId);
-
-                final Instant completedAt = Instant.now();
-                return createOperationOutcome(interactionId, validationResults, csvFiles, request, file.getSize(),
-                        initiatedAt, completedAt, originalFileName);
-
+                Instant completedAt = Instant.now();
+                return generateValidationResults(masterInteractionId, request,
+                        file.getSize(), initiatedAt, completedAt, originalFileName, combinedValidationResults);
             } catch (final Exception e) {
                 log.error("Error in ZIP processing tasklet: {} for interactionId :{} ", e.getMessage(), e);
                 throw new RuntimeException("Error processing ZIP files: " + e.getMessage(), e);
             }
+        }
+
+        private Map<String, Object> validateScreeningGroup(String groupKey, List<FileDetail> fileDetails,
+                String originalFileName) throws Exception {
+            Instant initiatedAtForThisGroup = Instant.now();
+
+            // Log the group being processed
+            log.info("Processing group {} with {} files for interactionId: {}", groupKey, fileDetails.size(),
+                    masterInteractionId);
+
+            // Save the screening group - you can call this for each group
+            String groupInteractionId = UUID.randomUUID().toString();
+            saveScreeningGroup(groupInteractionId, request, file, fileDetails, tenantId);
+
+            // Validate CSV files inside the group
+            String validationResults = validateCsvUsingPython(fileDetails, masterInteractionId);
+            Instant completedAtForThisGroup = Instant.now();
+
+            Map<String, Object> operationOutomeForThisGroup = createOperationOutcome(masterInteractionId,
+                    groupInteractionId, validationResults, fileDetails,
+                    request,
+                    file.getSize(), initiatedAtForThisGroup, completedAtForThisGroup, originalFileName);
+
+            saveValidationResults(operationOutomeForThisGroup, masterInteractionId, groupInteractionId, tenantId);
+            return operationOutomeForThisGroup;
         }
 
         private void createOutputFileInProcessedDir(final String processedDirPathStr) throws IOException {
@@ -528,6 +624,8 @@ public class CsvOrchestrationEngine {
             if (!vfsCoreService.fileExists(inboundFO)) {
                 log.error("Inbound folder does not exist: {} for interactionId :{} ", inboundFO.getName().getPath(),
                         interactionId);
+                log.error("Inbound folder does not exist: {} for interactionId :{} ", inboundFO.getName().getPath(),
+                        interactionId);
                 throw new FileSystemException("Inbound folder does not exist: " + inboundFO.getName().getPath());
             }
             vfsCoreService.validateAndCreateDirectories(ingresshomeFO);
@@ -550,6 +648,8 @@ public class CsvOrchestrationEngine {
                 final FileObject[] children = processedDir.getChildren();
 
                 if (children == null) {
+                    log.warn("No children found in processed directory: {} for interactionId :{}",
+                            processedDir.getName().getPath(), interactionId);
                     log.warn("No children found in processed directory: {} for interactionId :{}",
                             processedDir.getName().getPath(), interactionId);
                     return csvFiles;
@@ -626,7 +726,7 @@ public class CsvOrchestrationEngine {
         // return validationResults;
         // }
 
-        public String validateCsvUsingPython(final List<String> filePaths, final String interactionId)
+        public String validateCsvUsingPython(final List<FileDetail> fileDetails, final String interactionId)
                 throws Exception {
             log.info("CsvService : validateCsvUsingPython BEGIN for interactionId :{} " + interactionId);
             try {
@@ -636,19 +736,19 @@ public class CsvOrchestrationEngine {
                 }
 
                 // Enhanced validation input
-                if (filePaths == null || filePaths.isEmpty()) {
+                if (fileDetails == null || fileDetails.isEmpty()) {
                     log.error("No files provided for validation");
                     throw new IllegalArgumentException("No files provided for validation");
                 }
 
                 // Ensure the files exist and are valid using VFS before running the validation
                 final List<FileObject> fileObjects = new ArrayList<>();
-                for (final String filePath : filePaths) {
-                    log.info("Validating file: {}", filePath);
-                    final FileObject file = vfsCoreService.resolveFile(filePath);
+                for (final FileDetail fileDetail : fileDetails) {
+                    log.info("Validating file: {}", fileDetail);
+                    final FileObject file = vfsCoreService.resolveFile(fileDetail.filePath());
                     if (!vfsCoreService.fileExists(file)) {
-                        log.error("File not found: {}", filePath);
-                        throw new FileNotFoundException("File not found: " + filePath);
+                        log.error("File not found: {}", fileDetail.filePath());
+                        throw new FileNotFoundException("File not found: " + fileDetail.filePath());
                     }
                     fileObjects.add(file);
                 }
@@ -657,12 +757,12 @@ public class CsvOrchestrationEngine {
                 vfsCoreService.validateAndCreateDirectories(fileObjects.toArray(new FileObject[0]));
 
                 // Build command to run Python script
-                final List<String> command = buildValidationCommand(config, filePaths);
+                final List<String> command = buildValidationCommand(config, fileDetails);
 
                 log.info("Executing validation command: {}", String.join(" ", command));
 
                 final ProcessBuilder processBuilder = new ProcessBuilder();
-                processBuilder.directory(new File(filePaths.get(0)).getParentFile());
+                processBuilder.directory(new File(fileDetails.get(0).filePath()).getParentFile());
                 processBuilder.command(command);
                 processBuilder.redirectErrorStream(true);
 
@@ -706,20 +806,23 @@ public class CsvOrchestrationEngine {
         }
 
         private List<String> buildValidationCommand(final AppConfig.CsvValidation.Validation config,
-                final List<String> filePaths) {
+                final List<FileDetail> fileDetails) {
             final List<String> command = new ArrayList<>();
             command.add(config.pythonExecutable());
             command.add("validate-nyher-fhir-ig-equivalent.py");
             command.add("datapackage-nyher-fhir-ig-equivalent.json");
-            Map<FileType, String> fileTypeToFileNameMap = filePaths.stream()
-                    .map(path -> path.substring(path.lastIndexOf("/") + 1))
-                    .collect(Collectors.toMap(
-                            FileType::fromFilename,
-                            filename -> filename));
-            command.add(fileTypeToFileNameMap.get(FileType.QE_ADMIN_DATA));
-            command.add(fileTypeToFileNameMap.get(FileType.SCREENING_OBSERVATION_DATA));
-            command.add(fileTypeToFileNameMap.get(FileType.SCREENING_PROFILE_DATA));
-            command.add(fileTypeToFileNameMap.get(FileType.DEMOGRAPHIC_DATA));
+            List<FileType> fileTypeOrder = Arrays.asList(
+                    FileType.QE_ADMIN_DATA,
+                    FileType.SCREENING_OBSERVATION_DATA,
+                    FileType.SCREENING_PROFILE_DATA,
+                    FileType.DEMOGRAPHIC_DATA);
+            Map<FileType, String> fileTypeToFileNameMap = new HashMap<>();
+            for (FileDetail fileDetail : fileDetails) {
+                fileTypeToFileNameMap.put(fileDetail.fileType(), fileDetail.filename());
+            }
+            for (FileType fileType : fileTypeOrder) {
+                command.add(fileTypeToFileNameMap.get(fileType)); // Adding the filename in order
+            }
 
             // Pad with empty strings if fewer than 7 files
             while (command.size() < 7) { // 1 (python) + 1 (script) + 1 (package) + 4 (files) //TODO CHECK IF THIS IS
@@ -769,43 +872,25 @@ public class CsvOrchestrationEngine {
         }
     }
 
-    public static Map<FileType, FileDetail> processFiles(final List<String> filePaths) {
-        final Map<FileType, FileDetail> fileMap = new EnumMap<>(FileType.class);
+    // public static Map<FileType, FileDetail> processFiles(final List<String>
+    // filePaths) {
+    // final Map<FileType, FileDetail> fileMap = new EnumMap<>(FileType.class);
 
-        for (final String filePath : filePaths) {
-            try {
-                final Path path = Path.of(filePath);
-                final String filename = path.getFileName().toString();
-                final FileType fileType = FileType.fromFilename(filename);
-                final String content = Files.readString(path);
-                final FileDetail fileDetail = new FileDetail(filename, fileType, content);
-                fileMap.put(fileType, fileDetail);
-            } catch (final IOException e) {
-                log.error("Error reading file: " + filePath + " - " + e.getMessage());
-            } catch (final IllegalArgumentException e) {
-                log.error("Error processing file type for: " + filePath + " - " + e.getMessage());
-            }
-        }
-
-        return fileMap;
-    }
-
-    public enum FileType {
-        DEMOGRAPHIC_DATA,
-        QE_ADMIN_DATA,
-        SCREENING_OBSERVATION_DATA,
-        SCREENING_PROFILE_DATA;
-
-        public static FileType fromFilename(final String filename) {
-            for (final FileType type : values()) {
-                if (filename.startsWith(type.name())) {
-                    return type;
-                }
-            }
-            throw new IllegalArgumentException("Unknown file type in filename: " + filename);
-        }
-    }
-
-    public record FileDetail(String filename, FileType fileType, String content) {
-    }
+    // for (final String filePath : filePaths) {
+    // try {
+    // final Path path = Path.of(filePath);
+    // final String filename = path.getFileName().toString();
+    // final FileType fileType = FileType.fromFilename(filename);
+    // final String content = Files.readString(path);
+    // final FileDetail fileDetail = new FileDetail(filename, fileType, content);
+    // fileMap.put(fileType, fileDetail);
+    // } catch (final IOException e) {
+    // log.error("Error reading file: " + filePath + " - " + e.getMessage());
+    // } catch (final IllegalArgumentException e) {
+    // log.error("Error processing file type for: " + filePath + " - " +
+    // e.getMessage());
+    // }
+    // }
+    // return fileMap;
+    // }
 }
