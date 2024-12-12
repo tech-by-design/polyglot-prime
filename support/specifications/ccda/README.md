@@ -58,7 +58,7 @@ A vocabulary schema containing controlled terminologies and code system referenc
 # CCDA Validation Using XML-Spy
 
 ## Overview
-This section explains XML-Spy and associated XSD schema files to validate CCDA (Consolidated Clinical Document Architecture) documents. The validation ensures structural and semantic accuracy, aligning with CCDA and HL7 standards.
+This section explains [XML-Spy](https://www.altova.com/xmlspy-xml-editor) and associated XSD schema files to validate CCDA (Consolidated Clinical Document Architecture) documents. The validation ensures structural and semantic accuracy, aligning with CCDA and HL7 standards.
 
 ## Tools for Validation
 
