@@ -2,7 +2,7 @@
 <ClinicalDocument
 	xmlns="urn:hl7-org:v3"
 	xmlns:voc="urn:hl7-org:v3/voc"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 CDA.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 ../ccda-gravity-schema-files/CDA.xsd">
 	<!-- 
 ********************************************************
   CDA Header
