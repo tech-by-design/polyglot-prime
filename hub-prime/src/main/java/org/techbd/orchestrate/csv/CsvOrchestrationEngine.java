@@ -311,7 +311,6 @@ public class CsvOrchestrationEngine {
                 }
 
                 initRIHR.setCreatedAt(forwardedAt);
-                // initRIHR.setPa
                 initRIHR.setCreatedBy(CsvService.class.getName());
                 initRIHR.setToState("CSV_ACCEPT");
                 final var provenance = "%s.saveScreeningGroup"
@@ -394,7 +393,7 @@ public class CsvOrchestrationEngine {
                 } else {
                     initRIHR.setToState("VALIDATION_FAILED");
                 }
-                // initRIHR.setValidation
+                
                 // initRIHR.setValidation
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
