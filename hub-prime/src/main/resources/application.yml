@@ -10,6 +10,7 @@ logging:
     org:
       springframework: INFO
       hibernate: ERROR
+      web: DEBUG
       techbd:
         service:
           http:

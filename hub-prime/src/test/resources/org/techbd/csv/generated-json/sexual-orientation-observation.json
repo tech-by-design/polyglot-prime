@@ -1,0 +1,26 @@
+{
+  "resourceType": "Observation",
+  "meta": {
+    "lastUpdated": "2024-02-23T00:00:00.000+05:30",
+    "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation" ]
+  },
+  "text": {
+    "status": "generated"
+  },
+  "status": "final",
+  "code": {
+    "coding": [ {
+      "system": "http://loinc.org",
+      "code": "76690-7",
+      "display": "Sexual orientation"
+    } ]
+  },
+  "effectiveDateTime": "2024-02-23T00:00:00Z",
+  "valueCodeableConcept": {
+    "coding": [ {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+      "code": "UNK",
+      "display": "Unknown"
+    } ]
+  }
+}

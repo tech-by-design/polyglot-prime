@@ -1,0 +1,30 @@
+{
+  "resourceType": "Location",
+  "id": "Location-interactionId",
+  "meta": {
+    "lastUpdated": "2024-02-23T00:00:00.000+05:30"
+  },
+  "status": "active",
+  "name": "downtown location",
+  "type": [ {
+    "coding": [ {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+      "code": "CSC"
+    } ]
+  } ],
+  "address": {
+    "city": "New York",
+    "district": "MANHATTAN",
+    "state": "NY",
+    "postalCode": "10006"
+  },
+  "physicalType": {
+    "coding": [ {
+      "system": "http://terminology.hl7.org/CodeSystem/location-physical-type",
+      "code": "bu"
+    } ]
+  },
+  "managingOrganization": {
+    "reference": "Organization/CUMC"
+  }
+}

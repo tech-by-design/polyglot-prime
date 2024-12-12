@@ -1,0 +1,40 @@
+{
+  "resourceType": "Consent",
+  "id": "Consent-interactionId",
+  "meta": {
+    "lastUpdated": "2024-02-23T00:00:00.000+05:30",
+    "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent" ]
+  },
+  "status": "active",
+  "scope": {
+    "coding": [ {
+      "code": "treatment"
+    } ],
+    "text": "treatment"
+  },
+  "category": [ {
+    "coding": [ {
+      "system": "http://loinc.org",
+      "code": "59284-0",
+      "display": "Patient Consent"
+    } ]
+  }, {
+    "coding": [ {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+      "code": "IDSCL"
+    } ]
+  } ],
+  "patient": {
+    "reference": "Patient/11223344"
+  },
+  "dateTime": "2024-02-23T05:30:00+05:30",
+  "organization": [ {
+    "reference": "Organization/CUMC"
+  } ],
+  "policy": [ {
+    "authority": "urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5"
+  } ],
+  "provision": {
+    "type": "permit"
+  }
+}
