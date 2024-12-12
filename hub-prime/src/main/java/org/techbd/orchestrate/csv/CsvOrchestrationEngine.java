@@ -37,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
+import org.techbd.model.csv.PayloadAndValidationOutcome;
 import org.techbd.service.CsvService;
 import org.techbd.service.VfsCoreService;
 import org.techbd.service.http.InteractionsFilter;
@@ -61,7 +62,6 @@ public class CsvOrchestrationEngine {
     private final List<OrchestrationSession> sessions;
     private final AppConfig appConfig;
     private final VfsCoreService vfsCoreService;
-    private final FHIRService fhirService;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private static final Logger log = LoggerFactory.getLogger(CsvOrchestrationEngine.class);
     private static final Pattern FILE_PATTERN = Pattern.compile(
@@ -73,7 +73,6 @@ public class CsvOrchestrationEngine {
         this.appConfig = appConfig;
         this.vfsCoreService = vfsCoreService;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        this.fhirService = fhirService;
     }
 
     public List<OrchestrationSession> getSessions() {
@@ -118,8 +117,8 @@ public class CsvOrchestrationEngine {
         private MultipartFile file;
         private String masterInteractionId;
         private HttpServletRequest request;
+        private Map<String,PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private boolean generateBundle;
-
         public OrchestrationSessionBuilder withSessionId(final String sessionId) {
             this.sessionId = sessionId;
             return this;
@@ -194,14 +193,16 @@ public class CsvOrchestrationEngine {
         private final Device device;
         private final MultipartFile file;
         private Map<String, Object> validationResults;
+        private Map<String,PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private String tenantId;
-        private boolean bundleGenerate;
         HttpServletRequest request;
+        private boolean generateBundle;
 
         public OrchestrationSession(final String sessionId, final String tenantId, final Device device,
                 final MultipartFile file,
                 final String masterInteractionId,
-                final HttpServletRequest request, boolean generateBundle) {
+                final HttpServletRequest request,
+                final boolean generateBundle) {
             this.sessionId = sessionId;
             this.tenantId = tenantId;
             this.device = device;
@@ -209,11 +210,11 @@ public class CsvOrchestrationEngine {
             this.validationResults = new HashMap<>();
             this.masterInteractionId = masterInteractionId;
             this.request = request;
-            this.bundleGenerate = bundleGenerate;
+            this.generateBundle = generateBundle;
         }
 
-        public boolean isBundleGenerate() {
-            return bundleGenerate;
+        public boolean isGenerateBundle() {
+            return generateBundle;
         }
 
         public String getSessionId() {
@@ -555,8 +556,8 @@ public class CsvOrchestrationEngine {
                     Map<String, Object> operationOutomeForThisGroup = validateScreeningGroup(groupKey, fileDetails,
                             originalFileName);
                     combinedValidationResults.add(operationOutomeForThisGroup);
-                    if (bundleGenerate) {
-                        //TODO  - invoke fhir conversion and submission.
+                    if (generateBundle) {
+                        this.payloadAndValidationOutcomes.put(groupKey, new PayloadAndValidationOutcome(fileDetails, isValid(operationOutomeForThisGroup)));
                     }
                 }
                 Instant completedAt = Instant.now();
