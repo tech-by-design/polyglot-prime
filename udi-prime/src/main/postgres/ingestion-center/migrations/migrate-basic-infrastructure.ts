@@ -1119,16 +1119,20 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
-        ADD COLUMN IF NOT EXISTS screening_consent_data_payload_text text NULL,  
-        ADD COLUMN IF NOT EXISTS screening_encounter_data_payload_text text NULL,  
-        ADD COLUMN IF NOT EXISTS screening_location_data_payload_text text NULL,  
+        DROP COLUMN IF EXISTS screening_consent_data_payload_text,
+        DROP COLUMN IF EXISTS screening_encounter_data_payload_text,
+        DROP COLUMN IF EXISTS screening_location_data_payload_text,
+        DROP COLUMN IF EXISTS screening_resources_data_payload_text,
+        DROP COLUMN IF EXISTS screening_consent_data_file_name,
+        DROP COLUMN IF EXISTS screening_encounter_data_file_name,	
+        DROP COLUMN IF EXISTS screening_location_data_file_name,
+        DROP COLUMN IF EXISTS screening_resources_data_file_name,
+        DROP COLUMN IF EXISTS zip_file_sat_interaction_id,
         ADD COLUMN IF NOT EXISTS screening_observation_data_payload_text text NULL,  
-        ADD COLUMN IF NOT EXISTS screening_resources_data_payload_text text NULL, 
-        ADD COLUMN IF NOT EXISTS screening_consent_data_file_name text NULL, 
-        ADD COLUMN IF NOT EXISTS screening_encounter_data_file_name text NULL, 
-        ADD COLUMN IF NOT EXISTS screening_location_data_file_name text NULL, 
-        ADD COLUMN IF NOT EXISTS screening_observation_data_file_name text NULL, 
-        ADD COLUMN IF NOT EXISTS screening_resources_data_file_name text NULL;
+        ADD COLUMN IF NOT EXISTS screening_profile_data_payload_text text NULL,  
+        ADD COLUMN IF NOT EXISTS screening_observation_data_file_name text NULL,
+        ADD COLUMN IF NOT EXISTS screening_profile_data_file_name text NULL,
+        ADD COLUMN IF NOT EXISTS zip_file_hub_interaction_id text NULL;
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
         DROP COLUMN IF EXISTS screening_data_payload_text,
@@ -1136,7 +1140,31 @@ const migrateSP = pgSQLa.storedProcedure(
 
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS patient_mrn_source_system TEXT NULL;
+      
+      ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+      DROP CONSTRAINT IF EXISTS sat_interaction_flat_file_csv_request_zip_file_sat_interaction_id_fkey;
 
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'flat_file_csv_request_zip_file_hub_interaction_id_fkey'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+          ADD CONSTRAINT flat_file_csv_request_zip_file_hub_interaction_id_fkey FOREIGN KEY (zip_file_hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
+      END IF;
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
+        ADD COLUMN IF NOT EXISTS source_type text NULL, 
+        ADD COLUMN IF NOT EXISTS source_hub_interaction_id text NULL; 
+        
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request  
+        ADD COLUMN IF NOT EXISTS origin text NULL, 
+        ADD COLUMN IF NOT EXISTS validation_result_payload jsonb NULL;
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request 
+        ADD COLUMN IF NOT EXISTS client_ip_address TEXT NULL, 
+            ADD COLUMN IF NOT EXISTS user_agent TEXT NULL,
+            ADD COLUMN IF NOT EXISTS origin TEXT NULL; 
 
 
       ${dependenciesSQL}
