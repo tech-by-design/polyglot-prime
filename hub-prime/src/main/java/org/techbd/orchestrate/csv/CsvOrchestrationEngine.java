@@ -289,6 +289,7 @@ public class CsvOrchestrationEngine {
                                 tenantId)));
                 initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 initRIHR.setCsvZipFileName(file.getOriginalFilename());
+                initRIHR.setSourceHubInteractionId(interactionId);
                 for (FileDetail fileDetail : fileDetailList) {
                     switch (fileDetail.fileType()) {
                         case FileType.DEMOGRAPHIC_DATA -> {
@@ -300,8 +301,8 @@ public class CsvOrchestrationEngine {
                             initRIHR.setCsvQeAdminDataPayloadText(fileDetail.content());
                         }
                         case FileType.SCREENING_PROFILE_DATA -> {
-                            initRIHR.setCsvScreeningConsentDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningConsentDataPayloadText(fileDetail.content());
+                            initRIHR.setCsvScreeningProfileDataFileName(fileDetail.filename());
+                            initRIHR.setCsvScreeningProfileDataPayloadText(fileDetail.content());
                         }
                         case FileType.SCREENING_OBSERVATION_DATA -> {
                             initRIHR.setCsvScreeningObservationDataFileName(fileDetail.filename());
