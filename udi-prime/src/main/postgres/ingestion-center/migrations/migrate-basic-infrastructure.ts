@@ -1145,18 +1145,7 @@ const migrateSP = pgSQLa.storedProcedure(
       DROP CONSTRAINT IF EXISTS sat_interaction_flat_file_csv_request_zip_file_sat_interaction_id_fkey;
 
       
-      DO $$
-      BEGIN
-      ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
-        DROP CONSTRAINT IF EXISTS sat_interaction_flat_file_csv_request_zip_file_sat_interaction_id_fkey,
-        ADD CONSTRAINT flat_file_csv_request_zip_file_hub_interaction_id_fkey FOREIGN KEY (zip_file_hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
-      EXCEPTION
-        WHEN OTHERS THEN 
-        RAISE NOTICE 'Already exists';
-      END
-      $$;
-
-
+      
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
         ADD COLUMN IF NOT EXISTS source_type text NULL, 
         ADD COLUMN IF NOT EXISTS source_hub_interaction_id text NULL; 
