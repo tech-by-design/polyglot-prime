@@ -107,11 +107,6 @@ Alternatively, if the example CCDA files are stored in a different folder, ensur
 schemaLocation="file:///path/to/ccda/folder/CDA.xsd" 
 ```
 
-
-This ensures that the files are correctly placed in the same folder (`ccda/ccda-gravity-schema-files/`), or it guides users to modify the `schemaLocation` in the CCDA file if necessary.
-
-
-
 ### **Step 2: Load the CCDA File in XML-Spy**
 1. Open XML-Spy.
 2. Load the CCDA file (e.g., `AHCHRSNScreeningResponseCCDExample.xml`).
