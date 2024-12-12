@@ -1,4 +1,4 @@
-# HL7 CCD Schema Customization and Data Mapping for 1115 Waiver
+# HL7 CCD Schema Preparation, Customization and Validation
 
 This repository focuses on the preparation, customization, and validation of the HL7 CCDA (Consolidated Clinical Document Architecture) XSD schema, specifically tailored to the 1115 Waiver data elements. Below is an overview of the key objectives and files in this project.
 
@@ -101,7 +101,7 @@ support/
 
 ### **Step 1: Prepare the Files**
 Ensure the following:
-1. **Example CCDA files** should be stored in the `ccda/` folder.
+1. **Example CCDA files** should be stored in the `ccda/NYHRSN-CCDA-examples` folder.
    - For example, place the `AHCHRSNScreeningResponseCCDExample.xml` file in the `ccda/` folder.
 2. **All XSD schema files** should also be placed in the same `ccda/` folder.
 
@@ -111,7 +111,7 @@ schemaLocation="file:///path/to/ccda/folder/CDA.xsd"
 ```
 
 
-This ensures that the files are correctly placed in the same folder (`ccda/`), or it guides users to modify the `schemaLocation` in the CCDA file if necessary. Let me know if any further adjustments are needed!
+This ensures that the files are correctly placed in the same folder (`ccda/`), or it guides users to modify the `schemaLocation` in the CCDA file if necessary.
 
 
 
@@ -130,9 +130,9 @@ This ensures that the files are correctly placed in the same folder (`ccda/`), o
 2. Ensure the corrected file retains its naming convention for version tracking.
 
 ## Example Validation Workflow
-1. Place the file `AHCHRSNScreeningResponseCCDExample.xml` in `NYHRSN-CCDA-examples/`.
+1. Place the file `AHCHRSNScreeningResponseCCDExample.xml` in `ccda/`.
 2. Open XML-Spy and load the file.
-3. Link the XSD file `POCD_MT000040.xsd` located in the `ccda/` folder.
+3. Link the XSD file `CDA.xsd` located in the `ccda/` folder.
 4. Perform validation and review the results in the **Validation Results** pane.
 5. Address errors or warnings, and save the updated file in the same folder after validation.
 
