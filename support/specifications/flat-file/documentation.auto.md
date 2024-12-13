@@ -29,7 +29,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').type.coding.display
   - `type` string
   - `constraints`:
-    - `pattern` `^(prov|dept|team|govt|ins|pay|edu|reli|crs|cg|bus|other)(,\s*(prov|dept|team|govt|ins|pay|edu|reli|crs|cg|bus|other))*$`
+    - `pattern` `^(healthcare provider|hospital department|organizational team|government|insurance company|payer|educational institute|religious institution|clinical research sponsor|community group|non-healthcare business or corporation|other)(,\s*(healthcare provider|hospital department|organizational team|government|insurance company|payer|educational institute|religious institution|clinical research sponsor|community group|non-healthcare business or corporation|other))*$`
 ### `ORGANIZATION_TYPE_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').type.coding.code
   - `type` string
@@ -80,6 +80,11 @@
           - `fields` ['PATIENT_MR_ID_VALUE']
 ### `PATIENT_MR_ID_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
+  - `type` string
+  - `constraints`:
+    - `required` True
+### `ENCOUNTER_ID`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').id
   - `type` string
   - `constraints`:
     - `required` True
@@ -179,7 +184,6 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^[A-Za-z0-9\-\.]{1,64}$`
 ### `ENCOUNTER_CLASS_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.code
   - `type` string
