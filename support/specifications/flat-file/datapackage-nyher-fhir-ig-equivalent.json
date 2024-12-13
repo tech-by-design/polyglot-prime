@@ -50,6 +50,7 @@
       "schema": {
         "fields":  [
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},
+          {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true}},
           {"name": "SCREENING_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code", "constraints": {"required": true, "enum": ["96777-8", "97023-6"]}}, 
           {"name": "SCREENING_CODE_DESCRIPTION", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display", "type": "string", "constraints": {"required": true, "enum": [ 
           "accountable health communities (ahc) health-related social needs screening (hrsn) tool",
@@ -221,7 +222,7 @@
       "schema": {   
         "fields":  [
         {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},
-        {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true, "pattern": "^[A-Za-z0-9\\-\\.]{1,64}$"}},
+        {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true}},
         {"name": "ENCOUNTER_CLASS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').class.code", "constraints": {"required": true, "enum": [
           "amb", "emer", "fld", "hh", "imp", "acute", "nonac", "obsenc", "prenc", "ss", "vr"
         ]
