@@ -58,7 +58,7 @@ A vocabulary schema containing controlled terminologies and code system referenc
 # CCDA Validation Using XML-Spy
 
 ## Overview
-This section explains XML-Spy and associated XSD schema files to validate CCDA (Consolidated Clinical Document Architecture) documents. The validation ensures structural and semantic accuracy, aligning with CCDA and HL7 standards.
+This section explains [XML-Spy](https://www.altova.com/xmlspy-xml-editor) and associated XSD schema files to validate CCDA (Consolidated Clinical Document Architecture) documents. The validation ensures structural and semantic accuracy, aligning with CCDA and HL7 standards.
 
 ## Tools for Validation
 
@@ -99,18 +99,13 @@ support/
 ### **Step 1: Prepare the Files**
 Ensure the following:
 1. **Example CCDA files** should be stored in the `ccda/NYHRSN-CCDA-examples` folder.
-   - For example, place the `AHCHRSNScreeningResponseCCDExample.xml` file in the `ccda/ccda-gravity-schema-files/` folder.
-2. **All XSD schema files** should also be placed in the same `ccda/` folder.
+
+2. **All XSD schema files** should also be placed in the same `ccda/ccda-gravity-schema-files/` folder.
 
 Alternatively, if the example CCDA files are stored in a different folder, ensure that you update the `schemaLocation` in the CCDA file to point to the correct location of the `CDA.xsd` file, like this:
 ```
 schemaLocation="file:///path/to/ccda/folder/CDA.xsd" 
 ```
-
-
-This ensures that the files are correctly placed in the same folder (`ccda/ccda-gravity-schema-files/`), or it guides users to modify the `schemaLocation` in the CCDA file if necessary.
-
-
 
 ### **Step 2: Load the CCDA File in XML-Spy**
 1. Open XML-Spy.
