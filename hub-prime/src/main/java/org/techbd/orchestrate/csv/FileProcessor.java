@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 
+import net.sourceforge.plantuml.utils.Log;
+
 public class FileProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(FileProcessor.class);
 
@@ -46,7 +48,8 @@ public class FileProcessor {
             for (FileType requiredFileType : requiredFileTypes) {
                 if (!presentFileTypes.contains(requiredFileType)) {
                     String missingFile = requiredFileType.name().toLowerCase() + groupKey + ".csv";
-                    throw new IllegalArgumentException("Missing required file: " + missingFile);
+                    //throw new IllegalArgumentException("Missing required file: " + missingFile);
+                LOG.error("Missing required file: " + missingFile);
                 }
             }
         }

@@ -18,8 +18,8 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +68,7 @@ public class CsvOrchestrationEngine {
             "(DEMOGRAPHIC_DATA|QE_ADMIN_DATA|SCREENING)_(.+)");
 
     public CsvOrchestrationEngine(final AppConfig appConfig, final VfsCoreService vfsCoreService,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig,FHIRService fhirService) {
+            final UdiPrimeJpaConfig udiPrimeJpaConfig, FHIRService fhirService) {
         this.sessions = new ArrayList<>();
         this.appConfig = appConfig;
         this.vfsCoreService = vfsCoreService;
@@ -125,12 +125,10 @@ public class CsvOrchestrationEngine {
             return this;
         }
 
-
         public OrchestrationSessionBuilder withTenantId(final String tenantId) {
             this.tenantId = tenantId;
             return this;
         }
-
 
         public OrchestrationSessionBuilder withDevice(final Device device) {
             this.device = device;
@@ -394,7 +392,7 @@ public class CsvOrchestrationEngine {
                 } else {
                     initRIHR.setToState("VALIDATION_FAILED");
                 }
-                
+
                 // initRIHR.setValidation
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
@@ -461,6 +459,7 @@ public class CsvOrchestrationEngine {
             final Device device = Device.INSTANCE;
             result.put("resourceType", "OperationOutcome");
             result.put("bundleSessionId", masterInteractionId);
+            result.put("originalFileName", originalFileName);
             result.put("validationResults", combinedValidationResult);
             result.put("requestUri", request.getRequestURI());
             result.put("zipFileSize", zipFileSize);
@@ -471,6 +470,28 @@ public class CsvOrchestrationEngine {
                     "deviceName", device.deviceName()));
             result.put("initiatedAt", initiatedAt.toString());
             result.put("completedAt", completedAt.toString());
+
+            // Identify files not processed
+            List<String> fileNotProcessed = new ArrayList<>();
+            for (Map<String, Object> validationResult : combinedValidationResult) {
+                // Debug: Print each validation result
+                System.out.println("Validation Result: " + validationResult);
+                if (validationResult != null
+                        && validationResult.containsKey("fileNotProcessed")
+                        && validationResult.get("fileNotProcessed") != null) {
+                    // Debug: Print the identified file not processed
+                    System.out.println("File Not Processed: " + validationResult.get("fileNotProcessed"));
+                    fileNotProcessed.add(validationResult.get("fileNotProcessed").toString());
+                }
+            }
+            // Debug: Print the final list of files not processed
+            System.out.println("Files Not Processed: " + fileNotProcessed);
+            result.put("fileNotProcessed", fileNotProcessed);
+            // Debug: Print the final list of files not processed
+            System.out.println("Files Not Processed: " + fileNotProcessed);
+
+            // result.put("fileNotProcessed", fileNotProcessed);
+
             return result;
         }
 
@@ -543,29 +564,135 @@ public class CsvOrchestrationEngine {
                 // AND REMOVE
                 // TODO -check if working for multiple screenings
                 List<Map<String, Object>> combinedValidationResults = new ArrayList<>();
+
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
-                    String groupKey = entry.getKey(); // The group key (e.g., "_1")
-                    List<FileDetail> fileDetails = entry.getValue(); // The list of FileDetails in this group
-                    if (fileDetails.isEmpty()) {
-                        log.warn(
-                                "No CSV files found for validation in group {}. Skipping validation for interactionId: {}",
-                                groupKey, masterInteractionId);
-                        continue; // Skip empty groups
+                    String groupKey = entry.getKey();
+                    List<FileDetail> fileDetails = entry.getValue();
+                    Map<String, Object> operationOutcomeForThisGroup;
+
+                    // Check if all required file types are present
+                    if (isGroupComplete(fileDetails)) {
+                        operationOutcomeForThisGroup = validateScreeningGroup(groupKey, fileDetails, originalFileName);
+                    } else {
+                        // Incomplete group - generate error operation outcome
+                        operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
+                                groupKey, fileDetails, originalFileName, masterInteractionId);
+                        log.warn("Incomplete Group - Missing files for group {}", groupKey);
                     }
-                    Map<String, Object> operationOutomeForThisGroup = validateScreeningGroup(groupKey, fileDetails,
-                            originalFileName);
-                    combinedValidationResults.add(operationOutomeForThisGroup);
-                    if (bundleGenerate) {
-                        //TODO  - invoke fhir conversion and submission.
-                    }
+
+                    combinedValidationResults.add(operationOutcomeForThisGroup);
+                    System.out.println("combinedValidationResults : " + combinedValidationResults.toString());
                 }
+                // if (bundleGenerate) {
+                // //TODO - invoke fhir conversion and submission.
+                // }
                 Instant completedAt = Instant.now();
                 return generateValidationResults(masterInteractionId, request,
                         file.getSize(), initiatedAt, completedAt, originalFileName, combinedValidationResults);
             } catch (final Exception e) {
-                log.error("Error in ZIP processing tasklet: {} for interactionId :{} ", e.getMessage(), e);
+                log.error("Error in ZIP processing tasklet for interactionId: {}", masterInteractionId, e);
                 throw new RuntimeException("Error processing ZIP files: " + e.getMessage(), e);
             }
+        }
+
+        // Move this method outside of processScreenings
+        public boolean isGroupComplete(List<FileDetail> fileDetails) {
+            Set<FileType> presentFileTypes = fileDetails.stream()
+                    .map(FileDetail::fileType)
+                    .collect(Collectors.toSet());
+
+            // Define required file types
+            Set<FileType> requiredFileTypes = Set.of(
+                    FileType.QE_ADMIN_DATA,
+                    FileType.SCREENING_OBSERVATION_DATA,
+                    FileType.SCREENING_PROFILE_DATA,
+                    FileType.DEMOGRAPHIC_DATA);
+
+            return presentFileTypes.containsAll(requiredFileTypes);
+        }
+
+        private Map<String, Object> createIncompleteGroupOperationOutcome(
+                String groupKey,
+                List<FileDetail> fileDetails,
+                String originalFileName,
+                String masterInteractionId) throws Exception {
+
+            Instant initiatedAt = Instant.now();
+            String groupInteractionId = UUID.randomUUID().toString();
+
+            // Determine missing file types
+            Set<FileType> requiredFileTypes = Set.of(
+                    FileType.QE_ADMIN_DATA,
+                    FileType.SCREENING_OBSERVATION_DATA,
+                    FileType.SCREENING_PROFILE_DATA,
+                    FileType.DEMOGRAPHIC_DATA);
+
+            Set<FileType> presentFileTypes = fileDetails.stream()
+                    .map(FileDetail::fileType)
+                    .collect(Collectors.toSet());
+
+            Set<FileType> missingFileTypes = new HashSet<>(requiredFileTypes);
+            missingFileTypes.removeAll(presentFileTypes);
+
+            Map<String, Object> operationOutcome = new HashMap<>();
+            operationOutcome.put("resourceType", "OperationOutcome");
+            operationOutcome.put("interactionId", masterInteractionId);
+
+            // Validation Results with Detailed Errors
+            Map<String, Object> validationResults = new HashMap<>();
+            List<Map<String, Object>> errors = new ArrayList<>();
+
+            for (FileType missingType : missingFileTypes) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("type", "missing-file-error");
+                error.put("description", "Input file received is invalid.");
+                error.put("message",
+                        "Incomplete Group - Missing " + missingType.name() + " file for group " + groupKey);
+                errors.add(error);
+            }
+
+            validationResults.put("errors", errors);
+            operationOutcome.put("validationResults", validationResults);
+
+            // Provenance Details
+            Map<String, Object> provenance = new HashMap<>();
+            provenance.put("resourceType", "Provenance");
+            provenance.put("interactionId", groupInteractionId);
+
+            // Agent Details
+            List<Map<String, Object>> agents = new ArrayList<>();
+            Map<String, Object> agent = new HashMap<>();
+            Map<String, Object> who = new HashMap<>();
+            List<Map<String, Object>> coding = new ArrayList<>();
+            Map<String, Object> agentCoding = new HashMap<>();
+            agentCoding.put("system", "Validator");
+            agentCoding.put("display", "TechByDesign");
+            coding.add(agentCoding);
+            who.put("coding", coding);
+            agent.put("who", who);
+            agents.add(agent);
+
+            provenance.put("agent", agents);
+            provenance.put("initiatedAt", initiatedAt);
+            provenance.put("completedAt", Instant.now());
+            provenance.put("description", "Validation of files in " + originalFileName);
+
+            // Validated Files
+            List<String> validatedFiles = fileDetails.stream()
+                    .map(FileDetail::filename)
+                    .collect(Collectors.toList());
+            provenance.put("validatedFiles", validatedFiles);
+
+            operationOutcome.put("provenance", provenance);
+
+            // Save validation results
+            saveValidationResults(
+                    operationOutcome,
+                    masterInteractionId,
+                    groupInteractionId,
+                    tenantId);
+
+            return operationOutcome;
         }
 
         private Map<String, Object> validateScreeningGroup(String groupKey, List<FileDetail> fileDetails,
