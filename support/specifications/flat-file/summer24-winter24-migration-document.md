@@ -90,6 +90,7 @@
     | Column Name | Required/Optional | Cardinality |
     |-------------|-------------------|-------------|
     | **PATIENT_MR_ID_VALUE** | **Required** | 1..1 |
+    | **ENCOUNTER_ID** | **Required** | 1..1 |
     | **SCREENING_CODE** | **Required** | 1..1 |
     | **SCREENING_CODE_DESCRIPTION** | **Required** | 1..1 |
     | **RECORDED_TIME** | **Required** | 1..1 |
