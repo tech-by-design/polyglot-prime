@@ -19,8 +19,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
-import org.techbd.model.csv.ScreeningData;
-import org.techbd.model.csv.ScreeningResourceData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.DateUtil;
 
 /**
@@ -54,38 +54,37 @@ public class LocationConverter extends BaseConverter {
      *         resource.
      */
     @Override
-    public BundleEntryComponent convert(Bundle bundle, DemographicData demographicData,
-            List<ScreeningData> screeningDataList, QeAdminData qrAdminData, ScreeningResourceData screeningResourceData,
-            String interactionId) {
+    public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
 
         Location location = new Location();
         setMeta(location);
         
 
         // Set Location ID
-        location.setId(generateUniqueId(interactionId));
+        // location.setId(generateUniqueId(interactionId));
 
         // Set Meta Data
         Meta meta = location.getMeta();
-        meta.setLastUpdated(getLastUpdatedDate(screeningResourceData));
+        // meta.setLastUpdated(getLastUpdatedDate(screeningResourceData));
 
-        // Set location status
-        populateLocationStatus(location, screeningResourceData);
+        // // Set location status
+        // populateLocationStatus(location, screeningResourceData);
 
-        // Set location name
-        populateLocationName(location, screeningResourceData);
+        // // Set location name
+        // populateLocationName(location, screeningResourceData);
 
-        // Set location type
-        populateLocationType(location, screeningResourceData);
+        // // Set location type
+        // populateLocationType(location, screeningResourceData);
 
-        // Set address
-        populateAddress(location, screeningResourceData);
+        // // Set address
+        // populateAddress(location, screeningResourceData);
 
-        // Set managing organization
-        populateManagingOrganization(location, qrAdminData);
+        // // Set managing organization
+        // populateManagingOrganization(location, qrAdminData);
 
-        // Set Physical  type
-        populatePhysicalType(location, screeningResourceData);
+        // // Set Physical  type
+        // populatePhysicalType(location, screeningResourceData);
 
         // Wrap the Location resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
@@ -93,94 +92,94 @@ public class LocationConverter extends BaseConverter {
         return bundleEntryComponent;
     }
 
-    private static void populateLocationStatus(Location location, ScreeningResourceData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getLocationStatus() != null) {
-            location.setStatus(Location.LocationStatus.fromCode(screeningResourceData.getLocationStatus()));
-        } else {
-            location.setStatus(Location.LocationStatus.ACTIVE); // Default status
-        }
-    }
+    // private static void populateLocationStatus(Location location, ScreeningProfileData screeningResourceData) {
+    //     if (screeningResourceData != null && screeningResourceData.getLocationStatus() != null) {
+    //         location.setStatus(Location.LocationStatus.fromCode(screeningResourceData.getLocationStatus()));
+    //     } else {
+    //         location.setStatus(Location.LocationStatus.ACTIVE); // Default status
+    //     }
+    // }
 
-    private static void populateLocationName(Location location, ScreeningResourceData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getLocationName() != null) {
-            location.setName(screeningResourceData.getLocationName());
-        }
-    }
+    // private static void populateLocationName(Location location, ScreeningProfileData screeningResourceData) {
+    //     if (screeningResourceData != null && screeningResourceData.getLocationName() != null) {
+    //         location.setName(screeningResourceData.getLocationName());
+    //     }
+    // }
 
-    private static void populateLocationType(Location location, ScreeningResourceData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getLocationTypeCode() != null) {
-            CodeableConcept type = new CodeableConcept();
-            Coding coding = new Coding();
-            coding.setSystem(screeningResourceData.getLocationTypeSystem());
-            coding.setCode(screeningResourceData.getLocationTypeCode());
-            type.addCoding(coding);
-            location.setType(List.of(type));
-        }
-    }
+    // private static void populateLocationType(Location location, ScreeningProfileData screeningResourceData) {
+    //     if (screeningResourceData != null && screeningResourceData.getLocationTypeCode() != null) {
+    //         CodeableConcept type = new CodeableConcept();
+    //         Coding coding = new Coding();
+    //         coding.setSystem(screeningResourceData.getLocationTypeSystem());
+    //         coding.setCode(screeningResourceData.getLocationTypeCode());
+    //         type.addCoding(coding);
+    //         location.setType(List.of(type));
+    //     }
+    // }
 
-    private static void populateAddress(Location location, ScreeningResourceData screeningResourceData) {
-        if (screeningResourceData != null) {
-            Address address = new Address();
-            //TODO: need to generate id , address type, and  address line
-           // address.setId("SCNAddressLocation");
-           // address.setType(Location.AddressType.PHYSICAL);
-           // address.setLine(List.of(screeningResourceData.getLine()));
-            address.setCity(screeningResourceData.getLocationCity());
-            address.setDistrict(screeningResourceData.getLocationDistrict());
-            address.setState(screeningResourceData.getLocationState());
-            address.setPostalCode(screeningResourceData.getLocationZip());
+    // private static void populateAddress(Location location, ScreeningProfileData screeningResourceData) {
+    //     if (screeningResourceData != null) {
+    //         Address address = new Address();
+    //         //TODO: need to generate id , address type, and  address line
+    //        // address.setId("SCNAddressLocation");
+    //        // address.setType(Location.AddressType.PHYSICAL);
+    //        // address.setLine(List.of(screeningResourceData.getLine()));
+    //         address.setCity(screeningResourceData.getLocationCity());
+    //         address.setDistrict(screeningResourceData.getLocationDistrict());
+    //         address.setState(screeningResourceData.getLocationState());
+    //         address.setPostalCode(screeningResourceData.getLocationZip());
     
-            location.setAddress(address);
-        }
-    }
-    
-
-    private static void populateManagingOrganization(Location location, QeAdminData qrAdminData) {
-        if (qrAdminData != null && qrAdminData.getFacilityId() != null) {
-            location.setManagingOrganization(
-                    new Reference("Organization/" + qrAdminData.getFacilityId()));
-        }
-    }
-
-    private static void populatePhysicalType(Location location, ScreeningResourceData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getLocationPhysicalTypeCode() != null) {
-            CodeableConcept physicalType = new CodeableConcept();
-            Coding coding = new Coding();
-            coding.setSystem(screeningResourceData.getLocationPhysicalTypeSystem());
-            coding.setCode(screeningResourceData.getLocationPhysicalTypeCode());
-            physicalType.addCoding(coding);
-            location.setPhysicalType(physicalType);
-        }
-    }
+    //         location.setAddress(address);
+    //     }
+    // }
     
 
-    /**
-     * Generate a unique ID for the location based on its data.
-     *
-     * @param interactionId The interaction ID used to generate a unique identifier.
-     * @return A unique ID for the location.
-     */
-    private String generateUniqueId(String interactionId) {
-        return "Location-" + interactionId;
-    }
+    // private static void populateManagingOrganization(Location location, QeAdminData qrAdminData) {
+    //     if (qrAdminData != null && qrAdminData.getFacilityId() != null) {
+    //         location.setManagingOrganization(
+    //                 new Reference("Organization/" + qrAdminData.getFacilityId()));
+    //     }
+    // }
 
-    /**
-     * Get the last updated date for the location based on its data.
-     *
-     * @param screeningResourceData The ScreeningResourceData object containing the location's last
-     *                     updated date.
-     * @return The last updated date.
-     */
-    private Date getLastUpdatedDate(ScreeningResourceData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getLocationLastUpdated() != null
-                && !screeningResourceData.getLocationLastUpdated().isEmpty()) {
-            try {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                return dateFormat.parse(screeningResourceData.getLocationLastUpdated());
-            } catch (ParseException e) {
-                LOG.error("Error parsing last updated date", e);
-            }
-        }
-        return new Date();
-    }
+    // private static void populatePhysicalType(Location location, ScreeningProfileData screeningResourceData) {
+    //     if (screeningResourceData != null && screeningResourceData.getLocationPhysicalTypeCode() != null) {
+    //         CodeableConcept physicalType = new CodeableConcept();
+    //         Coding coding = new Coding();
+    //         coding.setSystem(screeningResourceData.getLocationPhysicalTypeSystem());
+    //         coding.setCode(screeningResourceData.getLocationPhysicalTypeCode());
+    //         physicalType.addCoding(coding);
+    //         location.setPhysicalType(physicalType);
+    //     }
+    // }
+    
+
+    // /**
+    //  * Generate a unique ID for the location based on its data.
+    //  *
+    //  * @param interactionId The interaction ID used to generate a unique identifier.
+    //  * @return A unique ID for the location.
+    //  */
+    // private String generateUniqueId(String interactionId) {
+    //     return "Location-" + interactionId;
+    // }
+
+    // /**
+    //  * Get the last updated date for the location based on its data.
+    //  *
+    //  * @param screeningResourceData The ScreeningResourceData object containing the location's last
+    //  *                     updated date.
+    //  * @return The last updated date.
+    //  */
+    // private Date getLastUpdatedDate(ScreeningProfileData screeningResourceData) {
+    //     if (screeningResourceData != null && screeningResourceData.getLocationLastUpdated() != null
+    //             && !screeningResourceData.getLocationLastUpdated().isEmpty()) {
+    //         try {
+    //             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    //             return dateFormat.parse(screeningResourceData.getLocationLastUpdated());
+    //         } catch (ParseException e) {
+    //             LOG.error("Error parsing last updated date", e);
+    //         }
+    //     }
+    //     return new Date();
+    // }
 }
