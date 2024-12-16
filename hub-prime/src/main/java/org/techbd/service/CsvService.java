@@ -4,27 +4,26 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
-import org.techbd.model.csv.*;
 import org.techbd.orchestrate.csv.CsvOrchestrationEngine;
-import org.techbd.service.converters.csv.CsvToFhirConverter;
 import org.techbd.service.http.Interactions;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
-import org.techbd.util.CsvConversionUtil;
+
 import com.fasterxml.jackson.databind.JsonNode;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.Map;
 @Service
 public class CsvService {
 
@@ -142,7 +141,7 @@ public class CsvService {
             engine.orchestrate(session);
             return csvBundleProcessorService.processPayload(masterInteractionId,
             session.getPayloadAndValidationOutcomes(), request,
-             response);
+             response,tenantId);
         } catch (final Exception ex) {
             LOG.error("Exception while processing file : {} ", file.getOriginalFilename(), ex);
         } finally {

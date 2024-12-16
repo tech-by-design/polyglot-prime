@@ -18,6 +18,7 @@ import org.techbd.model.csv.ScreeningProfileData;
  * patient MR ID.
  */
 public class CsvConversionUtil {
+    private static final char SEPARATOR =',';
     /**
      * Converts a CSV string into a map of demographic data grouped by
      * `patientMrIdValue`.
@@ -29,7 +30,7 @@ public class CsvConversionUtil {
      */
     public static Map<String, List<DemographicData>> convertCsvStringToDemographicData(String csvData)
             throws IOException {
-        return convertCsvStringToObjectMap(csvData, DemographicData.class, '|', "patientMrIdValue");
+        return convertCsvStringToObjectMap(csvData, DemographicData.class, SEPARATOR, "patientMrIdValue");
     }
 
     /**
@@ -43,7 +44,7 @@ public class CsvConversionUtil {
      */
     public static Map<String, List<ScreeningObservationData>> convertCsvStringToScreeningObservationData(String csvData)
             throws IOException {
-        return convertCsvStringToObjectMap(csvData, ScreeningObservationData.class, '|', "encounterId");
+        return convertCsvStringToObjectMap(csvData, ScreeningObservationData.class, SEPARATOR, "encounterId");
     }
 
     /**
@@ -56,7 +57,7 @@ public class CsvConversionUtil {
      * @throws IOException if an error occurs during reading or parsing the CSV
      */
     public static Map<String, List<QeAdminData>> convertCsvStringToQeAdminData(String csvData) throws IOException {
-        return convertCsvStringToObjectMap(csvData, QeAdminData.class, '|', "patientMrIdValue");
+        return convertCsvStringToObjectMap(csvData, QeAdminData.class, SEPARATOR, "patientMrIdValue");
     }
 
     /**
@@ -70,7 +71,7 @@ public class CsvConversionUtil {
      */
     public static Map<String, List<ScreeningProfileData>> convertCsvStringToScreeningProfileData(String csvData)
             throws IOException {
-        return convertCsvStringToObjectMap(csvData, ScreeningProfileData.class, '|', "patientMrIdValue");
+        return convertCsvStringToObjectMap(csvData, ScreeningProfileData.class, SEPARATOR, "patientMrIdValue");
     }
 
     /**

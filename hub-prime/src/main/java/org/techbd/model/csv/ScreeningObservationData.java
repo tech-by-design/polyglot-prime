@@ -24,6 +24,9 @@ public class ScreeningObservationData {
     @CsvBindByName(column = "SCREENING_CODE")
     private String screeningCode;
 
+    @CsvBindByName(column = "ENCOUNTER_ID")
+    private String encounterId;
+
     @CsvBindByName(column = "SCREENING_CODE_DESCRIPTION")
     private String screeningCodeDescription;
 
