@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -76,11 +77,11 @@ public class SecurityConfig {
                                 .permitAll()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
-                // .sessionManagement(
-                //         sessionManagement -> sessionManagement
-                //                 .invalidSessionUrl("/?timeout=true")
-                //                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                // )
+                .sessionManagement(
+                        sessionManagement -> sessionManagement
+                                .invalidSessionUrl("/?timeout=true")
+                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
