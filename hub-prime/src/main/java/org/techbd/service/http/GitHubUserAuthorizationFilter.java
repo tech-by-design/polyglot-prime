@@ -34,8 +34,9 @@ public class GitHubUserAuthorizationFilter extends OncePerRequestFilter {
 
     public static final Optional<AuthenticatedUser> getAuthenticatedUser(
             final @NonNull HttpServletRequest request) {
-        return Optional.ofNullable(request.getSession(false))
-                .map(session -> (AuthenticatedUser) session.getAttribute(AUTH_USER_SESSION_ATTR_NAME));
+        final var sessionUser = (AuthenticatedUser) request.getSession(true)
+                .getAttribute(AUTH_USER_SESSION_ATTR_NAME);
+        return Optional.ofNullable(sessionUser);
     }
 
     protected static final void setAuthenticatedUser(final @NonNull HttpServletRequest request,
