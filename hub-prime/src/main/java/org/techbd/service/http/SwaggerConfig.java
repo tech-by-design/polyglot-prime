@@ -126,6 +126,7 @@ public class SwaggerConfig {
                 .group("FHIR API")
                 .pathsToMatch("/metadata",
                         "/Bundle", "/Bundle/**",
+                        "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
                         "/api/expect/fhir/**"
                 )
                 .addOpenApiCustomizer(openApi -> {

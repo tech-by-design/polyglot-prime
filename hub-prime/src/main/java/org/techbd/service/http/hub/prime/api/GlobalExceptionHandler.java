@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest();
-        String tenantId = request.getHeader("X-Tenant-ID"); // Use your actual header name
+        String tenantId = request.getHeader("X-TechBD-Tenant-ID"); // Use your actual header name
         LOG.error("Validation Error: Required request body is missing. Tenant ID: {}", tenantId, ex);
         ErrorResponse response = new ErrorResponse("Error", "Validation Error: Required request body is missing");
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
         String parameterName = ex.getName(); // Get the parameter name from ex.getName()
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest();
-        String tenantId = request.getHeader("X-Tenant-ID"); // Use your actual header name
+        String tenantId = request.getHeader("X-TechBD-Tenant-ID"); // Use your actual header name
 
         LOG.error("Validation Error: {}. Parameter Name: {}. Tenant ID: {}", customMessage, parameterName, tenantId,
                 ex);
@@ -93,7 +93,7 @@ public class GlobalExceptionHandler {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest();
         HttpSession session = request.getSession(false); // Retrieve session if it exists, else null
-        String tenantId = request.getHeader("X-Tenant-ID");
+        String tenantId = request.getHeader("X-TechBD-Tenant-ID");
         String sessionId = session != null ? session.getId() : "No session";
         String userAgent = request.getHeader("User-Agent");
         String remoteAddress = request.getRemoteAddr();
@@ -111,7 +111,7 @@ public class GlobalExceptionHandler {
     private ResponseEntity<ErrorResponse> handleException(Exception ex, String customMessage, HttpStatus status) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest();
-        String tenantId = request.getHeader("X-Tenant-ID"); 
+        String tenantId = request.getHeader("X-TechBD-Tenant-ID"); 
         LOG.error("Validation Error: {}. Tenant ID: {}", customMessage, tenantId, ex);
         HttpSession session = request.getSession(false); // Retrieve session if it exists, else null
         String sessionId = session != null ? session.getId() : "No session";
