@@ -1,6 +1,6 @@
 package org.techbd.controller.http.hub.prime.api;
 
-import java.io.IOException;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,7 @@ public class CsvController {
                 this.csvService = csvService;
         }
 
-        @PostMapping(value = "/flatfile/csv/Bundle/$validate,/flatfile/csv/Bundle/$validate/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PostMapping(value = {"/flatfile/csv/Bundle/", "/flatfile/csv/Bundle//"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @ResponseBody
         public Object handleCsvUpload(
                         @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
@@ -56,25 +56,15 @@ public class CsvController {
                         MediaType.MULTIPART_FORM_DATA_VALUE })
         @ResponseBody
         @Async
-        public ResponseEntity<Object> handleCsvUploadAndConversion(
+        public List<Object> handleCsvUploadAndConversion(
                         @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
                         HttpServletRequest request,
-                        HttpServletResponse response) throws IOException {
+                        HttpServletResponse response) throws Exception {
 
                 if (tenantId == null || tenantId.trim().isEmpty()) {
                         throw new IllegalArgumentException("Tenant ID must be provided");
                 }
-
-                try {
-                        csvService.processZipFile(file,request,response,tenantId);
-                        return ResponseEntity.ok().body(
-                                        "{ \"status\": \"Success\", \"message\": \"CSV files processed successfully.\" }");
-                } catch (Exception e) {
-                        return ResponseEntity.status(500)
-                                        .body("{ \"status\": \"Error\", \"message\": \"Error processing CSV files: "
-                                                        + e.getMessage() + "\" }");
-                }
+                return csvService.processZipFile(file,request,response,tenantId);
         }
-
 }

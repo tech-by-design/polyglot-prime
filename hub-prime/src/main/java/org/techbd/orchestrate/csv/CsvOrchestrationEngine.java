@@ -212,6 +212,7 @@ public class CsvOrchestrationEngine {
             this.masterInteractionId = masterInteractionId;
             this.request = request;
             this.generateBundle = generateBundle;
+            this.payloadAndValidationOutcomes = new HashMap<>();
         }
 
         public boolean isGenerateBundle() {
