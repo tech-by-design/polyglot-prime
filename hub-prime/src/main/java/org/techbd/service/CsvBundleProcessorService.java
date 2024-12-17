@@ -5,18 +5,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.slf4j.Logger;
@@ -248,7 +240,6 @@ public class CsvBundleProcessorService {
                             profile,
                             screeningObservationList,
                             interactionId);
-                    request.setAttribute("csvInteractionId", interactionId);
                     saveConvertedFHIR(isValid, masterInteractionId, groupKey, interactionId, request,
                             bundle, tenantId);
                     if (bundle != null) {
