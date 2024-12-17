@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
-import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -43,7 +41,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             List<ScreeningObservationData> screeningObservationDataList,
             String interactionId) {
     
-        LOG.info("SexualOrientationObservationConverter::convert BEGIN for interaction id: {}", interactionId);
+        LOG.info("ScreeningResponseObservationConverter::convert BEGIN for interaction id: {}", interactionId);
     
         List<BundleEntryComponent> bundleEntryComponents = new ArrayList<>();
     
@@ -83,7 +81,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             entry.setResource(observation);
             bundleEntryComponents.add(entry);
         }    
-        LOG.info("SexualOrientationObservationConverter::convert END for interaction id: {}", interactionId);
+        LOG.info("ScreeningResponseObservationConverter::convert  no of observations:{}  END for interaction id: {}",screeningObservationDataList.size(), interactionId);
         return bundleEntryComponents;
     }
     

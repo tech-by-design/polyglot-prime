@@ -1,5 +1,16 @@
 package org.techbd.service.csv;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Observation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,19 +24,7 @@ import org.techbd.service.converters.shinny.BaseConverter;
 import org.techbd.service.converters.shinny.ScreeningResponseObservationConverter;
 
 import ca.uhn.fhir.context.FhirContext;
-
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Observation;
-import org.hl7.fhir.r4.model.Patient;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
 import ca.uhn.fhir.parser.IParser;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ScreeningResponseObservationConverterTest {
 
