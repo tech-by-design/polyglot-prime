@@ -60,6 +60,7 @@ public class CsvToFhirConverter {
         converters.stream().forEach(converter -> {
             entries.addAll(converter.convert(bundle, demographicData,  qeAdminData,screeningProfileData,screeningObservationData, interactionId));
         });
+        bundle.getEntry().addAll(entries);
     }
 
 }

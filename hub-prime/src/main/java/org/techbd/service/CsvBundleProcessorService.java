@@ -251,7 +251,6 @@ public class CsvBundleProcessorService {
                     request.setAttribute("csvInteractionId", interactionId);
                     saveConvertedFHIR(isValid, masterInteractionId, groupKey, interactionId, request,
                             bundle, tenantId);
-
                     if (bundle != null) {
                         results.add(fhirService.processBundle(
                                 bundle, tenantId, null, null, null, null, null,
