@@ -215,6 +215,17 @@ Field descriptions for each field are documented in the `documentation.auto.md` 
 
 Refer to `documentation.auto.md` for the complete set of field descriptions, including FHIR File Paths.
 
+## Generating Documentation Automatically
+
+The `documentation.auto.md` file is automatically generated using the `describe` method from the Frictionless library. This method extracts metadata from the data package and converts it into Markdown format.
+
+### How to Regenerate:
+
+1. Use the Frictionless library to describe the data package.
+2. Convert the metadata to Markdown format.
+3. Save the output as `documentation.auto.md`.
+
+This ensures that the field descriptions, including FHIR File Paths, remain up-to-date and consistent with the data package.
 
 This naming convention helps organize files systematically and allows easy identification of the data source, purpose, and context.
 
