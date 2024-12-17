@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -15,17 +16,21 @@ import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.util.CsvConstants;
+import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
 /**
  * Converts data into a FHIR Encounter resource.
  */
 @Component
+@Order(5)
 public class EncounterConverter extends BaseConverter {
     private static final Logger LOG = LoggerFactory.getLogger(EncounterConverter.class.getName());
 
@@ -58,13 +63,13 @@ public class EncounterConverter extends BaseConverter {
      */
     @Override
     public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
 
         Encounter encounter = new Encounter();
         setMeta(encounter);
 
         // Set Encounter ID
-        encounter.setId(generateUniqueId(interactionId));
+        encounter.setId("Encounter/"+CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
         // Set Meta Data
         Meta meta = encounter.getMeta();
@@ -87,7 +92,8 @@ public class EncounterConverter extends BaseConverter {
 
         // // Set location
         populateLocationReference(encounter, screeningProfileData);
-
+        //Create patient reference
+        createAssignerReference(idsGenerated.get(CsvConstants.PATIENT_ID));
         // Wrap the Encounter resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(encounter);
@@ -157,16 +163,6 @@ public class EncounterConverter extends BaseConverter {
             encounter.addLocation(new Encounter.EncounterLocationComponent()
                     .setLocation(new Reference("Location/" + "LocationExample-SCN")));
         }
-    }
-
-    /**
-     * Generate a unique ID for the encounter based on its data.
-     *
-     * @param interactionId The interaction ID used to generate a unique identifier.
-     * @return A unique ID for the encounter.
-     */
-    private String generateUniqueId(String interactionId) {
-        return "Encounter-" + interactionId;
     }
 
     /**

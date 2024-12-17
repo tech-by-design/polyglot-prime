@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Address;
@@ -22,16 +23,20 @@ import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.util.CsvConstants;
+import org.techbd.util.CsvConversionUtil;
 
 /**
  * Converts data related to an Organization into a FHIR Organization resource.
  */
 @Component
+@Order(1)
 public class OrganizationConverter extends BaseConverter {
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationConverter.class.getName());
 
@@ -63,11 +68,11 @@ public class OrganizationConverter extends BaseConverter {
      */
     @Override
     public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
         Organization organization = new Organization();
         setMeta(organization);
-        organization.setId(generateUniqueId(qeAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
-
+        organization.setId("Organization/"+CsvConversionUtil.sha256(qeAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
+        idsGenerated.put(CsvConstants.ORGANIZATION_ID,organization.getId());
         Meta meta = organization.getMeta();
         meta.setLastUpdated(getLastUpdatedDate(qeAdminData));
 
@@ -182,28 +187,6 @@ public class OrganizationConverter extends BaseConverter {
         }
     }
 
-    /**
-     * Generate a unique ID for the organization based on its data.
-     * This could be a combination of organization name, type, and an identifier.
-     *
-     * @param organizationId The organization ID used to generate a unique
-     *                       identifier.
-     * @return A unique ID for the organization.
-     */
-    // TODO: need an update in the ID generation code
-    private String generateUniqueId(String organizationId) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(organizationId.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hashBytes) {
-                hexString.append(String.format("%02x", b));
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 algorithm not found", e);
-        }
-    }
     /**
      * Get the last updated date for the organization based on its data from
      * QeAdminData.

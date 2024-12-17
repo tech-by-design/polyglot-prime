@@ -44,7 +44,7 @@ class OrganizationConverterTest {
         // Call the convert method of the organization converter
         final BundleEntryComponent result = organizationConverter
                 .convert(bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,
-                        "interactionId")
+                        "interactionId",null)
                 .get(0);
 
         // Create soft assertions to verify the result
@@ -113,7 +113,7 @@ class OrganizationConverterTest {
         final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
         final var result = organizationConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId");
+                "interactionId",null);
         final Organization organization = (Organization) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/organization.json";
         final FhirContext fhirContext = FhirContext.forR4();

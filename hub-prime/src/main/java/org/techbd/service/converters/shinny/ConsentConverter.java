@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Bundle;
@@ -20,17 +21,21 @@ import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.util.CsvConstants;
+import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
 /**
  * Converts data into a FHIR Consent resource.
  */
 @Component
+@Order(4)
 public class ConsentConverter extends BaseConverter {
     private static final Logger LOG = LoggerFactory.getLogger(ConsentConverter.class.getName());
 
@@ -65,13 +70,13 @@ public class ConsentConverter extends BaseConverter {
      */
     @Override
     public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
 
         Consent consent = new Consent();
         setMeta(consent);
 
         // // Set Consent ID
-        consent.setId(generateUniqueId(interactionId));
+        consent.setId("Consent/"+CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
         // // Set Meta Data
         Meta meta = consent.getMeta();
@@ -106,7 +111,8 @@ public class ConsentConverter extends BaseConverter {
         populateConsentProvision(consent, screeningProfileData);
 
         populateSourceAttachment(consent);
-
+        //Create organization reference
+        createAssignerReference(idsGenerated.get(CsvConstants.ORGANIZATION_ID));
         // Wrap the Consent resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(consent);
@@ -205,17 +211,6 @@ public class ConsentConverter extends BaseConverter {
     public static void populateConsentDateTime(Consent consent, ScreeningProfileData screeningResourceData) {
         String consentDateTime = screeningResourceData.getConsentDateTime();
         consent.setDateTime(DateUtil.convertStringToDate(consentDateTime));
-    }
-
-    /**
-     * Generate a unique ID for the consent based on its data.
-     *
-     * @param interactionId The interaction ID used to generate a unique identifier.
-     * @return A unique ID for the consent.
-     */
-    private String generateUniqueId(String interactionId) {
-        // Example unique ID generation logic
-        return "Consent-" + interactionId;
     }
 
     /**

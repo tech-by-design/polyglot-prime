@@ -43,7 +43,7 @@ class PatientConverterTest {
                 final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
                 final BundleEntryComponent result = patientConverter
                                 .convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                                                screeningDataList, "interactionId")
+                                                screeningDataList, "interactionId",null)
                                 .get(0);
                 final SoftAssertions softly = new SoftAssertions();
 
@@ -139,7 +139,7 @@ class PatientConverterTest {
                 final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
                 final var result = patientConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                                 screeningDataList,
-                                "interactionId");
+                                "interactionId",null);
                 final Patient patient = (Patient) result.get(0).getResource();
                 final var filePath = "src/test/resources/org/techbd/csv/generated-json/patient.json";
                 final FhirContext fhirContext = FhirContext.forR4();
@@ -149,7 +149,4 @@ class PatientConverterTest {
                 Files.createDirectories(outputPath.getParent());
                 Files.writeString(outputPath, fhirResourceJson);
         }
-
-       
-
 }

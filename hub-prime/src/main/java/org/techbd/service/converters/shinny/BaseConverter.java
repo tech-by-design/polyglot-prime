@@ -7,13 +7,11 @@ import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.techbd.util.YamlUtil;
 public abstract class BaseConverter implements IConverter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BaseConverter.class.getName());
     public static Map<String, String> PROFILE_MAP = getProfileUrlMap();
 
 
@@ -51,5 +49,20 @@ public abstract class BaseConverter implements IConverter {
         }
         return extension;
     }
-    
+     /**
+     * Method to create a Reference object and populate the 'assigner' field
+     * 
+     * @param referenceString The reference string in the format "ResourceType/ResourceId"
+     * @return A Reference object representing the assigner reference
+     */
+    public static Reference createAssignerReference(String referenceString) {
+        String[] parts = referenceString.split("/");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Reference string must be in the format 'ResourceType/ResourceId'");
+        }
+        Reference reference = new Reference();
+        reference.setReference(referenceString);
+     
+        return reference;
+    }
 }

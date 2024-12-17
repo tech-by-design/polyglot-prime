@@ -3,6 +3,8 @@ package org.techbd.util;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -120,6 +122,24 @@ public class CsvConversionUtil {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new IllegalArgumentException(
                     "The class " + obj.getClass().getName() + " does not have a field named '" + fieldName + "'.", e);
+        }
+    }
+
+     public static String sha256(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating SHA-256 hash", e);
         }
     }
 

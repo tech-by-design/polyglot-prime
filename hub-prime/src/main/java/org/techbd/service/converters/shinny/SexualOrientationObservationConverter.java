@@ -1,6 +1,7 @@
 package org.techbd.service.converters.shinny;
 
 import java.util.List;
+import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -13,14 +14,18 @@ import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.util.CsvConstants;
+import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
 @Component
+@Order(3)
 public class SexualOrientationObservationConverter extends BaseConverter {
 
     private static final Logger LOG = LoggerFactory.getLogger(SexualOrientationObservationConverter.class.getName());
@@ -36,7 +41,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
 
     @Override
     public List<BundleEntryComponent>   convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
         LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
         Observation observation = new Observation();
         setMeta(observation);
@@ -53,10 +58,13 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                 demographicData.getSexualOrientationValueCode(),
                 demographicData.getSexualOrientationValueCodeDescription()));
         observation.setValue(value);
+        observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
         // observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated())); //Not Used
         Narrative text = new Narrative();
         text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
         observation.setText(text);
+        //Create patient reference
+        createAssignerReference(idsGenerated.get(CsvConstants.PATIENT_ID));
         BundleEntryComponent entry = new BundleEntryComponent();
         entry.setResource(observation);
         LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);

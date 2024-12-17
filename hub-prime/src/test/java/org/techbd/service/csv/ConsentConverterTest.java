@@ -42,7 +42,7 @@ class ConsentConverterTest {
 
         // Call the convert method of the consent converter
         final BundleEntryComponent result = consentConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                 screeningDataList, "interactionId").get(0);
+                 screeningDataList, "interactionId",null).get(0);
 
         // Create soft assertions to verify the result
         final SoftAssertions softly = new SoftAssertions();
@@ -81,7 +81,7 @@ class ConsentConverterTest {
 
         final var result = consentConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId");
+                "interactionId",null);
 
         final Consent consent = (Consent) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/consent.json";

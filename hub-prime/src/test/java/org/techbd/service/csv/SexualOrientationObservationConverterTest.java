@@ -35,7 +35,7 @@ class SexualOrientationObservationConverterTest {
                 final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
                 final String interactionId = "interactionId";
                 final BundleEntryComponent result = sexualOrientationObservationConverter.convert(
-                                bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,interactionId).get(0);
+                                bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,interactionId,null).get(0);
                 final SoftAssertions softly = new SoftAssertions();
                 softly.assertThat(result).isNotNull();
                 softly.assertThat(result.getResource()).isInstanceOf(Observation.class);
@@ -73,7 +73,7 @@ class SexualOrientationObservationConverterTest {
                 final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
                 final var result = sexualOrientationObservationConverter.convert(bundle, demographicData, qrAdminData,
                                 screeningResourceData, screeningDataList,
-                                "interactionId");
+                                "interactionId",null);
                 final Observation observation = (Observation) result.get(0).getResource();
                 final var filePath = "src/test/resources/org/techbd/csv/generated-json/sexual-orientation-observation.json";
                 final FhirContext fhirContext = FhirContext.forR4();

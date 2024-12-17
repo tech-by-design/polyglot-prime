@@ -1,6 +1,7 @@
 package org.techbd.service.converters.shinny;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,14 +25,18 @@ import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.util.CsvConstants;
+import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
 @Component
+@Order(2)
 public class PatientConverter extends BaseConverter implements IPatientConverter {
     private static final Logger LOG = LoggerFactory.getLogger(PatientConverter.class.getName());
 
@@ -59,14 +64,16 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      *         resource.
      */
     @Override
-    public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
+    public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData, QeAdminData qeAdminData,
+            ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
+            String interactionId, Map<String, String> idsGenerated) {
         LOG.info("PatientConverter :: convert  BEGIN for transaction id :{}", interactionId);
         Patient patient = new Patient();
         setMeta(patient);
-        ScreeningObservationData screeningData = screeningObservationData.get(0);
-        patient.setId(generateUniqueId(screeningProfileData.getEncounterId(), qeAdminData.getFacilityId(),
-            demographicData.getPatientMrIdValue()));
+        patient.setId("Patient/"+CsvConversionUtil
+                .sha256(generateUniqueId(screeningProfileData.getEncounterId(), qeAdminData.getFacilityId(),
+                        demographicData.getPatientMrIdValue())));
+        idsGenerated.put(CsvConstants.PATIENT_ID, patient.getId());
         Meta meta = patient.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
                                                                                           // screening records
@@ -86,7 +93,8 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         Narrative text = new Narrative();
         text.setStatus(NarrativeStatus.GENERATED);
         patient.setText(text);
-
+        //Create organization reference
+        createAssignerReference(idsGenerated.get(CsvConstants.ORGANIZATION_ID));
         // populatePatientText(patient, demographicData);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(patient);
@@ -101,29 +109,32 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         }
         if (demographicData.getMiddleName() != null) {
             Extension middleNameExtension = new Extension();
-            middleNameExtension.setUrl("http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name"); //TODO : remove static reference
+            middleNameExtension.setUrl("http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name"); // TODO : remove
+                                                                                                        // static
+                                                                                                        // reference
             middleNameExtension.setValue(new StringType(demographicData.getMiddleName()));
             name.addExtension(middleNameExtension);
         }
         if (demographicData.getFamilyName() != null) {
             name.setFamily(demographicData.getFamilyName());
         }
-        name.addPrefix("Mr., Dr., PhD, CCNA"); //TODO : remove static reference
-        name.addSuffix("Jr., III"); //TODO : remove static reference
+        name.addPrefix("Mr., Dr., PhD, CCNA"); // TODO : remove static reference
+        name.addSuffix("Jr., III"); // TODO : remove static reference
         patient.addName(name);
         return patient;
     }
 
     // /**
-    //  * Concatenates the encounter ID, facility ID, and patient MRN ID
-    //  * to form a unique identifier in the format: "encounterIdfacilityId-patMrnId".
-    //  *
-    //  * @param encounterId The encounter ID.
-    //  * @param facilityId  The facility ID.
-    //  * @param patMrnId    The patient MRN ID.
-    //  * @return A concatenated string in the format:
-    //  *         "encounterIdfacilityId-patMrnId".
-    //  */
+    // * Concatenates the encounter ID, facility ID, and patient MRN ID
+    // * to form a unique identifier in the format:
+    // "encounterIdfacilityId-patMrnId".
+    // *
+    // * @param encounterId The encounter ID.
+    // * @param facilityId The facility ID.
+    // * @param patMrnId The patient MRN ID.
+    // * @return A concatenated string in the format:
+    // * "encounterIdfacilityId-patMrnId".
+    // */
     private String generateUniqueId(String encounterId, String facilityId, String patMrnId) {
         return new StringBuilder()
                 .append(encounterId)
@@ -134,32 +145,36 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
     }
 
     private void populateExtensions(Patient patient, DemographicData demographicData) {
-        if (StringUtils.isNotEmpty("ombCategory") || //TODO : remove static reference
+        if (StringUtils.isNotEmpty("ombCategory") || // TODO : remove static reference
                 StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryRaceCode()) ||
                 StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryRaceCodeDescription()) ||
                 StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryRaceCodeSystemName())) {
             Extension raceOmbExtension = getRaceOmbExtension(
-                    "ombCategory",  //TODO : remove static reference
+                    "ombCategory", // TODO : remove static reference
                     null,
                     demographicData.getExtensionOmbCategoryRaceCodeSystemName(),
                     demographicData.getExtensionOmbCategoryRaceCode(),
                     demographicData.getExtensionOmbCategoryRaceCodeDescription());
-            patient.addExtension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race", raceOmbExtension);  //TODO : remove static reference
+            patient.addExtension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race", raceOmbExtension); // TODO
+                                                                                                                    // :
+                                                                                                                    // remove
+                                                                                                                    // static
+                                                                                                                    // reference
         }
 
-        if (StringUtils.isNotEmpty("text") ||  //TODO : remove static reference
-                StringUtils.isNotEmpty("Asian")) {  //TODO : remove static reference
+        if (StringUtils.isNotEmpty("text") || // TODO : remove static reference
+                StringUtils.isNotEmpty("Asian")) { // TODO : remove static reference
 
             Extension raceDetailedExtension = getRaceDetailedExtension(
-                    "text",  //TODO : remove static reference
-                    "Asian", //TODO : remove static reference
+                    "text", // TODO : remove static reference
+                    "Asian", // TODO : remove static reference
                     null,
                     null,
                     null);
             patient.addExtension(raceDetailedExtension);
         }
 
-        if (StringUtils.isNotEmpty("ombCategory") ||  //TODO : remove static reference
+        if (StringUtils.isNotEmpty("ombCategory") || // TODO : remove static reference
                 StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryEthnicityCode()) ||
                 StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryEthnicityCodeDescription()) ||
                 StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryEthnicityCodeSystemName())) {
@@ -170,36 +185,46 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                     demographicData.getExtensionOmbCategoryEthnicityCodeSystemName(),
                     demographicData.getExtensionOmbCategoryEthnicityCode(),
                     demographicData.getExtensionOmbCategoryEthnicityCodeDescription());
-            patient.addExtension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity", ethnicityOmbExtension);  //TODO : remove static reference
+            patient.addExtension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+                    ethnicityOmbExtension); // TODO : remove static reference
         }
 
         if (StringUtils.isNotEmpty("text") ||
-                StringUtils.isNotEmpty("Hispanic or Latino")) { //TODO : remove static reference
+                StringUtils.isNotEmpty("Hispanic or Latino")) { // TODO : remove static reference
 
             Extension ethnicityDetailedExtension = getEthnicityDetailedExtension(
-                    "text",   //TODO : remove static reference
+                    "text", // TODO : remove static reference
                     "Hispanic or Latino",
                     null, null, null);
             patient.addExtension(ethnicityDetailedExtension);
         }
 
-        if (StringUtils.isNotEmpty("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex") || //TODO : remove static reference
+        if (StringUtils.isNotEmpty("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex") || // TODO :
+                                                                                                          // remove
+                                                                                                          // static
+                                                                                                          // reference
                 StringUtils.isNotEmpty(demographicData.getExtensionSexAtBirthCodeValue())) {
 
             Extension ethnicityDetailedExtension = getEthnicityDetailedExtension(
-                    "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex", //TODO : remove static reference
+                    "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex", // TODO : remove static
+                                                                                        // reference
                     demographicData.getExtensionSexAtBirthCodeValue(),
                     null, null, null);
             patient.addExtension(ethnicityDetailedExtension);
         }
 
-        if (StringUtils.isNotEmpty("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns") || //TODO : remove static reference
+        if (StringUtils.isNotEmpty("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns") || // TODO
+                                                                                                                   // :
+                                                                                                                   // remove
+                                                                                                                   // static
+                                                                                                                   // reference
                 StringUtils.isNotEmpty(demographicData.getExtensionPersonalPronounsCode()) ||
                 StringUtils.isNotEmpty(demographicData.getExtensionPersonalPronounsDisplay()) ||
                 StringUtils.isNotEmpty(demographicData.getExtensionPersonalPronounsSystem())) {
 
             Extension personalPronounsExtension = getShinnyPersonalPronounsExtension(
-                    "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns",   //TODO : remove static reference
+                    "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns", // TODO : remove static
+                                                                                                 // reference
                     null,
                     demographicData.getExtensionPersonalPronounsSystem(),
                     demographicData.getExtensionPersonalPronounsCode(),
@@ -207,13 +232,18 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
             patient.addExtension(personalPronounsExtension);
         }
 
-        if (StringUtils.isNotEmpty("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity") || //TODO : remove static reference
+        if (StringUtils.isNotEmpty("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity") || // TODO
+                                                                                                                 // :
+                                                                                                                 // remove
+                                                                                                                 // static
+                                                                                                                 // reference
                 StringUtils.isNotEmpty(demographicData.getExtensionGenderIdentityCode()) ||
                 StringUtils.isNotEmpty(demographicData.getExtensionGenderIdentityDisplay()) ||
                 StringUtils.isNotEmpty(demographicData.getExtensionGenderIdentitySystem())) {
 
             Extension genderIdentityExtension = getShinnyGenderIdentityExtension(
-                    "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity", //TODO : remove static reference
+                    "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity", // TODO : remove static
+                                                                                               // reference
                     null,
                     demographicData.getExtensionGenderIdentitySystem(),
                     demographicData.getExtensionGenderIdentityCode(),
@@ -226,17 +256,17 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         if (StringUtils.isNotEmpty(data.getPatientMrIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem("http://terminology.hl7.org/CodeSystem/v2-0203");   //TODO : remove static reference
+            coding.setSystem("http://terminology.hl7.org/CodeSystem/v2-0203"); // TODO : remove static reference
             coding.setCode("MR");
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem("http://www.scn.gov/facility/CUMC");  //TODO : remove static reference
+            identifier.setSystem("http://www.scn.gov/facility/CUMC"); // TODO : remove static reference
             identifier.setValue(data.getPatientMrIdValue());
 
             // Optional: Add assigner if needed (uncomment if required)
             Reference assigner = new Reference();
-            assigner.setReference("Organization/OrganizationExampleOther-SCN1"); //TODO -
+            assigner.setReference("Organization/OrganizationExampleOther-SCN1"); // TODO -
             // populate while organization is populated
             identifier.setAssigner(assigner);
 
@@ -249,12 +279,12 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         if (StringUtils.isNotEmpty(data.getPatientMaIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem("http://terminology.hl7.org/CodeSystem/v2-0203"); //TODO : remove static reference
+            coding.setSystem("http://terminology.hl7.org/CodeSystem/v2-0203"); // TODO : remove static reference
             coding.setCode("MA");
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem("http://www.medicaid.gov/");  //TODO : remove static reference
+            identifier.setSystem("http://www.medicaid.gov/"); // TODO : remove static reference
             identifier.setValue(data.getPatientMaIdValue());
             patient.addIdentifier(identifier);
         }
@@ -264,14 +294,14 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         if (StringUtils.isNotEmpty(data.getPatientSsIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem("http://terminology.hl7.org/CodeSystem/v2-0203");  //TODO : remove static reference
+            coding.setSystem("http://terminology.hl7.org/CodeSystem/v2-0203"); // TODO : remove static reference
             coding.setCode("SSN");
             coding.setDisplay("Social Security Number");
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             type.setText("Social Security Number");
             identifier.setType(type);
-            identifier.setSystem("http://www.ssa.gov/");  //TODO : remove static reference
+            identifier.setSystem("http://www.ssa.gov/"); // TODO : remove static reference
             identifier.setValue(data.getPatientSsIdValue());
             patient.addIdentifier(identifier);
         }
@@ -297,7 +327,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
     private static void populatePhone(Patient patient, DemographicData demographicData) {
         Optional.ofNullable(demographicData.getTelecomValue())
                 .ifPresent(phone -> patient.addTelecom(new ContactPoint()
-                        .setSystem(ContactPoint.ContactPointSystem.PHONE)   //TODO : remove static reference
+                        .setSystem(ContactPoint.ContactPointSystem.PHONE) // TODO : remove static reference
                         .setValue(demographicData.getTelecomValue())
                         .setUse(ContactPoint.ContactPointUse.HOME)));
     }
@@ -316,9 +346,10 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
             Optional.ofNullable(data.getZip())
                     .filter(StringUtils::isNotEmpty)
                     .ifPresent(address::setPostalCode);
-            String addressText = String.format("%s %s, %s %s", address.getLine().get(0), address.getCity(), address.getState(), address.getPostalCode());
+            String addressText = String.format("%s %s, %s %s", address.getLine().get(0), address.getCity(),
+                    address.getState(), address.getPostalCode());
             address.setText(addressText);
-            
+
             patient.addAddress(address);
         }
     }
@@ -348,7 +379,8 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                 .ifPresent(relationshipCode -> {
                     // Using builder pattern where applicable
                     var coding = new Coding()
-                            .setSystem("http://terminology.hl7.org/CodeSystem/v2-0063")  //TODO : remove static reference
+                            .setSystem("http://terminology.hl7.org/CodeSystem/v2-0063") // TODO : remove static
+                                                                                        // reference
                             .setCode(relationshipCode)
                             .setDisplay(data.getRelationshipPersonDescription());
 
@@ -358,7 +390,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                             .setFamily(data.getRelationshipPersonFamilyName())
                             .addGiven(data.getRelationshipPersonGivenName());
 
-                    var telecomSystem = Optional.ofNullable("Phone")  //TODO : remove static reference
+                    var telecomSystem = Optional.ofNullable("Phone") // TODO : remove static reference
                             .filter(StringUtils::isNotEmpty)
                             .map(String::toLowerCase)
                             .map(ContactPoint.ContactPointSystem::fromCode)
@@ -378,7 +410,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
     }
 
     private static void populatePatientText(Patient patient, DemographicData data) {
-        Optional.ofNullable("generated")  //TODO : remove static reference
+        Optional.ofNullable("generated") // TODO : remove static reference
                 .filter(StringUtils::isNotEmpty)
                 .ifPresent(status -> {
                     Narrative text = new Narrative();

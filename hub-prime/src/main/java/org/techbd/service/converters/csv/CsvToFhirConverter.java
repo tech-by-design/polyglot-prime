@@ -1,7 +1,9 @@
 package org.techbd.service.converters.csv;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -41,7 +43,6 @@ public class CsvToFhirConverter {
             LOG.debug("CsvToFhirConvereter::convert - Bundle entry created :{}", interactionId);
             LOG.debug("Conversion of resources - BEGIN for interactionId :{}", interactionId);
             addEntries(bundle, demographicData, screeningDataList, qeAdminData, screeningProfileData,interactionId);
-            setReferences(bundle);
             LOG.debug("Conversion of resources - END for interactionId :{}", interactionId);
             LOG.info("CsvToFhirConvereter::convert - END for interactionId :{}", interactionId);
         } catch (Exception ex) {
@@ -49,16 +50,12 @@ public class CsvToFhirConverter {
         }
         return FhirContext.forR4().newJsonParser().encodeResourceToString(bundle);
     }
-
-    private void setReferences(Bundle bundle) {
-        // TODO : after conversion.set generated ids of resources in other resources
-    }
-
     private void addEntries(Bundle bundle, DemographicData demographicData, List<ScreeningObservationData> screeningObservationData,
             QeAdminData qeAdminData,ScreeningProfileData screeningProfileData, String interactionId) {
         List<BundleEntryComponent> entries = new ArrayList<>();
+        Map<String,String> idsGenerated = new HashMap<>();
         converters.stream().forEach(converter -> {
-            entries.addAll(converter.convert(bundle, demographicData,  qeAdminData,screeningProfileData,screeningObservationData, interactionId));
+            entries.addAll(converter.convert(bundle, demographicData,  qeAdminData,screeningProfileData,screeningObservationData, interactionId,idsGenerated));
         });
         bundle.getEntry().addAll(entries);
     }

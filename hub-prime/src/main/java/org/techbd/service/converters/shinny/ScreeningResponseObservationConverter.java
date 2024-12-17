@@ -2,6 +2,7 @@ package org.techbd.service.converters.shinny;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
@@ -16,14 +17,18 @@ import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.util.CsvConstants;
+import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
 @Component
+@Order(6)
 public class ScreeningResponseObservationConverter extends BaseConverter {
 
     private static final Logger LOG = LoggerFactory.getLogger(SexualOrientationObservationConverter.class.getName());
@@ -39,7 +44,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             QeAdminData qeAdminData,
             ScreeningProfileData screeningProfileData,
             List<ScreeningObservationData> screeningObservationDataList,
-            String interactionId) {
+            String interactionId,Map<String,String> idsGenerated) {
     
         LOG.info("ScreeningResponseObservationConverter::convert BEGIN for interaction id: {}", interactionId);
     
@@ -47,7 +52,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
     
         for (ScreeningObservationData data : screeningObservationDataList) {
             Observation observation = new Observation();
-            String observationId = "Observation/"+data.getScreeningCode(); // Use screening code as ID
+            String observationId = "Observation/"+CsvConversionUtil.sha256(data.getEncounterId()+data.getScreeningCode()); // Use screening code as ID
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
             Meta meta = new Meta();
             meta.setLastUpdated(DateUtil.parseDate(data.getRecordedTime()));
@@ -76,6 +81,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             CodeableConcept value = new CodeableConcept();
             value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(), data.getAnswerCodeDescription()));
             observation.setValue(value);
+            //Create patient reference
+            createAssignerReference(idsGenerated.get(CsvConstants.PATIENT_ID));
             BundleEntryComponent entry = new BundleEntryComponent();
             entry.setFullUrl(fullUrl);
             entry.setResource(observation);

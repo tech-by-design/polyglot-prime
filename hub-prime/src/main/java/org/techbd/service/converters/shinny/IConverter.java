@@ -1,6 +1,7 @@
 package org.techbd.service.converters.shinny;
 
 import java.util.List;
+import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CanonicalType;
@@ -25,7 +26,7 @@ public interface IConverter {
     }
 
     List<BundleEntryComponent> convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId);
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated);
 
     default void setMeta(Resource resource) {
         if (null != resource.getMeta()) {
