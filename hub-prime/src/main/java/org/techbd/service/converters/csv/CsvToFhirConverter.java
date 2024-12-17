@@ -58,7 +58,7 @@ public class CsvToFhirConverter {
             QeAdminData qeAdminData,ScreeningProfileData screeningProfileData, String interactionId) {
         List<BundleEntryComponent> entries = new ArrayList<>();
         converters.stream().forEach(converter -> {
-            entries.add(converter.convert(bundle, demographicData,  qeAdminData,screeningProfileData,screeningObservationData, interactionId));
+            entries.addAll(converter.convert(bundle, demographicData,  qeAdminData,screeningProfileData,screeningObservationData, interactionId));
         });
     }
 

@@ -62,7 +62,7 @@ public class OrganizationConverter extends BaseConverter {
      *         resource.
      */
     @Override
-    public BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
         Organization organization = new Organization();
         setMeta(organization);
@@ -93,7 +93,7 @@ public class OrganizationConverter extends BaseConverter {
         // Wrap the Organization resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(organization);
-        return bundleEntryComponent;
+        return List.of(bundleEntryComponent);
     }
 
     private static void populateOrganizationName(Organization organization, QeAdminData qrAdminData) {

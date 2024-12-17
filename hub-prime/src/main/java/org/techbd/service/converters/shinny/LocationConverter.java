@@ -54,7 +54,7 @@ public class LocationConverter extends BaseConverter {
      *         resource.
      */
     @Override
-    public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
 
         Location location = new Location();
@@ -89,7 +89,7 @@ public class LocationConverter extends BaseConverter {
         // Wrap the Location resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(location);
-        return bundleEntryComponent;
+        return List.of(bundleEntryComponent);
     }
 
     // private static void populateLocationStatus(Location location, ScreeningProfileData screeningResourceData) {

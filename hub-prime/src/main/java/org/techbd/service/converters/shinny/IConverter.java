@@ -24,7 +24,7 @@ public interface IConverter {
         setMeta(resource);
     }
 
-    BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    List<BundleEntryComponent> convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId);
 
     default void setMeta(Resource resource) {

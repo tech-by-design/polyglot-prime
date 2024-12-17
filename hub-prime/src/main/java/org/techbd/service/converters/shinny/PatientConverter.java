@@ -58,7 +58,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
      *         resource.
      */
     @Override
-    public BundleEntryComponent convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
         LOG.info("PatientConverter :: convert  BEGIN for transaction id :{}", interactionId);
         Patient patient = new Patient();
@@ -90,7 +90,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(patient);
         LOG.info("PatientConverter :: convert  END for transaction id :{}", interactionId);
-        return bundleEntryComponent;
+        return List.of(bundleEntryComponent);
     }
 
     private static Patient populatePatientName(Patient patient, DemographicData demographicData) {

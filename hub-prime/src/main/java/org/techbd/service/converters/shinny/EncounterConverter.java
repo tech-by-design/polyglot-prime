@@ -57,7 +57,7 @@ public class EncounterConverter extends BaseConverter {
      *         resource.
      */
     @Override
-    public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
 
         Encounter encounter = new Encounter();
@@ -91,7 +91,7 @@ public class EncounterConverter extends BaseConverter {
         // Wrap the Encounter resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(encounter);
-        return bundleEntryComponent;
+        return List.of(bundleEntryComponent);
     }
 
     // private void populatePatientReference(Encounter encounter, ScreeningProfileData screeningResourceData) {

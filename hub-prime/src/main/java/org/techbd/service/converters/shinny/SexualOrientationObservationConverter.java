@@ -32,7 +32,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
     }
 
     @Override
-    public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    public List<BundleEntryComponent>   convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
         LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
         Observation observation = new Observation();
@@ -56,7 +56,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         BundleEntryComponent entry = new BundleEntryComponent();
         entry.setResource(observation);
         LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
-        return entry;
+        return List.of(entry);
     }
 
 }

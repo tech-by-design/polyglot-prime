@@ -99,7 +99,7 @@
     "family": "Doe",
     "given": [ "Jon" ],
     "prefix": [ "Mr., Dr., PhD, CCNA" ],
-    "suffix": [ "Jr.,III" ]
+    "suffix": [ "Jr., III" ]
   } ],
   "telecom": [ {
     "system": "phone",

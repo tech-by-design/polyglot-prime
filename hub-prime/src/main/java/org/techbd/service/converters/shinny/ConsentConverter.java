@@ -61,7 +61,7 @@ public class ConsentConverter extends BaseConverter {
      *         resource.
      */
     @Override
-    public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
 
         Consent consent = new Consent();
@@ -105,7 +105,7 @@ public class ConsentConverter extends BaseConverter {
         // Wrap the Consent resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(consent);
-        return bundleEntryComponent;
+        return List.of(bundleEntryComponent);
     }
 
     // private static void populateConsentStatusAndScope(Consent consent, ScreeningProfileData data) {

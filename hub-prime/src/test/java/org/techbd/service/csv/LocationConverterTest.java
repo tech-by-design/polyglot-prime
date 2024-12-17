@@ -1,30 +1,11 @@
 package org.techbd.service.csv;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-
-import org.assertj.core.api.SoftAssertions;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Location;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.techbd.model.csv.DemographicData;
-import org.techbd.model.csv.QeAdminData;
-import org.techbd.model.csv.ScreeningObservationData;
-import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.converters.shinny.LocationConverter;
-import org.techbd.util.CsvConversionUtil;
-
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.parser.IParser;
 
 @ExtendWith(MockitoExtension.class)
 class LocationConverterTest {

@@ -23,7 +23,7 @@ public class QuestionnaireResponseConverter extends BaseConverter {
     }
 
     @Override
-    public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
+    public List<BundleEntryComponent>   convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
         return null;//TODO -REPLACE WITH ACTUAL CONVERSION
     }
