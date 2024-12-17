@@ -71,7 +71,7 @@ public class CsvConversionUtil {
      */
     public static Map<String, List<ScreeningProfileData>> convertCsvStringToScreeningProfileData(String csvData)
             throws IOException {
-        return convertCsvStringToObjectMap(csvData, ScreeningProfileData.class, SEPARATOR, "patientMrIdValue");
+        return convertCsvStringToObjectMap(csvData, ScreeningProfileData.class, SEPARATOR, "encounterId");
     }
 
     /**

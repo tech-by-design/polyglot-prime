@@ -200,7 +200,7 @@ public class FhirController {
                 uaValidationStrategyJson,
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
-                request, response, provenance, includeOperationOutcome, mtlsStrategy);
+                request, response, provenance, includeOperationOutcome, mtlsStrategy,null);
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {

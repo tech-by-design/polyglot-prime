@@ -25,7 +25,6 @@ public class QuestionnaireConverter  extends BaseConverter {
     @Override
     public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'convert'");
+        return null;//TODO -REPLACE WITH ACTUAL CONVERSION
     }
 }

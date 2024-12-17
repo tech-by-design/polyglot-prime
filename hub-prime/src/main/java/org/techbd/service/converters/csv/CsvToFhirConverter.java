@@ -52,7 +52,6 @@ public class CsvToFhirConverter {
 
     private void setReferences(Bundle bundle) {
         // TODO : after conversion.set generated ids of resources in other resources
-        throw new UnsupportedOperationException("Unimplemented method 'setReferences'");
     }
 
     private void addEntries(Bundle bundle, DemographicData demographicData, List<ScreeningObservationData> screeningObservationData,

@@ -25,6 +25,6 @@ public class QuestionnaireResponseConverter extends BaseConverter {
     @Override
     public BundleEntryComponent  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId) {
-        throw new UnsupportedOperationException("Unimplemented method 'convert'");
+        return null;//TODO -REPLACE WITH ACTUAL CONVERSION
     }
 }
