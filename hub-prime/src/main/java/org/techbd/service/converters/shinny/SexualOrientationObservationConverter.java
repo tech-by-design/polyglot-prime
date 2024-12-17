@@ -46,13 +46,13 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
         Observation observation = new Observation();
         setMeta(observation);
-        observation.setId(generateUniqueId(interactionId));
+        observation.setId("SexualOrientation-" +CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
         Meta meta = observation.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
         Reference subjectReference = new Reference();
-        subjectReference.setReference("Patient/" + "PatientExample"); //TODO : remove static reference
+        subjectReference.setReference("Patient/" + observation.getId()); //TODO : remove static reference
         observation.setSubject(subjectReference);
         CodeableConcept code = new CodeableConcept();
         code.addCoding(new Coding("http://loinc.org", //TODO : remove static reference
@@ -63,7 +63,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                 demographicData.getSexualOrientationValueCode(),
                 demographicData.getSexualOrientationValueCodeDescription()));
         observation.setValue(value);
-        observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
+        // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
         // observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated())); //Not Used
         Narrative text = new Narrative();
         text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
@@ -74,17 +74,6 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         entry.setResource(observation);
         LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
         return List.of(entry);
-    }
-
-    /**
-     * Generate a unique ID for the consent based on its data.
-     *
-     * @param interactionId The interaction ID used to generate a unique identifier.
-     * @return A unique ID for the consent.
-     */
-    private String generateUniqueId(String interactionId) {
-        // Example unique ID generation logic
-        return "SexualOrientation-" + interactionId;
     }
 
 }

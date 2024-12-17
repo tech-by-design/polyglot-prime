@@ -172,7 +172,7 @@ public class ConsentConverter extends BaseConverter {
 
     private void populateOrganizationReference(Consent consent, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null) {
-            consent.getOrganizationFirstRep().setReference("Organization/" + "OrganizationExampleOther-SCN1");  //TODO : remove static reference
+            consent.getOrganizationFirstRep().setReference("Organization/" + consent.getId());  //TODO : remove static reference
         }
     }
 

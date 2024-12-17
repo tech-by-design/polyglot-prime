@@ -108,7 +108,7 @@ public class EncounterConverter extends BaseConverter {
 
     private void populatePatientReference(Encounter encounter, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null && screeningResourceData.getPatientMrIdValue() != null) {
-            encounter.setSubject(new Reference("Patient/" + screeningResourceData.getPatientMrIdValue()));
+            encounter.setSubject(new Reference("Patient/" + encounter.getId()));
         }
     }
 

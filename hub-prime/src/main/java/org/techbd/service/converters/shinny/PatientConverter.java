@@ -266,7 +266,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
             // Optional: Add assigner if needed (uncomment if required)
             Reference assigner = new Reference();
-            assigner.setReference("Organization/OrganizationExampleOther-SCN1"); // TODO -
+            assigner.setReference("Organization/" + patient.getId()); // TODO -
             // populate while organization is populated
             identifier.setAssigner(assigner);
 
