@@ -1,0 +1,96 @@
+package org.techbd.service.csv;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.techbd.model.csv.DemographicData;
+import org.techbd.model.csv.QeAdminData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.service.converters.shinny.BaseConverter;
+import org.techbd.service.converters.shinny.ScreeningResponseObservationConverter;
+
+import ca.uhn.fhir.context.FhirContext;
+
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Patient;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import ca.uhn.fhir.parser.IParser;
+import static org.assertj.core.api.Assertions.assertThat;
+
+class ScreeningResponseObservationConverterTest {
+
+    @InjectMocks
+    private ScreeningResponseObservationConverter converter;
+
+    @Mock
+    private BaseConverter baseConverter;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void testConvert() throws IOException {
+        Bundle bundle = new Bundle();
+        DemographicData demographicData = CsvTestHelper.createDemographicData();
+        QeAdminData qeAdminData = CsvTestHelper.createQeAdminData();
+        ScreeningProfileData screeningProfileData = CsvTestHelper.createScreeningProfileData();
+        List<ScreeningObservationData> screeningObservationDataList = CsvTestHelper.createScreeningObservationData();
+        String interactionId = "testInteractionId";
+        List<BundleEntryComponent> result = converter.convert(
+                bundle,
+                demographicData,
+                qeAdminData,
+                screeningProfileData,
+                screeningObservationDataList,
+                interactionId);
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(screeningObservationDataList.size());
+
+        for (int i = 0; i < screeningObservationDataList.size(); i++) {
+            ScreeningObservationData screeningData = screeningObservationDataList.get(i);
+            BundleEntryComponent entry = result.get(i);
+            assertThat(entry.getFullUrl()).isEqualTo(
+                    "http://shinny.org/us/ny/hrsn/Observation/Observation/" + screeningData.getScreeningCode());
+            assertThat(entry.getResource()).isInstanceOf(Observation.class);
+            Observation observation = (Observation) entry.getResource();
+            assertThat(observation.getCode().getCodingFirstRep().getCode()).isEqualTo(screeningData.getScreeningCode());
+            assertThat(observation.getCode().getCodingFirstRep().getDisplay())
+                    .isEqualTo(screeningData.getScreeningCodeDescription());
+            assertThat(observation.getCode().getText()).isEqualTo(screeningData.getQuestionCodeText());
+            assertThat(observation.getSubject().getReference())
+                    .isEqualTo("Patient/" + screeningData.getPatientMrIdValue());
+        }
+    }
+
+    @Test
+    void testGeneratedScreeningResponseJson() throws Exception {
+        final var bundle = new Bundle();
+        final var demographicData = CsvTestHelper.createDemographicData();
+        final var screeningDataList = CsvTestHelper.createScreeningObservationData();
+        final var qrAdminData = CsvTestHelper.createQeAdminData();
+        final var screeningResourceData = CsvTestHelper.createScreeningProfileData();
+        final var result = converter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
+                screeningDataList, "interactionId");
+        final Observation observation = (Observation) result.get(0).getResource();
+        final var filePath = "src/test/resources/org/techbd/csv/generated-json/screening-response.json";
+        final FhirContext fhirContext = FhirContext.forR4();
+        final IParser fhirJsonParser = fhirContext.newJsonParser().setPrettyPrint(true);
+        final String fhirResourceJson = fhirJsonParser.encodeResourceToString(observation);
+        final Path outputPath = Paths.get(filePath);
+        Files.createDirectories(outputPath.getParent());
+        Files.writeString(outputPath, fhirResourceJson);
+    }
+
+}
