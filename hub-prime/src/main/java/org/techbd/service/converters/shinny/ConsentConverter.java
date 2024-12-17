@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -14,6 +15,8 @@ import org.hl7.fhir.r4.model.Consent;
 import org.hl7.fhir.r4.model.Consent.ConsentProvisionType;
 import org.hl7.fhir.r4.model.Consent.ConsentState;
 import org.hl7.fhir.r4.model.Meta;
+import org.hl7.fhir.r4.model.Narrative;
+import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,39 +71,41 @@ public class ConsentConverter extends BaseConverter {
         setMeta(consent);
 
         // // Set Consent ID
-        // consent.setId(generateUniqueId(interactionId));
+        consent.setId(generateUniqueId(interactionId));
 
         // // Set Meta Data
-        // Meta meta = consent.getMeta();
-        // meta.setLastUpdated(getLastUpdatedDate(screeningResourceData));
+        Meta meta = consent.getMeta();
+        meta.setLastUpdated(getLastUpdatedDate(screeningProfileData));
 
         // // Set consent scope
-        // populateConsentStatusAndScope(consent, screeningResourceData);
+        populateConsentStatusAndScope(consent, screeningProfileData);
 
         // // Set consent catehory
-        // populateConsentCategory(consent, screeningResourceData);
+        populateConsentCategory(consent, screeningProfileData);
 
         // // Set patient reference
-        // populatePatientReference(consent, screeningResourceData);
+        populatePatientReference(consent, screeningProfileData);
 
         // // Set consent date time
-        // populateConsentDateTime(consent, screeningResourceData);
+        populateConsentDateTime(consent, screeningProfileData);
 
         // // Set organization reference
-        // populateOrganizationReference(consent, screeningResourceData);
+        populateOrganizationReference(consent, screeningProfileData);
 
         // // Set state of consent
-        // populateConsentState(consent, screeningResourceData);
+        populateConsentState(consent, screeningProfileData);
 
         // // Set source reference of the consent
         // // TODO:
-        // // populateSourceReference(consent, screeningResourceData);
+        // populateSourceReference(consent, screeningProfileData);
 
         // // Set policy of the consent
-        // populateConsentPolicy(consent, screeningResourceData);
+        populateConsentPolicy(consent, screeningProfileData);
 
         // // Set provisions of the consent
-        // populateConsentProvision(consent, screeningResourceData);
+        populateConsentProvision(consent, screeningProfileData);
+
+        populateSourceAttachment(consent);
 
         // Wrap the Consent resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
@@ -108,122 +113,135 @@ public class ConsentConverter extends BaseConverter {
         return List.of(bundleEntryComponent);
     }
 
-    // private static void populateConsentStatusAndScope(Consent consent, ScreeningProfileData data) {
-    //     consent.setStatus(Consent.ConsentState.ACTIVE);
+    private static void populateConsentStatusAndScope(Consent consent, ScreeningProfileData data) {
+        consent.setStatus(Consent.ConsentState.ACTIVE);
 
-    //     CodeableConcept scope = new CodeableConcept();
-    //     Coding coding = new Coding();
-    //     coding.setCode(data.getConsentScopeCode());
-    //     scope.addCoding(coding);
-    //     scope.setText(data.getConsentScopeText());
+        CodeableConcept scope = new CodeableConcept();
+        Coding coding = new Coding();
+        coding.setCode("treatment"); //TODO : remove static reference
+        coding.setSystem("http://terminology.hl7.org/CodeSystem/consentscope");
+        coding.setDisplay("Treatment");
+        scope.addCoding(coding);
+        scope.setText("treatment"); //TODO : remove static reference
 
-    //     consent.setScope(scope);
+        consent.setScope(scope);
+
+        Narrative text = new Narrative();
+        text.setStatus(NarrativeStatus.GENERATED);
+        consent.setText(text);
+    }
+
+    private static void populateConsentCategory(Consent consent, ScreeningProfileData data) {
+        // Create a list of CodeableConcept to hold multiple categories
+        List<CodeableConcept> categories = new ArrayList<>();
+
+        // Add the first category (LOINC)
+        CodeableConcept loincCategory = new CodeableConcept();
+        Coding loincCoding = new Coding();
+        loincCoding.setSystem("http://loinc.org");
+        loincCoding.setCode("59284-0"); //TODO : remove static reference
+        loincCoding.setDisplay("Consent Document"); //TODO : remove static reference
+
+        loincCategory.addCoding(loincCoding);
+        categories.add(loincCategory);
+
+        // Add the second category (HL7 ActCode)
+        CodeableConcept hl7Category = new CodeableConcept();
+        Coding hl7Coding = new Coding();
+        hl7Coding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
+        hl7Coding.setCode("IDSCL"); //TODO : remove static reference
+
+        hl7Category.addCoding(hl7Coding);
+        categories.add(hl7Category);
+
+        // Set the categories in the consent object
+        consent.setCategory(categories);
+    }
+
+    private void populatePatientReference(Consent consent, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null && screeningResourceData.getPatientMrIdValue() != null) {
+            consent.getPatient().setReference("Patient/" + screeningResourceData.getPatientMrIdValue());
+        }
+    }
+
+    private void populateOrganizationReference(Consent consent, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null) {
+            consent.getOrganizationFirstRep().setReference("Organization/" + "OrganizationExampleOther-SCN1");  //TODO : remove static reference
+        }
+    }
+
+    private void populateConsentState(Consent consent, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null) {
+            consent.setStatus(ConsentState.valueOf("active".toUpperCase())); //TODO : remove static reference
+        }
+    }
+
+    // TODO: Need to change the code using the ScreeningResourceData, now it is
+    // static
+    // private void populateSourceReference(Consent consent, ScreeningResourceData
+    // screeningResourceData) {
+    // consent.setSourceReference("QuestionnaireResponse/ConsentQuestionnaireResponse");
     // }
 
-    // private static void populateConsentCategory(Consent consent, ScreeningProfileData data) {
-    //     // Create a list of CodeableConcept to hold multiple categories
-    //     List<CodeableConcept> categories = new ArrayList<>();
+    private void populateConsentPolicy(Consent consent, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData == null || screeningResourceData.getConsentPolicyAuthority() == null) {
+            return;
+        }
+        Consent.ConsentPolicyComponent policy = new Consent.ConsentPolicyComponent();
+        policy.setAuthority(screeningResourceData.getConsentPolicyAuthority());
 
-    //     // Add the first category (LOINC)
-    //     CodeableConcept loincCategory = new CodeableConcept();
-    //     Coding loincCoding = new Coding();
-    //     loincCoding.setSystem("http://loinc.org");
-    //     loincCoding.setCode(data.getConsentCategoryLoincCode());
-    //     loincCoding.setDisplay(data.getConsentCategoryLoincDisplay());
+        consent.addPolicy(policy);
+    }
 
-    //     loincCategory.addCoding(loincCoding);
-    //     categories.add(loincCategory);
+    private void populateConsentProvision(Consent consent, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData == null || screeningResourceData.getConsentProvisionType() == null) {
+            return;
+        }
+        Consent.provisionComponent provision = new Consent.provisionComponent();
+        provision.setType(ConsentProvisionType.PERMIT); // Directly set to "permit"
+        consent.setProvision(provision);
+    }
 
-    //     // Add the second category (HL7 ActCode)
-    //     CodeableConcept hl7Category = new CodeableConcept();
-    //     Coding hl7Coding = new Coding();
-    //     hl7Coding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
-    //     hl7Coding.setCode(data.getConsentCategoryIdsclCode());
+    public static void populateConsentDateTime(Consent consent, ScreeningProfileData screeningResourceData) {
+        String consentDateTime = screeningResourceData.getConsentDateTime();
+        consent.setDateTime(DateUtil.convertStringToDate(consentDateTime));
+    }
 
-    //     hl7Category.addCoding(hl7Coding);
-    //     categories.add(hl7Category);
+    /**
+     * Generate a unique ID for the consent based on its data.
+     *
+     * @param interactionId The interaction ID used to generate a unique identifier.
+     * @return A unique ID for the consent.
+     */
+    private String generateUniqueId(String interactionId) {
+        // Example unique ID generation logic
+        return "Consent-" + interactionId;
+    }
 
-    //     // Set the categories in the consent object
-    //     consent.setCategory(categories);
-    // }
+    /**
+     * Get the last updated date for the consent based on its data from QeAdminData.
+     *
+     * @param qrAdminData The QeAdminData object containing the consent's last
+     *                    updated date.
+     * @return The last updated date.
+     */
+    private Date getLastUpdatedDate(ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null && screeningResourceData.getConsentLastUpdated() != null
+                && !screeningResourceData.getConsentLastUpdated().isEmpty()) {
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                return dateFormat.parse(screeningResourceData.getConsentLastUpdated());
+            } catch (ParseException e) {
+                LOG.error("Error parsing last updated date", e);
+            }
+        }
+        return new Date();
+    }
 
-    // private void populatePatientReference(Consent consent, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData != null && screeningResourceData.getPatientMrIdValue() != null) {
-    //         consent.getPatient().setReference("Patient/" + screeningResourceData.getPatientMrIdValue());
-    //     }
-    // }
-
-    // private void populateOrganizationReference(Consent consent, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData != null && screeningResourceData.getFacilityId() != null) {
-    //         consent.getOrganizationFirstRep().setReference("Organization/" + screeningResourceData.getFacilityId());
-    //     }
-    // }
-
-    // private void populateConsentState(Consent consent, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData != null && screeningResourceData.getConsentStatus() != null) {
-    //         consent.setStatus(ConsentState.valueOf(screeningResourceData.getConsentStatus().toUpperCase()));
-    //     }
-    // }
-
-    // // TODO: Need to change the code using the ScreeningResourceData, now it is
-    // // static
-    // // private void populateSourceReference(Consent consent, ScreeningResourceData
-    // // screeningResourceData) {
-    // // consent.setSourceReference("QuestionnaireResponse/ConsentQuestionnaireResponse");
-    // // }
-
-    // private void populateConsentPolicy(Consent consent, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData == null || screeningResourceData.getConsentPolicyAuthority() == null) {
-    //         return;
-    //     }
-    //     Consent.ConsentPolicyComponent policy = new Consent.ConsentPolicyComponent();
-    //     policy.setAuthority(screeningResourceData.getConsentPolicyAuthority());
-
-    //     consent.addPolicy(policy);
-    // }
-
-    // private void populateConsentProvision(Consent consent, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData == null || screeningResourceData.getConsentProvisionType() == null) {
-    //         return;
-    //     }
-    //     Consent.provisionComponent provision = new Consent.provisionComponent();
-    //     provision.setType(ConsentProvisionType.PERMIT); // Directly set to "permit"
-    //     consent.setProvision(provision);
-    // }
-
-    // public static void populateConsentDateTime(Consent consent, ScreeningProfileData screeningResourceData) {
-    //     String consentDateTime = screeningResourceData.getConsentDateTime();
-    //     consent.setDateTime(DateUtil.convertStringToDate(consentDateTime));
-    // }
-
-    // /**
-    //  * Generate a unique ID for the consent based on its data.
-    //  *
-    //  * @param interactionId The interaction ID used to generate a unique identifier.
-    //  * @return A unique ID for the consent.
-    //  */
-    // private String generateUniqueId(String interactionId) {
-    //     // Example unique ID generation logic
-    //     return "Consent-" + interactionId;
-    // }
-
-    // /**
-    //  * Get the last updated date for the consent based on its data from QeAdminData.
-    //  *
-    //  * @param qrAdminData The QeAdminData object containing the consent's last
-    //  *                    updated date.
-    //  * @return The last updated date.
-    //  */
-    // private Date getLastUpdatedDate(ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData != null && screeningResourceData.getConsentLastUpdated() != null
-    //             && !screeningResourceData.getConsentLastUpdated().isEmpty()) {
-    //         try {
-    //             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-    //             return dateFormat.parse(screeningResourceData.getConsentLastUpdated());
-    //         } catch (ParseException e) {
-    //             LOG.error("Error parsing last updated date", e);
-    //         }
-    //     }
-    //     return new Date();
-    // }
+    private void populateSourceAttachment(Consent consent) {
+        Attachment attachment = new Attachment();
+        attachment.setContentType("application/pdf");
+        attachment.setLanguage("en");
+        consent.setSource(attachment);
+    }
 }

@@ -64,29 +64,29 @@ public class EncounterConverter extends BaseConverter {
         setMeta(encounter);
 
         // Set Encounter ID
-        // encounter.setId(generateUniqueId(interactionId));
+        encounter.setId(generateUniqueId(interactionId));
 
         // Set Meta Data
         Meta meta = encounter.getMeta();
-        // meta.setLastUpdated(getLastUpdatedDate(qrAdminData));
+        meta.setLastUpdated(getLastUpdatedDate(qeAdminData));
 
         // // Set encounter status
-        // populateEncounterStatus(encounter, screeningResourceData);
+        populateEncounterStatus(encounter, screeningProfileData);
 
         // // Set encounter class
-        // populateEncounterClass(encounter, screeningResourceData);
+        populateEncounterClass(encounter, screeningProfileData);
 
         // // Set encounter type
-        // populateEncounterType(encounter, screeningResourceData);
+        populateEncounterType(encounter, screeningProfileData);
 
         // // Set encounter period
-        // populateEncounterPeriod(encounter, screeningResourceData);
+        populateEncounterPeriod(encounter, screeningProfileData);
 
         // // Set patient reference
-        // populatePatientReference(encounter, screeningResourceData);
+        populatePatientReference(encounter, screeningProfileData);
 
         // // Set location
-        // populateLocationReference(encounter, screeningResourceData);
+        populateLocationReference(encounter, screeningProfileData);
 
         // Wrap the Encounter resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
@@ -94,97 +94,99 @@ public class EncounterConverter extends BaseConverter {
         return List.of(bundleEntryComponent);
     }
 
-    // private void populatePatientReference(Encounter encounter, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData != null && screeningResourceData.getPatientMrIdValue() != null) {
-    //         encounter.setSubject(new Reference("Patient/" + screeningResourceData.getPatientMrIdValue()));
-    //     }
-    // }
+    private void populatePatientReference(Encounter encounter, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null && screeningResourceData.getPatientMrIdValue() != null) {
+            encounter.setSubject(new Reference("Patient/" + screeningResourceData.getPatientMrIdValue()));
+        }
+    }
 
-    // private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
-    //     if (data.getEncounterClassCode() != null) {
-    //         Coding encounterClass = new Coding();
-    //         encounterClass.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
-    //         encounterClass.setCode(data.getEncounterClassCode());
-    //         encounter.setClass_(encounterClass);
-    //     }
-    // }
+    private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
+        if (data.getEncounterClassCode() != null) {
+            Coding encounterClass = new Coding();
+            encounterClass.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
+            encounterClass.setCode(data.getEncounterClassCode());
+            encounter.setClass_(encounterClass);
+        }
+    }
 
-    // private static void populateEncounterType(Encounter encounter, ScreeningProfileData data) {
-    //     if (data.getEncounterTypeCode() != null || data.getEncounterTypeCodeDescription() != null) {
-    //         CodeableConcept encounterType = new CodeableConcept();
+    private static void populateEncounterType(Encounter encounter, ScreeningProfileData data) {
+        if (data.getEncounterTypeCode() != null || data.getEncounterTypeCodeDescription() != null) {
+            CodeableConcept encounterType = new CodeableConcept();
 
-    //         if (data.getEncounterTypeCode() != null) {
-    //             Coding coding = new Coding();
-    //             coding.setCode(data.getEncounterTypeCode());
-    //             encounterType.addCoding(coding);
-    //         }
+            if (data.getEncounterTypeCode() != null) {
+                Coding coding = new Coding();
+                coding.setCode(data.getEncounterTypeCode());
+                coding.setSystem(data.getEncounterTypeCodeSystem());
+                coding.setDisplay(data.getEncounterTypeCodeDescription());
+                encounterType.addCoding(coding);
+            }
 
-    //         if (data.getEncounterTypeCodeDescription() != null) {
-    //             encounterType.setText(data.getEncounterTypeCodeDescription());
-    //         }
+            if (data.getEncounterTypeCodeDescription() != null) {
+                encounterType.setText(data.getEncounterTypeCodeDescription());
+            }
 
-    //         encounter.getType().add(encounterType);
-    //     }
-    // }
+            encounter.getType().add(encounterType);
+        }
+    }
 
-    // private void populateEncounterStatus(Encounter encounter, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData != null && screeningResourceData.getEncounterStatusCode() != null) {
-    //         encounter.setStatus(Encounter.EncounterStatus.fromCode(screeningResourceData.getEncounterStatusCode()));
-    //     } else {
-    //         encounter.setStatus(Encounter.EncounterStatus.UNKNOWN);
-    //     }
-    // }
+    private void populateEncounterStatus(Encounter encounter, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null && screeningResourceData.getEncounterStatusCode() != null) {
+            encounter.setStatus(Encounter.EncounterStatus.fromCode(screeningResourceData.getEncounterStatusCode()));
+        } else {
+            encounter.setStatus(Encounter.EncounterStatus.UNKNOWN);
+        }
+    }
 
-    // private void populateEncounterPeriod(Encounter encounter, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData != null) {
-    //         String startDateTime = screeningResourceData.getEncounterStartTime();
-    //         String endDateTime = screeningResourceData.getEncounterEndTime();
+    private void populateEncounterPeriod(Encounter encounter, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null) {
+            String startDateTime = "2024-02-23T00:00:00Z";  //TODO : remove static reference
+            String endDateTime = "2024-02-23T01:00:00Z";  //TODO : remove static reference
 
-    //         if (startDateTime != null) {
-    //             encounter.getPeriod().setStart(DateUtil.convertStringToDate(startDateTime));
-    //         }
+            if (startDateTime != null) {
+                encounter.getPeriod().setStart(DateUtil.convertStringToDate(startDateTime));
+            }
 
-    //         if (endDateTime != null) {
-    //             encounter.getPeriod().setEnd(DateUtil.convertStringToDate(endDateTime));
-    //         }
-    //     }
-    // }
+            if (endDateTime != null) {
+                encounter.getPeriod().setEnd(DateUtil.convertStringToDate(endDateTime));
+            }
+        }
+    }
 
-    // private void populateLocationReference(Encounter encounter, ScreeningProfileData screeningResourceData) {
-    //     if (screeningResourceData != null && screeningResourceData.getLocationName() != null) {
-    //         encounter.addLocation(new Encounter.EncounterLocationComponent()
-    //                 .setLocation(new Reference("Location/" + screeningResourceData.getLocationName())));
-    //     }
-    // }
+    private void populateLocationReference(Encounter encounter, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null) {
+            encounter.addLocation(new Encounter.EncounterLocationComponent()
+                    .setLocation(new Reference("Location/" + "LocationExample-SCN")));
+        }
+    }
 
-    // /**
-    //  * Generate a unique ID for the encounter based on its data.
-    //  *
-    //  * @param interactionId The interaction ID used to generate a unique identifier.
-    //  * @return A unique ID for the encounter.
-    //  */
-    // private String generateUniqueId(String interactionId) {
-    //     return "Encounter-" + interactionId;
-    // }
+    /**
+     * Generate a unique ID for the encounter based on its data.
+     *
+     * @param interactionId The interaction ID used to generate a unique identifier.
+     * @return A unique ID for the encounter.
+     */
+    private String generateUniqueId(String interactionId) {
+        return "Encounter-" + interactionId;
+    }
 
-    // /**
-    //  * Get the last updated date for the encounter based on its data from
-    //  * QeAdminData.
-    //  *
-    //  * @param qrAdminData The QeAdminData object containing the encounter's last
-    //  *                    updated date.
-    //  * @return The last updated date.
-    //  */
-    // private Date getLastUpdatedDate(QeAdminData qrAdminData) {
-    //     if (qrAdminData != null && qrAdminData.getFacilityLastUpdated() != null
-    //             && !qrAdminData.getFacilityLastUpdated().isEmpty()) {
-    //         try {
-    //             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-    //             return dateFormat.parse(qrAdminData.getFacilityLastUpdated());
-    //         } catch (ParseException e) {
-    //             LOG.error("Error parsing last updated date", e);
-    //         }
-    //     }
-    //     return new Date();
-    // }
+    /**
+     * Get the last updated date for the encounter based on its data from
+     * QeAdminData.
+     *
+     * @param qrAdminData The QeAdminData object containing the encounter's last
+     *                    updated date.
+     * @return The last updated date.
+     */
+    private Date getLastUpdatedDate(QeAdminData qrAdminData) {
+        if (qrAdminData != null && qrAdminData.getFacilityLastUpdated() != null
+                && !qrAdminData.getFacilityLastUpdated().isEmpty()) {
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                return dateFormat.parse(qrAdminData.getFacilityLastUpdated());
+            } catch (ParseException e) {
+                LOG.error("Error parsing last updated date", e);
+            }
+        }
+        return new Date();
+    }
 }

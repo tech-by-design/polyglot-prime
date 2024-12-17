@@ -19,6 +19,7 @@ import org.hl7.fhir.r4.model.Narrative;
 import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Patient.PatientCommunicationComponent;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
 import org.slf4j.Logger;
@@ -234,10 +235,10 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
             identifier.setValue(data.getPatientMrIdValue());
 
             // Optional: Add assigner if needed (uncomment if required)
-            // Reference assigner = new Reference();
-            // assigner.setReference("Organization/OrganizationExampleOther-SCN1"); //TODO -
+            Reference assigner = new Reference();
+            assigner.setReference("Organization/OrganizationExampleOther-SCN1"); //TODO -
             // populate while organization is populated
-            // identifier.setAssigner(assigner);
+            identifier.setAssigner(assigner);
 
             // Set the identifier on the Patient object
             patient.addIdentifier(identifier);
