@@ -71,7 +71,7 @@ server:
         secure: true
         http-only: true
         same-site: LAX
-      timeout: 60m
+      timeout: 5m
 
 org:
   techbd:
@@ -140,7 +140,7 @@ management:
   otlp:
     metrics: 
       export: 
-        url: ${TECHBD_OPEN_OBSERVE_URL}/metrics
+        url: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/metrics
         enabled: true 
         step: 1m # Interval for pushing metrics 
         headers: 
@@ -154,12 +154,12 @@ management:
         enabled: true
         sampling:
             probability: 1.0
-      endpoint: ${TECHBD_OPEN_OBSERVE_URL}/traces
+      endpoint: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/traces
       headers: 
         active : true
         enabled: true  
         Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}
         organization: default
-        stream-name: ${TECHBD_OPEN_OBSERVE_STREAM_NAME}traces
+        stream-name: ${TECHBD_OPEN_OBSERVE_STREAM_NAME}-traces
         service: 
           name: default

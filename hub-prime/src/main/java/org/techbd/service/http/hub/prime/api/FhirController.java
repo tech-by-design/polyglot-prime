@@ -48,6 +48,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -181,19 +182,26 @@ public class FhirController {
                         <li><code>post-stdin-payload-to-nyec-datalake-external</code>: This option runs a bash script via ProcessBuilder. The payload is passed through standard input (STDIN) to the script, which uses <code>curl</code> to send the request to the scoring engine API. In the <b>PHI-QA</b> environment, mTLS is enabled for this request. In other environments, mTLS is disabled for this script.</li>
                     </ul>
                     """, required = false) @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
+            @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
-            if (tenantId == null || tenantId.trim().isEmpty()) {
-                LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
-                throw new IllegalArgumentException("Tenant ID must be provided");
-            }
-            final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
-                    isSync ? "sync" : "async");
-            request = new CustomRequestWrapper(request, payload);
-            return fhirService.processBundle(payload, tenantId, fhirProfileUrlParam, fhirProfileUrlHeader,
-                    uaValidationStrategyJson,
-                    customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
-                    includeIncomingPayloadInDB,
-                    request, response, provenance, includeOperationOutcome, mtlsStrategy);
+
+        if (tenantId == null || tenantId.trim().isEmpty()) {
+            LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
+            throw new IllegalArgumentException("Tenant ID must be provided");
+        }
+
+        if (Boolean.TRUE.equals(deleteSessionCookie)) {
+            deleteJSessionCookie(request, response);
+        }
+
+        final var provenance = "%s.validateBundleAndForward(%s)".formatted(FhirController.class.getName(),
+                isSync ? "sync" : "async");
+        request = new CustomRequestWrapper(request, payload);
+        return fhirService.processBundle(payload, tenantId, fhirProfileUrlParam, fhirProfileUrlHeader,
+                uaValidationStrategyJson,
+                customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
+                includeIncomingPayloadInDB,
+                request, response, provenance, includeOperationOutcome, mtlsStrategy);
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
@@ -246,12 +254,18 @@ public class FhirController {
             @Parameter(description = "Optional header to specify the Structure definition profile URL. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
             @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @Parameter(description = "Parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
-            HttpServletRequest request) {
+            @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
+            HttpServletRequest request, HttpServletResponse response) {
 
         if (tenantId == null || tenantId.trim().isEmpty()) {
             LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
             throw new IllegalArgumentException("Tenant ID must be provided");
         }
+
+        if (Boolean.TRUE.equals(deleteSessionCookie)) {
+            deleteJSessionCookie(request, response);
+        }
+
         request = new CustomRequestWrapper(request, payload);
 
         LOG.info("FHIRController:Bundle Validate::  -BEGIN");
@@ -361,5 +375,13 @@ public class FhirController {
             Thread.currentThread().interrupt();
             return new ResponseEntity<>("Request interrupted", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private void deleteJSessionCookie(HttpServletRequest request, HttpServletResponse response) {
+        // Delete the JSESSIONID cookie
+        Cookie cookie = new Cookie("JSESSIONID", null); // Set the cookie name
+        cookie.setMaxAge(0); // Make it expire immediately
+        cookie.setPath("/"); // Set the same path as the original cookie
+        response.addCookie(cookie); // Add it to the response to delete
     }
 }

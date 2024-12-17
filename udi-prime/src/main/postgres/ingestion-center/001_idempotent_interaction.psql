@@ -3529,8 +3529,8 @@ BEGIN
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         WHERE 
             sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle'])
-            AND sihr.created_at >= start_date
-            AND sihr.created_at <= end_date
+            AND sihr.created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
+            AND sihr.created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
             AND sihr.tenant_id <> 'N/A'
         GROUP BY sihr.tenant_id_lower
     )
@@ -3718,8 +3718,8 @@ BEGIN
         sihr.tenant_id_lower = tenant_id_param
         AND sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
         AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle'])
-        AND sihr.created_at >= start_date_param
-        AND sihr.created_at < end_date_param
+        AND sihr.created_at >= TO_TIMESTAMP(start_date_param::text, 'YYYY-MM-DD') 
+        AND sihr.created_at < TO_TIMESTAMP(end_date_param::text, 'YYYY-MM-DD') + INTERVAL '1 day'
         AND NOT EXISTS (
             SELECT 1
             FROM techbd_udi_ingress.sat_interaction_fhir_request sihr2
