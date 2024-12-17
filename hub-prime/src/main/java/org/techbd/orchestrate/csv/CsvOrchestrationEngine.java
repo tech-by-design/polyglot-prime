@@ -487,10 +487,6 @@ public class CsvOrchestrationEngine {
             // Debug: Print the final list of files not processed
             System.out.println("Files Not Processed: " + fileNotProcessed);
             result.put("fileNotProcessed", fileNotProcessed);
-            // Debug: Print the final list of files not processed
-            System.out.println("Files Not Processed: " + fileNotProcessed);
-
-            // result.put("fileNotProcessed", fileNotProcessed);
 
             return result;
         }
@@ -941,8 +937,8 @@ public class CsvOrchestrationEngine {
             command.add("datapackage-nyher-fhir-ig-equivalent.json");
             List<FileType> fileTypeOrder = Arrays.asList(
                     FileType.QE_ADMIN_DATA,
-                    FileType.SCREENING_OBSERVATION_DATA,
                     FileType.SCREENING_PROFILE_DATA,
+                    FileType.SCREENING_OBSERVATION_DATA,
                     FileType.DEMOGRAPHIC_DATA);
             Map<FileType, String> fileTypeToFileNameMap = new HashMap<>();
             for (FileDetail fileDetail : fileDetails) {
