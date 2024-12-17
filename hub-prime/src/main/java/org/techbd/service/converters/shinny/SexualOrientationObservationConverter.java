@@ -11,6 +11,7 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Narrative;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,10 +46,14 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
         Observation observation = new Observation();
         setMeta(observation);
+        observation.setId(generateUniqueId(interactionId));
         Meta meta = observation.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
+        Reference subjectReference = new Reference();
+        subjectReference.setReference("Patient/" + "PatientExample"); //TODO : remove static reference
+        observation.setSubject(subjectReference);
         CodeableConcept code = new CodeableConcept();
         code.addCoding(new Coding("http://loinc.org", //TODO : remove static reference
                 "76690-7", "Sexual orientation")); //TODO : remove static reference
@@ -69,6 +74,17 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         entry.setResource(observation);
         LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
         return List.of(entry);
+    }
+
+    /**
+     * Generate a unique ID for the consent based on its data.
+     *
+     * @param interactionId The interaction ID used to generate a unique identifier.
+     * @return A unique ID for the consent.
+     */
+    private String generateUniqueId(String interactionId) {
+        // Example unique ID generation logic
+        return "SexualOrientation-" + interactionId;
     }
 
 }

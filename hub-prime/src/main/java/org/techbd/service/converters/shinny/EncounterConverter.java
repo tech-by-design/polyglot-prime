@@ -12,6 +12,8 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Meta;
+import org.hl7.fhir.r4.model.Narrative;
+import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
@@ -94,6 +96,10 @@ public class EncounterConverter extends BaseConverter {
         populateLocationReference(encounter, screeningProfileData);
         //Create patient reference
         createAssignerReference(idsGenerated.get(CsvConstants.PATIENT_ID));
+        Narrative text = new Narrative();
+        text.setStatus(NarrativeStatus.GENERATED);
+        encounter.setText(text);
+
         // Wrap the Encounter resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(encounter);
