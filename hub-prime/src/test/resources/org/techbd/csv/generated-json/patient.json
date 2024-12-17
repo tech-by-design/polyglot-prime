@@ -6,6 +6,9 @@
     "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient" ]
   },
   "language": "en",
+  "text": {
+    "status": "generated"
+  },
   "extension": [ {
     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
     "valueExtension": {
@@ -80,8 +83,10 @@
     "type": {
       "coding": [ {
         "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-        "code": "SSN"
-      } ]
+        "code": "SSN",
+        "display": "Social Security Number"
+      } ],
+      "text": "Social Security Number"
     },
     "system": "http://www.ssa.gov/",
     "value": "999-34-2964"
@@ -94,16 +99,18 @@
     "family": "Doe",
     "given": [ "Jon" ],
     "prefix": [ "Mr., Dr., PhD, CCNA" ],
-    "suffix": [ "Jr., III" ]
+    "suffix": [ "Jr.,III" ]
   } ],
   "telecom": [ {
     "system": "phone",
-    "value": "1234567890"
+    "value": "1234567890",
+    "use": "home"
   } ],
   "gender": "male",
   "birthDate": "1981-07-16",
   "address": [ {
-    "line": [ "115 Broadway Apt2", "dummy_address2" ],
+    "text": "115 Broadway Apt2 New York, NY 10032",
+    "line": [ "115 Broadway Apt2" ],
     "city": "New York",
     "district": "MANHATTAN",
     "state": "NY",
