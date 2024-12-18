@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>286</td>
-<td>31</td>
+<td>297</td>
+<td>33</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -93,44 +93,53 @@
 <td>1</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession</a></td>
-<td>6</td></tr>
+<td>4</td></tr>
 <tr class="a">
+<td><a href="#org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSessionBuilder">org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSessionBuilder</a></td>
+<td>1</td></tr>
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.csv.FileProcessor">org.techbd.orchestrate.csv.FileProcessor</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine">org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder</a></td>
 <td>3</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.PostPopulateSupport">org.techbd.orchestrate.fhir.PostPopulateSupport</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.PrePopulateSupport">org.techbd.orchestrate.fhir.PrePopulateSupport</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.util.FileUtils">org.techbd.orchestrate.fhir.util.FileUtils</a></td>
+<td>2</td></tr>
+<tr class="a">
+<td><a href="#org.techbd.service.CsvBundleProcessorService">org.techbd.service.CsvBundleProcessorService</a></td>
 <td>2</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.converters.shinny.BaseConverter">org.techbd.service.converters.shinny.BaseConverter</a></td>
 <td>1</td></tr>
 <tr class="a">
+<td><a href="#org.techbd.service.converters.shinny.OrganizationConverter">org.techbd.service.converters.shinny.OrganizationConverter</a></td>
+<td>1</td></tr>
+<tr class="b">
 <td><a href="#org.techbd.service.http.Constant">org.techbd.service.http.Constant</a></td>
 <td>2</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.Interactions">org.techbd.service.http.Interactions</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.InteractionsFilter">org.techbd.service.http.InteractionsFilter</a></td>
 <td>2</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.hub.prime.api.FHIRService">org.techbd.service.http.hub.prime.api.FHIRService</a></td>
 <td>6</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator">org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator</a></td>
 <td>1</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
@@ -167,38 +176,40 @@
 <td>Dead store to device in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.createOperationOutcome(String, String, String, List, HttpServletRequest, long, Instant, Instant, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
-<td>428</td>
+<td>466</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Dead store to userAgent in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.createOperationOutcome(String, String, String, List, HttpServletRequest, long, Instant, Instant, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
-<td>427</td>
+<td>465</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Found reliance on default encoding in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.validateCsvUsingPython(List, String): new java.io.InputStreamReader(InputStream)</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>899</td>
+<td>930</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Possible null pointer dereference in org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession.validate() due to return value of called method</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
-<td>250</td>
-<td>Medium</td></tr>
-<tr class="b">
-<td>Self assignment of field CsvOrchestrationEngine$OrchestrationSession.bundleGenerate in new org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession(CsvOrchestrationEngine, String, String, CsvOrchestrationEngine$Device, MultipartFile, String, HttpServletRequest, boolean)</td>
-<td>CORRECTNESS</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SA_FIELD_SELF_ASSIGNMENT">SA_FIELD_SELF_ASSIGNMENT</a></td>
-<td>210</td>
-<td>High</td></tr>
+<td>257</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSessionBuilder"></a><section>
+<h2>org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSessionBuilder</h2>
+<table class="table table-striped">
 <tr class="a">
-<td>Uninitialized read of bundleGenerate in new org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession(CsvOrchestrationEngine, String, String, CsvOrchestrationEngine$Device, MultipartFile, String, HttpServletRequest, boolean)</td>
-<td>CORRECTNESS</td>
-<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UR_UNINIT_READ">UR_UNINIT_READ</a></td>
-<td>210</td>
-<td>High</td></tr></table></section><a name="org.techbd.orchestrate.csv.FileProcessor"></a><section>
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Unused field: org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSessionBuilder.payloadAndValidationOutcomes</td>
+<td>PERFORMANCE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UUF_UNUSED_FIELD">UUF_UNUSED_FIELD</a></td>
+<td></td>
+<td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.csv.FileProcessor"></a><section>
 <h2>org.techbd.orchestrate.csv.FileProcessor</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -211,7 +222,7 @@
 <td>Possible null pointer dereference in org.techbd.orchestrate.csv.FileProcessor.processAndGroupFiles(List) due to return value of called method</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
-<td>30</td>
+<td>29</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</h2>
 <table class="table table-striped">
@@ -314,6 +325,26 @@
 <td>BAD_PRACTICE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#OS_OPEN_STREAM">OS_OPEN_STREAM</a></td>
 <td>12</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.CsvBundleProcessorService"></a><section>
+<h2>org.techbd.service.CsvBundleProcessorService</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>instanceof will always return true for all non-null values in org.techbd.service.CsvBundleProcessorService.isPayloadInstanceOfBundle(String), since all org.hl7.fhir.r4.model.Bundle are instances of org.hl7.fhir.r4.model.Bundle</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#BC_VACUOUS_INSTANCEOF">BC_VACUOUS_INSTANCEOF</a></td>
+<td>163</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>Exception is caught when Exception is not thrown in org.techbd.service.CsvBundleProcessorService.processPayload(String, Map, HttpServletRequest, HttpServletResponse, String)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
+<td>104</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.BaseConverter"></a><section>
 <h2>org.techbd.service.converters.shinny.BaseConverter</h2>
 <table class="table table-striped">
@@ -327,8 +358,22 @@
 <td>org.techbd.service.converters.shinny.BaseConverter.PROFILE_MAP isn't final but should be</td>
 <td>MALICIOUS_CODE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_SHOULD_BE_FINAL">MS_SHOULD_BE_FINAL</a></td>
-<td>13</td>
-<td>High</td></tr></table></section><a name="org.techbd.service.http.Constant"></a><section>
+<td>15</td>
+<td>High</td></tr></table></section><a name="org.techbd.service.converters.shinny.OrganizationConverter"></a><section>
+<h2>org.techbd.service.converters.shinny.OrganizationConverter</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Useless object stored in variable addressLines of method org.techbd.service.converters.shinny.OrganizationConverter.populateOrganizationAddress(Organization, QeAdminData)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UC_USELESS_OBJECT">UC_USELESS_OBJECT</a></td>
+<td>139</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.http.Constant"></a><section>
 <h2>org.techbd.service.http.Constant</h2>
 <table class="table table-striped">
 <tr class="a">
@@ -392,40 +437,40 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String): String.getBytes()</td>
+<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>725</td>
+<td>731</td>
 <td>High</td></tr>
 <tr class="a">
-<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources): String.getBytes()</td>
+<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>592</td>
+<td>598</td>
 <td>High</td></tr>
 <tr class="b">
-<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map): String.getBytes()</td>
+<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map, String, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
 <td>266</td>
 <td>High</td></tr>
 <tr class="a">
-<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String)</td>
+<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>770</td>
+<td>776</td>
 <td>Medium</td></tr>
 <tr class="b">
-<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources)</td>
+<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>635</td>
+<td>641</td>
 <td>Medium</td></tr>
 <tr class="a">
-<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String)</td>
+<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>1420</td>
+<td>1434</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator"></a><section>
 <h2>org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator</h2>
 <table class="table table-striped">

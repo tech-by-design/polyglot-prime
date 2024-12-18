@@ -179,7 +179,7 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>328</td></tr>
+<td>336</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>195</td></tr>
@@ -250,7 +250,7 @@
 <td>211</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>330</td></tr>
+<td>338</td></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>197</td></tr>
@@ -310,6 +310,40 @@
 
     @Override
     public List&lt;ResourceProvenance&lt;GitHubFileProvenance, Resource&lt;? extends Nature, ?&gt;&gt;&gt; resources() {</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>384</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
+<td>275</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>LOG.info(&quot;FHIRService  - Validate -BEGIN for interactionId: {} &quot;, interactionId);
+                final var igPackages = appConfig.getIgPackages();
+                final var igVersion = appConfig.getIgVersion();
+                final var sessionBuilder = engine.session()
+                                .withSessionId(UUID.randomUUID().toString())
+                                .onDevice(Device.createDefault())
+                                .withPayloads(List.of(payload))
+                                .withFhirProfileUrl(fhirProfileUrl)
+                                .withFhirIGPackages(igPackages)
+                                .withIgVersion(igVersion)
+                                .addHapiValidationEngine() // by default
+                                // clearExisting is set to true so engines can be fully supplied through header
+                                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+                final var session = sessionBuilder.build();
+                try {
+                        engine.orchestrate(session);
+                        // TODO: if there are errors that should prevent forwarding, stop here
+                        // TODO: need to implement `immediate` (sync) webClient op, right now it's async
+                        // only
+                        // immediateResult is what's returned to the user while async operation
+                        // continues
+                        final var immediateResult = new HashMap&lt;&gt;(Map.of(</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
