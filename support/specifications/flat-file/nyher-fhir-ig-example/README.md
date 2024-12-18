@@ -16,12 +16,13 @@ This directory contains a valid example dataset that aligns with the [FHIR Imple
    
 2. **`qe_admin_data.csv`**  
    Includes administrative data for organizations.
-   
-3. **`screening_observation_data.csv`**  
+
+3. **`screening_profile_data.csv`**  
+   Contains data used to create both Encounter and Consent resources and support screening-related processes.
+
+4. **`screening_observation_data.csv`**  
    Provides details used for Observation resources in the screening process.
 
-4. **`screening_profile_data.csv`**  
-   Contains data used to create both Encounter and Consent resources and support screening-related processes.
 
 ## Mapping CSV Fields to FHIR IG Elements
 

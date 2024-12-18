@@ -69,11 +69,93 @@
   - `type` string
   - `constraints`:
     - `pattern` `^(https?:\/\/)(www\.)?(hl7\.org\/fhir\/sid\/us-npi|medicaid\.gov|scn\.ny\.gov|cbo\.ny\.gov|hl7\.org\/oid|irs\.gov)(\/)?$`
+## `screening_profile_data`
+  - `path` nyher-fhir-ig-example/SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv
+  - `schema`
+      - `primaryKey` ['ENCOUNTER_ID']
+    - `foreignKeys` []
+### `PATIENT_MR_ID_VALUE`
+  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
+  - `type` string
+  - `constraints`:
+    - `required` True
+### `ENCOUNTER_ID`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').id
+  - `type` string
+  - `constraints`:
+    - `required` True
+### `ENCOUNTER_CLASS_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.code
+  - `type` string
+  - `constraints`:
+    - `required` True
+    - `enum` ['amb', 'emer', 'fld', 'hh', 'imp', 'acute', 'nonac', 'obsenc', 'prenc', 'ss', 'vr']
+### `ENCOUNTER_STATUS_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').status
+  - `type` string
+  - `constraints`:
+    - `required` True
+    - `enum` ['planned', 'arrived', 'triaged', 'in-progress', 'onleave', 'finished', 'cancelled', 'entered-in-error', 'unknown']
+### `ENCOUNTER_TYPE_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.code
+  - `type` string
+  - `constraints`:
+    - `enum` ['405672008', '23918007']
+### `ENCOUNTER_TYPE_CODE_DESCRIPTION`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.text
+  - `type` string
+### `ENCOUNTER_TYPE_CODE_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system
+  - `type` string
+  - `constraints`:
+    - `enum` ['http://snomed.info/sct']
+### `ENCOUNTER_LAST_UPDATED`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').meta.lastUpdated
+  - `type` string
+  - `constraints`:
+    - `required` True
+    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
+### `CONSENT_LAST_UPDATED`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').meta.lastUpdated
+  - `type` string
+  - `constraints`:
+    - `required` True
+    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
+### `CONSENT_DATE_TIME`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
+  - `type` string
+  - `constraints`:
+    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
+### `CONSENT_POLICY_AUTHORITY`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').policy.authority
+  - `type` string
+### `CONSENT_PROVISION_TYPE`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').provision.type
+  - `type` string
+  - `constraints`:
+    - `enum` ['deny', 'permit']
+### `SCREENING_LAST_UPDATED`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').meta.lastUpdated
+  - `type` string
+  - `constraints`:
+    - `required` True
+    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
+### `SCREENING_STATUS_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Observation').status
+  - `type` string
+  - `constraints`:
+    - `required` True
+    - `enum` ['final', 'corrected', 'entered-in-error', 'unknown']
 ## `screening_observation_data`
   - `path` nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv
   - `schema`
       - `foreignKeys`
       - [1]
+        - `fields` ['ENCOUNTER_ID']
+        - `reference`
+          - `resource` screening_profile_data
+          - `fields` ['ENCOUNTER_ID']
+      - [2]
         - `fields` ['PATIENT_MR_ID_VALUE']
         - `reference`
           - `resource` qe_admin_data
@@ -165,87 +247,6 @@
 ### `DATA_ABSENT_REASON_TEXT`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.text
   - `type` string
-## `screening_profile_data`
-  - `path` nyher-fhir-ig-example/SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv
-  - `schema`
-      - `foreignKeys`
-      - [1]
-        - `fields` ['PATIENT_MR_ID_VALUE']
-        - `reference`
-          - `resource` qe_admin_data
-          - `fields` ['PATIENT_MR_ID_VALUE']
-### `PATIENT_MR_ID_VALUE`
-  - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
-  - `type` string
-  - `constraints`:
-    - `required` True
-### `ENCOUNTER_ID`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').id
-  - `type` string
-  - `constraints`:
-    - `required` True
-### `ENCOUNTER_CLASS_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.code
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `enum` ['amb', 'emer', 'fld', 'hh', 'imp', 'acute', 'nonac', 'obsenc', 'prenc', 'ss', 'vr']
-### `ENCOUNTER_STATUS_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').status
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `enum` ['planned', 'arrived', 'triaged', 'in-progress', 'onleave', 'finished', 'cancelled', 'entered-in-error', 'unknown']
-### `ENCOUNTER_TYPE_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.code
-  - `type` string
-  - `constraints`:
-    - `enum` ['405672008', '23918007']
-### `ENCOUNTER_TYPE_CODE_DESCRIPTION`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.text
-  - `type` string
-### `ENCOUNTER_TYPE_CODE_SYSTEM`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system
-  - `type` string
-  - `constraints`:
-    - `enum` ['http://snomed.info/sct']
-### `ENCOUNTER_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resourceType ='Encounter').meta.lastUpdated
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-### `CONSENT_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').meta.lastUpdated
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-### `CONSENT_DATE_TIME`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
-  - `type` string
-  - `constraints`:
-    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-### `CONSENT_POLICY_AUTHORITY`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').policy.authority
-  - `type` string
-### `CONSENT_PROVISION_TYPE`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').provision.type
-  - `type` string
-  - `constraints`:
-    - `enum` ['deny', 'permit']
-### `SCREENING_LAST_UPDATED`
-  - `description` Bundle.entry.resource.where(resourceType ='Observation').meta.lastUpdated
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
-### `SCREENING_STATUS_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Observation').status
-  - `type` string
-  - `constraints`:
-    - `required` True
-    - `enum` ['final', 'corrected', 'entered-in-error', 'unknown']
 ## `demographic_data`
   - `path` nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv
   - `schema`

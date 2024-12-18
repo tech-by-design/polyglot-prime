@@ -21,8 +21,7 @@ DECLARE
     v_created_by TEXT; 
     v_provenance TEXT; 
     v_hub_upsert_behavior boolean;
-    --v_hub_diagnostic_row techbd_udi_ingress.hub_diagnostic%ROWTYPE;
-   	function_exists boolean;
+    function_exists boolean;
 	v_hub_diagnostic_id TEXT;
     v_record_count numeric;
     v_group_id TEXT;				
@@ -46,6 +45,7 @@ DECLARE
 	v_user_agent TEXT;
 	v_origin TEXT;
 	v_source_type TEXT;
+	v_group_hub_interaction_id TEXT;
 
 BEGIN
 	
@@ -79,14 +79,14 @@ BEGIN
     
     -- Check existence of required functions     
     RETURN NEXT has_function(schema_name, 'register_interaction_http_request',
-        ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+        ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
         'Function register_interaction_http_request exists');
        
     RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 'Function register_issue exists');
     
-    RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
-    
-    RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text'], 
+    RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
+  
+   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text'], 
    		'Function sat_interaction_csv_request_upserted exists');
     RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
 
@@ -322,6 +322,7 @@ test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New 
 	v_nature                    := '{"nature": "Original Flat File CSV", "tenant_id": "N/A"}';
 	v_from_state				:= NULL;
     v_to_state                  := 'CSV_ACCEPT'; 
+    v_group_hub_interaction_id	:= v_interaction_id;
    
     PERFORM techbd_udi_ingress.register_interaction_http_request(
         interaction_id           => v_interaction_id,
@@ -557,7 +558,18 @@ test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New 
                     ),
              'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "Converted to FHIR" as nature'
          );  
-                   
+        
+    /*To update validation_result_payload for the full zip file, call techbd_udi_ingress.sat_interaction_csv_request_upserted function with interaction_id, uri, tenant_id, validation_result_payload and nature as 'Update Zip File Payload'.*/
+    SELECT techbd_udi_ingress.sat_interaction_csv_request_upserted(
+    	interaction_id				=> v_source_hub_interaction_id::text, 
+    	uri							=> v_interaction_key::text, 
+    	--tenant_id					=> v_nature->>'tenant_id', 
+    	validation_result_payload 	=> v_payload::jsonb,
+    	nature 						=> 'Update Zip File Payload'::text
+   	) INTO v_interaction_id;
+  
+    RETURN NEXT ok(v_interaction_id = v_source_hub_interaction_id, 'CSV - Successfully updated the table sat_interaction_zip_file_request with consolidated payload');
+        
     /* Last call to insert the FHIR bundle which is generated from CSV file with interaction_key = '/flatfile/csv/Bundle'*/
     v_interaction_id            := 'b99ddd45-9a4f-5cc8-9c5d-b45245d90fb0';    
     v_nature                    := '{"nature": "org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id": "N/A"}';
@@ -583,7 +595,8 @@ test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New 
         source_hub_interaction_id => v_source_hub_interaction_id,
 		client_ip_address		 => v_client_ip_address,	
 		user_agent				 => v_user_agent,
-		source_type				 => v_source_type
+		source_type				 => v_source_type,
+		group_hub_interaction_id => v_group_hub_interaction_id
     );
    
    /*Test 3 raws are inserted into sat_interaction_http_request table*/

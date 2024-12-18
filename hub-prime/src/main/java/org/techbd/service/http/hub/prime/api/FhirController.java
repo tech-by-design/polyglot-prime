@@ -48,6 +48,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -378,15 +379,9 @@ public class FhirController {
 
     private void deleteJSessionCookie(HttpServletRequest request, HttpServletResponse response) {
         // Delete the JSESSIONID cookie
-        var cookies = request.getCookies();
-        if (cookies != null) {
-            for (var cookie : cookies) {
-                if ("JSESSIONID".equals(cookie.getName())) {
-                    cookie.setMaxAge(0); // Invalidate the cookie
-                    cookie.setPath("/"); // Make sure the path matches
-                    response.addCookie(cookie);
-                }
-            }
-        }
+        Cookie cookie = new Cookie("JSESSIONID", null); // Set the cookie name
+        cookie.setMaxAge(0); // Make it expire immediately
+        cookie.setPath("/"); // Set the same path as the original cookie
+        response.addCookie(cookie); // Add it to the response to delete
     }
 }

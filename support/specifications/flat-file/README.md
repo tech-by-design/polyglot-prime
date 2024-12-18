@@ -28,8 +28,8 @@ This project leverages the [Frictionless Data](https://frictionlessdata.io/) lib
 3. **Ensure Correct CSV Order**
    - After loading the CSV package into Data Curator, ensure that the files are listed and processed in the following order (due to the primary key reference in `QE_ADMIN_DATA`):
      1. `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv` 
-     2. `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv` 
-     3. `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv` 
+     2. `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv`      
+     3. `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv` 
      4. `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`
    - This order is required because `QE_ADMIN_DATA` has the primary key `PATIENT_MR_ID_VALUE`, and the other datasets reference it.
 4. **Validate and Save**
@@ -75,8 +75,8 @@ The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getti
 - **`flat-file/nyher-fhir-ig-example/`**: Folder containing sample CSV files for validation.
   - `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`: Demographic information data.
   - `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv`: QE administration data.
-  - `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv`: Primary screening observation data.
   - `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv`: Primary screening observation data.
+  - `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv`: Primary screening observation data.
   - `Consolidated NYHER FHIR IG Examples.xlsx`: Excel file with consolidated sheets of the CSV data above.
 
 - **`documentation.auto.md`**
@@ -146,7 +146,7 @@ Before you can use this tool, make sure you have the following installed on your
    Use the provided `validate-nyher-fhir-ig-equivalent.py` script to validate all CSV files in the `flat-file/nyher-fhir-ig-example/` directory. Replace filenames as necessary, but **ensure that the file order remains unchanged**. The order of files is mandatory for the validation process.
 
    ```bash
-   python3 validate-nyher-fhir-ig-equivalent.py datapackage-nyher-fhir-ig-equivalent.json nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv  nyher-fhir-ig-example/SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv output.json
+   python3 validate-nyher-fhir-ig-equivalent.py datapackage-nyher-fhir-ig-equivalent.json nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv output.json
    ```
 
 3. **Review Validation Results**:
@@ -175,8 +175,8 @@ The CSV file names in this project follow a strict naming convention to ensure c
    - Examples of valid values:
      - `DEMOGRAPHIC_DATA_`
      - `QE_ADMIN_DATA_` 
-     - `SCREENING_OBSERVATION_DATA_`
      - `SCREENING_PROFILE_DATA_` 
+     - `SCREENING_OBSERVATION_DATA_`
 
 2. **`<GROUP_IDENTIFIER>`**:
    - This part of the file name is flexible and includes the following components:
@@ -188,8 +188,8 @@ The CSV file names in this project follow a strict naming convention to ensure c
 
 - `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`
 - `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv` 
+- `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv` 
 - `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv`
-- `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv`
 
 ### Migration Plan
 
@@ -215,6 +215,17 @@ Field descriptions for each field are documented in the `documentation.auto.md` 
 
 Refer to `documentation.auto.md` for the complete set of field descriptions, including FHIR File Paths.
 
+## Generating Documentation Automatically
+
+The `documentation.auto.md` file is automatically generated using the `describe` method from the Frictionless library. This method extracts metadata from the data package and converts it into Markdown format.
+
+### How to Regenerate:
+
+1. Use the Frictionless library to describe the data package.
+2. Convert the metadata to Markdown format.
+3. Save the output as `documentation.auto.md`.
+
+This ensures that the field descriptions, including FHIR File Paths, remain up-to-date and consistent with the data package.
 
 This naming convention helps organize files systematically and allows easy identification of the data source, purpose, and context.
 
