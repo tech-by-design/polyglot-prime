@@ -264,9 +264,14 @@
 ### `PATIENT_MA_ID_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MA').value
   - `type` string
+  - `constraints`:
+    - `required` True
+    - `pattern` `^[A-Za-z]{2}\d{5}[A-Za-z]$`
 ### `PATIENT_SS_ID_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'SS').value
   - `type` string
+  - `constraints`:
+    - `required` True
 ### `GIVEN_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').name.given
   - `type` string
