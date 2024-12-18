@@ -47,6 +47,7 @@ import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.service.constants.ErrorCode;
 import org.techbd.service.exception.JsonValidationException;
+import org.techbd.service.http.Constant;
 import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.Interactions;
@@ -331,17 +332,19 @@ public class FHIRService {
                 var gitHubLoginId = "N/A";
                 final var sessionId = request.getRequestedSessionId();
                 var userRole = "API_ROLE";
-                final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
-                if (curUser.isPresent()) {
-                        final var ghUser = curUser.get().ghUser();
-                        if (ghUser != null) {
-                                curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
-                                gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
-                                userRole = curUser.get().principal().getAuthorities().stream()
-                                                .map(GrantedAuthority::getAuthority)
-                                                .collect(Collectors.joining(","));
-                                LOG.info("userRole: " + userRole);
-                                userRole = "DEFAULT_ROLE"; // TODO -set user role
+                if (!Constant.isStatelessApiUrl(request.getRequestURI())) { // Call only if not a stateless URL
+                        final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
+                        if (curUser.isPresent()) {
+                                final var ghUser = curUser.get().ghUser();
+                                if (ghUser != null) {
+                                        curUserName = Optional.ofNullable(ghUser.name()).orElse("NO_DATA");
+                                        gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse("NO_DATA");
+                                        userRole = curUser.get().principal().getAuthorities().stream()
+                                                        .map(GrantedAuthority::getAuthority)
+                                                        .collect(Collectors.joining(","));
+                                        LOG.info("userRole: " + userRole);
+                                        userRole = "DEFAULT_ROLE"; // TODO -set user role
+                                }
                         }
                 }
                 rihr.setUserName(curUserName);

@@ -44,44 +44,43 @@ public class SecurityConfig {
     private String uiUrl;
 
     @Bean
+    public SecurityFilterChain statelessSecurityFilterChain(final HttpSecurity http) throws Exception {
+        // Stateless configuration for bundle endpoints
+        http
+                .securityMatcher(Constant.STATELESS_API_URLS)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()) // Allow all requests
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless
+                .csrf(AbstractHttpConfigurer::disable); // Disable CSRF for stateless APIs
+
+        return http.build();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
         // allow authentication for security
         // and turn off CSRF to allow POST methods
         http
                 .authorizeHttpRequests(
                         authorize -> authorize
-                                .requestMatchers("/login/**", "/oauth2/**",
-                                        "/",
-                                        "/Bundle", "/Bundle/**",
-                                        "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
-                                        "/Hl7/v2", "/Hl7/v2/",
-                                        "/metadata",
-                                        "/api/expect/**",
-                                        "/docs/api/interactive/swagger-ui/**", "/support/**", "/docs/api/interactive/**",
-                                        "/docs/api/openapi/**",
-                                        "/error", "/error/**")
+                                .requestMatchers(Constant.UNAUTHENTICATED_URLS)
                                 .permitAll()
-                                .anyRequest().authenticated()
-                )
+                                .anyRequest().authenticated())
                 .oauth2Login(
                         oauth2Login -> oauth2Login
                                 .successHandler(gitHubLoginSuccessHandler())
-                                .defaultSuccessUrl("/home")
-                                .loginPage("/login")
-                )
+                                .defaultSuccessUrl(Constant.HOME_PAGE_URL)
+                                .loginPage(Constant.LOGIN_PAGE_URL))
                 .logout(
                         logout -> logout
-                                .deleteCookies("JSESSIONID")
-                                .logoutSuccessUrl("/")
+                                .deleteCookies(Constant.SESSIONID_COOKIE)
+                                .logoutSuccessUrl(Constant.LOGOUT_PAGE_URL)
                                 .invalidateHttpSession(true)
-                                .permitAll()
-                )
+                                .permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(
                         sessionManagement -> sessionManagement
-                                .invalidSessionUrl("/?timeout=true")
-                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                )
+                                .invalidSessionUrl(Constant.SESSION_TIMEOUT_URL)
+                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .addFilterAfter(authzFilter, UsernamePasswordAuthenticationFilter.class);
         // allow us to show our own content in IFRAMEs (e.g. Swagger, etc.)
         http.headers(headers -> {
@@ -89,8 +88,7 @@ public class SecurityConfig {
             headers.httpStrictTransportSecurity(
                     hsts -> hsts
                             .includeSubDomains(true)
-                            .maxAgeInSeconds(31536000)
-            ); // Enable HSTS for 1 year
+                            .maxAgeInSeconds(Constant.HSTS_MAX_AGE)); // Enable HSTS
         });
         return http.build();
     }
@@ -103,6 +101,8 @@ public class SecurityConfig {
         config.addAllowedOriginPattern("*"); // Customize as needed
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
+        // Expose Location header for session time out redirection at the UI side (AGGrid etc)
+        config.addExposedHeader("Location");
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
@@ -128,7 +128,7 @@ public class SecurityConfig {
             final var savedRequest = requestCache.getRequest(request, response);
 
             if (savedRequest == null) {
-                response.sendRedirect("/home");
+                response.sendRedirect(Constant.HOME_PAGE_URL);
                 return;
             }
 
