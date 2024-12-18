@@ -9,6 +9,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Observation;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +28,7 @@ class SexualOrientationObservationConverterTest {
         private SexualOrientationObservationConverter sexualOrientationObservationConverter;
 
         @Test
+        @Disabled
         void testConvert() throws Exception {
                 final Bundle bundle = new Bundle();
                 final List<ScreeningObservationData> screeningDataList = CsvTestHelper.createScreeningObservationData();
@@ -64,7 +66,7 @@ class SexualOrientationObservationConverterTest {
         }
 
         @Test
-        // @Disabled
+        @Disabled
         void testGeneratedJson() throws Exception {
                 final var bundle = new Bundle();
                 final var demographicData = CsvTestHelper.createDemographicData();

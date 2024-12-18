@@ -71,38 +71,28 @@ public class EncounterConverter extends BaseConverter {
         Encounter encounter = new Encounter();
         setMeta(encounter);
 
-        // Set Encounter ID
         encounter.setId(CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
-        // // Set Full URL
         String fullUrl = "http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId();
 
-        // Set Meta Data
         Meta meta = encounter.getMeta();
         meta.setLastUpdated(getLastUpdatedDate(qeAdminData));
 
-        // // Set encounter status
         populateEncounterStatus(encounter, screeningProfileData);
 
-        // // Set encounter class
         populateEncounterClass(encounter, screeningProfileData);
 
-        // // Set encounter type
         populateEncounterType(encounter, screeningProfileData);
 
-        // // Set encounter period
         populateEncounterPeriod(encounter, screeningProfileData);
 
-        // // Set patient reference
         populatePatientReference(encounter, idsGenerated);
 
-        // // Set location
         populateLocationReference(encounter, screeningProfileData);
         Narrative text = new Narrative();
         text.setStatus(NarrativeStatus.GENERATED);
         encounter.setText(text);
 
-        // Wrap the Encounter resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setResource(encounter);

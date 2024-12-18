@@ -76,7 +76,7 @@ public class Hl7Service {
                     return fhirService.processBundle(shinnyFhirJson, tenantId, null, null, null, null, null,
                             Boolean.toString(false), false,
                             false,
-                            false, request, response, null, true,null,null);
+                            false, request, response, null, true,null,null, shinnyFhirJson);
                 }
             }
         } catch (Exception ex) {

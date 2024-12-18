@@ -75,44 +75,32 @@ public class ConsentConverter extends BaseConverter {
         Consent consent = new Consent();
         setMeta(consent);
 
-        // // Set Consent ID
         consent.setId(CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
-        // // Set Meta Data
         Meta meta = consent.getMeta();
         meta.setLastUpdated(getLastUpdatedDate(screeningProfileData));
 
-        // // Set consent scope
         populateConsentStatusAndScope(consent, screeningProfileData);
 
-        // // Set consent catehory
         populateConsentCategory(consent, screeningProfileData);
 
-        // // Set patient reference
         populatePatientReference(consent, idsGenerated);
 
-        // // Set consent date time
         populateConsentDateTime(consent, screeningProfileData);
 
-        // // Set organization reference
         populateOrganizationReference(consent,idsGenerated);
 
-        // // Set state of consent
         populateConsentState(consent, screeningProfileData);
 
-        // // Set source reference of the consent
         // // TODO:
         // populateSourceReference(consent, screeningProfileData);
 
-        // // Set policy of the consent
         populateConsentPolicy(consent, screeningProfileData);
 
-        // // Set provisions of the consent
         populateConsentProvision(consent, screeningProfileData);
 
         populateSourceAttachment(consent);
         String fullUrl = "http://shinny.org/us/ny/hrsn/Consent/" + consent.getId();
-        // Wrap the Consent resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setResource(consent);
@@ -138,10 +126,8 @@ public class ConsentConverter extends BaseConverter {
     }
 
     private static void populateConsentCategory(Consent consent, ScreeningProfileData data) {
-        // Create a list of CodeableConcept to hold multiple categories
         List<CodeableConcept> categories = new ArrayList<>();
 
-        // Add the first category (LOINC)
         CodeableConcept loincCategory = new CodeableConcept();
         Coding loincCoding = new Coding();
         loincCoding.setSystem("http://loinc.org");
@@ -151,7 +137,6 @@ public class ConsentConverter extends BaseConverter {
         loincCategory.addCoding(loincCoding);
         categories.add(loincCategory);
 
-        // Add the second category (HL7 ActCode)
         CodeableConcept hl7Category = new CodeableConcept();
         Coding hl7Coding = new Coding();
         hl7Coding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
@@ -160,7 +145,6 @@ public class ConsentConverter extends BaseConverter {
         hl7Category.addCoding(hl7Coding);
         categories.add(hl7Category);
 
-        // Set the categories in the consent object
         consent.setCategory(categories);
     }
 

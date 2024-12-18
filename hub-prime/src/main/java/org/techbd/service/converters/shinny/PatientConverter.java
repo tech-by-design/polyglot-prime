@@ -379,8 +379,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                 .ifPresent(relationshipCode -> {
                     // Using builder pattern where applicable
                     var coding = new Coding()
-                            .setSystem("http://terminology.hl7.org/CodeSystem/v2-0063") // TODO : remove static
-                                                                                        // reference
+                            .setSystem("http://terminology.hl7.org/CodeSystem/v2-0063") // TODO : remove static reference
                             .setCode(relationshipCode)
                             .setDisplay(data.getRelationshipPersonDescription());
 

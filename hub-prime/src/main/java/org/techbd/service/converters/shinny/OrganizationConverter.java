@@ -103,7 +103,6 @@ public class OrganizationConverter extends BaseConverter {
 
     private static void populateOrganizationType(Organization organization, QeAdminData data) {
         // if (StringUtils.isNotEmpty(data.getFacilityCmsIdentifierTypeCode())) {
-            // Create a new CodeableConcept for type
             CodeableConcept type = new CodeableConcept();
 
             // Create a new Coding object
@@ -113,10 +112,8 @@ public class OrganizationConverter extends BaseConverter {
             coding.setCode(data.getOrganizationTypeCode()); // Set the code (e.g., "other")
             coding.setDisplay(data.getOrganizationTypeDisplay()); // Set the display (e.g., "Other")
 
-            // Add the coding to the type
             type.addCoding(coding);
 
-            // Set the type on the Organization object
             organization.setType(Collections.singletonList(type));
         // }
     }
@@ -127,7 +124,6 @@ public class OrganizationConverter extends BaseConverter {
 
             Address address = new Address();
 
-            // Set the full address text by concatenating address components
             String fullAddressText = qrAdminData.getFacilityAddress1();
             if (qrAdminData.getFacilityCity() != null) {
                 fullAddressText += ", " + qrAdminData.getFacilityCity();
@@ -140,24 +136,16 @@ public class OrganizationConverter extends BaseConverter {
             }
             address.setText(fullAddressText);
 
-            // Set the address line (address line 1 and possibly address line 2)
             List<String> addressLines = new ArrayList<>();
             addressLines.add(qrAdminData.getFacilityAddress1());
 
-            // Add address line 2 if it's available
-            // if (qrAdminData.getFacilityAddress2() != null) {    //BlankInTheCSV
-            //     addressLines.add(qrAdminData.getFacilityAddress2());
-            // }
-
             // address.setLine(addressLines);
 
-            // Set the city, district, state, and postal code
             address.setCity(qrAdminData.getFacilityCity());
             address.setDistrict(qrAdminData.getFacilityDistrict());
             address.setState(qrAdminData.getFacilityState());
             address.setPostalCode(qrAdminData.getFacilityZip());
 
-            // Add the address to the organization
             organization.addAddress(address);
         }
     }
