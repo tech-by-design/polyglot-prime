@@ -74,6 +74,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                 .sha256(generateUniqueId(screeningProfileData.getEncounterId(), qeAdminData.getFacilityId(),
                         demographicData.getPatientMrIdValue())));
         idsGenerated.put(CsvConstants.PATIENT_ID, patient.getId());
+        String fullUrl = "http://shinny.org/us/ny/hrsn/Patient/" + patient.getId();
         Meta meta = patient.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
                                                                                           // screening records
@@ -95,6 +96,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         patient.setText(text);
         // populatePatientText(patient, demographicData);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
+        bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setResource(patient);
         LOG.info("PatientConverter :: convert  END for transaction id :{}", interactionId);
         return List.of(bundleEntryComponent);

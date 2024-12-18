@@ -78,6 +78,9 @@ public class ConsentConverter extends BaseConverter {
         // // Set Consent ID
         consent.setId("Consent/"+CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
+        // // Set Full URL
+        String fullUrl = "http://shinny.org/us/ny/hrsn/Consent/" + consent.getId();
+
         // // Set Meta Data
         Meta meta = consent.getMeta();
         meta.setLastUpdated(getLastUpdatedDate(screeningProfileData));
@@ -89,7 +92,7 @@ public class ConsentConverter extends BaseConverter {
         populateConsentCategory(consent, screeningProfileData);
 
         // // Set patient reference
-        populatePatientReference(consent, screeningProfileData);
+        populatePatientReference(consent, idsGenerated);
 
         // // Set consent date time
         populateConsentDateTime(consent, screeningProfileData);
@@ -114,6 +117,7 @@ public class ConsentConverter extends BaseConverter {
 
         // Wrap the Consent resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
+        bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setResource(consent);
         return List.of(bundleEntryComponent);
     }
@@ -163,10 +167,8 @@ public class ConsentConverter extends BaseConverter {
         consent.setCategory(categories);
     }
 
-    private void populatePatientReference(Consent consent, ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getPatientMrIdValue() != null) {
-            consent.getPatient().setReference("Patient/" + screeningResourceData.getPatientMrIdValue());
-        }
+    private void populatePatientReference(Consent consent, Map<String,String> idsGenerated) {
+            consent.getPatient().setReference(idsGenerated.get(CsvConstants.PATIENT_ID));
     }
 
     private void populateOrganizationReference(Consent consent,Map<String,String> idsGenerated) {

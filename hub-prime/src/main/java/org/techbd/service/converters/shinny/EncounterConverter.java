@@ -74,6 +74,9 @@ public class EncounterConverter extends BaseConverter {
         // Set Encounter ID
         encounter.setId("Encounter/" + CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
+        // // Set Full URL
+        String fullUrl = "http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId();
+
         // Set Meta Data
         Meta meta = encounter.getMeta();
         meta.setLastUpdated(getLastUpdatedDate(qeAdminData));
@@ -101,6 +104,7 @@ public class EncounterConverter extends BaseConverter {
 
         // Wrap the Encounter resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
+        bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setResource(encounter);
         return List.of(bundleEntryComponent);
     }
