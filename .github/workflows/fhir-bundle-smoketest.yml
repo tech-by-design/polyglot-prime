@@ -7,6 +7,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'tech-by-design/polyglot-prime' }}
 
     steps:
     - name: Checkout code
