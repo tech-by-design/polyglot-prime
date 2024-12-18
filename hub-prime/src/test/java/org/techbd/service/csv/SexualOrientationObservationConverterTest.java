@@ -3,7 +3,9 @@ package org.techbd.service.csv;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
@@ -36,8 +38,9 @@ class SexualOrientationObservationConverterTest {
                 final var demographicData = CsvTestHelper.createDemographicData();
                 final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
                 final String interactionId = "interactionId";
+                final Map<String, String> idsGenerated = new HashMap<>();
                 final BundleEntryComponent result = sexualOrientationObservationConverter.convert(
-                                bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,interactionId,null).get(0);
+                                bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,interactionId, idsGenerated).get(0);
                 final SoftAssertions softly = new SoftAssertions();
                 softly.assertThat(result).isNotNull();
                 softly.assertThat(result.getResource()).isInstanceOf(Observation.class);
@@ -72,10 +75,11 @@ class SexualOrientationObservationConverterTest {
                 final var demographicData = CsvTestHelper.createDemographicData();
                 final var screeningDataList = CsvTestHelper.createScreeningObservationData();
                 final var qrAdminData = CsvTestHelper.createQeAdminData();
+                final Map<String, String> idsGenerated = new HashMap<>();
                 final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
                 final var result = sexualOrientationObservationConverter.convert(bundle, demographicData, qrAdminData,
                                 screeningResourceData, screeningDataList,
-                                "interactionId",null);
+                                "interactionId", idsGenerated);
                 final Observation observation = (Observation) result.get(0).getResource();
                 final var filePath = "src/test/resources/org/techbd/csv/generated-json/sexual-orientation-observation.json";
                 final FhirContext fhirContext = FhirContext.forR4();

@@ -3,7 +3,9 @@ package org.techbd.service.csv;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Address;
@@ -43,10 +45,11 @@ class OrganizationConverterTest {
         final List<ScreeningObservationData> screeningDataList =  CsvTestHelper.createScreeningObservationData();
         final QeAdminData qrAdminData =  CsvTestHelper.createQeAdminData();
         final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
+        final Map<String, String> idsGenerated = new HashMap<>();
         // Call the convert method of the organization converter
         final BundleEntryComponent result = organizationConverter
                 .convert(bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,
-                        "interactionId",null)
+                        "interactionId",idsGenerated)
                 .get(0);
 
         // Create soft assertions to verify the result
@@ -113,10 +116,11 @@ class OrganizationConverterTest {
         final var demographicData =  CsvTestHelper.createDemographicData();
         final var screeningDataList =  CsvTestHelper.createScreeningObservationData();
         final var qrAdminData =  CsvTestHelper.createQeAdminData();
+        final Map<String, String> idsGenerated = new HashMap<>();
         final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
         final var result = organizationConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId",null);
+                "interactionId", idsGenerated);
         final Organization organization = (Organization) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/organization.json";
         final FhirContext fhirContext = FhirContext.forR4();

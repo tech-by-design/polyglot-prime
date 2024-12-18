@@ -1,12 +1,15 @@
 package org.techbd.service.csv;
 
+import static org.assertj.core.api.Assertions.*;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Observation;
@@ -48,13 +51,14 @@ class ScreeningResponseObservationConverterTest {
         ScreeningProfileData screeningProfileData = CsvTestHelper.createScreeningProfileData();
         List<ScreeningObservationData> screeningObservationDataList = CsvTestHelper.createScreeningObservationData();
         String interactionId = "testInteractionId";
+        Map<String, String> idsGenerated = new HashMap<>();
         List<BundleEntryComponent> result = converter.convert(
                 bundle,
                 demographicData,
                 qeAdminData,
                 screeningProfileData,
                 screeningObservationDataList,
-                interactionId, null);
+                interactionId, idsGenerated);
         assertThat(result).isNotNull();
         assertThat(result).hasSize(screeningObservationDataList.size());
 
@@ -81,9 +85,10 @@ class ScreeningResponseObservationConverterTest {
         final var demographicData = CsvTestHelper.createDemographicData();
         final var screeningDataList = CsvTestHelper.createScreeningObservationData();
         final var qrAdminData = CsvTestHelper.createQeAdminData();
+        final Map<String, String> idsGenerated = new HashMap<>();
         final var screeningResourceData = CsvTestHelper.createScreeningProfileData();
         final var result = converter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                screeningDataList, "interactionId", null);
+                screeningDataList, "interactionId", idsGenerated);
         final Observation observation = (Observation) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/screening-response.json";
         final FhirContext fhirContext = FhirContext.forR4();

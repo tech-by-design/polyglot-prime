@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ContactPoint;
@@ -97,6 +98,7 @@ public class PatientConverter extends BaseConverter {
         // populatePatientText(patient, demographicData);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
+        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Patient/" + patient.getId()));
         bundleEntryComponent.setResource(patient);
         LOG.info("PatientConverter :: convert  END for transaction id :{}", interactionId);
         return List.of(bundleEntryComponent);

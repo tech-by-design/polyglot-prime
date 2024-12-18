@@ -1,15 +1,13 @@
 package org.techbd.service.converters.shinny;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Consent;
@@ -78,7 +76,7 @@ public class ConsentConverter extends BaseConverter {
         consent.setId(CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
         Meta meta = consent.getMeta();
-        meta.setLastUpdated(getLastUpdatedDate(screeningProfileData));
+        meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getConsentLastUpdated()));
 
         populateConsentStatusAndScope(consent, screeningProfileData);
 
@@ -103,6 +101,7 @@ public class ConsentConverter extends BaseConverter {
         String fullUrl = "http://shinny.org/us/ny/hrsn/Consent/" + consent.getId();
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
+        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Consent/" + consent.getId()));
         bundleEntryComponent.setResource(consent);
         return List.of(bundleEntryComponent);
     }
@@ -191,26 +190,6 @@ public class ConsentConverter extends BaseConverter {
     public static void populateConsentDateTime(Consent consent, ScreeningProfileData screeningResourceData) {
         String consentDateTime = screeningResourceData.getConsentDateTime();
         consent.setDateTime(DateUtil.convertStringToDate(consentDateTime));
-    }
-
-    /**
-     * Get the last updated date for the consent based on its data from QeAdminData.
-     *
-     * @param qrAdminData The QeAdminData object containing the consent's last
-     *                    updated date.
-     * @return The last updated date.
-     */
-    private Date getLastUpdatedDate(ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getConsentLastUpdated() != null
-                && !screeningResourceData.getConsentLastUpdated().isEmpty()) {
-            try {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                return dateFormat.parse(screeningResourceData.getConsentLastUpdated());
-            } catch (ParseException e) {
-                LOG.error("Error parsing last updated date", e);
-            }
-        }
-        return new Date();
     }
 
     private void populateSourceAttachment(Consent consent) {

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -83,6 +84,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             observation.setValue(value);
             BundleEntryComponent entry = new BundleEntryComponent();
             entry.setFullUrl(fullUrl);
+            entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observationId));
             entry.setResource(observation);
             bundleEntryComponents.add(entry);
         }    
