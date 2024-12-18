@@ -37,7 +37,7 @@ import org.techbd.util.DateUtil;
 
 @Component
 @Order(2)
-public class PatientConverter extends BaseConverter implements IPatientConverter {
+public class PatientConverter extends BaseConverter {
     private static final Logger LOG = LoggerFactory.getLogger(PatientConverter.class.getName());
 
     /**
@@ -79,7 +79,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
                                                                                           // screening records
         patient.setLanguage("en");
-        populateExtensions(patient, demographicData);
+        populatePatientWithExtensions(patient, demographicData);
         populateMrIdentifier(patient, demographicData,idsGenerated );
         populateMaIdentifier(patient, demographicData);
         populateSsnIdentifier(patient, demographicData);
@@ -102,6 +102,63 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         return List.of(bundleEntryComponent);
     }
 
+    public static void populatePatientWithExtensions(Patient patient,DemographicData demographicData) {
+        if (demographicData.getExtensionOmbCategoryRaceCode() != null) {
+            Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
+            Extension ombCategoryExtension = new Extension("ombCategory");
+            ombCategoryExtension.setValue(new Coding()
+                    .setSystem("urn:oid:2.16.840.1.113883.6.238")
+                    .setCode(demographicData.getExtensionOmbCategoryRaceCode())
+                    .setDisplay(demographicData.getExtensionOmbCategoryRaceCodeDescription()));
+            raceExtension.addExtension(ombCategoryExtension);
+            Extension textExtension = new Extension("text");
+            textExtension.setValue(new org.hl7.fhir.r4.model.StringType(demographicData.getExtensionOmbCategoryRaceCodeDescription()));
+            raceExtension.addExtension(textExtension);
+
+            patient.addExtension(raceExtension);
+        }
+
+        if (demographicData.getExtensionOmbCategoryEthnicityCode() != null) {
+            Extension ethnicityExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
+
+            Extension ombCategoryExtension = new Extension("ombCategory");
+            ombCategoryExtension.setValue(new Coding()
+                    .setSystem("urn:oid:2.16.840.1.113883.6.238")
+                    .setCode(demographicData.getExtensionOmbCategoryEthnicityCode())
+                    .setDisplay(demographicData.getExtensionOmbCategoryEthnicityCodeDescription()));
+            ethnicityExtension.addExtension(ombCategoryExtension);
+
+            Extension textExtension = new Extension("text");
+            textExtension.setValue(new org.hl7.fhir.r4.model.StringType(demographicData.getExtensionOmbCategoryEthnicityCodeDescription()));
+            ethnicityExtension.addExtension(textExtension);
+
+            patient.addExtension(ethnicityExtension);
+        }
+
+        if (demographicData.getExtensionSexAtBirthCodeValue() != null) {
+            Extension birthSexExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex");
+            birthSexExtension.setValue(new org.hl7.fhir.r4.model.CodeType(demographicData.getExtensionSexAtBirthCodeValue()));
+            patient.addExtension(birthSexExtension);
+        }
+
+        if (demographicData.getExtensionPersonalPronounsCode() != null) {
+            Extension pronounsExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns");
+            pronounsExtension.setValue(new CodeableConcept().addCoding(new Coding()
+                    .setSystem("http://loinc.org")
+                    .setCode(demographicData.getExtensionPersonalPronounsCode())
+                    .setDisplay(demographicData.getExtensionPersonalPronounsDisplay())));
+            patient.addExtension(pronounsExtension);
+        }
+
+        if (demographicData.getExtensionGenderIdentityCode() != null) {
+            Extension genderIdentityExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity");
+            genderIdentityExtension.setValue(new CodeableConcept().addCoding(new Coding()
+                    .setSystem("http://snomed.info/sct")
+                    .setCode(demographicData.getExtensionGenderIdentityCode())
+                    .setDisplay(demographicData.getExtensionGenderIdentityDisplay())));
+            patient.addExtension(genderIdentityExtension);
+        }
+    }
     private static Patient populatePatientName(Patient patient, DemographicData demographicData) {
         HumanName name = new HumanName();
         if (demographicData.getGivenName() != null) {
@@ -144,113 +201,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                 .toString();
     }
 
-    private void populateExtensions(Patient patient, DemographicData demographicData) {
-        if (StringUtils.isNotEmpty("ombCategory") || // TODO : remove static reference
-                StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryRaceCode()) ||
-                StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryRaceCodeDescription()) ||
-                StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryRaceCodeSystemName())) {
-            Extension raceOmbExtension = getRaceOmbExtension(
-                    "ombCategory", // TODO : remove static reference
-                    null,
-                    demographicData.getExtensionOmbCategoryRaceCodeSystemName(),
-                    demographicData.getExtensionOmbCategoryRaceCode(),
-                    demographicData.getExtensionOmbCategoryRaceCodeDescription());
-            patient.addExtension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race", raceOmbExtension); // TODO
-                                                                                                                    // :
-                                                                                                                    // remove
-                                                                                                                    // static
-                                                                                                                    // reference
-        }
-
-        if (StringUtils.isNotEmpty("text") || // TODO : remove static reference
-                StringUtils.isNotEmpty("Asian")) { // TODO : remove static reference
-
-            Extension raceDetailedExtension = getRaceDetailedExtension(
-                    "text", // TODO : remove static reference
-                    "Asian", // TODO : remove static reference
-                    null,
-                    null,
-                    null);
-            patient.addExtension(raceDetailedExtension);
-        }
-
-        if (StringUtils.isNotEmpty("ombCategory") || // TODO : remove static reference
-                StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryEthnicityCode()) ||
-                StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryEthnicityCodeDescription()) ||
-                StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryEthnicityCodeSystemName())) {
-
-            Extension ethnicityOmbExtension = getEthnicityOmbExtension(
-                    "ombCategory",
-                    null,
-                    demographicData.getExtensionOmbCategoryEthnicityCodeSystemName(),
-                    demographicData.getExtensionOmbCategoryEthnicityCode(),
-                    demographicData.getExtensionOmbCategoryEthnicityCodeDescription());
-            patient.addExtension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
-                    ethnicityOmbExtension); // TODO : remove static reference
-        }
-
-        if (StringUtils.isNotEmpty("text") ||
-                StringUtils.isNotEmpty("Hispanic or Latino")) { // TODO : remove static reference
-
-            Extension ethnicityDetailedExtension = getEthnicityDetailedExtension(
-                    "text", // TODO : remove static reference
-                    "Hispanic or Latino",
-                    null, null, null);
-            patient.addExtension(ethnicityDetailedExtension);
-        }
-
-        if (StringUtils.isNotEmpty("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex") || // TODO :
-                                                                                                          // remove
-                                                                                                          // static
-                                                                                                          // reference
-                StringUtils.isNotEmpty(demographicData.getExtensionSexAtBirthCodeValue())) {
-
-            Extension ethnicityDetailedExtension = getEthnicityDetailedExtension(
-                    "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex", // TODO : remove static
-                                                                                        // reference
-                    demographicData.getExtensionSexAtBirthCodeValue(),
-                    null, null, null);
-            patient.addExtension(ethnicityDetailedExtension);
-        }
-
-        if (StringUtils.isNotEmpty("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns") || // TODO
-                                                                                                                   // :
-                                                                                                                   // remove
-                                                                                                                   // static
-                                                                                                                   // reference
-                StringUtils.isNotEmpty(demographicData.getExtensionPersonalPronounsCode()) ||
-                StringUtils.isNotEmpty(demographicData.getExtensionPersonalPronounsDisplay()) ||
-                StringUtils.isNotEmpty(demographicData.getExtensionPersonalPronounsSystem())) {
-
-            Extension personalPronounsExtension = getShinnyPersonalPronounsExtension(
-                    "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns", // TODO : remove static
-                                                                                                 // reference
-                    null,
-                    demographicData.getExtensionPersonalPronounsSystem(),
-                    demographicData.getExtensionPersonalPronounsCode(),
-                    demographicData.getExtensionPersonalPronounsDisplay());
-            patient.addExtension(personalPronounsExtension);
-        }
-
-        if (StringUtils.isNotEmpty("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity") || // TODO
-                                                                                                                 // :
-                                                                                                                 // remove
-                                                                                                                 // static
-                                                                                                                 // reference
-                StringUtils.isNotEmpty(demographicData.getExtensionGenderIdentityCode()) ||
-                StringUtils.isNotEmpty(demographicData.getExtensionGenderIdentityDisplay()) ||
-                StringUtils.isNotEmpty(demographicData.getExtensionGenderIdentitySystem())) {
-
-            Extension genderIdentityExtension = getShinnyGenderIdentityExtension(
-                    "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity", // TODO : remove static
-                                                                                               // reference
-                    null,
-                    demographicData.getExtensionGenderIdentitySystem(),
-                    demographicData.getExtensionGenderIdentityCode(),
-                    demographicData.getExtensionGenderIdentityDisplay());
-            patient.addExtension(genderIdentityExtension);
-        }
-    }
+   
 
     private static void populateMrIdentifier(Patient patient, DemographicData data,Map<String,String> idsGenerated) {
         if (StringUtils.isNotEmpty(data.getPatientMrIdValue())) {
@@ -408,50 +359,4 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                 });
     }
 
-    private static void populatePatientText(Patient patient, DemographicData data) {
-        Optional.ofNullable("generated") // TODO : remove static reference
-                .filter(StringUtils::isNotEmpty)
-                .ifPresent(status -> {
-                    Narrative text = new Narrative();
-                    text.setStatus(NarrativeStatus.fromCode(status.toLowerCase()));
-                });
-    }
-
-    @Override
-    public Extension getRaceOmbExtension(String url, String value, String system, String code, String display) {
-        return createExtension(url, value, system, code, display);
-    }
-
-    @Override
-    public Extension getRaceDetailedExtension(String url, String value, String system, String code, String display) {
-        return createExtension(url, value, system, code, display);
-    }
-
-    @Override
-    public Extension getEthnicityOmbExtension(String url, String value, String system, String code, String display) {
-        return createExtension(url, value, system, code, display);
-    }
-
-    @Override
-    public Extension getEthnicityDetailedExtension(String url, String value, String system, String code,
-            String display) {
-        return createExtension(url, value, system, code, display);
-    }
-
-    @Override
-    public Extension getSexAtBirthExtension(String url, String value, String system, String code, String display) {
-        return createExtension(url, value, system, code, display);
-    }
-
-    @Override
-    public Extension getShinnyPersonalPronounsExtension(String url, String value, String system, String code,
-            String display) {
-        return createExtension(url, value, system, code, display);
-    }
-
-    @Override
-    public Extension getShinnyGenderIdentityExtension(String url, String value, String system, String code,
-            String display) {
-        return createExtension(url, value, system, code, display);
-    }
 }
