@@ -172,7 +172,7 @@ public class FHIRService {
                         }
                 } catch (JsonValidationException ex) {
                         payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
-                                        response, payload, buildOperationOutcome(ex, interactionId),interactionId);
+                                        response, payload, buildOperationOutcome(ex, interactionId),interactionId,groupInteractionId);
                 }
                 Instant end = Instant.now();
                 Duration timeElapsed = Duration.between(start, end);

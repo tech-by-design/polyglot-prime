@@ -17,7 +17,6 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Organization;
-import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +68,7 @@ public class OrganizationConverter extends BaseConverter {
     ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
         Organization organization = new Organization();
         setMeta(organization);
-        organization.setId("Organization/"+CsvConversionUtil.sha256(qeAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
+        organization.setId(CsvConversionUtil.sha256(qeAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
         idsGenerated.put(CsvConstants.ORGANIZATION_ID,organization.getId());
         Meta meta = organization.getMeta();
         meta.setLastUpdated(getLastUpdatedDate(qeAdminData));

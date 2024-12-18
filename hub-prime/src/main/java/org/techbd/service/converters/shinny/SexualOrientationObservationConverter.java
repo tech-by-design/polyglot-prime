@@ -52,7 +52,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
         Reference subjectReference = new Reference();
-        subjectReference.setReference(idsGenerated.get(CsvConstants.PATIENT_ID)); //TODO : remove static reference
+        subjectReference.setReference("Patient/"+idsGenerated.get(CsvConstants.PATIENT_ID)); //TODO : remove static reference
         observation.setSubject(subjectReference);
         CodeableConcept code = new CodeableConcept();
         code.addCoding(new Coding("http://loinc.org", //TODO : remove static reference

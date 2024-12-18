@@ -52,12 +52,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
     
         for (ScreeningObservationData data : screeningObservationDataList) {
             Observation observation = new Observation();
-            String observationId = "Observation/"+CsvConversionUtil.sha256(data.getEncounterId()+data.getScreeningCode()); // Use screening code as ID
+            String observationId = CsvConversionUtil.sha256(data.getEncounterId()+data.getScreeningCode()); // Use screening code as ID
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
-            Meta meta = new Meta();
-            meta.setLastUpdated(DateUtil.parseDate(data.getRecordedTime()));
-            meta.addProfile("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response");
-            observation.setMeta(meta);
+            setMeta(observation);
+            Meta meta = observation.getMeta();
+            meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
+                                                                                              // screening records
             observation.setLanguage("en");
             Narrative narrative = new Narrative();
             narrative.setStatus(NarrativeStatus.GENERATED);
@@ -73,7 +73,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             code.addCoding(new Coding("http://loinc.org", data.getScreeningCode(), data.getScreeningCodeDescription()));
             code.setText(data.getQuestionCodeText());
             observation.setCode(code);
-            observation.setSubject(new Reference("Patient/" + data.getPatientMrIdValue()));
+            observation.setSubject(new Reference("Patient/" +idsGenerated.get(CsvConstants.PATIENT_ID)));
             if (data.getRecordedTime() != null) {
                 observation.setEffective(new DateTimeType(DateUtil.parseDate(data.getRecordedTime())));
             }
@@ -81,8 +81,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             CodeableConcept value = new CodeableConcept();
             value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(), data.getAnswerCodeDescription()));
             observation.setValue(value);
-            //Create patient reference
-            createAssignerReference(idsGenerated.get(CsvConstants.PATIENT_ID));
             BundleEntryComponent entry = new BundleEntryComponent();
             entry.setFullUrl(fullUrl);
             entry.setResource(observation);

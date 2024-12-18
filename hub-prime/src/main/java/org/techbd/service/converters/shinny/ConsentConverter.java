@@ -76,7 +76,7 @@ public class ConsentConverter extends BaseConverter {
         setMeta(consent);
 
         // // Set Consent ID
-        consent.setId("Consent/"+CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
+        consent.setId(CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
         // // Set Meta Data
         Meta meta = consent.getMeta();
@@ -89,7 +89,7 @@ public class ConsentConverter extends BaseConverter {
         populateConsentCategory(consent, screeningProfileData);
 
         // // Set patient reference
-        populatePatientReference(consent, screeningProfileData);
+        populatePatientReference(consent, idsGenerated);
 
         // // Set consent date time
         populateConsentDateTime(consent, screeningProfileData);
@@ -163,14 +163,12 @@ public class ConsentConverter extends BaseConverter {
         consent.setCategory(categories);
     }
 
-    private void populatePatientReference(Consent consent, ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getPatientMrIdValue() != null) {
-            consent.getPatient().setReference("Patient/" + screeningResourceData.getPatientMrIdValue());
-        }
+    private void populatePatientReference(Consent consent, Map<String,String> idsGenerated) {
+            consent.getPatient().setReference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID));
     }
 
     private void populateOrganizationReference(Consent consent,Map<String,String> idsGenerated) {
-            consent.getOrganizationFirstRep().setReference(idsGenerated.get(CsvConstants.ORGANIZATION_ID));
+            consent.getOrganizationFirstRep().setReference("Organization/"+idsGenerated.get(CsvConstants.ORGANIZATION_ID));
     }
 
     private void populateConsentState(Consent consent, ScreeningProfileData screeningResourceData) {

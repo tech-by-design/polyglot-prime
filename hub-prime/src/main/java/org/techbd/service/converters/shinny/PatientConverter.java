@@ -70,7 +70,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         LOG.info("PatientConverter :: convert  BEGIN for transaction id :{}", interactionId);
         Patient patient = new Patient();
         setMeta(patient);
-        patient.setId("Patient/"+CsvConversionUtil
+        patient.setId(CsvConversionUtil
                 .sha256(generateUniqueId(screeningProfileData.getEncounterId(), qeAdminData.getFacilityId(),
                         demographicData.getPatientMrIdValue())));
         idsGenerated.put(CsvConstants.PATIENT_ID, patient.getId());
@@ -264,7 +264,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
             // Optional: Add assigner if needed (uncomment if required)
             Reference assigner = new Reference();
-            assigner.setReference(idsGenerated.get(CsvConstants.ORGANIZATION_ID));
+            assigner.setReference("Organization/"+idsGenerated.get(CsvConstants.ORGANIZATION_ID));
             // populate while organization is populated
             identifier.setAssigner(assigner);
 

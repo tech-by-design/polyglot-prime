@@ -72,7 +72,7 @@ public class EncounterConverter extends BaseConverter {
         setMeta(encounter);
 
         // Set Encounter ID
-        encounter.setId("Encounter/" + CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
+        encounter.setId(CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
         // Set Meta Data
         Meta meta = encounter.getMeta();
@@ -106,7 +106,7 @@ public class EncounterConverter extends BaseConverter {
     }
 
     private void populatePatientReference(Encounter encounter, Map<String, String> idsGenerated) {
-        encounter.setSubject(new Reference(idsGenerated.get(CsvConstants.PATIENT_ID)));
+        encounter.setSubject(new Reference("Patient/"+idsGenerated.get(CsvConstants.PATIENT_ID)));
     }
 
     private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {

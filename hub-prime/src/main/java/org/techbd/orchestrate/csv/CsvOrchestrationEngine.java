@@ -595,19 +595,15 @@ public class CsvOrchestrationEngine {
                 final List<String> csvFiles = scanForCsvFiles(processedDir, masterInteractionId);
 
                 final Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(csvFiles);
-                // final Map<FileType, FileDetail> files = processFiles(csvFiles);//TODO -CHECK
-                // AND REMOVE
-                // TODO -check if working for multiple screenings
                 List<Map<String, Object>> combinedValidationResults = new ArrayList<>();
 
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
                     List<FileDetail> fileDetails = entry.getValue();
                     Map<String, Object> operationOutcomeForThisGroup;
-
-                    // Check if all required file types are present
+                    final String groupInteractionId = UUID.randomUUID().toString();
                     if (isGroupComplete(fileDetails)) {
-                        operationOutcomeForThisGroup = validateScreeningGroup(groupKey, fileDetails, originalFileName);
+                        operationOutcomeForThisGroup = validateScreeningGroup(groupInteractionId,groupKey, fileDetails, originalFileName);
                     } else {
                         // Incomplete group - generate error operation outcome
                         operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
@@ -616,11 +612,10 @@ public class CsvOrchestrationEngine {
                     }
 
                     combinedValidationResults.add(operationOutcomeForThisGroup);
-                    System.out.println("combinedValidationResults : " + combinedValidationResults.toString());
+                    if (generateBundle) {
+                        this.payloadAndValidationOutcomes.put(groupKey, new PayloadAndValidationOutcome(fileDetails, isValid(operationOutcomeForThisGroup),groupInteractionId));
+                    }
                 }
-                // if (bundleGenerate) {
-                // //TODO - invoke fhir conversion and submission.
-                // }
                 Instant completedAt = Instant.now();
                 return generateValidationResults(masterInteractionId, request,
                         file.getSize(), initiatedAt, completedAt, originalFileName, combinedValidationResults);
@@ -730,16 +725,13 @@ public class CsvOrchestrationEngine {
             return operationOutcome;
         }
 
-        private Map<String, Object> validateScreeningGroup(String groupKey, List<FileDetail> fileDetails,
+        private Map<String, Object> validateScreeningGroup(String groupInteractionId,String groupKey, List<FileDetail> fileDetails,
                 String originalFileName) throws Exception {
             Instant initiatedAtForThisGroup = Instant.now();
 
             // Log the group being processed
             log.info("Processing group {} with {} files for interactionId: {}", groupKey, fileDetails.size(),
                     masterInteractionId);
-
-            // Save the screening group - you can call this for each group
-            String groupInteractionId = UUID.randomUUID().toString();
             saveScreeningGroup(groupInteractionId, request, file, fileDetails, tenantId);
 
             // Validate CSV files inside the group
