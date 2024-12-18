@@ -273,18 +273,18 @@
   - `constraints`:
     - `required` True
     - `minLength` 1
-    - `pattern` `^[A-Za-z]+$`
+    - `pattern` `[\r\n\t\S]+`
 ### `MIDDLE_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').name.extension.valueString
   - `type` string
   - `constraints`:
-    - `pattern` `^[A-Za-z]+$`
+    - `pattern` `[\r\n\t\S]+`
 ### `FAMILY_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').name.family
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^[A-Za-z]+$`
+    - `pattern` `[\r\n\t\S]+`
 ### `GENDER`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').gender
   - `type` string
