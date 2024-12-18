@@ -1,6 +1,9 @@
 package org.techbd.service.converters.shinny;
 
+import java.util.List;
+
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
@@ -32,6 +35,7 @@ public class BundleConverter {
         Meta meta = new Meta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         meta.setVersionId(igVersion);
+        meta.setProfile(List.of(new CanonicalType("http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")));
         bundle.setMeta(meta);
         LOG.info("Empty FHIR Bundle template generated with Meta and one empty entry for interactionId : {}.",
                 interactionId);
