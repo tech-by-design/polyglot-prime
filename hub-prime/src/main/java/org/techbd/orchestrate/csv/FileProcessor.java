@@ -1,6 +1,7 @@
 package org.techbd.orchestrate.csv;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -15,8 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 
-import net.sourceforge.plantuml.utils.Log;
-
 public class FileProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(FileProcessor.class);
 
@@ -29,7 +28,7 @@ public class FileProcessor {
                 final Path path = Path.of(filePath);
                 final String filename = path.getFileName().toString();
                 final FileType fileType = FileType.fromFilename(filename);
-                String fileContent = null;//Files.readString(path);
+                String fileContent = Files.readString(path);
                 String groupKey = filename.substring(fileType.name().length(), filename.lastIndexOf(".csv"));
                 FileDetail fileDetail = new FileDetail(filename, fileType, fileContent,filePath);
                 groupedFiles.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(fileDetail);

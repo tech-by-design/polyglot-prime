@@ -37,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
+import org.techbd.model.csv.PayloadAndValidationOutcome;
 import org.techbd.service.CsvService;
 import org.techbd.service.VfsCoreService;
 import org.techbd.service.http.InteractionsFilter;
@@ -44,6 +45,7 @@ import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.api.FHIRService;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
@@ -61,19 +63,17 @@ public class CsvOrchestrationEngine {
     private final List<OrchestrationSession> sessions;
     private final AppConfig appConfig;
     private final VfsCoreService vfsCoreService;
-    private final FHIRService fhirService;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private static final Logger log = LoggerFactory.getLogger(CsvOrchestrationEngine.class);
     private static final Pattern FILE_PATTERN = Pattern.compile(
             "(DEMOGRAPHIC_DATA|QE_ADMIN_DATA|SCREENING)_(.+)");
 
     public CsvOrchestrationEngine(final AppConfig appConfig, final VfsCoreService vfsCoreService,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig, FHIRService fhirService) {
+            final UdiPrimeJpaConfig udiPrimeJpaConfig, final FHIRService fhirService) {
         this.sessions = new ArrayList<>();
         this.appConfig = appConfig;
         this.vfsCoreService = vfsCoreService;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        this.fhirService = fhirService;
     }
 
     public List<OrchestrationSession> getSessions() {
@@ -118,6 +118,7 @@ public class CsvOrchestrationEngine {
         private MultipartFile file;
         private String masterInteractionId;
         private HttpServletRequest request;
+        private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private boolean generateBundle;
 
         public OrchestrationSessionBuilder withSessionId(final String sessionId) {
@@ -150,7 +151,7 @@ public class CsvOrchestrationEngine {
             return this;
         }
 
-        public OrchestrationSessionBuilder withGenerateBundle(boolean generateBundle) {
+        public OrchestrationSessionBuilder withGenerateBundle(final boolean generateBundle) {
             this.generateBundle = generateBundle;
             return this;
         }
@@ -192,9 +193,10 @@ public class CsvOrchestrationEngine {
         private final Device device;
         private final MultipartFile file;
         private Map<String, Object> validationResults;
-        private String tenantId;
-        private boolean bundleGenerate;
+        private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
+        private final String tenantId;
         HttpServletRequest request;
+        private final boolean generateBundle;
 
         public OrchestrationSession(final String sessionId, final String tenantId, final Device device,
                 final MultipartFile file,
@@ -207,11 +209,12 @@ public class CsvOrchestrationEngine {
             this.validationResults = new HashMap<>();
             this.masterInteractionId = masterInteractionId;
             this.request = request;
-            this.bundleGenerate = bundleGenerate;
+            this.generateBundle = generateBundle;
+            this.payloadAndValidationOutcomes = new HashMap<>();
         }
 
-        public boolean isBundleGenerate() {
-            return bundleGenerate;
+        public boolean isGenerateBundle() {
+            return generateBundle;
         }
 
         public String getSessionId() {
@@ -238,6 +241,10 @@ public class CsvOrchestrationEngine {
             return validationResults;
         }
 
+        public Map<String, PayloadAndValidationOutcome> getPayloadAndValidationOutcomes() {
+            return payloadAndValidationOutcomes;
+        }
+
         public void validate() {
             log.info("CsvOrchestrationEngine : validate - file : {} BEGIN for interaction id : {}",
                     file.getOriginalFilename(), masterInteractionId);
@@ -255,7 +262,7 @@ public class CsvOrchestrationEngine {
 
                 // Trigger CSV processing and validation
                 this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
-                // TODO - SAVE COMBINED VALIDATION RESULTS UNDER MASTER INTERACTION ID??
+                saveCombinedValidationResults(validationResults, masterInteractionId);
             } catch (final IllegalArgumentException e) {
                 log.error("Validation Error", e);
                 this.validationResults = Map.of(
@@ -269,8 +276,8 @@ public class CsvOrchestrationEngine {
             }
         }
 
-        private void saveScreeningGroup(String groupInteractionId, final HttpServletRequest request,
-                final MultipartFile file, List<FileDetail> fileDetailList, final String tenantId) {
+        private void saveScreeningGroup(final String groupInteractionId, final HttpServletRequest request,
+                final MultipartFile file, final List<FileDetail> fileDetailList, final String tenantId) {
             final var interactionId = getBundleInteractionId(request);
             log.info("REGISTER State NONE : BEGIN for inteaction id  : {} tenant id : {}",
                     interactionId, tenantId);
@@ -280,7 +287,8 @@ public class CsvOrchestrationEngine {
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
                 initRIHR.setInteractionId(groupInteractionId);
-                // TODO - set master interaction id
+                initRIHR.setGroupHubInteractionId(groupInteractionId);
+                initRIHR.setSourceHubInteractionId(masterInteractionId);
                 initRIHR.setInteractionKey(request.getRequestURI());
                 initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", "Original Flat File CSV", "tenant_id",
@@ -288,7 +296,7 @@ public class CsvOrchestrationEngine {
                 initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 initRIHR.setCsvZipFileName(file.getOriginalFilename());
                 initRIHR.setSourceHubInteractionId(interactionId);
-                for (FileDetail fileDetail : fileDetailList) {
+                for (final FileDetail fileDetail : fileDetailList) {
                     switch (fileDetail.fileType()) {
                         case FileType.DEMOGRAPHIC_DATA -> {
                             initRIHR.setCsvDemographicDataFileName(fileDetail.filename());
@@ -363,8 +371,9 @@ public class CsvOrchestrationEngine {
             return Boolean.TRUE.equals(valid);
         }
 
-        private void saveValidationResults(final Map<String, Object> validationResults, String masterInteractionId,
-                String groupInteractionId,
+        private void saveValidationResults(final Map<String, Object> validationResults,
+                final String masterInteractionId,
+                final String groupInteractionId,
                 final String tenantId) {
             final var interactionId = getBundleInteractionId(request);
             log.info("REGISTER State VALIDATION : BEGIN for inteaction id  : {} tenant id : {}",
@@ -375,8 +384,7 @@ public class CsvOrchestrationEngine {
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
                 initRIHR.setInteractionId(groupInteractionId);
-                // TODO - set master interaction id while saving group for linking when new db
-                // changes available.
+                initRIHR.setGroupHubInteractionId(masterInteractionId);
                 initRIHR.setInteractionKey(request.getRequestURI());
                 initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", "CSV Validation Result", "tenant_id",
@@ -387,13 +395,11 @@ public class CsvOrchestrationEngine {
                 initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
                 initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
                 initRIHR.setFromState("CSV_ACCEPT");
-                if (isValid(validationResults)) { // TODO -revisit this logic as per new validation json
+                if (isValid(validationResults)) {
                     initRIHR.setToState("VALIDATION_SUCCESS");
                 } else {
                     initRIHR.setToState("VALIDATION_FAILED");
                 }
-
-                // initRIHR.setValidation
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
                 initRIHR.setProvenance(provenance);
@@ -414,8 +420,40 @@ public class CsvOrchestrationEngine {
             }
         }
 
+        private void saveCombinedValidationResults(final Map<String, Object> combinedValidationResults,
+                final String masterInteractionId) {
+            log.info("SaveCombinedValidationResults: BEGIN for inteaction id  : {} tenant id : {}",
+                    masterInteractionId, tenantId);
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            final var jooqCfg = dslContext.configuration();
+            final var createdAt = OffsetDateTime.now();
+            final var initRIHR = new SatInteractionCsvRequestUpserted();
+            try {
+                initRIHR.setInteractionId(masterInteractionId);
+                initRIHR.setUri(request.getRequestURI());
+                initRIHR.setNature("Update Zip File Payload");
+                initRIHR.setCreatedAt(createdAt);
+                initRIHR.setCreatedBy(CsvService.class.getName());
+                initRIHR.setValidationResultPayload(
+                        (JsonNode) Configuration.objectMapper.valueToTree(combinedValidationResults));
+                final var start = Instant.now();
+                final var execResult = initRIHR.execute(jooqCfg);
+                final var end = Instant.now();
+                log.info(
+                        "SaveCombinedValidationResults : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
+                                + execResult,
+                        masterInteractionId, tenantId,
+                        Duration.between(start, end).toMillis());
+            } catch (final Exception e) {
+                log.error("ERROR:: saveCombinedValidationResults CALL for interaction id : {} tenant id : {}"
+                        + initRIHR.getName() + " initRIHR error", masterInteractionId,
+                        tenantId,
+                        e);
+            }
+        }
+
         private static Map<String, Object> createOperationOutcome(final String masterInteractionId,
-                String groupInteractionId,
+                final String groupInteractionId,
                 final String validationResults,
                 final List<FileDetail> fileDetails, final HttpServletRequest request, final long zipFileSize,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) throws Exception {
@@ -451,7 +489,8 @@ public class CsvOrchestrationEngine {
                 final long zipFileSize,
                 final Instant initiatedAt,
                 final Instant completedAt,
-                final String originalFileName, List<Map<String, Object>> combinedValidationResult) throws Exception {
+                final String originalFileName, final List<Map<String, Object>> combinedValidationResult)
+                throws Exception {
 
             Map<String, Object> result = new HashMap<>();
 
@@ -494,7 +533,7 @@ public class CsvOrchestrationEngine {
         private static Map<String, Object> populateProvenance(final String interactionId,
                 final List<FileDetail> fileDetails,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) {
-            List<String> fileNames = fileDetails.stream()
+            final List<String> fileNames = fileDetails.stream()
                     .map(FileDetail::filename)
                     .collect(Collectors.toList());
             return Map.of(
@@ -555,20 +594,16 @@ public class CsvOrchestrationEngine {
                 // Collect CSV files for validation
                 final List<String> csvFiles = scanForCsvFiles(processedDir, masterInteractionId);
 
-                Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(csvFiles);
-                // final Map<FileType, FileDetail> files = processFiles(csvFiles);//TODO -CHECK
-                // AND REMOVE
-                // TODO -check if working for multiple screenings
+                final Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(csvFiles);
                 List<Map<String, Object>> combinedValidationResults = new ArrayList<>();
 
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
                     List<FileDetail> fileDetails = entry.getValue();
                     Map<String, Object> operationOutcomeForThisGroup;
-
-                    // Check if all required file types are present
+                    final String groupInteractionId = UUID.randomUUID().toString();
                     if (isGroupComplete(fileDetails)) {
-                        operationOutcomeForThisGroup = validateScreeningGroup(groupKey, fileDetails, originalFileName);
+                        operationOutcomeForThisGroup = validateScreeningGroup(groupInteractionId,groupKey, fileDetails, originalFileName);
                     } else {
                         // Incomplete group - generate error operation outcome
                         operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
@@ -577,11 +612,10 @@ public class CsvOrchestrationEngine {
                     }
 
                     combinedValidationResults.add(operationOutcomeForThisGroup);
-                    System.out.println("combinedValidationResults : " + combinedValidationResults.toString());
+                    if (generateBundle) {
+                        this.payloadAndValidationOutcomes.put(groupKey, new PayloadAndValidationOutcome(fileDetails, isValid(operationOutcomeForThisGroup),groupInteractionId));
+                    }
                 }
-                // if (bundleGenerate) {
-                // //TODO - invoke fhir conversion and submission.
-                // }
                 Instant completedAt = Instant.now();
                 return generateValidationResults(masterInteractionId, request,
                         file.getSize(), initiatedAt, completedAt, originalFileName, combinedValidationResults);
@@ -691,16 +725,13 @@ public class CsvOrchestrationEngine {
             return operationOutcome;
         }
 
-        private Map<String, Object> validateScreeningGroup(String groupKey, List<FileDetail> fileDetails,
+        private Map<String, Object> validateScreeningGroup(String groupInteractionId,String groupKey, List<FileDetail> fileDetails,
                 String originalFileName) throws Exception {
             Instant initiatedAtForThisGroup = Instant.now();
 
             // Log the group being processed
             log.info("Processing group {} with {} files for interactionId: {}", groupKey, fileDetails.size(),
                     masterInteractionId);
-
-            // Save the screening group - you can call this for each group
-            String groupInteractionId = UUID.randomUUID().toString();
             saveScreeningGroup(groupInteractionId, request, file, fileDetails, tenantId);
 
             // Validate CSV files inside the group
