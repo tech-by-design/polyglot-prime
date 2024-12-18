@@ -7,6 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,7 @@ public class ScoringEngineApiTest {
     private static final String URL_QA_SCORING_ENGINE_API = "https://qa.hrsn.nyehealth.org/HRSNBundle";
     private static final Logger LOG = LoggerFactory.getLogger(ScoringEngineApiTest.class.getName());
 
-    @Test
+//    @Test
     public void testScoringEngineApi() throws Exception {
         try {
             KeyDetails keyDetails = getSecretsFromAWSSecretManager();
