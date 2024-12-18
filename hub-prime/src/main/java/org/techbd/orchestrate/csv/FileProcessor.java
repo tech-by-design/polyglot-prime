@@ -16,8 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 
-import net.sourceforge.plantuml.utils.Log;
-
 public class FileProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(FileProcessor.class);
 

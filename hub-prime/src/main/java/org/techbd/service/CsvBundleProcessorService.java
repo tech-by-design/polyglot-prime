@@ -246,7 +246,7 @@ public class CsvBundleProcessorService {
                         results.add(fhirService.processBundle(
                                 bundle, tenantId, null, null, null, null, null,
                                 Boolean.toString(false), false,
-                                false, false, request, response, null, true, null,interactionId,groupInteractionId));
+                                false, false, request, response, null, true, null,interactionId,groupInteractionId,masterInteractionId));
                     } else {
                         results.add(createOperationOutcomeForError(masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), new Exception("Bundle not created")));

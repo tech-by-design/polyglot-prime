@@ -18,7 +18,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -288,7 +287,8 @@ public class CsvOrchestrationEngine {
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
                 initRIHR.setInteractionId(groupInteractionId);
-                initRIHR.setGroupHubInteractionId(masterInteractionId);
+                initRIHR.setGroupHubInteractionId(groupInteractionId);
+                initRIHR.setSourceHubInteractionId(masterInteractionId);
                 initRIHR.setInteractionKey(request.getRequestURI());
                 initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", "Original Flat File CSV", "tenant_id",
