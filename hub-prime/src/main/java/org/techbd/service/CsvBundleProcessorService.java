@@ -23,6 +23,7 @@ import org.techbd.model.csv.PayloadAndValidationOutcome;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.service.constants.SourceType;
 import org.techbd.service.converters.csv.CsvToFhirConverter;
 import org.techbd.service.http.hub.prime.api.FHIRService;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -134,7 +135,7 @@ public class CsvBundleProcessorService {
             initRIHR.setCreatedAt(forwardedAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
             initRIHR.setFromState(isValid ? "VALIDATION SUCCESS" : "VALIDATION FAILED");
-            initRIHR.setFromState(isPayloadInstanceOfBundle(payload) ? "CONVERTED_TO_FHIR" : "FHIR_CONVERSION_FAILED");
+            initRIHR.setToState(isPayloadInstanceOfBundle(payload) ? "CONVERTED_TO_FHIR" : "FHIR_CONVERSION_FAILED");
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
             initRIHR.setProvenance(provenance);
             initRIHR.setCsvGroupId(groupKey);
@@ -246,7 +247,7 @@ public class CsvBundleProcessorService {
                         results.add(fhirService.processBundle(
                                 bundle, tenantId, null, null, null, null, null,
                                 Boolean.toString(false), false,
-                                false, false, request, response, null, true, null,interactionId,groupInteractionId,masterInteractionId));
+                                false, false, request, response, null, true, null,interactionId,groupInteractionId,masterInteractionId,SourceType.CSV.name()));
                     } else {
                         results.add(createOperationOutcomeForError(masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), new Exception("Bundle not created")));

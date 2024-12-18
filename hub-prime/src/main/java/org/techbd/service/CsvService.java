@@ -16,6 +16,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.csv.CsvOrchestrationEngine;
+import org.techbd.service.constants.Origin;
 import org.techbd.service.http.Interactions;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -83,7 +84,7 @@ public class CsvService {
         final var forwardedAt = OffsetDateTime.now();
         final var initRIHR = new RegisterInteractionHttpRequest();
         try {
-            initRIHR.setOrigin("http");
+            initRIHR.setOrigin(Origin.HTTP.name());
             initRIHR.setInteractionId(interactionId);
             initRIHR.setInteractionKey(request.getRequestURI());
             initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
@@ -94,7 +95,7 @@ public class CsvService {
             initRIHR.setCsvZipFileName(file.getOriginalFilename());
             initRIHR.setCreatedAt(forwardedAt);
             final InetAddress localHost = InetAddress.getLocalHost();
-                final String ipAddress = localHost.getHostAddress();
+            final String ipAddress = localHost.getHostAddress();
             initRIHR.setClientIpAddress(ipAddress);
             initRIHR.setUserAgent(request.getHeader("User-Agent"));
             initRIHR.setCreatedBy(CsvService.class.getName());

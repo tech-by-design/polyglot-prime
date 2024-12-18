@@ -31,6 +31,7 @@ import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
 import org.techbd.orchestrate.sftp.SftpManager;
+import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.SandboxHelpers;
@@ -201,7 +202,7 @@ public class FhirController {
                 uaValidationStrategyJson,
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
-                request, response, provenance, includeOperationOutcome, mtlsStrategy,null, null,null);
+                request, response, provenance, includeOperationOutcome, mtlsStrategy,null, null,null,SourceType.FHIR.name());
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {

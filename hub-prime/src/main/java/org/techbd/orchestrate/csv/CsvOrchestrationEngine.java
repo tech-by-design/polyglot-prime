@@ -296,6 +296,10 @@ public class CsvOrchestrationEngine {
                 initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 initRIHR.setCsvZipFileName(file.getOriginalFilename());
                 initRIHR.setSourceHubInteractionId(interactionId);
+                final InetAddress localHost = InetAddress.getLocalHost();
+                final String ipAddress = localHost.getHostAddress();
+                initRIHR.setClientIpAddress(ipAddress);
+                initRIHR.setUserAgent(request.getHeader("User-Agent"));
                 for (final FileDetail fileDetail : fileDetailList) {
                     switch (fileDetail.fileType()) {
                         case FileType.DEMOGRAPHIC_DATA -> {
@@ -384,7 +388,8 @@ public class CsvOrchestrationEngine {
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
                 initRIHR.setInteractionId(groupInteractionId);
-                initRIHR.setGroupHubInteractionId(masterInteractionId);
+                initRIHR.setGroupHubInteractionId(groupInteractionId);
+                initRIHR.setSourceHubInteractionId(masterInteractionId);
                 initRIHR.setInteractionKey(request.getRequestURI());
                 initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", "CSV Validation Result", "tenant_id",

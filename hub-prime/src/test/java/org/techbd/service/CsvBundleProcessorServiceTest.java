@@ -116,7 +116,7 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome mockOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString()))
                 .thenReturn(mockOutcome);
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
                 payloadAndValidationOutcomes,
@@ -130,7 +130,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString());
     }
 
     @Test
@@ -185,7 +185,7 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome mockOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString()))
                 .thenReturn(mockOutcome);
 
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
@@ -199,7 +199,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString());
     }
 
     @Test
@@ -245,7 +245,7 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome successfulOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString()))
                 .thenReturn(successfulOutcome)
                 .thenThrow(new RuntimeException("Mock failure"));
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
@@ -274,7 +274,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString());
     }
 
     private String getMockBundleJson() {
