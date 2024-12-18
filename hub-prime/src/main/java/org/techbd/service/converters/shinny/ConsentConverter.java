@@ -95,7 +95,7 @@ public class ConsentConverter extends BaseConverter {
         populateConsentDateTime(consent, screeningProfileData);
 
         // // Set organization reference
-        populateOrganizationReference(consent, screeningProfileData);
+        populateOrganizationReference(consent,idsGenerated);
 
         // // Set state of consent
         populateConsentState(consent, screeningProfileData);
@@ -111,8 +111,7 @@ public class ConsentConverter extends BaseConverter {
         populateConsentProvision(consent, screeningProfileData);
 
         populateSourceAttachment(consent);
-        //Create organization reference
-        createAssignerReference(idsGenerated.get(CsvConstants.ORGANIZATION_ID));
+
         // Wrap the Consent resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(consent);
@@ -170,10 +169,8 @@ public class ConsentConverter extends BaseConverter {
         }
     }
 
-    private void populateOrganizationReference(Consent consent, ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData != null) {
-            consent.getOrganizationFirstRep().setReference("Organization/" + consent.getId());  //TODO : remove static reference
-        }
+    private void populateOrganizationReference(Consent consent,Map<String,String> idsGenerated) {
+            consent.getOrganizationFirstRep().setReference(idsGenerated.get(CsvConstants.ORGANIZATION_ID));
     }
 
     private void populateConsentState(Consent consent, ScreeningProfileData screeningResourceData) {

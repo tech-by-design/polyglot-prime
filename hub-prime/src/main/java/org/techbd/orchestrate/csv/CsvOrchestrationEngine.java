@@ -70,7 +70,7 @@ public class CsvOrchestrationEngine {
             "(DEMOGRAPHIC_DATA|QE_ADMIN_DATA|SCREENING)_(.+)");
 
     public CsvOrchestrationEngine(final AppConfig appConfig, final VfsCoreService vfsCoreService,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig,final FHIRService fhirService) {
+            final UdiPrimeJpaConfig udiPrimeJpaConfig, final FHIRService fhirService) {
         this.sessions = new ArrayList<>();
         this.appConfig = appConfig;
         this.vfsCoreService = vfsCoreService;
@@ -119,7 +119,7 @@ public class CsvOrchestrationEngine {
         private MultipartFile file;
         private String masterInteractionId;
         private HttpServletRequest request;
-        private Map<String,PayloadAndValidationOutcome> payloadAndValidationOutcomes;
+        private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private boolean generateBundle;
 
         public OrchestrationSessionBuilder withSessionId(final String sessionId) {
@@ -127,12 +127,10 @@ public class CsvOrchestrationEngine {
             return this;
         }
 
-
         public OrchestrationSessionBuilder withTenantId(final String tenantId) {
             this.tenantId = tenantId;
             return this;
         }
-
 
         public OrchestrationSessionBuilder withDevice(final Device device) {
             this.device = device;
@@ -196,7 +194,7 @@ public class CsvOrchestrationEngine {
         private final Device device;
         private final MultipartFile file;
         private Map<String, Object> validationResults;
-        private Map<String,PayloadAndValidationOutcome> payloadAndValidationOutcomes;
+        private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private final String tenantId;
         HttpServletRequest request;
         private final boolean generateBundle;
@@ -265,7 +263,7 @@ public class CsvOrchestrationEngine {
 
                 // Trigger CSV processing and validation
                 this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
-                // TODO - SAVE COMBINED VALIDATION RESULTS UNDER MASTER INTERACTION ID??
+                saveCombinedValidationResults(validationResults, masterInteractionId);
             } catch (final IllegalArgumentException e) {
                 log.error("Validation Error", e);
                 this.validationResults = Map.of(
@@ -290,7 +288,7 @@ public class CsvOrchestrationEngine {
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
                 initRIHR.setInteractionId(groupInteractionId);
-                // TODO - set master interaction id
+                initRIHR.setGroupHubInteractionId(masterInteractionId);
                 initRIHR.setInteractionKey(request.getRequestURI());
                 initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", "Original Flat File CSV", "tenant_id",
@@ -373,7 +371,8 @@ public class CsvOrchestrationEngine {
             return Boolean.TRUE.equals(valid);
         }
 
-        private void saveValidationResults(final Map<String, Object> validationResults, final String masterInteractionId,
+        private void saveValidationResults(final Map<String, Object> validationResults,
+                final String masterInteractionId,
                 final String groupInteractionId,
                 final String tenantId) {
             final var interactionId = getBundleInteractionId(request);
@@ -385,8 +384,7 @@ public class CsvOrchestrationEngine {
             final var initRIHR = new RegisterInteractionHttpRequest();
             try {
                 initRIHR.setInteractionId(groupInteractionId);
-                // TODO - set master interaction id while saving group for linking when new db
-                // changes available.
+                initRIHR.setGroupHubInteractionId(masterInteractionId);
                 initRIHR.setInteractionKey(request.getRequestURI());
                 initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", "CSV Validation Result", "tenant_id",
@@ -397,13 +395,11 @@ public class CsvOrchestrationEngine {
                 initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
                 initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
                 initRIHR.setFromState("CSV_ACCEPT");
-                if (isValid(validationResults)) { // TODO -revisit this logic as per new validation json
+                if (isValid(validationResults)) {
                     initRIHR.setToState("VALIDATION_SUCCESS");
                 } else {
                     initRIHR.setToState("VALIDATION_FAILED");
                 }
-                
-                // initRIHR.setValidation
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
                 initRIHR.setProvenance(provenance);
@@ -419,6 +415,38 @@ public class CsvOrchestrationEngine {
             } catch (final Exception e) {
                 log.error("ERROR:: REGISTER State VALIDATION CALL for interaction id : {} tenant id : {}"
                         + initRIHR.getName() + " initRIHR error", interactionId,
+                        tenantId,
+                        e);
+            }
+        }
+
+        private void saveCombinedValidationResults(final Map<String, Object> combinedValidationResults,
+                final String masterInteractionId) {
+            log.info("SaveCombinedValidationResults: BEGIN for inteaction id  : {} tenant id : {}",
+                    masterInteractionId, tenantId);
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            final var jooqCfg = dslContext.configuration();
+            final var createdAt = OffsetDateTime.now();
+            final var initRIHR = new SatInteractionCsvRequestUpserted();
+            try {
+                initRIHR.setInteractionId(masterInteractionId);
+                initRIHR.setUri(request.getRequestURI());
+                initRIHR.setNature("Update Zip File Payload");
+                initRIHR.setCreatedAt(createdAt);
+                initRIHR.setCreatedBy(CsvService.class.getName());
+                initRIHR.setValidationResultPayload(
+                        (JsonNode) Configuration.objectMapper.valueToTree(combinedValidationResults));
+                final var start = Instant.now();
+                final var execResult = initRIHR.execute(jooqCfg);
+                final var end = Instant.now();
+                log.info(
+                        "SaveCombinedValidationResults : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
+                                + execResult,
+                        masterInteractionId, tenantId,
+                        Duration.between(start, end).toMillis());
+            } catch (final Exception e) {
+                log.error("ERROR:: saveCombinedValidationResults CALL for interaction id : {} tenant id : {}"
+                        + initRIHR.getName() + " initRIHR error", masterInteractionId,
                         tenantId,
                         e);
             }
@@ -461,7 +489,8 @@ public class CsvOrchestrationEngine {
                 final long zipFileSize,
                 final Instant initiatedAt,
                 final Instant completedAt,
-                final String originalFileName, final List<Map<String, Object>> combinedValidationResult) throws Exception {
+                final String originalFileName, final List<Map<String, Object>> combinedValidationResult)
+                throws Exception {
 
             Map<String, Object> result = new HashMap<>();
 

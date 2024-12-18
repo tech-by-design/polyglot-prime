@@ -31,7 +31,7 @@ public class CsvController {
                 this.csvService = csvService;
         }
 
-        @PostMapping(value = {"/flatfile/csv/Bundle/", "/flatfile/csv/Bundle//"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PostMapping(value = {"/flatfile/csv/Bundle/$validate", "/flatfile/csv/Bundle/$validate/"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @ResponseBody
         public Object handleCsvUpload(
                         @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,

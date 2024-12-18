@@ -79,7 +79,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
                                                                                           // screening records
         patient.setLanguage("en");
         populateExtensions(patient, demographicData);
-        populateMrIdentifier(patient, demographicData);
+        populateMrIdentifier(patient, demographicData,idsGenerated );
         populateMaIdentifier(patient, demographicData);
         populateSsnIdentifier(patient, demographicData);
         populatePatientName(patient, demographicData);
@@ -93,8 +93,6 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         Narrative text = new Narrative();
         text.setStatus(NarrativeStatus.GENERATED);
         patient.setText(text);
-        //Create organization reference
-        createAssignerReference(idsGenerated.get(CsvConstants.ORGANIZATION_ID));
         // populatePatientText(patient, demographicData);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(patient);
@@ -252,7 +250,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
         }
     }
 
-    private static void populateMrIdentifier(Patient patient, DemographicData data) {
+    private static void populateMrIdentifier(Patient patient, DemographicData data,Map<String,String> idsGenerated) {
         if (StringUtils.isNotEmpty(data.getPatientMrIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
@@ -266,7 +264,7 @@ public class PatientConverter extends BaseConverter implements IPatientConverter
 
             // Optional: Add assigner if needed (uncomment if required)
             Reference assigner = new Reference();
-            assigner.setReference("Organization/" + patient.getId()); // TODO -
+            assigner.setReference(idsGenerated.get(CsvConstants.ORGANIZATION_ID));
             // populate while organization is populated
             identifier.setAssigner(assigner);
 

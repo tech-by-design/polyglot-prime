@@ -88,7 +88,6 @@ public class FHIRService {
         private final AppConfig appConfig;
         private final OrchestrationEngine engine;
         private final UdiPrimeJpaConfig udiPrimeJpaConfig;
-        private final Tracer tracer;
         @Value("${org.techbd.service.http.interactions.default-persist-strategy:#{null}}")
         private String defaultPersistStrategy;
 
@@ -101,7 +100,6 @@ public class FHIRService {
                 this.appConfig = appConfig;
                 this.udiPrimeJpaConfig = udiPrimeJpaConfig;
                 this.engine = engine;
-                this.tracer = tracer;
         }
 
         public Object processBundle(final @RequestBody @Nonnull String payload,
@@ -114,7 +112,7 @@ public class FHIRService {
                         boolean includeRequestInOutcome,
                         boolean includeIncomingPayloadInDB,
                         HttpServletRequest request, HttpServletResponse response, String provenance,
-                        boolean includeOperationOutcome, String mtlsStrategy, String interactionId)
+                        boolean includeOperationOutcome, String mtlsStrategy, String interactionId,String groupInteractionId)
                         throws IOException {
                 final var start = Instant.now();
                 LOG.info("Bundle processing start at {} for interaction id {}.",
@@ -144,7 +142,7 @@ public class FHIRService {
                         }
                         addObservabilityHeadersToResponse(request, response);
                         payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
-                                        response, payload, result,interactionId);
+                                        response, payload, result,interactionId,groupInteractionId);
                         if (isActionDiscard(payloadWithDisposition)) {
                                 return payloadWithDisposition;
                         }
@@ -255,7 +253,7 @@ public class FHIRService {
 
         private Map<String, Object> registerBundleInteraction(org.jooq.Configuration jooqCfg,
                         HttpServletRequest request, HttpServletResponse response,
-                        String payload, Map<String, Map<String, Object>> validationResult,String interactionId)
+                        String payload, Map<String, Map<String, Object>> validationResult,String interactionId,String groupInteractionId)
                         throws IOException {
                 final Interactions interactions = new Interactions();
                 final var mutatableReq = new ContentCachingRequestWrapper(request);
@@ -288,7 +286,7 @@ public class FHIRService {
                 final var rihr = new RegisterInteractionHttpRequest();
 
                 try {
-                        prepareRequest(rihr, rre, provenance, request,interactionId);
+                        prepareRequest(rihr, rre, provenance, request,interactionId,groupInteractionId);
                         final var start = Instant.now();
                         rihr.execute(jooqCfg);
                         final var end = Instant.now();
@@ -310,10 +308,11 @@ public class FHIRService {
         }
 
         private void prepareRequest(RegisterInteractionHttpRequest rihr, RequestResponseEncountered rre,
-                        String provenance, HttpServletRequest request,String interactionId) {
+                        String provenance, HttpServletRequest request,String interactionId,String groupInteractionId) {
                 LOG.info("REGISTER State None, Accept, Disposition: BEGIN for interaction id: {} tenant id: {}",
                                 rre.interactionId().toString(), rre.tenant());
                 rihr.setInteractionId(interactionId!=null ? interactionId : rre.interactionId().toString());
+                rihr.setGroupHubInteractionId(groupInteractionId);
                 rihr.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                                 Map.of("nature", RequestResponseEncountered.class.getName(),
                                                 "tenant_id",

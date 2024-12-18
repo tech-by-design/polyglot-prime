@@ -64,14 +64,15 @@ public class EncounterConverter extends BaseConverter {
      *         resource.
      */
     @Override
-    public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
+    public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData, QeAdminData qeAdminData,
+            ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
+            String interactionId, Map<String, String> idsGenerated) {
 
         Encounter encounter = new Encounter();
         setMeta(encounter);
 
         // Set Encounter ID
-        encounter.setId("Encounter/"+CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
+        encounter.setId("Encounter/" + CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
 
         // Set Meta Data
         Meta meta = encounter.getMeta();
@@ -90,12 +91,10 @@ public class EncounterConverter extends BaseConverter {
         populateEncounterPeriod(encounter, screeningProfileData);
 
         // // Set patient reference
-        populatePatientReference(encounter, screeningProfileData);
+        populatePatientReference(encounter, idsGenerated);
 
         // // Set location
         populateLocationReference(encounter, screeningProfileData);
-        //Create patient reference
-        createAssignerReference(idsGenerated.get(CsvConstants.PATIENT_ID));
         Narrative text = new Narrative();
         text.setStatus(NarrativeStatus.GENERATED);
         encounter.setText(text);
@@ -106,10 +105,8 @@ public class EncounterConverter extends BaseConverter {
         return List.of(bundleEntryComponent);
     }
 
-    private void populatePatientReference(Encounter encounter, ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getPatientMrIdValue() != null) {
-            encounter.setSubject(new Reference("Patient/" + encounter.getId()));
-        }
+    private void populatePatientReference(Encounter encounter, Map<String, String> idsGenerated) {
+        encounter.setSubject(new Reference(idsGenerated.get(CsvConstants.PATIENT_ID)));
     }
 
     private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
@@ -151,8 +148,8 @@ public class EncounterConverter extends BaseConverter {
 
     private void populateEncounterPeriod(Encounter encounter, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null) {
-            String startDateTime = "2024-02-23T00:00:00Z";  //TODO : remove static reference
-            String endDateTime = "2024-02-23T01:00:00Z";  //TODO : remove static reference
+            String startDateTime = "2024-02-23T00:00:00Z"; // TODO : remove static reference
+            String endDateTime = "2024-02-23T01:00:00Z"; // TODO : remove static reference
 
             if (startDateTime != null) {
                 encounter.getPeriod().setStart(DateUtil.convertStringToDate(startDateTime));

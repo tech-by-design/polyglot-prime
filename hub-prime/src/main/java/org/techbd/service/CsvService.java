@@ -1,5 +1,6 @@
 package org.techbd.service;
 
+import java.net.InetAddress;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -92,6 +93,10 @@ public class CsvService {
             initRIHR.setCsvZipFileContent(file.getBytes());
             initRIHR.setCsvZipFileName(file.getOriginalFilename());
             initRIHR.setCreatedAt(forwardedAt);
+            final InetAddress localHost = InetAddress.getLocalHost();
+                final String ipAddress = localHost.getHostAddress();
+            initRIHR.setClientIpAddress(ipAddress);
+            initRIHR.setUserAgent(request.getHeader("User-Agent"));
             initRIHR.setCreatedBy(CsvService.class.getName());
             final var provenance = "%s.saveArchiveInteraction".formatted(CsvService.class.getName());
             initRIHR.setProvenance(provenance);
@@ -114,6 +119,7 @@ public class CsvService {
                     e);
         }
     }
+    
 
     /**
      * Processes a Zip file uploaded as a MultipartFile and extracts data into

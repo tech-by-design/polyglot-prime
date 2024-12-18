@@ -52,7 +52,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
         Reference subjectReference = new Reference();
-        subjectReference.setReference("Patient/" + observation.getId()); //TODO : remove static reference
+        subjectReference.setReference(idsGenerated.get(CsvConstants.PATIENT_ID)); //TODO : remove static reference
         observation.setSubject(subjectReference);
         CodeableConcept code = new CodeableConcept();
         code.addCoding(new Coding("http://loinc.org", //TODO : remove static reference
@@ -68,8 +68,6 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         Narrative text = new Narrative();
         text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
         observation.setText(text);
-        //Create patient reference
-        createAssignerReference(idsGenerated.get(CsvConstants.PATIENT_ID));
         BundleEntryComponent entry = new BundleEntryComponent();
         entry.setResource(observation);
         LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);

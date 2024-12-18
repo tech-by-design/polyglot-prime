@@ -1,8 +1,5 @@
 package org.techbd.service.converters.shinny;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,6 +17,7 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Organization;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,27 +73,11 @@ public class OrganizationConverter extends BaseConverter {
         idsGenerated.put(CsvConstants.ORGANIZATION_ID,organization.getId());
         Meta meta = organization.getMeta();
         meta.setLastUpdated(getLastUpdatedDate(qeAdminData));
-
-        // // Set organization name
         populateOrganizationName(organization, qeAdminData);
-
-        // // Set organization identifier
         populateOrganizationIdentifier(organization, qeAdminData);
-
-        // // Set organization status
         populateIsActive(organization, qeAdminData);
-
-        // // Set organization type (This could be a coded value from DemographicData or QR
-        // // admin data)
         populateOrganizationType(organization, qeAdminData);
-
-        // // Set organization address (from DemographicData)
         populateOrganizationAddress(organization, qeAdminData);
-
-        // Set contact information (from QR Admin Data)
-        // populateOrganizationContact(organization, qeAdminData);
-
-        // Wrap the Organization resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setResource(organization);
         return List.of(bundleEntryComponent);
