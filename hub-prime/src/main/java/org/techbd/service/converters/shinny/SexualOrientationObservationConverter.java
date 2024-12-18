@@ -48,6 +48,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         setMeta(observation);
         observation.setId("SexualOrientation-" +CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
         Meta meta = observation.getMeta();
+        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation" + observation.getId();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
@@ -69,6 +70,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
         observation.setText(text);
         BundleEntryComponent entry = new BundleEntryComponent();
+        entry.setFullUrl(fullUrl);
         entry.setResource(observation);
         LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
         return List.of(entry);

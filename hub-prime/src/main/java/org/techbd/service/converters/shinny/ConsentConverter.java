@@ -111,9 +111,10 @@ public class ConsentConverter extends BaseConverter {
         populateConsentProvision(consent, screeningProfileData);
 
         populateSourceAttachment(consent);
-
+        String fullUrl = "http://shinny.org/us/ny/hrsn/Consent/" + consent.getId();
         // Wrap the Consent resource in a BundleEntryComponent
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
+        bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setResource(consent);
         return List.of(bundleEntryComponent);
     }
