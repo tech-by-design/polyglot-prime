@@ -13,6 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.conf.Configuration;
+import org.techbd.service.constants.SourceType;
 import org.techbd.service.converters.shinny.Hl7FHIRToShinnyFHIRConverter;
 import org.techbd.service.http.GitHubUserAuthorizationFilter;
 import org.techbd.service.http.InteractionsFilter;
@@ -76,7 +77,7 @@ public class Hl7Service {
                     return fhirService.processBundle(shinnyFhirJson, tenantId, null, null, null, null, null,
                             Boolean.toString(false), false,
                             false,
-                            false, request, response, null, true,null,null, null,null);
+                            false, request, response, null, true,null,null, null,null,SourceType.HL7.name());
                 }
             }
         } catch (Exception ex) {
