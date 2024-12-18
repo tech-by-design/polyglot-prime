@@ -28,7 +28,7 @@ public class BundleConverter {
     public Bundle generateEmptyBundle(String interactionId,String igVersion,DemographicData demographicData) {
         Bundle bundle = new Bundle();
         bundle.setId("AHCHRSNScreeningResponse-"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
-        bundle.setType(Bundle.BundleType.COLLECTION);
+        bundle.setType(Bundle.BundleType.TRANSACTION);
         Meta meta = new Meta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         meta.setVersionId(igVersion);
