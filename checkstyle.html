@@ -75,7 +75,7 @@
 <tr class="b">
 <td style="text-align: left;">37</td>
 <td>0</td>
-<td>169</td>
+<td>170</td>
 <td>0</td></tr></table></section><section>
 <h2>Files</h2><a id="Files"></a>
 <table class="table table-striped">
@@ -197,7 +197,7 @@
 <tr class="b">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fconverters.2Fshinny.2FScreeningResponseObservationConverter.java">org/techbd/service/converters/shinny/ScreeningResponseObservationConverter.java</a></td>
 <td>0</td>
-<td>6</td>
+<td>7</td>
 <td>0</td></tr>
 <tr class="a">
 <td style="text-align: left;"><a href="#org.2Ftechbd.2Fservice.2Fconverters.2Fshinny.2FSexualOrientationObservationConverter.java">org/techbd/service/converters/shinny/SexualOrientationObservationConverter.java</a></td>
@@ -413,7 +413,7 @@
 <li>allowEmptyMethods: <code>&quot;true&quot;</code></li>
 <li>allowEmptyLoops: <code>&quot;true&quot;</code></li>
 <li>allowEmptyTypes: <code>&quot;true&quot;</code></li></ul></td>
-<td>34</td>
+<td>35</td>
 <td><img src="images/icon_warning_sml.gif" />&#160;Warning</td></tr></table></section><section>
 <h2>Details</h2><a id="Details"></a><section>
 <h3>lib/aide/JsonContentAction.java</h3><a id="lib.2Faide.2FJsonContentAction.java"></a>
@@ -1106,32 +1106,44 @@
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>indentation</td>
 <td>CommentsIndentation</td>
-<td>Comment has incorrect indentation level 90, expected is 8, indentation should be the same level as line 83.</td>
-<td>82</td></tr>
+<td>Comment has incorrect indentation level 90, expected is 8, indentation should be the same level as line 81.</td>
+<td>80</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
 <td>ParenPad</td>
 <td>')' is preceded with whitespace.</td>
-<td>85</td></tr>
+<td>83</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
 <td>EmptyLineSeparator</td>
 <td>'METHOD_DEF' should be separated from previous line.</td>
-<td>165</td></tr>
+<td>160</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>indentation</td>
 <td>CommentsIndentation</td>
-<td>Comment has incorrect indentation level 104, expected is 12, indentation should be the same level as line 175.</td>
-<td>174</td></tr>
+<td>Comment has incorrect indentation level 104, expected is 12, indentation should be the same level as line 170.</td>
+<td>169</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
 <td>EmptyLineSeparator</td>
 <td>'METHOD_DEF' has more than 1 empty lines before.</td>
-<td>207</td></tr>
+<td>202</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>WhitespaceAround</td>
+<td>WhitespaceAround: '+' is not followed by whitespace. Empty blocks may only be represented as {} when not part of a multi-block statement (4.1.3)</td>
+<td>211</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>WhitespaceAround</td>
+<td>WhitespaceAround: '+' is not preceded with whitespace.</td>
+<td>211</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
@@ -1144,24 +1156,12 @@
 <td>WhitespaceAround</td>
 <td>WhitespaceAround: '+' is not preceded with whitespace.</td>
 <td>216</td></tr>
-<tr class="a">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>WhitespaceAround</td>
-<td>WhitespaceAround: '+' is not followed by whitespace. Empty blocks may only be represented as {} when not part of a multi-block statement (4.1.3)</td>
-<td>221</td></tr>
-<tr class="b">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>WhitespaceAround</td>
-<td>WhitespaceAround: '+' is not preceded with whitespace.</td>
-<td>221</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>blocks</td>
 <td>NeedBraces</td>
 <td>'if' construct must use '{}'s.</td>
-<td>326</td></tr></table></section><section>
+<td>321</td></tr></table></section><section>
 <h3>org/techbd/service/converters/shinny/ScreeningResponseObservationConverter.java</h3><a id="org.2Ftechbd.2Fservice.2Fconverters.2Fshinny.2FScreeningResponseObservationConverter.java"></a>
 <table class="table table-striped">
 <tr class="a">
@@ -1175,7 +1175,19 @@
 <td>whitespace</td>
 <td>EmptyLineSeparator</td>
 <td>'METHOD_DEF' should be separated from previous line.</td>
-<td>41</td></tr>
+<td>39</td></tr>
+<tr class="a">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>WhitespaceAround</td>
+<td>WhitespaceAround: '+' is not preceded with whitespace.</td>
+<td>54</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>WhitespaceAround</td>
+<td>WhitespaceAround: '+' is not followed by whitespace. Empty blocks may only be represented as {} when not part of a multi-block statement (4.1.3)</td>
+<td>56</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
@@ -1184,28 +1196,22 @@
 <td>56</td></tr>
 <tr class="b">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>WhitespaceAround</td>
-<td>WhitespaceAround: '+' is not followed by whitespace. Empty blocks may only be represented as {} when not part of a multi-block statement (4.1.3)</td>
-<td>58</td></tr>
-<tr class="a">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
-<td>whitespace</td>
-<td>WhitespaceAround</td>
-<td>WhitespaceAround: '+' is not preceded with whitespace.</td>
-<td>58</td></tr>
-<tr class="b">
-<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>indentation</td>
 <td>CommentsIndentation</td>
-<td>Comment has incorrect indentation level 94, expected is 12, indentation should be the same level as line 63.</td>
-<td>62</td></tr>
+<td>Comment has incorrect indentation level 94, expected is 12, indentation should be the same level as line 61.</td>
+<td>60</td></tr>
 <tr class="a">
 <td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
 <td>whitespace</td>
 <td>WhitespaceAround</td>
+<td>WhitespaceAround: 'if' is not followed by whitespace. Empty blocks may only be represented as {} when not part of a multi-block statement (4.1.3)</td>
+<td>63</td></tr>
+<tr class="b">
+<td style="text-align: left;"><img src="images/icon_warning_sml.gif" />&#160;Warning</td>
+<td>whitespace</td>
+<td>WhitespaceAround</td>
 <td>WhitespaceAround: '+' is not followed by whitespace. Empty blocks may only be represented as {} when not part of a multi-block statement (4.1.3)</td>
-<td>78</td></tr></table></section><section>
+<td>80</td></tr></table></section><section>
 <h3>org/techbd/service/converters/shinny/SexualOrientationObservationConverter.java</h3><a id="org.2Ftechbd.2Fservice.2Fconverters.2Fshinny.2FSexualOrientationObservationConverter.java"></a>
 <table class="table table-striped">
 <tr class="a">
