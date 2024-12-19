@@ -183,7 +183,7 @@ public class ConsentConverter extends BaseConverter {
             return;
         }
         Consent.provisionComponent provision = new Consent.provisionComponent();
-        provision.setType(ConsentProvisionType.PERMIT); // Directly set to "permit"
+        provision.setType(ConsentProvisionType.fromCode(screeningResourceData.getConsentProvisionType()));
         consent.setProvision(provision);
     }
 
