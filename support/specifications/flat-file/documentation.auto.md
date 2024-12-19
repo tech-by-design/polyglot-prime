@@ -379,12 +379,12 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
   - `constraints`:
-    - `enum` ['1002-5', '2028-9', '2054-5', '2076-8', '2106-3', 'UNK', 'ASKU']
+    - `enum` ['1002-5', '2028-9', '2054-5', '2076-8', '2106-3', '2131-1', 'unk', 'asku']
 ### `EXTENSION_OMBCATEGORY_RACE_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.display
   - `type` string
   - `constraints`:
-    - `enum` ['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Native Hawaiian or Other Pacific Islander', 'White', 'Unknown', 'Asked but no answer']
+    - `enum` ['american indian or alaska native', 'asian', 'black or african american', 'native hawaiian or other pacific islander', 'white', 'unknown', 'asked but no answer']
 ### `EXTENSION_OMBCATEGORY_RACE_CODE_SYSTEM_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.system
   - `type` string
@@ -394,17 +394,17 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
   - `constraints`:
-    - `enum` ['2135-2', '2186-5']
+    - `enum` ['2135-2', '2186-5', '2133-7', 'asku', 'unk', 'oth']
 ### `EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display
   - `type` string
   - `constraints`:
-    - `enum` ['hispanic or latino', 'non hispanic or latino']
+    - `enum` ['hispanic or latino', 'non hispanic or latino', 'asked but unknown', 'unknown', 'other', 'ethnicity']
 ### `EXTENSION_OMBCATEGORY_ETHNICITY_CODE_SYSTEM_NAME`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.system
   - `type` string
   - `constraints`:
-    - `enum` ['urn:oid:2.16.840.1.113883.6.238']
+    - `enum` ['urn:oid:2.16.840.1.113883.6.238', 'http://terminology.hl7.org/CodeSystem/v3-NullFlavor']
 ### `PATIENT_LAST_UPDATED`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').meta.lastUpdated
   - `type` string
