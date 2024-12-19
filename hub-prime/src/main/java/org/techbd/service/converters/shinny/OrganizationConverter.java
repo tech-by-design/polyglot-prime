@@ -94,11 +94,24 @@ public class OrganizationConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(data.getFacilityId())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setDisplay("Care Ridge");  //Static_Value
+
+            if (StringUtils.isNotEmpty(data.getFacilityIdentifierTypeDisplay())) {
+                coding.setDisplay(data.getFacilityIdentifierTypeDisplay());
+                LOG.info("Coding Display Set: {}", data.getFacilityIdentifierTypeDisplay());
+            }
+
+            if (StringUtils.isNotEmpty(data.getFacilityIdentifierTypeValue())) {
+                identifier.setValue(data.getFacilityIdentifierTypeValue());
+                LOG.info("Identifier Value Set: {}", data.getFacilityIdentifierTypeValue());
+            }
+
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setValue(data.getFacilityName());
+
+            LOG.info("Adding Identifier: Type Display - {}, Value - {}",
+                    coding.getDisplay(), identifier.getValue());
+
             organization.addIdentifier(identifier);
         }
     }
