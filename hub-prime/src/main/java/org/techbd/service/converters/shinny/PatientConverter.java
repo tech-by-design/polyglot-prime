@@ -9,6 +9,7 @@ import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
+import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.ContactPoint;
@@ -139,7 +140,7 @@ public class PatientConverter extends BaseConverter {
 
         if (demographicData.getExtensionSexAtBirthCodeValue() != null) {
             Extension birthSexExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex");
-            birthSexExtension.setValue(new StringType(demographicData.getExtensionSexAtBirthCodeValue()));
+            birthSexExtension.setValue(new CodeType(demographicData.getExtensionSexAtBirthCodeValue())); // Use CodeType for valueCode
             patient.addExtension(birthSexExtension);
         }
 

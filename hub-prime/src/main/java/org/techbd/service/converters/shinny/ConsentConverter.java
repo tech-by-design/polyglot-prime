@@ -3,6 +3,7 @@ package org.techbd.service.converters.shinny;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.hl7.fhir.r4.model.Attachment;
 import org.hl7.fhir.r4.model.Bundle;
@@ -73,7 +74,7 @@ public class ConsentConverter extends BaseConverter {
         Consent consent = new Consent();
         setMeta(consent);
 
-        consent.setId(CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
+        consent.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
 
         Meta meta = consent.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getConsentLastUpdated()));
