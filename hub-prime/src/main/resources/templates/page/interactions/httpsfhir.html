@@ -116,13 +116,13 @@
                             modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
                         }, modalAide)
                     },       
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "ID of the tenant involved in the interaction" },                                   
+                    { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "ID of the tenant involved in the interaction" },                                   
                     { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The ID of the Bundle sent through the interaction" },
+                    { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter", headerTooltip: "The type of the Bundle sent through the interaction" },
                     { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },
                     { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },
                     { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },                                      
-                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },                    
-                    { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter", headerTooltip: "The type of the Bundle sent through the interaction" },
+                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },                                        
                     { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", headerTooltip: "Description of the interaction’s type or purpose" },
                     { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
                     { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
