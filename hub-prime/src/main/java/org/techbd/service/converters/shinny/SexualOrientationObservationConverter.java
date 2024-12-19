@@ -49,7 +49,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         setMeta(observation);
         observation.setId("SexualOrientation-" +CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
         Meta meta = observation.getMeta();
-        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation" + observation.getId();
+        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
         Reference subjectReference = new Reference();
