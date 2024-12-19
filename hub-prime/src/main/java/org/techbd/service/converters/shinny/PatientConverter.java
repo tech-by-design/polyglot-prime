@@ -109,7 +109,7 @@ public class PatientConverter extends BaseConverter {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
             Extension ombCategoryExtension = new Extension("ombCategory");
             ombCategoryExtension.setValue(new Coding()
-                    .setSystem("urn:oid:2.16.840.1.113883.6.238")
+                    .setSystem(demographicData.getExtensionOmbCategoryRaceCodeSystemName())
                     .setCode(demographicData.getExtensionOmbCategoryRaceCode())
                     .setDisplay(demographicData.getExtensionOmbCategoryRaceCodeDescription()));
             raceExtension.addExtension(ombCategoryExtension);
@@ -125,7 +125,7 @@ public class PatientConverter extends BaseConverter {
 
             Extension ombCategoryExtension = new Extension("ombCategory");
             ombCategoryExtension.setValue(new Coding()
-                    .setSystem("urn:oid:2.16.840.1.113883.6.238")
+                    .setSystem(demographicData.getExtensionOmbCategoryEthnicityCodeSystemName())
                     .setCode(demographicData.getExtensionOmbCategoryEthnicityCode())
                     .setDisplay(demographicData.getExtensionOmbCategoryEthnicityCodeDescription()));
             ethnicityExtension.addExtension(ombCategoryExtension);

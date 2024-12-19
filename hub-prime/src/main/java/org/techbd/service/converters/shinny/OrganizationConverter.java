@@ -108,7 +108,7 @@ public class OrganizationConverter extends BaseConverter {
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-
+            identifier.setSystem("http://www.scn.ny.gov/");
             LOG.info("Adding Identifier: Type Display - {}, Value - {}",
                     coding.getDisplay(), identifier.getValue());
 
