@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+ 
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 8px 0px 10px 15px;
+        }
+    </style>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'interaction_csv_http_stat'; 
+        const viewdetail = 'interaction_http_request_payload';         
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "Request Time",
+                        field: "created_at",
+                        filter: "agDateColumnFilter",
+                         headerTooltip: "The timestamp indicating when the interaction was initiated."
+                    },                    
+                    {
+                        headerName: "TechBD Interaction ID",
+                        field: "hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "Unique identifier for each HTTP interaction in the system."
+                        // cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                        //     modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
+                        // }, modalAide)
+                    },
+                    { headerName: "TechBD Tenant ID", field: "tenant_id_lower", headerTooltip: "ID of the tenant involved in the interaction", filter: "agNumberColumnFilter" },
+                    { headerName: "File Count", field: "file_count", headerTooltip: "The total number of files processed, including demographic, administrative, observation, and profile files.", filter: "agNumberColumnFilter" },
+                    { headerName: "FHIR Count", field: "fhir_count",  headerTooltip: "The total number of FHIR interactions associated with this HTTP request.", filter: "agNumberColumnFilter" },
+                    { headerName: " FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.",  filter: "agNumberColumnFilter" },
+                    { headerName: "FHIR Failed Count", field: "fhir_count_failed",  headerTooltip: "The number of failed FHIR interactions where the HTTP response encountered an error.", filter: "agNumberColumnFilter" }
+                    
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>    
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">            
+                        headerName: "Request Time",
+                        This widget provides a comprehensive overview of CSV-based HTTP interactions, including processed request details. Key columns include the Hub Interaction ID, which serves as the unique identifier for each interaction, and the Request Time timestamp indicating when the interaction occurred. The File Count aggregates the number of associated demographic, administrative, observation, and profile files. The widget also highlights the total FHIR interactions (FHIR Count), breaking them down into Successful FHIR Interactions and Failed FHIR Interactions. Users can explore patterns in data processing outcomes, validate successful data flows, and identify issues related to failed interactions. Sorting and filtering options empower users to analyze interactions effectively.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>        
+    </div>
+</body>
+
+</html>
