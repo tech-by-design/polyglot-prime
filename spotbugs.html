@@ -77,7 +77,7 @@
 <th>Missing Classes</th></tr>
 <tr class="b">
 <td>298</td>
-<td>34</td>
+<td>36</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -92,54 +92,57 @@
 <td><a href="#lib.aide.tabular.JooqRowsSupplier">lib.aide.tabular.JooqRowsSupplier</a></td>
 <td>1</td></tr>
 <tr class="b">
+<td><a href="#org.techbd.controller.http.hub.prime.api.CsvController">org.techbd.controller.http.hub.prime.api.CsvController</a></td>
+<td>2</td></tr>
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession</a></td>
 <td>5</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSessionBuilder">org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSessionBuilder</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.csv.FileProcessor">org.techbd.orchestrate.csv.FileProcessor</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine">org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder</a></td>
 <td>3</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.PostPopulateSupport">org.techbd.orchestrate.fhir.PostPopulateSupport</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.PrePopulateSupport">org.techbd.orchestrate.fhir.PrePopulateSupport</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.util.FileUtils">org.techbd.orchestrate.fhir.util.FileUtils</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.CsvBundleProcessorService">org.techbd.service.CsvBundleProcessorService</a></td>
 <td>2</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.converters.shinny.BaseConverter">org.techbd.service.converters.shinny.BaseConverter</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.converters.shinny.OrganizationConverter">org.techbd.service.converters.shinny.OrganizationConverter</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.Constant">org.techbd.service.http.Constant</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.Interactions">org.techbd.service.http.Interactions</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.InteractionsFilter">org.techbd.service.http.InteractionsFilter</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.api.FHIRService">org.techbd.service.http.hub.prime.api.FHIRService</a></td>
 <td>6</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator">org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator</a></td>
 <td>1</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
@@ -163,6 +166,26 @@
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SF_SWITCH_NO_DEFAULT">SF_SWITCH_NO_DEFAULT</a></td>
 <td>322</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.controller.http.hub.prime.api.CsvController"></a><section>
+<h2>org.techbd.controller.http.hub.prime.api.CsvController</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Possible null pointer dereference in org.techbd.controller.http.hub.prime.api.CsvController.handleCsvUpload(MultipartFile, String, HttpServletRequest, HttpServletResponse) due to return value of called method</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
+<td>48</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>Possible null pointer dereference in org.techbd.controller.http.hub.prime.api.CsvController.handleCsvUpload(MultipartFile, String, HttpServletRequest, HttpServletResponse) due to return value of called method</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE">NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE</a></td>
+<td>56</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.csv.CsvOrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
