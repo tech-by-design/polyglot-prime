@@ -81,7 +81,7 @@ public class PatientConverter extends BaseConverter {
                                                                                           // screening records
         patient.setLanguage("en");
         populatePatientWithExtensions(patient, demographicData);
-        populateMrIdentifier(patient, demographicData,idsGenerated );
+        populateMrIdentifier(patient, demographicData,qeAdminData, idsGenerated );
         populateMaIdentifier(patient, demographicData);
         populateSsnIdentifier(patient, demographicData);
         populatePatientName(patient, demographicData);
@@ -109,7 +109,7 @@ public class PatientConverter extends BaseConverter {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
             Extension ombCategoryExtension = new Extension("ombCategory");
             ombCategoryExtension.setValue(new Coding()
-                    .setSystem("urn:oid:2.16.840.1.113883.6.238")
+                    .setSystem(demographicData.getExtensionOmbCategoryRaceCodeSystemName())
                     .setCode(demographicData.getExtensionOmbCategoryRaceCode())
                     .setDisplay(demographicData.getExtensionOmbCategoryRaceCodeDescription()));
             raceExtension.addExtension(ombCategoryExtension);
@@ -125,7 +125,7 @@ public class PatientConverter extends BaseConverter {
 
             Extension ombCategoryExtension = new Extension("ombCategory");
             ombCategoryExtension.setValue(new Coding()
-                    .setSystem("urn:oid:2.16.840.1.113883.6.238")
+                    .setSystem(demographicData.getExtensionOmbCategoryEthnicityCodeSystemName())
                     .setCode(demographicData.getExtensionOmbCategoryEthnicityCode())
                     .setDisplay(demographicData.getExtensionOmbCategoryEthnicityCodeDescription()));
             ethnicityExtension.addExtension(ombCategoryExtension);
@@ -139,7 +139,7 @@ public class PatientConverter extends BaseConverter {
 
         if (demographicData.getExtensionSexAtBirthCodeValue() != null) {
             Extension birthSexExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex");
-            birthSexExtension.setValue(new org.hl7.fhir.r4.model.CodeType(demographicData.getExtensionSexAtBirthCodeValue()));
+            birthSexExtension.setValue(new StringType(demographicData.getExtensionSexAtBirthCodeValue()));
             patient.addExtension(birthSexExtension);
         }
 
@@ -177,8 +177,6 @@ public class PatientConverter extends BaseConverter {
         if (demographicData.getFamilyName() != null) {
             name.setFamily(demographicData.getFamilyName());
         }
-        name.addPrefix("Mr., Dr., PhD, CCNA"); // TODO : remove static reference
-        name.addSuffix("Jr., III"); // TODO : remove static reference
         patient.addName(name);
         return patient;
     }
@@ -205,7 +203,7 @@ public class PatientConverter extends BaseConverter {
 
    
 
-    private static void populateMrIdentifier(Patient patient, DemographicData data,Map<String,String> idsGenerated) {
+    private static void populateMrIdentifier(Patient patient, DemographicData data,QeAdminData qeAdminData,Map<String,String> idsGenerated) {
         if (StringUtils.isNotEmpty(data.getPatientMrIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
@@ -214,7 +212,7 @@ public class PatientConverter extends BaseConverter {
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem("http://www.scn.gov/facility/CUMC"); // TODO : remove static reference
+            identifier.setSystem("http://www.scn.gov/facility/"+qeAdminData.getFacilityId());
             identifier.setValue(data.getPatientMrIdValue());
 
             // Optional: Add assigner if needed (uncomment if required)

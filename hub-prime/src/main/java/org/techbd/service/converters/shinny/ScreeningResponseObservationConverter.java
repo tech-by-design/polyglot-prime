@@ -55,7 +55,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             Observation observation = new Observation();
             String observationId = CsvConversionUtil.sha256(data.getEncounterId()+data.getScreeningCode()); // Use screening code as ID'
             observation.setId(observationId);
-            String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + data.getQuestionCode();
+            String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/%s%s"
+            .formatted(data.getQuestionCodeDisplay().replace(" ", ""), data.getQuestionCode());
             setMeta(observation);
             Meta meta = observation.getMeta();
             meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
