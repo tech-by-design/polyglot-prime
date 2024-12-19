@@ -3,7 +3,9 @@ package org.techbd.service.csv;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Address;
@@ -43,9 +45,10 @@ class PatientConverterTest {
                 final List<ScreeningObservationData> screeningDataList =  CsvTestHelper.createScreeningObservationData();
                 final QeAdminData qrAdminData =  CsvTestHelper.createQeAdminData();
                 final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
+                final Map<String, String> idsGenerated = new HashMap<>();
                 final BundleEntryComponent result = patientConverter
                                 .convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                                                screeningDataList, "interactionId",null)
+                                                screeningDataList, "interactionId", idsGenerated)
                                 .get(0);
                 final SoftAssertions softly = new SoftAssertions();
 
@@ -56,7 +59,7 @@ class PatientConverterTest {
                 softly.assertThat(patient.getId()).isNotEmpty();
                 softly.assertThat(patient.getId())
                                 .isNotNull()
-                                .isEqualTo("EncounterExampleCUMC-11223344");
+                                .isEqualTo("c8538406d9cbf420fefe69f60b40f6573cd4ccd4cfb21b3301118b086a367163");
                 softly.assertThat(patient.getLanguage()).isEqualTo("en");
                 softly.assertThat(patient.hasName()).isTrue();
                 softly.assertThat(patient.getNameFirstRep().getGivenAsSingleString()).isEqualTo("Jon");
@@ -138,10 +141,11 @@ class PatientConverterTest {
                 final var demographicData =  CsvTestHelper.createDemographicData();
                 final var screeningDataList =  CsvTestHelper.createScreeningObservationData();
                 final var qrAdminData =  CsvTestHelper.createQeAdminData();
+                final Map<String, String> idsGenerated = new HashMap<>();
                 final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
                 final var result = patientConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                                 screeningDataList,
-                                "interactionId",null);
+                                "interactionId", idsGenerated);
                 final Patient patient = (Patient) result.get(0).getResource();
                 final var filePath = "src/test/resources/org/techbd/csv/generated-json/patient.json";
                 final FhirContext fhirContext = FhirContext.forR4();

@@ -1,10 +1,7 @@
 package org.techbd.service.converters.shinny;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Identifier;
@@ -28,6 +26,7 @@ import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
+import org.techbd.util.DateUtil;
 
 /**
  * Converts data related to an Organization into a FHIR Organization resource.
@@ -70,14 +69,17 @@ public class OrganizationConverter extends BaseConverter {
         setMeta(organization);
         organization.setId(CsvConversionUtil.sha256(qeAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
         idsGenerated.put(CsvConstants.ORGANIZATION_ID,organization.getId());
+        String fullUrl = "http://shinny.org/us/ny/hrsn/Organization/" + organization.getId();
         Meta meta = organization.getMeta();
-        meta.setLastUpdated(getLastUpdatedDate(qeAdminData));
+        meta.setLastUpdated(DateUtil.parseDate(qeAdminData.getFacilityLastUpdated()));
         populateOrganizationName(organization, qeAdminData);
         populateOrganizationIdentifier(organization, qeAdminData);
         populateIsActive(organization, qeAdminData);
         populateOrganizationType(organization, qeAdminData);
         populateOrganizationAddress(organization, qeAdminData);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
+        bundleEntryComponent.setFullUrl(fullUrl);
+        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Organization/" + organization.getId()));
         bundleEntryComponent.setResource(organization);
         return List.of(bundleEntryComponent);
     }
@@ -155,28 +157,4 @@ public class OrganizationConverter extends BaseConverter {
             organization.setActive(Boolean.parseBoolean("TRUE"));
         }
     }
-
-    /**
-     * Get the last updated date for the organization based on its data from
-     * QeAdminData.
-     *
-     * @param qrAdminData The QeAdminData object containing the facility's last
-     *                    updated date.
-     * @return The last updated date.
-     */
-    private Date getLastUpdatedDate(QeAdminData qrAdminData) {
-        // Check if the facilityLastUpdated field in QeAdminData is not null or empty
-        if (qrAdminData != null && qrAdminData.getFacilityLastUpdated() != null
-                && !qrAdminData.getFacilityLastUpdated().isEmpty()) {
-            try {
-                // Example: Assuming the format is "yyyy-MM-dd'T'HH:mm:ss'Z'" (ISO 8601 format)
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                return dateFormat.parse(qrAdminData.getFacilityLastUpdated()); // Return the parsed date
-            } catch (ParseException e) {
-                return new Date();
-            }
-        }
-        return new Date();
-    }
-
 }
