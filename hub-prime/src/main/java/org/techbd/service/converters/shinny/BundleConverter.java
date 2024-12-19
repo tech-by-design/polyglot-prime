@@ -1,6 +1,7 @@
 package org.techbd.service.converters.shinny;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CanonicalType;
@@ -30,7 +31,7 @@ public class BundleConverter {
      */
     public Bundle generateEmptyBundle(String interactionId,String igVersion,DemographicData demographicData) {
         Bundle bundle = new Bundle();
-        bundle.setId(CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
+        bundle.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
         bundle.setType(Bundle.BundleType.TRANSACTION);
         Meta meta = new Meta();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
