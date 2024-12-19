@@ -248,7 +248,7 @@ public class PatientConverter extends BaseConverter {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
             coding.setSystem("http://terminology.hl7.org/CodeSystem/v2-0203"); // TODO : remove static reference
-            coding.setCode("SSN");
+            coding.setCode("SS");
             coding.setDisplay("Social Security Number");
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);

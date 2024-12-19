@@ -53,8 +53,9 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
     
         for (ScreeningObservationData data : screeningObservationDataList) {
             Observation observation = new Observation();
-            String observationId = CsvConversionUtil.sha256(data.getEncounterId()+data.getScreeningCode()); // Use screening code as ID
-            String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
+            String observationId = CsvConversionUtil.sha256(data.getEncounterId()+data.getScreeningCode()); // Use screening code as ID'
+            observation.setId(observationId);
+            String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + data.getQuestionCode();
             setMeta(observation);
             Meta meta = observation.getMeta();
             meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
@@ -71,7 +72,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             observation.addCategory(createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                     "survey", null));
             CodeableConcept code = new CodeableConcept();
-            code.addCoding(new Coding("http://loinc.org", data.getScreeningCode(), data.getScreeningCodeDescription()));
+            code.addCoding(new Coding("http://loinc.org", data.getQuestionCode(), data.getQuestionCodeDisplay()));
             code.setText(data.getQuestionCodeText());
             observation.setCode(code);
             observation.setSubject(new Reference("Patient/" +idsGenerated.get(CsvConstants.PATIENT_ID)));
