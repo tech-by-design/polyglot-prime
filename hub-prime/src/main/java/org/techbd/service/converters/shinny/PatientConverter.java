@@ -177,8 +177,6 @@ public class PatientConverter extends BaseConverter {
         if (demographicData.getFamilyName() != null) {
             name.setFamily(demographicData.getFamilyName());
         }
-        name.addPrefix("Mr., Dr., PhD, CCNA"); // TODO : remove static reference
-        name.addSuffix("Jr., III"); // TODO : remove static reference
         patient.addName(name);
         return patient;
     }
