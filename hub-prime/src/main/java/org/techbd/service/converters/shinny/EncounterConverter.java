@@ -86,7 +86,7 @@ public class EncounterConverter extends BaseConverter {
 
         populatePatientReference(encounter, idsGenerated);
 
-        populateLocationReference(encounter, screeningProfileData);
+        populateLocationReference(encounter, screeningProfileData, idsGenerated);
         Narrative text = new Narrative();
         text.setStatus(NarrativeStatus.GENERATED);
         encounter.setText(text);
@@ -99,7 +99,7 @@ public class EncounterConverter extends BaseConverter {
     }
 
     private void populatePatientReference(Encounter encounter, Map<String, String> idsGenerated) {
-        encounter.setSubject(new Reference("Patient/"+idsGenerated.get(CsvConstants.PATIENT_ID)));
+        encounter.setSubject(new Reference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)));
     }
 
     private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
@@ -117,7 +117,7 @@ public class EncounterConverter extends BaseConverter {
 
             if (data.getEncounterTypeCode() != null) {
                 Coding coding = new Coding();
-                coding.setCode(data.getEncounterTypeCode());
+                coding.setCode(data.getEncounterClassCode());
                 coding.setSystem(data.getEncounterTypeCodeSystem());
                 coding.setDisplay(data.getEncounterTypeCodeDescription());
                 encounterType.addCoding(coding);
@@ -154,10 +154,10 @@ public class EncounterConverter extends BaseConverter {
         }
     }
 
-    private void populateLocationReference(Encounter encounter, ScreeningProfileData screeningResourceData) {
+    private void populateLocationReference(Encounter encounter, ScreeningProfileData screeningResourceData, Map<String, String> idsGenerated) {
         if (screeningResourceData != null) {
             encounter.addLocation(new Encounter.EncounterLocationComponent()
-                    .setLocation(new Reference("Location/" + "LocationExample-SCN")));
+                    .setLocation(new Reference("Location/" + idsGenerated.get(CsvConstants.PATIENT_ID))));
         }
     }
 }
