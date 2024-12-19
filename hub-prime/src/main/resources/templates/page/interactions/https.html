@@ -34,7 +34,7 @@
                         filter: "agDateColumnFilter"
                     },
                     {
-                        headerName: "Interaction ID",
+                        headerName: "TechBD Interaction ID",
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
@@ -60,7 +60,7 @@
                             
                         }, modalAide)
                     },
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
+                    { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
                     { headerName: "URI", field: "uri", filter: "agTextColumnFilter" },
                     { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
                     { headerName: "From State", field: "from_state", filter: "agTextColumnFilter" },
@@ -91,7 +91,7 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description" id="date-range"> 
-        This widget offers a detailed analysis of HTTP interactions, focusing on key aspects such as the request time, interaction ID, tenant ID, URI, and the nature of the interaction. It also tracks the state transitions from the initial state to the final state, along with any validation issues encountered during the process. The widget includes information about associated FHIR resources, the client's IP address, and the user agent. By providing a sortable and filterable grid, this tool enables users to efficiently explore and identify patterns, issues, or anomalies in the interactions, supporting deeper insights into the system's performance and behavior.
+        This widget offers a detailed analysis of HTTP interactions, focusing on key aspects such as the request time, TechBD interaction ID, tenant ID, URI, and the nature of the interaction. It also tracks the state transitions from the initial state to the final state, along with any validation issues encountered during the process. The widget includes information about associated FHIR resources, the client's IP address, and the user agent. By providing a sortable and filterable grid, this tool enables users to efficiently explore and identify patterns, issues, or anomalies in the interactions, supporting deeper insights into the system's performance and behavior.
     </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>

@@ -50,14 +50,14 @@
                         filter: "agDateColumnFilter"
                     },
                     {
-                        headerName: "Interaction ID",
+                        headerName: "TechBD Interaction ID",
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
                             modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/techbd_udi_ingress/interaction_http_request/interaction_id/${params.value}.json`));
                         }, modalAide)
                     },
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
+                    { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter" },
                     { headerName: "URI", field: "uri", filter: "agTextColumnFilter" },
                     { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
                     { headerName: "Custom", field: "custom_content" },
