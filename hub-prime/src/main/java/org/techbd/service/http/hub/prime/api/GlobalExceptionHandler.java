@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingRequestValueException;
@@ -84,7 +85,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-    @ApiResponse(responseCode = "415", description = "Unsupported Media Type", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Unsupported media type\"}")))
+    @ApiResponse(responseCode = "400", description = "Unsupported Media Type", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Unsupported media type\"}")))
     public ResponseEntity<ErrorResponse> handleMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
         return handleException(ex, "Unsupported media type", HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
@@ -108,10 +109,18 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(responseBody, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(HttpMessageNotWritableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ApiResponse(responseCode = "500", description = "Bad Request", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Unable to process the response due to an internal error\"}")))
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotWritableException(HttpMessageNotWritableException ex) {
+        return handleException(ex, "We encountered an error while processing your file.",
+                    HttpStatus.BAD_REQUEST);
+    }
+
     private ResponseEntity<ErrorResponse> handleException(Exception ex, String customMessage, HttpStatus status) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest();
-        String tenantId = request.getHeader("X-TechBD-Tenant-ID"); 
+        String tenantId = request.getHeader("X-TechBD-Tenant-ID");
         LOG.error("Validation Error: {}. Tenant ID: {}", customMessage, tenantId, ex);
         HttpSession session = request.getSession(false); // Retrieve session if it exists, else null
         String sessionId = session != null ? session.getId() : "No session";
