@@ -1162,21 +1162,6 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
 	      ADD COLUMN IF NOT EXISTS group_hub_interaction_id TEXT NULL;      
         
-      DO $$
-      BEGIN
-          IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.table_constraints
-              WHERE table_name = 'sat_interaction_fhir_request'
-                AND constraint_name = 'sat_interaction_fhir_request_group_interaction_id_fkey'
-                AND constraint_type = 'FOREIGN KEY'
-          ) THEN
-              ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
-              ADD CONSTRAINT sat_interaction_fhir_request_group_interaction_id_fkey
-              FOREIGN KEY (group_hub_interaction_id)
-              REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
-          END IF;
-      END $$;        
 
 
       ${dependenciesSQL}
