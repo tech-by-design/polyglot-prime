@@ -86,7 +86,7 @@ public class EncounterConverter extends BaseConverter {
 
         populatePatientReference(encounter, idsGenerated);
 
-        populateLocationReference(encounter, screeningProfileData, idsGenerated);
+    //    populateLocationReference(encounter, screeningProfileData, idsGenerated);
         Narrative text = new Narrative();
         text.setStatus(NarrativeStatus.GENERATED);
         encounter.setText(text);
