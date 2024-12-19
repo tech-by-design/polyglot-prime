@@ -3,7 +3,9 @@ package org.techbd.service.csv;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
@@ -40,11 +42,12 @@ class ConsentConverterTest {
         final DemographicData demographicData = CsvTestHelper.createDemographicData();
         final List<ScreeningObservationData> screeningDataList = CsvTestHelper.createScreeningObservationData();
         final QeAdminData qrAdminData = CsvTestHelper.createQeAdminData();
+        final Map<String, String> idsGenerated = new HashMap<>();
         final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
 
         // Call the convert method of the consent converter
         final BundleEntryComponent result = consentConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                 screeningDataList, "interactionId",null).get(0);
+                 screeningDataList, "interactionId", idsGenerated).get(0);
 
         // Create soft assertions to verify the result
         final SoftAssertions softly = new SoftAssertions();
@@ -80,11 +83,12 @@ class ConsentConverterTest {
         final var demographicData = CsvTestHelper.createDemographicData();
         final var screeningDataList = CsvTestHelper.createScreeningObservationData();
         final var qrAdminData = CsvTestHelper.createQeAdminData();
+        final Map<String, String> idsGenerated = new HashMap<>();
         final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
 
         final var result = consentConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId",null);
+                "interactionId", idsGenerated);
 
         final Consent consent = (Consent) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/consent.json";

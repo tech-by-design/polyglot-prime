@@ -3,7 +3,9 @@ package org.techbd.service.csv;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
@@ -36,18 +38,19 @@ class EncounterConverterTest {
     @Disabled
     void testConvert() throws Exception {
         // Create necessary data objects for the test
-        final Bundle bundle = new Bundle();  // Ensure this is populated with relevant data
-        final DemographicData demographicData = CsvTestHelper.createDemographicData();  // Create DemographicData instance
-        final List<ScreeningObservationData> screeningDataList = CsvTestHelper.createScreeningObservationData();  // Create list of ScreeningData
-        final QeAdminData qrAdminData = CsvTestHelper.createQeAdminData();  // Create QeAdminData instance
-        final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();  // Create ScreeningResourceData
+        final Bundle bundle = new Bundle();
+        final DemographicData demographicData = CsvTestHelper.createDemographicData();
+        final List<ScreeningObservationData> screeningDataList = CsvTestHelper.createScreeningObservationData();
+        final QeAdminData qrAdminData = CsvTestHelper.createQeAdminData();
+        final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
+        final Map<String, String> idsGenerated = new HashMap<>();
     
         // Instantiate the EncounterConverter
         EncounterConverter encounterConverter = new EncounterConverter();
     
         // Call the convert method of the encounter converter
         final BundleEntryComponent result = encounterConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                 screeningDataList, "interactionId", null).get(0);;
+                 screeningDataList, "interactionId", idsGenerated).get(0);;
     
         // Create soft assertions to verify the result
         final SoftAssertions softly = new SoftAssertions();
@@ -84,11 +87,12 @@ class EncounterConverterTest {
         final var demographicData = CsvTestHelper.createDemographicData();
         final var screeningDataList = CsvTestHelper.createScreeningObservationData();
         final var qrAdminData = CsvTestHelper.createQeAdminData();
+        final Map<String, String> idsGenerated = new HashMap<>();
         final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
 
         final var result = encounterConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId", null);
+                "interactionId", idsGenerated);
 
         final Encounter encounter = (Encounter) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/encounter.json";

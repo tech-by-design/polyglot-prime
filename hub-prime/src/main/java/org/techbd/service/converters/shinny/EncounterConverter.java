@@ -1,13 +1,11 @@
 package org.techbd.service.converters.shinny;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Encounter;
@@ -76,7 +74,7 @@ public class EncounterConverter extends BaseConverter {
         String fullUrl = "http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId();
 
         Meta meta = encounter.getMeta();
-        meta.setLastUpdated(getLastUpdatedDate(qeAdminData));
+        meta.setLastUpdated(DateUtil.parseDate(qeAdminData.getFacilityLastUpdated()));
 
         populateEncounterStatus(encounter, screeningProfileData);
 
@@ -95,6 +93,7 @@ public class EncounterConverter extends BaseConverter {
 
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
+        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId()));
         bundleEntryComponent.setResource(encounter);
         return List.of(bundleEntryComponent);
     }
@@ -160,26 +159,5 @@ public class EncounterConverter extends BaseConverter {
             encounter.addLocation(new Encounter.EncounterLocationComponent()
                     .setLocation(new Reference("Location/" + "LocationExample-SCN")));
         }
-    }
-
-    /**
-     * Get the last updated date for the encounter based on its data from
-     * QeAdminData.
-     *
-     * @param qrAdminData The QeAdminData object containing the encounter's last
-     *                    updated date.
-     * @return The last updated date.
-     */
-    private Date getLastUpdatedDate(QeAdminData qrAdminData) {
-        if (qrAdminData != null && qrAdminData.getFacilityLastUpdated() != null
-                && !qrAdminData.getFacilityLastUpdated().isEmpty()) {
-            try {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                return dateFormat.parse(qrAdminData.getFacilityLastUpdated());
-            } catch (ParseException e) {
-                LOG.error("Error parsing last updated date", e);
-            }
-        }
-        return new Date();
     }
 }

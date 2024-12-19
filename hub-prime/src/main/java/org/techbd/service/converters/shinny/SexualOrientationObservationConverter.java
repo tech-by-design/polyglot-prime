@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
@@ -48,8 +49,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         setMeta(observation);
         observation.setId("SexualOrientation-" +CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
         Meta meta = observation.getMeta();
-        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation" + observation.getId();
-        meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
+        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
         Reference subjectReference = new Reference();
@@ -71,6 +71,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         observation.setText(text);
         BundleEntryComponent entry = new BundleEntryComponent();
         entry.setFullUrl(fullUrl);
+        entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observation.getId()));
         entry.setResource(observation);
         LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
         return List.of(entry);
