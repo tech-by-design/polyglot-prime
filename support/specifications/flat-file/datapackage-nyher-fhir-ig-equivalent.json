@@ -414,24 +414,24 @@
 "vol", "vot", "wak", "wal", "war", "was", "wel (b)", "cym (t)", "wen", "wln", "wol", "xal", "xho", 
 "yao", "yap", "yid", "yor", "ypk", "zap", "zbl", "zen", "zgh", "zha", "chi (b)", "zho (t)", "znd", 
 "zul", "zun", "zxx", "zza" ] }},                       
-          {"name": "EXTENSION_OMBCATEGORY_RACE_CODE", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.code", "constraints": { "enum":["1002-5", "2028-9", "2054-5", "2076-8", "2106-3", "UNK", "ASKU"]}},
+          {"name": "EXTENSION_OMBCATEGORY_RACE_CODE", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.code", "constraints": { "enum":["1002-5", "2028-9", "2054-5", "2076-8", "2106-3", "2131-1", "unk", "asku"]}},
           {"name": "EXTENSION_OMBCATEGORY_RACE_CODE_DESCRIPTION", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.display", "constraints": { "enum":[
-            "American Indian or Alaska Native",
-            "Asian",
-            "Black or African American",
-            "Native Hawaiian or Other Pacific Islander",
-            "White",
-            "Unknown",
-            "Asked but no answer"
+            "american indian or alaska native",
+            "asian",
+            "black or african american",
+            "native hawaiian or other pacific islander",
+            "white",
+            "unknown",
+            "asked but no answer"
           ]}},
           {"name": "EXTENSION_OMBCATEGORY_RACE_CODE_SYSTEM_NAME", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.system", "constraints": { "enum":[
             "urn:oid:2.16.840.1.113883.6.238", 
             "http://terminology.hl7.org/CodeSystem/v3-NullFlavor" 
           ]}},           
-          {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code", "constraints": { "enum":["2135-2", "2186-5"]}},
-          {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display", "constraints": { "enum":["hispanic or latino", "non hispanic or latino"]}},
+          {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code", "constraints": { "enum":["2135-2", "2186-5", "2133-7", "asku", "unk", "oth"]}},
+          {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display", "constraints": { "enum":["hispanic or latino", "non hispanic or latino", "asked but unknown", "unknown", "other", "ethnicity"]}},
           {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE_SYSTEM_NAME", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.system", "constraints": { "enum":[
-            "urn:oid:2.16.840.1.113883.6.238" 
+            "urn:oid:2.16.840.1.113883.6.238" , "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
           ]}},         
           {"name": "PATIENT_LAST_UPDATED", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').meta.lastUpdated", "constraints": { "required": true,
             "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"
