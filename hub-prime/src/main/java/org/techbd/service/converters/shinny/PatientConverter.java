@@ -81,7 +81,7 @@ public class PatientConverter extends BaseConverter {
                                                                                           // screening records
         patient.setLanguage("en");
         populatePatientWithExtensions(patient, demographicData);
-        populateMrIdentifier(patient, demographicData,idsGenerated );
+        populateMrIdentifier(patient, demographicData,qeAdminData, idsGenerated );
         populateMaIdentifier(patient, demographicData);
         populateSsnIdentifier(patient, demographicData);
         populatePatientName(patient, demographicData);
