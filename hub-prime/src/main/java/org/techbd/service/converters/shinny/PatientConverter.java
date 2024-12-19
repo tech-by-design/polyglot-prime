@@ -18,8 +18,6 @@ import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
-import org.hl7.fhir.r4.model.Narrative;
-import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Patient.PatientCommunicationComponent;
 import org.hl7.fhir.r4.model.Reference;
@@ -93,9 +91,6 @@ public class PatientConverter extends BaseConverter {
         populatePreferredLanguage(patient, demographicData);
         populatePatientRelationContact(patient, demographicData);
 
-        Narrative text = new Narrative();
-        text.setStatus(NarrativeStatus.GENERATED);
-        patient.setText(text);
         // populatePatientText(patient, demographicData);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
@@ -147,7 +142,7 @@ public class PatientConverter extends BaseConverter {
         if (demographicData.getExtensionPersonalPronounsCode() != null) {
             Extension pronounsExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns");
             pronounsExtension.setValue(new CodeableConcept().addCoding(new Coding()
-                    .setSystem("http://loinc.org")
+                    .setSystem(demographicData.getExtensionPersonalPronounsSystem())
                     .setCode(demographicData.getExtensionPersonalPronounsCode())
                     .setDisplay(demographicData.getExtensionPersonalPronounsDisplay())));
             patient.addExtension(pronounsExtension);
@@ -156,7 +151,7 @@ public class PatientConverter extends BaseConverter {
         if (demographicData.getExtensionGenderIdentityCode() != null) {
             Extension genderIdentityExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity");
             genderIdentityExtension.setValue(new CodeableConcept().addCoding(new Coding()
-                    .setSystem("http://snomed.info/sct")
+                    .setSystem(demographicData.getExtensionGenderIdentitySystem())
                     .setCode(demographicData.getExtensionGenderIdentityCode())
                     .setDisplay(demographicData.getExtensionGenderIdentityDisplay())));
             patient.addExtension(genderIdentityExtension);
@@ -311,7 +306,7 @@ public class PatientConverter extends BaseConverter {
                 .filter(StringUtils::isNotEmpty)
                 .ifPresent(languageCode -> {
                     Coding coding = new Coding();
-                    coding.setSystem("urn:ietf:bcp:47");
+                    coding.setSystem(data.getPreferredLanguageCodeSystemName());
                     coding.setCode(languageCode);
                     CodeableConcept language = new CodeableConcept();
                     language.addCoding(coding);
