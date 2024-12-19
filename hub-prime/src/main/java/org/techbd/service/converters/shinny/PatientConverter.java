@@ -205,7 +205,7 @@ public class PatientConverter extends BaseConverter {
 
    
 
-    private static void populateMrIdentifier(Patient patient, DemographicData data,Map<String,String> idsGenerated) {
+    private static void populateMrIdentifier(Patient patient, DemographicData data,QeAdminData qeAdminData,Map<String,String> idsGenerated) {
         if (StringUtils.isNotEmpty(data.getPatientMrIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
@@ -214,7 +214,7 @@ public class PatientConverter extends BaseConverter {
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem("http://www.scn.gov/facility/CUMC"); // TODO : remove static reference
+            identifier.setSystem("http://www.scn.gov/facility/"+qeAdminData.getFacilityId());
             identifier.setValue(data.getPatientMrIdValue());
 
             // Optional: Add assigner if needed (uncomment if required)
