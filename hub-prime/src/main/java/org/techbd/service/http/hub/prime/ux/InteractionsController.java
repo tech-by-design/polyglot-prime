@@ -54,18 +54,24 @@ public class InteractionsController {
         return presentation.populateModel("page/interactions/httpsfailed", model, request);
     }
 
+    @GetMapping("/interactions/httpscsv")
+    @RouteMapping(label = "CSV via HTTPs", title = "CSV Files via HTTPs", siblingOrder = 40)
+    public String httpscsv(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/interactions/httpscsv", model, request);
+    }   
+
     @GetMapping("/interactions/sftp")
-    @RouteMapping(label = "CSV via SFTP (recent 10 egress)", title = "CSV Files via SFTP (egress directory)", siblingOrder = 40)
+    @RouteMapping(label = "CSV via SFTP (recent 10 egress)", title = "CSV Files via SFTP (egress directory)", siblingOrder = 50)
     public String sftp(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/sftp", model, request);
-    }
+    } 
 
     @Operation(summary = "Recent Orchctl Interactions")
     @GetMapping("/interactions/orchctl")
-    @RouteMapping(label = "CSV via SFTP (DB)", title = "CSV Files via SFTP (in PostgreSQL DB)", siblingOrder = 50)
+    @RouteMapping(label = "CSV via SFTP (DB)", title = "CSV Files via SFTP (in PostgreSQL DB)", siblingOrder = 60)
     public String orchctl(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/orchctl", model, request);
-    }
+    }   
 
     @Operation(summary = "Recent SFTP Interactions")
     @GetMapping("/support/interaction/sftp/recent.json")
@@ -77,25 +83,25 @@ public class InteractionsController {
     }
 
     @GetMapping("/interactions/https")
-    @RouteMapping(label = "HTTP Interactions", title = "Interactions via HTTPs", siblingOrder = 60)
+    @RouteMapping(label = "HTTP Interactions", title = "Interactions via HTTPs", siblingOrder = 70)
     public String https(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/https", model, request);
     }
 
     @GetMapping("/interactions/observe")
-    @RouteMapping(label = "Performance Overview", title = "Performance Overview", siblingOrder = 70)
+    @RouteMapping(label = "Performance Overview", title = "Performance Overview", siblingOrder = 80)
     public String osberve(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/observe", model, request);
     }
 
     @GetMapping("/interactions/provenance")
-    @RouteMapping(label = "Provenance", title = "Provenance", siblingOrder = 80)
+    @RouteMapping(label = "Provenance", title = "Provenance", siblingOrder = 90)
     public String provenance(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/provenance", model, request);
     }
 
     @GetMapping("/interactions/user")
-    @RouteMapping(label = "User Sessions", title = "User", siblingOrder = 90)
+    @RouteMapping(label = "User Sessions", title = "User", siblingOrder = 100)
     public String user(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/user", model, request);
     }
