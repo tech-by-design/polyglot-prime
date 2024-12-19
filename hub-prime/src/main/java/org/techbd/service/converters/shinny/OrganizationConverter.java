@@ -108,7 +108,7 @@ public class OrganizationConverter extends BaseConverter {
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem("http://www.scn.ny.gov/");
+            identifier.setSystem(data.getFacilityIdentifierTypeSystem());
             LOG.info("Adding Identifier: Type Display - {}, Value - {}",
                     coding.getDisplay(), identifier.getValue());
 
@@ -166,7 +166,7 @@ public class OrganizationConverter extends BaseConverter {
     }
 
     private static void populateIsActive(Organization organization, QeAdminData qrAdminData) {
-        if (StringUtils.isNotEmpty("TRUE")) {  //Static_Value
+        if (StringUtils.isNotEmpty("TRUE")) {  //TODO : remove static reference
             organization.setActive(Boolean.parseBoolean("TRUE"));
         }
     }
