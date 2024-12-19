@@ -68,7 +68,6 @@
                 let originalData = [];
 
                 var columnDefs = [
-                    { headerName: "QE", field: "tenantId",  filter: true, enablePivot: true, enableRowGroup: true },
                     {
                         headerName: "Request Time", field: "sessionFinalizedAt", sortable: true, filter: false, sort: "desc", enablePivot: true, enableRowGroup: true,
                         valueFormatter: function (params) {
@@ -94,6 +93,7 @@
                             return '';
                         }
                     },
+                    { headerName: "TechBD Tenant ID", field: "tenantId",  filter: true, enablePivot: true, enableRowGroup: true },                    
                     {
                         headerName: "Session ID", field: "sessionId", sortable: true, filter: true, enablePivot: true, enableRowGroup: true,
                         cellRenderer: function (params) {

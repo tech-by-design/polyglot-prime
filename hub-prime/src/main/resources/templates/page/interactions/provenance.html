@@ -24,7 +24,7 @@
         const viewName = 'interaction_http_request_summary'; 
         const provenanceDetView = 'interaction_http_request_summary_details';
         const proveanceColumnDefs = [
-            { headerName: "Interaction Id", field: "hub_interaction_id", filter: "agTextColumnFilter" }, 
+            { headerName: "TechBD  Interaction ID", field: "hub_interaction_id", filter: "agTextColumnFilter" }, 
             { headerName: "Submission Date", field: "request_created_at", filter: "agDateColumnFilter" } 
         ];
         function getProveanceGridData(params) {
@@ -52,7 +52,7 @@
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     {
-                        headerName: "Tenant ID",
+                        headerName: "TechBD Tenant ID",
                         field: "tenant_id_lower",
                         filter: "agTextColumnFilter",
                         headerTooltip: "Unique identifier assigned to a tenant, representing the organization or client making the HTTP requests.",

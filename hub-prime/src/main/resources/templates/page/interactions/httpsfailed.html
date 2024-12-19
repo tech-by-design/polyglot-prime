@@ -106,18 +106,18 @@
                         headerTooltip: "Timestamp when the interaction was created"
 
                     },
-                    { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },
-                    { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },
                     {
-                        headerName: "Interaction ID",
+                        headerName: "TechBD  Interaction ID",
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         headerTooltip: "Unique identifier for each interaction; click to open a popup with detailed error and interaction information.",
                         cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
                             modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${popViewName}/sat_interaction_http_request_id/${params.data.sat_interaction_fhir_request_id}.json`));
                         }, modalAide)
-                    },
-                    { headerName: "Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "ID of the tenant involved in the interaction" },
+                    },                    
+                    { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "ID of the tenant involved in the interaction" },                    
+                    { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },
+                    { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },                    
                     { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction." },
                     { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", headerTooltip: "Description of the interaction's type or purpose" },
                     { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state from which the interaction originated" },

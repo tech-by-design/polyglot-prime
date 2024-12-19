@@ -19,12 +19,12 @@
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
-                .withColumnDefs([
-                    { headerName: "QE", field: "qe", filter: "agTextColumnFilter" },
+                .withColumnDefs([                    
                     {
                         headerName: "Request Time", field: "request_time", sortable: true, sort: "desc",
                         filter: "agDateColumnFilter"
                     },
+                    { headerName: "TechBD Tenant ID", field: "qe", filter: "agTextColumnFilter" },
                     {
                         headerName: "Session ID", field: "session_id",
                         filter: "agTextColumnFilter", 
