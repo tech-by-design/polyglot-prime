@@ -3773,6 +3773,7 @@ $$ LANGUAGE plpgsql;
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http_stat CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http_stat AS
 SELECT 
+	sizfr.tenant_id_lower,
 	sizfr.hub_interaction_id,
 	sizfr.created_at,
     SUM(CASE WHEN siffcr.demographic_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
@@ -3793,5 +3794,6 @@ LEFT JOIN
 	ON sizfr.hub_interaction_id = sifr.source_hub_interaction_id AND (sifr.nature ='Forwarded HTTP Response' or sifr.nature='Forwarded HTTP Response Error') AND sifr.source_type ='CSV'
 GROUP BY 
     sizfr.hub_interaction_id,
-    sizfr.created_at
+    sizfr.created_at,
+    sizfr.tenant_id_lower
 ORDER BY  sizfr.created_at DESC;
