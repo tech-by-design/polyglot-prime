@@ -120,9 +120,9 @@ public class ConsentConverter extends BaseConverter {
 
         consent.setScope(scope);
 
-        Narrative text = new Narrative();
-        text.setStatus(NarrativeStatus.GENERATED);
-        consent.setText(text);
+       // Narrative text = new Narrative();
+       // text.setStatus(NarrativeStatus.GENERATED);
+       // consent.setText(text);
     }
 
     private static void populateConsentCategory(Consent consent, ScreeningProfileData data) {
