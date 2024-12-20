@@ -60,19 +60,19 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                                                               // screening records
             observation.setLanguage("en");
             observation.setStatus(Observation.ObservationStatus.fromCode(screeningProfileData.getScreeningStatusCode()));
-            if (data.getObservationCategorySdohCode() != null && !data.getObservationCategorySnomedCode().equals("sdoh-category-unspecified")) {
+            if (!data.getObservationCategorySdohCode().isEmpty()) {
                 observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                     data.getObservationCategorySdohCode(), data.getObservationCategorySdohDisplay()));
             } else {
                 observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                     "sdoh-category-unspecified", "SDOH Category Unspecified"));
             
-                if (data.getObservationCategorySnomedCode() != null) {
+                if (!data.getObservationCategorySnomedCode().isEmpty()) {
                     observation.addCategory(createCategory("http://snomed.info/sct",
                         data.getObservationCategorySnomedCode(), data.getObservationCategorySnomedDisplay()));
                 }
             }
-            if(data.getDataAbsentReasonCode() != null) {
+            if(!data.getDataAbsentReasonCode().isEmpty()) {
                 CodeableConcept dataAbsentReason = new CodeableConcept();
 
                 dataAbsentReason.addCoding(
