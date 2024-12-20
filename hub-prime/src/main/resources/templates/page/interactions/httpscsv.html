@@ -19,16 +19,46 @@
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'interaction_csv_http_stat'; 
-        const viewdetail = 'interaction_http_request_payload';         
+        const viewdetail = 'interaction_csv_http_fhir_request';
+        const pipupviewName = 'interaction_http_fhir_request';  
+        const modalAide = new ModalAide();
+        const fhirColumnDefs = [
+            { headerName: "TechBD Interaction ID", field: "interaction_id", filter: "agTextColumnFilter", 
+            cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${pipupviewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
+             }, modalAide) },
+            { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
+            { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter" },            
+            { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter" },
+            { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter" }  ,
+            { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" } 
+        ];
+        function getQuestionAndAnswerGridData(params) { 
+            const hub_interaction_id = params.data.hub_interaction_id;
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/source_hub_interaction_id/${hub_interaction_id}.json`))
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }               
         document.addEventListener('DOMContentLoaded', function () {
-            const modalAide = new ModalAide();
+            
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     {
                         headerName: "Request Time",
                         field: "created_at",
                         filter: "agDateColumnFilter",
-                         headerTooltip: "The timestamp indicating when the interaction was initiated."
+                        headerTooltip: "The timestamp indicating when the interaction was initiated."
                     },                    
                     {
                         headerName: "TechBD Interaction ID",
@@ -41,8 +71,8 @@
                     },
                     { headerName: "TechBD Tenant ID", field: "tenant_id_lower", headerTooltip: "ID of the tenant involved in the interaction", filter: "agNumberColumnFilter" },
                     { headerName: "File Count", field: "file_count", headerTooltip: "The total number of files processed, including demographic, administrative, observation, and profile files.", filter: "agNumberColumnFilter" },
-                    { headerName: "FHIR Count", field: "fhir_count",  headerTooltip: "The total number of FHIR interactions associated with this HTTP request.", filter: "agNumberColumnFilter" },
-                    { headerName: " FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.",  filter: "agNumberColumnFilter" },
+                    { headerName: "FHIR Count", field: "fhir_count",  headerTooltip: "The total number of FHIR interactions associated with this HTTP request.", filter: "agNumberColumnFilter", cellRenderer: 'agGroupCellRenderer' },
+                    { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.",  filter: "agNumberColumnFilter" },
                     { headerName: "FHIR Failed Count", field: "fhir_count_failed",  headerTooltip: "The number of failed FHIR interactions where the HTTP response encountered an error.", filter: "agNumberColumnFilter" }
                     
                 ])
@@ -55,6 +85,19 @@
                         }));
                     },
                 )
+                .withMasterDetail(true)
+                .withDetailCellRendererParams({
+                    detailGridOptions: {
+                        columnDefs: fhirColumnDefs,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getQuestionAndAnswerGridData(params);
+                    }
+                })
+                .withDetailRowAutoHeight(false)
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "750px", width: "100%" })
                 .build();
@@ -67,7 +110,9 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">             
-                        This widget provides a comprehensive overview of CSV-based HTTP interactions, including processed request details. Key columns include the Hub Interaction ID, which serves as the unique identifier for each interaction, and the Request Time timestamp indicating when the interaction occurred. The File Count aggregates the number of associated demographic, administrative, observation, and profile files. The widget also highlights the total FHIR interactions (FHIR Count), breaking them down into Successful FHIR Interactions and Failed FHIR Interactions. Users can explore patterns in data processing outcomes, validate successful data flows, and identify issues related to failed interactions. Sorting and filtering options empower users to analyze interactions effectively.
+            This widget provides a comprehensive overview of CSV-based HTTP interactions, including processed request details. Key columns include the Hub Interaction ID, which serves as the unique identifier for each interaction, and the Request Time timestamp indicating when the interaction occurred. The File Count aggregates the number of associated demographic, administrative, observation, and profile files.
+            The widget also highlights the total FHIR interactions (FHIR Count), breaking them down into Successful FHIR Interactions and Failed FHIR Interactions. Users can click on the FHIR Count to open a dropdown, which provides detailed information about each FHIR interaction, including specifics on successful and failed transactions. This allows users to explore patterns in data processing outcomes, validate successful data flows, and identify issues related to failed interactions.
+            Sorting and filtering options empower users to analyze interactions effectively, offering enhanced flexibility in reviewing and understanding the data.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>        
     </div>
