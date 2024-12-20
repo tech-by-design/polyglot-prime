@@ -139,7 +139,14 @@ AS SELECT hub_interaction_id AS interaction_id,
         WHEN 'Condition' = ANY(string_to_array(resource_type_set, ', '))
             THEN 'Assessment'
         ELSE NULL
-    END AS bundle_resource_type
+    END AS bundle_resource_type,
+    CASE 
+    	WHEN (source_type = 'CSV') then 'CSV'
+    	WHEN (source_type = 'fhir') then 'FHIR'
+    	WHEN (source_type = 'FHIR') then 'FHIR'
+    	ELSE 'FHIR'
+    END as source_type,   
+    source_hub_interaction_id    
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE uri != '/api/expect/fhir/bundle'; 
 
