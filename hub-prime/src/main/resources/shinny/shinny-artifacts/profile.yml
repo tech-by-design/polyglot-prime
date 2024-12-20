@@ -7,4 +7,4 @@ observation: http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation
 questionnaire: http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-questionnaire
 practitioner: http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-practitioner
 questionnaireResponse: http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-questionnaire
-observationSexualOrientation: http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation
+observationSexualOrientation: http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-sexual-orientation

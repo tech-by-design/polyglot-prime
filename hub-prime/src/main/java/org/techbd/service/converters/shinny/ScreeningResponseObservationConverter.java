@@ -11,8 +11,6 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Meta;
-import org.hl7.fhir.r4.model.Narrative;
-import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -53,21 +51,40 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
     
         for (ScreeningObservationData data : screeningObservationDataList) {
             Observation observation = new Observation();
-            String observationId = CsvConversionUtil.sha256(data.getEncounterId()+data.getScreeningCode()); // Use screening code as ID'
+            String observationId = CsvConversionUtil.sha256(data.getQuestionCodeDisplay().replace(" ", "")+ data.getQuestionCode()); 
             observation.setId(observationId);
-            String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/%s%s"
-            .formatted(data.getQuestionCodeDisplay().replace(" ", ""), data.getQuestionCode());
+            String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/"+observationId;
             setMeta(observation);
             Meta meta = observation.getMeta();
             meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
                                                                                               // screening records
             observation.setLanguage("en");
-            Narrative narrative = new Narrative();
-            narrative.setStatus(NarrativeStatus.GENERATED);
-            observation.setText(narrative);
-            observation.setStatus(Observation.ObservationStatus.FINAL);
-            observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                    "housing-instability", "Housing Instability"));
+            observation.setStatus(Observation.ObservationStatus.fromCode(screeningProfileData.getScreeningStatusCode()));
+            if (data.getObservationCategorySdohCode() != null && !data.getObservationCategorySnomedCode().equals("sdoh-category-unspecified")) {
+                observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                    data.getObservationCategorySdohCode(), data.getObservationCategorySdohDisplay()));
+            } else {
+                observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                    "sdoh-category-unspecified", "SDOH Category Unspecified"));
+            
+                if (data.getObservationCategorySnomedCode() != null) {
+                    observation.addCategory(createCategory("http://snomed.info/sct",
+                        data.getObservationCategorySnomedCode(), data.getObservationCategorySnomedDisplay()));
+                }
+            }
+            if(data.getDataAbsentReasonCode() != null) {
+                CodeableConcept dataAbsentReason = new CodeableConcept();
+
+                dataAbsentReason.addCoding(
+                    new Coding()
+                        .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                        .setCode(data.getDataAbsentReasonCode())
+                        .setDisplay(data.getDataAbsentReasonDisplay())
+                );
+                dataAbsentReason.setText(data.getDataAbsentReasonText());
+
+                observation.setDataAbsentReason(dataAbsentReason);
+            }
             observation.addCategory(createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                     "social-history", null));
             observation.addCategory(createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
