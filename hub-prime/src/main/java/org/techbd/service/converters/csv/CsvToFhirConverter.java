@@ -35,14 +35,15 @@ public class CsvToFhirConverter {
     }
 
     public String convert(DemographicData demographicData,
-            QeAdminData qeAdminData, ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningDataList, String interactionId) {
+            QeAdminData qeAdminData, ScreeningProfileData screeningProfileData,
+            List<ScreeningObservationData> screeningDataList, String interactionId) {
         Bundle bundle = null;
         try {
             LOG.info("CsvToFhirConvereter::convert - BEGIN for interactionId :{}", interactionId);
-            bundle = bundleConverter.generateEmptyBundle(interactionId, appConfig.getIgVersion(),demographicData);
+            bundle = bundleConverter.generateEmptyBundle(interactionId, appConfig.getIgVersion(), demographicData);
             LOG.debug("CsvToFhirConvereter::convert - Bundle entry created :{}", interactionId);
             LOG.debug("Conversion of resources - BEGIN for interactionId :{}", interactionId);
-            addEntries(bundle, demographicData, screeningDataList, qeAdminData, screeningProfileData,interactionId);
+            addEntries(bundle, demographicData, screeningDataList, qeAdminData, screeningProfileData, interactionId);
             LOG.debug("Conversion of resources - END for interactionId :{}", interactionId);
             LOG.info("CsvToFhirConvereter::convert - END for interactionId :{}", interactionId);
         } catch (Exception ex) {
@@ -50,14 +51,26 @@ public class CsvToFhirConverter {
         }
         return FhirContext.forR4().newJsonParser().encodeResourceToString(bundle);
     }
-    private void addEntries(Bundle bundle, DemographicData demographicData, List<ScreeningObservationData> screeningObservationData,
-            QeAdminData qeAdminData,ScreeningProfileData screeningProfileData, String interactionId) {
+
+    private void addEntries(Bundle bundle, DemographicData demographicData,
+            List<ScreeningObservationData> screeningObservationData,
+            QeAdminData qeAdminData, ScreeningProfileData screeningProfileData, String interactionId) {
         List<BundleEntryComponent> entries = new ArrayList<>();
-        Map<String,String> idsGenerated = new HashMap<>();
+        Map<String, String> idsGenerated = new HashMap<>();
+
+        // Iterate over the converters
         converters.stream().forEach(converter -> {
-            entries.addAll(converter.convert(bundle, demographicData,  qeAdminData,screeningProfileData,screeningObservationData, interactionId,idsGenerated));
+            try {
+                // Attempt to process using the current converter
+                entries.addAll(converter.convert(bundle, demographicData, qeAdminData, screeningProfileData,
+                        screeningObservationData, interactionId, idsGenerated));
+            } catch (Exception e) {
+                // Log the error and continue with other converters
+                LOG.error("Error occurred while processing converter: " + converter.getClass().getName(), e);
+            }
         });
+
+        // Add all successful entries to the bundle
         bundle.getEntry().addAll(entries);
     }
-
 }

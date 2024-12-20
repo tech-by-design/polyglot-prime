@@ -507,7 +507,6 @@ public class CsvOrchestrationEngine {
             result.put("validationResults", combinedValidationResult);
             result.put("requestUri", request.getRequestURI());
             result.put("zipFileSize", zipFileSize);
-            result.put("noOfScreenings", combinedValidationResult.size());
             result.put("userAgent", userAgent);
             result.put("device", Map.of(
                     "deviceId", device.deviceId(),

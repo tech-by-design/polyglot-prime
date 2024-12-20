@@ -35,7 +35,7 @@ class EncounterConverterTest {
     private EncounterConverter encounterConverter;
 
     @Test
-    @Disabled
+    // @Disabled
     void testConvert() throws Exception {
         // Create necessary data objects for the test
         final Bundle bundle = new Bundle();
@@ -44,44 +44,46 @@ class EncounterConverterTest {
         final QeAdminData qrAdminData = CsvTestHelper.createQeAdminData();
         final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
         final Map<String, String> idsGenerated = new HashMap<>();
-    
+
         // Instantiate the EncounterConverter
         EncounterConverter encounterConverter = new EncounterConverter();
-    
+
         // Call the convert method of the encounter converter
-        final BundleEntryComponent result = encounterConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                 screeningDataList, "interactionId", idsGenerated).get(0);;
-    
+        final BundleEntryComponent result = encounterConverter
+                .convert(bundle, demographicData, qrAdminData, screeningResourceData,
+                        screeningDataList, "interactionId", idsGenerated)
+                .get(0);
+        ;
+
         // Create soft assertions to verify the result
         final SoftAssertions softly = new SoftAssertions();
-    
+
         // Assert that the result is not null
         softly.assertThat(result).isNotNull();
-    
+
         // Assert that the result resource is an instance of Encounter
         softly.assertThat(result.getResource()).isInstanceOf(Encounter.class);
-    
+
         // Cast the result to Encounter and assert various properties
         final Encounter encounter = (Encounter) result.getResource();
-    
+
         // Assert that the encounter ID is not null or empty and matches expected
         softly.assertThat(encounter.getId()).isNotEmpty();
-        softly.assertThat(encounter.getId()).isEqualTo("Encounter-interactionId");
-    
+        softly.assertThat(encounter.getId()).matches("[a-f0-9]{64}");
+
         // Assert that the encounter status is active (FINISHED)
-       //softly.assertThat(encounter.getStatus()).isEqualTo("FINISHED");
-    
+        // softly.assertThat(encounter.getStatus()).isEqualTo("FINISHED");
+
         // Assert that the encounter has the correct encounter type
         softly.assertThat(encounter.getType()).hasSize(1);
         softly.assertThat(encounter.getTypeFirstRep().getCodingFirstRep().getCode()).isEqualTo("405672008");
-    
+
         // Assert all soft assertions
         softly.assertAll();
     }
-    
 
     @Test
-    @Disabled
+    //@Disabled
     void testGeneratedJson() throws Exception {
         final var bundle = new Bundle();
         final var demographicData = CsvTestHelper.createDemographicData();

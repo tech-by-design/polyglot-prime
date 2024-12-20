@@ -35,7 +35,7 @@ class ConsentConverterTest {
     private ConsentConverter consentConverter;
 
     @Test
-    @Disabled
+    //@Disabled
     void testConvert() throws Exception {
         // Create the necessary data objects for the test
         final Bundle bundle = new Bundle();
@@ -63,7 +63,8 @@ class ConsentConverterTest {
 
         // Assert that the consent ID is not null or empty and matches expected
         softly.assertThat(consent.getId()).isNotEmpty();
-        softly.assertThat(consent.getId()).isEqualTo("Consent-interactionId");
+        softly.assertThat(consent.getId()).matches("[a-f0-9]{64}");
+        // softly.assertThat(consent.getId()).isEqualTo("Consent-interactionId");
 
         // Assert that the consent status is active
         softly.assertThat(consent.getStatus()).isEqualTo(Consent.ConsentState.ACTIVE);
@@ -77,7 +78,7 @@ class ConsentConverterTest {
     }
 
     @Test
-    @Disabled
+   // @Disabled
     void testGeneratedJson() throws Exception {
         final var bundle = new Bundle();
         final var demographicData = CsvTestHelper.createDemographicData();

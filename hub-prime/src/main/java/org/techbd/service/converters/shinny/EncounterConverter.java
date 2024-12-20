@@ -26,6 +26,8 @@ import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
+import ca.uhn.fhir.context.FhirContext;
+
 /**
  * Converts data into a FHIR Encounter resource.
  */
@@ -90,11 +92,12 @@ public class EncounterConverter extends BaseConverter {
         Narrative text = new Narrative();
         text.setStatus(NarrativeStatus.GENERATED);
         encounter.setText(text);
-
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
-        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId()));
+        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
+                .setUrl("http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId()));
         bundleEntryComponent.setResource(encounter);
+
         return List.of(bundleEntryComponent);
     }
 
@@ -117,7 +120,7 @@ public class EncounterConverter extends BaseConverter {
 
             if (data.getEncounterTypeCode() != null) {
                 Coding coding = new Coding();
-                coding.setCode(data.getEncounterClassCode());
+                coding.setCode(data.getEncounterTypeCode());
                 coding.setSystem(data.getEncounterTypeCodeSystem());
                 coding.setDisplay(data.getEncounterTypeCodeDescription());
                 encounterType.addCoding(coding);
@@ -154,7 +157,8 @@ public class EncounterConverter extends BaseConverter {
         }
     }
 
-    private void populateLocationReference(Encounter encounter, ScreeningProfileData screeningResourceData, Map<String, String> idsGenerated) {
+    private void populateLocationReference(Encounter encounter, ScreeningProfileData screeningResourceData,
+            Map<String, String> idsGenerated) {
         if (screeningResourceData != null) {
             encounter.addLocation(new Encounter.EncounterLocationComponent()
                     .setLocation(new Reference("Location/" + idsGenerated.get(CsvConstants.PATIENT_ID))));
