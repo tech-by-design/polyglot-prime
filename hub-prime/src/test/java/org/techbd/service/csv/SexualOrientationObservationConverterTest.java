@@ -30,7 +30,7 @@ class SexualOrientationObservationConverterTest {
         private SexualOrientationObservationConverter sexualOrientationObservationConverter;
 
         @Test
-        @Disabled
+        //@Disabled
         void testConvert() throws Exception {
                 final Bundle bundle = new Bundle();
                 final List<ScreeningObservationData> screeningDataList = CsvTestHelper.createScreeningObservationData();
@@ -69,7 +69,7 @@ class SexualOrientationObservationConverterTest {
         }
 
         @Test
-        @Disabled
+        //@Disabled
         void testGeneratedJson() throws Exception {
                 final var bundle = new Bundle();
                 final var demographicData = CsvTestHelper.createDemographicData();
