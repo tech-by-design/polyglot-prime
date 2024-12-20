@@ -88,10 +88,10 @@ public class EncounterConverter extends BaseConverter {
 
         populatePatientReference(encounter, idsGenerated);
 
-    //    populateLocationReference(encounter, screeningProfileData, idsGenerated);
-        Narrative text = new Narrative();
-        text.setStatus(NarrativeStatus.GENERATED);
-        encounter.setText(text);
+        // populateLocationReference(encounter, screeningProfileData, idsGenerated);
+        // Narrative text = new Narrative();
+        // text.setStatus(NarrativeStatus.GENERATED);
+        // encounter.setText(text);
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)

@@ -66,9 +66,9 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         observation.setValue(value);
         // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
         // observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated())); //Not Used
-        Narrative text = new Narrative();
-        text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
-        observation.setText(text);
+       // Narrative text = new Narrative();
+       // text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
+       // observation.setText(text);
         BundleEntryComponent entry = new BundleEntryComponent();
         entry.setFullUrl(fullUrl);
         entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observation.getId()));
