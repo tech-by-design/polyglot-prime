@@ -60,14 +60,30 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                                                               // screening records
             observation.setLanguage("en");
             observation.setStatus(Observation.ObservationStatus.fromCode(screeningProfileData.getScreeningStatusCode()));
-            if(data.getObservationCategorySdohCode() != null && !data.getObservationCategorySnomedCode().equals("sdoh-category-unspecified")) {
+            if (data.getObservationCategorySdohCode() != null && !data.getObservationCategorySnomedCode().equals("sdoh-category-unspecified")) {
                 observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                     data.getObservationCategorySdohCode(), data.getObservationCategorySdohDisplay()));
-            } else if (data.getObservationCategorySdohCode() == null && data.getObservationCategorySnomedCode() != null) {
+            } else {
                 observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                     "sdoh-category-unspecified", "SDOH Category Unspecified"));
-                observation.addCategory(createCategory("http://snomed.info/sct",
-                    data.getObservationCategorySnomedCode(), data.getObservationCategorySnomedDisplay()));
+            
+                if (data.getObservationCategorySnomedCode() != null) {
+                    observation.addCategory(createCategory("http://snomed.info/sct",
+                        data.getObservationCategorySnomedCode(), data.getObservationCategorySnomedDisplay()));
+                }
+            }
+            if(data.getDataAbsentReasonCode() != null) {
+                CodeableConcept dataAbsentReason = new CodeableConcept();
+
+                dataAbsentReason.addCoding(
+                    new Coding()
+                        .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                        .setCode(data.getDataAbsentReasonCode())
+                        .setDisplay(data.getDataAbsentReasonDisplay())
+                );
+                dataAbsentReason.setText(data.getDataAbsentReasonText());
+
+                observation.setDataAbsentReason(dataAbsentReason);
             }
             observation.addCategory(createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                     "social-history", null));
