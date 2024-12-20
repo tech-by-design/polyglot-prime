@@ -39,7 +39,7 @@ org:
       http:
         hub:
           prime:
-            defaultDatalakeApiUrl: https://qa.hrsn.nyehealth.org/HRSNBundle
+            defaultDatalakeApiUrl: https://hrsn.nyehealth.org/HRSNBundle
             defaultDataLakeApiAuthn:
               # The allowed values for mTlsStrategy are as follows:
               # - no-mTls: No mTLS is used. The WebClient sends a standard HTTP POST request to the scoring engine API without mutual TLS (mTLS).
