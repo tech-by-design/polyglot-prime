@@ -107,7 +107,7 @@
 
                     },
                     {
-                        headerName: "TechBD  Interaction ID",
+                        headerName: "TechBD Interaction ID",
                         field: "interaction_id",
                         filter: "agTextColumnFilter",
                         headerTooltip: "Unique identifier for each interaction; click to open a popup with detailed error and interaction information.",
@@ -116,6 +116,8 @@
                         }, modalAide)
                     },                    
                     { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "ID of the tenant involved in the interaction" },                    
+                    { headerName: "Bundle Source", field: "source_type", filter: "agTextColumnFilter", headerTooltip: "The Bundle data source where the data came from e.g. CSV, CCDA, FHIR etc." },
+                    { headerName: "TechBD Bundle Source Interaction Id", field: "source_hub_interaction_id", filter: "agTextColumnFilter", headerTooltip: "The orginal Bundle source interaction ID(CSV Zip file Interaction Id,CCDA file Interaction Id etc.)" },
                     { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },
                     { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },                    
                     { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction." },
