@@ -10,7 +10,6 @@ import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Meta;
-import org.hl7.fhir.r4.model.Narrative;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -50,7 +49,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
         observation.setId(CsvConversionUtil.sha256(screeningProfileData.getPatientMrIdValue()+screeningProfileData.getEncounterId()));
         Meta meta = observation.getMeta();
         String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
-        meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
+        meta.setLastUpdated(DateUtil.parseDate(demographicData.getSexualOrientationLastUpdated()));
         observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
         Reference subjectReference = new Reference();
         subjectReference.setReference("Patient/"+idsGenerated.get(CsvConstants.PATIENT_ID)); //TODO : remove static reference

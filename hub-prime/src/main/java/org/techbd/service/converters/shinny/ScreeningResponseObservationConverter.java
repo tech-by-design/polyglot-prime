@@ -56,7 +56,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/"+observationId;
             setMeta(observation);
             Meta meta = observation.getMeta();
-            meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
+            meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getScreeningLastUpdated())); // max date available in all
                                                                                               // screening records
             observation.setLanguage("en");
             observation.setStatus(Observation.ObservationStatus.fromCode(screeningProfileData.getScreeningStatusCode()));

@@ -10,8 +10,6 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Meta;
-import org.hl7.fhir.r4.model.Narrative;
-import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
@@ -25,8 +23,6 @@ import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
-
-import ca.uhn.fhir.context.FhirContext;
 
 /**
  * Converts data into a FHIR Encounter resource.
@@ -76,7 +72,7 @@ public class EncounterConverter extends BaseConverter {
         String fullUrl = "http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId();
 
         Meta meta = encounter.getMeta();
-        meta.setLastUpdated(DateUtil.parseDate(qeAdminData.getFacilityLastUpdated()));
+        meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getEncounterLastUpdated()));
 
         populateEncounterStatus(encounter, screeningProfileData);
 
