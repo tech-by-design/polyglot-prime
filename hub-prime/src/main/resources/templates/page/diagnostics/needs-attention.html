@@ -190,7 +190,7 @@
             const gridOptions = {
                 columnDefs: [
                     {
-                        headerName: "TechBD Tenant ID",
+                        headerName: "QE Name",
                         field: "qe_name",
                         filter: "agTextColumnFilter",
                         cellRenderer: qeNameCellRenderer,
@@ -198,7 +198,15 @@
                     },
                     {
                         headerName: "QE to Tech by Design",
-                        field: "qe_total_submissions", 
+                        field: "qe_total_submissions",
+                        // cellRenderer: cellRenderer1,
+                        // cellStyle: function (params) {
+                        //     console.log(params.data.shinny_datalake_submissions_failed)
+                        //     if (params.data.qe_total_submissions != (params.data.shinny_datalake_submissions + params.data.shinny_datalake_submissions_failed)) {
+                        //         return { color: 'red' };
+                        //     }
+                        //     return null;
+                        // },
                         filter: "agNumberColumnFilter",
                         headerTooltip: "FHIR File count from QE to Tech by Design"
                     },
