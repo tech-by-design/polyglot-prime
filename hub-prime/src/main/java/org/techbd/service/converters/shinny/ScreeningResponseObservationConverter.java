@@ -56,23 +56,23 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/"+observationId;
             setMeta(observation);
             Meta meta = observation.getMeta();
-            meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
+            meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getScreeningLastUpdated())); // max date available in all
                                                                                               // screening records
             observation.setLanguage("en");
             observation.setStatus(Observation.ObservationStatus.fromCode(screeningProfileData.getScreeningStatusCode()));
-            if (data.getObservationCategorySdohCode() != null && !data.getObservationCategorySnomedCode().equals("sdoh-category-unspecified")) {
+            if (!data.getObservationCategorySdohCode().isEmpty()) {
                 observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                     data.getObservationCategorySdohCode(), data.getObservationCategorySdohDisplay()));
             } else {
                 observation.addCategory(createCategory("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                     "sdoh-category-unspecified", "SDOH Category Unspecified"));
             
-                if (data.getObservationCategorySnomedCode() != null) {
+                if (!data.getObservationCategorySnomedCode().isEmpty()) {
                     observation.addCategory(createCategory("http://snomed.info/sct",
                         data.getObservationCategorySnomedCode(), data.getObservationCategorySnomedDisplay()));
                 }
             }
-            if(data.getDataAbsentReasonCode() != null) {
+            if(!data.getDataAbsentReasonCode().isEmpty()) {
                 CodeableConcept dataAbsentReason = new CodeableConcept();
 
                 dataAbsentReason.addCoding(
