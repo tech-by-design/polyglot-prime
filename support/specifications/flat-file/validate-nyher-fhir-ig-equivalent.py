@@ -121,6 +121,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             ("CONSENT_STATUS", "consent_status"),
             ("CONSENT_CATEGORY_IDSCL_CODE","consent_category_idscl_code"),
             ("CONSENT_CATEGORY_LOINC_DISPLAY", "consent_category_loinc_display"),   
+            ("CONSENT_STATUS", "consent_status"), 
             ("CONSENT_PROVISION_TYPE", "consent_provision_type"), 
             ("OBSERVATION_CATEGORY_SDOH_CODE",""),
             ("OBSERVATION_CATEGORY_SDOH_CODE","observation_category_sdoh_code"),
