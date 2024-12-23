@@ -3800,6 +3800,7 @@ WITH fhir_summary AS (
 
 SELECT 
     sizfr.tenant_id_lower,
+    sizfr.tenant_id,
     sizfr.hub_interaction_id,
     sizfr.created_at,
     SUM(CASE WHEN siffcr.demographic_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
@@ -3822,6 +3823,7 @@ GROUP BY
     sizfr.hub_interaction_id,
     sizfr.created_at,
     sizfr.tenant_id_lower,
+    sizfr.tenant_id,
     fhir_summary.fhir_count,
     fhir_summary.fhir_count_success,
     fhir_summary.fhir_count_failed
