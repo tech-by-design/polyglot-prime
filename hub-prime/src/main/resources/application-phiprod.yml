@@ -54,8 +54,8 @@ org:
                 # Path to the TLS certificate resource for mTLS.
                 mTlsCertResourceName: src/main/resources/certificates/scoring-engine/nyec-cert.pem # File is blank by default.Add certificate here.
               mTlsAwsSecrets: 
-                mTlsKeySecretName: techbd-qa-client-key # The name of the AWS Secrets Manager secret that holds the mTLS private key
-                mTlsCertSecretName: techbd-qa-client-certificate  # The name of the AWS Secrets Manager secret that holds the mTLS client certificate
+                mTlsKeySecretName: techbd-prd-client-key # The name of the AWS Secrets Manager secret that holds the mTLS private key
+                mTlsCertSecretName: techbd-prd-client-certificate  # The name of the AWS Secrets Manager secret that holds the mTLS client certificate
               postStdinPayloadToNyecDataLakeExternal:
                 # The command requires tenantId as argument 1 and payload via STDIN
                 # The command will return a status as a normal process and STDOUT will include all verbose debugging
