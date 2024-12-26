@@ -1,4 +1,4 @@
-name: Prime UDI schema generator
+name: Synthetic stage UDI schema generator
 
 on:
   workflow_dispatch: # Manual trigger
