@@ -1,4 +1,4 @@
-name: Devl UDI schema generator
+name: Synthetic Devl UDI schema generator
 
 on:
   workflow_dispatch: # Manual trigger

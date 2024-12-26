@@ -1,4 +1,4 @@
-name: UDI PRD PHI RDS schema generator
+name: PHI PROD UDI schema generator
 
 on:
   workflow_dispatch:

@@ -79,7 +79,7 @@ jobs:
             gh pr create --base main --head synthetic-techbd-fhir-stage-${{ github.ref_name}}-deployment --title "FHIR stage techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir stage deployment for version ${{ github.ref_name }}"  
 
 
-    synthetic-techbd-prod-deployment:
+    phi-prod-techbd-deployment:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
@@ -96,26 +96,26 @@ jobs:
         - name: Create and switch to a new branch
           run: |
             cd infrastructure-prime
-            git checkout -b synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment
+            git checkout -b phi-prod-techbd-fhir-${{ github.ref_name}}-deployment
             
         - name: Update fhir environment file
           run: |
             cd infrastructure-prime
-            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/synthetic.fhir.api.techbd.org/.env
+            sed -i 's/TAG=.*/TAG=${{ github.ref_name }}/g' aws/hub.techbd.org/.env
   
         - name: Commit and push changes
           run: |
             cd infrastructure-prime
             git add .
             git commit -m "ci: fhir production ${{ github.ref_name }} deployment"
-            git push --set-upstream origin synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment
+            git push --set-upstream origin phi-prod-techbd-fhir-${{ github.ref_name}}-deployment
   
         - name: Create Pull Request
           env:
             GH_TOKEN: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
           run: |
             cd infrastructure-prime
-            gh pr create --base main --head synthetic-techbd-fhir-prod-${{ github.ref_name}}-deployment --title "FHIR prod techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir prod deployment for version ${{ github.ref_name }}"
+            gh pr create --base main --head phi-prod-techbd-fhir-${{ github.ref_name}}-deployment --title "FHIR prod techbd.org ${{ github.ref_name }} update" --body "Automated techbd fhir prod deployment for version ${{ github.ref_name }}"
 
     phi-qa-techbd-deployment:
       runs-on: ubuntu-latest
