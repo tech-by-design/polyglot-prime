@@ -104,7 +104,7 @@ Ensure the following:
 
 Alternatively, if the example CCDA files are stored in a different folder, ensure that you update the `schemaLocation` in the CCDA file to point to the correct location of the `CDA.xsd` file, like this:
 ```
-schemaLocation="file:///path/to/ccda/folder/CDA.xsd" 
+schemaLocation="file:///path/to/ccda/folder/CDA.xsd"
 ```
 
 ### **Step 2: Load the CCDA File in XML-Spy**
@@ -131,3 +131,44 @@ schemaLocation="file:///path/to/ccda/folder/CDA.xsd"
 ## Notes
 - Use the provided `voc.xsd` file for vocabulary and code system validation.
 - Always ensure that schema files are up-to-date and compatible with the CCDA version being validated.
+
+
+# Technical Implementation Steps for Protecting PHI in HL7 CCD Screening Data Ingestion
+
+This document focuses on the preparation of the XSLT file which is used for protecting PHI data from CCD files to be ingested by the QEs.
+
+## 1. XSLT Development:
+
+- ### TechBD will analyze CCD file structures to identify screening data tags.
+
+    - The CCD file structures were analyzed to identify the following patient and screening data tags:
+
+       - a. Patient (recordTarget/patientRole)
+       - b. Organization (author/assignedAuthor/representedOrganization)
+       - c. Encounter (componentOf/encompassingEncounter)
+       - d. Consent (authorization/consent)
+       - e. Observation (component/structuredBody/component)
+
+- ### Create an XSLT file with transformation rules to exclude non-relevant tags.
+  - A sample XSLT file was developed to extract the specified sections (Patient, Organization, Encounter, and Observation).
+  - A channel was configured in Mirth Connect to test the functionality of the XSLT file.
+
+- ### Test the XSLT file with multiple CCD examples to ensure correct functionality.
+- ### Publish the XSLT file on TechBD’s public GitHub repository.
+
+## 2. Distribution to Senders:
+- Share the XSLT file and detailed instructions for its use through TechBD’s GitHub repository.
+
+- Offer support to help senders integrate the XSLT file into their workflows.
+
+## 3. Incoming API Quality Check:
+- Integrate a cleaning pipeline into the CCD HTTP API that applies the XSLT to all incoming CCD files.
+
+- Validate that only screening data is included in the cleaned payloads.
+
+- Maintain logs to track and audit the quality checks performed on each CCD file.
+
+## 4. Monitoring and Compliance:
+- Implement logging and notification mechanisms to ensure all CCD files adhere to the expected structure.
+
+- Periodically review logs and metrics to confirm compliance with data submission guidelines.
