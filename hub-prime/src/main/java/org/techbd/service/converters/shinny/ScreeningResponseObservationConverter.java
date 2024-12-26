@@ -1,31 +1,17 @@
+
 package org.techbd.service.converters.shinny;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
-import org.hl7.fhir.r4.model.CodeableConcept;
-import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.DateTimeType;
-import org.hl7.fhir.r4.model.Meta;
-import org.hl7.fhir.r4.model.Observation;
-import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.model.csv.DemographicData;
-import org.techbd.model.csv.QeAdminData;
-import org.techbd.model.csv.ScreeningObservationData;
-import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.model.csv.*;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
@@ -43,8 +29,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
     private static final String SDOH_CATEGORY_URL = "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes";
     private static final String LOINC_URL = "http://loinc.org";
     private static final String PROFILE_URL = "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response";
+    private static final String DEFAULT_LANGUAGE = "en";
+    private static final String DEFAULT_GROUP_DISPLAY_NAME = "Screening Observation Group";
 
-    private Map<String, List<ScreeningObservationData>> screeningCodeGroups = new HashMap<>();
+    private Map<String, List<ScreeningObservationData>> screeningCodeGroups;
 
     @Override
     public ResourceType getResourceType() {
@@ -62,20 +50,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             Map<String, String> idsGenerated) {
 
         LOG.info("ScreeningResponseObservationConverter::convert BEGIN for interaction id: {}", interactionId);
-
-        List<BundleEntryComponent> bundleEntryComponents = new ArrayList<>();
-
-        /*
-         * TODO
-         * populate referencesMap--if a question falls in any of reference
-         * INTERPERSONAL_SAFETY_GROUP_QUESTIONS
-         * AHC_SCREENING_GROUP_QUESTIONS
-         * SUPPLEMENTAL_GROUP_QUESTIONS
-         * TOTAL_SCORE_QUESTIONS
-         * MENTAL_HEALTH_SCORE_QUESTIONS
-         * PHYSICAL_ACTIVITY_SCORE_QUESTIONS
-         *
-         */
         List<String> interpersonalSafetyQuestions = QUESTIONS_MAP
                 .get(CsvConstants.INTERPERSONAL_SAFETY_GROUP_QUESTIONS);
         List<String> ahcScreeningQuestions = QUESTIONS_MAP.get(CsvConstants.AHC_SCREENING_GROUP_QUESTIONS);
@@ -86,17 +60,21 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
         Map<String, List<Reference>> referencesMap = new HashMap<>();
         Map<String, String> questionAndAnswerCode = new HashMap<>();
+        List<BundleEntryComponent> bundleEntryComponents = new ArrayList<>();
         // questionAndAnswerCode.clear();
         for (ScreeningObservationData data : screeningObservationDataList) {
             Observation observation = new Observation();
             String observationId = CsvConversionUtil
-                    .sha256(data.getQuestionCodeDisplay().replace(" ", "") + data.getQuestionCode());
+                    .sha256(data.getQuestionCodeDisplay().replace(" ", "") +
+                            data.getQuestionCode());
             observation.setId(observationId);
+            // **********try */ data.setObservationId(observationId);
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
             setMeta(observation);
             Meta meta = observation.getMeta();
-            meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getScreeningLastUpdated())); // max date
-                                                                                                     // available in all
+            meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getScreeningLastUpdated()));
+            // max date
+            // available in all
             // screening records
             observation.setLanguage("en");
             observation
@@ -104,7 +82,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             if (!data.getObservationCategorySdohCode().isEmpty()) {
                 observation.addCategory(createCategory(
                         "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                        data.getObservationCategorySdohCode(), data.getObservationCategorySdohDisplay()));
+                        data.getObservationCategorySdohCode(),
+                        data.getObservationCategorySdohDisplay()));
             } else {
                 observation.addCategory(createCategory(
                         "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
@@ -112,7 +91,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 if (!data.getObservationCategorySnomedCode().isEmpty()) {
                     observation.addCategory(createCategory("http://snomed.info/sct",
-                            data.getObservationCategorySnomedCode(), data.getObservationCategorySnomedDisplay()));
+                            data.getObservationCategorySnomedCode(),
+                            data.getObservationCategorySnomedDisplay()));
                 }
             }
             if (!data.getDataAbsentReasonCode().isEmpty()) {
@@ -132,22 +112,25 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             observation.addCategory(createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                     "survey", null));
             CodeableConcept code = new CodeableConcept();
-            code.addCoding(new Coding("http://loinc.org", data.getQuestionCode(), data.getQuestionCodeDisplay()));
+            code.addCoding(new Coding("http://loinc.org", data.getQuestionCode(),
+                    data.getQuestionCodeDisplay()));
             code.setText(data.getQuestionCodeText());
             observation.setCode(code);
-            observation.setSubject(new Reference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)));
+            observation.setSubject(new Reference("Patient/" +
+                    idsGenerated.get(CsvConstants.PATIENT_ID)));
             if (data.getRecordedTime() != null) {
                 observation.setEffective(new DateTimeType(DateUtil.parseDate(data.getRecordedTime())));
             }
             observation.setIssued(DateUtil.parseDate(data.getRecordedTime()));
             CodeableConcept value = new CodeableConcept();
-            value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(), data.getAnswerCodeDescription()));
+            value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(),
+                    data.getAnswerCodeDescription()));
             observation.setValue(value);
             questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
             // debug
             FhirContext ctx = FhirContext.forR4();
             String jsonString = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(observation);
-            LOG.info("Observation JSON: {}", jsonString);
+            LOG.debug("Observation JSON: {}", jsonString);
             BundleEntryComponent entry = new BundleEntryComponent();
             entry.setFullUrl(fullUrl);
             entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
@@ -157,68 +140,60 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         }
 
         try {
-            // Group observations by screening code first
-            screeningCodeGroups = screeningObservationDataList.stream()
-                    .collect(Collectors.groupingBy(ScreeningObservationData::getScreeningCode));
-
-            LOG.info("Found {} different screening code groups", screeningCodeGroups.size());
-            // double log
-            LOG.info("Initial screeningObservationDataList size: {}", screeningObservationDataList.size());
-            LOG.info("Initial screening codes present: {}",
-                    screeningObservationDataList.stream()
-                            .map(ScreeningObservationData::getScreeningCode)
-                            .distinct()
-                            .collect(Collectors.toList()));
-
-            // Process each screening code group
-            for (Map.Entry<String, List<ScreeningObservationData>> entry : screeningCodeGroups.entrySet()) {
-                String screeningCode = entry.getKey();
-                List<ScreeningObservationData> groupData = entry.getValue();
-
-                LOG.info("Processing screening code: {} with {} observations", screeningCode, groupData.size());
-
-                // First create individual observations for this group
-                Map<String, String> individualObservationIds = new HashMap<>();
-                for (ScreeningObservationData data : groupData) {
-                    BundleEntryComponent individualEntry = createIndividualObservation(
-                            data, demographicData, screeningProfileData, idsGenerated);
-                    bundleEntryComponents.add(individualEntry);
-                    individualObservationIds.put(data.getQuestionCode(), individualEntry.getResource().getId());
-                }
-
-                // Then create the group observation
-                BundleEntryComponent groupEntry = createGroupObservation(
-                        screeningCode,
-                        groupData,
-                        demographicData,
-                        screeningProfileData,
-                        individualObservationIds,
-                        idsGenerated,
-                        interactionId);
-                bundleEntryComponents.add(groupEntry);
-            }
-
-            LOG.info("Total bundle entries created: {}", bundleEntryComponents.size());
-
+            return processScreeningGroups(demographicData, screeningProfileData,
+                    screeningObservationDataList, idsGenerated, interactionId);
         } catch (Exception e) {
             LOG.error("Error converting screening observations for interaction {}: {}",
                     interactionId, e.getMessage(), e);
             throw new RuntimeException("Error converting screening observations", e);
+        } finally {
+            LOG.info("ScreeningResponseObservationConverter::convert END for interaction id: {}", interactionId);
         }
+    }
 
-        LOG.info("ScreeningResponseObservationConverter::convert END for interaction id: {}", interactionId);
-        // double log
-        FhirContext ctx = FhirContext.forR4();
-        LOG.info("Created {} group observations:", screeningCodeGroups.size());
-        bundleEntryComponents.stream()
-                .filter(entry -> entry.getResource() instanceof Observation)
-                .map(entry -> (Observation) entry.getResource())
-                .filter(obs -> !obs.getHasMember().isEmpty()) // This identifies group observations
-                .forEach(groupObs -> {
-                    String json = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(groupObs);
-                    LOG.info("Group Observation JSON for screening code {}: {}",
-                            groupObs.getCode().getCodingFirstRep().getCode(), json);
-                });
+    /**
+     * Processes screening observation data into groups and creates corresponding
+     * FHIR resources
+     * 
+     * @param demographicData              Patient demographic information
+     * @param screeningProfileData         Screening profile data
+     * @param screeningObservationDataList List of screening observations
+     * @param idsGenerated                 Map of generated IDs
+     * @param interactionId                Interaction identifier
+     * @return List of bundle entry components
+     */
+    private List<BundleEntryComponent> processScreeningGroups(
+            DemographicData demographicData,
+            ScreeningProfileData screeningProfileData,
+            List<ScreeningObservationData> screeningObservationDataList,
+            Map<String, String> idsGenerated,
+            String interactionId) {
+
+        List<BundleEntryComponent> bundleEntryComponents = new ArrayList<>();
+
+        // Group observations by screening code
+        screeningCodeGroups = screeningObservationDataList.stream()
+                .collect(Collectors.groupingBy(ScreeningObservationData::getScreeningCode));
+
+        LOG.debug("Found {} different screening code groups", screeningCodeGroups.size());
+        logScreeningDetails(screeningObservationDataList);
+
+        // Process each screening code group
+        screeningCodeGroups.forEach((screeningCode, groupData) -> {
+            LOG.info("Processing screening code: {} with {} observations", screeningCode, groupData.size());
+
+            // Create individual observations and store their IDs
+            Map<String, String> individualObservationIds = processIndividualObservations(
+                    groupData, demographicData, screeningProfileData, idsGenerated, bundleEntryComponents);
+
+            // Create and add group observation
+            BundleEntryComponent groupEntry = createGroupObservation(
+                    screeningCode, groupData, demographicData, screeningProfileData,
+                    individualObservationIds, idsGenerated, interactionId);
+            bundleEntryComponents.add(groupEntry);
+        });
+
+        logGroupObservations(bundleEntryComponents);
         return bundleEntryComponents;
     }
 
@@ -302,6 +277,23 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 .setUrl("Observation/" + observationId));
 
         return groupEntry;
+    }
+
+    private Map<String, String> processIndividualObservations(
+            List<ScreeningObservationData> groupData,
+            DemographicData demographicData,
+            ScreeningProfileData screeningProfileData,
+            Map<String, String> idsGenerated,
+            List<BundleEntryComponent> bundleEntryComponents) {
+
+        Map<String, String> individualObservationIds = new HashMap<>();
+        groupData.forEach(data -> {
+            BundleEntryComponent individualEntry = createIndividualObservation(
+                    data, demographicData, screeningProfileData, idsGenerated);
+            bundleEntryComponents.add(individualEntry);
+            individualObservationIds.put(data.getQuestionCode(), individualEntry.getResource().getId());
+        });
+        return individualObservationIds;
     }
 
     private BundleEntryComponent createIndividualObservation(
@@ -388,5 +380,28 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         Coding coding = new Coding(system, code, display);
         category.addCoding(coding);
         return category;
+    }
+
+    private void logScreeningDetails(List<ScreeningObservationData> screeningObservationDataList) {
+        LOG.debug("Initial screeningObservationDataList size: {}", screeningObservationDataList.size());
+        LOG.info("Initial screening codes present: {}",
+                screeningObservationDataList.stream()
+                        .map(ScreeningObservationData::getScreeningCode)
+                        .distinct()
+                        .collect(Collectors.toList()));
+    }
+
+    private void logGroupObservations(List<BundleEntryComponent> bundleEntryComponents) {
+        FhirContext ctx = FhirContext.forR4();
+        LOG.info("Created {} group observations:", screeningCodeGroups.size());
+        bundleEntryComponents.stream()
+                .filter(entry -> entry.getResource() instanceof Observation)
+                .map(entry -> (Observation) entry.getResource())
+                .filter(obs -> !obs.getHasMember().isEmpty())
+                .forEach(groupObs -> {
+                    String json = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(groupObs);
+                    LOG.info("Group Observation JSON for screening code {}: {}",
+                            groupObs.getCode().getCodingFirstRep().getCode(), json);
+                });
     }
 }
