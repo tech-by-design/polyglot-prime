@@ -3,6 +3,7 @@ package org.techbd.util;
 public interface CsvConstants {
 
     public static final String PATIENT_ID="PATIENT_ID";
+    public static final String ENCOUNTER_ID="ENCOUNTER_ID";
     public static final String ORGANIZATION_ID="ORGRANIZATION_ID";
     public static final String INTERPERSONAL_SAFETY_GROUP_QUESTIONS = "INTERPERSONAL_SAFETY_GROUP_QUESTIONS";
     public static final String AHC_SCREENING_GROUP_QUESTIONS = "AHC_SCREENING_GROUP_QUESTIONS";
