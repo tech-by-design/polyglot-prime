@@ -95,9 +95,9 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
             setMeta(observation);
             Meta meta = observation.getMeta();
-            meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in
-                                                                                              // all
-                                                                                              // screening records
+            meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getScreeningLastUpdated())); // max date
+                                                                                                     // available in all
+            // screening records
             observation.setLanguage("en");
             observation
                     .setStatus(Observation.ObservationStatus.fromCode(screeningProfileData.getScreeningStatusCode()));
@@ -144,7 +144,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
             value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(), data.getAnswerCodeDescription()));
             observation.setValue(value);
             questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
-            //debug
+            // debug
             FhirContext ctx = FhirContext.forR4();
             String jsonString = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(observation);
             LOG.info("Observation JSON: {}", jsonString);
