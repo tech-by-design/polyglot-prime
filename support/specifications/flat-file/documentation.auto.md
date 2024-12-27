@@ -89,7 +89,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['amb', 'emer', 'fld', 'hh', 'imp', 'acute', 'nonac', 'obsenc', 'prenc', 'ss', 'vr']
+    - `enum` ['AMB', 'EMER', 'FLD', 'HH', 'IMP', 'ACUTE', 'NONAC', 'OBSENC', 'PRENC', 'SS', 'VR']
 ### `ENCOUNTER_STATUS_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').status
   - `type` string
@@ -343,7 +343,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['LA29518-0', 'LA29519-8', 'LA29520-6', 'oth', 'unk']
+    - `enum` ['LA29518-0', 'LA29519-8', 'LA29520-6', 'OTH', 'UNK']
 ### `EXTENSION_PERSONAL_PRONOUNS_DISPLAY`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.display
   - `type` string
@@ -358,7 +358,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['33791000087105', '407376001', '407377005', '446131000124102', '446141000124107', '446151000124109', 'oth', 'unk', 'asked-declined']
+    - `enum` ['33791000087105', '407376001', '407377005', '446131000124102', '446141000124107', '446151000124109', 'OTH', 'UNK', 'asked-declined']
 ### `EXTENSION_GENDER_IDENTITY_DISPLAY`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display
   - `type` string
@@ -400,7 +400,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
   - `constraints`:
-    - `enum` ['2135-2', '2186-5', '2133-7', 'asku', 'unk', 'oth']
+    - `enum` ['2135-2', '2186-5', '2133-7', 'ASKU', 'UNK', 'OTH']
 ### `EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display
   - `type` string
@@ -440,7 +440,7 @@
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['20430005', '38628009', '42035005', '765288000', 'oth', 'unk', 'asked-declined']
+    - `enum` ['20430005', '38628009', '42035005', '765288000', 'OTH', 'UNK', 'asked-declined']
 ### `SEXUAL_ORIENTATION_VALUE_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.display
   - `type` string
