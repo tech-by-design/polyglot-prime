@@ -52,7 +52,7 @@
         {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true}},
         {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true}},
         {"name": "ENCOUNTER_CLASS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').class.code", "constraints": {"required": true, "enum": [
-          "amb", "emer", "fld", "hh", "imp", "acute", "nonac", "obsenc", "prenc", "ss", "vr"
+          "AMB", "EMER", "FLD", "HH", "IMP", "ACUTE", "NONAC", "OBSENC", "PRENC", "SS", "VR"
         ]
       }},
       {"name": "ENCOUNTER_STATUS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').status", "constraints": {"required": true, "enum": [
@@ -337,7 +337,7 @@
             ]}},
           {"name": "ZIP", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.postalCode", "constraints": { "pattern": "^\\d{5}(\\d{4})?$"}},
           {"name": "TELECOM_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').telecom.value", "constraints": { "required": true}},         
-          {"name": "EXTENSION_PERSONAL_PRONOUNS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code", "constraints": {"enum":[ "LA29518-0", "LA29519-8", "LA29520-6", "oth", "unk"]}},
+          {"name": "EXTENSION_PERSONAL_PRONOUNS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code", "constraints": {"enum":[ "LA29518-0", "LA29519-8", "LA29520-6", "OTH", "UNK"]}},
           {"name": "EXTENSION_PERSONAL_PRONOUNS_DISPLAY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.display", "constraints": {"enum": [
             "he/him/his/his/himself",
             "she/her/her/hers/herself",
@@ -353,8 +353,8 @@
               "446131000124102",
               "446141000124107",
               "446151000124109",
-              "oth",
-              "unk",
+              "OTH",
+              "UNK",
               "asked-declined"
             ]}},
           {"name": "EXTENSION_GENDER_IDENTITY_DISPLAY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display", "constraints": {  
@@ -538,7 +538,7 @@
             "urn:oid:2.16.840.1.113883.6.238", 
             "http://terminology.hl7.org/CodeSystem/v3-NullFlavor" 
           ]}},           
-          {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code", "constraints": { "enum":["2135-2", "2186-5", "2133-7", "asku", "unk", "oth"]}},
+          {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code", "constraints": { "enum":["2135-2", "2186-5", "2133-7", "ASKU", "UNK", "OTH"]}},
           {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display", "constraints": { "enum":["hispanic or latino", "non hispanic or latino", "asked but unknown", "unknown", "other", "ethnicity"]}},
           {"name": "EXTENSION_OMBCATEGORY_ETHNICITY_CODE_SYSTEM_NAME", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.system", "constraints": { "enum":[
             "urn:oid:2.16.840.1.113883.6.238" , "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
@@ -565,8 +565,8 @@
             "38628009",
             "42035005",
             "765288000",
-            "oth",
-            "unk",
+            "OTH",
+            "UNK",
             "asked-declined"
           ]}},
           {"name": "SEXUAL_ORIENTATION_VALUE_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.display", "constraints": {  "enum":[
