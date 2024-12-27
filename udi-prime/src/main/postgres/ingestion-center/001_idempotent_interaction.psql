@@ -3691,7 +3691,8 @@ BEGIN
          WHERE 
             sihr.nature = ''Forwarded HTTP Response Error''
             AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle''])
-            AND sihr.created_at BETWEEN $1 AND $2
+            AND sihr.created_at >= TO_TIMESTAMP($1::text, ''YYYY-MM-DD'') 
+	        AND sihr.created_at < TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') + INTERVAL ''1 day''
             AND sihr.tenant_id_lower = $3
          ORDER BY sihr.created_at DESC'
     )
