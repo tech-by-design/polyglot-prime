@@ -49,6 +49,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -351,22 +352,22 @@ public class CsvOrchestrationEngine {
             }
 
             Object validationResults = input.get("validationResults");
-            if (validationResults instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> validationResultsMap = (Map<String, Object>) validationResults;
 
-                if (validationResultsMap.containsKey("report")) {
-                    Object report = validationResultsMap.get("report");
-                    if (report instanceof Map) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> reportMap = (Map<String, Object>) report;
+            if (validationResults instanceof ObjectNode) {
+                ObjectNode validationResultsNode = (ObjectNode) validationResults;
 
-                        if (reportMap.containsKey("valid")) {
-                            Object valid = reportMap.get("valid");
-                            if (valid instanceof Boolean) {
-                                return (Boolean) valid;
-                            }
-                        }
+                // Check if errorSummary exists and is empty
+                JsonNode errorsSummaryNode = validationResultsNode.get("errorsSummary");
+                if (errorsSummaryNode != null && errorsSummaryNode.isArray() && errorsSummaryNode.size() > 0) {
+                    return false; // Return false if errorsSummary is not empty
+                }
+
+                // Check the "report" node
+                JsonNode reportNode = validationResultsNode.get("report");
+                if (reportNode != null && reportNode.isObject()) {
+                    JsonNode validNode = reportNode.get("valid");
+                    if (validNode != null && validNode.isBoolean()) {
+                        return validNode.asBoolean();
                     }
                 }
             }
@@ -632,7 +633,9 @@ public class CsvOrchestrationEngine {
                     combinedValidationResults.add(operationOutcomeForThisGroup);
                     if (generateBundle) {
                         this.payloadAndValidationOutcomes.put(groupKey,
-                                new PayloadAndValidationOutcome(fileDetails, isGroupComplete(fileDetails) ? extractValidValue(operationOutcomeForThisGroup) : false,
+                                new PayloadAndValidationOutcome(fileDetails,
+                                        isGroupComplete(fileDetails) ? extractValidValue(operationOutcomeForThisGroup)
+                                                : false,
                                         groupInteractionId, extractProvenance(operationOutcomeForThisGroup),
                                         operationOutcomeForThisGroup));
                     }

@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.OperationOutcome;
@@ -61,9 +59,9 @@ public class CsvBundleProcessorService {
             final String groupKey = entry.getKey();
             final PayloadAndValidationOutcome outcome = entry.getValue();
             final String groupInteractionId = outcome.groupInteractionId();
-            final Map<String,Object> provenance = outcome.provenance();
+            final Map<String, Object> provenance = outcome.provenance();
             try {
-                
+
                 if (outcome.isValid()) {
                     Map<String, List<DemographicData>> demographicData = null;
                     Map<String, List<ScreeningProfileData>> screeningProfileData = null;
@@ -104,11 +102,47 @@ public class CsvBundleProcessorService {
             } catch (Exception e) {
                 LOG.error("Error processing payload: " + e.getMessage(), e);
                 resultBundles.add(
-                        createOperationOutcomeForError(masterInteractionId, groupInteractionId, "","", e,provenance));
+                        createOperationOutcomeForError(masterInteractionId, groupInteractionId, "", "", e, provenance));
             }
         }
 
         return resultBundles;
+    }
+
+    public String addBundleProvenance(Map<String, Object> existingProvenance, List<String> bundleGeneratedFrom,
+            String patientMrnId, String encounterId,Instant initiatedAt,Instant completedAt) throws Exception {
+        Map<String, Object> newProvenance = new HashMap<>();
+        newProvenance.put("resourceType", "Provenance");
+        newProvenance.put("description", "Bundle created from provided files for the given patientMrnId and encounterId");
+        newProvenance.put("validatedFiles", bundleGeneratedFrom);
+        newProvenance.put("initiatedAt", initiatedAt.toString());
+        newProvenance.put("completedAt", completedAt.toString());
+        newProvenance.put("patientMrnId", patientMrnId);
+        newProvenance.put("encounterId", encounterId);
+        Map<String, Object> agent = new HashMap<>();
+        Map<String, String> whoCoding = new HashMap<>();
+        whoCoding.put("system", "generator");
+        whoCoding.put("display", "TechByDesign");
+        agent.put("who", Collections.singletonMap("coding", List.of(whoCoding)));
+        newProvenance.put("agent", List.of(agent));
+        List<Map<String, Object>> provenanceList = new ArrayList<>();
+        provenanceList.add(existingProvenance);
+        provenanceList.add(newProvenance);
+        return Configuration.objectMapper.writeValueAsString(provenanceList);
+    }
+
+    public void addHapiFhirValidation(Map<String, Object> provenance, String validationDescription) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> agent = new HashMap<>();
+        Map<String, String> whoCoding = new HashMap<>();
+
+        whoCoding.put("system", "Validator");
+        whoCoding.put("display", "HAPI FHIR Validation");
+
+        agent.put("who", Collections.singletonMap("coding", List.of(whoCoding)));
+        provenance.put("hapiFhirValidation", Map.of(
+                "agent", List.of(agent),
+                "description", validationDescription));
     }
 
     private void saveConvertedFHIR(boolean isValid, String masterInteractionId, String groupKey,
@@ -235,14 +269,17 @@ public class CsvBundleProcessorService {
                         LOG.error(errorMessage);
                         throw new IllegalArgumentException(errorMessage);
                     }
-
+                    Instant initiatedAt =Instant.now();
                     final var bundle = csvToFhirConverter.convert(
                             demographicList.get(0),
                             qeAdminList.get(0),
                             profile,
                             screeningObservationList,
                             interactionId);
+                    Instant completedAt = Instant.now();
                     if (bundle != null) {
+                        String updatedProvenance = addBundleProvenance(payloadAndValidationOutcome.provenance(), getFileNames(payloadAndValidationOutcome.fileDetails()),
+                        profile.getPatientMrIdValue(), profile.getEncounterId(),initiatedAt,completedAt);
                         saveConvertedFHIR(isValid, masterInteractionId, groupKey, interactionId, request,
                                 bundle, tenantId);
                         results.add(fhirService.processBundle(
@@ -250,7 +287,7 @@ public class CsvBundleProcessorService {
                                 Boolean.toString(false), false,
                                 false, false,
                                 request, response,
-                                Configuration.objectMapper.writeValueAsString(payloadAndValidationOutcome.provenance()),
+                                updatedProvenance,
                                 true, null, interactionId, groupInteractionId,
                                 masterInteractionId, SourceType.CSV.name()));
                     } else {
@@ -272,7 +309,14 @@ public class CsvBundleProcessorService {
 
         return results;
     }
-
+   public static List<String> getFileNames(List<FileDetail> fileDetails) {
+        if (fileDetails != null) {
+            return fileDetails.stream()
+                    .map(FileDetail::filename)
+                    .collect(Collectors.toList());
+        }
+        return List.of(); // return an empty list if the input is null
+    }
     private Map<String, Object> createOperationOutcomeForError(
             final String masterInteractionId,
             final String groupInteractionId,
@@ -288,10 +332,11 @@ public class CsvBundleProcessorService {
                 "Error processing data for Master Interaction ID: " + masterInteractionId +
                         ", Interaction ID: " + groupInteractionId +
                         ", Patient MRN: " + patientMrIdValue +
+                        ", EncounterID : "+ encounterId +
                         ", Error: " + e.getMessage());
         return Map.of(
-            "masterInteractionId",masterInteractionId,
-            "groupInteractionId",groupInteractionId,
+                "masterInteractionId", masterInteractionId,
+                "groupInteractionId", groupInteractionId,
                 "patientMrId", patientMrIdValue,
                 "encounterId", encounterId,
                 "provenance", provenance,
