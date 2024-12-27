@@ -185,7 +185,7 @@
                 </xsl:for-each>
             </componentOf>
 
-            <!-- Extract Observation Details -->
+            <!-- Extract Observations -->
             <component>
                 <structuredBody>
                     <xsl:for-each select="hl7:component/hl7:structuredBody/hl7:component/hl7:section">
@@ -208,7 +208,7 @@
                                     </text>
                                 </xsl:if>
 
-                                <!-- Process Entries -->
+                                <!-- Process observation Entries -->
                                 <xsl:for-each select="hl7:entry/hl7:observation">
                                     <Observation>
                                         <templateId>
@@ -236,7 +236,7 @@
                                             <codeSystemName><xsl:value-of select="hl7:interpretationCode/@codeSystemName"/></codeSystemName>
                                         </interpretationCode>
 
-                                        <!-- Include Subject Information -->
+                                        <!-- Include Subject Information only if exists -->
                                         <xsl:if test="hl7:subject">
                                             <subject>
                                                 <xsl:if test="hl7:subject/hl7:relatedSubject/hl7:subject">
