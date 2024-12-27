@@ -57,55 +57,55 @@ public class CsvBundleProcessorService {
             String tenantId) {
         final List<Object> resultBundles = new ArrayList<>();
 
-        try {
-            for (final var entry : payloadAndValidationOutcomes.entrySet()) {
-                final String groupKey = entry.getKey();
-                final PayloadAndValidationOutcome outcome = entry.getValue();
-                final String groupInteractionId = outcome.groupInteractionId();
+        for (final var entry : payloadAndValidationOutcomes.entrySet()) {
+            final String groupKey = entry.getKey();
+            final PayloadAndValidationOutcome outcome = entry.getValue();
+            final String groupInteractionId = outcome.groupInteractionId();
+            final Map<String,Object> provenance = outcome.provenance();
+            try {
+                
+                if (outcome.isValid()) {
+                    Map<String, List<DemographicData>> demographicData = null;
+                    Map<String, List<ScreeningProfileData>> screeningProfileData = null;
+                    Map<String, List<QeAdminData>> qeAdminData = null;
+                    Map<String, List<ScreeningObservationData>> screeningObservationData = null;
 
-                // Parse input files
-                Map<String, List<DemographicData>> demographicData = null;
-                Map<String, List<ScreeningProfileData>> screeningProfileData = null;
-                Map<String, List<QeAdminData>> qeAdminData = null;
-                Map<String, List<ScreeningObservationData>> screeningObservationData = null;
-
-                for (final FileDetail fileDetail : outcome.fileDetails()) {
-                    try {
-                        final String content = fileDetail.content();
-                        final FileType fileType = fileDetail.fileType();
-                        switch (fileType) {
-                            case DEMOGRAPHIC_DATA ->
-                                demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content);
-                            case SCREENING_PROFILE_DATA -> screeningProfileData = CsvConversionUtil
-                                    .convertCsvStringToScreeningProfileData(content);
-                            case QE_ADMIN_DATA ->
-                                qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content);
-                            case SCREENING_OBSERVATION_DATA -> screeningObservationData = CsvConversionUtil
-                                    .convertCsvStringToScreeningObservationData(content);
-                            default -> throw new IllegalStateException("Unexpected value: " + fileType);
+                    for (final FileDetail fileDetail : outcome.fileDetails()) {
+                        try {
+                            final String content = fileDetail.content();
+                            final FileType fileType = fileDetail.fileType();
+                            switch (fileType) {
+                                case DEMOGRAPHIC_DATA ->
+                                    demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content);
+                                case SCREENING_PROFILE_DATA -> screeningProfileData = CsvConversionUtil
+                                        .convertCsvStringToScreeningProfileData(content);
+                                case QE_ADMIN_DATA ->
+                                    qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content);
+                                case SCREENING_OBSERVATION_DATA -> screeningObservationData = CsvConversionUtil
+                                        .convertCsvStringToScreeningObservationData(content);
+                                default -> throw new IllegalStateException("Unexpected value: " + fileType);
+                            }
+                        } catch (final IOException e) {
+                            LOG.error("Error processing file: " + fileDetail.filename() + ", Error: " + e.getMessage());
+                            throw new RuntimeException(e);
                         }
-                    } catch (final IOException e) {
-                        LOG.error("Error processing file: " + fileDetail.filename() + ", Error: " + e.getMessage());
-                        throw new RuntimeException(e);
                     }
+                    validateAndThrowIfDataMissing(demographicData, screeningProfileData, qeAdminData,
+                            screeningObservationData);
+                    if (screeningProfileData != null) {
+                        resultBundles.addAll(processScreening(groupKey, demographicData, screeningProfileData,
+                                qeAdminData, screeningObservationData, request, response, groupInteractionId,
+                                masterInteractionId,
+                                tenantId, outcome.isValid(), outcome));
+                    }
+                } else {
+                    resultBundles.add(outcome.validationResults());
                 }
-
-                // Validate data
-                validateAndThrowIfDataMissing(demographicData, screeningProfileData, qeAdminData,
-                        screeningObservationData);
-
-                // Process screening profile data
-                if (screeningProfileData != null) {
-                    resultBundles.addAll(processScreeningProfileData(groupKey, demographicData, screeningProfileData,
-                            qeAdminData, screeningObservationData, request, response, groupInteractionId,
-                            masterInteractionId,
-                            tenantId, outcome.isValid()));
-                }
+            } catch (Exception e) {
+                LOG.error("Error processing payload: " + e.getMessage(), e);
+                resultBundles.add(
+                        createOperationOutcomeForError(masterInteractionId, groupInteractionId, "","", e,provenance));
             }
-        } catch (Exception e) {
-            LOG.error("Error processing payload: " + e.getMessage(), e);
-            resultBundles.add(
-                    createOperationOutcomeForError(masterInteractionId, UUID.randomUUID().toString(), "Unknown", e));
         }
 
         return resultBundles;
@@ -202,7 +202,7 @@ public class CsvBundleProcessorService {
         }
     }
 
-    private List<Object> processScreeningProfileData(String groupKey,
+    private List<Object> processScreening(String groupKey,
             final Map<String, List<DemographicData>> demographicData,
             final Map<String, List<ScreeningProfileData>> screeningProfileData,
             final Map<String, List<QeAdminData>> qeAdminData,
@@ -211,7 +211,8 @@ public class CsvBundleProcessorService {
             HttpServletResponse response,
             String groupInteractionId,
             String masterInteractionId,
-            String tenantId, boolean isValid) {
+            String tenantId, boolean isValid, PayloadAndValidationOutcome payloadAndValidationOutcome)
+            throws IOException {
 
         List<Object> results = new ArrayList<>();
 
@@ -241,23 +242,30 @@ public class CsvBundleProcessorService {
                             profile,
                             screeningObservationList,
                             interactionId);
-                    saveConvertedFHIR(isValid, masterInteractionId, groupKey, interactionId, request,
-                            bundle, tenantId);
                     if (bundle != null) {
+                        saveConvertedFHIR(isValid, masterInteractionId, groupKey, interactionId, request,
+                                bundle, tenantId);
                         results.add(fhirService.processBundle(
                                 bundle, tenantId, null, null, null, null, null,
                                 Boolean.toString(false), false,
-                                false, false, request, response, null, true, null,interactionId,groupInteractionId,masterInteractionId,SourceType.CSV.name()));
+                                false, false,
+                                request, response,
+                                Configuration.objectMapper.writeValueAsString(payloadAndValidationOutcome.provenance()),
+                                true, null, interactionId, groupInteractionId,
+                                masterInteractionId, SourceType.CSV.name()));
                     } else {
                         results.add(createOperationOutcomeForError(masterInteractionId, interactionId,
-                                profile.getPatientMrIdValue(), new Exception("Bundle not created")));
+                                profile.getPatientMrIdValue(), profile.getEncounterId(),
+                                new Exception("Bundle not created"),
+                                payloadAndValidationOutcome.provenance()));
                     }
                 } catch (final Exception e) {
                     LOG.error(String.format(
                             "Error processing patient data for MrId: %s, interactionId: %s, Error: %s",
                             profile.getPatientMrIdValue(), interactionId, e.getMessage()), e);
                     results.add(createOperationOutcomeForError(masterInteractionId, interactionId,
-                            profile.getPatientMrIdValue(), e));
+                            profile.getPatientMrIdValue(), profile.getEncounterId(), e,
+                            payloadAndValidationOutcome.provenance()));
                 }
             }
         });
@@ -265,20 +273,28 @@ public class CsvBundleProcessorService {
         return results;
     }
 
-    private OperationOutcome createOperationOutcomeForError(final String masterInteractionId,
-            final String interactionId,
+    private Map<String, Object> createOperationOutcomeForError(
+            final String masterInteractionId,
+            final String groupInteractionId,
             final String patientMrIdValue,
-            final Exception e) {
+            final String encounterId,
+            final Exception e,
+            Map<String, Object> provenance) {
         OperationOutcome operationOutcome = new OperationOutcome();
         OperationOutcome.OperationOutcomeIssueComponent issue = operationOutcome.addIssue();
         issue.setSeverity(OperationOutcome.IssueSeverity.ERROR);
         issue.setCode(OperationOutcome.IssueType.EXCEPTION);
         issue.setDiagnostics(
                 "Error processing data for Master Interaction ID: " + masterInteractionId +
-                        ", Interaction ID: " + interactionId +
+                        ", Interaction ID: " + groupInteractionId +
                         ", Patient MRN: " + patientMrIdValue +
                         ", Error: " + e.getMessage());
-        return operationOutcome;
+        return Map.of(
+            "masterInteractionId",masterInteractionId,
+            "groupInteractionId",groupInteractionId,
+                "patientMrId", patientMrIdValue,
+                "encounterId", encounterId,
+                "provenance", provenance,
+                "operationOutcome", operationOutcome);
     }
-
 }

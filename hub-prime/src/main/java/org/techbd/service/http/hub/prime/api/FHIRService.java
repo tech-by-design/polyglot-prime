@@ -114,7 +114,8 @@ public class FHIRService {
                         boolean includeRequestInOutcome,
                         boolean includeIncomingPayloadInDB,
                         HttpServletRequest request, HttpServletResponse response, String provenance,
-                        boolean includeOperationOutcome, String mtlsStrategy, String interactionId,String groupInteractionId,String masterInteractionId,String sourceType)
+                        boolean includeOperationOutcome, String mtlsStrategy, String interactionId,
+                        String groupInteractionId,String masterInteractionId,String sourceType)
                         throws IOException {
                 final var start = Instant.now();
                 LOG.info("Bundle processing start at {} for interaction id {}.",
