@@ -150,11 +150,13 @@ This document focuses on the preparation of the XSLT file which is used for prot
        - e. Observation (component/structuredBody/component)
 
 - ### Create an XSLT file with transformation rules to exclude non-relevant tags.
-  - A sample XSLT file was developed to extract the specified sections (Patient, Organization, Encounter, and Observation).
+  - A sample XSLT file was developed to extract the specified sections (Patient, Organization, Encounter, Consent and Observation).
   - A channel was configured in Mirth Connect to test the functionality of the XSLT file.
 
 - ### Test the XSLT file with multiple CCD examples to ensure correct functionality.
+  - The XSLT file is tested with multiple CCD files as well as CCD files with sections other than the specified sections (Patient, Organization, Encounter, Consent and Observation)
 - ### Publish the XSLT file on TechBD’s public GitHub repository.
+  - The XSLT file, cda-phi-filter.xslt, is saved in the GitHub repository under the folder support/specifications/ccda.
 
 ## 2. Distribution to Senders:
 - Share the XSLT file and detailed instructions for its use through TechBD’s GitHub repository.
