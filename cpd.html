@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2024-12-30<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.410.0</li>
+          <li id="projectVersion">Version: 0.411.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -179,7 +179,7 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>352</td></tr>
+<td>361</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>196</td></tr>
@@ -250,7 +250,7 @@
 <td>211</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>354</td></tr>
+<td>363</td></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>198</td></tr>
@@ -316,34 +316,34 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>402</td></tr>
+<td>411</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
 <td>281</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>LOG.info(&quot;FHIRService  - Validate -BEGIN for interactionId: {} &quot;, interactionId);
-                final var igPackages = appConfig.getIgPackages();
-                final var igVersion = appConfig.getIgVersion();
-                final var sessionBuilder = engine.session()
-                                .withSessionId(UUID.randomUUID().toString())
-                                .onDevice(Device.createDefault())
-                                .withPayloads(List.of(payload))
-                                .withFhirProfileUrl(fhirProfileUrl)
-                                .withFhirIGPackages(igPackages)
-                                .withIgVersion(igVersion)
-                                .addHapiValidationEngine() // by default
-                                // clearExisting is set to true so engines can be fully supplied through header
-                                .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-                final var session = sessionBuilder.build();
-                try {
-                        engine.orchestrate(session);
-                        // TODO: if there are errors that should prevent forwarding, stop here
-                        // TODO: need to implement `immediate` (sync) webClient op, right now it's async
-                        // only
-                        // immediateResult is what's returned to the user while async operation
-                        // continues
-                        final var immediateResult = new HashMap&lt;&gt;(Map.of(</pre></td></tr></table>
+                        final var igPackages = appConfig.getIgPackages();
+                        final var igVersion = appConfig.getIgVersion();
+                        final var sessionBuilder = engine.session()
+                                        .withSessionId(UUID.randomUUID().toString())
+                                        .onDevice(Device.createDefault())
+                                        .withPayloads(List.of(payload))
+                                        .withFhirProfileUrl(fhirProfileUrl)
+                                        .withFhirIGPackages(igPackages)
+                                        .withIgVersion(igVersion)
+                                        .addHapiValidationEngine() // by default
+                                        // clearExisting is set to true so engines can be fully supplied through header
+                                        .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+                        final var session = sessionBuilder.build();
+                        try {
+                                engine.orchestrate(session);
+                                // TODO: if there are errors that should prevent forwarding, stop here
+                                // TODO: need to implement `immediate` (sync) webClient op, right now it's async
+                                // only
+                                // immediateResult is what's returned to the user while async operation
+                                // continues
+                                final var immediateResult = new HashMap&lt;&gt;(Map.of(</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
