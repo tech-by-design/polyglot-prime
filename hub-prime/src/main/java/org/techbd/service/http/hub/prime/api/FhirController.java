@@ -40,6 +40,7 @@ import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
+import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -185,7 +186,8 @@ public class FhirController {
                     """, required = false) @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
             @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
-
+        Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
+        try {
         if (tenantId == null || tenantId.trim().isEmpty()) {
             LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
             throw new IllegalArgumentException("Tenant ID must be provided");
@@ -203,6 +205,9 @@ public class FhirController {
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
                 request, response, provenance, includeOperationOutcome, mtlsStrategy,null, null,null,SourceType.FHIR.name());
+        } finally {
+                span.end();
+        }
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
