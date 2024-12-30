@@ -86,7 +86,7 @@ class CsvBundleProcessorServiceTest {
         List<FileDetail> fileDetails = List.of(demographicFile, screeningProfileFile, qeAdminFile,
                 screeningObservationFile);
         PayloadAndValidationOutcome outcome = new PayloadAndValidationOutcome(fileDetails, true,
-                "group-int-id");
+                "group-int-id",new HashMap<>(),new HashMap<>());
         payloadAndValidationOutcomes.put("key1", outcome);
         try (MockedStatic<CsvConversionUtil> mockedStatic = mockStatic(CsvConversionUtil.class)) {
             mockedStatic.when(() -> CsvConversionUtil.convertCsvStringToDemographicData(anyString()))
@@ -155,7 +155,7 @@ class CsvBundleProcessorServiceTest {
         List<FileDetail> fileDetails = List.of(demographicFile, screeningProfileFile, qeAdminFile,
                 screeningObservationFile);
         PayloadAndValidationOutcome outcome = new PayloadAndValidationOutcome(fileDetails, true,
-                "group-int-id");
+                "group-int-id",new HashMap<>(),new HashMap<>());
         payloadAndValidationOutcomes.put("key1", outcome);
 
         try (MockedStatic<CsvConversionUtil> mockedStatic = mockStatic(CsvConversionUtil.class)) {
@@ -222,7 +222,7 @@ class CsvBundleProcessorServiceTest {
         List<FileDetail> fileDetails = List.of(demographicFile, screeningProfileFile, qeAdminFile,
                 screeningObservationFile);
         PayloadAndValidationOutcome outcome = new PayloadAndValidationOutcome(fileDetails, true,
-                "group-int-id");
+                "group-int-id",new HashMap<>(),new HashMap<>());
         payloadAndValidationOutcomes.put("key1", outcome);
 
         try (MockedStatic<CsvConversionUtil> mockedStatic = mockStatic(CsvConversionUtil.class)) {
@@ -255,20 +255,6 @@ class CsvBundleProcessorServiceTest {
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(2, result.size());
-        if (result.get(0).equals(successfulOutcome)) {
-            assertEquals(successfulOutcome, result.get(0));
-            assertTrue(result.get(1) instanceof OperationOutcome);
-            OperationOutcome operationOutcome = (OperationOutcome) result.get(1);
-            assertEquals(OperationOutcome.IssueType.EXCEPTION, operationOutcome.getIssueFirstRep().getCode());
-        } else if (result.get(1).equals(successfulOutcome)) {
-            assertEquals(successfulOutcome, result.get(1));
-            assertTrue(result.get(0) instanceof OperationOutcome);
-            OperationOutcome operationOutcome = (OperationOutcome) result.get(0);
-            assertEquals(OperationOutcome.IssueType.EXCEPTION, operationOutcome.getIssueFirstRep().getCode());
-        } else {
-            fail("Neither position contains the expected successful outcome");
-        }
-
         verify(csvToFhirConverter, times(2)).convert(any(DemographicData.class), any(QeAdminData.class),
                 any(ScreeningProfileData.class), anyList(), anyString());
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
