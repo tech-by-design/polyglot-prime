@@ -47,7 +47,7 @@ org:
               # - aws-secrets-temp-file: mTLS is enabled. The WebClient retrieves the TLS key and certificate from AWS Secrets Manager store it to a temporary file ,create ssl context and then delete from temporary file, and then sends an HTTPS POST request to the scoring engine API with mutual TLS authentication.
               # - mTlsResources: mTLS is enabled. The WebClient reads the TLS key and certificate from a local folder, and then sends an HTTPS POST request to the scoring engine API with mutual TLS authentication.
               # - post-stdin-payload-to-nyec-datalake-external: This option runs a bash script via ProcessBuilder. The payload is passed through standard input (STDIN) to the script, which uses `curl` to send the request to the scoring engine API. In the `phiqa` environment, mTLS is enabled for this request. In other environments, mTLS is disabled for this script.
-              mTlsStrategy: post-stdin-payload-to-nyec-datalake-external
+              mTlsStrategy: aws-secrets
               mTlsResources:
                 # Path to the TLS key resource for mTLS.
                 mTlsKeyResourceName: src/main/resources/certificates/scoring-engine/nyec-client-key.key # File is blank by default.Add key here.
