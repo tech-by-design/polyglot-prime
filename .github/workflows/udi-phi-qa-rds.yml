@@ -1,4 +1,4 @@
-name: UDI QA non-PHI RDS schema generator
+name:  PHI-QA UDI schema generator
 
 on:
   workflow_dispatch:

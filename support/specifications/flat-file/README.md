@@ -171,7 +171,7 @@ The CSV file names in this project follow a strict naming convention to ensure c
 ### Components of the File Name
 
 1. **`<DATA_TYPE>`**:
-   - This is the predefined and mandatory part of the file name. It indicates the type of data contained in the file and must remain unchanged.
+   - This is the predefined and mandatory part of the file name. It indicates the category of data contained in the file and must remain unchanged.
    - Examples of valid values:
      - `DEMOGRAPHIC_DATA_`
      - `QE_ADMIN_DATA_` 
@@ -179,7 +179,7 @@ The CSV file names in this project follow a strict naming convention to ensure c
      - `SCREENING_OBSERVATION_DATA_`
 
 2. **`<GROUP_IDENTIFIER>`**:
-   - This part of the file name is flexible and includes the following components:
+   - This part of the file name is flexible and which may include the following components for better identification:
      - **QE Name or Organization**: Represents the entity providing the data (e.g., `partner1-test`).
      - **Date**: The date the data was generated or collected, formatted as `YYYYMMDD` (e.g., `20241128`).
      - **Test Case or Scenario Identifier**: A specific identifier to distinguish different test cases or scenarios (e.g., `testcase1`).

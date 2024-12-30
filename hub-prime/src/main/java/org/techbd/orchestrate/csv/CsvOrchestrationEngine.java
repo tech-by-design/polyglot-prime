@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -48,6 +49,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -80,7 +82,7 @@ public class CsvOrchestrationEngine {
         return Collections.unmodifiableList(sessions);
     }
 
-    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
+    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) throws Exception {
         for (final OrchestrationSession session : sessions) {
             this.sessions.add(session);
             session.validate();
@@ -245,10 +247,9 @@ public class CsvOrchestrationEngine {
             return payloadAndValidationOutcomes;
         }
 
-        public void validate() {
+        public void validate() throws IOException {
             log.info("CsvOrchestrationEngine : validate - file : {} BEGIN for interaction id : {}",
                     file.getOriginalFilename(), masterInteractionId);
-            try {
                 final Instant intiatedAt = Instant.now();
                 final String originalFilename = file.getOriginalFilename();
                 final String uniqueFilename = masterInteractionId + "_"
@@ -263,17 +264,7 @@ public class CsvOrchestrationEngine {
                 // Trigger CSV processing and validation
                 this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
                 saveCombinedValidationResults(validationResults, masterInteractionId);
-            } catch (final IllegalArgumentException e) {
-                log.error("Validation Error", e);
-                this.validationResults = Map.of(
-                        "status", "Error",
-                        "message", "Validation Error: " + e.getMessage());
-            } catch (final Exception e) {
-                log.error("Unexpected system error", e);
-                this.validationResults = Map.of(
-                        "status", "Error",
-                        "message", "An unexpected system error occurred: " + e.getMessage());
-            }
+            
         }
 
         private void saveScreeningGroup(final String groupInteractionId, final HttpServletRequest request,
@@ -344,35 +335,33 @@ public class CsvOrchestrationEngine {
             }
         }
 
-        /**
-         * Checks if the "valid" field in "validationResults.report" is true.
-         *
-         * @param jsonMap The input JSON represented as a Map<String, Object>.
-         * @return true if "valid" is true; otherwise, false.
-         */
-        public static boolean isValid(final Map<String, Object> csvValidationResult) {
-            if (csvValidationResult == null || !csvValidationResult.containsKey("validationResults")) {
+        public static boolean extractValidValue(Map<String, Object> input) {
+            if (input == null || !input.containsKey("validationResults")) {
                 return false;
             }
 
-            final Object validationResults = csvValidationResult.get("validationResults");
-            if (!(validationResults instanceof Map<?, ?>)) {
-                return false;
+            Object validationResults = input.get("validationResults");
+
+            if (validationResults instanceof ObjectNode) {
+                ObjectNode validationResultsNode = (ObjectNode) validationResults;
+
+                // Check if errorSummary exists and is empty
+                JsonNode errorsSummaryNode = validationResultsNode.get("errorsSummary");
+                if (errorsSummaryNode != null && errorsSummaryNode.isArray() && errorsSummaryNode.size() > 0) {
+                    return false; // Return false if errorsSummary is not empty
+                }
+
+                // Check the "report" node
+                JsonNode reportNode = validationResultsNode.get("report");
+                if (reportNode != null && reportNode.isObject()) {
+                    JsonNode validNode = reportNode.get("valid");
+                    if (validNode != null && validNode.isBoolean()) {
+                        return validNode.asBoolean();
+                    }
+                }
             }
 
-            @SuppressWarnings("unchecked")
-            final Map<String, Object> validationResultsMap = (Map<String, Object>) validationResults;
-            final Object report = validationResultsMap.get("report");
-
-            if (!(report instanceof Map<?, ?>)) {
-                return false;
-            }
-
-            @SuppressWarnings("unchecked")
-            final Map<String, Object> reportMap = (Map<String, Object>) report;
-            final Object valid = reportMap.get("valid");
-
-            return Boolean.TRUE.equals(valid);
+            return false;
         }
 
         private void saveValidationResults(final Map<String, Object> validationResults,
@@ -400,7 +389,7 @@ public class CsvOrchestrationEngine {
                 initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
                 initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
                 initRIHR.setFromState("CSV_ACCEPT");
-                if (isValid(validationResults)) {
+                if (extractValidValue(validationResults)) {
                     initRIHR.setToState("VALIDATION_SUCCESS");
                 } else {
                     initRIHR.setToState("VALIDATION_FAILED");
@@ -455,6 +444,20 @@ public class CsvOrchestrationEngine {
                         tenantId,
                         e);
             }
+        }
+
+        /**
+         * Extracts the "provenance" object from the provided map.
+         *
+         * @param operationOutcomeForThisGroup A map containing operation outcome
+         *                                     details.
+         * @return A map representing the "provenance" object, or an empty map if
+         *         "provenance" is not found.
+         */
+        public static Map<String, Object> extractProvenance(Map<String, Object> operationOutcomeForThisGroup) {
+            return Optional.ofNullable(operationOutcomeForThisGroup)
+                    .map(map -> (Map<String, Object>) map.get("provenance"))
+                    .orElse(Map.of());
         }
 
         private static Map<String, Object> createOperationOutcome(final String masterInteractionId,
@@ -607,7 +610,8 @@ public class CsvOrchestrationEngine {
                     Map<String, Object> operationOutcomeForThisGroup;
                     final String groupInteractionId = UUID.randomUUID().toString();
                     if (isGroupComplete(fileDetails)) {
-                        operationOutcomeForThisGroup = validateScreeningGroup(groupInteractionId,groupKey, fileDetails, originalFileName);
+                        operationOutcomeForThisGroup = validateScreeningGroup(groupInteractionId, groupKey, fileDetails,
+                                originalFileName);
                     } else {
                         // Incomplete group - generate error operation outcome
                         operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
@@ -617,7 +621,12 @@ public class CsvOrchestrationEngine {
 
                     combinedValidationResults.add(operationOutcomeForThisGroup);
                     if (generateBundle) {
-                        this.payloadAndValidationOutcomes.put(groupKey, new PayloadAndValidationOutcome(fileDetails, isValid(operationOutcomeForThisGroup),groupInteractionId));
+                        this.payloadAndValidationOutcomes.put(groupKey,
+                                new PayloadAndValidationOutcome(fileDetails,
+                                        isGroupComplete(fileDetails) ? extractValidValue(operationOutcomeForThisGroup)
+                                                : false,
+                                        groupInteractionId, extractProvenance(operationOutcomeForThisGroup),
+                                        operationOutcomeForThisGroup));
                     }
                 }
                 Instant completedAt = Instant.now();
@@ -729,7 +738,8 @@ public class CsvOrchestrationEngine {
             return operationOutcome;
         }
 
-        private Map<String, Object> validateScreeningGroup(String groupInteractionId,String groupKey, List<FileDetail> fileDetails,
+        private Map<String, Object> validateScreeningGroup(String groupInteractionId, String groupKey,
+                List<FileDetail> fileDetails,
                 String originalFileName) throws Exception {
             Instant initiatedAtForThisGroup = Instant.now();
 

@@ -98,7 +98,7 @@ org:
           prime:
             version: @project.version@
             fhirVersion: r4
-            igVersion: 1.2.0
+            igVersion: 1.2.1
             igPackages:
                 fhir-v4:
                     # Path to SHIN-NY IG package downloaded from URL: https://shinny.org/us/ny/hrsn/downloads.html
@@ -137,31 +137,12 @@ org:
           idleTimeout: 300000
           connectionTimeout: 30000
           maxLifetime: 1800000
-
-management:
-  otlp:
-    metrics: 
-      export: 
-        url: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/metrics
-        enabled: true 
-        step: 1m # Interval for pushing metrics 
-        headers: 
-          enabled: true 
-          Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}
-          organization: default
-          service: 
-            name: default
-    tracing: 
-      export:
-        enabled: true
-        sampling:
-            probability: 1.0
+otel:
+  traces:
+    exporter: otlp
+    otlp:
+      enabled: true
+      authorizationTokenSecretName: null
       endpoint: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/traces
-      headers: 
-        active : true
-        enabled: true  
-        Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}
-        organization: default
-        stream-name: ${TECHBD_OPEN_OBSERVE_STREAM_NAME}-traces
-        service: 
-          name: default
+      headers:
+        Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD} 

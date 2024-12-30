@@ -60,14 +60,11 @@ public class CsvService {
                     .build();
             engine.orchestrate(session);
             return session.getValidationResults();
-        } catch (final Exception ex) {
-            LOG.error("Exception while processing file : {} ", file.getOriginalFilename(), ex);
         } finally {
             if (null == session) {
                 engine.clear(session);
             }
         }
-        return null;
     }
 
     private String getBundleInteractionId(final HttpServletRequest request) {
@@ -149,15 +146,11 @@ public class CsvService {
             return csvBundleProcessorService.processPayload(masterInteractionId,
             session.getPayloadAndValidationOutcomes(), request,
              response,tenantId);
-        } catch (final Exception ex) {
-            LOG.error("Exception while processing file : {} ", file.getOriginalFilename(), ex);
         } finally {
             if (null == session) {
                 engine.clear(session);
             }
         }
-        return null;
-       
     }
     
 }

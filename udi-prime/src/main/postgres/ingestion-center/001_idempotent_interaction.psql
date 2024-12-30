@@ -3691,7 +3691,8 @@ BEGIN
          WHERE 
             sihr.nature = ''Forwarded HTTP Response Error''
             AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle''])
-            AND sihr.created_at BETWEEN $1 AND $2
+            AND sihr.created_at >= TO_TIMESTAMP($1::text, ''YYYY-MM-DD'') 
+	        AND sihr.created_at < TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') + INTERVAL ''1 day''
             AND sihr.tenant_id_lower = $3
          ORDER BY sihr.created_at DESC'
     )
@@ -3800,8 +3801,10 @@ WITH fhir_summary AS (
 
 SELECT 
     sizfr.tenant_id_lower,
+    sizfr.tenant_id,
     sizfr.hub_interaction_id,
     sizfr.created_at,
+    sizfr.uri,
     SUM(CASE WHEN siffcr.demographic_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
     SUM(CASE WHEN siffcr.qe_admin_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
     SUM(CASE WHEN siffcr.screening_observation_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
@@ -3821,7 +3824,9 @@ LEFT JOIN
 GROUP BY 
     sizfr.hub_interaction_id,
     sizfr.created_at,
+    sizfr.uri,
     sizfr.tenant_id_lower,
+    sizfr.tenant_id,
     fhir_summary.fhir_count,
     fhir_summary.fhir_count_success,
     fhir_summary.fhir_count_failed

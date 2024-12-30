@@ -26,7 +26,7 @@
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     { headerName: "Request Time", field: "orch_started_at",  sort: "desc", filter: "agDateColumnFilter", headerTooltip: "Timestamp indicating when the ingestion process started" },
-                    { headerName: "QE", field: "qe", filter: "agTextColumnFilter", headerTooltip: "Name of the Qualified Entity" },
+                    { headerName: "TechBD Tenant ID", field: "qe", filter: "agTextColumnFilter", headerTooltip: "Name of the TechBD Tenant ID" },
                     { headerName: "Ingested File Source", field: "ingest_file", filter: "agTextColumnFilter", headerTooltip: "The name of the file being processed",tooltipValueGetter: (p) =>
                     p.value },
                     { headerName: "Issue Column", field: "issue_column", filter: "agTextColumnFilter", headerTooltip: "Indicates the column location of the issue within the CSV file, if applicable" },

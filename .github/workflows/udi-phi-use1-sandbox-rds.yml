@@ -1,4 +1,4 @@
-name: UDI Sandbox PHI RDS schema generator
+name:  Sandbox Devops UDI schema generator (For testing)
 
 on:
   workflow_dispatch:
