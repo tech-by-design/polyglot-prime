@@ -54,7 +54,7 @@ public class CsvBundleProcessorService {
             List<String> filesNotProcessed,
             HttpServletRequest request,
             HttpServletResponse response,
-            String tenantId,String originalFileName) {
+            String tenantId, String originalFileName) {
         final List<Object> resultBundles = new ArrayList<>();
 
         for (final var entry : payloadAndValidationOutcomes.entrySet()) {
@@ -71,23 +71,18 @@ public class CsvBundleProcessorService {
                     Map<String, List<ScreeningObservationData>> screeningObservationData = null;
 
                     for (final FileDetail fileDetail : outcome.fileDetails()) {
-                        try {
-                            final String content = fileDetail.content();
-                            final FileType fileType = fileDetail.fileType();
-                            switch (fileType) {
-                                case DEMOGRAPHIC_DATA ->
-                                    demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content);
-                                case SCREENING_PROFILE_DATA -> screeningProfileData = CsvConversionUtil
-                                        .convertCsvStringToScreeningProfileData(content);
-                                case QE_ADMIN_DATA ->
-                                    qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content);
-                                case SCREENING_OBSERVATION_DATA -> screeningObservationData = CsvConversionUtil
-                                        .convertCsvStringToScreeningObservationData(content);
-                                default -> throw new IllegalStateException("Unexpected value: " + fileType);
-                            }
-                        } catch (final IOException e) {
-                            LOG.error("Error processing file: " + fileDetail.filename() + ", Error: " + e.getMessage());
-                            throw new RuntimeException(e);
+                        final String content = fileDetail.content();
+                        final FileType fileType = fileDetail.fileType();
+                        switch (fileType) {
+                            case DEMOGRAPHIC_DATA ->
+                                demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content);
+                            case SCREENING_PROFILE_DATA -> screeningProfileData = CsvConversionUtil
+                                    .convertCsvStringToScreeningProfileData(content);
+                            case QE_ADMIN_DATA ->
+                                qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content);
+                            case SCREENING_OBSERVATION_DATA -> screeningObservationData = CsvConversionUtil
+                                    .convertCsvStringToScreeningObservationData(content);
+                            default -> throw new IllegalStateException("Unexpected value: " + fileType);
                         }
                     }
                     validateAndThrowIfDataMissing(demographicData, screeningProfileData, qeAdminData,
@@ -109,7 +104,8 @@ public class CsvBundleProcessorService {
         }
         if (CollectionUtils.isNotEmpty(filesNotProcessed)) {
             resultBundles
-                    .add(createOperationOutcomeForFileNotProcessed(masterInteractionId, tenantId, filesNotProcessed,originalFileName));
+                    .add(createOperationOutcomeForFileNotProcessed(masterInteractionId, tenantId, filesNotProcessed,
+                            originalFileName));
         }
         return resultBundles;
     }
@@ -367,7 +363,7 @@ public class CsvBundleProcessorService {
     private Map<String, Object> createOperationOutcomeForFileNotProcessed(
             final String masterInteractionId,
             final String inputZipFile,
-            final List<String> filesNotProcessed,String originalFileName) {
+            final List<String> filesNotProcessed, String originalFileName) {
         OperationOutcome operationOutcome = new OperationOutcome();
         OperationOutcome.OperationOutcomeIssueComponent issue = operationOutcome.addIssue();
         issue.setSeverity(OperationOutcome.IssueSeverity.ERROR);
