@@ -171,7 +171,7 @@ The CSV file names in this project follow a strict naming convention to ensure c
 ### Components of the File Name
 
 1. **`<DATA_TYPE>`**:
-   - This is the predefined and mandatory part of the file name. It indicates the type of data contained in the file and must remain unchanged.
+   - This is the predefined and mandatory part of the file name. It indicates the category of data contained in the file and must remain unchanged.
    - Examples of valid values:
      - `DEMOGRAPHIC_DATA_`
      - `QE_ADMIN_DATA_` 
