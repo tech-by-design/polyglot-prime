@@ -136,7 +136,7 @@ public class FHIRService {
                                                         : appConfig.getDefaultSdohFhirProfileUrl();
                         final var immediateResult = validate(request, payload, fhirProfileUrl,
                                         uaValidationStrategyJson,
-                                        includeRequestInOutcome,interactionId,provenance);
+                                        includeRequestInOutcome,interactionId,provenance,sourceType);
                         final var result = Map.of("OperationOutcome", immediateResult);
                         if ("true".equals(healthCheck)) {
                                 LOG.info("%s is true, skipping Scoring Engine submission."
@@ -382,7 +382,7 @@ public class FHIRService {
 
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
                         String uaValidationStrategyJson,
-                        boolean includeRequestInOutcome,String interactionId,String provenance) {
+                        boolean includeRequestInOutcome,String interactionId,String provenance,String sourceType) {
                 final var start = Instant.now();
                 LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
                 final var igPackages = appConfig.getIgPackages();
@@ -415,7 +415,7 @@ public class FHIRService {
                                         getBaseUrl(request) + "/Bundle/$status/"
                                                         + interactionId.toString(),
                                         "device", session.getDevice()));
-                        if (StringUtils.isNotEmpty(provenance)) {
+                        if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
                                 immediateResult.put("provenance",Configuration.objectMapper.readTree(provenance));
                         }
                         if (uaValidationStrategyJson != null) {
