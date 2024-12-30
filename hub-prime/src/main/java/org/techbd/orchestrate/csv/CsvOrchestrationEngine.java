@@ -82,7 +82,7 @@ public class CsvOrchestrationEngine {
         return Collections.unmodifiableList(sessions);
     }
 
-    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
+    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) throws Exception {
         for (final OrchestrationSession session : sessions) {
             this.sessions.add(session);
             session.validate();
@@ -247,10 +247,9 @@ public class CsvOrchestrationEngine {
             return payloadAndValidationOutcomes;
         }
 
-        public void validate() {
+        public void validate() throws IOException {
             log.info("CsvOrchestrationEngine : validate - file : {} BEGIN for interaction id : {}",
                     file.getOriginalFilename(), masterInteractionId);
-            try {
                 final Instant intiatedAt = Instant.now();
                 final String originalFilename = file.getOriginalFilename();
                 final String uniqueFilename = masterInteractionId + "_"
@@ -265,17 +264,7 @@ public class CsvOrchestrationEngine {
                 // Trigger CSV processing and validation
                 this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
                 saveCombinedValidationResults(validationResults, masterInteractionId);
-            } catch (final IllegalArgumentException e) {
-                log.error("Validation Error", e);
-                this.validationResults = Map.of(
-                        "status", "Error",
-                        "message", "Validation Error: " + e.getMessage());
-            } catch (final Exception e) {
-                log.error("Unexpected system error", e);
-                this.validationResults = Map.of(
-                        "status", "Error",
-                        "message", "An unexpected system error occurred: " + e.getMessage());
-            }
+            
         }
 
         private void saveScreeningGroup(final String groupInteractionId, final HttpServletRequest request,
