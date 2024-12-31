@@ -1,9 +1,9 @@
 {
   "name" : "us.ny.hrsn",
-  "version" : "1.2.0",
+  "version" : "1.2.1",
   "tools-version" : 3,
   "type" : "IG",
-  "date" : "20241209151540",
+  "date" : "20241220151809",
   "license" : "CC0-1.0",
   "canonical" : "http://shinny.org/us/ny/hrsn",
   "notForPublication" : true,
