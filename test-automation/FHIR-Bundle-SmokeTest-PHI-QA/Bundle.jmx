@@ -2715,12 +2715,12 @@
           <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Tenant ID CSV">
             <stringProp name="delimiter">,</stringProp>
             <stringProp name="fileEncoding"></stringProp>
-            <stringProp name="filename">D:/apache-jmeter-5.6.3/FHIR-Bundle-SmokeTest-PHI-QA/TenantIds.csv</stringProp>
+            <stringProp name="filename">./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/TenantIds.csv</stringProp>
             <boolProp name="ignoreFirstLine">false</boolProp>
             <boolProp name="quotedData">false</boolProp>
-            <boolProp name="recycle">true</boolProp>
+            <boolProp name="recycle">false</boolProp>
             <stringProp name="shareMode">shareMode.all</stringProp>
-            <boolProp name="stopThread">false</boolProp>
+            <boolProp name="stopThread">true</boolProp>
             <stringProp name="variableNames">TenantId</stringProp>
           </CSVDataSet>
           <hashTree/>
