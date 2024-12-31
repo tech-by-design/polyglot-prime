@@ -120,7 +120,6 @@ public class CsvOrchestrationEngine {
         private MultipartFile file;
         private String masterInteractionId;
         private HttpServletRequest request;
-        private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private boolean generateBundle;
 
         public OrchestrationSessionBuilder withSessionId(final String sessionId) {
@@ -195,6 +194,7 @@ public class CsvOrchestrationEngine {
         private final Device device;
         private final MultipartFile file;
         private Map<String, Object> validationResults;
+        private List<String> filesNotProcessed;
         private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private final String tenantId;
         HttpServletRequest request;
@@ -213,6 +213,7 @@ public class CsvOrchestrationEngine {
             this.request = request;
             this.generateBundle = generateBundle;
             this.payloadAndValidationOutcomes = new HashMap<>();
+            this.filesNotProcessed = new ArrayList<>();
         }
 
         public boolean isGenerateBundle() {
@@ -247,6 +248,10 @@ public class CsvOrchestrationEngine {
             return payloadAndValidationOutcomes;
         }
 
+        public List<String> getFilesNotProcessed() {
+            return filesNotProcessed;
+        }
+
         public void validate() throws IOException {
             log.info("CsvOrchestrationEngine : validate - file : {} BEGIN for interaction id : {}",
                     file.getOriginalFilename(), masterInteractionId);
@@ -263,8 +268,7 @@ public class CsvOrchestrationEngine {
 
                 // Trigger CSV processing and validation
                 this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
-                saveCombinedValidationResults(validationResults, masterInteractionId);
-            
+                saveCombinedValidationResults(validationResults, masterInteractionId);            
         }
 
         private void saveScreeningGroup(final String groupInteractionId, final HttpServletRequest request,
@@ -465,30 +469,13 @@ public class CsvOrchestrationEngine {
                 final String validationResults,
                 final List<FileDetail> fileDetails, final HttpServletRequest request, final long zipFileSize,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) throws Exception {
-            // Populate provenance with additional details like user agent, device, and URI
             final Map<String, Object> provenance = populateProvenance(groupInteractionId, fileDetails, initiatedAt,
                     completedAt, originalFileName);
-
-            // Get user agent and device details
-            final String userAgent = request.getHeader("User-Agent");
-            final Device device = Device.INSTANCE; // Assuming Device class returns device details
-
-            // Populate the outer map with additional details
             return Map.of(
                     "resourceType", "OperationOutcome",
                     "interactionId", groupInteractionId,
                     "validationResults", Configuration.objectMapper.readTree(validationResults),
                     "provenance", provenance
-            // "requestUri", request.getRequestURI()
-            // "zipFileSize", zipFileSize,
-            // "userAgent", userAgent,
-            // "device", Map.of(
-            // "deviceId", device.deviceId(),
-            // "deviceName", device.deviceName()
-            // "initiatedAt", ZonedDateTime.now().minusMinutes(10).toString(), // Example
-            // initiated time
-            // "completedAt", ZonedDateTime.now().toString() // Example completed time
-            // )
             );
         }
 
@@ -516,24 +503,7 @@ public class CsvOrchestrationEngine {
                     "deviceName", device.deviceName()));
             result.put("initiatedAt", initiatedAt.toString());
             result.put("completedAt", completedAt.toString());
-
-            // Identify files not processed
-            List<String> fileNotProcessed = new ArrayList<>();
-            for (Map<String, Object> validationResult : combinedValidationResult) {
-                // Debug: Print each validation result
-                System.out.println("Validation Result: " + validationResult);
-                if (validationResult != null
-                        && validationResult.containsKey("fileNotProcessed")
-                        && validationResult.get("fileNotProcessed") != null) {
-                    // Debug: Print the identified file not processed
-                    System.out.println("File Not Processed: " + validationResult.get("fileNotProcessed"));
-                    fileNotProcessed.add(validationResult.get("fileNotProcessed").toString());
-                }
-            }
-            // Debug: Print the final list of files not processed
-            System.out.println("Files Not Processed: " + fileNotProcessed);
-            result.put("fileNotProcessed", fileNotProcessed);
-
+            result.put("fileNotProcessed", this.filesNotProcessed);
             return result;
         }
 
@@ -545,22 +515,12 @@ public class CsvOrchestrationEngine {
                     .collect(Collectors.toList());
             return Map.of(
                     "resourceType", "Provenance",
-                    // "recorded", ZonedDateTime.now().toString(),
                     "interactionId", interactionId,
                     "agent", List.of(Map.of(
                             "who", Map.of(
                                     "coding", List.of(Map.of(
                                             "system", "Validator",
                                             "display", "frictionless version 5.18.0"))))),
-                    // "role", List.of(Map.of(
-                    // "coding", List.of(Map.of(
-                    // "system", "http://hl7.org/fhir/provenance-agent-role",
-                    // "code", "validator",
-                    // "display", "Validator")))),
-                    // "who", Map.of(
-                    // "identifier", Map.of(
-                    // "value", "Validator"),
-                    // "display", "frictionless version 5.18.0"))),
                     "initiatedAt", initiatedAt,
                     "completedAt", completedAt,
                     "description", "Validation of  files in " + originalFileName,
@@ -606,6 +566,10 @@ public class CsvOrchestrationEngine {
 
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
+                    if (groupKey.equals("filesNotProcessed")) {
+                        this.filesNotProcessed = entry.getValue().stream().map(FileDetail::filename).toList();
+                        continue;
+                    }
                     List<FileDetail> fileDetails = entry.getValue();
                     Map<String, Object> operationOutcomeForThisGroup;
                     final String groupInteractionId = UUID.randomUUID().toString();

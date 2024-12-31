@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.slf4j.Logger;
@@ -50,9 +51,10 @@ public class CsvBundleProcessorService {
 
     public List<Object> processPayload(final String masterInteractionId,
             final Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes,
+            List<String> filesNotProcessed,
             HttpServletRequest request,
             HttpServletResponse response,
-            String tenantId) {
+            String tenantId, String originalFileName) {
         final List<Object> resultBundles = new ArrayList<>();
 
         for (final var entry : payloadAndValidationOutcomes.entrySet()) {
@@ -69,23 +71,18 @@ public class CsvBundleProcessorService {
                     Map<String, List<ScreeningObservationData>> screeningObservationData = null;
 
                     for (final FileDetail fileDetail : outcome.fileDetails()) {
-                        try {
-                            final String content = fileDetail.content();
-                            final FileType fileType = fileDetail.fileType();
-                            switch (fileType) {
-                                case DEMOGRAPHIC_DATA ->
-                                    demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content);
-                                case SCREENING_PROFILE_DATA -> screeningProfileData = CsvConversionUtil
-                                        .convertCsvStringToScreeningProfileData(content);
-                                case QE_ADMIN_DATA ->
-                                    qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content);
-                                case SCREENING_OBSERVATION_DATA -> screeningObservationData = CsvConversionUtil
-                                        .convertCsvStringToScreeningObservationData(content);
-                                default -> throw new IllegalStateException("Unexpected value: " + fileType);
-                            }
-                        } catch (final IOException e) {
-                            LOG.error("Error processing file: " + fileDetail.filename() + ", Error: " + e.getMessage());
-                            throw new RuntimeException(e);
+                        final String content = fileDetail.content();
+                        final FileType fileType = fileDetail.fileType();
+                        switch (fileType) {
+                            case DEMOGRAPHIC_DATA ->
+                                demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content);
+                            case SCREENING_PROFILE_DATA -> screeningProfileData = CsvConversionUtil
+                                    .convertCsvStringToScreeningProfileData(content);
+                            case QE_ADMIN_DATA ->
+                                qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content);
+                            case SCREENING_OBSERVATION_DATA -> screeningObservationData = CsvConversionUtil
+                                    .convertCsvStringToScreeningObservationData(content);
+                            default -> throw new IllegalStateException("Unexpected value: " + fileType);
                         }
                     }
                     validateAndThrowIfDataMissing(demographicData, screeningProfileData, qeAdminData,
@@ -105,15 +102,20 @@ public class CsvBundleProcessorService {
                         createOperationOutcomeForError(masterInteractionId, groupInteractionId, "", "", e, provenance));
             }
         }
-
+        if (CollectionUtils.isNotEmpty(filesNotProcessed)) {
+            resultBundles
+                    .add(createOperationOutcomeForFileNotProcessed(masterInteractionId, tenantId, filesNotProcessed,
+                            originalFileName));
+        }
         return resultBundles;
     }
 
     public String addBundleProvenance(Map<String, Object> existingProvenance, List<String> bundleGeneratedFrom,
-            String patientMrnId, String encounterId,Instant initiatedAt,Instant completedAt) throws Exception {
+            String patientMrnId, String encounterId, Instant initiatedAt, Instant completedAt) throws Exception {
         Map<String, Object> newProvenance = new HashMap<>();
         newProvenance.put("resourceType", "Provenance");
-        newProvenance.put("description", "Bundle created from provided files for the given patientMrnId and encounterId");
+        newProvenance.put("description",
+                "Bundle created from provided files for the given patientMrnId and encounterId");
         newProvenance.put("validatedFiles", bundleGeneratedFrom);
         newProvenance.put("initiatedAt", initiatedAt.toString());
         newProvenance.put("completedAt", completedAt.toString());
@@ -269,7 +271,7 @@ public class CsvBundleProcessorService {
                         LOG.error(errorMessage);
                         throw new IllegalArgumentException(errorMessage);
                     }
-                    Instant initiatedAt =Instant.now();
+                    Instant initiatedAt = Instant.now();
                     final var bundle = csvToFhirConverter.convert(
                             demographicList.get(0),
                             qeAdminList.get(0),
@@ -278,8 +280,9 @@ public class CsvBundleProcessorService {
                             interactionId);
                     Instant completedAt = Instant.now();
                     if (bundle != null) {
-                        String updatedProvenance = addBundleProvenance(payloadAndValidationOutcome.provenance(), getFileNames(payloadAndValidationOutcome.fileDetails()),
-                        profile.getPatientMrIdValue(), profile.getEncounterId(),initiatedAt,completedAt);
+                        String updatedProvenance = addBundleProvenance(payloadAndValidationOutcome.provenance(),
+                                getFileNames(payloadAndValidationOutcome.fileDetails()),
+                                profile.getPatientMrIdValue(), profile.getEncounterId(), initiatedAt, completedAt);
                         saveConvertedFHIR(isValid, masterInteractionId, groupKey, interactionId, request,
                                 bundle, tenantId);
                         results.add(fhirService.processBundle(
@@ -309,7 +312,8 @@ public class CsvBundleProcessorService {
 
         return results;
     }
-   public static List<String> getFileNames(List<FileDetail> fileDetails) {
+
+    public static List<String> getFileNames(List<FileDetail> fileDetails) {
         if (fileDetails != null) {
             return fileDetails.stream()
                     .map(FileDetail::filename)
@@ -317,6 +321,7 @@ public class CsvBundleProcessorService {
         }
         return List.of(); // return an empty list if the input is null
     }
+
     private Map<String, Object> createOperationOutcomeForError(
             final String masterInteractionId,
             final String groupInteractionId,
@@ -332,14 +337,64 @@ public class CsvBundleProcessorService {
                 "Error processing data for Master Interaction ID: " + masterInteractionId +
                         ", Interaction ID: " + groupInteractionId +
                         ", Patient MRN: " + patientMrIdValue +
-                        ", EncounterID : "+ encounterId +
+                        ", EncounterID : " + encounterId +
                         ", Error: " + e.getMessage());
+
+        // Construct the desired structure with validationResults
         return Map.of(
                 "masterInteractionId", masterInteractionId,
                 "groupInteractionId", groupInteractionId,
                 "patientMrId", patientMrIdValue,
                 "encounterId", encounterId,
                 "provenance", provenance,
-                "operationOutcome", operationOutcome);
+                "validationResults", Map.of(
+                        "issue", List.of(Map.of(
+                                "severity", "ERROR",
+                                "code", "EXCEPTION",
+                                "diagnostics",
+                                "Error processing data for Master Interaction ID: " + masterInteractionId +
+                                        ", Interaction ID: " + groupInteractionId +
+                                        ", Patient MRN: " + patientMrIdValue +
+                                        ", EncounterID : " + encounterId +
+                                        ", Error: " + e.getMessage())),
+                        "resourceType", "OperationOutcome"));
+    }
+
+    private Map<String, Object> createOperationOutcomeForFileNotProcessed(
+            final String masterInteractionId,
+            final String inputZipFile,
+            final List<String> filesNotProcessed, String originalFileName) {
+        OperationOutcome operationOutcome = new OperationOutcome();
+        OperationOutcome.OperationOutcomeIssueComponent issue = operationOutcome.addIssue();
+        issue.setSeverity(OperationOutcome.IssueSeverity.ERROR);
+        issue.setCode(OperationOutcome.IssueType.NOTFOUND);
+
+        StringBuilder diagnosticsMessage = new StringBuilder();
+
+        if (filesNotProcessed != null && !filesNotProcessed.isEmpty()) {
+            diagnosticsMessage.append("Files not processed: in input zip file : ");
+            diagnosticsMessage.append(String.join(", ", filesNotProcessed));
+            StringBuilder remediation = new StringBuilder();
+            remediation.append("Filenames must start with one of the following prefixes: ");
+            for (FileType type : FileType.values()) {
+                remediation.append(type.name()).append(", ");
+            }
+            if (remediation.length() > 0) {
+                remediation.setLength(remediation.length() - 2);
+            }
+            Map<String, Object> issueDetails = Map.of(
+                    "severity", "ERROR",
+                    "code", "NOTFOUND",
+                    "diagnostics", diagnosticsMessage.toString(),
+                    "remediation", remediation.toString());
+
+            return Map.of(
+                    "masterInteractionId", masterInteractionId,
+                    "originalFileName", originalFileName,
+                    "validationResults", Map.of(
+                            "issue", List.of(issueDetails),
+                            "resourceType", "OperationOutcome"));
+        }
+        return Collections.emptyMap();
     }
 }

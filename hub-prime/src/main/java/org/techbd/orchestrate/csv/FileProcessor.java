@@ -23,18 +23,19 @@ public class FileProcessor {
             throws IOException {
         final Map<String, List<FileDetail>> groupedFiles = new HashMap<>();
         final Set<FileType> requiredFileTypes = EnumSet.allOf(FileType.class); // Required file types for validation
+        List<FileDetail> filesNotProcessed = new ArrayList<>();
         for (final String filePath : filePaths) {
-            try {
-                final Path path = Path.of(filePath);
-                final String filename = path.getFileName().toString();
-                final FileType fileType = FileType.fromFilename(filename);
+            final Path path = Path.of(filePath);
+            final String fileName = path.getFileName().toString();
+            try {                
+                final FileType fileType = FileType.fromFilename(fileName);
                 String fileContent = Files.readString(path);
-                String groupKey = filename.substring(fileType.name().length(), filename.lastIndexOf(".csv"));
-                FileDetail fileDetail = new FileDetail(filename, fileType, fileContent,filePath);
+                String groupKey = fileName.substring(fileType.name().length(), fileName.lastIndexOf(".csv"));
+                FileDetail fileDetail = new FileDetail(fileName, fileType, fileContent,filePath);
                 groupedFiles.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(fileDetail);
             } catch (final IllegalArgumentException e) {
                 LOG.error("Error processing file type for: " + filePath + " - " + e.getMessage());
-                throw e;
+                filesNotProcessed.add(new FileDetail(fileName, null, null, null));
             }
         }
         for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
@@ -52,6 +53,7 @@ public class FileProcessor {
                 }
             }
         }
+        groupedFiles.put("filesNotProcessed", filesNotProcessed);
         return groupedFiles;
     }
 }

@@ -1,30 +1,30 @@
 package org.techbd.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.hl7.fhir.r4.model.OperationOutcome;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.FileDetail;
@@ -119,8 +119,8 @@ class CsvBundleProcessorServiceTest {
                 eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString()))
                 .thenReturn(mockOutcome);
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
-                payloadAndValidationOutcomes,
-                request, response, "tenantId");
+                payloadAndValidationOutcomes,new ArrayList<>(),
+                request, response, "tenantId","test.zip");
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(2, result.size());
@@ -189,8 +189,8 @@ class CsvBundleProcessorServiceTest {
                 .thenReturn(mockOutcome);
 
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
-                payloadAndValidationOutcomes,
-                request, response, "tenantId");
+                payloadAndValidationOutcomes,new ArrayList<>(),
+                request, response, "tenantId","test.zip");
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(2, result.size());
@@ -249,8 +249,8 @@ class CsvBundleProcessorServiceTest {
                 .thenReturn(successfulOutcome)
                 .thenThrow(new RuntimeException("Mock failure"));
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
-                payloadAndValidationOutcomes,
-                request, response, "tenantId");
+                payloadAndValidationOutcomes,new ArrayList<>(),
+                request, response, "tenantId","test.zip");
 
         assertNotNull(result);
         assertFalse(result.isEmpty());

@@ -144,8 +144,8 @@ public class CsvService {
                     .build();
             engine.orchestrate(session);
             return csvBundleProcessorService.processPayload(masterInteractionId,
-            session.getPayloadAndValidationOutcomes(), request,
-             response,tenantId);
+            session.getPayloadAndValidationOutcomes(), session.getFilesNotProcessed(),request,
+             response,tenantId,file.getOriginalFilename());
         } finally {
             if (null == session) {
                 engine.clear(session);
