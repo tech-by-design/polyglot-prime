@@ -1,20 +1,33 @@
 package org.techbd.service.converters.shinny;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Meta;
+import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.model.csv.*;
+import org.techbd.model.csv.DemographicData;
+import org.techbd.model.csv.QeAdminData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
-import ca.uhn.fhir.context.FhirContext;
 
 @Component
 @Order(6)
@@ -58,7 +71,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
                         setMeta(observation);
                         Meta meta = observation.getMeta();
-                        meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getScreeningLastUpdated()));
+                        meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
                         // max date
                         // available in all
                         // screening records
@@ -93,6 +106,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 dataAbsentReason.setText(data.getDataAbsentReasonText());
 
                                 observation.setDataAbsentReason(dataAbsentReason);
+                        } else {
+                                CodeableConcept value = new CodeableConcept();
+                                value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(),
+                                                data.getAnswerCodeDescription()));
+                                observation.setValue(value);
                         }
                         observation.addCategory(
                                         createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
@@ -108,13 +126,9 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation.setSubject(new Reference("Patient/" +
                                         idsGenerated.get(CsvConstants.PATIENT_ID)));
                         if (data.getRecordedTime() != null) {
-                                observation.setEffective(new DateTimeType(DateUtil.parseDate(data.getRecordedTime())));
+                                observation.setEffective(new DateTimeType(DateUtil.convertStringToDate(data.getRecordedTime())));
                         }
-                        observation.setIssued(DateUtil.parseDate(data.getRecordedTime()));
-                        CodeableConcept value = new CodeableConcept();
-                        value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(),
-                                        data.getAnswerCodeDescription()));
-                        observation.setValue(value);
+                        observation.setIssued(DateUtil.convertStringToDate(data.getRecordedTime()));
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         BundleEntryComponent entry = new BundleEntryComponent();
@@ -127,7 +141,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 try {
                         return processScreeningGroups(demographicData, screeningProfileData,
-                                        screeningObservationDataList, idsGenerated, interactionId);
+                                        screeningObservationDataList, idsGenerated, interactionId, bundleEntryComponents);
                 } catch (Exception e) {
                         LOG.error("Error converting screening observations for interaction {}: {}",
                                         interactionId, e.getMessage(), e);
@@ -154,9 +168,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         ScreeningProfileData screeningProfileData,
                         List<ScreeningObservationData> screeningObservationDataList,
                         Map<String, String> idsGenerated,
-                        String interactionId) {
-
-                List<BundleEntryComponent> bundleEntryComponents = new ArrayList<>();
+                        String interactionId, List<BundleEntryComponent> bundleEntryComponents) {
 
                 // Group observations by screening code
                 Map<String, List<ScreeningObservationData>> screeningCodeGroups = screeningObservationDataList.stream()
@@ -199,7 +211,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 // Set meta information
                 Meta meta = new Meta();
                 meta.addProfile(PROFILE_URL);
-                meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
+                meta.setLastUpdated(DateUtil.convertStringToDate(demographicData.getPatientLastUpdated()));
                 groupObservation.setMeta(meta);
 
                 groupObservation.setLanguage("en");
