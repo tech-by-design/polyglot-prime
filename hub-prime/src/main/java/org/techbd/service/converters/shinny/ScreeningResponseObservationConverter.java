@@ -1,4 +1,3 @@
-
 package org.techbd.service.converters.shinny;
 
 import java.util.*;
@@ -178,7 +177,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         bundleEntryComponents.add(groupEntry);
                 });
 
-                //logGroupObservations(bundleEntryComponents);
+                // logGroupObservations(bundleEntryComponents);
                 return bundleEntryComponents;
         }
 
@@ -292,5 +291,4 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 return category;
         }
 
-        
 }
