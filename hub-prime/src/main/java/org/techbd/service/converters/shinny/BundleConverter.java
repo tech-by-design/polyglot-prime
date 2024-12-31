@@ -1,5 +1,6 @@
 package org.techbd.service.converters.shinny;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.util.CsvConversionUtil;
-import org.techbd.util.DateUtil;
 
 @Component
 public class BundleConverter {
@@ -34,7 +34,7 @@ public class BundleConverter {
         bundle.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
         bundle.setType(Bundle.BundleType.TRANSACTION);
         Meta meta = new Meta();
-        meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
+        meta.setLastUpdated(new Date());
         meta.setVersionId(igVersion);
         meta.setProfile(List.of(new CanonicalType("http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")));
         bundle.setMeta(meta);
