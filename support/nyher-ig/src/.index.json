@@ -1,0 +1,248 @@
+{
+  "index-version" : 2,
+  "files" : [
+    {
+      "filename" : "ImplementationGuide-us.ny.hrsn.json",
+      "resourceType" : "ImplementationGuide",
+      "id" : "us.ny.hrsn",
+      "url" : "http://shinny.org/us/ny/hrsn/ImplementationGuide/us.ny.hrsn",
+      "version" : "1.0.0"
+    },
+    {
+      "filename" : "CodeSystem-NYS-HRSN-Questionnaire.json",
+      "resourceType" : "CodeSystem",
+      "id" : "NYS-HRSN-Questionnaire",
+      "url" : "http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire",
+      "version" : "1.0.0",
+      "content" : "complete"
+    },
+    {
+      "filename" : "StructureDefinition-SHINNY-SDOHCC-Condition.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "SHINNY-SDOHCC-Condition",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNY-SDOHCC-Condition",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Condition",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-SHINNYBundleProfile.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "SHINNYBundleProfile",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Bundle",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-SHINNYMeta.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "SHINNYMeta",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYMeta",
+      "version" : "1.0.0",
+      "kind" : "complex-type",
+      "type" : "Meta",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-SHINNYSDOHServiceRequest.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "SHINNYSDOHServiceRequest",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYSDOHServiceRequest",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "ServiceRequest",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-SHINNYSDOHTaskForReferralManagement.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "SHINNYSDOHTaskForReferralManagement",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYSDOHTaskForReferralManagement",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Task",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-middle-name.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "middle-name",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name",
+      "version" : "1.0.0",
+      "kind" : "complex-type",
+      "type" : "Extension",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shin-ny-observation-sexual-orientation.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shin-ny-observation-sexual-orientation",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Observation",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shin-ny-organization.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shin-ny-organization",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Organization",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shin-ny-practitioner.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shin-ny-practitioner",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-practitioner",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Practitioner",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-Consent.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-Consent",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Consent",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-SDOHCCGoal.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-SDOHCCGoal",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-SDOHCCGoal",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Goal",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-encounter.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-encounter",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Encounter",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-gender-identity.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-gender-identity",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity",
+      "version" : "1.0.0",
+      "kind" : "complex-type",
+      "type" : "Extension",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-observation-assessment.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-observation-assessment",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-assessment",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Observation",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-observation-screening-response.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-observation-screening-response",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Observation",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-patient.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-patient",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Patient",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-personal-pronouns.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-personal-pronouns",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns",
+      "version" : "1.0.0",
+      "kind" : "complex-type",
+      "type" : "Extension",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-questionnaire-response.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-questionnaire-response",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-questionnaire-response",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "QuestionnaireResponse",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-questionnaire.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-questionnaire",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-questionnaire",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Questionnaire",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "StructureDefinition-shinny-sdoh-procedure.json",
+      "resourceType" : "StructureDefinition",
+      "id" : "shinny-sdoh-procedure",
+      "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-sdoh-procedure",
+      "version" : "1.0.0",
+      "kind" : "resource",
+      "type" : "Procedure",
+      "derivation" : "constraint"
+    },
+    {
+      "filename" : "ValueSet-SHINNYConsentProvisionTypeVS.json",
+      "resourceType" : "ValueSet",
+      "id" : "SHINNYConsentProvisionTypeVS",
+      "url" : "http://shinny.org/us/ny/hrsn/ValueSet/SHINNYConsentProvisionTypeVS",
+      "version" : "1.0.0"
+    },
+    {
+      "filename" : "ValueSet-SHINNYHTTPVerbsVS.json",
+      "resourceType" : "ValueSet",
+      "id" : "SHINNYHTTPVerbsVS",
+      "url" : "http://shinny.org/us/ny/hrsn/ValueSet/SHINNYHTTPVerbsVS",
+      "version" : "1.0.0"
+    },
+    {
+      "filename" : "ValueSet-SHINNYPersonalPronounsVS.json",
+      "resourceType" : "ValueSet",
+      "id" : "SHINNYPersonalPronounsVS",
+      "url" : "http://shinny.org/us/ny/hrsn/ValueSet/SHINNYPersonalPronounsVS",
+      "version" : "1.0.0"
+    },
+    {
+      "filename" : "ValueSet-SHINNYScreeningVS.json",
+      "resourceType" : "ValueSet",
+      "id" : "SHINNYScreeningVS",
+      "url" : "http://shinny.org/us/ny/hrsn/ValueSet/SHINNYScreeningVS",
+      "version" : "1.0.0"
+    }
+  ]
+}
