@@ -1,5 +1,6 @@
 package org.techbd.service.converters.shinny;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -9,14 +10,20 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
+import org.techbd.util.ScreeningAnswer;
 import org.techbd.util.YamlUtil;
 public abstract class BaseConverter implements IConverter {
 
     public static Map<String, String> PROFILE_MAP = getProfileUrlMap();
-
+    public static Map<String, List<String>> QUESTIONS_MAP =  getConfigMap();
+    public static Map<String, Integer> SCREENING_ANSWER_MAP = ScreeningAnswer.getCodeToScoreMap();
 
     public static Map<String, String> getProfileUrlMap() {
         return YamlUtil.getYamlResourceAsMap("src/main/resources/shinny/shinny-artifacts/profile.yml");
+    }
+
+    public static Map<String, List<String>> getConfigMap() {
+        return YamlUtil.getYamlResourceAsListMap("src/main/resources/shinny/shinny-artifacts/config.yml");
     }
 
     public CanonicalType getProfileUrl() {

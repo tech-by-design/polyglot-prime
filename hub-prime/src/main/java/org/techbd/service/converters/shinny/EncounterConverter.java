@@ -68,6 +68,8 @@ public class EncounterConverter extends BaseConverter {
         setMeta(encounter);
 
         encounter.setId(CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
+        
+        idsGenerated.put(CsvConstants.ENCOUNTER_ID, encounter.getId());
 
         String fullUrl = "http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId();
 

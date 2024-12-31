@@ -72,6 +72,9 @@ public class ScreeningObservationData {
     @CsvBindByName(column = "DATA_ABSENT_REASON_TEXT")
     private String dataAbsentReasonText;
 
+   // @CsvBindByName(column = "OBSERVATION_ID")
+    private String observationId;
+
     // Default constructor
     public ScreeningObservationData() {
     }
