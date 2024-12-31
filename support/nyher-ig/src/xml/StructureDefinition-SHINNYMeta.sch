@@ -13,6 +13,7 @@
     <sch:title>f:Meta</sch:title>
     <sch:rule context="f:Meta">
       <sch:assert test="count(f:lastUpdated) &gt;= 1">lastUpdated: minimum cardinality of 'lastUpdated' is 1</sch:assert>
+      <sch:assert test="count(f:profile) &gt;= 1">profile: minimum cardinality of 'profile' is 1</sch:assert>
     </sch:rule>
   </sch:pattern>
 </sch:schema>

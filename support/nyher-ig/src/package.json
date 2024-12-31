@@ -1,9 +1,9 @@
 {
   "name" : "us.ny.hrsn",
-  "version" : "1.1.0",
+  "version" : "1.2.0",
   "tools-version" : 3,
   "type" : "IG",
-  "date" : "20241112152502",
+  "date" : "20241209151540",
   "license" : "CC0-1.0",
   "canonical" : "http://shinny.org/us/ny/hrsn",
   "notForPublication" : true,
@@ -11,7 +11,7 @@
   "fhirVersions" : ["4.0.1"],
   "dependencies" : {
     "hl7.fhir.r4.core" : "4.0.1",
-    "hl7.terminology.r4" : "6.0.2",
+    "hl7.terminology.r4" : "6.1.0",
     "hl7.fhir.uv.extensions.r4" : "5.1.0",
     "hl7.fhir.us.core" : "3.1.1",
     "hl7.fhir.us.sdoh-clinicalcare" : "2.2.0",
