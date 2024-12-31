@@ -1846,7 +1846,7 @@ BEGIN
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     IF (v_return IS NOT NULL) THEN
-        IF(uri='/Bundle' OR uri='/Bundle/') THEN
+        IF(uri='/Bundle' OR uri='/Bundle/' OR uri='/flatfile/csv/Bundle' OR uri='/flatfile/csv/Bundle/') THEN
             CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
                 hub_interaction_id, 
                 tenant_id, 
