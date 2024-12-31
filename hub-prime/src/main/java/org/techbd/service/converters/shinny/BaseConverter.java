@@ -10,27 +10,22 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
-import org.techbd.util.ScreeningAnswer;
+
 import org.techbd.util.YamlUtil;
+
 public abstract class BaseConverter implements IConverter {
 
     public static Map<String, String> PROFILE_MAP = getProfileUrlMap();
-    public static Map<String, List<String>> QUESTIONS_MAP =  getConfigMap();
-    public static Map<String, Integer> SCREENING_ANSWER_MAP = ScreeningAnswer.getCodeToScoreMap();
 
     public static Map<String, String> getProfileUrlMap() {
         return YamlUtil.getYamlResourceAsMap("src/main/resources/shinny/shinny-artifacts/profile.yml");
-    }
-
-    public static Map<String, List<String>> getConfigMap() {
-        return YamlUtil.getYamlResourceAsListMap("src/main/resources/shinny/shinny-artifacts/config.yml");
     }
 
     public CanonicalType getProfileUrl() {
         return new CanonicalType(PROFILE_MAP.get(getResourceType().name().toLowerCase()));
     }
 
-    public static Extension createExtension(String url,String value, String system, String code, String display) {
+    public static Extension createExtension(String url, String value, String system, String code, String display) {
         if (StringUtils.isEmpty(url)) {
             throw new IllegalArgumentException("Extension URL cannot be null or empty");
         }
@@ -51,15 +46,17 @@ public abstract class BaseConverter implements IConverter {
             codeableConcept.addCoding(coding);
             extension.setValue(codeableConcept);
         }
-        if (StringUtils.isNotEmpty(value)){
+        if (StringUtils.isNotEmpty(value)) {
             extension.setValue(new StringType(value));
         }
         return extension;
     }
-     /**
+
+    /**
      * Method to create a Reference object and populate the 'assigner' field
      * 
-     * @param referenceString The reference string in the format "ResourceType/ResourceId"
+     * @param referenceString The reference string in the format
+     *                        "ResourceType/ResourceId"
      * @return A Reference object representing the assigner reference
      */
     public static Reference createAssignerReference(String referenceString) {
@@ -69,7 +66,7 @@ public abstract class BaseConverter implements IConverter {
         }
         Reference reference = new Reference();
         reference.setReference(referenceString);
-     
+
         return reference;
     }
 }
