@@ -146,7 +146,11 @@ AS SELECT hub_interaction_id AS interaction_id,
     	WHEN (source_type = 'FHIR') then 'FHIR'
     	ELSE 'FHIR'
     END as source_type,   
-    source_hub_interaction_id    
+    source_hub_interaction_id,
+    	CASE
+            WHEN is_bundle_valid = true THEN 'Valid'::text
+            WHEN is_bundle_valid = false THEN 'Invalid'::text
+        END AS is_bundle_valid  
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE uri != '/api/expect/fhir/bundle'; 
 
@@ -1586,6 +1590,7 @@ DECLARE
     v_techbd_disposition_action		TEXT 	:= NULL;
     v_elaboration 					JSONB 	:= NULL;
     v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
+   	v_is_bundle_valid				BOOLEAN	:= NULL;
 
 BEGIN
 
@@ -1627,7 +1632,7 @@ BEGIN
 		fhir_req.validation_initiated_at, 	fhir_req.validation_completed_at,	fhir_req.validation_engine,
 		fhir_req.ig_version,				fhir_req.profile_url,				fhir_req.medicaid_cin,
 		fhir_req.interaction_start_time,	fhir_req.interaction_end_time,		fhir_req.bundle_session_id,
-        fhir_req.patient_mrn_source_system
+        fhir_req.patient_mrn_source_system, fhir_req.is_bundle_valid
 		INTO 		
 		v_client_ip_address,				v_user_agent,						v_bundle_id,
 		v_bundle_last_updated,				v_organization_id,					v_organization_name,
@@ -1635,7 +1640,7 @@ BEGIN
 		v_validation_initiated_at,			v_validation_completed_at,			v_validation_engine,
 		v_ig_version,						v_profile_url,						v_medicaid_cin,
 		v_interaction_start_time,			v_interaction_end_time,				v_bundle_session_id,
-        v_patient_mrn_source_system 	
+        v_patient_mrn_source_system,        v_is_bundle_valid 	
 		FROM
 		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
 		WHERE 1 = 1
@@ -1653,6 +1658,7 @@ BEGIN
     	v_validation_engine 		:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
     	v_ig_version				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'igVersion');        
     	v_profile_url				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'profileUrl');      
+    	v_is_bundle_valid				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'valid');      
     	v_validation_initiated_at 	:= to_timestamp((sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'initiatedAt')::NUMERIC);
     	v_validation_completed_at 	:= to_timestamp((sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'completedAt')::NUMERIC);
     	
@@ -1800,7 +1806,8 @@ BEGIN
         patient_mrn_source_system,
         source_type,
         source_hub_interaction_id,
-        group_hub_interaction_id
+        group_hub_interaction_id,
+        is_bundle_valid
     )
     VALUES (
         gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
@@ -1842,7 +1849,8 @@ BEGIN
         v_patient_mrn_source_system,
         source_type,
         source_hub_interaction_id,
-        group_hub_interaction_id
+        group_hub_interaction_id,
+        v_is_bundle_valid
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     IF (v_return IS NOT NULL) THEN
