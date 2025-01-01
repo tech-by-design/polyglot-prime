@@ -121,6 +121,12 @@
                     { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter", headerTooltip: "The type of the Bundle sent through the interaction" },
                     { headerName: "Bundle Source", field: "source_type", filter: "agTextColumnFilter", headerTooltip: "The Bundle data source where the data came from e.g. CSV, CCDA, FHIR etc." },
                     { headerName: "TechBD Bundle Source Interaction Id", field: "source_hub_interaction_id", filter: "agTextColumnFilter", headerTooltip: "The orginal Bundle source interaction ID(CSV Zip file Interaction Id,CCDA file Interaction Id etc.)" },
+                    { 
+                        headerName: "Operation Outcome Status", 
+                        field: "is_bundle_valid", 
+                        filter: "agTextColumnFilter", 
+                        headerTooltip: "Indicates whether the OperationOutcome is valid ('Valid' or 'Invalid')" 
+                    },
                     { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },
                     { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },
                     { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },                                      
