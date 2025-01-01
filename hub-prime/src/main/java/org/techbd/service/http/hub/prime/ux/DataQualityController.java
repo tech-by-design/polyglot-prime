@@ -71,14 +71,20 @@ public class DataQualityController {
         return presentation.populateModel("page/diagnostics/fhir-validation-issues", model, request);
     }
 
+    @GetMapping("/data-quality/https-via-csv-validations")
+    @RouteMapping(label = "CSV Via HTTPs Data Quality", title = "CSV Via HTTPs Data Quality", siblingOrder = 40)
+    public String diagnosticsHttpsViaCsvValidationIssues(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/https-via-csv-validations", model, request);
+    }    
+
     @GetMapping("/data-quality/ig-publication-issues")
-    @RouteMapping(label = "IG Publication Issues", title = "IG Publication Issues", siblingOrder = 40)
+    @RouteMapping(label = "IG Publication Issues", title = "IG Publication Issues", siblingOrder = 50)
     public String igPublicationIssues(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/ig-publication-issues", model, request);
     }
 
     @GetMapping("/data-quality/fhir-rules")
-    @RouteMapping(label = "FHIR Rules", title = "FHIR Rules", siblingOrder = 50)
+    @RouteMapping(label = "FHIR Rules", title = "FHIR Rules", siblingOrder = 60)
     public String fhirRules(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/diagnostics/fhir-rules", model, request);
     }
