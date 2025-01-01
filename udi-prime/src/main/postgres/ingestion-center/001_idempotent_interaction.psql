@@ -147,7 +147,10 @@ AS SELECT hub_interaction_id AS interaction_id,
     	ELSE 'FHIR'
     END as source_type,   
     source_hub_interaction_id,
-    is_bundle_valid    
+    	CASE
+            WHEN is_bundle_valid = true THEN 'Valid'::text
+            WHEN is_bundle_valid = false THEN 'Invalid'::text
+        END AS is_bundle_valid  
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE uri != '/api/expect/fhir/bundle'; 
 
