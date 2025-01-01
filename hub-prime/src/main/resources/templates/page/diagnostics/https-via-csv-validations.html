@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'https_csv_validation_errors';
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+            .withColumnDefs([
+                            { 
+                                headerName: "Created Time", 
+                                field: "created_at", 
+                                sortable: true, 
+                                sort: "desc", 
+                                filter: "agDateColumnFilter", 
+                                headerTooltip: "The timestamp when the CSV validation error was recorded."
+                            },
+                            { 
+                                headerName: "TechBD Tenant ID", 
+                                field: "tenant_id", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
+                            },
+                            { 
+                                headerName: "URI", 
+                                field: "uri", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The URI where the CSV file was submitted or validated."
+                            },
+                            { 
+                                headerName: "File Name", 
+                                field: "file_name", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The name of the CSV file where the error occurred."
+                            },                            
+                            { 
+                                headerName: "Field Name", 
+                                field: "fieldname", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The name of the field in the CSV file where the error occurred."
+                            },
+                            { 
+                                headerName: "Cell Value", 
+                                field: "value", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The value of the cell in the CSV file that triggered the error."
+                            },
+                            { 
+                                headerName: "Error Type", 
+                                field: "error_type", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The category or type of validation error encountered."
+                            },
+                            { 
+                                headerName: "Error Message", 
+                                field: "error", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The detailed error message describing the validation issue."
+                            },
+                            { 
+                                headerName: "Description", 
+                                field: "description", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "A brief description of the validation error."
+                            },
+                            { 
+                                headerName: "Row Number", 
+                                field: "rownumber", 
+                                filter: "agNumberColumnFilter", 
+                                headerTooltip: "The row number in the CSV file where the error occurred."
+                            },
+                            { 
+                                headerName: "Field Number", 
+                                field: "fieldnumber", 
+                                filter: "agNumberColumnFilter", 
+                                headerTooltip: "The field number in the CSV file where the error occurred."
+                            }
+                        ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">
+            This data grid provides an in-depth view of validation errors identified during the HTTPS-based CSV validation process. Each row in the grid represents a specific issue detected within the submitted CSV files, including details such as the problematic field, the corresponding error message, and the exact row and field number where the error occurred.            
+            Additionally, the grid highlights the section of the CSV being validated, the associated file name, and the tenant information for accurate context. This information is critical for identifying and addressing errors in the ingestion process, ensuring data quality and compliance with validation standards. Users can hover over column headers for additional details about each field. </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>
