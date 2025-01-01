@@ -1161,6 +1161,9 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
 	      ADD COLUMN IF NOT EXISTS group_hub_interaction_id TEXT NULL;      
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
+	      ADD COLUMN IF NOT EXISTS is_bundle_valid BOOLEAN NULL;      
         
 
 
