@@ -24,6 +24,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 @Service
@@ -45,12 +46,12 @@ public class CsvService {
 
     public Object validateCsvFile(final MultipartFile file, final HttpServletRequest request,
             final HttpServletResponse response,
-            final String tenantId) throws Exception {
+            final String tenantId,String origin) throws Exception {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final var dslContext = udiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-            saveArchiveInteraction(jooqCfg, request, file, tenantId);
+            saveArchiveInteraction(jooqCfg, request, file, tenantId,origin);
             session = engine.session()
                     .withMasterInteractionId(getBundleInteractionId(request))
                     .withSessionId(UUID.randomUUID().toString())
@@ -74,14 +75,14 @@ public class CsvService {
 
     private void saveArchiveInteraction(final org.jooq.Configuration jooqCfg, final HttpServletRequest request,
             final MultipartFile file,
-            final String tenantId) {
+            final String tenantId,String origin) {
         final var interactionId = getBundleInteractionId(request);
         LOG.info("REGISTER State NONE : BEGIN for inteaction id  : {} tenant id : {}",
                 interactionId, tenantId);
         final var forwardedAt = OffsetDateTime.now();
         final var initRIHR = new RegisterInteractionHttpRequest();
         try {
-            initRIHR.setOrigin(Origin.HTTP.name());
+            initRIHR.setOrigin(StringUtils.isEmpty(origin) ? Origin.HTTP.name():origin);
             initRIHR.setInteractionId(interactionId);
             initRIHR.setInteractionKey(request.getRequestURI());
             initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
@@ -127,12 +128,12 @@ public class CsvService {
      * @throws Exception If an error occurs during processing the zip file or CSV
      *                   parsing.
      */
-    public List<Object> processZipFile(final MultipartFile file,final HttpServletRequest request ,HttpServletResponse response ,final String tenantId) throws Exception {
+    public List<Object> processZipFile(final MultipartFile file,final HttpServletRequest request ,HttpServletResponse response ,final String tenantId,String origin) throws Exception {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final var dslContext = udiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-            saveArchiveInteraction(jooqCfg, request, file, tenantId);
+            saveArchiveInteraction(jooqCfg, request, file, tenantId,origin);
             final String masterInteractionId = getBundleInteractionId(request);
             session = engine.session()
                     .withMasterInteractionId(masterInteractionId)

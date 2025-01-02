@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,6 +40,7 @@ public class CsvController {
   public Object handleCsvUpload(
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Tenant ID, a mandatory parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID) String tenantId,
+      @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       HttpServletRequest request,
       HttpServletResponse response)
       throws Exception {
@@ -63,7 +65,7 @@ public class CsvController {
       log.error("CsvController: handleCsvUpload:: Tenant ID is missing or empty");
       throw new IllegalArgumentException("Tenant ID must be provided");
     }
-    return csvService.validateCsvFile(file, request, response, tenantId);
+    return csvService.validateCsvFile(file, request, response, tenantId,origin);
   }
 
   @PostMapping(value = { "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/" }, consumes = {
@@ -73,12 +75,13 @@ public class CsvController {
   public List<Object> handleCsvUploadAndConversion(
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
+      @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       HttpServletRequest request,
       HttpServletResponse response) throws Exception {
 
     if (tenantId == null || tenantId.trim().isEmpty()) {
       throw new IllegalArgumentException("Tenant ID must be provided");
     }
-    return csvService.processZipFile(file, request, response, tenantId);
+    return csvService.processZipFile(file, request, response, tenantId,origin);
   }
 }
