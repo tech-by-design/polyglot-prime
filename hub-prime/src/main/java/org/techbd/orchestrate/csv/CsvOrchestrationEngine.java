@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.vfs2.FileObject;
+import org.hl7.fhir.r4.model.OperationOutcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -568,6 +569,9 @@ public class CsvOrchestrationEngine {
                     String groupKey = entry.getKey();
                     if (groupKey.equals("filesNotProcessed")) {
                         this.filesNotProcessed = entry.getValue().stream().map(FileDetail::filename).toList();
+                        combinedValidationResults.add(
+                            createOperationOutcomeForFileNotProcessed(
+                                masterInteractionId,this.filesNotProcessed,originalFileName));
                         continue;
                     }
                     List<FileDetail> fileDetails = entry.getValue();
@@ -601,7 +605,42 @@ public class CsvOrchestrationEngine {
                 throw new RuntimeException("Error processing ZIP files: " + e.getMessage(), e);
             }
         }
+private Map<String, Object> createOperationOutcomeForFileNotProcessed(
+            final String masterInteractionId,
+            final List<String> filesNotProcessed, String originalFileName) {
+        OperationOutcome operationOutcome = new OperationOutcome();
+        OperationOutcome.OperationOutcomeIssueComponent issue = operationOutcome.addIssue();
+        issue.setSeverity(OperationOutcome.IssueSeverity.ERROR);
+        issue.setCode(OperationOutcome.IssueType.NOTFOUND);
 
+        StringBuilder diagnosticsMessage = new StringBuilder();
+
+        if (filesNotProcessed != null && !filesNotProcessed.isEmpty()) {
+            diagnosticsMessage.append("Files not processed: in input zip file : ");
+            diagnosticsMessage.append(String.join(", ", filesNotProcessed));
+            StringBuilder remediation = new StringBuilder();
+            remediation.append("Filenames must start with one of the following prefixes: ");
+            for (FileType type : FileType.values()) {
+                remediation.append(type.name()).append(", ");
+            }
+            if (remediation.length() > 0) {
+                remediation.setLength(remediation.length() - 2);
+            }
+            Map<String, Object> issueDetails = Map.of(
+                    "severity", "ERROR",
+                    "code", "NOTFOUND",
+                    "diagnostics", diagnosticsMessage.toString(),
+                    "remediation", remediation.toString());
+
+            return Map.of(
+                    "masterInteractionId", masterInteractionId,
+                    "originalFileName", originalFileName,
+                    "validationResults", Map.of(
+                            "issue", List.of(issueDetails),
+                            "resourceType", "OperationOutcome"));
+        }
+        return Collections.emptyMap();
+    }
         // Move this method outside of processScreenings
         public boolean isGroupComplete(List<FileDetail> fileDetails) {
             Set<FileType> presentFileTypes = fileDetails.stream()
