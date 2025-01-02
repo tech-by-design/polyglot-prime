@@ -48,6 +48,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         "95617-7",
                         "95616-9",
                         "95615-1");
+
         private static final Set<String> PHYSICAL_ACTIVITY_REFS = Set.of(
                         "89555-7",
                         "68516-4");
@@ -55,6 +56,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         private static final Set<String> MENTAL_STATE_REFS = Set.of(
                         "44250-9",
                         "44255-8");
+
+        private static final Map<String, Set<String>> QUESTION_CODE_REF_MAP = Map.of(
+                        "95614-4", INTERPERSONAL_SAFETY_REFS,
+                        "77594-0", PHYSICAL_ACTIVITY_REFS,
+                        "71969-0", MENTAL_STATE_REFS);
 
         @Override
         public ResourceType getResourceType() {
@@ -74,6 +80,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 LOG.info("ScreeningResponseObservationConverter::convert BEGIN for interaction id: {}", interactionId);
                 Map<String, String> questionAndAnswerCode = new HashMap<>();
                 List<BundleEntryComponent> bundleEntryComponents = new ArrayList<>();
+                Map<String, List<Reference>> derivedFromMap = new HashMap<>();
 
                 for (ScreeningObservationData data : screeningObservationDataList) {
                         Observation observation = new Observation();
@@ -144,7 +151,36 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         }
                         observation.setIssued(DateUtil.convertStringToDate(data.getRecordedTime()));
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
-                        addScoreRefs(observation, data, screeningObservationDataList);
+
+                        QUESTION_CODE_REF_MAP.forEach((key, value) -> {
+                                if (key.equals(data.getQuestionCode())) {
+                                        List<Reference> derivedFromRefs = screeningObservationDataList.stream()
+                                                        .filter(obs -> value.contains(obs.getQuestionCode()))
+                                                        .map(obs -> {
+                                                                String derivedFromId = CsvConversionUtil.sha256(
+                                                                                obs.getQuestionCodeDisplay()
+                                                                                                .replace(" ", "") +
+                                                                                                obs.getQuestionCode()
+                                                                                                + obs.getEncounterId());
+
+                                                                return new Reference("Observation/" + derivedFromId);
+                                                        })
+                                                        .collect(Collectors.toList());
+                                        derivedFromMap.put(observationId, derivedFromRefs);
+                                }
+
+                        });
+
+                        List<Reference> derivedRefs = derivedFromMap.get(observationId);
+
+                        if (derivedRefs != null && !derivedRefs.isEmpty()) {
+                                observation.setDerivedFrom(derivedRefs);
+                                if (LOG.isDebugEnabled()) {
+                                        derivedRefs.forEach(
+                                                        ref -> LOG.debug("Added reference {} for the observation {}",
+                                                                        ref.getReference(), observationId));
+                                }
+                        }
 
                         BundleEntryComponent entry = new BundleEntryComponent();
                         entry.setFullUrl(fullUrl);
@@ -316,53 +352,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 Coding coding = new Coding(system, code, display);
                 category.addCoding(coding);
                 return category;
-        }
-
-        private void addScoreRefs(Observation observation, ScreeningObservationData currentData,
-                        List<ScreeningObservationData> allObservations) {
-
-                // Check for interpersonal safety, physical activity, or mental state codes
-                if (!"95614-4".equals(currentData.getQuestionCode()) &&
-                                !"77594-0".equals(currentData.getQuestionCode()) &&
-                                !"71969-0".equals(currentData.getQuestionCode())) {
-                        return;
-                }
-
-                LOG.info("Processing observation with code: {}", currentData.getQuestionCode());
-
-                Set<String> relevantRefs;
-                String observationType;
-
-                // Determine which reference set to use based on question code
-                if ("95614-4".equals(currentData.getQuestionCode())) {
-                        relevantRefs = INTERPERSONAL_SAFETY_REFS;
-                        observationType = "InterpersonalSafety";
-                } else if ("77594-0".equals(currentData.getQuestionCode())) {
-                        relevantRefs = PHYSICAL_ACTIVITY_REFS;
-                        observationType = "PhysicalActivity";
-                } else {
-                        relevantRefs = MENTAL_STATE_REFS;
-                        observationType = "MentalState";
-                }
-                List<Reference> derivedFromRefs = allObservations.stream()
-                                .filter(obs -> relevantRefs.contains(obs.getQuestionCode()))
-                                .map(obs -> {
-                                        String observationId = CsvConversionUtil.sha256(
-                                                        obs.getQuestionCodeDisplay().replace(" ", "") +
-                                                                        obs.getQuestionCode() + obs.getEncounterId());
-                                        return new Reference("Observation/" + observationId);
-                                })
-                                .collect(Collectors.toList());
-
-                if (!derivedFromRefs.isEmpty()) {
-                        observation.setDerivedFrom(derivedFromRefs);
-                        LOG.info("Added {} derived references for question code {}",
-                                        derivedFromRefs.size(), currentData.getQuestionCode());
-
-                        if (LOG.isDebugEnabled()) {
-                                derivedFromRefs.forEach(ref -> LOG.debug("Added reference: {}", ref.getReference()));
-                        }
-                }
         }
 
 }
