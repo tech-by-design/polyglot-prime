@@ -4,11 +4,15 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +34,6 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.util.CsvConversionUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.gson.Gson;
 
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -105,7 +108,7 @@ public class CsvBundleProcessorService {
         }
         if (CollectionUtils.isNotEmpty(filesNotProcessed)) {
             resultBundles
-                    .add(createOperationOutcomeForFileNotProcessed(masterInteractionId, tenantId, filesNotProcessed,
+                    .add(createOperationOutcomeForFileNotProcessed(masterInteractionId,  filesNotProcessed,
                             originalFileName));
         }
         return resultBundles;
@@ -352,7 +355,6 @@ public class CsvBundleProcessorService {
 
     private Map<String, Object> createOperationOutcomeForFileNotProcessed(
             final String masterInteractionId,
-            final String inputZipFile,
             final List<String> filesNotProcessed, String originalFileName) {
         OperationOutcome operationOutcome = new OperationOutcome();
         OperationOutcome.OperationOutcomeIssueComponent issue = operationOutcome.addIssue();
