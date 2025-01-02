@@ -213,7 +213,7 @@ public class FHIRService {
         public void validateJson(String jsonString, String interactionId) {
                 try {
                         Configuration.objectMapper.readTree(jsonString);
-                } catch (JsonProcessingException e) {
+                } catch (Exception e) {
                         throw new JsonValidationException(ErrorCode.INVALID_JSON);
                 }
         }

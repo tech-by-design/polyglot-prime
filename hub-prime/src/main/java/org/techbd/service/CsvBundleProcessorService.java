@@ -32,6 +32,7 @@ import org.techbd.util.CsvConversionUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -171,7 +172,7 @@ public class CsvBundleProcessorService {
             initRIHR.setCreatedAt(forwardedAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
             initRIHR.setFromState(isValid ? "VALIDATION SUCCESS" : "VALIDATION FAILED");
-            initRIHR.setToState(isPayloadInstanceOfBundle(payload) ? "CONVERTED_TO_FHIR" : "FHIR_CONVERSION_FAILED");
+            initRIHR.setToState(StringUtils.isNotEmpty(payload) ? "CONVERTED_TO_FHIR" : "FHIR_CONVERSION_FAILED");
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
             initRIHR.setProvenance(provenance);
             initRIHR.setCsvGroupId(groupKey);
@@ -190,17 +191,6 @@ public class CsvBundleProcessorService {
                     masterInteractionId, groupInteractionId,
                     tenantId,
                     e);
-        }
-    }
-
-    public boolean isPayloadInstanceOfBundle(String jsonString) {
-        try {
-            Gson gson = new Gson();
-            Bundle bundle = gson.fromJson(jsonString, Bundle.class);
-            return bundle instanceof Bundle;
-        } catch (Exception e) {
-            LOG.error("Error parsing string: " + e.getMessage());
-            return false;
         }
     }
 
