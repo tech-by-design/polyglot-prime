@@ -5,7 +5,12 @@
 <head>
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
-
+    <style>
+        .grid-description{
+            font-size: 14px;
+            margin: 5px 0px 5px 15px;
+        }
+    </style>
     <!-- if JSON Viewer is not already in the layout, add the following -->
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
@@ -34,6 +39,12 @@
                                 filter: "agTextColumnFilter", 
                                 headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
                             },
+                            { 
+                                headerName: "TechBD Interaction ID", 
+                                field: "zip_file_hub_interaction_id", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."
+                            },                            
                             { 
                                 headerName: "URI", 
                                 field: "uri", 
