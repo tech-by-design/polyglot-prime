@@ -3941,7 +3941,7 @@ SELECT
     sifcr.created_at,
     sifcr.tenant_id,
     sifcr.uri,
-    sifcr.hub_interaction_id,
+    sifcr.zip_file_hub_interaction_id, 
     tasks.value ->> 'name' AS section,
     error_payload.value ->> 'fieldName'::text AS fieldname,
     error_payload.value ->> 'cell'::text AS value,
