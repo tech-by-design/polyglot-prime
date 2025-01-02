@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.hl7.fhir.r4.model.Bundle;
@@ -42,6 +43,19 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         private static final String LOINC_URL = "http://loinc.org";
         private static final String PROFILE_URL = "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response";
 
+        private static final Set<String> INTERPERSONAL_SAFETY_REFS = Set.of(
+                        "95618-5",
+                        "95617-7",
+                        "95616-9",
+                        "95615-1");
+        private static final Set<String> PHYSICAL_ACTIVITY_REFS = Set.of(
+                        "89555-7",
+                        "68516-4");
+
+        private static final Set<String> MENTAL_STATE_REFS = Set.of(
+                        "44250-9",
+                        "44255-8");
+
         @Override
         public ResourceType getResourceType() {
                 return ResourceType.Observation;
@@ -65,7 +79,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         Observation observation = new Observation();
                         String observationId = CsvConversionUtil
                                         .sha256(data.getQuestionCodeDisplay().replace(" ", "") +
-                                                        data.getQuestionCode());
+                                                        data.getQuestionCode() + data.getEncounterId());
                         observation.setId(observationId);
                         data.setObservationId(observationId);
                         String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
@@ -130,6 +144,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         }
                         observation.setIssued(DateUtil.convertStringToDate(data.getRecordedTime()));
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
+                        addScoreRefs(observation, data, screeningObservationDataList);
 
                         BundleEntryComponent entry = new BundleEntryComponent();
                         entry.setFullUrl(fullUrl);
@@ -205,7 +220,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         String interactionId) {
 
                 Observation groupObservation = new Observation();
-                String observationId = CsvConversionUtil.sha256("group-" + screeningCode);
+                String observationId = CsvConversionUtil.sha256("group-" + screeningCode + screeningProfileData.getEncounterId());
                 groupObservation.setId(observationId);
 
                 // Set meta information
@@ -301,6 +316,53 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 Coding coding = new Coding(system, code, display);
                 category.addCoding(coding);
                 return category;
+        }
+
+        private void addScoreRefs(Observation observation, ScreeningObservationData currentData,
+                        List<ScreeningObservationData> allObservations) {
+
+                // Check for interpersonal safety, physical activity, or mental state codes
+                if (!"95614-4".equals(currentData.getQuestionCode()) &&
+                                !"77594-0".equals(currentData.getQuestionCode()) &&
+                                !"71969-0".equals(currentData.getQuestionCode())) {
+                        return;
+                }
+
+                LOG.info("Processing observation with code: {}", currentData.getQuestionCode());
+
+                Set<String> relevantRefs;
+                String observationType;
+
+                // Determine which reference set to use based on question code
+                if ("95614-4".equals(currentData.getQuestionCode())) {
+                        relevantRefs = INTERPERSONAL_SAFETY_REFS;
+                        observationType = "InterpersonalSafety";
+                } else if ("77594-0".equals(currentData.getQuestionCode())) {
+                        relevantRefs = PHYSICAL_ACTIVITY_REFS;
+                        observationType = "PhysicalActivity";
+                } else {
+                        relevantRefs = MENTAL_STATE_REFS;
+                        observationType = "MentalState";
+                }
+                List<Reference> derivedFromRefs = allObservations.stream()
+                                .filter(obs -> relevantRefs.contains(obs.getQuestionCode()))
+                                .map(obs -> {
+                                        String observationId = CsvConversionUtil.sha256(
+                                                        obs.getQuestionCodeDisplay().replace(" ", "") +
+                                                                        obs.getQuestionCode() + obs.getEncounterId());
+                                        return new Reference("Observation/" + observationId);
+                                })
+                                .collect(Collectors.toList());
+
+                if (!derivedFromRefs.isEmpty()) {
+                        observation.setDerivedFrom(derivedFromRefs);
+                        LOG.info("Added {} derived references for question code {}",
+                                        derivedFromRefs.size(), currentData.getQuestionCode());
+
+                        if (LOG.isDebugEnabled()) {
+                                derivedFromRefs.forEach(ref -> LOG.debug("Added reference: {}", ref.getReference()));
+                        }
+                }
         }
 
 }
