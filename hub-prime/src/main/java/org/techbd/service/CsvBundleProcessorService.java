@@ -152,7 +152,7 @@ public class CsvBundleProcessorService {
     }
 
     private void saveConvertedFHIR(boolean isValid, String masterInteractionId, String groupKey,
-            String groupInteractionId, final HttpServletRequest request,
+            String groupInteractionId,String interactionId, final HttpServletRequest request,
             final String payload,
             final String tenantId) {
         LOG.info(
@@ -164,7 +164,8 @@ public class CsvBundleProcessorService {
             final var dslContext = udiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             initRIHR.setOrigin("http");
-            initRIHR.setInteractionId(groupInteractionId);
+            initRIHR.setInteractionId(interactionId);
+            initRIHR.setGroupHubInteractionId(groupInteractionId);
             initRIHR.setSourceHubInteractionId(masterInteractionId);
             initRIHR.setInteractionKey(request.getRequestURI());
             initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
@@ -178,7 +179,7 @@ public class CsvBundleProcessorService {
             initRIHR.setToState(StringUtils.isNotEmpty(payload) ? "CONVERTED_TO_FHIR" : "FHIR_CONVERSION_FAILED");
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
             initRIHR.setProvenance(provenance);
-            initRIHR.setCsvGroupId(groupKey);
+            initRIHR.setCsvGroupId(groupInteractionId);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
@@ -276,7 +277,7 @@ public class CsvBundleProcessorService {
                         String updatedProvenance = addBundleProvenance(payloadAndValidationOutcome.provenance(),
                                 getFileNames(payloadAndValidationOutcome.fileDetails()),
                                 profile.getPatientMrIdValue(), profile.getEncounterId(), initiatedAt, completedAt);
-                        saveConvertedFHIR(isValid, masterInteractionId, groupKey, interactionId, request,
+                        saveConvertedFHIR(isValid, masterInteractionId, groupKey, groupInteractionId,interactionId, request,
                                 bundle, tenantId);
                         results.add(fhirService.processBundle(
                                 bundle, tenantId, null, null, null, null, null,
