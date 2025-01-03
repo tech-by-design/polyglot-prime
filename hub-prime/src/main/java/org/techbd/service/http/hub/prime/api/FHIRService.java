@@ -431,6 +431,7 @@ public class FHIRService {
                                 // continues
                                 final var immediateResult = new HashMap<>(Map.of(
                                                 "resourceType", "OperationOutcome",
+                                                "help", "If you need help understanding how to decipher OperationOutcome please see "+appConfig.getOperationOutcomeHelpUrl(),
                                                 "bundleSessionId", interactionId, // for tracking in
                                                                                   // database, etc.
                                                 "isAsync", true,

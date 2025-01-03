@@ -294,7 +294,9 @@ public class FhirController {
         final var session = sessionBuilder.build();
         try {
             engine.orchestrate(session);
-            final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", "validationResults",
+            final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome", 
+            "help", "If you need help understanding how to decipher OperationOutcome please see "+appConfig.getOperationOutcomeHelpUrl(),
+            "validationResults",
                     session.getValidationResults(), "device",
                     session.getDevice()));
             final var result = Map.of("OperationOutcome", opOutcome);

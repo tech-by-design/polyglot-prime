@@ -40,6 +40,7 @@ public class AppConfig {
     private String version;
     private String defaultSdohFhirProfileUrl;
     private String defaultDatalakeApiUrl;
+    private String operationOutcomeHelpUrl;
     private Map<String, String> structureDefinitionsUrls;
     private Map<String, String> codeSystemUrls;
     private Map<String, String> valueSetUrls;
@@ -78,7 +79,13 @@ public class AppConfig {
     public void setDefaultDatalakeApiUrl(String defaultDatalakeApiUrl) {
         this.defaultDatalakeApiUrl = defaultDatalakeApiUrl;
     }
+    public String getOperationOutcomeHelpUrl() {
+        return operationOutcomeHelpUrl;
+    }
 
+    public void setOperationOutcomeHelpUrl(String operationOutcomeHelpUrl) {
+        this.operationOutcomeHelpUrl = operationOutcomeHelpUrl;
+    }
     public void setStructureDefinitionsUrls(Map<String, String> structureDefinitionsUrls) {
         this.structureDefinitionsUrls = structureDefinitionsUrls;
     }
