@@ -239,6 +239,9 @@
                                                     <codeSystem><xsl:value-of select="hl7:interpretationCode/@codeSystem"/></codeSystem>
                                                     <codeSystemName><xsl:value-of select="hl7:interpretationCode/@codeSystemName"/></codeSystemName>
                                                 </interpretationCode>
+                                                <value>
+                                                    <displayName><xsl:value-of select="hl7:value/@displayName"/></displayName>
+                                                </value>
 
                                                 <!-- Include Subject Information only if exists -->
                                                 <xsl:if test="hl7:subject">
