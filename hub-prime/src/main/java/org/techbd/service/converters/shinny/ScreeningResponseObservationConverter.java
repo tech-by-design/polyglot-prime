@@ -16,6 +16,7 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
@@ -152,25 +153,50 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation.setIssued(DateUtil.convertStringToDate(data.getRecordedTime()));
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
-                        QUESTION_CODE_REF_MAP.forEach((key, value) -> {
-                                if (key.equals(data.getQuestionCode())) {
-                                        List<Reference> derivedFromRefs = screeningObservationDataList.stream()
-                                                        .filter(obs -> value.contains(obs.getQuestionCode()))
-                                                        .map(obs -> {
-                                                                String derivedFromId = CsvConversionUtil.sha256(
-                                                                                obs.getQuestionCodeDisplay()
-                                                                                                .replace(" ", "") +
-                                                                                                obs.getQuestionCode()
-                                                                                                + obs.getEncounterId());
+                        switch (data.getQuestionCode()) {
+                                case "95614-4" ->  { // Interpersonal safety
+                                        CodeableConcept coding = new CodeableConcept();
+                                        coding.addCoding(new Coding("http://unitsofmeasure.org", null,
+                                                        "{Number}"));
+                                        coding.setText(data.getAnswerCodeDescription());
+                                        observation.setValue(coding);
 
-                                                                return new Reference("Observation/" + derivedFromId);
-                                                        })
-                                                        .collect(Collectors.toList());
-                                        derivedFromMap.put(observationId, derivedFromRefs);
+                                }
+                                case "77594-0" ->  { // Physical Activity
+                                        Quantity quantity = new Quantity();
+                                        quantity.setValue(Double.parseDouble(data.getAnswerCodeDescription()));
+                                        quantity.setUnit("minutes per week");
+                                        quantity.setSystem("http://unitsofmeasure.org");
+                                        observation.setValue(quantity);
                                 }
 
-                        });
+                                case "71969-0" ->  { // Mental state
+                                        CodeableConcept coding = new CodeableConcept();
+                                        coding.addCoding(new Coding("http://unitsofmeasure.org", null,
+                                                        "{Number}"));
+                                        coding.setText(data.getAnswerCodeDescription());
+                                        observation.setValue(coding);
 
+                                }
+                                default -> {
+                        }
+
+                        }
+
+                        if (QUESTION_CODE_REF_MAP.containsKey(data.getQuestionCode())) {
+                                Set<String> questionCodeSet = QUESTION_CODE_REF_MAP.get(data.getQuestionCode());
+                                List<Reference> derivedFromRefs = screeningObservationDataList.stream()
+                                                .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
+                                                .map(obs -> {
+                                                        String derivedFromId = CsvConversionUtil.sha256(
+                                                                        obs.getQuestionCodeDisplay().replace(" ", "") +
+                                                                                        obs.getQuestionCode()
+                                                                                        + obs.getEncounterId());
+                                                        return new Reference("Observation/" + derivedFromId);
+                                                })
+                                                .collect(Collectors.toList());
+                                derivedFromMap.put(observationId, derivedFromRefs);
+                        }
                         List<Reference> derivedRefs = derivedFromMap.get(observationId);
 
                         if (derivedRefs != null && !derivedRefs.isEmpty()) {
