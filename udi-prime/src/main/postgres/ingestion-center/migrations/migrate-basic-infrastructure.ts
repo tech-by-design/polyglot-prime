@@ -1165,7 +1165,8 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
 	      ADD COLUMN IF NOT EXISTS is_bundle_valid BOOLEAN NULL;      
         
-
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request  
+        ADD COLUMN IF NOT EXISTS sftp_session_id text NULL;
 
       ${dependenciesSQL}
 

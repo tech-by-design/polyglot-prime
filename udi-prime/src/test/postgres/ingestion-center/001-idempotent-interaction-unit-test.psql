@@ -46,6 +46,7 @@ DECLARE
 	v_origin TEXT;
 	v_source_type TEXT;
 	v_group_hub_interaction_id TEXT;
+    v_sftp_session_id TEXT;
 
 BEGIN
 	
@@ -79,14 +80,14 @@ BEGIN
     
     -- Check existence of required functions     
     RETURN NEXT has_function(schema_name, 'register_interaction_http_request',
-        ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+        ARRAY['text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
         'Function register_interaction_http_request exists');
        
     RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 'Function register_issue exists');
     
     RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
   
-   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text'], 
+   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'], 
    		'Function sat_interaction_csv_request_upserted exists');
     RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
 
@@ -118,7 +119,7 @@ BEGIN
         ARRAY['sat_interaction_zip_file_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
             'csv_zip_file_name', 'csv_zip_file_content', 
             'client_ip_address', 'user_agent', 
-            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload'],
+            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id'],
         'The columns of techbd_udi_ingress.sat_interaction_zip_file_request should match the expected structure.');
     
     RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'csv_zip_file_content', 'bytea', 'The column csv_zip_file_content should be of type bytea.');
@@ -240,6 +241,7 @@ test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New 
 	v_client_ip_address	:= 'test_client_ip_address';
 	v_user_agent		:= 'test_user_agent';
 	v_source_type 		:= 'csv';
+	v_sftp_session_id   := NULL::text;
 
     PERFORM techbd_udi_ingress.register_interaction_http_request(
         interaction_id           => v_interaction_id,
@@ -264,7 +266,89 @@ test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New 
 		client_ip_address		 => v_client_ip_address,	
 		user_agent				 => v_user_agent,
 		origin					 => v_origin,
-        source_type				 => v_source_type
+        source_type				 => v_source_type,
+        sftp_session_id          => v_sftp_session_id
+    );
+    
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = v_interaction_key
+                            AND hub_intr.created_by              = v_created_by
+                            AND hub_intr.provenance              = v_provenance
+                   ),
+            'CSV - Successfully inserted into the table hub_interaction'
+        );
+        
+   /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.nature                   = v_nature
+                             AND sat_intr.nature_denorm            = v_nature->>'nature'
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Original CSV Zip Archive" as nature'
+         );
+        
+    /*Test 1 raw is inserted into sat_interaction_zip_file_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_zip_file_request sat_intr
+                             WHERE sat_intr.hub_interaction_id  = v_interaction_id
+                             AND sat_intr.uri                   = v_interaction_key
+                             AND sat_intr.nature                = v_nature->>'nature'
+                             AND sat_intr.created_by            = v_created_by
+                             AND sat_intr.provenance            = v_provenance
+                         	 AND group_id				 		= v_group_id
+        					 AND status					 		= v_status
+        					 AND client_ip_address 				= v_client_ip_address
+							 AND user_agent 					= v_user_agent
+                    ),
+             'CSV - Successfully inserted one record into the table sat_interaction_zip_file_request with "Original CSV Zip Archive" as nature'
+         );
+
+   /*Test one record is inserted into sat_interaction_user table*/
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = v_interaction_key
+							AND sat_intr.nature 				= v_nature->>'nature'
+                            AND sat_intr.created_by				= v_created_by
+                            AND sat_intr.provenance				= v_provenance
+                   ),
+            'CSV - Successfully inserted into the table sat_interaction_user'
+        );
+
+    /*Test for sftp and storing sftp session id*/
+        
+	v_sftp_session_id   := '0cc90e96-b8bc-4642-b4ae-910444360636';
+
+    PERFORM techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => NULL::jsonb,
+        payload_text             => NULL::text,
+        rule_namespace           => v_rule_namespace,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => TRUE,
+        csv_group_id			 => v_group_id,
+        csv_status				 => v_status,        		
+		csv_zip_file_name		 => v_csv_zip_file_name,
+		csv_zip_file_content	 => v_csv_zip_file_content,
+		client_ip_address		 => v_client_ip_address,	
+		user_agent				 => v_user_agent,
+		origin					 => 'sftp',
+        source_type				 => v_source_type,
+        sftp_session_id          => v_sftp_session_id
     );
     
     RETURN NEXT ok(
