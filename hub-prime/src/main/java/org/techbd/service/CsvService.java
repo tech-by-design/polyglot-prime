@@ -46,12 +46,12 @@ public class CsvService {
 
     public Object validateCsvFile(final MultipartFile file, final HttpServletRequest request,
             final HttpServletResponse response,
-            final String tenantId,String origin) throws Exception {
+            final String tenantId,String origin,String sftpSessionId) throws Exception {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final var dslContext = udiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-            saveArchiveInteraction(jooqCfg, request, file, tenantId,origin);
+            saveArchiveInteraction(jooqCfg, request, file, tenantId,origin,sftpSessionId);
             session = engine.session()
                     .withMasterInteractionId(getBundleInteractionId(request))
                     .withSessionId(UUID.randomUUID().toString())
@@ -75,7 +75,7 @@ public class CsvService {
 
     private void saveArchiveInteraction(final org.jooq.Configuration jooqCfg, final HttpServletRequest request,
             final MultipartFile file,
-            final String tenantId,String origin) {
+            final String tenantId,String origin,String sftpSessionId) {
         final var interactionId = getBundleInteractionId(request);
         LOG.info("REGISTER State NONE : BEGIN for inteaction id  : {} tenant id : {}",
                 interactionId, tenantId);
@@ -85,6 +85,9 @@ public class CsvService {
             initRIHR.setOrigin(StringUtils.isEmpty(origin) ? Origin.HTTP.name():origin);
             initRIHR.setInteractionId(interactionId);
             initRIHR.setInteractionKey(request.getRequestURI());
+            if(StringUtils.isNotEmpty(sftpSessionId)) {
+                initRIHR.setSftpSessionId(sftpSessionId);
+            }
             initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
                     Map.of("nature", "Original CSV Zip Archive", "tenant_id",
                             tenantId)));
@@ -128,12 +131,12 @@ public class CsvService {
      * @throws Exception If an error occurs during processing the zip file or CSV
      *                   parsing.
      */
-    public List<Object> processZipFile(final MultipartFile file,final HttpServletRequest request ,HttpServletResponse response ,final String tenantId,String origin) throws Exception {
+    public List<Object> processZipFile(final MultipartFile file,final HttpServletRequest request ,HttpServletResponse response ,final String tenantId,String origin,String sftpSessionId) throws Exception {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final var dslContext = udiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-            saveArchiveInteraction(jooqCfg, request, file, tenantId,origin);
+            saveArchiveInteraction(jooqCfg, request, file, tenantId,origin,sftpSessionId);
             final String masterInteractionId = getBundleInteractionId(request);
             session = engine.session()
                     .withMasterInteractionId(masterInteractionId)

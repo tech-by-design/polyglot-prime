@@ -41,6 +41,7 @@ public class CsvController {
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Tenant ID, a mandatory parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID) String tenantId,
       @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
+      @Parameter(description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
       HttpServletRequest request,
       HttpServletResponse response)
       throws Exception {
@@ -65,7 +66,7 @@ public class CsvController {
       log.error("CsvController: handleCsvUpload:: Tenant ID is missing or empty");
       throw new IllegalArgumentException("Tenant ID must be provided");
     }
-    return csvService.validateCsvFile(file, request, response, tenantId,origin);
+    return csvService.validateCsvFile(file, request, response, tenantId,origin,sftpSessionId);
   }
 
   @PostMapping(value = { "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/" }, consumes = {
@@ -76,12 +77,13 @@ public class CsvController {
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
       @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
+      @Parameter(description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
       HttpServletRequest request,
       HttpServletResponse response) throws Exception {
 
     if (tenantId == null || tenantId.trim().isEmpty()) {
       throw new IllegalArgumentException("Tenant ID must be provided");
     }
-    return csvService.processZipFile(file, request, response, tenantId,origin);
+    return csvService.processZipFile(file, request, response, tenantId,origin,sftpSessionId);
   }
 }
