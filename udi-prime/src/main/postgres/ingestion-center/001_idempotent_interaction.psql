@@ -3820,7 +3820,7 @@ FROM
 JOIN
     techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
     ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id 
-    AND siffcr.nature = 'Original Flat File CSV'
+     AND (siffcr.nature = 'Original Flat File CSV'::text or siffcr.nature = 'CSV Validation Result'::text)
 LEFT JOIN
     fhir_summary
     ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id
