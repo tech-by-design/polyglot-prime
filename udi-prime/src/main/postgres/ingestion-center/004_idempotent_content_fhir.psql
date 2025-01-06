@@ -38,7 +38,9 @@ AS WITH filtered_resources AS (
             sihr.tenant_id,
             jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE sihr.uri ~~ '/Bundle%'::text AND sihr.nature = 'Original FHIR Payload'::text
+          WHERE 
+          sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/') 
+          AND sihr.nature = 'Original FHIR Payload'::text
         ), filtered_data AS (
          SELECT filtered_resources.hub_interaction_id,
             filtered_resources.tenant_id,
