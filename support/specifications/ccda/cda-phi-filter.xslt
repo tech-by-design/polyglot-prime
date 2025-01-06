@@ -187,11 +187,11 @@
                 </xsl:for-each>
             </componentOf>
 
-            <!-- Extract Observations - Social History -->
+            <!-- Extract Observations -->
             <component>
                 <structuredBody>
                     <xsl:for-each select="hl7:component/hl7:structuredBody/hl7:component/hl7:section">
-                        <xsl:if test="hl7:code/@code = '29762-2'">  <!-- Social History -->
+                       <!-- <xsl:if test="hl7:code/@code = '29762-2'">   Social History -->
                             <component>
                                 <Section>
                                     <!-- Extract TemplateId, Title, and Text if present -->
@@ -213,77 +213,81 @@
 
                                     <!-- Process observation Entries -->
                                     <xsl:for-each select="hl7:entry/hl7:observation">
-                                        <entry>
-                                            <observation>
-                                                <templateId>
-                                                    <root><xsl:value-of select="hl7:templateId/@root"/></root>
-                                                </templateId>
-                                                <id>
-                                                    <root><xsl:value-of select="hl7:id/@root"/></root>
-                                                </id>
-                                                <code>
-                                                    <code><xsl:value-of select="hl7:code/@code"/></code>
-                                                    <displayName><xsl:value-of select="hl7:code/@displayName"/></displayName>
-                                                    <codeSystem><xsl:value-of select="hl7:code/@codeSystem"/></codeSystem>
-                                                    <codeSystemName><xsl:value-of select="hl7:code/@codeSystemName"/></codeSystemName>
-                                                </code>
-                                                <statusCode>
-                                                    <code><xsl:value-of select="hl7:statusCode/@code"/></code>
-                                                </statusCode>
-                                                <effectiveTime>
-                                                    <value><xsl:value-of select="hl7:effectiveTime/@value"/></value>
-                                                </effectiveTime>
-                                                <interpretationCode>
-                                                    <code><xsl:value-of select="hl7:interpretationCode/@code"/></code>
-                                                    <displayName><xsl:value-of select="hl7:interpretationCode/@displayName"/></displayName>
-                                                    <codeSystem><xsl:value-of select="hl7:interpretationCode/@codeSystem"/></codeSystem>
-                                                    <codeSystemName><xsl:value-of select="hl7:interpretationCode/@codeSystemName"/></codeSystemName>
-                                                </interpretationCode>
-                                                <value>
-                                                    <displayName><xsl:value-of select="hl7:value/@displayName"/></displayName>
-                                                </value>
+                                        <xsl:if test = "hl7:code/@codeSystemName = 'LOINC' or 
+                                                        hl7:code/@codeSystemName = 'SNOMED' or 
+                                                        hl7:code/@codeSystemName = 'SNOMED CT'">
+                                            <entry>
+                                                <observation>
+                                                    <templateId>
+                                                        <root><xsl:value-of select="hl7:templateId/@root"/></root>
+                                                    </templateId>
+                                                    <id>
+                                                        <root><xsl:value-of select="hl7:id/@root"/></root>
+                                                    </id>
+                                                    <code>
+                                                        <code><xsl:value-of select="hl7:code/@code"/></code>
+                                                        <displayName><xsl:value-of select="hl7:code/@displayName"/></displayName>
+                                                        <codeSystem><xsl:value-of select="hl7:code/@codeSystem"/></codeSystem>
+                                                        <codeSystemName><xsl:value-of select="hl7:code/@codeSystemName"/></codeSystemName>
+                                                    </code>
+                                                    <statusCode>
+                                                        <code><xsl:value-of select="hl7:statusCode/@code"/></code>
+                                                    </statusCode>
+                                                    <effectiveTime>
+                                                        <value><xsl:value-of select="hl7:effectiveTime/@value"/></value>
+                                                    </effectiveTime>
+                                                    <interpretationCode>
+                                                        <code><xsl:value-of select="hl7:interpretationCode/@code"/></code>
+                                                        <displayName><xsl:value-of select="hl7:interpretationCode/@displayName"/></displayName>
+                                                        <codeSystem><xsl:value-of select="hl7:interpretationCode/@codeSystem"/></codeSystem>
+                                                        <codeSystemName><xsl:value-of select="hl7:interpretationCode/@codeSystemName"/></codeSystemName>
+                                                    </interpretationCode>
+                                                    <value>
+                                                        <displayName><xsl:value-of select="hl7:value/@displayName"/></displayName>
+                                                    </value>
 
-                                                <!-- Include Subject Information only if exists -->
-                                                <xsl:if test="hl7:subject">
-                                                    <subject>
-                                                        <xsl:if test="hl7:subject/hl7:relatedSubject/hl7:subject">
-                                                            <relatedSubject>
-                                                                <subject>
-                                                                    <name><xsl:value-of select="hl7:subject/hl7:relatedSubject/hl7:subject/hl7:name"/></name>
-                                                                    <administrativeGenderCode>
-                                                                        <code><xsl:value-of select="hl7:subject/hl7:relatedSubject/hl7:subject/hl7:administrativeGenderCode/@code"/></code>
-                                                                    </administrativeGenderCode>
-                                                                    <birthTime>
-                                                                        <value><xsl:value-of select="hl7:subject/hl7:relatedSubject/hl7:subject/hl7:birthTime/@value"/></value>
-                                                                    </birthTime>
-                                                                </subject>
-                                                            </relatedSubject>
-                                                        </xsl:if>
-                                                    </subject>
-                                                </xsl:if>
+                                                    <!-- Include Subject Information only if exists -->
+                                                    <xsl:if test="hl7:subject">
+                                                        <subject>
+                                                            <xsl:if test="hl7:subject/hl7:relatedSubject/hl7:subject">
+                                                                <relatedSubject>
+                                                                    <subject>
+                                                                        <name><xsl:value-of select="hl7:subject/hl7:relatedSubject/hl7:subject/hl7:name"/></name>
+                                                                        <administrativeGenderCode>
+                                                                            <code><xsl:value-of select="hl7:subject/hl7:relatedSubject/hl7:subject/hl7:administrativeGenderCode/@code"/></code>
+                                                                        </administrativeGenderCode>
+                                                                        <birthTime>
+                                                                            <value><xsl:value-of select="hl7:subject/hl7:relatedSubject/hl7:subject/hl7:birthTime/@value"/></value>
+                                                                        </birthTime>
+                                                                    </subject>
+                                                                </relatedSubject>
+                                                            </xsl:if>
+                                                        </subject>
+                                                    </xsl:if>
 
-                                                <!-- Handle Nested Entry Relationships -->
-                                                <entryRelationship>
-                                                    <xsl:for-each select="hl7:entryRelationship/hl7:observation">
-                                                        <observation>
-                                                            <id>
-                                                                <root><xsl:value-of select="hl7:id/@root"/></root>
-                                                            </id>
-                                                            <code>
-                                                                <code><xsl:value-of select="hl7:code/@code"/></code>
-                                                                <displayName><xsl:value-of select="hl7:code/@displayName"/></displayName>
-                                                                <codeSystem><xsl:value-of select="hl7:code/@codeSystem"/></codeSystem>
-                                                                <codeSystemName><xsl:value-of select="hl7:code/@codeSystemName"/></codeSystemName>
-                                                            </code>
-                                                        </observation>
-                                                    </xsl:for-each>
-                                                </entryRelationship>
-                                            </observation>
-                                        </entry>
+                                                    <!-- Handle Nested Entry Relationships -->
+                                                    <entryRelationship>
+                                                        <xsl:for-each select="hl7:entryRelationship/hl7:observation">
+                                                            <observation>
+                                                                <id>
+                                                                    <root><xsl:value-of select="hl7:id/@root"/></root>
+                                                                </id>
+                                                                <code>
+                                                                    <code><xsl:value-of select="hl7:code/@code"/></code>
+                                                                    <displayName><xsl:value-of select="hl7:code/@displayName"/></displayName>
+                                                                    <codeSystem><xsl:value-of select="hl7:code/@codeSystem"/></codeSystem>
+                                                                    <codeSystemName><xsl:value-of select="hl7:code/@codeSystemName"/></codeSystemName>
+                                                                </code>
+                                                            </observation>
+                                                        </xsl:for-each>
+                                                    </entryRelationship>
+                                                </observation>
+                                            </entry>
+                                        </xsl:if>
                                     </xsl:for-each>
                                 </Section>
                             </component>
-                        </xsl:if>
+                     <!--   </xsl:if> -->
                     </xsl:for-each>
                 </structuredBody>
             </component>
