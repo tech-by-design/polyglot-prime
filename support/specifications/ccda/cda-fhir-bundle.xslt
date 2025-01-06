@@ -197,12 +197,12 @@
           }
         ],
         "subject" : {
-          "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>"
+          "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>",
           "display" : "<xsl:value-of select='$patientResourceName'/>"
         },
         "organization" : [{
           "reference" : "Organization/<xsl:value-of select='//ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension'/>"
-        }],
+        }]
       },
       "request" : {
         "method" : "POST",
