@@ -15,10 +15,13 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
@@ -44,10 +47,12 @@ public class SwaggerConfig {
                         .version(appConfig.getVersion())
                         .license(new License().name("GitHub Repository")
                                 .url("https://github.com/tech-by-design/polyglot-prime")))
-                .externalDocs(new ExternalDocumentation().description("Tech by Design Technical Documents Microsite")
+                .externalDocs(new ExternalDocumentation()
+                        .description("Tech by Design Technical Documents Microsite")
                         .url("https://tech-by-design.github.io/docs.techbd.org/"))
-                //.addServersItem(new Server().url(serverUrl).description("Environment-specific server URL"))
-                ;
+        // .addServersItem(new Server().url(serverUrl).description("Environment-specific
+        // server URL"))
+        ;
     }
 
     @Bean
@@ -74,7 +79,8 @@ public class SwaggerConfig {
                                     - Aggregated: `[{ ... first ... }, { ... second ... }]`
 
                                     ${cwd()} refers to current working directory (CWD) on the API server, ${artifactId} refers to the `interactionId`.
-                                    """.replace("\n", "%n"),
+                                    """
+                                    .replace("\n", "%n"),
                             Interactions.Servlet.HeaderName.PREFIX))
                     .required(false);
 
@@ -89,7 +95,8 @@ public class SwaggerConfig {
 
                                     - { "nature": "integration-test", "test-case": "fhir-fixture-shinny-impl-guide-sample.json" }
                                     - { "nature": "synthetic-scoring", "test-case": "qe-001" }
-                                    """.replace("\n", "%n"),
+                                    """
+                                    .replace("\n", "%n"),
                             Interactions.Servlet.HeaderName.PREFIX))
                     .required(false);
 
@@ -108,10 +115,10 @@ public class SwaggerConfig {
                         "/presentation/shell/**",
                         "/support/interaction/**",
                         "/interactions/**",
-                        "/mock/shinny-data-lake/**"
-                )
+                        "/mock/shinny-data-lake/**")
                 .addOpenApiCustomizer(openApi -> {
-                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
+                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and
+                                                              // clear generated server
                     servers.add(new Server()
                             .url(hubApiUrl)
                             .description("Tech by Design Hub Self-Service UI API Server"));
@@ -127,14 +134,81 @@ public class SwaggerConfig {
                 .pathsToMatch("/metadata",
                         "/Bundle", "/Bundle/**",
                         "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/**",
-                        "/api/expect/fhir/**"
-                )
+                        "/api/expect/fhir/**")
                 .addOpenApiCustomizer(openApi -> {
-                    List<Server> servers = new ArrayList<>(); // Create a new modifiable list, and clear generated server
+                    // Set custom servers
+                    List<Server> servers = new ArrayList<>();
                     servers.add(new Server()
                             .url(fhirApiUrl)
                             .description("Tech by Design FHIR API Server"));
                     openApi.setServers(servers);
+    
+                    // Add reusable FileUpload schema
+                    openApi.getComponents().addSchemas("FileUpload", new io.swagger.v3.oas.models.media.Schema<>()
+                            .type("object")
+                            .addProperties("file", new io.swagger.v3.oas.models.media.Schema<>()
+                                    .type("file")
+                                    .format("binary")));
+    
+                    // Add Mirth Endpoint 1
+                    openApi.getPaths().addPathItem("/ccda/Bundle", new PathItem()
+                            .post(new Operation()
+                                    .tags(List.of("Tech by Design Hub CCDA Endpoints"))
+                                    .summary("CCDA endpoint to validate and convert XML to JSON, then store, and forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use /ccda/Bundle/$validate.")
+                                    .description("CCDA endpoint to validate and convert XML to JSON, then store, and forward a payload to SHIN-NY.")
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-Tenant-ID")
+                                            .description("Mandatory header for Tenant ID")
+                                            .required(true)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                            .description("Multipart form-data containing the CCDA XML file for validation, conversion to JSON and submission to SHIN-NY.")
+                                            .required(true)
+                                            .content(new io.swagger.v3.oas.models.media.Content()
+                                                    .addMediaType("multipart/form-data", new io.swagger.v3.oas.models.media.MediaType()
+                                                            .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                    .$ref("#/components/schemas/FileUpload")))))
+                                    .responses(new ApiResponses()
+                                            .addApiResponse("200",
+                                                    new ApiResponse()
+                                                            .description("Successful response"))
+                                            .addApiResponse("400",
+                                                    new ApiResponse()
+                                                            .description("Bad request"))
+                                            .addApiResponse("500",
+                                                    new ApiResponse()
+                                                            .description("Server error")))));
+    
+                    // Add Mirth Endpoint 2
+                    openApi.getPaths().addPathItem("/ccda/Bundle/$validate", new PathItem()
+                            .post(new Operation()
+                                    .tags(List.of("Tech by Design Hub CCDA Endpoints"))
+                                    .summary("CCDA endpoint to validate and convert XML to JSON but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /ccda/Bundle not /ccda/Bundle/$validate.")
+                                    .description("CCDA endpoint to validate and convert XML to JSON but not store or forward a payload to SHIN-NY.")
+                                    .addParametersItem(new Parameter()
+                                            .name("X-TechBD-Tenant-ID")
+                                            .description("Tenant ID header")
+                                            .required(true)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                    .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                            .description("Multipart form-data containing the CCDA XML file for validation.")
+                                            .required(true)
+                                            .content(new io.swagger.v3.oas.models.media.Content()
+                                                    .addMediaType("multipart/form-data", new io.swagger.v3.oas.models.media.MediaType()
+                                                            .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                    .$ref("#/components/schemas/FileUpload")))))
+                                    .responses(new ApiResponses()
+                                            .addApiResponse("200",
+                                                    new ApiResponse()
+                                                            .description("Successful validation response"))
+                                            .addApiResponse("400",
+                                                    new ApiResponse()
+                                                            .description("Bad request"))
+                                            .addApiResponse("500",
+                                                    new ApiResponse()
+                                                            .description("Server error")))));
                 })
                 .build();
     }
