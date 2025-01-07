@@ -3490,8 +3490,9 @@ BEGIN
             max(sihr.created_at)::TIMESTAMP AS recently_created_at
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         WHERE 
-            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle']) 
-            AND sihr.created_at BETWEEN start_date AND end_date
+            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/'])  
+            AND sihr.created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
+            AND sihr.created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
             AND sihr.tenant_id <> 'N/A' 
             AND sihr.organization_id <> ''
         GROUP BY sihr.organization_id
@@ -3536,7 +3537,7 @@ BEGIN
             max(sihr.created_at) AS recently_created_at
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         WHERE 
-            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle'])
+            sihr.uri = ANY (ARRAY['/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/'])
             AND sihr.created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
             AND sihr.created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
             AND sihr.tenant_id <> 'N/A'
@@ -3693,7 +3694,7 @@ BEGIN
             techbd_udi_ingress.sat_interaction_fhir_request sihr
          WHERE 
             sihr.nature = ''Forwarded HTTP Response Error''
-            AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle''])
+            AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'', ''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/''])
             AND sihr.created_at >= TO_TIMESTAMP($1::text, ''YYYY-MM-DD'') 
 	        AND sihr.created_at < TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') + INTERVAL ''1 day''
             AND sihr.tenant_id_lower = $3
@@ -3766,8 +3767,9 @@ BEGIN
              FROM 
                 techbd_udi_ingress.sat_interaction_fhir_request sihr
              WHERE 
-                sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle''])
-                AND sihr.created_at BETWEEN $2 AND $3  -- Parameters shifted by one
+                sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'',''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/''])
+	            AND sihr.created_at >= TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') 
+		        AND sihr.created_at < TO_TIMESTAMP($3::text, ''YYYY-MM-DD'') + INTERVAL ''1 day'' -- Parameters shifted by one
                 AND sihr.tenant_id <> ''N/A''
                 AND sihr.organization_id = $1  -- Organization ID filter
              GROUP BY 

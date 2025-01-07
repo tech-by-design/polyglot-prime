@@ -113,7 +113,7 @@ org:
                     uvSdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
             defaultSdohFhirProfileUrl: https://shinny.org/us/ny/hrsn/StructureDefinition-SHINNYBundleProfile.json
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
-            operationOutcomeHelpUrl: "https://github.com/tech-by-design/help-desk-non-phi/discussions/51"
+            operationOutcomeHelpUrl: "https://techbd.org/get-help/"
             fhirUmlsApiKey: umls_api_key
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
@@ -149,3 +149,11 @@ otel:
       endpoint: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/traces
       headers:
         Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD} 
+  metrics:
+    exporter: otlp
+    otlp:
+      enabled: true
+      authorizationTokenSecretName: null
+      endpoint: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/metrics
+      headers:
+        Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}

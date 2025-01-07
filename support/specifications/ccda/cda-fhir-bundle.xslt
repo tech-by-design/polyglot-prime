@@ -6,20 +6,23 @@
   <xsl:output method="text"/>
   
   <!-- Root template -->
+  <xsl:param name="currentTimestamp"/>
+  <xsl:variable name="concentResourceId" select="generate-id(/)"/>
+  <xsl:variable name="patientResourceId" select="//ccda:patientRole/ccda:id/ccda:extension"/>
+  <xsl:variable name="patientResourceName" select="//ccda:patientRole/ccda:patient/ccda:name/ccda:family | //ccda:patientRole/ccda:patient/ccda:name/ccda:given"/>
+
   <xsl:template match="/">
     {
       "resourceType": "Bundle",
-      "type": "collection",
-      <!-- "entry": [
-        <xsl:apply-templates select="//ccda:patientRole"/>
-        <xsl:apply-templates select="//ccda:encompassingEncounter"/>
-        <xsl:for-each select="//ccda:observation">
-          <xsl:apply-templates select="."/>
-          <xsl:if test="position() != last()">,</xsl:if>
-        </xsl:for-each>
-      ] -->
+      "id": "<xsl:value-of select='generate-id()'/>",
+      "meta" : {
+        "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
+        "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"]
+      },
+      "type" : "transaction", <!--"type": "collection", -->
+      "timestamp" : "<xsl:value-of select='$currentTimestamp'/>",
       "entry": [
-        <xsl:apply-templates select="//ccda:patientRole | //ccda:encompassingEncounter | //ccda:observation"/>
+        <xsl:apply-templates select="//ccda:patientRole | //ccda:encompassingEncounter | //ccda:observation | //ccda:location  | //ccda:consent | //ccda:author"/>
       ]
     }
   </xsl:template>
@@ -28,9 +31,15 @@
   <xsl:template match="ccda:patientRole">
     <xsl:if test="position() > 1">,</xsl:if>
     {
+      "fullUrl" : "http://shinny.org/us/ny/hrsn/Patient/<xsl:value-of select="ccda:id/ccda:extension"/>",
       "resource": {
         "resourceType": "Patient",
-        "id": "<xsl:value-of select="ccda:id/ccda:root"/>",
+        "id": "<xsl:value-of select="ccda:id/ccda:extension"/>",
+        "meta" : {
+          "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
+          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient"]
+        },
+        "language" : "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/ccda:code"/>",
         "name": [
           {
             "use": "official",
@@ -83,11 +92,11 @@
         ],
         "extension": [
           {
-            "url": "http://hl7.org/fhir/StructureDefinition/patient-race",
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
             "valueCodeableConcept": {
               "coding": [
                 {
-                  "system": "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:codeSystem"/>",
+                  "system": "urn:oid:<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:codeSystem"/>",
                   "code": "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:code"/>",
                   "display": "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:displayName"/>"
                 }
@@ -95,11 +104,11 @@
             }
           },
           {
-            "url": "http://hl7.org/fhir/StructureDefinition/patient-ethnicity",
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
             "valueCodeableConcept": {
               "coding": [
                 {
-                  "system": "<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:codeSystem"/>",
+                  "system": "urn:oid:<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:codeSystem"/>",
                   "code": "<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:code"/>",
                   "display": "<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:displayName"/>"
                 }
@@ -119,6 +128,10 @@
             }
           }
         ]
+      },
+      "request" : {
+        "method" : "POST",
+        "url" : "http://shinny.org/us/ny/hrsn/Patient/<xsl:value-of select="ccda:id/ccda:extension"/>"
       }
     }
   </xsl:template>
@@ -127,9 +140,14 @@
   <xsl:template match="ccda:encompassingEncounter">
     <xsl:if test="position() > 1">,</xsl:if>
     {
+      "fullUrl" : "http://shinny.org/us/ny/hrsn/Encounter/<xsl:value-of select="ccda:id/ccda:extension"/>",
       "resource": {
         "resourceType": "Encounter",
         "id": "<xsl:value-of select="ccda:id/ccda:extension"/>",
+        "meta" : {
+          "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
+          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter"]
+        },
         "status": "finished",
         "type": [
           {
@@ -146,6 +164,93 @@
           "start": "<xsl:value-of select="ccda:effectiveTime/ccda:low/ccda:value"/>",
           "end": "<xsl:value-of select="ccda:effectiveTime/ccda:high/ccda:value"/>"
         }
+      },
+      "request" : {
+        "method" : "POST",
+        "url" : "http://shinny.org/us/ny/hrsn/Encounter/<xsl:value-of select="ccda:id/ccda:extension"/>"
+      }
+    }
+  </xsl:template>
+
+  <!-- Consent Template -->
+  <xsl:template match="ccda:consent">
+    <xsl:if test="position() > 1">,</xsl:if>
+    {
+      "fullUrl" : "http://shinny.org/us/ny/hrsn/Consent/<xsl:value-of select='$concentResourceId'/>",
+      "resource": {
+        "resourceType": "Consent",
+        "id": "<xsl:value-of select='$concentResourceId'/>",
+        "meta" : {
+          "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
+          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent"]
+        },
+        "status": "<xsl:value-of select="ccda:statusCode/ccda:code"/>",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "<xsl:value-of select="ccda:code/ccda:codeSystem"/>", <!--"http://loinc.org",-->
+                "code": "<xsl:value-of select="ccda:code/ccda:code"/>",
+                "display": "<xsl:value-of select="ccda:code/ccda:displayName"/>"
+              }
+            ]
+          }
+        ],
+        "subject" : {
+          "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>",
+          "display" : "<xsl:value-of select='$patientResourceName'/>"
+        },
+        "organization" : [{
+          "reference" : "Organization/<xsl:value-of select='//ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension'/>"
+        }]
+      },
+      "request" : {
+        "method" : "POST",
+        "url" : "http://shinny.org/us/ny/hrsn/Consent/<xsl:value-of select='$concentResourceId'/>"
+      }
+    }
+  </xsl:template>
+
+  <!-- Organization Template -->
+  <xsl:template match="ccda:author">
+    <xsl:if test="position() > 1">,</xsl:if>
+    {
+      "fullUrl" : "http://shinny.org/us/ny/hrsn/Organization/<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>",
+        "meta" : {
+          "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
+          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization"]
+        },
+        "active": true,
+        "identifier": [
+          {
+            "type" : {
+              "coding": [
+                {
+                  "display": "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/>"
+                }
+              ]
+            },
+            "system" : "http://www.scn.ny.gov/",
+            "value" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>"
+          }
+        ],
+        "name" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/>",
+        "address" : [{
+          "text" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine"/>, <xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city"/>, <xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state"/> <xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode"/>",
+          "line" : ["<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine"/>"],
+          "city" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city"/>",
+          "district" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:county"/>",
+          "state" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state"/>",
+          "postalCode" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode"/>"
+        }]
+      },
+
+      "request" : {
+        "method" : "POST",
+        "url" : "http://shinny.org/us/ny/hrsn/Organization/<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>"
       }
     }
   </xsl:template>
@@ -154,9 +259,14 @@
   <xsl:template match="ccda:observation">
     <xsl:if test="position() > 1">,</xsl:if>
     {
+      "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='normalize-space(ccda:id)'/>",
       "resource": {
         "resourceType": "Observation",
         "id": "<xsl:value-of select='normalize-space(ccda:id)'/>",
+        "meta" : {
+          "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
+          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+        },
         "status": "<xsl:value-of select='ccda:statusCode/ccda:code'/>",
         "code": {
           "coding": [
@@ -171,7 +281,7 @@
         "subject": {
           "reference": "Patient/<xsl:value-of select='ancestor::ccda:ClinicalDocument/ccda:recordTarget/ccda:patientRole/ccda:id/ccda:root'/>"
         },
-        "category": {
+        "category": [{
           "coding": [
             {
               "system": "http://terminology.hl7.org/CodeSystem/observation-category",
@@ -179,7 +289,7 @@
               "display": "<xsl:value-of select='ccda:code/ccda:displayName'/>"
             }
           ]
-        },
+        }],
         <!-- "effectiveDateTime": "<xsl:value-of select='ccda:effectiveTime/ccda:value'/>" -->
         "effectiveDateTime": "<xsl:choose>
                                 <xsl:when test='string-length(ccda:effectiveTime/ccda:value) > 14'>
@@ -204,9 +314,12 @@
                                   <xsl:value-of select='ccda:effectiveTime/ccda:value'/>
                                 </xsl:otherwise>
                               </xsl:choose>"
+      },
+      "request" : {
+        "method" : "POST",
+        "url" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='normalize-space(ccda:id)'/>"
       }
     }
-    <!-- <xsl:if test="position() != last()">,</xsl:if> -->
   </xsl:template>
 
 </xsl:stylesheet>
