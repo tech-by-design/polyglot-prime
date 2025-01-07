@@ -40,6 +40,8 @@ import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,6 +66,7 @@ public class FhirController {
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private final FHIRService fhirService;
     private final Tracer tracer;
+    private final Meter meter;
 
     public FhirController(@SuppressWarnings("PMD.UnusedFormalParameter") final Environment environment,
             final AppConfig appConfig,
@@ -71,6 +74,7 @@ public class FhirController {
             final FHIRService fhirService,
             final OrchestrationEngine orchestrationEngine,
             final Tracer tracer,
+            final Meter meter,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
             @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
         this.appConfig = appConfig;
@@ -78,6 +82,7 @@ public class FhirController {
         this.fhirService = fhirService;
         this.engine = orchestrationEngine;
         this.tracer = tracer;
+        this.meter = meter;
     }
 
     @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -187,6 +192,9 @@ public class FhirController {
             @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
         Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
+        LongCounter  bundleCounter =  meter.counterBuilder("bundle.received.total")
+                          .setDescription("Counts of Bundle requests received")
+                         .build();
         try {
         if (tenantId == null || tenantId.trim().isEmpty()) {
             LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
@@ -206,6 +214,7 @@ public class FhirController {
                 includeIncomingPayloadInDB,
                 request, response, provenance, includeOperationOutcome, mtlsStrategy,null, null,null,SourceType.FHIR.name());
         } finally {
+                bundleCounter.add(1);
                 span.end();
         }
     }

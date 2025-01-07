@@ -147,3 +147,11 @@ otel:
       endpoint: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/traces
       headers:
         Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD} 
+  metrics:
+    exporter: otlp
+    otlp:
+      enabled: true
+      authorizationTokenSecretName: null
+      endpoint: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/metrics
+      headers:
+        Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}
