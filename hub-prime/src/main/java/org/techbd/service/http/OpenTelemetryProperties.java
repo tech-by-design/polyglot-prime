@@ -9,13 +9,28 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Component
-@ConfigurationProperties(prefix = "otel.traces")
+@ConfigurationProperties(prefix = "otel")
 @Getter
 @Setter
 public class OpenTelemetryProperties {
-    private String exporter;
-    private OtlpProperties otlp;
-       @Getter
+    private TracesProperties traces;
+    private MetricsProperties metrics;
+
+    @Getter
+    @Setter
+    public static class TracesProperties {
+        private String exporter;
+        private OtlpProperties otlp;
+    }
+
+    @Getter
+    @Setter
+    public static class MetricsProperties {
+        private String exporter;
+        private OtlpProperties otlp;
+    }
+
+    @Getter
     @Setter
     public static class OtlpProperties {
         private String endpoint;

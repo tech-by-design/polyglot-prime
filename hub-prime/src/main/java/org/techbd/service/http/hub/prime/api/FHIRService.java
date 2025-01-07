@@ -70,6 +70,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.micrometer.common.util.StringUtils;
 import io.netty.handler.ssl.SslContextBuilder;
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import jakarta.annotation.Nonnull;
@@ -98,14 +100,41 @@ public class FHIRService {
         private boolean saveUserDataToInteractions;
 
         private final Tracer tracer;
+        private final Meter meter;
+
+        private final LongCounter fhirBundleCounter;
+        private final LongCounter validateCounter;
+        private final LongCounter scoringEngineCounter;
+        private final LongCounter mTlsResourceCounter;
+        private final LongCounter stdOutCounter;
 
         public FHIRService(
                         final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig,
-                        OrchestrationEngine engine, final Tracer tracer) {
+                        OrchestrationEngine engine, final Tracer tracer, final Meter meter) {
                 this.appConfig = appConfig;
                 this.udiPrimeJpaConfig = udiPrimeJpaConfig;
                 this.engine = engine;
                 this.tracer = tracer;
+                this.meter = meter;
+                this.fhirBundleCounter = meter.counterBuilder("fhir_service_process_bundle.total")
+                                .setDescription("Counts the number of FHIR bundle requests")
+                                .build();
+
+                this.validateCounter = meter.counterBuilder("fhir_service_validate.total")
+                                .setDescription("Counts the number of times validate has been called in FHIRService")
+                                .build();
+
+                this.scoringEngineCounter = meter.counterBuilder("fhir_service_sendToScoringEngine.total")
+                                .setDescription("Counts of datalake api requests being sent")
+                                .build();
+
+                this.mTlsResourceCounter = meter.counterBuilder("fhir_service_handleMtlsResources.total")
+                                .setDescription("Counts the number of TLS resource operations ")
+                                .build();
+
+                this.stdOutCounter = meter.counterBuilder("fhir_service_handlePostStdoutPayload.total")
+                                .setDescription("Counts the number of External STDOUT operations ")
+                                .build();
         }
 
         public Object processBundle(final @RequestBody @Nonnull String payload,
@@ -194,6 +223,7 @@ public class FHIRService {
                                         interactionId, timeElapsed.toMillis());
                         return payloadWithDisposition;
                 } finally {
+                        fhirBundleCounter.add(1);
                         span.end();
                 }
         }
@@ -404,7 +434,7 @@ public class FHIRService {
 
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
                         String uaValidationStrategyJson,
-                        boolean includeRequestInOutcome, String interactionId, String provenance,String sourceType) {
+                        boolean includeRequestInOutcome, String interactionId, String provenance, String sourceType) {
                 Span span = tracer.spanBuilder("FhirService.validate").startSpan();
                 try {
                         final var start = Instant.now();
@@ -471,6 +501,7 @@ public class FHIRService {
                                                 interactionId, timeElapsed.toMillis());
                         }
                 } finally {
+                        validateCounter.add(1);
                         span.end();
                 }
         }
@@ -539,6 +570,7 @@ public class FHIRService {
                                 LOG.info("FHIRService:: sendToScoringEngine END for interaction id: {}", interactionId);
                         }
                 } finally {
+                        scoringEngineCounter.add(1);
                         span.end();
                 }
         }
@@ -696,6 +728,8 @@ public class FHIRService {
                                         request.getRequestURI(), tenantId, ex.getMessage(), provenance,
                                         groupInteractionId, masterInteractionId, sourceType);
 
+                } finally {
+                        mTlsResourceCounter.add(1);
                 }
         }
 
@@ -889,6 +923,8 @@ public class FHIRService {
                         registerStateFailed(jooqCfg, interactionId,
                                         request.getRequestURI(), tenantId, ex.getMessage(), provenance,
                                         groupInteractionId, masterInteractionId, sourceType);
+                } finally {
+                        stdOutCounter.add(1);
                 }
                 LOG.info("Proceed with posting payload via external process END for interactionId : {}",
                                 interactionId);
