@@ -17,7 +17,7 @@
         document.addEventListener('DOMContentLoaded', async function () {
             const helpers = new Helpers();
             // Inject the date range into the HTML
-            helpers.injectDateRangeText('dashboard-date-range', 'Synthetic Testing from {startDate} to {endDate} (FHIR)');
+            helpers.injectDateRangeText('dashboard-date-range', 'Submission from {startDate} to {endDate}');
         });
     </script>
 </head>
@@ -82,27 +82,7 @@
             </dl>
         </div>
 
-        <div class="mt-8 flex flex-col items-center justify-center pb-4 w-full max-w-9xl">
-            <div class="text-center">Most Recent Flat Files SFTP <code>egress</code> Interactions (hover to see details)
-            </div>
-            <dl class="w-[100%] flex justify-between mt-5 grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HEALTHeLINK', @{/dashboard/stat/sftp/most-recent-egress/healthelink.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('healtheconnections', @{/dashboard/stat/sftp/most-recent-egress/healtheconn.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Healthix', @{/dashboard/stat/sftp/most-recent-egress/healthix.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('Rochester', @{/dashboard/stat/sftp/most-recent-egress/grrhio.html})}">
-                </div>
-                <div
-                    th:replace="~{fragments/dashboard :: serverTextStat('HixNY', @{/dashboard/stat/sftp/most-recent-egress/hixny.html})}">
-                </div>
-            </dl>
-        </div>
+ 
 
         <!-- <div class="mt-12 w-full grid grid-cols-4 gap-8" id="dashboard-container">
             <div th:replace="fragments/interactions :: serverTextStat"></div>
@@ -125,7 +105,7 @@
                 <div id="loader" style="display: none;" class="mx-auto w-fit">Loading...</div>
                 <div id="mermaid-diagram"></div>
             </div>
-            <div>
+            <!-- <div>
                 <h3 class="text-xl font-bold mb-4">Synthetic Testing with forced error August 6, 2024 (FHIR)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
                     sequenceDiagram
@@ -143,7 +123,7 @@
                         ScoringEngine ->> SHINNY: Submit only 50% to Data lake
                         SHINNY ->> MDW: Submit to MDW
                 </pre>
-            </div>
+            </div> -->
             <div>
                 <h3 class="text-xl font-bold mb-4">Production (FHIR)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md"> 
@@ -185,7 +165,7 @@
             </div>
         </div>
 
-        <div class="mt-12 w-full grid grid-cols-2 gap-8">
+        <!-- <div class="mt-12 w-full grid grid-cols-2 gap-8">
             <div>
                 <h3 class="text-xl font-bold mb-4">Synthetic Testing (flat files)</h3>
                 <pre class="mermaid bg-white p-4 rounded-lg shadow-md">
@@ -200,7 +180,7 @@
                         participant TODO as TODO
                 </pre>
             </div>
-        </div>
+        </div> -->
 
 
         <script th:inline="javascript">
