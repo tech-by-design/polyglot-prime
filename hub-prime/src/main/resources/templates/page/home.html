@@ -251,12 +251,13 @@
                     mermaid.contentLoaded();
 
                     // Wait for Mermaid to render and then add click event listeners
-                    setTimeout(function () {
-                        addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink');
-                        addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn');
-                        addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix');
-                        addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio');
-                        addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny');
+                    setTimeout(function () { 
+                        const { todayFormatted, pastDateFormatted } =  getDateRange(7);
+                        addClickEvent('HEALTHeLINK Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthelink&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+                        addClickEvent('Healtheconnections Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healtheconn&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+                        addClickEvent('Healthix Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=healthix&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+                        addClickEvent('Rochester Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=grrhio&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
+                        addClickEvent('HixNY Proxy Validated FHIR JSON', '/needs-attention/techbd-to-scoring-engine?qeName=hixny&fromDate='+pastDateFormatted+'&toDate='+todayFormatted+'');
                     }, 500);
 
                 } catch (error) {
@@ -317,8 +318,24 @@
                     }
                 });
             }
+            function getDateRange(daysAgo = 7) {
+                let today = new Date();
+                let pastDate = new Date(today);
+                pastDate.setDate(today.getDate() - daysAgo);
 
-            // Example usage on page load or user interaction
+                return {
+                    todayFormatted: formatDate(today),
+                    pastDateFormatted: formatDate(pastDate),
+                };
+            }
+            function formatDate(date) {
+                let day = String(date.getDate()).padStart(2, '0');
+                let month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+                let year = date.getFullYear();
+
+                return `${month}-${day}-${year}`;
+            }
+                    // Example usage on page load or user interaction
             // window.onload = function () {
             //     fetchRecentData(); // Fetch data for the last 7 days
             // }
