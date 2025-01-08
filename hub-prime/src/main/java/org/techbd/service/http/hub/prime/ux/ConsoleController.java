@@ -41,12 +41,7 @@ public class ConsoleController {
     public String certEngineScorecard(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/console/cert-engine-scorecard", model, request);
     }
-
-    @RouteMapping(label = "HRSN Viewer", title = "HRSN Viewer App", siblingOrder = 20)
-    @GetMapping("/console/hrsn-viewer-app")
-    public String hrsnViewerApp(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/console/hrsn-viewer-app", model, request);
-    }
+ 
 
     @RouteMapping(label = "Health Information", title = "Health Information", siblingOrder = 30)
     @GetMapping("/console/health-info")
