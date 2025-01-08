@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 5px 0px 8px 15px;
+        }
+
+        .grid-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 12px 0px 11px 15px;
+        }
+    </style>
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'hrsn_data_tracker';
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+              .withColumnDefs([
+                            {
+                                headerName: "Encountered Time",
+                                field: "interaction_date",
+                                sortable: true,
+                                sort: "desc",
+                                filter: "agDateColumnFilter",
+                                tooltipField: "interaction_date",
+                                tooltipComponentParams: { tooltipText: "Date when the interaction occurred." }
+                            },
+                            {
+                                headerName: "TechBD Tenant ID",
+                                field: "qe_name",
+                                filter: "agTextColumnFilter",
+                                tooltipField: "qe_name",
+                                tooltipComponentParams: { tooltipText: "Identifier for the TechBD tenant." }
+                            },
+                            {
+                                headerName: "IT Vendor",
+                                field: "it_vendor",
+                                filter: "agTextColumnFilter",
+                                tooltipField: "it_vendor",
+                                tooltipComponentParams: { tooltipText: "Name of the associated IT Vendor." }
+                            },
+                            {
+                                headerName: "SCN",
+                                field: "scn",
+                                filter: "agTextColumnFilter",
+                                tooltipField: "scn",
+                                tooltipComponentParams: { tooltipText: "Service Coordination Network for the interaction." }
+                            },
+                            {
+                                headerName: "Bundle Resource Type",
+                                field: "type",
+                                filter: "agNumberColumnFilter",
+                                tooltipField: "type",
+                                tooltipComponentParams: { tooltipText: "Resource type categorized as Referral, Screening, or Assessment." }
+                            },
+                            {
+                                headerName: "Count",
+                                field: "count",
+                                filter: "agNumberColumnFilter",
+                                tooltipField: "count",
+                                tooltipComponentParams: { tooltipText: "Total count of interactions." }
+                            }
+                        ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">
+            This widget offers an overview of interactions processed through the system. It includes columns such as Encountered Time, TechBD Tenant ID, IT Vendor, SCN, Bundle Resource Type, and Count. Users can filter and sort the data to analyze interactions effectively. The widget helps in identifying trends and patterns based on tenant-specific and SCN-specific details.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

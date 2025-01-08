@@ -3973,3 +3973,73 @@ WHERE
     ])
     AND (((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer) > 0
    order by  sifcr.created_at DESC ;
+
+
+
+/*****************************************
+This query retrieves interaction details from the techbd_udi_ingress.sat_interaction_fhir_request table. It includes interaction date, tenant ID (QE), IT vendor, SCN, type, and the count of interactions.
+
+SCN is determined based on tenant_id and patient_mrn_source_system, defaulting to NULL if patient_mrn_source_system is NULL.
+Filters exclude invalid bundles and specific URIs.
+Results are grouped by key fields and sorted in ascending order.
+*****************************************/
+   
+ drop view if exists techbd_udi_ingress.hrsn_data_tracker cascade;  
+ create or replace view techbd_udi_ingress.hrsn_data_tracker as  
+ SELECT  
+    htt_req.created_at::date AS interaction_date, 
+    htt_req.tenant_id AS qe_name,  
+    case
+	    WHEN htt_req.patient_mrn_source_system IS NULL THEN NULL
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HAHRSN' THEN 'Healthy Alliance'
+        WHEN tenant_id_lower = 'hixny' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HAHRSN' THEN 'Healthy Alliance Foundation Inc.'
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HVCCHRSN' THEN 'Hudson Valley Care Coalition, Inc.'
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'CCHRSN' THEN 'Care Compass'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HWCLI' THEN 'Health and Welfare Council of LI'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'PHS' THEN 'Public Health Solutions'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'SIPPS' THEN 'Staten Island PPS'
+        WHEN tenant_id_lower = 'bronxrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'SOMOSFH' THEN 'Somos Healthcare Providers, Inc.'
+        WHEN tenant_id_lower = 'grrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'FLIPAFH' THEN 'Finger Lakes IPA Inc.'
+        WHEN tenant_id_lower = 'grrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'FLIPATN' THEN 'Finger Lakes IPA Inc. (Monroe County Only)'
+        WHEN tenant_id_lower = 'healthelink' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'WNYICCFH' THEN 'Western New York Integrated Care Collaborative, Inc.'
+        ELSE SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5)
+    END AS scn, 
+    -- Determine IT Vendor based on SCN and QE
+    case
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HAHRSN' THEN 'Unite Us'
+        WHEN tenant_id_lower = 'hixny' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HAHRSN' THEN 'UniteUs'
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HVCCHRSN' THEN 'Unite Us'
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'CCHRSN' THEN 'Unite Us'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HWCLI' THEN 'UniteUs'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'PHS' THEN 'UniteUs'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'SIPPS' THEN 'Channels360'
+        WHEN tenant_id_lower = 'bronxrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'SOMOSFH' THEN 'FindHelp'
+        WHEN tenant_id_lower = 'grrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'FLIPAFH' THEN 'FindHelp'
+        WHEN tenant_id_lower = 'grrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'FLIPATN' THEN 'TogetherNow'
+        WHEN tenant_id_lower = 'healthelink' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'WNYICCFH' THEN 'FindHelp'
+        ELSE ''
+    END AS it_vendor, 
+    CASE
+        WHEN 'ServiceRequest' = ANY(string_to_array(htt_req.resource_type_set, ', ')) 
+          OR 'Task' = ANY(string_to_array(htt_req.resource_type_set, ', '))
+            THEN 'Referral'
+        WHEN 'Consent' = ANY(string_to_array(htt_req.resource_type_set, ', '))
+            THEN 'Screening'
+        WHEN 'Condition' = ANY(string_to_array(htt_req.resource_type_set, ', '))
+            THEN 'Assessment'
+        ELSE NULL
+    END AS type, 
+    COUNT(*) AS count
+FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+WHERE 
+    htt_req.uri =  ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/']) 
+    AND htt_req.is_bundle_valid = true  
+    AND htt_req.nature = 'Forwarded HTTP Response'
+GROUP BY 
+    interaction_date, qe_name, it_vendor, scn, type 
+ORDER BY 
+    interaction_date ASC, 
+    qe_name ASC, 
+    it_vendor ASC, 
+    scn ASC, 
+    type ASC;
