@@ -4038,8 +4038,4 @@ WHERE
 GROUP BY 
     interaction_date, qe_name, it_vendor, scn, type 
 ORDER BY 
-    interaction_date ASC, 
-    qe_name ASC, 
-    it_vendor ASC, 
-    scn ASC, 
-    type ASC;
+    interaction_date DESC;
