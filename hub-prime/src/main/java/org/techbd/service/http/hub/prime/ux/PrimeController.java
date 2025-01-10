@@ -351,4 +351,53 @@ public class PrimeController {
         }
     }
 
+    @GetMapping(value = "/dashboard/stat/csv/most-recent/{tenantId}.{extension}", produces = {
+        "application/json", "text/html" })
+    public ResponseEntity<?> CSVviaHTTPsubmission(@PathVariable String tenantId, @PathVariable String extension) {
+        String schemaName = "techbd_udi_ingress";
+        String viewName = "interaction_recent_csv_https";
+
+        // Fetch the result using the dynamically determined table and column; if
+        // jOOQ-generated types were found, automatic column value mapping will occur
+        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(Tables.class, schemaName,
+                viewName);
+        List<Map<String, Object>> recentInteractions = udiPrimeJpaConfig.dsl().selectFrom(typableTable.table())
+                .where(DSL.upper(typableTable.column("tenant_id").cast(String.class)).eq(tenantId.toUpperCase()))
+                .fetch()
+                .intoMaps();
+
+        if (recentInteractions != null && recentInteractions.size() > 0) {
+
+            String mre = recentInteractions.get(0).get("interaction_created_at").toString();
+
+            String interactionCount = recentInteractions.get(0).get("interaction_count").toString();
+
+            String formattedTime = getrecentInteractioString(mre);
+
+            if ("html".equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                        .body(mre.length() > 0
+                                ? "<span title=\"%s sessions found, most recent %s \">%s</span>".formatted(
+                                        interactionCount,
+                                        convertToEST(mre),
+                                        formattedTime)
+                                : "<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
+
+            } else if ("json".equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(mre);
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        } else {
+            if ("html".equalsIgnoreCase(extension)) {
+                return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                        .body("<span title=\"No data found in %s\">⚠️</span>".formatted(tenantId));
+            } else if ("json".equalsIgnoreCase(extension)) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+    }    
+
 }
