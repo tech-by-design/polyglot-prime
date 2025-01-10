@@ -81,30 +81,23 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
 
         # Transform and validate
         common_transform_steps = [ 
-            ("ORGANIZATION_TYPE_DISPLAY", "organization_type_display"), 
-            ("FACILITY_STATE", "facility_state"),   
-            ("SCREENING_STATUS_CODE", "screening_status_code"),
+            ("ORGANIZATION_TYPE_DISPLAY", "organization_type_display"),    
             ("SCREENING_CODE_DESCRIPTION", "screening_code_description"),
             ("QUESTION_CODE_TEXT", "question_code_text"),  
             ("ANSWER_CODE", "answer_code"),
-            ("ANSWER_CODE_DESCRIPTION", "answer_code_description"),
-            ("GENDER", "gender"), 
-             ("EXTENSION_SEX_AT_BIRTH_CODE_VALUE", "extension_sex_at_birth_code_value"),
+            ("ANSWER_CODE_DESCRIPTION", "answer_code_description"), 
+            ("EXTENSION_SEX_AT_BIRTH_CODE_VALUE", "extension_sex_at_birth_code_value"),
             ("RELATIONSHIP_PERSON_CODE", "relationship_person_code"),
-            ("RELATIONSHIP_PERSON_DESCRIPTION", "relationship_person_description"),
-            ("STATE", "state"),
+            ("RELATIONSHIP_PERSON_DESCRIPTION", "relationship_person_description"), 
             ("EXTENSION_GENDER_IDENTITY_DISPLAY", "extension_gender_identity_display"),            
             ("GENDER_IDENTITY_CODE", "gender_identity_code"),  
             ("SEXUAL_ORIENTATION_VALUE_CODE_DESCRIPTION", "sexual_orientation_value_code_description"), 
             ("PREFERRED_LANGUAGE_CODE_SYSTEM_NAME", "preferred_language_code_system_name"), 
             ("EXTENSION_OMBCATEGORY_RACE_CODE", "extension_ombcategory_race_code"),
             ("EXTENSION_OMBCATEGORY_RACE_CODE_DESCRIPTION", "extension_ombcategory_race_code_description"),  
-            ("EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION", "extension_ombcategory_ethnicity_code_description"),   
-            ("CONSENT_STATUS", "consent_status"),   
-            ("OBSERVATION_CATEGORY_SDOH_CODE","observation_category_sdoh_code"),
+            ("EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION", "extension_ombcategory_ethnicity_code_description"),    
             ("OBSERVATION_CATEGORY_SDOH_DISPLAY","observation_category_sdoh_display"),  
-            ("QUESTION_CODE_DISPLAY","question_code_display"),  
-            ("DATA_ABSENT_REASON_CODE", "data_absent_reason_code"),
+            ("QUESTION_CODE_DISPLAY","question_code_display"),   
             ("DATA_ABSENT_REASON_DISPLAY", "data_absent_reason_display")
         ]
 
