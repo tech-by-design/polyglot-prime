@@ -183,7 +183,7 @@ public class ConsentConverter extends BaseConverter {
         if (screeningResourceData == null || screeningResourceData.getConsentProvisionType() == null) {
             return;
         }
-        Consent.provisionComponent provision = new Consent.provisionComponent();
+        Consent.ProvisionComponent provision = new Consent.ProvisionComponent();
         provision.setType(ConsentProvisionType.fromCode(screeningResourceData.getConsentProvisionType()));
         consent.setProvision(provision);
     }

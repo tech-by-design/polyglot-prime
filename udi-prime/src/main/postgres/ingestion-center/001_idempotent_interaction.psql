@@ -3934,42 +3934,212 @@ sorted by `created_at` in descending order.
 DROP VIEW IF EXISTS techbd_udi_ingress.https_csv_validation_errors CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.https_csv_validation_errors
 AS   
-SELECT 
-    sifcr.created_at,
-    sifcr.tenant_id,
-    sifcr.uri,
-    sifcr.zip_file_hub_interaction_id, 
-    tasks.value ->> 'name' AS section,
-    error_payload.value ->> 'fieldName'::text AS fieldname,
-    error_payload.value ->> 'cell'::text AS value,
-    error_payload.value ->> 'title'::text AS error_type,
-    error_payload.value ->> 'message'::text AS error,
-    error_payload.value ->> 'description'::text AS description,
-    (error_payload.value ->> 'rowNumber'::text)::integer AS rownumber,
-    (error_payload.value ->> 'fieldNumber'::text)::integer AS fieldnumber,
-    CASE 
-        WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN original_csv.qe_admin_data_file_name
-        WHEN tasks.value ->> 'name' = 'demographic_data' THEN original_csv.demographic_data_file_name
-        WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN original_csv.screening_observation_data_file_name
-        WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN original_csv.screening_profile_data_file_name
+select
+	created_at,
+	tenant_id,
+	uri,
+	zip_file_hub_interaction_id,
+	section,
+	fieldname,
+	value,
+	error_type,
+	error,
+	description,
+	rownumber,
+	fieldnumber,
+	file_name
+from
+	(
+	select
+		sifcr.created_at,
+		sifcr.tenant_id,
+		sifcr.uri,
+		sifcr.zip_file_hub_interaction_id,
+		tasks.value ->> 'name' as section,
+		error_payload.value ->> 'fieldName'::text as fieldname,
+		error_payload.value ->> 'cell'::text as value,
+		error_payload.value ->> 'title'::text as error_type,
+		error_payload.value ->> 'message'::text as error,
+		error_payload.value ->> 'description'::text as description,
+		(error_payload.value ->> 'rowNumber'::text)::integer as rownumber,
+		(error_payload.value ->> 'fieldNumber'::text)::integer as fieldnumber,
+		case
+			when tasks.value ->> 'name' = 'qe_admin_data' then original_csv.qe_admin_data_file_name
+			when tasks.value ->> 'name' = 'demographic_data' then original_csv.demographic_data_file_name
+			when tasks.value ->> 'name' = 'screening_observation_data' then original_csv.screening_observation_data_file_name
+			when tasks.value ->> 'name' = 'screening_profile_data' then original_csv.screening_profile_data_file_name
+			else null
+		end as file_name
+	from
+		techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
+	left join techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv
+            on
+		sifcr.hub_interaction_id = original_csv.hub_interaction_id
+		and original_csv.nature = 'Original Flat File CSV'
+        ,
+		lateral jsonb_array_elements(
+            ((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'tasks'::text
+        ) tasks(value)
+        ,
+		lateral jsonb_array_elements(tasks.value -> 'errors'::text) error_payload(value)
+	where
+		sifcr.nature = 'CSV Validation Result'::text
+		and (((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer) > 0
+		and sifcr.uri = any (array[
+            '/flatfile/csv/Bundle'::text,
+		'/flatfile/csv/Bundle/'::text,
+		'/flatfile/csv/Bundle/$validate'::text,
+		'/flatfile/csv/Bundle/$validate/'::text
+        ])
+union all
+	select
+		sifcr.created_at,
+		sifcr.tenant_id,
+		sifcr.uri,
+		sifcr.zip_file_hub_interaction_id,
+		null as section,
+		null as fieldname,
+		null as value,
+		error_payload.value ->> 'type'::text as error_type,
+		error_payload.value ->> 'message'::text as error,
+		error_payload.value ->> 'description'::text as description,
+		null as rownumber,
+		null as fieldnumber,
+		null as file_name
+	from
+		techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
+        ,
+		lateral jsonb_array_elements(
+            (sifcr.validation_result_payload -> 'validationResults'::text) -> 'errors'::text
+        ) error_payload(value)
+	where
+		sifcr.nature = 'CSV Validation Result'::text
+		and jsonb_array_length(
+            sifcr.validation_result_payload -> 'validationResults' -> 'errors'
+        ) > 0
+		and sifcr.uri = any (array[
+            '/flatfile/csv/Bundle'::text,
+		'/flatfile/csv/Bundle/'::text,
+		'/flatfile/csv/Bundle/$validate'::text,
+		'/flatfile/csv/Bundle/$validate/'::text
+        ]) 		 		
+) as result
+order by
+	created_at desc;
+
+
+
+/*****************************************
+This query retrieves interaction details from the techbd_udi_ingress.sat_interaction_fhir_request table. It includes interaction date, tenant ID (QE), IT vendor, SCN, type, and the count of interactions.
+
+SCN is determined based on tenant_id and patient_mrn_source_system, defaulting to NULL if patient_mrn_source_system is NULL.
+Filters exclude invalid bundles and specific URIs.
+Results are grouped by key fields and sorted in ascending order.
+*****************************************/
+   
+ drop view if exists techbd_udi_ingress.hrsn_data_tracker cascade;  
+ create or replace view techbd_udi_ingress.hrsn_data_tracker as  
+ SELECT  
+    htt_req.created_at::date AS interaction_date, 
+    htt_req.tenant_id AS qe_name,  
+    case
+	    WHEN htt_req.patient_mrn_source_system IS NULL THEN NULL
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HAHRSN' THEN 'Healthy Alliance'
+        WHEN tenant_id_lower = 'hixny' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HAHRSN' THEN 'Healthy Alliance Foundation Inc.'
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HVCCHRSN' THEN 'Hudson Valley Care Coalition, Inc.'
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'CCHRSN' THEN 'Care Compass'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HWCLI' THEN 'Health and Welfare Council of LI'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'PHS' THEN 'Public Health Solutions'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'SIPPS' THEN 'Staten Island PPS'
+        WHEN tenant_id_lower = 'bronxrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'SOMOSFH' THEN 'Somos Healthcare Providers, Inc.'
+        WHEN tenant_id_lower = 'grrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'FLIPAFH' THEN 'Finger Lakes IPA Inc.'
+        WHEN tenant_id_lower = 'grrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'FLIPATN' THEN 'Finger Lakes IPA Inc. (Monroe County Only)'
+        WHEN tenant_id_lower = 'healthelink' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'WNYICCFH' THEN 'Western New York Integrated Care Collaborative, Inc.'
+        ELSE SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5)
+    END AS scn, 
+    -- Determine IT Vendor based on SCN and QE
+    case
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HAHRSN' THEN 'Unite Us'
+        WHEN tenant_id_lower = 'hixny' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HAHRSN' THEN 'UniteUs'
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HVCCHRSN' THEN 'Unite Us'
+        WHEN tenant_id_lower = 'healtheconn' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'CCHRSN' THEN 'Unite Us'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'HWCLI' THEN 'UniteUs'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'PHS' THEN 'UniteUs'
+        WHEN tenant_id_lower = 'healthix' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'SIPPS' THEN 'Channels360'
+        WHEN tenant_id_lower = 'bronxrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'SOMOSFH' THEN 'FindHelp'
+        WHEN tenant_id_lower = 'grrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'FLIPAFH' THEN 'FindHelp'
+        WHEN tenant_id_lower = 'grrhio' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'FLIPATN' THEN 'TogetherNow'
+        WHEN tenant_id_lower = 'healthelink' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'WNYICCFH' THEN 'FindHelp'
+        ELSE ''
+    END AS it_vendor, 
+    CASE
+        WHEN 'ServiceRequest' = ANY(string_to_array(htt_req.resource_type_set, ', ')) 
+          OR 'Task' = ANY(string_to_array(htt_req.resource_type_set, ', '))
+            THEN 'Referral'
+        WHEN 'Consent' = ANY(string_to_array(htt_req.resource_type_set, ', '))
+            THEN 'Screening'
+        WHEN 'Condition' = ANY(string_to_array(htt_req.resource_type_set, ', '))
+            THEN 'Assessment'
         ELSE NULL
-    END AS file_name
-FROM 
-    techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
-    LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv
-        ON sifcr.hub_interaction_id = original_csv.hub_interaction_id
-        AND original_csv.nature = 'Original Flat File CSV',
-    LATERAL jsonb_array_elements(
-        ((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'tasks'::text
-    ) tasks(value),
-    LATERAL jsonb_array_elements(tasks.value -> 'errors'::text) error_payload(value)
+    END AS type, 
+    COUNT(*) AS count
+FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
 WHERE 
-    sifcr.nature = 'CSV Validation Result'::text 
-    AND sifcr.uri = ANY (ARRAY[
-        '/flatfile/csv/Bundle'::text, 
-        '/flatfile/csv/Bundle/'::text, 
-        '/flatfile/csv/Bundle/$validate'::text, 
-        '/flatfile/csv/Bundle/$validate/'::text
-    ])
-    AND (((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer) > 0
-   order by  sifcr.created_at DESC ;
+    htt_req.uri =  ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/']) 
+    AND htt_req.is_bundle_valid = true  
+    AND htt_req.nature = 'Forwarded HTTP Response'
+GROUP BY 
+    interaction_date, qe_name, it_vendor, scn, type 
+ORDER BY 
+    interaction_date DESC;
+
+/*******************************************************************************************
+This view takes data from sat_interaction_fhir_request table to 
+provide a consolidated view of CCDA FHIR requests via CSV, including resource types, 
+interaction details, request attributes, and validation issues.
+******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_ccda_fhir_request CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_ccda_fhir_request
+AS SELECT hub_interaction_id AS interaction_id,
+    uri,
+    bundle_id,
+    created_at AS interaction_created_at,
+    created_by AS interaction_created_by,
+    provenance AS interaction_provenance,
+    sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
+    nature,
+    tenant_id,
+    user_agent,
+    client_ip_address,
+    'application/json'::text AS content_type,
+    payload,
+    elaboration,
+    from_state,
+    to_state,
+    state_transition_reason,
+    created_at AS request_created_at,
+    created_by AS request_created_by,
+    provenance AS request_provenance,
+    issues_count,
+    resource_type_set AS resource_types,
+    interaction_start_time::text AS start_time,
+    interaction_end_time::text AS finish_time,
+    EXTRACT(epoch FROM interaction_end_time::timestamp without time zone - interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
+    patient_id,
+    patient_mrn,
+    patient_mrn_source_system,
+    organization_id,
+    organization_name,
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
+    CASE
+        WHEN 'ServiceRequest' = ANY(string_to_array(resource_type_set, ', ')) OR 'Task' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Referral'
+        WHEN 'Consent' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Screening'
+        WHEN 'Condition' = ANY(string_to_array(resource_type_set, ', '))
+            THEN 'Assessment'
+        ELSE NULL
+    END AS bundle_resource_type,   
+    source_hub_interaction_id    
+   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
+   WHERE source_type='CCDA';     

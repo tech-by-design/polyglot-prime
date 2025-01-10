@@ -61,11 +61,16 @@ public class ContentController {
         return presentation.populateModel("page/content/organizations", model, request);
     }
 
-
     @GetMapping("/content/scn")
     @RouteMapping(label = "SCN", title = "SCN", siblingOrder = 40)
     public String scn(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/content/scn", model, request);
     }    
+
+    @GetMapping("/content/hrsn-data-tracker")
+    @RouteMapping(label = "HRSN Data Tracker", title = "HRSN Data Tracker", siblingOrder = 50)
+    public String hrsnDataTracker(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/content/hrsn-data-tracker", model, request);
+    }      
 
 }

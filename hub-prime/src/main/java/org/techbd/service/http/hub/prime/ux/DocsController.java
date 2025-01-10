@@ -215,12 +215,7 @@ public class DocsController {
     public String techBdSwaggerUI(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/docs/swagger-ui/techbd-api", model, request);
     }
-
-    @RouteMapping(label = "HRSN Query OpenAPI UI", title = "HRSN Query OpenAPI Documentation", siblingOrder = 20)
-    @GetMapping("/docs/swagger-ui/query-api")
-    public String hrsnQuerySwaggerUI(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/docs/swagger-ui/query-api", model, request);
-    }
+ 
 
     @RouteMapping(label = "Announcements", title = "Announcements", siblingOrder = 30)
     @GetMapping("/docs/announcements")
