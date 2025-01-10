@@ -3934,45 +3934,98 @@ sorted by `created_at` in descending order.
 DROP VIEW IF EXISTS techbd_udi_ingress.https_csv_validation_errors CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.https_csv_validation_errors
 AS   
-SELECT 
-    sifcr.created_at,
-    sifcr.tenant_id,
-    sifcr.uri,
-    sifcr.zip_file_hub_interaction_id, 
-    tasks.value ->> 'name' AS section,
-    error_payload.value ->> 'fieldName'::text AS fieldname,
-    error_payload.value ->> 'cell'::text AS value,
-    error_payload.value ->> 'title'::text AS error_type,
-    error_payload.value ->> 'message'::text AS error,
-    error_payload.value ->> 'description'::text AS description,
-    (error_payload.value ->> 'rowNumber'::text)::integer AS rownumber,
-    (error_payload.value ->> 'fieldNumber'::text)::integer AS fieldnumber,
-    CASE 
-        WHEN tasks.value ->> 'name' = 'qe_admin_data' THEN original_csv.qe_admin_data_file_name
-        WHEN tasks.value ->> 'name' = 'demographic_data' THEN original_csv.demographic_data_file_name
-        WHEN tasks.value ->> 'name' = 'screening_observation_data' THEN original_csv.screening_observation_data_file_name
-        WHEN tasks.value ->> 'name' = 'screening_profile_data' THEN original_csv.screening_profile_data_file_name
-        ELSE NULL
-    END AS file_name
-FROM 
-    techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
-    LEFT JOIN techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv
-        ON sifcr.hub_interaction_id = original_csv.hub_interaction_id
-        AND original_csv.nature = 'Original Flat File CSV',
-    LATERAL jsonb_array_elements(
-        ((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'tasks'::text
-    ) tasks(value),
-    LATERAL jsonb_array_elements(tasks.value -> 'errors'::text) error_payload(value)
-WHERE 
-    sifcr.nature = 'CSV Validation Result'::text 
-    AND sifcr.uri = ANY (ARRAY[
-        '/flatfile/csv/Bundle'::text, 
-        '/flatfile/csv/Bundle/'::text, 
-        '/flatfile/csv/Bundle/$validate'::text, 
-        '/flatfile/csv/Bundle/$validate/'::text
-    ])
-    AND (((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer) > 0
-   order by  sifcr.created_at DESC ;
+select
+	created_at,
+	tenant_id,
+	uri,
+	zip_file_hub_interaction_id,
+	section,
+	fieldname,
+	value,
+	error_type,
+	error,
+	description,
+	rownumber,
+	fieldnumber,
+	file_name
+from
+	(
+	select
+		sifcr.created_at,
+		sifcr.tenant_id,
+		sifcr.uri,
+		sifcr.zip_file_hub_interaction_id,
+		tasks.value ->> 'name' as section,
+		error_payload.value ->> 'fieldName'::text as fieldname,
+		error_payload.value ->> 'cell'::text as value,
+		error_payload.value ->> 'title'::text as error_type,
+		error_payload.value ->> 'message'::text as error,
+		error_payload.value ->> 'description'::text as description,
+		(error_payload.value ->> 'rowNumber'::text)::integer as rownumber,
+		(error_payload.value ->> 'fieldNumber'::text)::integer as fieldnumber,
+		case
+			when tasks.value ->> 'name' = 'qe_admin_data' then original_csv.qe_admin_data_file_name
+			when tasks.value ->> 'name' = 'demographic_data' then original_csv.demographic_data_file_name
+			when tasks.value ->> 'name' = 'screening_observation_data' then original_csv.screening_observation_data_file_name
+			when tasks.value ->> 'name' = 'screening_profile_data' then original_csv.screening_profile_data_file_name
+			else null
+		end as file_name
+	from
+		techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
+	left join techbd_udi_ingress.sat_interaction_flat_file_csv_request original_csv
+            on
+		sifcr.hub_interaction_id = original_csv.hub_interaction_id
+		and original_csv.nature = 'Original Flat File CSV'
+        ,
+		lateral jsonb_array_elements(
+            ((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'tasks'::text
+        ) tasks(value)
+        ,
+		lateral jsonb_array_elements(tasks.value -> 'errors'::text) error_payload(value)
+	where
+		sifcr.nature = 'CSV Validation Result'::text
+		and (((((sifcr.validation_result_payload -> 'validationResults'::text) -> 'report'::text) -> 'stats'::text) ->> 'errors'::text)::integer) > 0
+		and sifcr.uri = any (array[
+            '/flatfile/csv/Bundle'::text,
+		'/flatfile/csv/Bundle/'::text,
+		'/flatfile/csv/Bundle/$validate'::text,
+		'/flatfile/csv/Bundle/$validate/'::text
+        ])
+union all
+	select
+		sifcr.created_at,
+		sifcr.tenant_id,
+		sifcr.uri,
+		sifcr.zip_file_hub_interaction_id,
+		null as section,
+		null as fieldname,
+		null as value,
+		error_payload.value ->> 'type'::text as error_type,
+		error_payload.value ->> 'message'::text as error,
+		error_payload.value ->> 'description'::text as description,
+		null as rownumber,
+		null as fieldnumber,
+		null as file_name
+	from
+		techbd_udi_ingress.sat_interaction_flat_file_csv_request sifcr
+        ,
+		lateral jsonb_array_elements(
+            (sifcr.validation_result_payload -> 'validationResults'::text) -> 'errors'::text
+        ) error_payload(value)
+	where
+		sifcr.nature = 'CSV Validation Result'::text
+		and jsonb_array_length(
+            sifcr.validation_result_payload -> 'validationResults' -> 'errors'
+        ) > 0
+		and sifcr.uri = any (array[
+            '/flatfile/csv/Bundle'::text,
+		'/flatfile/csv/Bundle/'::text,
+		'/flatfile/csv/Bundle/$validate'::text,
+		'/flatfile/csv/Bundle/$validate/'::text
+        ]) 		 		
+) as result
+order by
+	created_at desc;
 
 
 
