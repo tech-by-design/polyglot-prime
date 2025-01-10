@@ -838,7 +838,8 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_fhir CASCADE;
  OVER (PARTITION BY (upper(sihr.tenant_id))) AS interaction_count
     FROM 
         techbd_udi_ingress.sat_interaction_fhir_request sihr 
-    WHERE sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text])
+    WHERE sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text, '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/','/flatfile/csv/$validate','/flatfile/csv/$validate/'
+     ])
 )
 SELECT 
     sat_interaction_fhir_request_id as sat_interaction_http_request_id,
@@ -4143,3 +4144,33 @@ AS SELECT hub_interaction_id AS interaction_id,
     source_hub_interaction_id    
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE source_type='CCDA';     
+
+
+/*******************************************************************************************
+ * Comprehensive view of Latest CSV via HTTPs Interactions per Tenant IDs* 
+ ******************************************************************************************/
+ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_csv_https CASCADE;
+ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_csv_https AS
+ WITH ranked_records AS (
+    SELECT 
+        sihr.sat_interaction_fhir_request_id,
+        sihr.hub_interaction_id AS interaction_id,
+        sihr.tenant_id AS tenant_id,
+        sihr.created_at AS interaction_created_at,
+        row_number() OVER (PARTITION BY (upper(sihr.tenant_id)) ORDER BY sihr.created_at DESC) AS rn,
+        COUNT(*)
+ OVER (PARTITION BY (upper(sihr.tenant_id))) AS interaction_count
+    FROM 
+        techbd_udi_ingress.sat_interaction_fhir_request sihr 
+    WHERE sihr.uri = ANY (ARRAY[ '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/','/flatfile/csv/$validate','/flatfile/csv/$validate/'
+     ]) 
+)
+SELECT 
+    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
+    interaction_id,
+    tenant_id,
+    interaction_created_at,
+    interaction_count
+FROM 
+    ranked_records
+WHERE rn = 1;    
