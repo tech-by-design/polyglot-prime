@@ -66,8 +66,6 @@ springdoc:
   show-actuator: true 
 
 server:
-  tomcat:
-    max-http-response-header-size: 16384  # Increase the size here
   servlet:
     context-path: /
     session:
