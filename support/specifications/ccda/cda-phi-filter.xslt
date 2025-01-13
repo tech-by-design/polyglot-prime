@@ -54,6 +54,7 @@
                             <streetAddressLine><xsl:value-of select="hl7:addr/hl7:streetAddressLine"/></streetAddressLine>
                             <city><xsl:value-of select="hl7:addr/hl7:city"/></city>
                             <state><xsl:value-of select="hl7:addr/hl7:state"/></state>
+                            <county><xsl:value-of select="hl7:addr/hl7:county"/></county>
                             <postalCode><xsl:value-of select="hl7:addr/hl7:postalCode"/></postalCode>
                         </addr>
                         <telecom>
