@@ -190,6 +190,7 @@ public class FhirController {
                     </ul>
                     """, required = false) @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
             @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
+            @Parameter(description = "Optional parameter to specify source of the request.", required = false) @RequestParam(value = "source", required = false, defaultValue = "FHIR") String source,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
         Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
         LongCounter  bundleCounter =  meter.counterBuilder("bundle.received.total")
@@ -212,7 +213,7 @@ public class FhirController {
                 uaValidationStrategyJson,
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
-                request, response, provenance, includeOperationOutcome, mtlsStrategy,null, null,null,SourceType.FHIR.name());
+                request, response, provenance, includeOperationOutcome, mtlsStrategy,null, null,null,source);
         } finally {
                 bundleCounter.add(1);
                 span.end();
