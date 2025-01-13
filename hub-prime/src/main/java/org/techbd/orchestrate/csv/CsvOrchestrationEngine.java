@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,9 +34,12 @@ import org.apache.commons.vfs2.FileObject;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.techbd.conf.Configuration;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
@@ -56,6 +60,14 @@ import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import lib.aide.vfs.VfsIngressConsumer;
+
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 /**
  * The {@code OrchestrationEngine} class is responsible for managing and
@@ -256,20 +268,20 @@ public class CsvOrchestrationEngine {
         public void validate() throws IOException {
             log.info("CsvOrchestrationEngine : validate - file : {} BEGIN for interaction id : {}",
                     file.getOriginalFilename(), masterInteractionId);
-                final Instant intiatedAt = Instant.now();
-                final String originalFilename = file.getOriginalFilename();
-                final String uniqueFilename = masterInteractionId + "_"
-                        + (originalFilename != null ? originalFilename : "upload.zip");
-                final Path destinationPath = Path.of(appConfig.getCsv().validation().inboundPath(), uniqueFilename);
-                Files.createDirectories(destinationPath.getParent());
+            final Instant intiatedAt = Instant.now();
+            final String originalFilename = file.getOriginalFilename();
+            final String uniqueFilename = masterInteractionId + "_"
+                    + (originalFilename != null ? originalFilename : "upload.zip");
+            final Path destinationPath = Path.of(appConfig.getCsv().validation().inboundPath(), uniqueFilename);
+            Files.createDirectories(destinationPath.getParent());
 
-                // Save the uploaded file to the inbound folder
-                Files.copy(file.getInputStream(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
-                log.info("File saved to: {}", destinationPath);
+            // Save the uploaded file to the inbound folder
+            Files.copy(file.getInputStream(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("File saved to: {}", destinationPath);
 
-                // Trigger CSV processing and validation
-                this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
-                saveCombinedValidationResults(validationResults, masterInteractionId);            
+            // Trigger CSV processing and validation
+            this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
+            saveCombinedValidationResults(validationResults, masterInteractionId);
         }
 
         private void saveScreeningGroup(final String groupInteractionId, final HttpServletRequest request,
@@ -476,8 +488,7 @@ public class CsvOrchestrationEngine {
                     "resourceType", "OperationOutcome",
                     "interactionId", groupInteractionId,
                     "validationResults", Configuration.objectMapper.readTree(validationResults),
-                    "provenance", provenance
-            );
+                    "provenance", provenance);
         }
 
         public Map<String, Object> generateValidationResults(final String masterInteractionId,
@@ -570,8 +581,8 @@ public class CsvOrchestrationEngine {
                     if (groupKey.equals("filesNotProcessed")) {
                         this.filesNotProcessed = entry.getValue().stream().map(FileDetail::filename).toList();
                         combinedValidationResults.add(
-                            createOperationOutcomeForFileNotProcessed(
-                                masterInteractionId,this.filesNotProcessed,originalFileName));
+                                createOperationOutcomeForFileNotProcessed(
+                                        masterInteractionId, this.filesNotProcessed, originalFileName));
                         continue;
                     }
                     List<FileDetail> fileDetails = entry.getValue();
@@ -605,42 +616,44 @@ public class CsvOrchestrationEngine {
                 throw new RuntimeException("Error processing ZIP files: " + e.getMessage(), e);
             }
         }
-private Map<String, Object> createOperationOutcomeForFileNotProcessed(
-            final String masterInteractionId,
-            final List<String> filesNotProcessed, String originalFileName) {
-        OperationOutcome operationOutcome = new OperationOutcome();
-        OperationOutcome.OperationOutcomeIssueComponent issue = operationOutcome.addIssue();
-        issue.setSeverity(OperationOutcome.IssueSeverity.ERROR);
-        issue.setCode(OperationOutcome.IssueType.NOTFOUND);
 
-        StringBuilder diagnosticsMessage = new StringBuilder();
+        private Map<String, Object> createOperationOutcomeForFileNotProcessed(
+                final String masterInteractionId,
+                final List<String> filesNotProcessed, String originalFileName) {
+            OperationOutcome operationOutcome = new OperationOutcome();
+            OperationOutcome.OperationOutcomeIssueComponent issue = operationOutcome.addIssue();
+            issue.setSeverity(OperationOutcome.IssueSeverity.ERROR);
+            issue.setCode(OperationOutcome.IssueType.NOTFOUND);
 
-        if (filesNotProcessed != null && !filesNotProcessed.isEmpty()) {
-            diagnosticsMessage.append("Files not processed: in input zip file : ");
-            diagnosticsMessage.append(String.join(", ", filesNotProcessed));
-            StringBuilder remediation = new StringBuilder();
-            remediation.append("Filenames must start with one of the following prefixes: ");
-            for (FileType type : FileType.values()) {
-                remediation.append(type.name()).append(", ");
+            StringBuilder diagnosticsMessage = new StringBuilder();
+
+            if (filesNotProcessed != null && !filesNotProcessed.isEmpty()) {
+                diagnosticsMessage.append("Files not processed: in input zip file : ");
+                diagnosticsMessage.append(String.join(", ", filesNotProcessed));
+                StringBuilder remediation = new StringBuilder();
+                remediation.append("Filenames must start with one of the following prefixes: ");
+                for (FileType type : FileType.values()) {
+                    remediation.append(type.name()).append(", ");
+                }
+                if (remediation.length() > 0) {
+                    remediation.setLength(remediation.length() - 2);
+                }
+                Map<String, Object> issueDetails = Map.of(
+                        "severity", "ERROR",
+                        "code", "NOTFOUND",
+                        "diagnostics", diagnosticsMessage.toString(),
+                        "remediation", remediation.toString());
+
+                return Map.of(
+                        "masterInteractionId", masterInteractionId,
+                        "originalFileName", originalFileName,
+                        "validationResults", Map.of(
+                                "issue", List.of(issueDetails),
+                                "resourceType", "OperationOutcome"));
             }
-            if (remediation.length() > 0) {
-                remediation.setLength(remediation.length() - 2);
-            }
-            Map<String, Object> issueDetails = Map.of(
-                    "severity", "ERROR",
-                    "code", "NOTFOUND",
-                    "diagnostics", diagnosticsMessage.toString(),
-                    "remediation", remediation.toString());
-
-            return Map.of(
-                    "masterInteractionId", masterInteractionId,
-                    "originalFileName", originalFileName,
-                    "validationResults", Map.of(
-                            "issue", List.of(issueDetails),
-                            "resourceType", "OperationOutcome"));
+            return Collections.emptyMap();
         }
-        return Collections.emptyMap();
-    }
+
         // Move this method outside of processScreenings
         public boolean isGroupComplete(List<FileDetail> fileDetails) {
             Set<FileType> presentFileTypes = fileDetails.stream()
@@ -898,115 +911,207 @@ private Map<String, Object> createOperationOutcomeForFileNotProcessed(
         // return validationResults;
         // }
 
-        public String validateCsvUsingPython(final List<FileDetail> fileDetails, final String interactionId)
-                throws Exception {
-            log.info("CsvService : validateCsvUsingPython BEGIN for interactionId :{} " + interactionId);
-            try {
-                final var config = appConfig.getCsv().validation();
-                if (config == null) {
-                    throw new IllegalStateException("CSV validation configuration is null");
-                }
+        public String validateCsvUsingPython(final List<FileDetail> fileDetails, final String interactionId) {
+            log.info("CsvService : validateCsvUsingPython BEGIN for interactionId : {}", interactionId);
 
-                // Enhanced validation input
+            try {
+                // Validate input
                 if (fileDetails == null || fileDetails.isEmpty()) {
                     log.error("No files provided for validation");
                     throw new IllegalArgumentException("No files provided for validation");
                 }
 
-                // Ensure the files exist and are valid using VFS before running the validation
-                final List<FileObject> fileObjects = new ArrayList<>();
-                for (final FileDetail fileDetail : fileDetails) {
-                    log.info("Validating file: {}", fileDetail);
-                    final FileObject file = vfsCoreService.resolveFile(fileDetail.filePath());
-                    if (!vfsCoreService.fileExists(file)) {
-                        log.error("File not found: {}", fileDetail.filePath());
-                        throw new FileNotFoundException("File not found: " + fileDetail.filePath());
-                    }
-                    fileObjects.add(file);
-                }
+                // Create WebClient instance
+                WebClient webClient = WebClient.builder()
+                        .baseUrl("https://synthetic.csv-frictionless-validator.techbd.org")
+                        .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.MULTIPART_FORM_DATA_VALUE)
+                        .build();
 
-                // Validate and create directories
-                vfsCoreService.validateAndCreateDirectories(fileObjects.toArray(new FileObject[0]));
+                // Prepare multipart form data
+                MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
+                Set<String> requiredFields = new HashSet<>(Arrays.asList(
+                        "QE_ADMIN_DATA_FILE",
+                        "SCREENING_PROFILE_DATA_FILE",
+                        "SCREENING_OBSERVATION_DATA_FILE",
+                        "DEMOGRAPHIC_DATA_FILE"));
 
-                // Build command to run Python script
-                final List<String> command = buildValidationCommand(config, fileDetails);
-
-                log.info("Executing validation command: {}", String.join(" ", command));
-
-                final ProcessBuilder processBuilder = new ProcessBuilder();
-                processBuilder.directory(new File(fileDetails.get(0).filePath()).getParentFile());
-                processBuilder.command(command);
-                processBuilder.redirectErrorStream(true);
-
-                final Process process = processBuilder.start();
-
-                // Capture and handle output/error streams
-                final StringBuilder output = new StringBuilder();
-                final StringBuilder errorOutput = new StringBuilder();
-
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    String line;
-
-                    while ((line = reader.readLine()) != null) {
-                        log.info("argument : " + line);
-                        output.append(line).append("\n");
+                for (FileDetail fileDetail : fileDetails) {
+                    String fieldName = determineFieldName(fileDetail.filename());
+                    if (fieldName != null) {
+                        byte[] fileBytes = fileDetail.content().getBytes(StandardCharsets.UTF_8);
+                        formData.add(fieldName, new ByteArrayResource(fileBytes) {
+                            @Override
+                            public String getFilename() {
+                                return fileDetail.filename();
+                            }
+                        });
+                        requiredFields.remove(fieldName);
                     }
                 }
 
-                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                    String line;
-                    while ((line = errorReader.readLine()) != null) {
-                        errorOutput.append(line).append("\n");
-                    }
+                if (!requiredFields.isEmpty()) {
+                    String missingFields = String.join(", ", requiredFields);
+                    log.error("Missing required files: {}", missingFields);
+                    throw new IllegalArgumentException("Missing required files: " + missingFields);
                 }
 
-                final int exitCode = process.waitFor();
-                if (exitCode != 0) {
-                    log.error("Python script execution failed. Exit code: {}, Error: {}",
-                            exitCode, errorOutput.toString());
-                    throw new IOException("Python script execution failed with exit code " +
-                            exitCode + ": " + errorOutput.toString());
-                }
-                log.info("CsvService : validateCsvUsingPython END for interactionId :{} " + interactionId);
-                // Return parsed validation results
-                return output.toString();
+                // Make the POST request
+                String response = webClient.post()
+                        .uri("/validate_service_nyher_fhir_ig_equivalent/")
+                        .bodyValue(formData)
+                        .retrieve()
+                        .onStatus(
+                                status -> status.isError(),
+                                clientResponse -> clientResponse.bodyToMono(String.class)
+                                        .flatMap(errorBody -> Mono.error(new RuntimeException(
+                                                "Validation failed with status code: " +
+                                                        clientResponse.statusCode() + " and body: " + errorBody))))
+                        .bodyToMono(String.class)
+                        .block(); // Blocking for simplicity; avoid in fully reactive applications.
 
-            } catch (IOException | InterruptedException e) {
+                log.info("CsvService : validateCsvUsingPython END for interactionId : {}", interactionId);
+                return response;
+
+            } catch (Exception e) {
                 log.error("Error during CSV validation: {}", e.getMessage(), e);
                 throw new RuntimeException("Error during CSV validation", e);
             }
         }
 
-        private List<String> buildValidationCommand(final AppConfig.CsvValidation.Validation config,
-                final List<FileDetail> fileDetails) {
-            final List<String> command = new ArrayList<>();
-            command.add(config.pythonExecutable());
-            command.add("validate-nyher-fhir-ig-equivalent.py");
-            command.add("datapackage-nyher-fhir-ig-equivalent.json");
-            List<FileType> fileTypeOrder = Arrays.asList(
-                    FileType.QE_ADMIN_DATA,
-                    FileType.SCREENING_PROFILE_DATA,
-                    FileType.SCREENING_OBSERVATION_DATA,
-                    FileType.DEMOGRAPHIC_DATA);
-            Map<FileType, String> fileTypeToFileNameMap = new HashMap<>();
-            for (FileDetail fileDetail : fileDetails) {
-                fileTypeToFileNameMap.put(fileDetail.fileType(), fileDetail.filename());
+        private String determineFieldName(String filename) {
+            if (filename.startsWith("QE_ADMIN_DATA_")) {
+                return "QE_ADMIN_DATA_FILE";
+            } else if (filename.startsWith("SCREENING_PROFILE_DATA_")) {
+                return "SCREENING_PROFILE_DATA_FILE";
+            } else if (filename.startsWith("SCREENING_OBSERVATION_DATA_")) {
+                return "SCREENING_OBSERVATION_DATA_FILE";
+            } else if (filename.startsWith("DEMOGRAPHIC_DATA_")) {
+                return "DEMOGRAPHIC_DATA_FILE";
             }
-            for (FileType fileType : fileTypeOrder) {
-                command.add(fileTypeToFileNameMap.get(fileType)); // Adding the filename in order
-            }
-
-            // Pad with empty strings if fewer than 7 files
-            while (command.size() < 7) { // 1 (python) + 1 (script) + 1 (package) + 4 (files) //TODO CHECK IF THIS IS
-                                         // NEEDED ACCORDING TO NUMBER OF FILES.
-                command.add("");
-            }
-
-            // Add output path
-            // command.add("output.json");
-
-            return command;
+            log.warn("Unrecognized filename pattern: {}", filename);
+            return null;
         }
+
+        // public String validateCsvUsingPython(final List<FileDetail> fileDetails,
+        // final String interactionId)
+        // throws Exception {
+        // log.info("CsvService : validateCsvUsingPython BEGIN for interactionId :{} " +
+        // interactionId);
+        // try {
+        // final var config = appConfig.getCsv().validation();
+        // if (config == null) {
+        // throw new IllegalStateException("CSV validation configuration is null");
+        // }
+
+        // // Enhanced validation input
+        // if (fileDetails == null || fileDetails.isEmpty()) {
+        // log.error("No files provided for validation");
+        // throw new IllegalArgumentException("No files provided for validation");
+        // }
+
+        // // Ensure the files exist and are valid using VFS before running the
+        // validation
+        // final List<FileObject> fileObjects = new ArrayList<>();
+        // for (final FileDetail fileDetail : fileDetails) {
+        // log.info("Validating file: {}", fileDetail);
+        // final FileObject file = vfsCoreService.resolveFile(fileDetail.filePath());
+        // if (!vfsCoreService.fileExists(file)) {
+        // log.error("File not found: {}", fileDetail.filePath());
+        // throw new FileNotFoundException("File not found: " + fileDetail.filePath());
+        // }
+        // fileObjects.add(file);
+        // }
+
+        // // Validate and create directories
+        // vfsCoreService.validateAndCreateDirectories(fileObjects.toArray(new
+        // FileObject[0]));
+
+        // // Build command to run Python script
+        // final List<String> command = buildValidationCommand(config, fileDetails);
+
+        // log.info("Executing validation command: {}", String.join(" ", command));
+
+        // final ProcessBuilder processBuilder = new ProcessBuilder();
+        // processBuilder.directory(new
+        // File(fileDetails.get(0).filePath()).getParentFile());
+        // processBuilder.command(command);
+        // processBuilder.redirectErrorStream(true);
+
+        // final Process process = processBuilder.start();
+
+        // // Capture and handle output/error streams
+        // final StringBuilder output = new StringBuilder();
+        // final StringBuilder errorOutput = new StringBuilder();
+
+        // try (BufferedReader reader = new BufferedReader(new
+        // InputStreamReader(process.getInputStream()))) {
+        // String line;
+
+        // while ((line = reader.readLine()) != null) {
+        // log.info("argument : " + line);
+        // output.append(line).append("\n");
+        // }
+        // }
+
+        // try (BufferedReader errorReader = new BufferedReader(new
+        // InputStreamReader(process.getErrorStream()))) {
+        // String line;
+        // while ((line = errorReader.readLine()) != null) {
+        // errorOutput.append(line).append("\n");
+        // }
+        // }
+
+        // final int exitCode = process.waitFor();
+        // if (exitCode != 0) {
+        // log.error("Python script execution failed. Exit code: {}, Error: {}",
+        // exitCode, errorOutput.toString());
+        // throw new IOException("Python script execution failed with exit code " +
+        // exitCode + ": " + errorOutput.toString());
+        // }
+        // log.info("CsvService : validateCsvUsingPython END for interactionId :{} " +
+        // interactionId);
+        // // Return parsed validation results
+        // return output.toString();
+
+        // } catch (IOException | InterruptedException e) {
+        // log.error("Error during CSV validation: {}", e.getMessage(), e);
+        // throw new RuntimeException("Error during CSV validation", e);
+        // }
+        // }
+
+        // private List<String> buildValidationCommand(final
+        // AppConfig.CsvValidation.Validation config,
+        // final List<FileDetail> fileDetails) {
+        // final List<String> command = new ArrayList<>();
+        // command.add(config.pythonExecutable());
+        // command.add("validate-nyher-fhir-ig-equivalent.py");
+        // command.add("datapackage-nyher-fhir-ig-equivalent.json");
+        // List<FileType> fileTypeOrder = Arrays.asList(
+        // FileType.QE_ADMIN_DATA,
+        // FileType.SCREENING_PROFILE_DATA,
+        // FileType.SCREENING_OBSERVATION_DATA,
+        // FileType.DEMOGRAPHIC_DATA);
+        // Map<FileType, String> fileTypeToFileNameMap = new HashMap<>();
+        // for (FileDetail fileDetail : fileDetails) {
+        // fileTypeToFileNameMap.put(fileDetail.fileType(), fileDetail.filename());
+        // }
+        // for (FileType fileType : fileTypeOrder) {
+        // command.add(fileTypeToFileNameMap.get(fileType)); // Adding the filename in
+        // order
+        // }
+
+        // // Pad with empty strings if fewer than 7 files
+        // while (command.size() < 7) { // 1 (python) + 1 (script) + 1 (package) + 4
+        // (files) //TODO CHECK IF THIS IS
+        // // NEEDED ACCORDING TO NUMBER OF FILES.
+        // command.add("");
+        // }
+
+        // // Add output path
+        // // command.add("output.json");
+
+        // return command;
+        // }
 
         private String extractGroupId(final FileObject file) {
             final String fileName = file.getName().getBaseName();
