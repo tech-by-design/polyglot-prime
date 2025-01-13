@@ -142,6 +142,7 @@ AS SELECT hub_interaction_id AS interaction_id,
     END AS bundle_resource_type,
     CASE 
     	WHEN (source_type = 'CSV') then 'CSV'
+        WHEN (source_type = 'CCDA') then 'CCDA'
     	WHEN (source_type = 'fhir') then 'FHIR'
     	WHEN (source_type = 'FHIR') then 'FHIR'
     	ELSE 'FHIR'
