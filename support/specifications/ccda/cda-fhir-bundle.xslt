@@ -35,17 +35,24 @@
       "fullUrl" : "http://shinny.org/us/ny/hrsn/Patient/<xsl:value-of select='$patientResourceId'/>",
       "resource": {
         "resourceType": "Patient",
-        "id": "<xsl:value-of select="ccda:id/ccda:extension"/>",
+        "id": "<xsl:value-of select='$patientResourceId'/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient"]
         },
+        <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:languageCode/ccda:code)">
         "language" : "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/ccda:code"/>",
+        </xsl:if>
         "name": [
           {
-            "use": "official"
+            <xsl:if test="string(ccda:patient/ccda:name/ccda:given)">
+            "extension" : [{
+              "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name",
+              "valueString" : "<xsl:value-of select="ccda:patient/ccda:name/ccda:given"/>"
+            }],
+            </xsl:if>
             <xsl:if test="string(ccda:patient/ccda:name/ccda:family)">
-              , "family": "<xsl:value-of select="ccda:patient/ccda:name/ccda:family"/>"
+              "family": "<xsl:value-of select="ccda:patient/ccda:name/ccda:family"/>"
             </xsl:if>
             <xsl:if test="string(ccda:patient/ccda:name/ccda:given)">
               , "given": ["<xsl:value-of select="ccda:patient/ccda:name/ccda:given"/>"]
@@ -61,10 +68,8 @@
         "gender": "<xsl:choose>
                       <xsl:when test="ccda:patient/ccda:administrativeGenderCode/ccda:code = 'M'">male</xsl:when>
                       <xsl:when test="ccda:patient/ccda:administrativeGenderCode/ccda:code = 'F'">female</xsl:when>
-                      <!-- <xsl:otherwise>unknown</xsl:otherwise> -->
                       <xsl:otherwise><xsl:value-of select="ccda:patient/ccda:administrativeGenderCode/ccda:code"/></xsl:otherwise>
                     </xsl:choose>",
-        <!-- "birthDate": "<xsl:value-of select="ccda:patient/ccda:birthTime/ccda:value"/>", -->
         "birthDate": "<xsl:choose>
                         <xsl:when test='string-length(ccda:patient/ccda:birthTime/ccda:value) = 14'>
                           <xsl:value-of select='concat(substring(ccda:patient/ccda:birthTime/ccda:value, 1, 4), "-", substring(ccda:patient/ccda:birthTime/ccda:value, 5, 2), "-", substring(ccda:patient/ccda:birthTime/ccda:value, 7, 2), "T", substring(ccda:patient/ccda:birthTime/ccda:value, 9, 2), ":", substring(ccda:patient/ccda:birthTime/ccda:value, 11, 2), ":", substring(ccda:patient/ccda:birthTime/ccda:value, 13, 2))'/>
@@ -76,67 +81,138 @@
                           <xsl:value-of select='ccda:patient/ccda:birthTime/ccda:value'/>
                         </xsl:otherwise>
                       </xsl:choose>",
+        <xsl:if test="string(ccda:addr/ccda:streetAddressLine) or string(ccda:addr/ccda:city) or string(ccda:addr/ccda:state) or string(ccda:addr/ccda:postalCode) or string(ccda:addr/ccda:county)">
         "address": [
           {
-            "line": [
-              "<xsl:value-of select="ccda:addr/ccda:streetAddressLine"/>"
-            ],
-            "city": "<xsl:value-of select="ccda:addr/ccda:city"/>",
-            "state": "<xsl:value-of select="ccda:addr/ccda:state"/>",
-            "postalCode": "<xsl:value-of select="ccda:addr/ccda:postalCode"/>"
+            <xsl:if test="string(ccda:addr/ccda:streetAddressLine) or string(ccda:addr/ccda:city) or string(ccda:addr/ccda:state) or string(ccda:addr/ccda:postalCode)">
+              "text" : "<xsl:value-of select='ccda:addr/ccda:streetAddressLine'/>
+              <xsl:if test="string(ccda:addr/ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select='ccda:addr/ccda:city'/></xsl:if>
+              <xsl:if test="string(ccda:addr/ccda:state)">, <xsl:value-of select='ccda:addr/ccda:state'/></xsl:if>
+              <xsl:if test="string(ccda:addr/ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select='ccda:addr/ccda:postalCode'/></xsl:if>"
+            </xsl:if>
+            <xsl:if test="string(ccda:addr/ccda:streetAddressLine)">
+              , "line": ["<xsl:value-of select="ccda:addr/ccda:streetAddressLine"/>"]
+            </xsl:if>
+            <xsl:if test="string(ccda:addr/ccda:city)">
+              , "city": "<xsl:value-of select="ccda:addr/ccda:city"/>"
+            </xsl:if>            
+            <xsl:if test="string(ccda:addr/ccda:county)">
+              , "district" : "<xsl:value-of select="ccda:addr/ccda:county"/>"
+            </xsl:if>            
+            <xsl:if test="string(ccda:addr/ccda:state)">
+              , "state": "<xsl:value-of select="ccda:addr/ccda:state"/>"
+            </xsl:if>            
+            <xsl:if test="string(ccda:addr/ccda:postalCode)">
+              , "postalCode": "<xsl:value-of select="ccda:addr/ccda:postalCode"/>"
+            </xsl:if>            
           }
         ],
+        </xsl:if> 
+        <xsl:if test="string(ccda:telecom/ccda:value)">
         "telecom": [
           {
             "system": "phone",
             "value": "<xsl:value-of select="ccda:telecom/ccda:value"/>",
-            "use": "<xsl:value-of select="ccda:telecom/ccda:use"/>"
+            "use": "<xsl:choose>
+                      <xsl:when test="ccda:telecom/ccda:use = 'HP'">home</xsl:when>
+                      <xsl:when test="ccda:telecom/ccda:use = 'WP'">work</xsl:when>
+                      <xsl:otherwise><xsl:value-of select="ccda:telecom/ccda:use"/></xsl:otherwise>
+                    </xsl:choose>"
           }
         ],
-        "extension": [
-          {
-            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
-            "valueCodeableConcept": {
-              "coding": [
-                {
-                  "system": "urn:oid:<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:codeSystem"/>",
-                  "code": "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:code"/>",
-                  "display": "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:displayName"/>"
-                }
-              ]
+        </xsl:if>
+        "extension" : [{
+          "extension": [{
+            "url" : "ombCategory",
+            "valueCoding": {
+              "system": "urn:oid:<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:codeSystem"/>",
+              "code": "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:code"/>",
+              "display": "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:displayName"/>"
             }
           },
           {
-            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
-            "valueCodeableConcept": {
-              "coding": [
-                {
-                  "system": "urn:oid:<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:codeSystem"/>",
-                  "code": "<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:code"/>",
-                  "display": "<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:displayName"/>"
-                }
-              ]
+            "url" : "text",
+            "valueString" : "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:displayName"/>"
+          }],
+          "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+        },
+        {
+          "extension": [{
+            "url" : "ombCategory",
+            "valueCoding": {
+              "system": "urn:oid:<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:codeSystem"/>",
+              "code": "<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:code"/>",
+              "display": "<xsl:value-of select="ccda:patient/ccda:ethnicGroupCode/ccda:displayName"/>"
             }
           },
           {
-            "url": "http://hl7.org/fhir/StructureDefinition/patient-language",
-            "valueCodeableConcept": {
-              "coding": [
-                {
-                  "system": "urn:ietf:bcp:47",
-                  "code": "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/ccda:code"/>"
-                }
-              ],
-              "text": "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:preferenceInd/ccda:value"/>"
-            }
+            "url" : "text",
+            "valueString" : "<xsl:value-of select="ccda:patient/ccda:raceCode/ccda:displayName"/>"
+          }],
+          "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+        },
+        {
+          "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
+          "valueCode" : "<xsl:value-of select="ccda:patient/ccda:administrativeGenderCode/ccda:code"/>"
+        }
+      ],
+      "identifier" : [{
+          "type" : {
+            "coding" : [{
+              "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+              "code" : "MR",
+              "display" : "Medical Record Number"
+            }],
+            "text" : "Medical Record Number"
+          },
+          "value" : "<xsl:value-of select='$patientResourceId'/>"
+          <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension)">
+          , "assigner" : {
+            "reference" : "Organization/<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>"
           }
-        ]
-      },
+          </xsl:if>
+        },
+        {
+          "type" : {
+            "coding" : [{
+              "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+              "code" : "MA",
+              "display" : "Patient Medicaid Number"
+            }],
+            "text" : "Patient Medicaid Number"
+          },
+          "system" : "http://www.medicaid.gov/",
+          "value" : "<xsl:value-of select='$patientResourceId'/>"
+        },
+        {
+          "type" : {
+            "coding" : [{
+              "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+              "code" : "SS",
+              "display" : "Social Security Number"
+            }],
+            "text" : "Social Security Number"
+          },
+          "system" : "http://www.ssa.gov/"
+        }
+      ],
+      <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:languageCode/ccda:code)">
+      "communication" : [{
+        "language" : {
+          "coding" : [{
+            "system" : "urn:ietf:bcp:47",
+            "code" : "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/ccda:code"/>"
+          }]
+        },
+        "preferred" : <xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:preferenceInd/ccda:value"/>
+      }],
+      </xsl:if>
       "request" : {
         "method" : "POST",
         "url" : "http://shinny.org/us/ny/hrsn/Patient/<xsl:value-of select='$patientResourceId'/>"
       }
     }
+  }
   </xsl:template>
 
   <!-- Encounter Template -->
@@ -192,7 +268,7 @@
           {
             "coding": [
               {
-                "system": "http://loinc.org", <!--"<xsl:value-of select="ccda:code/ccda:codeSystem"/>", -->
+                "system": "http://loinc.org",
                 "code": "<xsl:value-of select="ccda:code/ccda:code"/>",
                 "display": "<xsl:value-of select="ccda:code/ccda:displayName"/>"
               }
@@ -293,7 +369,6 @@
             }
           ]
         }],
-        <!-- "effectiveDateTime": "<xsl:value-of select='ccda:effectiveTime/ccda:value'/>" -->
         "effectiveDateTime": "<xsl:choose>
                                 <xsl:when test='string-length(ccda:effectiveTime/ccda:value) > 14'>
                                   <xsl:value-of select="
