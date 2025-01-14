@@ -344,9 +344,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.setCode(code);
 
                 // Set subject, effective time, and issued date
-                groupObservation.setSubject(new Reference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)));
-                groupObservation.setEncounter(
-                                new Reference("Encounter/" + idsGenerated.get(CsvConstants.ENCOUNTER_ID)));
+                String patientId = idsGenerated.getOrDefault(CsvConstants.PATIENT_ID, null);
+                if (patientId != null){
+                        groupObservation.setSubject(new Reference("Patient/" + patientId));
+                }
+                String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
+                if (encounterId != null){
+                        groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
+                }
                 groupObservation.setEffective(new DateTimeType(new Date()));
                 groupObservation.setIssued(new Date());
                 CodeableConcept interpretation = new CodeableConcept();

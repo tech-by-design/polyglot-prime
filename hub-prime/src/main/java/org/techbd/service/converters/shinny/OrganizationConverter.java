@@ -16,6 +16,7 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r4.model.StringType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -105,56 +106,58 @@ public class OrganizationConverter extends BaseConverter {
                 LOG.info("Identifier Value Set: {}", data.getFacilityIdentifierTypeValue());
             }
 
+            if (StringUtils.isNotEmpty(data.getFacilityIdentifierTypeSystem())) {
+                identifier.setSystem(data.getFacilityIdentifierTypeSystem());
+                LOG.info("Adding Identifier: Type Display - {}, Value - {}", coding.getDisplay(), identifier.getValue());
+            }
+
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem(data.getFacilityIdentifierTypeSystem());
-            LOG.info("Adding Identifier: Type Display - {}, Value - {}",
-                    coding.getDisplay(), identifier.getValue());
-
             organization.addIdentifier(identifier);
         }
     }
 
     private static void populateOrganizationType(Organization organization, QeAdminData data) {
-        // if (StringUtils.isNotEmpty(data.getFacilityCmsIdentifierTypeCode())) {
+        if (StringUtils.isNotEmpty(data.getOrganizationTypeCode()) || StringUtils.isNotEmpty(data.getOrganizationTypeDisplay())) {
             CodeableConcept type = new CodeableConcept();
 
             // Create a new Coding object
             Coding coding = new Coding();
             String system = "http://terminology.hl7.org/CodeSystem/organization-type";  //TODO : remove static reference
-            coding.setSystem(system); // Set the system
-            coding.setCode(data.getOrganizationTypeCode()); // Set the code (e.g., "other")
-            coding.setDisplay(data.getOrganizationTypeDisplay()); // Set the display (e.g., "Other")
+            coding.setSystem(system);
+            coding.setCode(data.getOrganizationTypeCode());
+            coding.setDisplay(data.getOrganizationTypeDisplay());
 
             type.addCoding(coding);
 
             organization.setType(Collections.singletonList(type));
-        // }
+        }
     }
 
     private static void populateOrganizationAddress(Organization organization, QeAdminData qrAdminData) {
-        if (qrAdminData.getFacilityAddress1() != null || qrAdminData.getFacilityCity() != null ||
-                qrAdminData.getFacilityState() != null || qrAdminData.getFacilityZip() != null) {
+        if (StringUtils.isNotEmpty(qrAdminData.getFacilityAddress1()) || StringUtils.isNotEmpty(qrAdminData.getFacilityCity()) ||
+            StringUtils.isNotEmpty(qrAdminData.getFacilityState()) || StringUtils.isNotEmpty(qrAdminData.getFacilityZip())) {
 
             Address address = new Address();
 
             String fullAddressText = qrAdminData.getFacilityAddress1();
-            if (qrAdminData.getFacilityCity() != null) {
+            if (StringUtils.isNotEmpty(qrAdminData.getFacilityCity())) {
                 fullAddressText += ", " + qrAdminData.getFacilityCity();
             }
-            if (qrAdminData.getFacilityState() != null) {
+            if (StringUtils.isNotEmpty(qrAdminData.getFacilityState())) {
                 fullAddressText += ", " + qrAdminData.getFacilityState();
             }
-            if (qrAdminData.getFacilityZip() != null) {
+            if (StringUtils.isNotEmpty(qrAdminData.getFacilityZip())) {
                 fullAddressText += " " + qrAdminData.getFacilityZip();
             }
             address.setText(fullAddressText);
 
-            List<String> addressLines = new ArrayList<>();
-            addressLines.add(qrAdminData.getFacilityAddress1());
-
-            // address.setLine(addressLines);
+            if (StringUtils.isNotEmpty(qrAdminData.getFacilityAddress1())){
+                List<StringType> addressLines = new ArrayList<>();
+                addressLines.add(new StringType(qrAdminData.getFacilityAddress1()));
+                address.setLine(addressLines);
+            }
 
             address.setCity(qrAdminData.getFacilityCity());
             address.setDistrict(qrAdminData.getFacilityDistrict());
