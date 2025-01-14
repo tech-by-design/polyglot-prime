@@ -237,7 +237,7 @@ AS SELECT tenant_id,
  * If an error occurs during any step, the function logs the error using the `register_issue` procedure and returns NULL.
  *******************************************************************************************************************************/
 
-DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
 
@@ -371,6 +371,7 @@ BEGIN
        	IF((v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(register_interaction_http_request.interaction_key) NOT IN ('/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate')) /*fhir bundle*/
        	   OR (v_nature_denorm = 'Original HL7 Payload'	AND trim(register_interaction_http_request.interaction_key) IN ('/Hl7/v2', '/Hl7/v2/'))			/*hl7*/
        	   OR (v_nature_denorm = 'Original CSV Zip Archive' AND trim(register_interaction_http_request.interaction_key) IN ('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate'))   	/*csv*/
+		   --OR (v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(register_interaction_http_request.interaction_key) IN ('/ccda/Bundle', '/ccda/Bundle/$validate'))   	/*ccda*/
        	  ) THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 		        hub_interaction_id 			=> register_interaction_http_request.interaction_id,
@@ -402,7 +403,7 @@ BEGIN
 	    END IF;
 	   
 	    --2.1) Call the function with the defined parameters to upsert interaction FHIR request info.
-	   	IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate')
+	   	IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/ccda/Bundle', '/ccda/Bundle/$validate')
 	   		AND v_nature_denorm NOT IN ('Original HL7 Payload', 'Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR') THEN
 	   		
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
@@ -515,7 +516,7 @@ BEGIN
        
 		--RECURSIVE FUNCTION CALL
 	   	/*----------------------------- FHIR Bundle inserts into sat_interaction_http_request ----------------------*/
-		IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate') THEN  
+		IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/ccda/Bundle') THEN  
 			IF (v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN	--Check previous nature				
 				v_from_state 	:= 'NONE';
 				v_to_state 		:= 'ACCEPT_FHIR_BUNDLE';
