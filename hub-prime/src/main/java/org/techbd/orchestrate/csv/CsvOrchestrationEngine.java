@@ -1,10 +1,6 @@
 package org.techbd.orchestrate.csv;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +44,8 @@ import org.techbd.service.CsvService;
 import org.techbd.service.VfsCoreService;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.hub.prime.AppConfig;
+import org.techbd.service.http.hub.prime.AppConfig.CsvValidation;
+import org.techbd.service.http.hub.prime.AppConfig.Csvs;
 import org.techbd.service.http.hub.prime.api.FHIRService;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
@@ -61,12 +59,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import lib.aide.vfs.VfsIngressConsumer;
 
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 /**
@@ -921,9 +917,17 @@ public class CsvOrchestrationEngine {
                     throw new IllegalArgumentException("No files provided for validation");
                 }
 
+                // Fetch CSV configuration from AppConfig
+                Csvs cs = appConfig.getCsvs();
+                String baseUrl = cs.baseUrl();
+                String endpoint = cs.endpoint();
+
+                // Log URL information for debugging
+                log.info("Using baseUrl: {}, endpoint: {}", baseUrl, endpoint);
+
                 // Create WebClient instance
                 WebClient webClient = WebClient.builder()
-                        .baseUrl("https://synthetic.csv-frictionless-validator.techbd.org")
+                        .baseUrl(baseUrl)
                         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.MULTIPART_FORM_DATA_VALUE)
                         .build();
 
@@ -955,19 +959,19 @@ public class CsvOrchestrationEngine {
                     throw new IllegalArgumentException("Missing required files: " + missingFields);
                 }
 
-                // Make the POST request
+                //POST request with streaming response handling
                 String response = webClient.post()
-                        .uri("/validate_service_nyher_fhir_ig_equivalent/")
+                        .uri(endpoint)
                         .bodyValue(formData)
                         .retrieve()
-                        .onStatus(
-                                status -> status.isError(),
-                                clientResponse -> clientResponse.bodyToMono(String.class)
-                                        .flatMap(errorBody -> Mono.error(new RuntimeException(
-                                                "Validation failed with status code: " +
-                                                        clientResponse.statusCode() + " and body: " + errorBody))))
-                        .bodyToMono(String.class)
-                        .block(); // Blocking for simplicity; avoid in fully reactive applications.
+                        .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException(
+                                        "Validation failed with status code: " +
+                                                clientResponse.statusCode() + " and body: " + errorBody))))
+                        .bodyToFlux(String.class)
+                        .collect(StringBuilder::new, StringBuilder::append)
+                        .map(StringBuilder::toString)
+                        .block();
 
                 log.info("CsvService : validateCsvUsingPython END for interactionId : {}", interactionId);
                 return response;
@@ -991,127 +995,6 @@ public class CsvOrchestrationEngine {
             log.warn("Unrecognized filename pattern: {}", filename);
             return null;
         }
-
-        // public String validateCsvUsingPython(final List<FileDetail> fileDetails,
-        // final String interactionId)
-        // throws Exception {
-        // log.info("CsvService : validateCsvUsingPython BEGIN for interactionId :{} " +
-        // interactionId);
-        // try {
-        // final var config = appConfig.getCsv().validation();
-        // if (config == null) {
-        // throw new IllegalStateException("CSV validation configuration is null");
-        // }
-
-        // // Enhanced validation input
-        // if (fileDetails == null || fileDetails.isEmpty()) {
-        // log.error("No files provided for validation");
-        // throw new IllegalArgumentException("No files provided for validation");
-        // }
-
-        // // Ensure the files exist and are valid using VFS before running the
-        // validation
-        // final List<FileObject> fileObjects = new ArrayList<>();
-        // for (final FileDetail fileDetail : fileDetails) {
-        // log.info("Validating file: {}", fileDetail);
-        // final FileObject file = vfsCoreService.resolveFile(fileDetail.filePath());
-        // if (!vfsCoreService.fileExists(file)) {
-        // log.error("File not found: {}", fileDetail.filePath());
-        // throw new FileNotFoundException("File not found: " + fileDetail.filePath());
-        // }
-        // fileObjects.add(file);
-        // }
-
-        // // Validate and create directories
-        // vfsCoreService.validateAndCreateDirectories(fileObjects.toArray(new
-        // FileObject[0]));
-
-        // // Build command to run Python script
-        // final List<String> command = buildValidationCommand(config, fileDetails);
-
-        // log.info("Executing validation command: {}", String.join(" ", command));
-
-        // final ProcessBuilder processBuilder = new ProcessBuilder();
-        // processBuilder.directory(new
-        // File(fileDetails.get(0).filePath()).getParentFile());
-        // processBuilder.command(command);
-        // processBuilder.redirectErrorStream(true);
-
-        // final Process process = processBuilder.start();
-
-        // // Capture and handle output/error streams
-        // final StringBuilder output = new StringBuilder();
-        // final StringBuilder errorOutput = new StringBuilder();
-
-        // try (BufferedReader reader = new BufferedReader(new
-        // InputStreamReader(process.getInputStream()))) {
-        // String line;
-
-        // while ((line = reader.readLine()) != null) {
-        // log.info("argument : " + line);
-        // output.append(line).append("\n");
-        // }
-        // }
-
-        // try (BufferedReader errorReader = new BufferedReader(new
-        // InputStreamReader(process.getErrorStream()))) {
-        // String line;
-        // while ((line = errorReader.readLine()) != null) {
-        // errorOutput.append(line).append("\n");
-        // }
-        // }
-
-        // final int exitCode = process.waitFor();
-        // if (exitCode != 0) {
-        // log.error("Python script execution failed. Exit code: {}, Error: {}",
-        // exitCode, errorOutput.toString());
-        // throw new IOException("Python script execution failed with exit code " +
-        // exitCode + ": " + errorOutput.toString());
-        // }
-        // log.info("CsvService : validateCsvUsingPython END for interactionId :{} " +
-        // interactionId);
-        // // Return parsed validation results
-        // return output.toString();
-
-        // } catch (IOException | InterruptedException e) {
-        // log.error("Error during CSV validation: {}", e.getMessage(), e);
-        // throw new RuntimeException("Error during CSV validation", e);
-        // }
-        // }
-
-        // private List<String> buildValidationCommand(final
-        // AppConfig.CsvValidation.Validation config,
-        // final List<FileDetail> fileDetails) {
-        // final List<String> command = new ArrayList<>();
-        // command.add(config.pythonExecutable());
-        // command.add("validate-nyher-fhir-ig-equivalent.py");
-        // command.add("datapackage-nyher-fhir-ig-equivalent.json");
-        // List<FileType> fileTypeOrder = Arrays.asList(
-        // FileType.QE_ADMIN_DATA,
-        // FileType.SCREENING_PROFILE_DATA,
-        // FileType.SCREENING_OBSERVATION_DATA,
-        // FileType.DEMOGRAPHIC_DATA);
-        // Map<FileType, String> fileTypeToFileNameMap = new HashMap<>();
-        // for (FileDetail fileDetail : fileDetails) {
-        // fileTypeToFileNameMap.put(fileDetail.fileType(), fileDetail.filename());
-        // }
-        // for (FileType fileType : fileTypeOrder) {
-        // command.add(fileTypeToFileNameMap.get(fileType)); // Adding the filename in
-        // order
-        // }
-
-        // // Pad with empty strings if fewer than 7 files
-        // while (command.size() < 7) { // 1 (python) + 1 (script) + 1 (package) + 4
-        // (files) //TODO CHECK IF THIS IS
-        // // NEEDED ACCORDING TO NUMBER OF FILES.
-        // command.add("");
-        // }
-
-        // // Add output path
-        // // command.add("output.json");
-
-        // return command;
-        // }
 
         private String extractGroupId(final FileObject file) {
             final String fileName = file.getName().getBaseName();

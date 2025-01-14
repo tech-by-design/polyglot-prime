@@ -113,6 +113,9 @@ org:
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
             operationOutcomeHelpUrl: "https://techbd.org/get-help/"
             fhirUmlsApiKey: umls_api_key
+            csvs:  
+             baseUrl: https://synthetic.csv-frictionless-validator.techbd.org
+             endpoint: /validate_service_nyher_fhir_ig_equivalent/
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:

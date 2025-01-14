@@ -165,4 +165,28 @@ public class AppConfig {
     public String getIgVersion() {
         return igVersion;
     }
+public record Csvs(String baseUrl, String endpoint) {
+    
+    @Override
+    public String baseUrl() {
+        return baseUrl;
+    }
+
+    @Override
+    public String endpoint() {
+        return endpoint;
+    }
 }
+
+private Csvs csvs;
+
+public Csvs getCsvs() {
+    return csvs;
+}
+
+public void setCsvs(Csvs csvs) {
+    this.csvs = csvs;
+}
+}
+
+
