@@ -286,7 +286,7 @@ public class CsvBundleProcessorService {
                                 request, response,
                                 updatedProvenance,
                                 true, null, interactionId, groupInteractionId,
-                                masterInteractionId, SourceType.CSV.name()));
+                                masterInteractionId, SourceType.CSV.name(),null));
                     } else {
                         results.add(createOperationOutcomeForError(masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), profile.getEncounterId(),

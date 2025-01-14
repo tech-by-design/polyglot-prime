@@ -148,7 +148,8 @@ public class FHIRService {
                         boolean includeIncomingPayloadInDB,
                         HttpServletRequest request, HttpServletResponse response, String provenance,
                         boolean includeOperationOutcome, String mtlsStrategy, String interactionId,
-                        String groupInteractionId, String masterInteractionId, String sourceType)
+                        String groupInteractionId, String masterInteractionId, String sourceType,
+                        String requestUriToBeOverriden)
                         throws IOException {
                 Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
                 try {
@@ -181,7 +182,7 @@ public class FHIRService {
                                 addObservabilityHeadersToResponse(request, response);
                                 payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                                 response, payload, result, interactionId, groupInteractionId,
-                                                masterInteractionId, sourceType);
+                                                masterInteractionId, sourceType, requestUriToBeOverriden);
                                 if (isActionDiscard(payloadWithDisposition)) {
                                         return payloadWithDisposition;
                                 }
@@ -192,7 +193,7 @@ public class FHIRService {
                                                         includeIncomingPayloadInDB, tenantId, payload,
                                                         provenance, null, includeOperationOutcome, mtlsStrategy,
                                                         interactionId, groupInteractionId, masterInteractionId,
-                                                        sourceType);
+                                                        sourceType, requestUriToBeOverriden);
                                         Instant end = Instant.now();
                                         Duration timeElapsed = Duration.between(start, end);
                                         LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
@@ -205,7 +206,7 @@ public class FHIRService {
                                                         includeIncomingPayloadInDB, tenantId, payload,
                                                         provenance, payloadWithDisposition, includeOperationOutcome,
                                                         mtlsStrategy, interactionId, groupInteractionId,
-                                                        masterInteractionId, sourceType);
+                                                        masterInteractionId, sourceType, requestUriToBeOverriden);
                                         Instant end = Instant.now();
                                         Duration timeElapsed = Duration.between(start, end);
                                         LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
@@ -215,7 +216,8 @@ public class FHIRService {
                         } catch (JsonValidationException ex) {
                                 payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                                 response, payload, buildOperationOutcome(ex, interactionId),
-                                                interactionId, groupInteractionId, masterInteractionId, sourceType);
+                                                interactionId, groupInteractionId, masterInteractionId, sourceType,
+                                                requestUriToBeOverriden);
                         }
                         Instant end = Instant.now();
                         Duration timeElapsed = Duration.between(start, end);
@@ -301,7 +303,8 @@ public class FHIRService {
         private Map<String, Object> registerBundleInteraction(org.jooq.Configuration jooqCfg,
                         HttpServletRequest request, HttpServletResponse response,
                         String payload, Map<String, Map<String, Object>> validationResult, String interactionId,
-                        String groupInteractionId, String masterInteractionId, String sourceType)
+                        String groupInteractionId, String masterInteractionId, String sourceType,
+                        String requestUriToBeOverriden)
                         throws IOException {
                 Span span = tracer.spanBuilder("FHIRService.registerBundleInteraction").startSpan();
                 try {
@@ -337,7 +340,7 @@ public class FHIRService {
 
                         try {
                                 prepareRequest(rihr, rre, provenance, request, interactionId, groupInteractionId,
-                                                masterInteractionId, sourceType);
+                                                masterInteractionId, sourceType, requestUriToBeOverriden);
                                 final var start = Instant.now();
                                 rihr.execute(jooqCfg);
                                 final var end = Instant.now();
@@ -363,7 +366,7 @@ public class FHIRService {
 
         private void prepareRequest(RegisterInteractionHttpRequest rihr, RequestResponseEncountered rre,
                         String provenance, HttpServletRequest request, String interactionId, String groupInteractionId,
-                        String masterInteractionId, String sourceType) {
+                        String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
                 LOG.info("REGISTER State None, Accept, Disposition: BEGIN for interaction id: {} tenant id: {}",
                                 rre.interactionId().toString(), rre.tenant());
                 rihr.setInteractionId(interactionId != null ? interactionId : rre.interactionId().toString());
@@ -376,7 +379,8 @@ public class FHIRService {
                                                                 ? rre.tenant().tenantId()
                                                                 : "N/A") : "N/A")));
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                rihr.setInteractionKey(request.getRequestURI());
+                rihr.setInteractionKey(StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
+                                : request.getRequestURI());
                 rihr.setPayload((JsonNode) Configuration.objectMapper.valueToTree(rre));
                 rihr.setCreatedAt(OffsetDateTime.now());
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
@@ -461,7 +465,9 @@ public class FHIRService {
                                 // continues
                                 final var immediateResult = new HashMap<>(Map.of(
                                                 "resourceType", "OperationOutcome",
-                                                "help", "If you need help understanding how to decipher OperationOutcome please see "+appConfig.getOperationOutcomeHelpUrl(),
+                                                "help",
+                                                "If you need help understanding how to decipher OperationOutcome please see "
+                                                                + appConfig.getOperationOutcomeHelpUrl(),
                                                 "bundleSessionId", interactionId, // for tracking in
                                                                                   // database, etc.
                                                 "isAsync", true,
@@ -515,7 +521,7 @@ public class FHIRService {
                         String provenance,
                         Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome,
                         String mtlsStrategy, String interactionId, String groupInteractionId,
-                        String masterInteractionId, String sourceType) {
+                        String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
                 Span span = tracer.spanBuilder("FhirService.sentToScoringEngine").startSpan();
                 try {
                         interactionId = null != interactionId ? interactionId : getBundleInteractionId(request);
@@ -551,7 +557,7 @@ public class FHIRService {
                                                         jooqCfg, request,
                                                         bundlePayloadWithDisposition, payload, dataLakeApiContentType,
                                                         provenance, includeIncomingPayloadInDB, groupInteractionId,
-                                                        masterInteractionId, sourceType);
+                                                        masterInteractionId, sourceType, requestUriToBeOverriden);
                                 } else {
                                         handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId,
                                                         dataLakeApiBaseURL,
@@ -559,7 +565,7 @@ public class FHIRService {
                                                         payload,
                                                         dataLakeApiContentType, provenance, includeIncomingPayloadInDB,
                                                         mtlsStrategy, groupInteractionId, masterInteractionId,
-                                                        sourceType);
+                                                        sourceType, requestUriToBeOverriden);
                                 }
 
                         } catch (
@@ -581,7 +587,7 @@ public class FHIRService {
                         Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
                         String provenance, boolean includeIncomingPayloadInDB, String mtlsStrategyStr,
                         String groupInteractionId,
-                        String masterInteractionId, String sourceType) {
+                        String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
                 MTlsStrategy mTlsStrategy = null;
 
                 LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from application.yml :{} for interaction id: {}",
@@ -593,31 +599,34 @@ public class FHIRService {
                 } else {
                         mTlsStrategy = MTlsStrategy.fromString(defaultDatalakeApiAuthn.mTlsStrategy());
                 }
+                String requestURI = StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
+                                : request.getRequestURI();
                 switch (mTlsStrategy) {
                         case AWS_SECRETS -> handleAwsSecrets(defaultDatalakeApiAuthn.mTlsAwsSecrets(), interactionId,
                                         tenantId, dataLakeApiBaseURL, dataLakeApiContentType,
                                         bundlePayloadWithDisposition, jooqCfg, provenance,
-                                        request.getRequestURI(), includeIncomingPayloadInDB, payload,
+                                        requestURI, includeIncomingPayloadInDB, payload,
                                         groupInteractionId, masterInteractionId, sourceType);
                         case POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL ->
                                 handlePostStdoutPayload(interactionId, tenantId, jooqCfg, dataLakeApiBaseURL,
                                                 bundlePayloadWithDisposition,
                                                 includeIncomingPayloadInDB, payload, provenance, request,
                                                 defaultDatalakeApiAuthn.postStdinPayloadToNyecDataLakeExternal(),
-                                                groupInteractionId, masterInteractionId, sourceType);
+                                                groupInteractionId, masterInteractionId, sourceType,
+                                                requestUriToBeOverriden);
                         case MTLS_RESOURCES ->
                                 handleMtlsResources(interactionId, tenantId, jooqCfg,
                                                 bundlePayloadWithDisposition,
                                                 includeIncomingPayloadInDB, payload, provenance, request,
                                                 dataLakeApiContentType, dataLakeApiBaseURL,
                                                 defaultDatalakeApiAuthn.mTlsResources(), groupInteractionId,
-                                                masterInteractionId, sourceType);
+                                                masterInteractionId, sourceType, requestUriToBeOverriden);
                         default ->
                                 handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
                                                 request,
                                                 bundlePayloadWithDisposition, payload, dataLakeApiContentType,
                                                 provenance, includeIncomingPayloadInDB, groupInteractionId,
-                                                masterInteractionId, sourceType);
+                                                masterInteractionId, sourceType, requestUriToBeOverriden);
                 }
         }
 
@@ -626,13 +635,15 @@ public class FHIRService {
                         String payload, String provenance, HttpServletRequest request, String dataLakeApiContentType,
                         String dataLakeApiBaseURL,
                         MTlsResources mTlsResources, String groupInteractionId, String masterInteractionId,
-                        String sourceType) {
+                        String sourceType,String requestUriToBeOverriden) {
                 LOG.info("FHIRService:: handleMtlsResources BEGIN for interaction id: {} tenantid :{} scoring",
                                 interactionId,
                                 tenantId);
+                final var requestURI = StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden : request.getRequestURI();
+                                                       
                 try {
                         registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
-                                        request.getRequestURI(), tenantId,
+                                        requestURI, tenantId,
                                         Optional.ofNullable(bundlePayloadWithDisposition)
                                                         .orElse(new HashMap<>()),
                                         null, includeIncomingPayloadInDB, payload, groupInteractionId,
@@ -725,7 +736,7 @@ public class FHIRService {
                         LOG.error("ERROR:: handleMtlsResources Exception while posting to scoring engine with MTLS enabled for interactionId : {}",
                                         interactionId, ex);
                         registerStateFailed(jooqCfg, interactionId,
-                                        request.getRequestURI(), tenantId, ex.getMessage(), provenance,
+                                        requestURI, tenantId, ex.getMessage(), provenance,
                                         groupInteractionId, masterInteractionId, sourceType);
 
                 } finally {
@@ -738,7 +749,7 @@ public class FHIRService {
                         org.jooq.Configuration jooqCfg, HttpServletRequest request,
                         Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
                         String provenance, boolean includeIncomingPayloadInDB, String groupInteractionId,
-                        String masterInteractionId, String sourceType) {
+                        String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
                 if (!MTlsStrategy.NO_MTLS.value.equals(mTlsStrategy.value)) {
                         LOG.info("#########Invalid MTLS Strategy defined #############: Allowed values are {} .Hence proceeding with post to scoring engine without mTls for interaction id :{}",
                                         MTlsStrategy.getAllValues(), interactionId);
@@ -759,14 +770,18 @@ public class FHIRService {
                 var webClient = createWebClient(dataLakeApiBaseURL, jooqCfg, request,
                                 tenantId, payload,
                                 bundlePayloadWithDisposition, provenance, includeIncomingPayloadInDB,
-                                interactionId, groupInteractionId, masterInteractionId, sourceType);
+                                interactionId, groupInteractionId, masterInteractionId, sourceType,
+                                requestUriToBeOverriden);
                 LOG.debug("FHIRService:: createWebClient END for interaction id: {} tenant id :{} ", interactionId,
                                 tenantId);
                 LOG.debug("FHIRService:: sendPostRequest BEGIN for interaction id: {} tenantid :{} ", interactionId,
                                 tenantId);
                 sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
                                 dataLakeApiContentType, interactionId,
-                                jooqCfg, provenance, request.getRequestURI(), dataLakeApiBaseURL, groupInteractionId,
+                                jooqCfg, provenance,
+                                StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
+                                                : request.getRequestURI(),
+                                dataLakeApiBaseURL, groupInteractionId,
                                 masterInteractionId, sourceType);
                 LOG.debug("FHIRService:: sendPostRequest END for interaction id: {} tenantid :{} ", interactionId,
                                 tenantId);
@@ -881,12 +896,14 @@ public class FHIRService {
                         boolean includeIncomingPayloadInDB, String payload, String provenance,
                         HttpServletRequest request,
                         PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal,
-                        String groupInteractionId, String masterInteractionId, String sourceType) {
+                        String groupInteractionId, String masterInteractionId, String sourceType,String requestUriToBeOverriden) {
                 LOG.info("Proceed with posting payload via external process BEGIN forinteractionId : {}",
                                 interactionId);
+                final var requestURI = StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden : request.getRequestURI();
+                       
                 try {
                         registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
-                                        request.getRequestURI(), tenantId,
+                        requestURI, tenantId,
                                         Optional.ofNullable(bundlePayloadWithDisposition)
                                                         .orElse(new HashMap<>()),
                                         null, includeIncomingPayloadInDB, payload, groupInteractionId,
@@ -910,18 +927,18 @@ public class FHIRService {
                                         && postToNyecExternalResponse.processOutput()
                                                         .contains("{\"status\": \"Success\"")) {
                                 registerStateComplete(jooqCfg, interactionId,
-                                                request.getRequestURI(), tenantId, responsePayload,
+                                requestURI, tenantId, responsePayload,
                                                 provenance, groupInteractionId, masterInteractionId, sourceType);
                         } else {
                                 registerStateFailed(jooqCfg, interactionId,
-                                                request.getRequestURI(), tenantId, responsePayload,
+                                requestURI, tenantId, responsePayload,
                                                 provenance, groupInteractionId, masterInteractionId, sourceType);
                         }
                 } catch (Exception ex) {
                         LOG.error("Exception while postStdinPayloadToNyecDataLakeExternal forinteractionId : {}",
                                         interactionId, ex);
                         registerStateFailed(jooqCfg, interactionId,
-                                        request.getRequestURI(), tenantId, ex.getMessage(), provenance,
+                        requestURI, tenantId, ex.getMessage(), provenance,
                                         groupInteractionId, masterInteractionId, sourceType);
                 } finally {
                         stdOutCounter.add(1);
@@ -1018,14 +1035,14 @@ public class FHIRService {
                         Map<String, Object> bundlePayloadWithDisposition,
                         String provenance,
                         boolean includeIncomingPayloadInDB, String interactionId, String groupInteractionId,
-                        String masterInteractionId, String sourceType) {
+                        String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
                 return WebClient.builder()
                                 .baseUrl(scoringEngineApiURL)
                                 .filter(ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
                                         filter(clientRequest, request, jooqCfg, provenance, tenantId, payload,
                                                         bundlePayloadWithDisposition,
                                                         includeIncomingPayloadInDB, groupInteractionId,
-                                                        masterInteractionId, sourceType);
+                                                        masterInteractionId, sourceType, requestUriToBeOverriden);
                                         return Mono.just(clientRequest);
                                 }))
                                 .build();
@@ -1079,12 +1096,13 @@ public class FHIRService {
                         String payload,
                         Map<String, Object> bundlePayloadWithDisposition,
                         boolean includeIncomingPayloadInDB, String groupInteractionId, String masterInteractionId,
-                        String sourceType) {
+                        String sourceType, String requestUriToBeOverriden) {
 
                 final var interactionId = getBundleInteractionId(request);
                 LOG.debug("FHIRService:: sendToScoringEngine Filter request before post - BEGIN interaction id: {}",
                                 interactionId);
-                final var requestURI = request.getRequestURI();
+                final var requestURI = StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
+                                : request.getRequestURI();
                 StringBuilder requestBuilder = new StringBuilder()
                                 .append(clientRequest.method().name()).append(" ")
                                 .append(clientRequest.url()).append(" HTTP/1.1").append("\n");
