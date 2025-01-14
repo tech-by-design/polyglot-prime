@@ -23,6 +23,22 @@ This directory contains a valid example dataset that aligns with the [FHIR Imple
 4. **`screening_observation_data.csv`**  
    Provides details used for Observation resources in the screening process.
 
+#### CSV example zip files for SFTP testing
+
+1. **`CorrectDataMultipleSet.zip`**  
+Contains two sets of CSV files with information about two patients.
+
+2. **`CorrectDataSingleSet.zip`**
+Contains one set of CSV files with information about one  patient.
+
+
+3. **`MissingSet.zip`**
+Contains two sets: One set is complete. The other set has missing data.
+
+
+4. **`MultiplePatientMultipleEncSingleSet.zip`**
+Contains multiple patients' data (three patients) in a single set of files.
+
 
 ## Mapping CSV Fields to FHIR IG Elements
 
