@@ -14,7 +14,7 @@
     <xsl:template match="/hl7:ClinicalDocument">
         <ClinicalDocument>
             <!-- Extract Header Information -->
-            <Header>
+            <header>
                 <typeId>
                     <root><xsl:value-of select="hl7:typeId/@root"/></root>
                     <codeSystem><xsl:value-of select="hl7:typeId/@extension"/></codeSystem>
@@ -34,14 +34,14 @@
                     <codeSystemName><xsl:value-of select="hl7:code/@codeSystemName"/></codeSystemName>
                     <displayName><xsl:value-of select="hl7:code/@displayName"/></displayName>
                 </code>
-                <EffectiveTime>
+                <effectiveTime>
                     <value><xsl:value-of select="hl7:effectiveTime/@value"/></value>
-                </EffectiveTime>
+                </effectiveTime>
                 <confidentialityCode>
                     <code><xsl:value-of select="hl7:confidentialityCode/@code"/></code>
                     <codeSystem><xsl:value-of select="hl7:confidentialityCode/@codeSystem"/></codeSystem>
                 </confidentialityCode>
-            </Header>
+            </header>
             <!-- Extract Patient Information -->
             <recordTarget>
                 <patientRole>
@@ -158,6 +158,26 @@
                         <statusCode>
                             <code><xsl:value-of select="hl7:statusCode/@code"/></code>
                         </statusCode>
+                        <effectiveTime>
+                            <value><xsl:value-of select="hl7:effectiveTime/@value"/></value>
+                        </effectiveTime>
+                        <entry>
+                            <act>
+                                <classCode><xsl:value-of select="hl7:entry/hl7:act/@classCode"/></classCode>
+                                <moodCode><xsl:value-of select="hl7:entry/hl7:act/@moodCode"/></moodCode>
+                                <code>
+                                    <code><xsl:value-of select="hl7:entry/hl7:act/hl7:code/@code"/></code>
+                                    <displayName><xsl:value-of select="hl7:entry/hl7:act/hl7:code/@displayName"/></displayName>
+                                    <codeSystem><xsl:value-of select="hl7:entry/hl7:act/hl7:code/@codeSystem"/></codeSystem>
+                                </code>
+                            </act>
+                        </entry>
+                        <policy>
+                            <id><xsl:value-of select="hl7:policy/@id"/></id>
+                        </policy>
+                        <provision>
+                            <type><xsl:value-of select="hl7:provision/@type"/></type>
+                        </provision>
                     </consent>
                 </xsl:for-each>                
             </authorization>
@@ -230,6 +250,7 @@
                                                         <displayName><xsl:value-of select="hl7:code/@displayName"/></displayName>
                                                         <codeSystem><xsl:value-of select="hl7:code/@codeSystem"/></codeSystem>
                                                         <codeSystemName><xsl:value-of select="hl7:code/@codeSystemName"/></codeSystemName>
+                                                        <originalText><xsl:value-of select="hl7:code/hl7:originalText"/></originalText>
                                                     </code>
                                                     <statusCode>
                                                         <code><xsl:value-of select="hl7:statusCode/@code"/></code>
@@ -244,7 +265,10 @@
                                                         <codeSystemName><xsl:value-of select="hl7:interpretationCode/@codeSystemName"/></codeSystemName>
                                                     </interpretationCode>
                                                     <value>
+                                                        <type><xsl:value-of select="hl7:value/@xsi:type"/></type>
+                                                        <code><xsl:value-of select="hl7:value/@code"/></code>
                                                         <displayName><xsl:value-of select="hl7:value/@displayName"/></displayName>
+                                                        <codeSystem><xsl:value-of select="hl7:value/@codeSystem"/></codeSystem>
                                                     </value>
 
                                                     <!-- Include Subject Information only if exists -->
