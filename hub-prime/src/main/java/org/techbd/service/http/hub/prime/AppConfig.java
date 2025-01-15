@@ -165,7 +165,8 @@ public class AppConfig {
     public String getIgVersion() {
         return igVersion;
     }
-public record Csvs(String baseUrl, String endpoint) {
+
+    public record Csvs(String baseUrl, String endpoint) {
     
     @Override
     public String baseUrl() {
