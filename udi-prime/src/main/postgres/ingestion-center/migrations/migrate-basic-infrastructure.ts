@@ -1168,6 +1168,10 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request  
         ADD COLUMN IF NOT EXISTS sftp_session_id text NULL;
 
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request 
+        ADD COLUMN IF NOT EXISTS misc_errors jsonb NULL;
+
+
       ${dependenciesSQL}
 
       CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};
