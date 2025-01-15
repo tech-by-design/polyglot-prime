@@ -1968,6 +1968,7 @@ AS SELECT sat_interaction_fhir_request_id,
     (SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ') FROM jsonb_each_text((payload->>'responseBody')::jsonb) AS json_data(key, value)) AS response_body_details,
     case 
     	when (source_type = 'CSV') then 'CSV'
+        WHEN (source_type = 'CCDA') then 'CCDA'
     	when (source_type = 'fhir') then 'FHIR'
     	when (source_type = 'FHIR') then 'FHIR'
     	else 'FHIR'
