@@ -62,10 +62,10 @@ public class CsvBundleProcessorService {
 
     public List<Object> processPayload(final String masterInteractionId,
             final Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes,
-            List<String> filesNotProcessed,
-            HttpServletRequest request,
-            HttpServletResponse response,
-            String tenantId, String originalFileName) {
+            final List<String> filesNotProcessed,
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String tenantId, final String originalFileName) {
         final List<Object> resultBundles = new ArrayList<>();
         final List<Object> miscErrors = new ArrayList<>();
         boolean isAllCsvConvertedToFhir = true;
@@ -109,9 +109,9 @@ public class CsvBundleProcessorService {
                     isAllCsvConvertedToFhir = false;
                     resultBundles.add(outcome.validationResults());
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 LOG.error("Error processing payload: " + e.getMessage(), e);
-                Map<String, Object> errors = createOperationOutcomeForError(masterInteractionId, groupInteractionId, "",
+                final Map<String, Object> errors = createOperationOutcomeForError(masterInteractionId, groupInteractionId, "",
                         "", e, provenance);
                 resultBundles.add(errors);
                 miscErrors.add(errors);
@@ -119,7 +119,7 @@ public class CsvBundleProcessorService {
             }
         }
         if (CollectionUtils.isNotEmpty(filesNotProcessed)) {
-            Map<String, Object> fileNotProcessedError = createOperationOutcomeForFileNotProcessed(masterInteractionId,
+            final Map<String, Object> fileNotProcessedError = createOperationOutcomeForFileNotProcessed(masterInteractionId,
                     filesNotProcessed,
                     originalFileName);
             resultBundles.add(fileNotProcessedError);
@@ -131,8 +131,8 @@ public class CsvBundleProcessorService {
         return resultBundles;
     }
 
-    private void saveMiscErrorAndStatus(final List<Object> miscError, boolean allCSvConvertedToFHIR,
-            final String masterInteractionId, HttpServletRequest request) {
+    private void saveMiscErrorAndStatus(final List<Object> miscError, final boolean allCSvConvertedToFHIR,
+            final String masterInteractionId, final HttpServletRequest request) {
         LOG.info("SaveMiscErrorAndStatus: BEGIN for inteaction id  : {} ",
                 masterInteractionId);
         final var status = allCSvConvertedToFHIR ? "PROCESSED_SUCESSFULLY" : "PARTIALLY_PROCESSED";
@@ -164,9 +164,9 @@ public class CsvBundleProcessorService {
         }
     }
 
-    public String addBundleProvenance(Map<String, Object> existingProvenance, List<String> bundleGeneratedFrom,
-            String patientMrnId, String encounterId, Instant initiatedAt, Instant completedAt) throws Exception {
-        Map<String, Object> newProvenance = new HashMap<>();
+    public String addBundleProvenance(final Map<String, Object> existingProvenance, final List<String> bundleGeneratedFrom,
+            final String patientMrnId, final String encounterId, final Instant initiatedAt, final Instant completedAt) throws Exception {
+        final Map<String, Object> newProvenance = new HashMap<>();
         newProvenance.put("resourceType", "Provenance");
         newProvenance.put("description",
                 "Bundle created from provided files for the given patientMrnId and encounterId");
@@ -175,22 +175,23 @@ public class CsvBundleProcessorService {
         newProvenance.put("completedAt", completedAt.toString());
         newProvenance.put("patientMrnId", patientMrnId);
         newProvenance.put("encounterId", encounterId);
-        Map<String, Object> agent = new HashMap<>();
-        Map<String, String> whoCoding = new HashMap<>();
+        final Map<String, Object> agent = new HashMap<>();
+        final Map<String, String> whoCoding = new HashMap<>();
         whoCoding.put("system", "generator");
         whoCoding.put("display", "TechByDesign");
         agent.put("who", Collections.singletonMap("coding", List.of(whoCoding)));
         newProvenance.put("agent", List.of(agent));
-        List<Map<String, Object>> provenanceList = new ArrayList<>();
+        final List<Map<String, Object>> provenanceList = new ArrayList<>();
         provenanceList.add(existingProvenance);
         provenanceList.add(newProvenance);
         return Configuration.objectMapper.writeValueAsString(provenanceList);
     }
 
-    public void addHapiFhirValidation(Map<String, Object> provenance, String validationDescription) {
+    public void addHapiFhirValidation(final Map<String, Object> provenance, final String validationDescription) {
         @SuppressWarnings("unchecked")
+        final
         Map<String, Object> agent = new HashMap<>();
-        Map<String, String> whoCoding = new HashMap<>();
+        final Map<String, String> whoCoding = new HashMap<>();
 
         whoCoding.put("system", "Validator");
         whoCoding.put("display", "HAPI FHIR Validation");
@@ -201,9 +202,9 @@ public class CsvBundleProcessorService {
                 "description", validationDescription));
     }
 
-    private void saveFhirConversionStatus(boolean isValid, String masterInteractionId, String groupKey,
-            String groupInteractionId, String interactionId, final HttpServletRequest request,
-            final String payload, Map<String, Object> operationOutcome,
+    private void saveFhirConversionStatus(final boolean isValid, final String masterInteractionId, final String groupKey,
+            final String groupInteractionId, final String interactionId, final HttpServletRequest request,
+            final String payload, final Map<String, Object> operationOutcome,
             final String tenantId) {
         LOG.info(
                 "REGISTER State CONVERTED_TO_FHIR : BEGIN for master InteractionId :{} group interaction id  : {} tenant id : {}",
@@ -256,7 +257,7 @@ public class CsvBundleProcessorService {
             final Map<String, List<QeAdminData>> qeAdminData,
             final Map<String, List<ScreeningObservationData>> screeningObservationData) {
 
-        StringBuilder missingDataMessage = new StringBuilder("The following required data maps are missing or empty: ");
+        final StringBuilder missingDataMessage = new StringBuilder("The following required data maps are missing or empty: ");
 
         boolean isAnyMissing = false;
 
@@ -284,23 +285,23 @@ public class CsvBundleProcessorService {
         }
     }
 
-    private List<Object> processScreening(String groupKey,
+    private List<Object> processScreening(final String groupKey,
             final Map<String, List<DemographicData>> demographicData,
             final Map<String, List<ScreeningProfileData>> screeningProfileData,
             final Map<String, List<QeAdminData>> qeAdminData,
             final Map<String, List<ScreeningObservationData>> screeningObservationData,
-            HttpServletRequest request,
-            HttpServletResponse response,
-            String groupInteractionId,
-            String masterInteractionId,
-            String tenantId, boolean isValid, PayloadAndValidationOutcome payloadAndValidationOutcome,
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String groupInteractionId,
+            final String masterInteractionId,
+            final String tenantId, final boolean isValid, final PayloadAndValidationOutcome payloadAndValidationOutcome,
             boolean isAllCsvConvertedToFhir)
             throws IOException {
 
-        List<Object> results = new ArrayList<>();
-        AtomicInteger errorCount = new AtomicInteger();
+        final List<Object> results = new ArrayList<>();
+        final AtomicInteger errorCount = new AtomicInteger();
         screeningProfileData.forEach((encounterId, profileList) -> {
-            for (ScreeningProfileData profile : profileList) {
+            for (final ScreeningProfileData profile : profileList) {
                 final String interactionId = UUID.randomUUID().toString();
                 String bundle = null;
                 try {
@@ -313,22 +314,22 @@ public class CsvBundleProcessorService {
                             .getOrDefault(profile.getEncounterId(), List.of());
 
                     if (demographicList.isEmpty() || qeAdminList.isEmpty() || screeningObservationList.isEmpty()) {
-                        String errorMessage = String.format(
+                        final String errorMessage = String.format(
                                 "Data missing in one or more files for patientMrIdValue: %s",
                                 profile.getPatientMrIdValue());
                         LOG.error(errorMessage);
                         throw new IllegalArgumentException(errorMessage);
                     }
-                    Instant initiatedAt = Instant.now();
+                    final Instant initiatedAt = Instant.now();
                     bundle = csvToFhirConverter.convert(
                             demographicList.get(0),
                             qeAdminList.get(0),
                             profile,
                             screeningObservationList,
                             interactionId);
-                    Instant completedAt = Instant.now();
+                    final Instant completedAt = Instant.now();
                     if (bundle != null) {
-                        String updatedProvenance = addBundleProvenance(payloadAndValidationOutcome.provenance(),
+                        final String updatedProvenance = addBundleProvenance(payloadAndValidationOutcome.provenance(),
                                 getFileNames(payloadAndValidationOutcome.fileDetails()),
                                 profile.getPatientMrIdValue(), profile.getEncounterId(), initiatedAt, completedAt);
                         saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId,
@@ -344,7 +345,7 @@ public class CsvBundleProcessorService {
                                 masterInteractionId, SourceType.CSV.name(), null));
                     } else {
                         errorCount.incrementAndGet();
-                        Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
+                        final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), profile.getEncounterId(),
                                 new Exception("Bundle not created"),
                                 payloadAndValidationOutcome.provenance());
@@ -355,7 +356,7 @@ public class CsvBundleProcessorService {
                     }
                 } catch (final Exception e) {
                     errorCount.incrementAndGet();
-                    Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
+                    final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
                             profile.getPatientMrIdValue(), profile.getEncounterId(), e,
                             payloadAndValidationOutcome.provenance());
                     LOG.error(String.format(
@@ -374,7 +375,7 @@ public class CsvBundleProcessorService {
         return results;
     }
 
-    public static List<String> getFileNames(List<FileDetail> fileDetails) {
+    public static List<String> getFileNames(final List<FileDetail> fileDetails) {
         if (fileDetails != null) {
             return fileDetails.stream()
                     .map(FileDetail::filename)
@@ -389,20 +390,20 @@ public class CsvBundleProcessorService {
             final String patientMrIdValue,
             final String encounterId,
             final Exception e,
-            Map<String, Object> provenance) {
+            final Map<String, Object> provenance) {
         if (e == null) {
             return Collections.emptyMap();
         }
 
-        String diagnosticsMessage = "Error processing data for Master Interaction ID: " + masterInteractionId +
+        final String diagnosticsMessage = "Error processing data for Master Interaction ID: " + masterInteractionId +
                 ", Interaction ID: " + groupInteractionId +
                 ", Patient MRN: " + patientMrIdValue +
                 ", EncounterID : " + encounterId +
                 ", Error: " + e.getMessage();
 
-        String remediationMessage = "Error processing data.";
+        final String remediationMessage = "Error processing data.";
 
-        Map<String, Object> errorDetails = Map.of(
+        final Map<String, Object> errorDetails = Map.of(
                 "type", "processing-error",
                 "description", remediationMessage,
                 "message", diagnosticsMessage);
@@ -420,23 +421,23 @@ public class CsvBundleProcessorService {
 
     private Map<String, Object> createOperationOutcomeForFileNotProcessed(
             final String masterInteractionId,
-            final List<String> filesNotProcessed, String originalFileName) {
+            final List<String> filesNotProcessed, final String originalFileName) {
         if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        StringBuilder diagnosticsMessage = new StringBuilder("Files not processed: in input zip file : ");
+        final StringBuilder diagnosticsMessage = new StringBuilder("Files not processed: in input zip file : ");
         diagnosticsMessage.append(String.join(", ", filesNotProcessed));
 
-        StringBuilder remediation = new StringBuilder("Filenames must start with one of the following prefixes: ");
-        for (FileType type : FileType.values()) {
+        final StringBuilder remediation = new StringBuilder("Filenames must start with one of the following prefixes: ");
+        for (final FileType type : FileType.values()) {
             remediation.append(type.name()).append(", ");
         }
         if (remediation.length() > 0) {
             remediation.setLength(remediation.length() - 2); // Remove trailing comma and space
         }
 
-        Map<String, Object> errorDetails = Map.of(
+        final Map<String, Object> errorDetails = Map.of(
                 "type", "files-not-processed",
                 "description", remediation.toString(),
                 "message", diagnosticsMessage.toString());
@@ -448,7 +449,7 @@ public class CsvBundleProcessorService {
                         "errors", List.of(errorDetails),
                         "resourceType", "OperationOutcome"));
     }
-   private void addObservabilityHeadersToResponse(HttpServletRequest request, HttpServletResponse response) {
+   private void addObservabilityHeadersToResponse(final HttpServletRequest request, final HttpServletResponse response) {
                 final var startTime = (Instant) request.getAttribute(START_TIME_ATTRIBUTE);
                 final var finishTime = Instant.now();
                 final Duration duration = Duration.between(startTime, finishTime);
@@ -477,7 +478,7 @@ public class CsvBundleProcessorService {
                         metricCookie.setPath("/"); // Set path as required
                         metricCookie.setHttpOnly(false); // Ensure the cookie is accessible via JavaScript
                         response.addCookie(metricCookie);
-                } catch (UnsupportedEncodingException ex) {
+                } catch (final UnsupportedEncodingException ex) {
                         LOG.error("Exception during setting  Observability-Metric-Interaction-Active cookie to response header",
                                         ex);
                 }
