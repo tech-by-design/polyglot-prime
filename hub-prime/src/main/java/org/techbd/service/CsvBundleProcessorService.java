@@ -344,6 +344,8 @@ public class CsvBundleProcessorService {
                                 true, null, interactionId, groupInteractionId,
                                 masterInteractionId, SourceType.CSV.name(), null));
                     } else {
+                        LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
+                                profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);
                         errorCount.incrementAndGet();
                         final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), profile.getEncounterId(),
@@ -359,9 +361,8 @@ public class CsvBundleProcessorService {
                     final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
                             profile.getPatientMrIdValue(), profile.getEncounterId(), e,
                             payloadAndValidationOutcome.provenance());
-                    LOG.error(String.format(
-                            "Error processing patient data for MrId: %s, interactionId: %s, Error: %s",
-                            profile.getPatientMrIdValue(), interactionId, e.getMessage()), e);
+                    LOG.error("Error processing patient data for MrId:{}, interactionId: {}, masterInteractionId:{} , groupInteractionId:{}, Error:{}",
+                            profile.getPatientMrIdValue(), interactionId,masterInteractionId,groupInteractionId, e.getMessage(), e);
                     results.add(result);
                     saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId, interactionId,
                             request,
