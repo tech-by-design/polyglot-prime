@@ -120,7 +120,7 @@ if __name__ == "__main__":
         "errorsSummary": [],
         "report": None
     }
-@validation_router.post("/validate_service_nyher_fhir_ig_equivalent/")
+@validation_router.post("/flatfile/csv/Bundle/$validate")
 async def validate(
     QE_ADMIN_DATA_FILE: UploadFile = File(..., description="File should start with QE_ADMIN_DATA_"),
     SCREENING_PROFILE_DATA_FILE: UploadFile = File(..., description="File should start with SCREENING_PROFILE_DATA_"),
