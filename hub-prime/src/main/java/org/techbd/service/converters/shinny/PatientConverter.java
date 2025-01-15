@@ -101,7 +101,7 @@ public class PatientConverter extends BaseConverter {
     }
 
     public static void populatePatientWithExtensions(Patient patient,DemographicData demographicData) {
-        if (demographicData.getExtensionOmbCategoryRaceCode() != null) {
+        if (StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryRaceCode())) {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
             Extension ombCategoryExtension = new Extension("ombCategory");
             ombCategoryExtension.setValue(new Coding()
@@ -116,7 +116,7 @@ public class PatientConverter extends BaseConverter {
             patient.addExtension(raceExtension);
         }
 
-        if (demographicData.getExtensionOmbCategoryEthnicityCode() != null) {
+        if (StringUtils.isNotEmpty(demographicData.getExtensionOmbCategoryEthnicityCode())) {
             Extension ethnicityExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
 
             Extension ombCategoryExtension = new Extension("ombCategory");
@@ -133,13 +133,13 @@ public class PatientConverter extends BaseConverter {
             patient.addExtension(ethnicityExtension);
         }
 
-        if (demographicData.getExtensionSexAtBirthCodeValue() != null) {
+        if (StringUtils.isNotEmpty(demographicData.getExtensionSexAtBirthCodeValue())) {
             Extension birthSexExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex");
             birthSexExtension.setValue(new CodeType(demographicData.getExtensionSexAtBirthCodeValue())); // Use CodeType for valueCode
             patient.addExtension(birthSexExtension);
         }
 
-        if (demographicData.getExtensionPersonalPronounsCode() != null) {
+        if (StringUtils.isNotEmpty(demographicData.getExtensionPersonalPronounsCode())) {
             Extension pronounsExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns");
             pronounsExtension.setValue(new CodeableConcept().addCoding(new Coding()
                     .setSystem(demographicData.getExtensionPersonalPronounsSystem())
@@ -148,7 +148,7 @@ public class PatientConverter extends BaseConverter {
             patient.addExtension(pronounsExtension);
         }
 
-        if (demographicData.getExtensionGenderIdentityCode() != null) {
+        if (StringUtils.isNotEmpty(demographicData.getExtensionGenderIdentityCode())) {
             Extension genderIdentityExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity");
             genderIdentityExtension.setValue(new CodeableConcept().addCoding(new Coding()
                     .setSystem(demographicData.getExtensionGenderIdentitySystem())
