@@ -47,6 +47,7 @@ DECLARE
 	v_source_type TEXT;
 	v_group_hub_interaction_id TEXT;
     v_sftp_session_id TEXT;
+	v_zip_file_processing_errors jsonb;
 
 BEGIN
 	
@@ -87,7 +88,7 @@ BEGIN
     
     RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
   
-   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text'], 
+   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 
    		'Function sat_interaction_csv_request_upserted exists');
     RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
 
@@ -119,7 +120,7 @@ BEGIN
         ARRAY['sat_interaction_zip_file_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
             'csv_zip_file_name', 'csv_zip_file_content', 
             'client_ip_address', 'user_agent', 
-            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id'],
+            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id', 'misc_errors'],
         'The columns of techbd_udi_ingress.sat_interaction_zip_file_request should match the expected structure.');
     
     RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'csv_zip_file_content', 'bytea', 'The column csv_zip_file_content should be of type bytea.');
@@ -643,17 +644,31 @@ test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New 
              'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "Converted to FHIR" as nature'
          );  
         
-    /*To update validation_result_payload for the full zip file, call techbd_udi_ingress.sat_interaction_csv_request_upserted function with interaction_id, uri, tenant_id, validation_result_payload and nature as 'Update Zip File Payload'.*/
+    /*To update validation_result_payload for the full zip file, call techbd_udi_ingress.sat_interaction_csv_request_upserted function with interaction_id, uri, validation_result_payload and nature as 'Update Zip File Payload'.*/
     SELECT techbd_udi_ingress.sat_interaction_csv_request_upserted(
     	interaction_id				=> v_source_hub_interaction_id::text, 
     	uri							=> v_interaction_key::text, 
-    	--tenant_id					=> v_nature->>'tenant_id', 
     	validation_result_payload 	=> v_payload::jsonb,
     	nature 						=> 'Update Zip File Payload'::text
    	) INTO v_interaction_id;
   
     RETURN NEXT ok(v_interaction_id = v_source_hub_interaction_id, 'CSV - Successfully updated the table sat_interaction_zip_file_request with consolidated payload');
-        
+      
+	/*To update the errors and status after the zip file is processed, call techbd_udi_ingress.sat_interaction_csv_request_upserted function with interaction_id, uri, error details and nature as 'Update Zip File Processing Details'.*/
+	v_zip_file_processing_errors 	:= '{"error1": "error details 1", "error2": "error details 2"}';
+	v_status						:= 'PROCESSED';
+	v_interaction_id				:= NULL;
+    SELECT techbd_udi_ingress.sat_interaction_csv_request_upserted(
+    	interaction_id				=> v_source_hub_interaction_id::text, 
+    	uri							=> v_interaction_key::text, 
+    	status						=> v_status::text, 
+    	zip_file_processing_errors	=> v_zip_file_processing_errors::jsonb,
+    	nature 						=> 'Update Zip File Processing Details'::text
+   	) INTO v_interaction_id;
+  
+    RETURN NEXT ok(v_interaction_id = v_source_hub_interaction_id, 'CSV - Successfully updated the table sat_interaction_zip_file_request with status and error details');
+    
+  
     /* Last call to insert the FHIR bundle which is generated from CSV file with interaction_key = '/flatfile/csv/Bundle'*/
     v_interaction_id            := 'b99ddd45-9a4f-5cc8-9c5d-b45245d90fb0';    
     v_nature                    := '{"nature": "org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id": "N/A"}';
