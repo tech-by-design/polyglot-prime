@@ -211,8 +211,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
         && !requestURI.startsWith("/flatfile/csv")  && !requestURI.startsWith("/flatfile/csv/")
         ) {
             final var rihr = new RegisterInteractionHttpRequest();
-            final var requestUriToBeOverridden = origRequest.getHeader("X-TechBD-Override-Request-URI");
-            final var source = origRequest.getParameter("source");
             try {
                 LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
                 rre.interactionId().toString(), rre.tenant());
@@ -223,13 +221,13 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
                                 tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                rihr.setInteractionKey(StringUtils.isNotEmpty(requestUriToBeOverridden) ? requestUriToBeOverridden  : requestURI);
+                rihr.setInteractionKey(requestURI);
+                rihr.setSourceType(SourceType.FHIR.name());
                 rihr.setPayload(Configuration.objectMapper
                         .readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
                 rihr.setCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
-                rihr.setSourceType(StringUtils.isNotEmpty(source)? source : SourceType.FHIR.name());
                 // User details
                 if (saveUserDataToInteractions) {
                     var curUserName = "API_USER";
