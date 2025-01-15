@@ -123,55 +123,6 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
-<td style="text-align: left;">org/techbd/orchestrate/csv/CsvOrchestrationEngine.java</td>
-<td>607</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/service/CsvBundleProcessorService.java</td>
-<td>355</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>}
-private Map&lt;String, Object&gt; createOperationOutcomeForFileNotProcessed(
-            final String masterInteractionId,
-            final List&lt;String&gt; filesNotProcessed, String originalFileName) {
-        OperationOutcome operationOutcome = new OperationOutcome();
-        OperationOutcome.OperationOutcomeIssueComponent issue = operationOutcome.addIssue();
-        issue.setSeverity(OperationOutcome.IssueSeverity.ERROR);
-        issue.setCode(OperationOutcome.IssueType.NOTFOUND);
-
-        StringBuilder diagnosticsMessage = new StringBuilder();
-
-        if (filesNotProcessed != null &amp;&amp; !filesNotProcessed.isEmpty()) {
-            diagnosticsMessage.append(&quot;Files not processed: in input zip file : &quot;);
-            diagnosticsMessage.append(String.join(&quot;, &quot;, filesNotProcessed));
-            StringBuilder remediation = new StringBuilder();
-            remediation.append(&quot;Filenames must start with one of the following prefixes: &quot;);
-            for (FileType type : FileType.values()) {
-                remediation.append(type.name()).append(&quot;, &quot;);
-            }
-            if (remediation.length() &gt; 0) {
-                remediation.setLength(remediation.length() - 2);
-            }
-            Map&lt;String, Object&gt; issueDetails = Map.of(
-                    &quot;severity&quot;, &quot;ERROR&quot;,
-                    &quot;code&quot;, &quot;NOTFOUND&quot;,
-                    &quot;diagnostics&quot;, diagnosticsMessage.toString(),
-                    &quot;remediation&quot;, remediation.toString());
-
-            return Map.of(
-                    &quot;masterInteractionId&quot;, masterInteractionId,
-                    &quot;originalFileName&quot;, originalFileName,
-                    &quot;validationResults&quot;, Map.of(
-                            &quot;issue&quot;, List.of(issueDetails),
-                            &quot;resourceType&quot;, &quot;OperationOutcome&quot;));
-        }
-        return Collections.emptyMap();
-    }</pre></td></tr></table>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
 <td style="text-align: left;">org/techbd/service/http/Interactions.java</td>
 <td>104</td></tr>
 <tr class="a">
@@ -280,7 +231,7 @@ private Map&lt;String, Object&gt; createOperationOutcomeForFileNotProcessed(
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>395</td></tr>
+<td>397</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>196</td></tr>
@@ -313,6 +264,48 @@ private Map&lt;String, Object&gt; createOperationOutcomeForFileNotProcessed(
                 rihr.setUserSession(sessionId);
                 rihr.setUserRole(userRole);
         }</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/CsvBundleProcessorService.java</td>
+<td>452</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>270</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>private void addObservabilityHeadersToResponse(final HttpServletRequest request, final HttpServletResponse response) {
+                final var startTime = (Instant) request.getAttribute(START_TIME_ATTRIBUTE);
+                final var finishTime = Instant.now();
+                final Duration duration = Duration.between(startTime, finishTime);
+
+                final String startTimeText = startTime.toString();
+                final String finishTimeText = finishTime.toString();
+                final String durationMsText = String.valueOf(duration.toMillis());
+                final String durationNsText = String.valueOf(duration.toNanos());
+
+                // set response headers for those clients that can access HTTP headers
+                response.addHeader(&quot;X-Observability-Metric-Interaction-Start-Time&quot;, startTimeText);
+                response.addHeader(&quot;X-Observability-Metric-Interaction-Finish-Time&quot;, finishTimeText);
+                response.addHeader(&quot;X-Observability-Metric-Interaction-Duration-Nanosecs&quot;, durationMsText);
+                response.addHeader(&quot;X-Observability-Metric-Interaction-Duration-Millisecs&quot;, durationNsText);
+
+                // set a cookie which is accessible to a JavaScript user agent that cannot
+                // access HTTP headers (usually HTML pages in web browser cannot access HTTP
+                // response headers)
+                try {
+                        final var metricCookie = new Cookie(&quot;Observability-Metric-Interaction-Active&quot;,
+                                        URLEncoder.encode(&quot;{ \&quot;startTime\&quot;: \&quot;&quot; + startTimeText
+                                                        + &quot;\&quot;, \&quot;finishTime\&quot;: \&quot;&quot; + finishTimeText
+                                                        + &quot;\&quot;, \&quot;durationMillisecs\&quot;: \&quot;&quot; + durationMsText
+                                                        + &quot;\&quot;, \&quot;durationNanosecs\&quot;: \&quot;&quot;
+                                                        + durationNsText + &quot;\&quot; }&quot;, StandardCharsets.UTF_8.toString()));
+                        metricCookie.setPath(&quot;/&quot;); // Set path as required
+                        metricCookie.setHttpOnly(false); // Ensure the cookie is accessible via JavaScript
+                        response.addCookie(metricCookie);
+                } catch (final UnsupportedEncodingException ex) {</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
@@ -351,7 +344,7 @@ private Map&lt;String, Object&gt; createOperationOutcomeForFileNotProcessed(
 <td>211</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>397</td></tr>
+<td>399</td></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>198</td></tr>
@@ -417,7 +410,7 @@ private Map&lt;String, Object&gt; createOperationOutcomeForFileNotProcessed(
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>445</td></tr>
+<td>447</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
 <td>296</td></tr>
