@@ -179,7 +179,9 @@ public class FHIRService {
                                                         .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
                                         return result; // Return without proceeding to scoring engine submission
                                 }
-                                addObservabilityHeadersToResponse(request, response);
+                                if (!SourceType.CSV.name().equals(sourceType)) {
+                                        addObservabilityHeadersToResponse(request, response);
+                                }
                                 payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                                 response, payload, result, interactionId, groupInteractionId,
                                                 masterInteractionId, sourceType, requestUriToBeOverriden);
