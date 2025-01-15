@@ -402,7 +402,7 @@ BEGIN
 	    END IF;
 	   
 	    --2.1) Call the function with the defined parameters to upsert interaction FHIR request info.
-	   	IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/ccda/Bundle')
+	   	IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/ccda/Bundle', '/ccda/Bundle/')
 	   		AND v_nature_denorm NOT IN ('Original HL7 Payload', 'Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR') THEN
 	   		
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
@@ -515,7 +515,7 @@ BEGIN
        
 		--RECURSIVE FUNCTION CALL
 	   	/*----------------------------- FHIR Bundle inserts into sat_interaction_http_request ----------------------*/
-		IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/ccda/Bundle') THEN  
+		IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/ccda/Bundle', '/ccda/Bundle/') THEN  
 			IF (v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered') THEN	--Check previous nature				
 				v_from_state 	:= 'NONE';
 				v_to_state 		:= 'ACCEPT_FHIR_BUNDLE';
