@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.conf.Configuration;
+import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -209,6 +211,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
         && !requestURI.startsWith("/flatfile/csv")  && !requestURI.startsWith("/flatfile/csv/")
         ) {
             final var rihr = new RegisterInteractionHttpRequest();
+            final var requestUriToBeOverridden = origRequest.getHeader("X-TechBD-Override-Request-URI");
+            final var source = origRequest.getParameter("source");
             try {
                 LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
                 rre.interactionId().toString(), rre.tenant());
@@ -219,13 +223,13 @@ public class InteractionsFilter extends OncePerRequestFilter {
                         Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
                                 tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                rihr.setInteractionKey(requestURI);
+                rihr.setInteractionKey(StringUtils.isNotEmpty(requestUriToBeOverridden) ? requestUriToBeOverridden  : requestURI);
                 rihr.setPayload(Configuration.objectMapper
                         .readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
                 rihr.setCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
-
+                rihr.setSourceType(StringUtils.isNotEmpty(source)? source : SourceType.FHIR.name());
                 // User details
                 if (saveUserDataToInteractions) {
                     var curUserName = "API_USER";

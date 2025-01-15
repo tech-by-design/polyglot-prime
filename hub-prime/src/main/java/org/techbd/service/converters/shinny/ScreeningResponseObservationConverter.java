@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -117,7 +118,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                         data.getObservationCategorySnomedDisplay()));
                                 }
                         }
-                        if (!data.getDataAbsentReasonCode().isEmpty()) {
+                        if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
+                                CodeableConcept value = new CodeableConcept();
+                                value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(),
+                                                data.getAnswerCodeDescription()));
+                                observation.setValue(value);
+                        } else if (!data.getDataAbsentReasonCode().isEmpty()) {
                                 CodeableConcept dataAbsentReason = new CodeableConcept();
 
                                 dataAbsentReason.addCoding(
@@ -128,11 +134,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 dataAbsentReason.setText(data.getDataAbsentReasonText());
 
                                 observation.setDataAbsentReason(dataAbsentReason);
-                        } else {
-                                CodeableConcept value = new CodeableConcept();
-                                value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(),
-                                                data.getAnswerCodeDescription()));
-                                observation.setValue(value);
                         }
                         observation.addCategory(
                                         createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
@@ -164,7 +165,21 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 }
                                 case "77594-0" ->  { // Physical Activity
                                         Quantity quantity = new Quantity();
-                                        quantity.setValue(Double.parseDouble(data.getAnswerCodeDescription()));
+                                         String codeDescription = data.getAnswerCodeDescription();
+                                          if (codeDescription != null && !codeDescription.isEmpty()) {
+                                                try{
+                                                      Optional<Double> doubleValue = Optional.of(Double.valueOf(codeDescription));
+                                                        doubleValue.ifPresent(doubleVal -> {
+                                                            quantity.setValue(doubleVal);
+                                                        });
+                                               }catch(NumberFormatException nfe){
+                                                LOG.warn("Unexpected value: "+codeDescription+" could not be converted to a double.", nfe);
+                                                quantity.setValue(0.0);
+                                               }
+                                        }  else {
+                                            quantity.setValue(0.0);
+
+                                        }
                                         quantity.setUnit("minutes per week");
                                         quantity.setSystem("http://unitsofmeasure.org");
                                         observation.setValue(quantity);
@@ -329,9 +344,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.setCode(code);
 
                 // Set subject, effective time, and issued date
-                groupObservation.setSubject(new Reference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)));
-                groupObservation.setEncounter(
-                                new Reference("Encounter/" + idsGenerated.get(CsvConstants.ENCOUNTER_ID)));
+                String patientId = idsGenerated.getOrDefault(CsvConstants.PATIENT_ID, null);
+                if (patientId != null){
+                        groupObservation.setSubject(new Reference("Patient/" + patientId));
+                }
+                String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
+                if (encounterId != null){
+                        groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
+                }
                 groupObservation.setEffective(new DateTimeType(new Date()));
                 groupObservation.setIssued(new Date());
                 CodeableConcept interpretation = new CodeableConcept();

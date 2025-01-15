@@ -21,7 +21,7 @@
         "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"]
       },
       "type" : "transaction", 
-      "timestamp" : "<xsl:value-of select='$currentTimestamp'/>",
+      "timestamp" : "<xsl:value-of select='ccda:header/ccda:effectiveTime/ccda:value'/>",
       "entry": [
         <xsl:apply-templates select="//ccda:patientRole | //ccda:encompassingEncounter | //ccda:observation | //ccda:location  | //ccda:consent | //ccda:author"/>
       ]
@@ -263,25 +263,77 @@
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent"]
         },
-        "status": "<xsl:value-of select="ccda:statusCode/ccda:code"/>",
-        "category": [
-          {
-            "coding": [
-              {
-                "system": "http://loinc.org",
-                "code": "<xsl:value-of select="ccda:code/ccda:code"/>",
-                "display": "<xsl:value-of select="ccda:code/ccda:displayName"/>"
-              }
-            ]
+        "status": "<xsl:value-of select="ccda:statusCode/ccda:code"/>"
+        <xsl:if test="string(ccda:entry/ccda:act/ccda:code/ccda:code)">
+          , "scope" : {
+            "coding" : [{
+              "system" : "http://terminology.hl7.org/CodeSystem/consentscope", <!--"<xsl:value-of select="ccda:entry/ccda:act/ccda:code/ccda:codeSystem"/>"-->
+              "code" : "<xsl:value-of select="ccda:entry/ccda:act/ccda:code/ccda:code"/>",
+              "display" : "<xsl:value-of select="ccda:entry/ccda:act/ccda:code/ccda:displayName"/>"
+            }],
+            "text" : "<xsl:value-of select="ccda:entry/ccda:act/ccda:code/ccda:displayName"/>"
           }
-        ],
-        "subject" : {
-          "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>",
-          "display" : "<xsl:value-of select='$patientResourceName'/>"
-        },
-        "organization" : [{
-          "reference" : "Organization/<xsl:value-of select='//ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension'/>"
-        }]
+        </xsl:if>
+        <xsl:if test="string(ccda:code/ccda:code)">
+          , "category": [
+            {
+              "coding": [
+                {
+                  "system": "http://loinc.org", <!--"<xsl:value-of select="ccda:code/ccda:codeSystem"/>", -->
+                  "code": "<xsl:value-of select="ccda:code/ccda:code"/>",
+                  "display": "<xsl:value-of select="ccda:code/ccda:displayName"/>"
+                }
+              ]
+            }
+          ]
+        </xsl:if>
+        <xsl:if test="string(ccda:effectiveTime/ccda:value)">
+          , "dateTime" :  "<xsl:choose>
+                            <xsl:when test='string-length(ccda:effectiveTime/ccda:value) > 14'>
+                              <xsl:value-of select="
+                                concat(
+                                  substring(ccda:effectiveTime/ccda:value, 1, 4), '-',
+                                  substring(ccda:effectiveTime/ccda:value, 5, 2), '-',
+                                  substring(ccda:effectiveTime/ccda:value, 7, 2), 'T',
+                                  substring(ccda:effectiveTime/ccda:value, 9, 2), ':',
+                                  substring(ccda:effectiveTime/ccda:value, 11, 2), ':',
+                                  substring(ccda:effectiveTime/ccda:value, 13, 2),
+                                  substring(ccda:effectiveTime/ccda:value, 15, 6)
+                                )"/>
+                            </xsl:when>
+                            <xsl:when test='string-length(ccda:effectiveTime/ccda:value) = 14'>
+                              <xsl:value-of select='concat(substring(ccda:effectiveTime/ccda:value, 1, 4), "-", substring(ccda:effectiveTime/ccda:value, 5, 2), "-", substring(ccda:effectiveTime/ccda:value, 7, 2), "T", substring(ccda:effectiveTime/ccda:value, 9, 2), ":", substring(ccda:effectiveTime/ccda:value, 11, 2), ":", substring(ccda:effectiveTime/ccda:value, 13, 2))'/>
+                            </xsl:when>
+                            <xsl:when test='string-length(ccda:effectiveTime/ccda:value) = 8'>
+                              <xsl:value-of select='concat(substring(ccda:effectiveTime/ccda:value, 1, 4), "-", substring(ccda:effectiveTime/ccda:value, 5, 2), "-", substring(ccda:effectiveTime/ccda:value, 7, 2))'/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                              <xsl:value-of select='ccda:effectiveTime/ccda:value'/>
+                            </xsl:otherwise>
+                          </xsl:choose>"
+        </xsl:if>
+        , "patient" : {
+            "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>"
+        }
+        <xsl:if test="string(//ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension)">
+          , "organization" : [{
+            "reference" : "Organization/<xsl:value-of select='//ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension'/>"
+          }]
+        </xsl:if>
+        <xsl:if test="string(ccda:provision/ccda:type)">
+          , "provision" : {
+            "type" : "<xsl:value-of select="ccda:provision/ccda:type"/>"
+          }
+        </xsl:if>
+        <xsl:if test="string(ccda:policy/ccda:id)">
+          , "policy" : [{
+            "authority" : "<xsl:value-of select="ccda:policy/ccda:id"/>"
+          }]
+        </xsl:if>
+        , "sourceAttachment" : {
+          "contentType" : "application/pdf",
+          "language" : "en"
+        }
       },
       "request" : {
         "method" : "POST",
@@ -336,68 +388,89 @@
 
   <!-- Observation Template -->
   <xsl:template match="ccda:observation">
-    <xsl:if test="position() > 1">,</xsl:if>
-    {
-      "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='normalize-space(ccda:id)'/>",
-      "resource": {
-        "resourceType": "Observation",
-        "id": "<xsl:value-of select='normalize-space(ccda:id)'/>",
-        "meta" : {
-          "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
-        },
-        "status": "<xsl:value-of select='ccda:statusCode/ccda:code'/>",
-        "code": {
-          "coding": [
+    <xsl:if test="string(ccda:value/ccda:displayName)">
+      <xsl:if test="position() > 1">,</xsl:if>
+      {
+        "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='normalize-space(ccda:id)'/>",
+        "resource": {
+          "resourceType": "Observation",
+          "id": "<xsl:value-of select='normalize-space(ccda:id)'/>",
+          "meta" : {
+            "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
+            "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+          },
+          "status": "<xsl:value-of select='ccda:statusCode/ccda:code'/>",
+          "category": [
             {
-              "system": "http://loinc.org",
-              "code": "<xsl:value-of select='ccda:code/ccda:code'/>",
-              "display": "<xsl:value-of select='ccda:code/ccda:displayName'/>"
-            }
-          ]
-        },
-        "valueString": "<xsl:value-of select='ccda:value/ccda:displayName'/>",
-        "subject": {
-          "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
-        },
-        "category": [{
-          "coding": [
+              "coding": [{
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "<xsl:value-of select='ccda:code/ccda:code'/>",
+                  "display": "<xsl:value-of select='ccda:code/ccda:displayName'/>"
+              }]
+            },
             {
-              "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-              "code": "<xsl:value-of select='ccda:code/ccda:code'/>",
-              "display": "<xsl:value-of select='ccda:code/ccda:displayName'/>"
+              "coding" : [{
+                  "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code" : "social-history"
+              }]
+            },
+            {
+              "coding" : [{
+                  "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code" : "survey"
+              }]
             }
-          ]
-        }],
-        "effectiveDateTime": "<xsl:choose>
-                                <xsl:when test='string-length(ccda:effectiveTime/ccda:value) > 14'>
-                                  <xsl:value-of select="
-                                    concat(
-                                      substring(ccda:effectiveTime/ccda:value, 1, 4), '-',
-                                      substring(ccda:effectiveTime/ccda:value, 5, 2), '-',
-                                      substring(ccda:effectiveTime/ccda:value, 7, 2), 'T',
-                                      substring(ccda:effectiveTime/ccda:value, 9, 2), ':',
-                                      substring(ccda:effectiveTime/ccda:value, 11, 2), ':',
-                                      substring(ccda:effectiveTime/ccda:value, 13, 2),
-                                      substring(ccda:effectiveTime/ccda:value, 15, 6)
-                                    )"/>
-                                </xsl:when>
-                                <xsl:when test='string-length(ccda:effectiveTime/ccda:value) = 14'>
-                                  <xsl:value-of select='concat(substring(ccda:effectiveTime/ccda:value, 1, 4), "-", substring(ccda:effectiveTime/ccda:value, 5, 2), "-", substring(ccda:effectiveTime/ccda:value, 7, 2), "T", substring(ccda:effectiveTime/ccda:value, 9, 2), ":", substring(ccda:effectiveTime/ccda:value, 11, 2), ":", substring(ccda:effectiveTime/ccda:value, 13, 2))'/>
-                                </xsl:when>
-                                <xsl:when test='string-length(ccda:effectiveTime/ccda:value) = 8'>
-                                  <xsl:value-of select='concat(substring(ccda:effectiveTime/ccda:value, 1, 4), "-", substring(ccda:effectiveTime/ccda:value, 5, 2), "-", substring(ccda:effectiveTime/ccda:value, 7, 2))'/>
-                                </xsl:when>
-                                <xsl:otherwise>
-                                  <xsl:value-of select='ccda:effectiveTime/ccda:value'/>
-                                </xsl:otherwise>
-                              </xsl:choose>"
-      },
-      "request" : {
-        "method" : "POST",
-        "url" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='normalize-space(ccda:id)'/>"
+          ],
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "<xsl:value-of select='ccda:code/ccda:code'/>",
+                "display": "<xsl:value-of select='ccda:code/ccda:displayName'/>"
+              }
+            ],
+            "text" : "<xsl:value-of select='ccda:code/ccda:originalText'/>"
+          },
+          "valueCodeableConcept" : {
+            "coding" : [{
+              "system" : "http://loinc.org",
+              "code" : "<xsl:value-of select='ccda:value/ccda:code'/>",
+              "display" : "<xsl:value-of select='ccda:value/ccda:displayName'/>"
+            }]
+          },
+          "subject": {
+            "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
+          },
+          "effectiveDateTime": "<xsl:choose>
+                                  <xsl:when test='string-length(ccda:effectiveTime/ccda:value) > 14'>
+                                    <xsl:value-of select="
+                                      concat(
+                                        substring(ccda:effectiveTime/ccda:value, 1, 4), '-',
+                                        substring(ccda:effectiveTime/ccda:value, 5, 2), '-',
+                                        substring(ccda:effectiveTime/ccda:value, 7, 2), 'T',
+                                        substring(ccda:effectiveTime/ccda:value, 9, 2), ':',
+                                        substring(ccda:effectiveTime/ccda:value, 11, 2), ':',
+                                        substring(ccda:effectiveTime/ccda:value, 13, 2),
+                                        substring(ccda:effectiveTime/ccda:value, 15, 6)
+                                      )"/>
+                                  </xsl:when>
+                                  <xsl:when test='string-length(ccda:effectiveTime/ccda:value) = 14'>
+                                    <xsl:value-of select='concat(substring(ccda:effectiveTime/ccda:value, 1, 4), "-", substring(ccda:effectiveTime/ccda:value, 5, 2), "-", substring(ccda:effectiveTime/ccda:value, 7, 2), "T", substring(ccda:effectiveTime/ccda:value, 9, 2), ":", substring(ccda:effectiveTime/ccda:value, 11, 2), ":", substring(ccda:effectiveTime/ccda:value, 13, 2))'/>
+                                  </xsl:when>
+                                  <xsl:when test='string-length(ccda:effectiveTime/ccda:value) = 8'>
+                                    <xsl:value-of select='concat(substring(ccda:effectiveTime/ccda:value, 1, 4), "-", substring(ccda:effectiveTime/ccda:value, 5, 2), "-", substring(ccda:effectiveTime/ccda:value, 7, 2))'/>
+                                  </xsl:when>
+                                  <xsl:otherwise>
+                                    <xsl:value-of select='ccda:effectiveTime/ccda:value'/>
+                                  </xsl:otherwise>
+                                </xsl:choose>"
+        },
+        "request" : {
+          "method" : "POST",
+          "url" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='normalize-space(ccda:id)'/>"
+        }
       }
-    }
+    </xsl:if>
   </xsl:template>
 
 </xsl:stylesheet>

@@ -3,6 +3,7 @@ package org.techbd.service.converters.shinny;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
@@ -86,7 +87,7 @@ public class EncounterConverter extends BaseConverter {
 
         populatePatientReference(encounter, idsGenerated);
 
-        // populateLocationReference(encounter, screeningProfileData, idsGenerated);
+        populateLocationReference(encounter, screeningProfileData, idsGenerated);
         // Narrative text = new Narrative();
         // text.setStatus(NarrativeStatus.GENERATED);
         // encounter.setText(text);
@@ -104,7 +105,7 @@ public class EncounterConverter extends BaseConverter {
     }
 
     private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
-        if (data.getEncounterClassCode() != null) {
+        if (StringUtils.isNotEmpty(data.getEncounterClassCode())) {
             Coding encounterClass = new Coding();
             encounterClass.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
             encounterClass.setCode(data.getEncounterClassCode());
@@ -113,7 +114,7 @@ public class EncounterConverter extends BaseConverter {
     }
 
     private static void populateEncounterType(Encounter encounter, ScreeningProfileData data) {
-        if (data.getEncounterTypeCode() != null || data.getEncounterTypeCodeDescription() != null) {
+        if (StringUtils.isNotEmpty(data.getEncounterTypeCode()) || StringUtils.isNotEmpty(data.getEncounterTypeCodeDescription())) {
             CodeableConcept encounterType = new CodeableConcept();
 
             if (data.getEncounterTypeCode() != null) {
@@ -133,7 +134,7 @@ public class EncounterConverter extends BaseConverter {
     }
 
     private void populateEncounterStatus(Encounter encounter, ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData != null && screeningResourceData.getEncounterStatusCode() != null) {
+        if (screeningResourceData != null && StringUtils.isNotEmpty(screeningResourceData.getEncounterStatusCode())) {
             encounter.setStatus(Encounter.EncounterStatus.fromCode(screeningResourceData.getEncounterStatusCode()));
         } else {
             encounter.setStatus(Encounter.EncounterStatus.UNKNOWN);
