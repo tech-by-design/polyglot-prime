@@ -3288,7 +3288,6 @@ DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, text, text, text, bytea, text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text, timestamptz, text, text, jsonb, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_csv_request_upserted(text, text, text, text, text, bytea, text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text, timestamptz, text, text, jsonb, text, text, text, text, text, jsonb);
 
-
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_csv_request_upserted(interaction_id text, uri text, nature text, tenant_id text DEFAULT NULL::text, csv_zip_file_name text DEFAULT NULL::text, csv_zip_file_content bytea DEFAULT NULL::bytea, group_id text DEFAULT NULL::text, status text DEFAULT NULL::text, csv_screening_observation_data_payload_text text DEFAULT NULL::text, csv_screening_profile_data_payload_text text DEFAULT NULL::text, csv_demographic_data_payload_text text DEFAULT NULL::text, csv_qe_admin_data_payload_text text DEFAULT NULL::text, csv_screening_observation_data_file_name text DEFAULT NULL::text, csv_screening_profile_data_file_name text DEFAULT NULL::text, csv_demographic_data_file_name text DEFAULT NULL::text, csv_qe_admin_data_file_name text DEFAULT NULL::text, validation_result_payload jsonb DEFAULT NULL::jsonb, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, zip_file_hub_interaction_id text DEFAULT NULL::text, client_ip_address text DEFAULT NULL::text, user_agent text DEFAULT NULL::text, origin text DEFAULT NULL::text, sftp_session_id text DEFAULT NULL::text, zip_file_processing_errors jsonb DEFAULT NULL::jsonb)
  RETURNS text
  LANGUAGE plpgsql
@@ -3328,7 +3327,7 @@ BEGIN
 	ELSIF nature = 'Update Zip File Processing Details' THEN /*Update the errors and status after the zip file is processed*/
     	UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
     		SET status = sat_interaction_csv_request_upserted.status::text,
-				misc_errors = sat_interaction_csv_request_upserted.zip_file_processing_errors::jsonb
+				general_errors = sat_interaction_csv_request_upserted.zip_file_processing_errors::jsonb
     		WHERE hub_interaction_id = sat_interaction_csv_request_upserted.interaction_id;
     	v_return := sat_interaction_csv_request_upserted.interaction_id;
     
