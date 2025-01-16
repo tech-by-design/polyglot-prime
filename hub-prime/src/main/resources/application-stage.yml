@@ -32,14 +32,7 @@ management:
     java:
       enabled: true
     os:
-      enabled: true
-otel:
-  traces:
-    exporter: otlp
-    otlp:
-      enabled: true
-      authorizationTokenSecretName: Open_observe
-      endpoint: https://observe.omnibus.techbd.org/api/default/traces    
+      enabled: true 
 org:
   techbd:    
     service:

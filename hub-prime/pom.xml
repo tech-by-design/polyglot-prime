@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.434.0</version>
+	<version>0.435.0</version>
 	<packaging>war</packaging>
 	<name>Tech by Design Hub (Prime)</name>
 	<description>Tech by Design Hub (Primary)</description>
@@ -34,13 +34,6 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-			<dependency>
-				<groupId>io.opentelemetry</groupId>
-				<artifactId>opentelemetry-bom</artifactId>
-				<version>1.44.1</version>
-				<type>pom</type>
-				<scope>import</scope>
-        	</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -323,32 +316,41 @@
             <artifactId>hapi-fhir-client</artifactId>
         	<version>7.6.1</version>
         </dependency>
-		 <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
+		<dependency> 
+            <groupId>io.micrometer</groupId> 
+            <artifactId>micrometer-registry-otlp</artifactId> 
+        </dependency>
+		<dependency> 
+            <groupId>io.opentelemetry</groupId> 
+            <artifactId>opentelemetry-exporter-otlp</artifactId> 
         </dependency>
 		<dependency>
-			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-sdk</artifactId>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-otel</artifactId>
+		</dependency>
+		<dependency> 
+			<groupId>com.squareup.okio</groupId> 
+			<artifactId>okio</artifactId> 
+			<version>3.9.1</version>
+		</dependency> 
+		
 		<dependency>
 			<groupId>io.opentelemetry.instrumentation</groupId>
-			<artifactId>opentelemetry-spring-boot-starter</artifactId>
-			<version>2.10.0</version>
+			<artifactId>opentelemetry-logback-appender-1.0</artifactId>
+			<version>2.11.0-alpha</version>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-api</artifactId>
+			<artifactId>opentelemetry-exporter-otlp-logs</artifactId>
+			<version>1.26.0-alpha</version>
 		</dependency>
-        <dependency> 
-            <groupId>com.squareup.okio</groupId> 
-            <artifactId>okio</artifactId> 
-            <version>3.9.1</version> 
-        </dependency>
 		<dependency>
-    		<groupId>com.opencsv</groupId>
-    		<artifactId>opencsv</artifactId>
-    		<version>5.8</version>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-sdk-logs</artifactId>
 		</dependency>
 	</dependencies>
 
