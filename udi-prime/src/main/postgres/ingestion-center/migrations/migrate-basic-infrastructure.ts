@@ -39,10 +39,6 @@ const assuranceSchema = SQLa.sqlSchemaDefn("techbd_udi_assurance", {
   isIdempotent: true,
 });
 
-const orchCtlSchema = SQLa.sqlSchemaDefn("techbd_orch_ctl", {
-  isIdempotent: true,
-});
-
 const diagnosticsSchema = SQLa.sqlSchemaDefn("techbd_udi_diagnostics", {
   isIdempotent: true,
 });
@@ -62,222 +58,6 @@ const {
 } = dvts.domains;
 const { ulidPrimaryKey: primaryKey } = dvts.keys;
 
-const orchctl_business_rules = dvp.typical.SQLa.tableDefinition("business_rules",{
-  "worksheet":textNullable(),
-  "field":textNullable(),
-  "required":textNullable(),
-  "Permissible Values":textNullable(),
-  "True Rejection":textNullable(),
-  "Warning Layer":textNullable(),
-  "Resolved by QE/QCS":textNullable(),
-  "src_file_row_number":integer(),
-  "session_id":textNullable(),
-  "session_entry_id":textNullable(),
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_device = dvp.typical.SQLa.tableDefinition("device",{
-  "device_id":textNullable(),
-  "name":textNullable(),
-  "state":textNullable(),
-  "boundary":textNullable(),
-  "segmentation":textNullable(),
-  "state_sysinfo":textNullable(),
-  "elaboration":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_orch_session = dvp.typical.SQLa.tableDefinition("orch_session",{
-  "orch_session_id":textNullable(),
-  "device_id":textNullable(),
-  "version":textNullable(),
-  "orch_started_at":dateTimeNullable(),
-  "orch_finished_at":dateTimeNullable(),
-  "elaboration":textNullable(),
-  "args_json":textNullable(),
-  "diagnostics_json":textNullable(),
-  "diagnostics_md":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_orch_session_entry = dvp.typical.SQLa.tableDefinition("orch_session_entry",{
-  "orch_session_entry_id":textNullable(),
-  "session_id":textNullable(),
-  "ingest_src":textNullable(),
-  "ingest_table_name":dateTimeNullable(),
-  "elaboration":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_orch_session_exec = dvp.typical.SQLa.tableDefinition("orch_session_exec",{
-  "orch_session_exec_id":textNullable(),
-  "exec_nature":textNullable(),
-  "session_id":textNullable(),
-  "session_entry_id":textNullable(),
-  "parent_exec_id":textNullable(),
-  "namespace":textNullable(),
-  "exec_identity":textNullable(),
-  "exec_code":textNullable(),
-  "exec_status":integer(),
-  "input_text":textNullable(),
-  "exec_error_text":textNullable(),
-  "output_text":textNullable(),
-  "output_nature":textNullable(),
-  "narrative_md":textNullable(),
-  "elaboration":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_orch_session_issue = dvp.typical.SQLa.tableDefinition("orch_session_issue",{
-  "orch_session_issue_id":textNullable(),
-  "session_id":textNullable(),
-  "session_entry_id":textNullable(),
-  "issue_type":textNullable(),
-  "issue_message":textNullable(),
-  "issue_row":integer(),
-  "issue_column":textNullable(),
-  "invalid_value":textNullable(),
-  "remediation":textNullable(),
-  "elaboration":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_orch_session_state = dvp.typical.SQLa.tableDefinition("orch_session_state",{
-  "orch_session_state_id":textNullable(),
-  "session_id":textNullable(),
-  "session_entry_id":textNullable(),
-  "from_state":textNullable(),
-  "to_state":textNullable(),
-  "transition_result":textNullable(),
-  "transition_reason":textNullable(),
-  "transitioned_at":dateTimeNullable(),
-  "elaboration":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_demographic_data = dvp.typical.SQLa.tableDefinition("demographic_data",{
-  "mpi_id":textNullable(),
-  "pat_mrn_id":textNullable(),
-  "from_state":textNullable(),
-  "facility_id":textNullable(),
-  "consent":textNullable(),
-  "first_name":textNullable(),
-  "middle_name":textNullable(),
-  "last_name":textNullable(),
-  "administrative_sex_code":textNullable(),
-  "administrative_sex_code_description":textNullable(),
-  "administrative_sex_code_system":textNullable(),
-  "sex_at_birth_code":textNullable(),
-  "sex_at_birth_code_description":textNullable(),
-  "sex_at_birth_code_system":textNullable(),
-  "pat_birth_date":textNullable(),
-  "address1":textNullable(),
-  "address2":textNullable(),
-  "city":textNullable(),
-  "state":textNullable(),
-  "zip":textNullable(),
-  "phone":textNullable(),
-  "ssn":textNullable(),
-  "gender_identity_code":textNullable(),
-  "gender_identity_code_description":textNullable(),
-  "gender_identity_code_system_name":textNullable(),
-  "sexual_orientation_code":textNullable(),
-  "sexual_orientation_code_description":textNullable(),
-  "sexual_orientation_code_system_name":textNullable(),
-  "preferred_language_code":textNullable(),
-  "preferred_language_code_description":textNullable(),
-  "preferred_language_code_system_name":textNullable(),
-  "race_code":textNullable(),
-  "race_code_description":textNullable(),
-  "race_code_system_name":textNullable(),
-  "ethnicity_code":textNullable(),
-  "ethnicity_code_description":textNullable(),
-  "ethnicity_code_system_name":textNullable(),
-  "medicaid_cin":textNullable(),
-  "src_file_row_number":integer(),
-  "session_id":textNullable(),
-  "session_entry_id":textNullable(),
-  "source_table":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_qe_admin_data = dvp.typical.SQLa.tableDefinition("qe_admin_data",{
-  "pat_mrn_id":textNullable(),
-  "facility_id":textNullable(),
-  "facility_long_name":textNullable(),
-  "organization_type":textNullable(),
-  "facility_address1":textNullable(),
-  "facility_address2":textNullable(),
-  "facility_city":textNullable(),
-  "facility_state":textNullable(),
-  "facility_zip":textNullable(),
-  "visit_part_2_flag":textNullable(),
-  "visit_omh_flag":textNullable(),
-  "sex_at_birth_code_system":textNullable(),
-  "visit_opwdd_flag":textNullable(),
-  "src_file_row_number":integer(),
-  "session_id":textNullable(),
-  "session_entry_id":textNullable(),
-  "source_table":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
-
-const orchctl_screening = dvp.typical.SQLa.tableDefinition("screening",{
-  "pat_mrn_id":textNullable(),
-  "facility_id":textNullable(),
-  "encounter_id":textNullable(),
-  "encounter_class_code":textNullable(),
-  "encounter_class_code_description":textNullable(),
-  "encounter_class_code_system":textNullable(),
-  "encounter_status_code":textNullable(),
-  "encounter_status_code_description":textNullable(),
-  "encounter_status_code_system":textNullable(),
-  "encounter_type_code":textNullable(),
-  "encounter_type_code_description":textNullable(),
-  "encounter_type_code_system":textNullable(),
-  "screening_status_code":textNullable(),
-  "screening_status_code_description":textNullable(),
-  "screening_status_code_system":textNullable(),
-  "screening_code":textNullable(),
-  "screening_code_description":textNullable(),
-  "screening_code_system_name":textNullable(),
-  "recorded_time":textNullable(),
-  "question_code":textNullable(),
-  "question_code_description":textNullable(),
-  "question_code_system_name":textNullable(),
-  "ucum_units":textNullable(),
-  "sdoh_domain":textNullable(),
-  "parent_question_code":textNullable(),
-  "answer_code":textNullable(),
-  "answer_code_description":textNullable(),
-  "answer_code_system_name":textNullable(),
-  "potential_need_indicated":textNullable(),
-  "src_file_row_number":integer(),
-  "session_id":textNullable(),
-  "session_entry_id":textNullable(),
-  "source_table":textNullable()
-},{
-  sqlNS: orchCtlSchema,
-  isIdempotent: true
-});
 
 const interactionHub = dvts.hubTable("interaction", {
   hub_interaction_id: primaryKey(),
@@ -766,28 +546,6 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${assuranceSchema}
 
-      ${orchCtlSchema}
-
-      ${orchctl_business_rules}
-
-      ${orchctl_device}
-
-      ${orchctl_orch_session}
-
-      ${orchctl_orch_session_entry}
-
-      ${orchctl_orch_session_exec}
-
-      ${orchctl_orch_session_issue}
-
-      ${orchctl_orch_session_state}
-
-      ${orchctl_demographic_data}
-
-      ${orchctl_qe_admin_data}
-
-      ${orchctl_screening}
-
       ${diagnosticsSchema}
 
       ${hubDiagnostics}
@@ -1170,6 +928,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request 
         ADD COLUMN IF NOT EXISTS misc_errors jsonb NULL;
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request RENAME COLUMN misc_errors TO general_errors;        
 
 
       ${dependenciesSQL}
