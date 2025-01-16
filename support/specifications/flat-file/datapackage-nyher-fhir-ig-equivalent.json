@@ -68,12 +68,12 @@
         "unknown"
       ]
     }},
-    {"name": "ENCOUNTER_TYPE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').type.coding.code", "constraints": { "enum": [
+    {"name": "ENCOUNTER_TYPE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').type.coding.code", "constraints": { "required": true, "enum": [ 
       "405672008", "23918007"
     ]
     } },
     {"name": "ENCOUNTER_TYPE_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').type.text"},
-    {"name": "ENCOUNTER_TYPE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system", "constraints": {"enum": [
+    {"name": "ENCOUNTER_TYPE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system", "constraints": { "required": true, "enum": [
       "http://snomed.info/sct"
     ]
     } },
@@ -83,7 +83,7 @@
    { "name": "CONSENT_LAST_UPDATED", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Consent').meta.lastUpdated", "constraints": {"required": true, 
    "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"
   } },       
-  { "name": "CONSENT_DATE_TIME", "type": "string" , "description":"Bundle.entry.resource.where(resourceType ='Consent').dateTime", "constraints": { 
+  { "name": "CONSENT_DATE_TIME", "type": "string" , "description":"Bundle.entry.resource.where(resourceType ='Consent').dateTime", "constraints": { "required": true,
     "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"
     } },
     { "name": "CONSENT_STATUS", "description":"Bundle.entry.resource.where(resourceType ='Consent').status", "type": "string",  "constraints": {"required": true, "enum":[
@@ -94,7 +94,7 @@
       "inactive",
       "entered-in-error"
     ]} },    
-    { "name": "CONSENT_POLICY_AUTHORITY", "description":"Bundle.entry.resource.where(resourceType ='Consent').policy.authority", "type": "string" },    
+    { "name": "CONSENT_POLICY_AUTHORITY", "description":"Bundle.entry.resource.where(resourceType ='Consent').policy.authority", "type": "string",  "constraints": {"required": true} },    
     { "name": "CONSENT_PROVISION_TYPE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Consent').provision.type", "constraints": { "enum": ["deny","permit"]} },
     { "name": "SCREENING_LAST_UPDATED", "type": "string" , "description":"Bundle.entry.resource.where(resourceType ='Observation').meta.lastUpdated",  "constraints": { "required": true,
     "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"
