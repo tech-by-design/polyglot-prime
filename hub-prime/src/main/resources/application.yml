@@ -133,7 +133,7 @@ org:
           username: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_USERNAME:}
           password: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD:}
           driverClassName: org.postgresql.Driver
-          maximumPoolSize: 500 # Set to 500 as per your request
+          maximumPoolSize: 1000 # Set to 500 as per your request
           minimumIdle: 100  # Minimum idle connections in the pool
           idleTimeout: 300000 # 30 seconds to wait for a connection from the pool
           connectionTimeout: 30000  # 5 minutes - idle connections are removed after this time
