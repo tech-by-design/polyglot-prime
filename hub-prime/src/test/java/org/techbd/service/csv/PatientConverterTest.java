@@ -15,7 +15,6 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.StringType;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,7 +37,7 @@ class PatientConverterTest {
         private PatientConverter patientConverter;
 
         @Test
-        @Disabled
+        // @Disabled
         void testConvert() throws Exception {
                 final Bundle bundle = new Bundle();
                 final DemographicData demographicData = CsvTestHelper.createDemographicData();
@@ -85,7 +84,7 @@ class PatientConverterTest {
                 softly.assertThat(maIdentifier.getSystem()).isEqualTo("http://www.medicaid.gov/");
                 softly.assertThat(maIdentifier.getValue()).isEqualTo("AA12345C");
                 final Identifier ssnIdentifier = patient.getIdentifier().stream()
-                                .filter(identifier -> "SSN".equals(identifier.getType().getCodingFirstRep().getCode()))
+                                .filter(identifier -> "SS".equals(identifier.getType().getCodingFirstRep().getCode()))
                                 .findFirst()
                                 .orElse(null);
                 softly.assertThat(ssnIdentifier).isNotNull();
@@ -98,8 +97,15 @@ class PatientConverterTest {
                 softly.assertThat(ssnIdentifier.getType().getCodingFirstRep().getSystem())
                                 .isEqualTo("http://terminology.hl7.org/CodeSystem/v2-0203");
                 softly.assertThat(ssnIdentifier.getType().getCodingFirstRep().getCode())
-                                .isEqualTo("SSN");
-                softly.assertThat(patient.getExtension()).hasSize(7);
+                                .isEqualTo("SS");
+
+                softly.assertThat(patient.getExtension()).hasSize(5);
+                softly.assertThat(patient.getExtensionByUrl("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race")).isNotNull();
+                softly.assertThat(patient.getExtensionByUrl("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity")).isNotNull();
+                softly.assertThat(patient.getExtensionByUrl("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex")).isNotNull();
+                softly.assertThat(patient.getExtensionByUrl("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns")).isNotNull();
+                softly.assertThat(patient.getExtensionByUrl("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity")).isNotNull();
+
                 softly.assertThat(patient.hasAddress()).isTrue();
                 final Address address = patient.getAddressFirstRep();
                 softly.assertThat(address.getLine().stream()
@@ -109,6 +115,7 @@ class PatientConverterTest {
                 softly.assertThat(address.getState()).isEqualTo("NY");
                 softly.assertThat(address.getPostalCode()).isEqualTo("10032");
                 softly.assertThat(address.getDistrict()).isEqualTo("MANHATTAN");
+
                 softly.assertThat(patient.hasContact()).isTrue();
                 final Patient.ContactComponent contact = patient.getContactFirstRep();
                 softly.assertThat(contact.getRelationshipFirstRep().getCodingFirstRep().getSystem())
@@ -124,6 +131,7 @@ class PatientConverterTest {
                 softly.assertThat(contact.getTelecomFirstRep().getSystem())
                                 .isEqualTo(ContactPoint.ContactPointSystem.PHONE);
                 softly.assertThat(contact.getTelecomFirstRep().getValue()).isEqualTo("1234567890");
+                
                 softly.assertThat(patient.hasCommunication()).isTrue();
                 final Patient.PatientCommunicationComponent communication = patient.getCommunicationFirstRep();
                 softly.assertThat(communication.getLanguage().getCodingFirstRep().getSystem())
@@ -135,7 +143,7 @@ class PatientConverterTest {
         }
 
         @Test
-        @Disabled
+        // @Disabled
         void testGeneratedJson() throws Exception {
                 final var bundle = new Bundle();
                 final var demographicData =  CsvTestHelper.createDemographicData();
