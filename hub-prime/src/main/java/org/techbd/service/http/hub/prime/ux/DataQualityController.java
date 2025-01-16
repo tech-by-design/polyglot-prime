@@ -60,11 +60,29 @@ public class DataQualityController {
         return presentation.populateModel("page/diagnostics/fhir-validation-issues", model, request);
     }
 
-    @GetMapping("/data-quality/https-via-csv-validations")
-    @RouteMapping(label = "CSV Via HTTPs Data Quality", title = "CSV Via HTTPs Data Quality", siblingOrder = 40)
+    @GetMapping("/data-quality/csv-validations") 
+    @RouteMapping(label = "CSV Data Quality", title = "CSV Data Quality", siblingOrder = 40)    
     public String diagnosticsHttpsViaCsvValidationIssues(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/diagnostics/https-via-csv-validations", model, request);
-    }    
+        return "redirect:/data-quality/csv-validations/file-not-processed";
+    }   
+    
+    @GetMapping("/data-quality/csv-validations/file-not-processed")
+    @RouteMapping(label = "Files Not Processed", title = "Files Not Processed", siblingOrder = 10)
+    public String diagnosticsFileNotProcessedIssues(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/file-not-processed", model, request);
+    }       
+    
+    @GetMapping("/data-quality/csv-validations/incomplete-groups")
+    @RouteMapping(label = "Incomplete Groups", title = "Incomplete Groups", siblingOrder = 20)
+    public String diagnosticsIncompleteGroupsIssues(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/incomplete-groups", model, request);
+    }   
+    
+    @GetMapping("/data-quality/csv-validations/data-integrity")
+    @RouteMapping(label = "Data Integrity Errors", title = "Data Integrity Errors", siblingOrder = 30)
+    public String diagnosticsDataIntegrityIssues(final Model model, final HttpServletRequest request) {
+        return presentation.populateModel("page/diagnostics/data-integrity", model, request);
+    }       
 
     @GetMapping("/data-quality/ig-publication-issues")
     @RouteMapping(label = "IG Publication Issues", title = "IG Publication Issues", siblingOrder = 50)
