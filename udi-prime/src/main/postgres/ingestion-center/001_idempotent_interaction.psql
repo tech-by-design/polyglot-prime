@@ -1134,7 +1134,7 @@ WITH combined_counts AS (
                 END) AS shinny_datalake_submissions,
             max(sihr.created_at) AS recently_created_at
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND (sihr.uri = ANY (ARRAY['/Bundle/'::text, '/Bundle'::text])) AND (sihr.tenant_id_lower = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]))
+          WHERE sihr.created_at >= (CURRENT_DATE - '7 days'::interval) AND (sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/'])) AND (sihr.tenant_id_lower = ANY (ARRAY['healthelink'::text, 'healtheconn'::text, 'healthix'::text, 'grrhio'::text, 'hixny'::text]))
           GROUP BY sihr.tenant_id_lower
         )
  SELECT  
@@ -3547,7 +3547,7 @@ BEGIN
             max(sihr.created_at) AS recently_created_at
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         WHERE 
-            sihr.uri = ANY (ARRAY['/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/'])
+            sihr.uri = ANY (ARRAY['/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/'])
             AND sihr.created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
             AND sihr.created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
             AND sihr.tenant_id <> 'N/A'
@@ -3704,7 +3704,7 @@ BEGIN
             techbd_udi_ingress.sat_interaction_fhir_request sihr
          WHERE 
             sihr.nature = ''Forwarded HTTP Response Error''
-            AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'', ''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/''])
+            AND sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'', ''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/''])
             AND sihr.created_at >= TO_TIMESTAMP($1::text, ''YYYY-MM-DD'') 
 	        AND sihr.created_at < TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') + INTERVAL ''1 day''
             AND sihr.tenant_id_lower = $3
@@ -3737,7 +3737,7 @@ BEGIN
     WHERE 
         sihr.tenant_id_lower = tenant_id_param
         AND sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
-        AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle'])
+        AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/'])
         AND sihr.created_at >= TO_TIMESTAMP(start_date_param::text, 'YYYY-MM-DD') 
         AND sihr.created_at < TO_TIMESTAMP(end_date_param::text, 'YYYY-MM-DD') + INTERVAL '1 day'
         AND NOT EXISTS (

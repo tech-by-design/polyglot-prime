@@ -100,6 +100,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.code
   - `type` string
   - `constraints`:
+    - `required` True
     - `enum` ['405672008', '23918007']
 ### `ENCOUNTER_TYPE_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.text
@@ -108,6 +109,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system
   - `type` string
   - `constraints`:
+    - `required` True
     - `enum` ['http://snomed.info/sct']
 ### `ENCOUNTER_LAST_UPDATED`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').meta.lastUpdated
@@ -125,6 +127,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
   - `type` string
   - `constraints`:
+    - `required` True
     - `pattern` `^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$`
 ### `CONSENT_STATUS`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').status
@@ -135,6 +138,8 @@
 ### `CONSENT_POLICY_AUTHORITY`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').policy.authority
   - `type` string
+  - `constraints`:
+    - `required` True
 ### `CONSENT_PROVISION_TYPE`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').provision.type
   - `type` string
