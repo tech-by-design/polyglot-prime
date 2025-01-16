@@ -118,6 +118,10 @@
                             <name>
                                 <xsl:value-of select="hl7:assignedAuthor/hl7:representedOrganization/hl7:name"/>
                             </name>
+                            <telecom>
+                                <use><xsl:value-of select="hl7:assignedAuthor/hl7:representedOrganization/hl7:telecom/@use"/></use>
+                                <value><xsl:value-of select="hl7:assignedAuthor/hl7:representedOrganization/hl7:telecom/@value"/></value>
+                            </telecom>
                             <addr>
                                 <streetAddressLine><xsl:value-of select="hl7:assignedAuthor/hl7:representedOrganization/hl7:addr/hl7:streetAddressLine"/></streetAddressLine>
                                 <city><xsl:value-of select="hl7:assignedAuthor/hl7:representedOrganization/hl7:addr/hl7:city"/></city>
@@ -204,6 +208,42 @@
                                 <value><xsl:value-of select="hl7:effectiveTime/hl7:high/@value"/></value>
                             </high>
                         </effectiveTime>
+                        <locationDetails>
+                            <healthCareFacility>
+                                <id> 
+                                    <extension><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:id/@extension"/></extension>
+                                    <root><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:id/@root"/></root>
+                                </id>
+                                <code> 
+                                    <code><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:code/@code"/></code>
+                                    <codeSystem><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:code/@codeSystem"/></codeSystem>
+                                    <displayName><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:code/@displayName"/></displayName>
+                                </code>
+                                <locationAddr>
+                                    <addr>
+                                        <streetAddressLine><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:location/hl7:addr/hl7:streetAddressLine"/></streetAddressLine>
+                                        <city><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:location/hl7:addr/hl7:city"/></city>
+                                        <state><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:location/hl7:addr/hl7:state"/></state>
+                                        <postalCode><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:location/hl7:addr/hl7:postalCode"/></postalCode>
+                                        <country><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:location/hl7:addr/hl7:country"/></country>
+                                    </addr>
+                                </locationAddr>
+                                <serviceProviderOrganization>
+                                    <name><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:serviceProviderOrganization/hl7:name"/></name>
+                                    <telecom>
+                                        <use><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:serviceProviderOrganization/hl7:telecom/@use"/></use>
+                                        <value><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:serviceProviderOrganization/hl7:telecom/@value"/></value>
+                                    </telecom>
+                                    <addr>
+                                        <streetAddressLine><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:serviceProviderOrganization/hl7:addr/hl7:streetAddressLine"/></streetAddressLine>
+                                        <city><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:serviceProviderOrganization/hl7:addr/hl7:city"/></city>
+                                        <state><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:serviceProviderOrganization/hl7:addr/hl7:state"/></state>
+                                        <postalCode><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:serviceProviderOrganization/hl7:addr/hl7:postalCode"/></postalCode>
+                                        <country><xsl:value-of select="hl7:location/hl7:healthCareFacility/hl7:serviceProviderOrganization/hl7:addr/hl7:country"/></country>
+                                    </addr>
+                                </serviceProviderOrganization>
+                            </healthCareFacility>
+                        </locationDetails>
                     </encompassingEncounter>
                 </xsl:for-each>
             </componentOf>
