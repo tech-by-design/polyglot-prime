@@ -272,11 +272,12 @@ public class PatientConverter extends BaseConverter {
     }
 
     private static void populatePhone(Patient patient, DemographicData demographicData) {
-        Optional.ofNullable(demographicData.getTelecomValue())
-                .ifPresent(phone -> patient.addTelecom(new ContactPoint()
-                        .setSystem(ContactPoint.ContactPointSystem.PHONE) // TODO : remove static reference
-                        .setValue(demographicData.getTelecomValue())
-                        .setUse(ContactPoint.ContactPointUse.HOME)));
+        if (StringUtils.isNotEmpty(demographicData.getTelecomValue())) {
+             patient.addTelecom(new ContactPoint()
+                    .setSystem(ContactPoint.ContactPointSystem.PHONE) // TODO : remove static reference
+                    .setValue(demographicData.getTelecomValue())
+                    .setUse(ContactPoint.ContactPointUse.HOME));
+        }
     }
 
     private static void populateAddress(Patient patient, DemographicData data) {
