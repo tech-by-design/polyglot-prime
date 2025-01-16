@@ -7,10 +7,13 @@
   
   <!-- Root template -->
   <xsl:param name="currentTimestamp"/>
-  <xsl:variable name="consentResourceId" select="translate(concat(generate-id(//ccda:consent), '-', '592840', $currentTimestamp), ':-+', '')"/>
-  <xsl:variable name="patientResourceId" select="//ccda:patientRole/ccda:id/ccda:extension"/>
-  <xsl:variable name="patientResourceName" select="//ccda:patientRole/ccda:patient/ccda:name/ccda:family | //ccda:patientRole/ccda:patient/ccda:name/ccda:given"/>
-  <xsl:variable name="bundleId" select="translate(concat(generate-id(//ccda:patientRole/ccda:id/ccda:extension), '-', $currentTimestamp), ':-+', '')"/>
+  <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id/ccda:extension"/>
+  <xsl:variable name="consentResourceId" select="translate(concat(generate-id(//ccda:consent), $patientRoleId, $currentTimestamp), ':-+', '')"/>
+  <xsl:variable name="patientResourceId" select="translate(concat(generate-id(//ccda:patientRole), $patientRoleId, $currentTimestamp), ':-+', '')"/>
+  <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family, ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given)"/>
+  <xsl:variable name="bundleId" select="translate(concat(generate-id(//ccda:patientRole/ccda:id/ccda:extension), $currentTimestamp), ':-+', '')"/>
+  <xsl:variable name="encounterResourceId" select="translate(concat(generate-id(//ccda:encompassingEncounter), $patientRoleId, $currentTimestamp), ':-+', '')"/>
+  <xsl:variable name="organizationResourceId" select="translate(concat(generate-id(//ccda:author), $patientRoleId, $currentTimestamp), ':-+', '')"/>
   
   <xsl:template match="/">
     {
@@ -80,9 +83,9 @@
                         <xsl:otherwise>
                           <xsl:value-of select='ccda:patient/ccda:birthTime/ccda:value'/>
                         </xsl:otherwise>
-                      </xsl:choose>",
+                      </xsl:choose>"
         <xsl:if test="string(ccda:addr/ccda:streetAddressLine) or string(ccda:addr/ccda:city) or string(ccda:addr/ccda:state) or string(ccda:addr/ccda:postalCode) or string(ccda:addr/ccda:county)">
-        "address": [
+        , "address": [
           {
             <xsl:if test="string(ccda:addr/ccda:streetAddressLine) or string(ccda:addr/ccda:city) or string(ccda:addr/ccda:state) or string(ccda:addr/ccda:postalCode)">
               "text" : "<xsl:value-of select='ccda:addr/ccda:streetAddressLine'/>
@@ -106,10 +109,10 @@
               , "postalCode": "<xsl:value-of select="ccda:addr/ccda:postalCode"/>"
             </xsl:if>            
           }
-        ],
+        ]
         </xsl:if> 
         <xsl:if test="string(ccda:telecom/ccda:value)">
-        "telecom": [
+        , "telecom": [
           {
             "system": "phone",
             "value": "<xsl:value-of select="ccda:telecom/ccda:value"/>",
@@ -119,9 +122,9 @@
                       <xsl:otherwise><xsl:value-of select="ccda:telecom/ccda:use"/></xsl:otherwise>
                     </xsl:choose>"
           }
-        ],
+        ]
         </xsl:if>
-        "extension" : [{
+        , "extension" : [{
           "extension": [{
             "url" : "ombCategory",
             "valueCoding": {
@@ -165,7 +168,7 @@
             }],
             "text" : "Medical Record Number"
           },
-          "value" : "<xsl:value-of select='$patientResourceId'/>"
+          "value" : "<xsl:value-of select='$patientRoleId'/>"
           <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension)">
           , "assigner" : {
             "reference" : "Organization/<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>"
@@ -182,7 +185,7 @@
             "text" : "Patient Medicaid Number"
           },
           "system" : "http://www.medicaid.gov/",
-          "value" : "<xsl:value-of select='$patientResourceId'/>"
+          "value" : "<xsl:value-of select='$patientRoleId'/>"
         },
         {
           "type" : {
@@ -219,10 +222,10 @@
   <xsl:template match="ccda:encompassingEncounter">
     <xsl:if test="position() > 1">,</xsl:if>
     {
-      "fullUrl" : "http://shinny.org/us/ny/hrsn/Encounter/<xsl:value-of select="ccda:id/ccda:extension"/>",
+      "fullUrl" : "http://shinny.org/us/ny/hrsn/Encounter/<xsl:value-of select="$encounterResourceId"/>",
       "resource": {
         "resourceType": "Encounter",
-        "id": "<xsl:value-of select="ccda:id/ccda:extension"/>",
+        "id": "<xsl:value-of select="$encounterResourceId"/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter"]
@@ -236,9 +239,14 @@
                 "code": "<xsl:value-of select="ccda:code/ccda:value"/>",
                 "display": "<xsl:value-of select="ccda:code/ccda:displayName"/>"
               }
-            ]
+            ],
+            "text": "<xsl:value-of select="ccda:code/ccda:displayName"/>"
           }
         ],
+        "subject" : {
+          "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>",
+          "display" : "<xsl:value-of select="$patientResourceName"/>"
+        },
         "period": {
           "start": "<xsl:value-of select="ccda:effectiveTime/ccda:low/ccda:value"/>",
           "end": "<xsl:value-of select="ccda:effectiveTime/ccda:high/ccda:value"/>"
@@ -246,7 +254,7 @@
       },
       "request" : {
         "method" : "POST",
-        "url" : "http://shinny.org/us/ny/hrsn/Encounter/<xsl:value-of select="ccda:id/ccda:extension"/>"
+        "url" : "http://shinny.org/us/ny/hrsn/Encounter/<xsl:value-of select="$encounterResourceId"/>"
       }
     }
   </xsl:template>
@@ -315,11 +323,9 @@
         , "patient" : {
             "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>"
         }
-        <xsl:if test="string(//ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension)">
-          , "organization" : [{
-            "reference" : "Organization/<xsl:value-of select='//ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension'/>"
-          }]
-        </xsl:if>
+        , "organization" : [{
+          "reference" : "Organization/<xsl:value-of select='$organizationResourceId'/>"
+        }]
         <xsl:if test="string(ccda:provision/ccda:type)">
           , "provision" : {
             "type" : "<xsl:value-of select="ccda:provision/ccda:type"/>"
@@ -346,15 +352,16 @@
   <xsl:template match="ccda:author">
     <xsl:if test="position() > 1">,</xsl:if>
     {
-      "fullUrl" : "http://shinny.org/us/ny/hrsn/Organization/<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>",
+      "fullUrl" : "http://shinny.org/us/ny/hrsn/Organization/<xsl:value-of select="$organizationResourceId"/>",
       "resource": {
         "resourceType": "Organization",
-        "id": "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>",
+        "id": "<xsl:value-of select="$organizationResourceId"/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
           "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization"]
         },
         "active": true,
+        <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:name) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension)">
         "identifier": [
           {
             "type" : {
@@ -368,20 +375,50 @@
             "value" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>"
           }
         ],
-        "name" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/>",
-        "address" : [{
-          "text" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine"/> | <xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city"/> | <xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state"/> | <xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode"/>",
-          "line" : ["<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine"/>"],
-          "city" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city"/>",
-          "district" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:county"/>",
-          "state" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state"/>",
-          "postalCode" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode"/>"
-        }]
+        </xsl:if>
+        "name" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/>"
+        <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom/ccda:value)">
+          , "telecom" : [{
+            "system" : "phone",
+            "value" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom/ccda:value"/>",
+            "use": "<xsl:choose>
+                        <xsl:when test="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom/ccda:use = 'HP'">home</xsl:when>
+                        <xsl:when test="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom/ccda:use = 'WP'">work</xsl:when>
+                        <xsl:otherwise><xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom/ccda:use"/></xsl:otherwise>
+                      </xsl:choose>"
+          }]
+        </xsl:if>
+        <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:county)">
+        , "address": [
+          {
+            <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode)">
+              "text" : "<xsl:value-of select='ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine'/>
+              <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select='ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city'/></xsl:if>
+              <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state)">, <xsl:value-of select='ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state'/></xsl:if>
+              <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select='ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode'/></xsl:if>"
+            </xsl:if>
+            <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine)">
+              , "line": ["<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:streetAddressLine"/>"]
+            </xsl:if>
+            <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city)">
+              , "city": "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:city"/>"
+            </xsl:if>            
+            <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:county)">
+              , "district" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:county"/>"
+            </xsl:if>            
+            <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state)">
+              , "state": "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:state"/>"
+            </xsl:if>            
+            <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode)">
+              , "postalCode": "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr/ccda:postalCode"/>"
+            </xsl:if>            
+          }
+        ]
+        </xsl:if> 
       },
-
       "request" : {
         "method" : "POST",
-        "url" : "http://shinny.org/us/ny/hrsn/Organization/<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension"/>"
+        "url" : "http://shinny.org/us/ny/hrsn/Organization/<xsl:value-of select="$organizationResourceId"/>"
       }
     }
   </xsl:template>
@@ -390,11 +427,12 @@
   <xsl:template match="ccda:observation">
     <xsl:if test="string(ccda:value/ccda:displayName)">
       <xsl:if test="position() > 1">,</xsl:if>
+      <xsl:variable name="observationResourceId" select="translate(concat(generate-id(ccda:code/ccda:code), position(), $patientRoleId, $currentTimestamp), ':-+', '')"/>
       {
-        "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='normalize-space(ccda:id)'/>",
+        "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='$observationResourceId'/>",
         "resource": {
           "resourceType": "Observation",
-          "id": "<xsl:value-of select='normalize-space(ccda:id)'/>",
+          "id": "<xsl:value-of select='$observationResourceId'/>",
           "meta" : {
             "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
             "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
@@ -439,7 +477,8 @@
             }]
           },
           "subject": {
-            "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
+            "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+            "display" : "<xsl:value-of select="$patientResourceName"/>"
           },
           "effectiveDateTime": "<xsl:choose>
                                   <xsl:when test='string-length(ccda:effectiveTime/ccda:value) > 14'>
@@ -467,7 +506,7 @@
         },
         "request" : {
           "method" : "POST",
-          "url" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='normalize-space(ccda:id)'/>"
+          "url" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='$observationResourceId'/>"
         }
       }
     </xsl:if>
