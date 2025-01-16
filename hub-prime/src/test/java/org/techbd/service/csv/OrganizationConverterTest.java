@@ -14,7 +14,6 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Organization;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,7 +36,7 @@ class OrganizationConverterTest {
     private OrganizationConverter organizationConverter;
 
     @Test
-    @Disabled
+//     @Disabled
     void testConvert() throws Exception {
         // Create the necessary data objects for the test
         final Bundle bundle = new Bundle();
@@ -76,13 +75,13 @@ class OrganizationConverterTest {
 
         // Assert that the organization has the correct identifier
         final Identifier mrIdentifier = organization.getIdentifier().stream()
-                .filter(identifier -> "Care Ridge SCN".equals(identifier.getValue()))
+                .filter(identifier -> "SCNExample".equals(identifier.getValue()))
                 .findFirst()
                 .orElse(null);
 
         softly.assertThat(mrIdentifier).isNotNull();
-        // softly.assertThat(mrIdentifier.getSystem()).isEqualTo("http://example.org/cms-system");
-        softly.assertThat(mrIdentifier.getValue()).isEqualTo("Care Ridge SCN");
+        softly.assertThat(mrIdentifier.getSystem()).isEqualTo("http://www.scn.ny.gov/");
+        softly.assertThat(mrIdentifier.getValue()).isEqualTo("SCNExample");
 
         // Assert that the organization has no extensions (since the output does not
         // have extensions)
@@ -96,6 +95,8 @@ class OrganizationConverterTest {
         softly.assertThat(address.getDistrict()).isEqualTo("Nassau County");
         softly.assertThat(address.getState()).isEqualTo("NY");
         softly.assertThat(address.getPostalCode()).isEqualTo("11803");
+        softly.assertThat(address.getLine()).hasSize(1);
+        softly.assertThat(address.getLine().get(0).getValue()).isEqualTo("111 Care Ridge St");
 
         // Assert that the organization has the correct type
         softly.assertThat(organization.getType()).hasSize(1);
@@ -105,12 +106,20 @@ class OrganizationConverterTest {
         softly.assertThat(type.getCodingFirstRep().getCode()).isEqualTo("other");
         softly.assertThat(type.getCodingFirstRep().getDisplay()).isEqualTo("Other");
 
+        //Assert that organization active is true
+        softly.assertThat(organization.getActive()).isTrue();
+
+        // Assert fullUrl
+        softly.assertThat(result.getFullUrl()).isEqualTo("http://shinny.org/us/ny/hrsn/Organization/" + organization.getId());
+        softly.assertThat(result.getRequest().getMethod()).isEqualTo(org.hl7.fhir.r4.model.Bundle.HTTPVerb.POST);
+        softly.assertThat(result.getRequest().getUrl()).isEqualTo("http://shinny.org/us/ny/hrsn/Organization/" + organization.getId());
+
         // Assert all soft assertions
         softly.assertAll();
     }
 
     @Test
-    @Disabled
+//     @Disabled
     void testGeneratedJson() throws Exception {
         final var bundle = new Bundle();
         final var demographicData =  CsvTestHelper.createDemographicData();
