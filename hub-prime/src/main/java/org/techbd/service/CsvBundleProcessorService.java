@@ -342,7 +342,7 @@ public class CsvBundleProcessorService {
                                 request, response,
                                 updatedProvenance,
                                 true, null, interactionId, groupInteractionId,
-                                masterInteractionId, SourceType.CSV.name(), null));
+                                masterInteractionId, SourceType.CSV.name(), null,false));
                     } else {
                         LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);

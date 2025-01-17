@@ -115,7 +115,7 @@ public class FHIRService {
                         HttpServletRequest request, HttpServletResponse response, String provenance,
                         boolean includeOperationOutcome, String mtlsStrategy, String interactionId,
                         String groupInteractionId, String masterInteractionId, String sourceType,
-                        String requestUriToBeOverriden)
+                        String requestUriToBeOverriden,boolean appendValidationIssue)
                         throws IOException {
                         final var start = Instant.now();
                         LOG.info("Bundle processing start at {} for interaction id {}.",
@@ -136,7 +136,7 @@ public class FHIRService {
                                                                 : appConfig.getDefaultSdohFhirProfileUrl();
                                 final var immediateResult = validate(request, payload, fhirProfileUrl,
                                                 uaValidationStrategyJson,
-                                                includeRequestInOutcome, interactionId, provenance, sourceType);
+                                                includeRequestInOutcome, interactionId, provenance, sourceType,appendValidationIssue);
                                 final var result = Map.of("OperationOutcome", immediateResult);
                                 if ("true".equals(healthCheck)) {
                                         LOG.info("%s is true, skipping Scoring Engine submission."
@@ -395,7 +395,7 @@ public class FHIRService {
 
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
                         String uaValidationStrategyJson,
-                        boolean includeRequestInOutcome, String interactionId, String provenance, String sourceType) {
+                        boolean includeRequestInOutcome, String interactionId, String provenance, String sourceType,boolean appendValidationIssue) {
                         final var start = Instant.now();
                         LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
                         final var igPackages = appConfig.getIgPackages();
@@ -403,6 +403,8 @@ public class FHIRService {
                         final var sessionBuilder = engine.session()
                                         .withSessionId(UUID.randomUUID().toString())
                                         .onDevice(Device.createDefault())
+                                        .withAppendValidationIssue(appendValidationIssue)
+                                        .withInteractionId(interactionId)
                                         .withPayloads(List.of(payload))
                                         .withFhirProfileUrl(fhirProfileUrl)
                                         .withFhirIGPackages(igPackages)
