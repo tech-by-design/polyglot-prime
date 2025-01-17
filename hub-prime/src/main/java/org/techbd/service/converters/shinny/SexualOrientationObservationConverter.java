@@ -3,6 +3,7 @@ package org.techbd.service.converters.shinny;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
@@ -41,39 +42,51 @@ public class SexualOrientationObservationConverter extends BaseConverter {
     }
 
     @Override
-    public List<BundleEntryComponent>   convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
+    public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData, QeAdminData qeAdminData,
+            ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
+            String interactionId, Map<String, String> idsGenerated) {
         LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
-        Observation observation = new Observation();
-        setMeta(observation);
-        observation.setId(CsvConversionUtil.sha256("SexualOrientation-" + screeningProfileData.getPatientMrIdValue()+screeningProfileData.getEncounterId()));
-        Meta meta = observation.getMeta();
-        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
-        meta.setLastUpdated(DateUtil.parseDate(demographicData.getSexualOrientationLastUpdated()));
-        observation.setStatus(Observation.ObservationStatus.fromCode("final"));  //TODO : remove static reference
-        Reference subjectReference = new Reference();
-        subjectReference.setReference("Patient/"+idsGenerated.get(CsvConstants.PATIENT_ID)); //TODO : remove static reference
-        observation.setSubject(subjectReference);
-        CodeableConcept code = new CodeableConcept();
-        code.addCoding(new Coding("http://loinc.org", //TODO : remove static reference
-                "76690-7", "Sexual orientation")); //TODO : remove static reference
-        observation.setCode(code);
-        CodeableConcept value = new CodeableConcept();
-        value.addCoding(new Coding(demographicData.getSexualOrientationValueCodeSystemName(),
-                demographicData.getSexualOrientationValueCode(),
-                demographicData.getSexualOrientationValueCodeDescription()));
-        observation.setValue(value);
-        // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
-        // observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated())); //Not Used
-       // Narrative text = new Narrative();
-       // text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
-       // observation.setText(text);
-        BundleEntryComponent entry = new BundleEntryComponent();
-        entry.setFullUrl(fullUrl);
-        entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observation.getId()));
-        entry.setResource(observation);
-        LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
-        return List.of(entry);
+        if (StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCodeSystemName()) ||
+                StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCode()) ||
+                StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCodeDescription())) {
+            Observation observation = new Observation();
+            setMeta(observation);
+            observation.setId(CsvConversionUtil.sha256("SexualOrientation-" + screeningProfileData.getPatientMrIdValue()
+                    + screeningProfileData.getEncounterId()));
+            Meta meta = observation.getMeta();
+            String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
+            meta.setLastUpdated(DateUtil.parseDate(demographicData.getSexualOrientationLastUpdated()));
+            observation.setStatus(Observation.ObservationStatus.fromCode("final")); // TODO : remove static reference
+            Reference subjectReference = new Reference();
+            subjectReference.setReference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)); // TODO : remove static reference
+            observation.setSubject(subjectReference);
+            CodeableConcept code = new CodeableConcept();
+            code.addCoding(new Coding("http://loinc.org", // TODO : remove static reference
+                    "76690-7", "Sexual orientation")); // TODO : remove static reference
+            observation.setCode(code);
+            CodeableConcept value = new CodeableConcept();
+            value.addCoding(new Coding(demographicData.getSexualOrientationValueCodeSystemName(),
+                    demographicData.getSexualOrientationValueCode(),
+                    demographicData.getSexualOrientationValueCodeDescription()));
+            observation.setValue(value);
+            // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
+            // observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated())); //Not Used
+            // Narrative text = new Narrative();
+            // text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
+            // observation.setText(text);
+            BundleEntryComponent entry = new BundleEntryComponent();
+            entry.setFullUrl(fullUrl);
+            entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
+                    .setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observation.getId()));
+            entry.setResource(observation);
+            LOG.info("SexualOrientationObservationConverter:: convert END for interaction id :{} ", interactionId);
+            return List.of(entry);
+        } else {
+            LOG.info(
+                    "SexualOrientationObservationConverter:: No data for sexual orientation, observation will not be created for interaction id :{} ",
+                    interactionId);
+            return List.of();
+        }
     }
 
 }
