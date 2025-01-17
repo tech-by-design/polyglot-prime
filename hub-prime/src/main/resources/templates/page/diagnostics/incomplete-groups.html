@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
+    <style>
+        .grid-description{
+            font-size: 14px;
+            margin: 5px 0px 5px 15px;
+        }
+    </style>
+    <!-- if JSON Viewer is not already in the layout, add the following -->
+    <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
+
+    <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'csv_incomplete_groups_errors';
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalAide = new ModalAide();
+            const agGridInstance = new AGGridAideBuilder()
+            .withColumnDefs([
+                            { 
+                                headerName: "Created Time", 
+                                field: "created_at", 
+                                sortable: true, 
+                                sort: "desc", 
+                                filter: "agDateColumnFilter", 
+                                headerTooltip: "The timestamp when the CSV validation error was recorded."
+                            },
+                            { 
+                                headerName: "TechBD Tenant ID", 
+                                field: "tenant_id", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
+                            },
+                            { 
+                                headerName: "TechBD Interaction ID", 
+                                field: "zip_file_hub_interaction_id", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."
+                            },                            
+                            { 
+                                headerName: "URI", 
+                                field: "uri", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The URI where the CSV file was submitted or validated."
+                            }, 
+                            { 
+                                headerName: "Error Type", 
+                                field: "error_type", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The category or type of validation error encountered."
+                            },
+                            { 
+                                headerName: "Error Message", 
+                                field: "error", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The detailed error message describing the validation issue."
+                            },
+                            { 
+                                headerName: "Description", 
+                                field: "description", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "A brief description of the validation error."
+                            } 
+                        ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                )
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">
+            This data grid focuses on errors related to incomplete file groups required for validation. Each row represents a missing or incomplete file within a logical group, with details such as the group identifier, the missing file name, and the associated error message. This view is essential for ensuring that all mandatory files for validation, such as demographic data or screening data, are included in the submission. Users can utilize this grid to identify gaps in their datasets and take corrective action promptly.
+ </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
+    </div>
+</body>
+
+</html>

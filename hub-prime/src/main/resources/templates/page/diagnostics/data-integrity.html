@@ -20,7 +20,7 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'https_csv_validation_errors';
+        const viewName = 'csv_data_integrity_errors';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
@@ -121,8 +121,8 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This data grid provides an in-depth view of validation errors identified during the HTTPS-based CSV validation process. Each row in the grid represents a specific issue detected within the submitted CSV files, including details such as the problematic field, the corresponding error message, and the exact row and field number where the error occurred.            
-            Additionally, the grid highlights the section of the CSV being validated, the associated file name, and the tenant information for accurate context. This information is critical for identifying and addressing errors in the ingestion process, ensuring data quality and compliance with validation standards. Users can hover over column headers for additional details about each field. </div>
+            This data grid highlights errors related to the integrity of data within the submitted CSV files. It includes issues such as foreign key violations, incorrect values, and constraint errors for specific rows and fields in the data. Each row in the grid provides detailed information about the error type, the problematic field, and the exact location (row and column) of the issue. This grid also identifies the section and file name where the error occurred, offering a comprehensive view of data inconsistencies for debugging and resolution.
+ </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
