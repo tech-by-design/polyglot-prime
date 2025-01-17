@@ -3958,11 +3958,14 @@ AS
 select
 		sizfcr.created_at,
 		sizfcr.tenant_id,
+        sizfcr.hub_interaction_id,
+        sizfcr.group_id,
 		sizfcr.uri,  
 		issue->>'type' as error_type,
 		issue->>'message' as error,
 		issue->>'description' as description, 
 		sizfcr.csv_zip_file_name as file_name,
+        sizfcr.origin  as origin,
 		sizfcr.user_agent  as user_agent
 from
 		techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
@@ -3994,6 +3997,8 @@ AS
 	sifcr.tenant_id,
 	sifcr.uri,
 	sifcr.zip_file_hub_interaction_id,
+    sifcr.hub_interaction_id,
+    sifcr.group_id,
 	error_payload.value ->> 'type'::text as error_type,
 	error_payload.value ->> 'message'::text as error,
 	error_payload.value ->> 'description'::text as description
@@ -4030,6 +4035,8 @@ select
 	sifcr.tenant_id,
 	sifcr.uri,
 	sifcr.zip_file_hub_interaction_id,
+	sifcr.hub_interaction_id, 
+    sifcr.group_id,   
 	tasks.value ->> 'name'::text as section,
 	error_payload.value ->> 'fieldName'::text as fieldname,
 	error_payload.value ->> 'cell'::text as value,

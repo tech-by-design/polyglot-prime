@@ -38,7 +38,13 @@
                                 field: "tenant_id", 
                                 filter: "agTextColumnFilter", 
                                 headerTooltip: "The unique identifier for the TechBD tenant associated with the CSV file."
-                            },                            
+                            },    
+                            { 
+                                headerName: "TechBD Zip File Interaction ID", 
+                                field: "hub_interaction_id", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."
+                            },                         
                             { 
                                 headerName: "URI", 
                                 field: "uri", 
@@ -70,11 +76,17 @@
                                 headerTooltip: "The name of the CSV file where the error occurred."
                             },                            
                             { 
+                                headerName: "Origin", 
+                                field: "origin", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The origin of the CSV file."
+                            }, 
+                            { 
                                 headerName: "User Agent", 
                                 field: "user_agent", 
                                 filter: "agTextColumnFilter", 
                                 headerTooltip: "The User Agent of the user who submitted the CSV file."
-                            }, 
+                            }                            
                         ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
