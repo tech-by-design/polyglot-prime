@@ -61,13 +61,11 @@ public class InteractionsController {
     }   
 
     // @GetMapping("/interactions/httpsccda")
-    // @RouteMapping(label = "CSV via CCDA", title = "CSV Files via CCDA", siblingOrder = 50)
+    // @RouteMapping(label = "CCDA via HTTPs", title = "CCDA via HTTPs", siblingOrder = 50)
     // public String httpsccda(final Model model, final HttpServletRequest request) {
     //     return presentation.populateModel("page/interactions/httpsccda", model, request);
     // }       
-
-  
-
+ 
     @Operation(summary = "Recent SFTP Interactions")
     @GetMapping("/support/interaction/sftp/recent.json")
     @ResponseBody
