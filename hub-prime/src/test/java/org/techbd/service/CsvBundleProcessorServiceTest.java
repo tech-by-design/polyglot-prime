@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -116,7 +117,7 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome mockOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean()))
                 .thenReturn(mockOutcome);
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
                 payloadAndValidationOutcomes,new ArrayList<>(),
@@ -130,7 +131,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean());
     }
 
     @Test
@@ -185,7 +186,7 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome mockOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean()))
                 .thenReturn(mockOutcome);
 
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
@@ -199,7 +200,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean());
     }
 
     @Test
@@ -245,7 +246,7 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome successfulOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean()))
                 .thenReturn(successfulOutcome)
                 .thenThrow(new RuntimeException("Mock failure"));
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
@@ -260,7 +261,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean());
     }
 
     private String getMockBundleJson() {

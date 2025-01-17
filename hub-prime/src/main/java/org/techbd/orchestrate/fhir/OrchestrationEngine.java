@@ -255,7 +255,7 @@ public class OrchestrationEngine {
 
         Observability observability();
 
-        ValidationResult validate(@NotNull final String payload);
+        ValidationResult validate(@NotNull final String payload,final String interactionId,final boolean isAppendValidationIssue);
     }
 
     public static class HapiValidationEngine implements OrchestrationEngine.ValidationEngine {
@@ -332,16 +332,16 @@ public class OrchestrationEngine {
         }
 
         @Override
-        public OrchestrationEngine.ValidationResult validate(@NotNull final String payload) {
+        public OrchestrationEngine.ValidationResult validate(@NotNull final String payload,final String interactionId,final boolean appendValidationIssue) {
             final var initiatedAt = Instant.now();
             try {
-                LOG.info("VALIDATOR -BEGIN initiated At : {} ", initiatedAt);
-                LOG.debug("BUNDLE PAYLOAD parse -BEGIN ");
+                LOG.info("VALIDATOR -BEGIN initiated At : {} for interactionid:{} ", initiatedAt,interactionId);
+                LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}",interactionId);
                 final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
                 LOG.debug("BUNDLE PAYLOAD parse -END");
                 final var hapiVR = fhirValidator.validateWithResult(bundle);
                 final var completedAt = Instant.now();
-                LOG.info("VALIDATOR -END completed at :{} ", completedAt);
+                LOG.info("VALIDATOR -END completed at :{} for interactionId:{} ", completedAt,interactionId);
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
                     @JsonSerialize(using = JsonTextSerializer.class)
@@ -357,6 +357,7 @@ public class OrchestrationEngine {
 
                     @Override
                     public List<OrchestrationEngine.ValidationIssue> getIssues() {
+                        if (appendValidationIssue) {
                         return hapiVR.getMessages().stream()
                                 .map(issue -> new OrchestrationEngine.ValidationIssue() {
                                     @Override
@@ -377,6 +378,9 @@ public class OrchestrationEngine {
 
                                 })
                                 .collect(Collectors.toList());
+                            } else {
+                                return null;
+                            }
                     }
 
                     @Override
@@ -471,7 +475,17 @@ public class OrchestrationEngine {
             private String fhirProfileUrl;
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
+            private String interactionId;
+            private boolean appendValidationIssue;
 
+            public Builder withInteractionId(@NotNull final String interactionId) {
+                this.interactionId = interactionId;
+                return this;
+            }
+            public Builder withhAppendValidationIssue(@NotNull final boolean appendValidationIssue) {
+                this.appendValidationIssue = appendValidationIssue;
+                return this;
+            }
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
                 return this;
@@ -503,6 +517,9 @@ public class OrchestrationEngine {
         private final Instant engineInitAt = Instant.now();
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
+        private final String interactionId;
+        private final boolean appendValidationIssue;
+
         private String igVersion;
 
         private Hl7ValidationEngineEmbedded(final Builder builder) {
@@ -511,10 +528,12 @@ public class OrchestrationEngine {
             observability = new Observability(Hl7ValidationEngineEmbedded.class.getName(),
                     "HL7 Official Embedded (TODO: version)", engineInitAt,
                     engineConstructedAt);
+            this.interactionId =builder.interactionId;
+            this.appendValidationIssue = builder.appendValidationIssue;
         }
 
         @Override
-        public ValidationResult validate(@NotNull final String payload) {
+        public ValidationResult validate(@NotNull final String payload,final String interactionId,final boolean appendValidationIssue) {
             final var initiatedAt = Instant.now();
             final var completedAt = Instant.now();
             return new ValidationResult() {
@@ -562,9 +581,21 @@ public class OrchestrationEngine {
 
         public static class Builder {
             private String fhirProfileUrl;
+            private String interactionId;
+            private boolean appendValidationIssue;
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
+                return this;
+            }
+
+            public Builder withInteractionId(@NotNull final String interactionId) {
+                this.interactionId = interactionId;
+                return this;
+            }
+
+            public Builder withAppendValidationIssue(@NotNull final boolean appendValidationIssue) {
+                this.appendValidationIssue = appendValidationIssue;
                 return this;
             }
 
@@ -589,6 +620,8 @@ public class OrchestrationEngine {
         private final String locale;
         private final String fileType;
         private final String fileName;
+        private final String interactionId;
+        private final boolean appendValidationIssue;
 
         private Hl7ValidationEngineApi(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
@@ -600,10 +633,12 @@ public class OrchestrationEngine {
             observability = new Observability(Hl7ValidationEngineApi.class.getName(),
                     "HL7 Official API (TODO: version)", engineInitAt,
                     engineConstructedAt);
+            this.interactionId = builder.interactionId;
+            this.appendValidationIssue = builder.appendValidationIssue;       
         }
 
         @Override
-        public ValidationResult validate(@NotNull final String payload) {
+        public ValidationResult validate(@NotNull final String payload,final String interactionId,final boolean appendValidationIssue) {
             final var initiatedAt = Instant.now();
 
             final String escapedPayload = StringEscapeUtils.escapeJson(payload);
@@ -739,12 +774,21 @@ public class OrchestrationEngine {
 
         public static class Builder {
             private String fhirProfileUrl;
+            private String interactionId;
+            private boolean appendValidationIssue;
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
                 return this;
             }
-
+            public Builder withInteractionId(@NotNull final String interactionId) {
+                this.interactionId = interactionId;
+                return this;
+            }
+            public Builder withAppendValidationIssue(@NotNull final boolean appendValidationIssue) {
+                this.appendValidationIssue = appendValidationIssue;
+                return this;
+            }            
             public Hl7ValidationEngineApi build() {
                 return new Hl7ValidationEngineApi(this);
             }
@@ -779,6 +823,8 @@ public class OrchestrationEngine {
         private final List<ValidationResult> validationResults;
         private final String fhirProfileUrl;
         private String igVersion;
+        private boolean appendValidationIssue;
+        private String interactionId;
 
         private OrchestrationSession(final Builder builder) {
             this.sessionId = builder.sessionId;
@@ -787,6 +833,8 @@ public class OrchestrationEngine {
             this.validationResults = new ArrayList<>();
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.device = builder.device;
+            this.appendValidationIssue = builder.appendValidationIssue;
+            this.interactionId = builder.interactionId;
         }
 
         public List<String> getPayloads() {
@@ -817,10 +865,18 @@ public class OrchestrationEngine {
             return sessionId;
         }
 
+        public boolean isAppendValidationIssue() {
+            return appendValidationIssue;
+        }
+
+        public String getInteractionId() {
+            return interactionId;
+        }
+
         public synchronized void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
-                    final ValidationResult result = engine.validate(payload);
+                    final ValidationResult result = engine.validate(payload,interactionId,appendValidationIssue);
                     validationResults.add(result);
                 }
             }
@@ -836,6 +892,8 @@ public class OrchestrationEngine {
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
             private String sessionId;
+            private boolean appendValidationIssue;
+            private String interactionId;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
@@ -865,6 +923,15 @@ public class OrchestrationEngine {
                 return this;
             }
 
+            public Builder withAppendValidationIssue(boolean appendValidationIssue) {
+                this.appendValidationIssue =appendValidationIssue;
+                return this;
+            }
+
+            public Builder withInteractionId(String interactionId) {
+                this.interactionId = interactionId;
+                return this;
+            }
             public Builder withFhirIGPackages(@NotNull final Map<String, Map<String, String>> igPackages) {
                 this.igPackages = igPackages;
                 return this;
@@ -953,6 +1020,7 @@ public class OrchestrationEngine {
             public OrchestrationSession build() {
                 return new OrchestrationSession(this);
             }
+
         }
     }
 }

@@ -182,6 +182,7 @@ public class FhirController {
                     """, required = false) @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
             @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
             @Parameter(description = "Optional parameter to specify source of the request.", required = false) @RequestParam(value = "source", required = false, defaultValue = "FHIR") String source,
+            @Parameter(description = "Optional parameter to specify if transformed validation issue needs to be appended.", required = false) @RequestParam(value = "append-validation-issue", required = false) boolean  appendValidationIssue,
             HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
         if (tenantId == null || tenantId.trim().isEmpty()) {
             LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
@@ -199,7 +200,7 @@ public class FhirController {
                 uaValidationStrategyJson,
                 customDataLakeApi, dataLakeApiContentType, healthCheck, isSync, includeRequestInOutcome,
                 includeIncomingPayloadInDB,
-                request, response, provenance, includeOperationOutcome, mtlsStrategy,null, null,null,source,requestUriToBeOverridden);
+                request, response, provenance, includeOperationOutcome, mtlsStrategy,null, null,null,source,requestUriToBeOverridden,appendValidationIssue);
     }
 
     @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
@@ -253,6 +254,7 @@ public class FhirController {
             @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
             @Parameter(description = "Parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
             @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
+            @Parameter(description = "Optional parameter to specify if transformed validation issue needs to be appended.", required = false) @RequestParam(value = "append-validation-issue", required = false) boolean  appendValidationIssue,
             HttpServletRequest request, HttpServletResponse response) {
 
         if (tenantId == null || tenantId.trim().isEmpty()) {
@@ -276,6 +278,9 @@ public class FhirController {
         final var sessionBuilder = engine.session()
                 .withSessionId(UUID.randomUUID().toString())
                 .onDevice(Device.createDefault())
+                .withAppendValidationIssue(appendValidationIssue)
+                .withInteractionId(InteractionsFilter.getActiveRequestEnc(request).requestId()
+                .toString())
                 .withPayloads(List.of(payload))
                 .withFhirProfileUrl(fhirProfileUrl)
                 .withFhirIGPackages(igPackages)
