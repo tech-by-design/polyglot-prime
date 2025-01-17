@@ -409,40 +409,6 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
-<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>400</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
-<td>273</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>LOG.info(&quot;FHIRService  - Validate -BEGIN for interactionId: {} &quot;, interactionId);
-                        final var igPackages = appConfig.getIgPackages();
-                        final var igVersion = appConfig.getIgVersion();
-                        final var sessionBuilder = engine.session()
-                                        .withSessionId(UUID.randomUUID().toString())
-                                        .onDevice(Device.createDefault())
-                                        .withPayloads(List.of(payload))
-                                        .withFhirProfileUrl(fhirProfileUrl)
-                                        .withFhirIGPackages(igPackages)
-                                        .withIgVersion(igVersion)
-                                        .addHapiValidationEngine() // by default
-                                        // clearExisting is set to true so engines can be fully supplied through header
-                                        .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-                        final var session = sessionBuilder.build();
-                        try {
-                                engine.orchestrate(session);
-                                // TODO: if there are errors that should prevent forwarding, stop here
-                                // TODO: need to implement `immediate` (sync) webClient op, right now it's async
-                                // only
-                                // immediateResult is what's returned to the user while async operation
-                                // continues
-                                final var immediateResult = new HashMap&lt;&gt;(Map.of(</pre></td></tr></table>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
 <td style="text-align: left;">org/techbd/controller/http/hub/prime/api/Hl7Controller.java</td>
 <td>75</td></tr>
 <tr class="a">
@@ -450,7 +416,7 @@
 <td>122</td></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
-<td>229</td></tr>
+<td>230</td></tr>
 <tr class="a">
 <td colspan="2" style="text-align: left;">
 <pre>&quot;    \&quot;resourceType\&quot;: \&quot;OperationOutcome\&quot;\n&quot; +
