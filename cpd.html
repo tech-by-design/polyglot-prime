@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2025-01-20<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.436.0</li>
+          <li id="projectVersion">Version: 0.437.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -365,6 +365,42 @@
                     userRole = curUser.get().principal().getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority)
                             .collect(Collectors.joining(&quot;,&quot;));</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1203</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1261</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>Map&lt;String, Object&gt; operationOutcomePayload, boolean appendValidationIssue) {
+                LOG.debug(&quot;FHIRService:: extractResourceTypeAndDisposition BEGIN for interaction id : {}&quot;,
+                                interactionId);
+        
+                if (operationOutcomePayload == null) {
+                        LOG.warn(&quot;FHIRService:: operationOutcomePayload is null for interaction id : {}&quot;,
+                                        interactionId);
+                        return null;
+                }
+
+                return Optional.ofNullable(operationOutcomePayload.get(&quot;OperationOutcome&quot;))
+                                .filter(Map.class::isInstance)
+                                .map(Map.class::cast)
+                                .flatMap(operationOutcomeMap -&gt; {
+                                        List&lt;?&gt; validationResults = (List&lt;?&gt;) operationOutcomeMap
+                                                        .get(&quot;validationResults&quot;);
+                                        if (validationResults == null || validationResults.isEmpty()) {
+                                                return Optional.empty();
+                                        }
+                                        Map&lt;String, Object&gt; validationResult = (Map&lt;String, Object&gt;) validationResults
+                                                        .get(0);
+
+                                        // Extract resourceType, issue and techByDesignDisposition
+                                        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
