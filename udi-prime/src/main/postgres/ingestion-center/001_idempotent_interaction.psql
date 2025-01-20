@@ -1650,7 +1650,7 @@ BEGIN
     	
 		v_user_agent 				:= sat_interaction_fhir_request_upserted.payload->'request'->>'userAgent';    
     	v_client_ip_address 		:= sat_interaction_fhir_request_upserted.payload->'request'->>'clientIpAddress';    
-    	v_issues_count 				:= jsonb_array_length((((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'issues'::text);			
+    	v_issues_count 				:= jsonb_array_length(((((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'OperationOutcome'::text) -> 'issue'::text);			
     	v_outbound_http_message 	:= "substring"((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);   	
 		v_bundle_session_id 		:= sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->>'bundleSessionId';	 				  
     	v_validation_engine 		:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
@@ -1861,7 +1861,10 @@ BEGIN
                 payload, 
                 created_by, 
                 provenance,
-                sat_interaction_fhir_request_upserted.elaboration
+                sat_interaction_fhir_request_upserted.elaboration,
+                v_ig_version,
+                v_validation_engine,
+                v_bundle_id
             );
             IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('techByDesignDisposition')) THEN
                 CALL techbd_udi_ingress.insert_validation_issues(
@@ -2171,6 +2174,7 @@ Returns:
 No return value. Inserts diagnostic records into the 'sat_interaction_fhir_session_diagnostic' table for each issue found in the payload.
 *******************************************************************************************************************************/
 DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text,text,text,text,jsonb,text,text);
+DROP PROCEDURE IF EXISTS techbd_udi_ingress.insert_fhir_session_diagnostic(text,text,text,text,jsonb,text,text,text,text,text);
 CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_session_diagnostic(
     IN hub_interaction_id TEXT,
     IN tenant_id TEXT,
@@ -2179,7 +2183,10 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_session_diagnostic(
     IN payload JSONB,
     IN created_by TEXT,
     IN provenance TEXT,
-    IN elaboration JSONB
+    IN elaboration JSONB,
+    IN ig_version TEXT,
+    IN validation_engine TEXT,
+    IN bundle_id TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -2208,7 +2215,7 @@ BEGIN
         FROM LATERAL jsonb_array_elements(
             (((insert_fhir_session_diagnostic.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text
         ) validationresult(value),
-        LATERAL jsonb_array_elements(validationresult.value -> 'issues'::text) issue(value)
+        LATERAL jsonb_array_elements(validationresult.value ->'operationOutcome'::text -> 'issue'::text) issue(value)
     LOOP
         -- Insert extracted data into the target table
         INSERT INTO techbd_udi_ingress.sat_interaction_fhir_session_diagnostic (
@@ -2225,7 +2232,10 @@ BEGIN
             encountered_at,
             elaboration,
             created_by,
-            provenance
+            provenance,
+            ig_version,
+            validation_engine,
+            bundle_id
         )
         VALUES (
             gen_random_uuid()::TEXT, 
@@ -2241,7 +2251,10 @@ BEGIN
             session_diagnostic_set.encounteredAt,
             session_diagnostic_set.elaboration,
             insert_fhir_session_diagnostic.created_by,
-            insert_fhir_session_diagnostic.provenance
+            insert_fhir_session_diagnostic.provenance,
+            insert_fhir_session_diagnostic.ig_version,
+            insert_fhir_session_diagnostic.validation_engine,
+            insert_fhir_session_diagnostic.bundle_id
         );
     END LOOP;
 EXCEPTION
@@ -2420,7 +2433,7 @@ BEGIN
     -- Extract values from the JSONB payload variable
     FOR issue_set IN
         SELECT
-            jsonb_array_elements(validation_result -> 'issues'::text) AS issue,
+            jsonb_array_elements(validation_result -> 'OperationOutcome'::text -> 'issue'::text) AS issue,
             to_timestamp(((validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
             validation_result ->> 'igVersion'::text AS ig_version,
             TRIM(BOTH FROM regexp_replace(

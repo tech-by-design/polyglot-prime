@@ -929,7 +929,16 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request 
         ADD COLUMN IF NOT EXISTS misc_errors jsonb NULL;
 
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request RENAME COLUMN misc_errors TO general_errors;        
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request RENAME COLUMN misc_errors TO general_errors;    
+      
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic 
+        ADD COLUMN IF NOT EXISTS ig_version text NULL;
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic 
+        ADD COLUMN IF NOT EXISTS validation_engine text NULL;
+
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic 
+        ADD COLUMN IF NOT EXISTS bundle_id text NULL;
 
 
       ${dependenciesSQL}
