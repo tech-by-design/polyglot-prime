@@ -4226,3 +4226,77 @@ SELECT
 FROM 
     ranked_records
 WHERE rn = 1;    
+
+
+/*****************************************
+This view consolidates diagnostic data from the table 'sat_interaction_fhir_session_diagnostic'. 
+It transforms and organizes key fields, including 'tenant_id', 'severity', 'message', 'ig_version', 
+and 'validation_engine', along with converting the 'encountered_at' timestamp into a date format. 
+
+The view aggregates data to calculate the count of issues ('issue_count') for each combination of 
+'tenant_id', 'severity', 'message', 'ig_version', and 'validation_engine'. It provides an ordered 
+output by the most recent encountered dates ('encountered_date') and tenant IDs for streamlined 
+analysis or reporting.
+
+If an existing view 'fhir_session_diagnostics' already exists, it is dropped before creating 
+this new view definition to ensure consistency.
+******************************************************************************************/
+
+drop view if exists techbd_udi_ingress.fhir_session_diagnostics cascade;
+create or replace view techbd_udi_ingress.fhir_session_diagnostics     
+as
+	select
+	to_timestamp(encountered_at::double precision)::date as encountered_date,
+	tenant_id,
+	severity,
+	message as message,
+	ig_version,
+	validation_engine,
+	COUNT(*) as issue_count
+from
+	techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
+	where message != ''
+group by
+	encountered_date,
+	tenant_id,
+	severity,
+	message,
+	ig_version,
+	validation_engine
+order by
+	encountered_date desc;
+
+
+/*****************************************
+This view, 'fhir_session_diagnostics_details', extracts detailed diagnostic information 
+from the 'sat_interaction_fhir_session_diagnostic' table. It includes fields such as 
+'tenant_id', 'uri', 'bundle_id', 'session_id', 'severity', 'message', 'line', 'column', 
+'diagnostics', and 'elaboration'. 
+
+The 'encountered_at' timestamp is converted into a date format ('encountered_date') 
+to simplify analysis. This view is intended to provide a comprehensive, detailed view 
+of diagnostics for further investigation or reporting.
+
+If an existing view 'fhir_session_diagnostics_details' already exists, it is dropped 
+before creating the new view to ensure the latest definition is applied.
+******************************************************************************************/
+
+drop view if exists techbd_udi_ingress.fhir_session_diagnostics_details cascade;
+create or replace view techbd_udi_ingress.fhir_session_diagnostics_details     
+as
+select
+	tenant_id,
+	uri,
+	bundle_id,
+	session_id,
+	severity,
+	message,
+	line,
+	"column",
+	ig_version,
+	validation_engine,
+	diagnostics,
+	to_char(to_timestamp(intr_diagno.encountered_at::double precision),	'MM-DD-YYYY'::text) AS encountered_date,
+	elaboration
+from
+	techbd_udi_ingress.sat_interaction_fhir_session_diagnostic intr_diagno;
