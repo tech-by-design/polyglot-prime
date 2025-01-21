@@ -138,30 +138,30 @@ org:
           idleTimeout: 300000 # 30 seconds to wait for a connection from the pool
           connectionTimeout: 30000  # 5 minutes - idle connections are removed after this time
           maxLifetime: 1800000  # 30 minutes - connections are refreshed after this time
-management:
-  tracing:
-    sampling:
-      probability: 1.0
-  otlp:
-    metrics: 
-      export: 
-        url: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/metrics
-        enabled: true 
-        step: 1m # Interval for pushing metrics 
-        headers: 
-          enabled: true 
-          Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}
-          organization: default
-          service: 
-            name: default
-    tracing: 
-      export:
-        enabled: true
-      endpoint: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/traces
-      headers: 
-        enabled: true  
-        Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}
-        organization: default
-        stream-name: ${TECHBD_OPEN_OBSERVE_STREAM_NAME}-traces
-        service: 
-          name: default
+# management:
+#   tracing:
+#     sampling:
+#       probability: 1.0
+#   otlp:
+#     metrics: 
+#       export: 
+#         url: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/metrics
+#         enabled: true 
+#         step: 1m # Interval for pushing metrics 
+#         headers: 
+#           enabled: true 
+#           Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}
+#           organization: default
+#           service: 
+#             name: default
+#     tracing: 
+#       export:
+#         enabled: true
+#       endpoint: ${TECHBD_OPEN_OBSERVE_URL}/api/${TECHBD_OPEN_OBSERVE_STREAM_NAME}/v1/traces
+#       headers: 
+#         enabled: true  
+#         Authorization: Basic ${TECHBD_OPEN_OBSERVE_PASSWORD}
+#         organization: default
+#         stream-name: ${TECHBD_OPEN_OBSERVE_STREAM_NAME}-traces
+#         service: 
+#           name: default
