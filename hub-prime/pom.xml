@@ -316,7 +316,7 @@
             <artifactId>hapi-fhir-client</artifactId>
         	<version>7.6.1</version>
         </dependency>
-		<dependency> 
+		<!-- <dependency> 
             <groupId>io.micrometer</groupId> 
             <artifactId>micrometer-registry-otlp</artifactId> 
         </dependency>
@@ -336,7 +336,7 @@
 			<groupId>com.squareup.okio</groupId> 
 			<artifactId>okio</artifactId> 
 			<version>3.9.1</version>
-		</dependency> 
+		</dependency>  -->
 		
 		<!-- <dependency>
 			<groupId>io.opentelemetry.instrumentation</groupId>

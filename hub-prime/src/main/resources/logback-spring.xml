@@ -11,7 +11,7 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder class="ch.qos.logback.classic.encoder.JsonEncoder">
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+            <!-- <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern> -->
             <jsonFormatter class="ch.qos.logback.core.json.JsonLayout">
                 <jsonFormatter>
                     <jsonGenerator class="com.fasterxml.jackson.core.JsonFactory"/>
