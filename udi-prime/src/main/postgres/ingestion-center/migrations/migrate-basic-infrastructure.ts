@@ -440,6 +440,30 @@ const interactionHl7RequestSat = interactionHub.satelliteTable(
 );
 
 
+const interactionCcdaRequestSat = interactionHub.satelliteTable(
+  "ccda_request",
+  {
+    sat_interaction_ccda_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: textNullable(),
+    nature: textNullable(),
+    payload: jsonbNullable(),
+    ccda_payload_text: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    elaboration: jsonbNullable(),
+    origin: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -599,6 +623,8 @@ const migrateSP = pgSQLa.storedProcedure(
       ${fileExchangeProtocol}
       
       ${interactionHl7RequestSat}    
+      
+      ${interactionCcdaRequestSat}    
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL;
       ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request ALTER COLUMN user_agent DROP NOT NULL;
@@ -617,6 +643,13 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_validation_idx_issue_partial ON techbd_udi_ingress.sat_interaction_fhir_validation_issue (issue) WHERE issue LIKE '%has not been checked because it is unknown%' OR issue LIKE '%Unknown profile%' OR issue LIKE '%Unknown extension%' OR issue LIKE '%Unknown Code System%' OR issue LIKE '%not found%' OR issue LIKE '%has not been checked because it could not be found%' OR issue LIKE '%Unable to find a match for profile%' OR issue LIKE '%None of the codings provided%' OR issue LIKE '%Unable to expand ValueSet%' OR issue LIKE '%Slicing cannot be evaluated%' OR issue LIKE '%could not be resolved%';
       CREATE INDEX IF NOT EXISTS sat_interaction_fhir_session_diagnostic_idx_encountered_at ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic (encountered_at);
 
+      CREATE UNIQUE INDEX sat_int_ccda_req_uq_hub_int_tnt_nat ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (hub_interaction_id, tenant_id, nature);
+      CREATE INDEX sat_inter_ccda_req_created_at_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (created_at DESC);
+      CREATE INDEX sat_inter_ccda_req_frm_state_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (from_state);
+      CREATE INDEX sat_inter_ccda_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (hub_interaction_id);
+      CREATE INDEX sat_inter_ccda_req_nature_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (nature);
+      CREATE INDEX sat_inter_ccda_req_payload_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING gin (payload);
+      CREATE INDEX sat_inter_ccda_req_to_state_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (to_state);
 
 
 
@@ -914,7 +947,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request 
         ADD COLUMN IF NOT EXISTS client_ip_address TEXT NULL, 
-            ADD COLUMN IF NOT EXISTS user_agent TEXT NULL,
+            ADD COLUMN IF NOT EXISTS hl7_payload_text TEXT NULL,
             ADD COLUMN IF NOT EXISTS origin TEXT NULL; 
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
