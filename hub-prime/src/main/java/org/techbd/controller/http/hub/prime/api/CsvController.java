@@ -27,11 +27,30 @@ import jakarta.servlet.http.HttpServletResponse;
 @RestController
 @Tag(name = "Tech by Design Hub CSV Endpoints", description = "Tech by Design Hub CSV Endpoints")
 public class CsvController {
+
   private static final Logger log = LoggerFactory.getLogger(CsvController.class);
   private final CsvService csvService;
 
   public CsvController(CsvService csvService) {
     this.csvService = csvService;
+  }
+
+  private void validateFile(MultipartFile file) {
+    if (file == null || file.isEmpty() || file.getOriginalFilename() == null
+        || file.getOriginalFilename().trim().isEmpty()) {
+      throw new IllegalArgumentException("Validation Error: Uploaded file is missing or empty.");
+    }
+
+    String originalFilename = file.getOriginalFilename();
+    if (!originalFilename.toLowerCase().endsWith(".zip")) {
+      throw new IllegalArgumentException("Validation Error: Uploaded file must have a .zip extension.");
+    }
+  }
+
+  private void validateTenantId(String tenantId) {
+    if (tenantId == null || tenantId.trim().isEmpty()) {
+      throw new IllegalArgumentException("Tenant ID must be provided.");
+    }
   }
 
   @PostMapping(value = { "/flatfile/csv/Bundle/$validate",
@@ -40,50 +59,43 @@ public class CsvController {
   public Object handleCsvUpload(
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Tenant ID, a mandatory parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID) String tenantId,
-      @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
+      @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false, defaultValue = "HTTP") String origin,
       @Parameter(description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
       HttpServletRequest request,
       HttpServletResponse response)
       throws Exception {
 
-    // Validate file presence
-    if (file == null || file.isEmpty() || file.getOriginalFilename() == null
-        || file.getOriginalFilename().trim().isEmpty()) {
-      log.error("CsvController: handleCsvUpload:: Uploaded file is missing or empty");
-      return new ResponseEntity<>(
-          "{\"status\":\"Error\",\"message\":\"Validation Error: Uploaded file is missing or empty.\"}",
-          HttpStatus.BAD_REQUEST);
-    }
-    // Validate file extension
-    String originalFilename = file.getOriginalFilename();
-    if (!originalFilename.toLowerCase().endsWith(".zip")) {
-      log.error("CsvController: handleCsvUpload:: Uploaded file is not a .zip file. Filename: " + originalFilename);
-      return new ResponseEntity<>(
-          "{\"status\":\"Error\",\"message\":\"Validation Error: Uploaded file must have a .zip extension.\"}",
-          HttpStatus.BAD_REQUEST);
-    }
-    if (tenantId == null || tenantId.trim().isEmpty()) {
-      log.error("CsvController: handleCsvUpload:: Tenant ID is missing or empty");
-      throw new IllegalArgumentException("Tenant ID must be provided");
-    }
-    return csvService.validateCsvFile(file, request, response, tenantId,origin,sftpSessionId);
+    try {
+      validateFile(file);
+      validateTenantId(tenantId);
+      return csvService.validateCsvFile(file, request, response, tenantId, origin, sftpSessionId);
+    } catch (IllegalArgumentException e) {
+      log.error("Validation error: {}", e.getMessage());
+      return ResponseEntity.badRequest().body("{\"status\":\"Error\", \"message\":\"" + e.getMessage() + "\"}");
+}
   }
 
-  @PostMapping(value = { "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/" }, consumes = {
-      MediaType.MULTIPART_FORM_DATA_VALUE })
+  @PostMapping(value = { "/flatfile/csv/Bundle",
+      "/flatfile/csv/Bundle/" }, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @ResponseBody
   @Async
-  public List<Object> handleCsvUploadAndConversion(
+  public ResponseEntity<Object> handleCsvUploadAndConversion(
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
-      @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
+      @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false, defaultValue = "HTTP") String origin,
       @Parameter(description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
       HttpServletRequest request,
       HttpServletResponse response) throws Exception {
 
-    if (tenantId == null || tenantId.trim().isEmpty()) {
-      throw new IllegalArgumentException("Tenant ID must be provided");
+    try {
+      validateFile(file);
+      validateTenantId(tenantId);
+      List<Object> processedFiles = csvService.processZipFile(file, request, response, tenantId, origin, sftpSessionId);
+      return ResponseEntity.ok(processedFiles);
+    } catch (IllegalArgumentException e) {
+      log.error("Validation error: {}", e.getMessage());
+      return ResponseEntity.badRequest().body("{\"status\":\"Error\",\"message\":\"" + e.getMessage() + "\"}");
     }
-    return csvService.processZipFile(file, request, response, tenantId,origin,sftpSessionId);
   }
 }
+
