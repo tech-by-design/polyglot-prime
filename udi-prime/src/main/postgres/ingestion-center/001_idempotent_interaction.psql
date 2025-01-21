@@ -1650,7 +1650,7 @@ BEGIN
     	
 		v_user_agent 				:= sat_interaction_fhir_request_upserted.payload->'request'->>'userAgent';    
     	v_client_ip_address 		:= sat_interaction_fhir_request_upserted.payload->'request'->>'clientIpAddress';    
-    	v_issues_count 				:= jsonb_array_length(((((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'OperationOutcome'::text) -> 'issue'::text);			
+    	v_issues_count 				:= jsonb_array_length(((((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'operationOutcome'::text) -> 'issue'::text);			
     	v_outbound_http_message 	:= "substring"((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);   	
 		v_bundle_session_id 		:= sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->>'bundleSessionId';	 				  
     	v_validation_engine 		:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
@@ -2433,7 +2433,7 @@ BEGIN
     -- Extract values from the JSONB payload variable
     FOR issue_set IN
         SELECT
-            jsonb_array_elements(validation_result -> 'OperationOutcome'::text -> 'issue'::text) AS issue,
+            jsonb_array_elements(validation_result -> 'operationOutcome'::text -> 'issue'::text) AS issue,
             to_timestamp(((validation_result ->> 'completedAt'::text)::numeric)::double precision) AS date_time,
             validation_result ->> 'igVersion'::text AS ig_version,
             TRIM(BOTH FROM regexp_replace(
