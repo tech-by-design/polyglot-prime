@@ -1,7 +1,7 @@
 <configuration debug="true">
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>[traceId=%X{traceId} spanId=%X{spanId}]%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -11,7 +11,7 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder class="ch.qos.logback.classic.encoder.JsonEncoder">
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+            <!-- <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern> -->
             <jsonFormatter class="ch.qos.logback.core.json.JsonLayout">
                 <jsonFormatter>
                     <jsonGenerator class="com.fasterxml.jackson.core.JsonFactory"/>
@@ -19,13 +19,13 @@
             </jsonFormatter>
         </encoder>
     </appender>
-    <appender name="OpenTelemetry"
+    <!-- <appender name="OpenTelemetry"
         class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
-    </appender>
+    </appender> -->
 
     <root level="info">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
-        <appender-ref ref="OpenTelemetry"/>
+        <!-- <appender-ref ref="OpenTelemetry"/> -->
     </root>
 </configuration>

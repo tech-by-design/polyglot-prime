@@ -79,23 +79,19 @@ public class CsvController {
       "/flatfile/csv/Bundle/" }, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @ResponseBody
   @Async
-  public ResponseEntity<Object> handleCsvUploadAndConversion(
+  public List<Object> handleCsvUploadAndConversion(
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
       @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false, defaultValue = "HTTP") String origin,
       @Parameter(description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
+      @Parameter(description = "Optional parameter to specify if transformed validation issue needs to be appended.", required = false) @RequestParam(value = "append-validation-issue", required = false, defaultValue = "true")  boolean appendValidationIssue,
       HttpServletRequest request,
       HttpServletResponse response) throws Exception {
 
-    try {
-      validateFile(file);
-      validateTenantId(tenantId);
-      List<Object> processedFiles = csvService.processZipFile(file, request, response, tenantId, origin, sftpSessionId);
-      return ResponseEntity.ok(processedFiles);
-    } catch (IllegalArgumentException e) {
-      log.error("Validation error: {}", e.getMessage());
-      return ResponseEntity.badRequest().body("{\"status\":\"Error\",\"message\":\"" + e.getMessage() + "\"}");
+    if (tenantId == null || tenantId.trim().isEmpty()) {
+      throw new IllegalArgumentException("Tenant ID must be provided");
     }
+   
+    return csvService.processZipFile(file, request, response, tenantId,origin,sftpSessionId,appendValidationIssue);
   }
 }
-
