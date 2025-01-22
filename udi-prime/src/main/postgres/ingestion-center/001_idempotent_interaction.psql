@@ -4255,7 +4255,8 @@ as
 	COUNT(*) as issue_count
 from
 	techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
-	where message != ''
+	where severity in ('warning','ERROR','WARING','error')
+	and message != ''	
 group by
 	encountered_date,
 	tenant_id,
@@ -4299,4 +4300,6 @@ select
 	to_char(to_timestamp(intr_diagno.encountered_at::double precision),	'MM-DD-YYYY'::text) AS encountered_date,
 	elaboration
 from
-	techbd_udi_ingress.sat_interaction_fhir_session_diagnostic intr_diagno;
+	techbd_udi_ingress.sat_interaction_fhir_session_diagnostic intr_diagno
+where severity in ('warning','ERROR','WARING','error')
+	and message != '';
