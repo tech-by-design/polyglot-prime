@@ -239,7 +239,6 @@ AS SELECT tenant_id,
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
 
-DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_http_request(text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, timestamptz, text, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
 
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_http_request(interaction_id text, interaction_key text, payload jsonb DEFAULT NULL::jsonb, payload_text text DEFAULT NULL::text, rule_namespace text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, nature jsonb DEFAULT NULL::jsonb, content_type text DEFAULT NULL::text, from_state text DEFAULT NULL::text, to_state text DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, user_id text DEFAULT NULL::text, user_name text DEFAULT NULL::text, user_session text DEFAULT NULL::text, user_role text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, hub_upsert_behavior boolean DEFAULT true, csv_zip_file_name text DEFAULT NULL::text, csv_zip_file_content bytea DEFAULT NULL::bytea, csv_group_id text DEFAULT NULL::text, csv_status text DEFAULT NULL::text, csv_screening_observation_data_payload_text text DEFAULT NULL::text, csv_screening_profile_data_payload_text text DEFAULT NULL::text, csv_demographic_data_payload_text text DEFAULT NULL::text, csv_qe_admin_data_payload_text text DEFAULT NULL::text, csv_screening_observation_data_file_name text DEFAULT NULL::text, csv_screening_profile_data_file_name text DEFAULT NULL::text, csv_demographic_data_file_name text DEFAULT NULL::text, csv_qe_admin_data_file_name text DEFAULT NULL::text, source_hub_interaction_id text DEFAULT NULL::text, client_ip_address text DEFAULT NULL::text, user_agent text DEFAULT NULL::text, origin text DEFAULT NULL::text, source_type text DEFAULT NULL::text, group_hub_interaction_id text DEFAULT NULL::text, sftp_session_id text DEFAULT NULL::text)
  RETURNS jsonb
@@ -368,9 +367,10 @@ BEGIN
        																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
-       	IF((v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(register_interaction_http_request.interaction_key) NOT IN ('/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/')) /*fhir bundle*/
+       	IF((v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(register_interaction_http_request.interaction_key) NOT IN ('/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/', '/ccda/Bundle', '/ccda/Bundle/')) /*fhir bundle*/
        	   OR (v_nature_denorm = 'Original HL7 Payload'	AND trim(register_interaction_http_request.interaction_key) IN ('/Hl7/v2', '/Hl7/v2/'))			/*hl7*/
        	   OR (v_nature_denorm = 'Original CSV Zip Archive' AND trim(register_interaction_http_request.interaction_key) IN ('/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/'))   	/*csv*/
+		   OR (v_nature_denorm = 'Original CCDA Payload' AND trim(register_interaction_http_request.interaction_key) IN ('/ccda/Bundle', '/ccda/Bundle/'))   			/*ccda*/	
 		  ) THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 		        hub_interaction_id 			=> register_interaction_http_request.interaction_id,
@@ -403,7 +403,7 @@ BEGIN
 	   
 	    --2.1) Call the function with the defined parameters to upsert interaction FHIR request info.
 	   	IF trim(register_interaction_http_request.interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/api/expect/fhir/bundle', '/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/', '/ccda/Bundle', '/ccda/Bundle/')
-	   		AND v_nature_denorm NOT IN ('Original HL7 Payload', 'Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR') THEN
+	   		AND v_nature_denorm NOT IN ('Original HL7 Payload', 'Original CSV Zip Archive', 'Original Flat File CSV', 'CSV Validation Result', 'Converted to FHIR', 'Original CCDA Payload') THEN
 	   		
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
 	   			hub_interaction_id 			=> register_interaction_http_request.interaction_id,
@@ -510,6 +510,23 @@ BEGIN
            	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, register_interaction_http_request.interaction_key, v_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_csv_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
        	   	/*------------------------------*/ 
+		--2.4) Call the function with the defined parameters to upsert interaction CCDA request info.
+	    ELSIF trim(register_interaction_http_request.interaction_key) IN ('/ccda/Bundle', '/ccda/Bundle/') AND v_nature_denorm IN ('Original CCDA Payload') THEN
+	   		PERFORM techbd_udi_ingress.sat_interaction_ccda_request_upserted(
+	        register_interaction_http_request.interaction_id,
+	        v_tenant_id_denorm,
+	        register_interaction_http_request.interaction_key,
+	        v_nature_denorm,
+	        register_interaction_http_request.from_state,
+	        register_interaction_http_request.to_state,
+	        register_interaction_http_request.payload,
+			register_interaction_http_request.payload_text,
+	        register_interaction_http_request.state_transition_reason,
+	        v_created_at,
+	        v_created_by,
+	        v_provenance,
+	        register_interaction_http_request.elaboration
+	       );
        	END IF;	
 	    /*==============================================================================================================================*/
        
@@ -4303,3 +4320,108 @@ from
 	techbd_udi_ingress.sat_interaction_fhir_session_diagnostic intr_diagno
 where severity in ('warning','ERROR','WARING','error')
 	and message != '';
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_ccda_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb, text, text, text);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_ccda_request_upserted(hub_interaction_id text, tenant_id text, uri text, nature text, from_state text, to_state text, payload jsonb DEFAULT NULL::jsonb, ccda_payload_text TEXT DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, client_ip_address text DEFAULT NULL::text, user_agent text DEFAULT NULL::text, origin text DEFAULT 'http'::text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    -- Declare variables to hold error and extracted data
+	v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;   
+    v_created_at 					TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
+    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  -- Set default provenance
+    v_exception_id 					TEXT;
+    
+    -- Additional variables for extracting and holding data from the payload JSONB
+    v_return 						TEXT 	:= NULL;
+
+BEGIN	
+	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
+  		WHERE t.hub_interaction_id = sat_interaction_ccda_request_upserted.hub_interaction_id 
+  		AND t."key" = sat_interaction_ccda_request_upserted.uri) THEN
+  		RETURN NULL;	
+  	END IF;
+  
+  	IF sat_interaction_ccda_request_upserted.ccda_payload_text IS NULL THEN
+  		RETURN NULL;	
+  	END IF;
+  
+  	-- The INSERT statement inserts a new record into the sat_interaction_ccda_request table, generating a UUID for the primary key.
+    -- If the operation succeeds, the generated UUID is returned.
+    INSERT INTO techbd_udi_ingress.sat_interaction_ccda_request (
+        sat_interaction_ccda_request_id,
+        hub_interaction_id,
+        tenant_id,
+        tenant_id_lower,
+        uri,
+        nature,
+        payload,
+		ccda_payload_text,
+        from_state,
+        to_state,
+        state_transition_reason,
+        created_by,
+        provenance,
+        elaboration,
+        client_ip_address, 
+        user_agent,
+        origin
+    )
+    VALUES (
+        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+        hub_interaction_id,
+        tenant_id,
+        LOWER(tenant_id),  -- Store the tenant ID in lowercase for consistency
+        uri,
+        nature,
+        payload,
+		ccda_payload_text,
+        from_state,
+        to_state,
+        state_transition_reason,
+        created_by,
+        provenance,
+        elaboration,
+        client_ip_address, 
+        user_agent,
+        origin
+    ) RETURNING sat_interaction_ccda_request_id INTO v_return;  -- Return the generated UUID
+
+    RETURN v_return;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		sat_interaction_ccda_request_upserted.uri,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+		RETURN NULL;
+END;
+$function$
+;
