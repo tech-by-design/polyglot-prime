@@ -23,7 +23,7 @@
         const viewName = 'fhir_session_diagnostics';
         const fhirValidationIssue = 'fhir_session_diagnostics_details';
         const fhirValidationIssueColumnDefs = [
-            { headerName: "Session ID", field: "session_id", filter: "agTextColumnFilter", headerTooltip: "Identifies the ingestion session during which the issue occurred" },
+            { headerName: "TechBD Interaction ID", field: "session_id", filter: "agTextColumnFilter", headerTooltip: "Identifies the interaction during which the issue occurred" },
             { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "Identifies the bundle during which the issue occurred" },            
             { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
             { headerName: "Issue Line", field: "line", filter: "agTextColumnFilter", headerTooltip: "The line number where the issue occurred" },
@@ -62,49 +62,74 @@
             const tenant_id = params.data.tenant_id ;
             const validation_engine = params.data.validation_engine ;
 
-            const requestData = {
-                "startRow": 0,
-                "endRow": 500,
-                "rowGroupCols": [],
-                "valueCols": [],
-                "pivotCols": [],
-                "pivotMode": false,
-                "groupKeys": [],
-                "filterModel": {
-                    "tenant_id": {
-                    "filterType": "text",
-                    "type": "equals",
-                    "filter": tenant_id
-                    },
-                    "severity": {
-                    "filterType": "text",
-                    "type": "equals",
-                    "filter": severity
-                    }, 
-                    "message": {
-                    "filterType": "text",
-                    "type": "equals",
-                    "filter": message
-                    },
-                    "ig_version": {
-                    "filterType": "text",
-                    "type": "equals",
-                    "filter": ig_version
-                    },
-                    "validation_engine": {
-                    "filterType": "text",
-                    "type": "equals",
-                    "filter": validation_engine
-                    }
+            const filterModel = {};
 
-                },
-                "sortModel": [
+            // Add filters only if values exist
+            if (tenant_id) {
+                filterModel["tenant_id"] = {
+                    filterType: "text",
+                    type: "equals",
+                    filter: tenant_id
+                };
+            }
+
+            if (severity) {
+                filterModel["severity"] = {
+                    filterType: "text",
+                    type: "equals",
+                    filter: severity
+                };
+            }
+
+            if (message) {
+                filterModel["message"] = {
+                    filterType: "text",
+                    type: "equals",
+                    filter: message
+                };
+            }
+
+            if (ig_version) {
+                filterModel["ig_version"] = {
+                    filterType: "text",
+                    type: "equals",
+                    filter: ig_version
+                };
+            }
+
+            if (validation_engine) {
+                filterModel["validation_engine"] = {
+                    filterType: "text",
+                    type: "equals",
+                    filter: validation_engine
+                };
+            }
+
+            if (encountered_date) {
+                filterModel["encountered_date"] = {
+                    filterType: "date",
+                    type: "equals",
+                    filter: encountered_date
+                }
+            }            
+
+            // Request data
+            const requestData = {
+                startRow: 0,
+                endRow: 500,
+                rowGroupCols: [],
+                valueCols: [],
+                pivotCols: [],
+                pivotMode: false,
+                groupKeys: [],
+                filterModel, // Use the dynamically created filter model
+                sortModel: [
                     {
-                    "sort": "desc",
-                    "colId": "encountered_date"
+                        sort: "desc",
+                        colId: "encountered_date"
                     }
                 ]
-                };
+            };
 
             // Fetch with POST method
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${fhirValidationIssue}.json`), {
