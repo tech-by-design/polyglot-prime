@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.440.0</version>
+	<version>0.441.0</version>
 	<packaging>war</packaging>
 	<name>Tech by Design Hub (Prime)</name>
 	<description>Tech by Design Hub (Primary)</description>
@@ -316,7 +316,7 @@
             <artifactId>hapi-fhir-client</artifactId>
         	<version>7.6.1</version>
         </dependency>
-		<!-- <dependency> 
+		<dependency> 
             <groupId>io.micrometer</groupId> 
             <artifactId>micrometer-registry-otlp</artifactId> 
         </dependency>
@@ -336,7 +336,7 @@
 			<groupId>com.squareup.okio</groupId> 
 			<artifactId>okio</artifactId> 
 			<version>3.9.1</version>
-		</dependency>  -->
+		</dependency> 
 		
 		<!-- <dependency>
 			<groupId>io.opentelemetry.instrumentation</groupId>
