@@ -156,7 +156,7 @@ const CLI = new Command()
             const generated = await module.generated();
             driverGenerateMigrationSQL = driverGenerateMigrationSQL + '\n' + generated.driverGenerateMigrationSQL;
             destroySQL = destroySQL + '\n' +generated.destroySQL;
-            if(module.migrationInput.description.length >= 20){
+            if(module.migrationInput.description.length > 20){
               throw new Error('Migration version description `'+module.migrationInput.description+'` length cannot exceed 20 characters');
             }
             if(migrateIc.ic.length-1==index){

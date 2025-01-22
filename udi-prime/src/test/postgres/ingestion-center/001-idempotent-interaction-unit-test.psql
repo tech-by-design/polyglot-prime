@@ -90,6 +90,11 @@ BEGIN
   
    	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 
    		'Function sat_interaction_csv_request_upserted exists');
+
+	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text'],
+        'Function sat_interaction_ccda_request_upserted exists'
+    );
+
     RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
 
     RETURN NEXT has_pk(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should have a primary key.');
@@ -126,6 +131,18 @@ BEGIN
     RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'csv_zip_file_content', 'bytea', 'The column csv_zip_file_content should be of type bytea.');
    
     RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_ccda_request', 'The table techbd_udi_ingress.sat_interaction_ccda_request should exist.');
+
+    RETURN NEXT has_pk(schema_name, 'sat_interaction_ccda_request', 'The table techbd_udi_ingress.sat_interaction_ccda_request should have a primary key.');
+
+    RETURN NEXT col_is_fk(schema_name::name, 'sat_interaction_ccda_request'::name, 'hub_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+
+    RETURN NEXT columns_are(schema_name, 'sat_interaction_ccda_request',
+        ARRAY['sat_interaction_ccda_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 'ccda_payload_text',
+			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance'],
+        'The columns of techbd_udi_ingress.sat_interaction_ccda_request should match the expected structure.'
+    );
 
     /*=================== Testing with FHIR bundle ========================*/
    
@@ -902,6 +919,302 @@ PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Mai
 	); 
 
 	/*======================END of HL7 Testing===========================*/
+
+	/*=================== Testing with CCDA File ========================*/
+       
+    /* First call to insert CCDA xml payload */
+    v_interaction_id            := 'c56ccd65-9a4f-5cc8-9c5d-b65245d90fb0';
+    v_interaction_key           := '/ccda/Bundle'; 
+    v_nature                    := '{"nature":"Original CCDA Payload", "tenant_id":"N/A"}';
+    v_from_state                := NULL; 
+    v_to_state                  := 'CCDA_ACCEPT'; 
+    v_hl7_json					:= 
+			'{
+			  "resourceType" : "Bundle",
+			  "id" : "AHCHRSNQuestionnaireResponseExample",
+			  "meta" : {
+			    "lastUpdated" : "2024-02-23T00:00:00Z",
+			    "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"]
+			  },
+			  "type" : "transaction",
+			  "timestamp" : "2024-02-23T00:00:00Z",
+			  "entry" : [{
+			    "fullUrl" : "http://shinny.org/us/ny/hrsn/Patient/PatientExample",
+			    "resource" : {
+			      "resourceType" : "Patient",
+			      "id" : "PatientExample",
+			      "meta" : {
+			        "lastUpdated" : "2024-02-23T00:00:00.00Z",
+			        "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient"]
+			      },
+			      "language" : "en",
+			      "extension" : [{
+			        "extension" : [{
+			          "url" : "ombCategory",
+			          "valueCoding" : {
+			            "system" : "urn:oid:2.16.840.1.113883.6.238",
+			            "code" : "2028-9",
+			            "display" : "Asian"
+			          }
+			        },
+			        {
+			          "url" : "text",
+			          "valueString" : "Asian"
+			        }],
+			        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+			      },
+			      {
+			        "extension" : [{
+			          "url" : "ombCategory",
+			          "valueCoding" : {
+			            "system" : "urn:oid:2.16.840.1.113883.6.238",
+			            "code" : "2135-2",
+			            "display" : "Hispanic or Latino"
+			          }
+			        },
+			        {
+			          "url" : "text",
+			          "valueString" : "Hispanic or Latino"
+			        }],
+			        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+			      }],
+			      "identifier" : [{
+			        "type" : {
+			          "coding" : [{
+			            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+			            "code" : "MR"
+			          }]
+			        },
+			        "system" : "http://www.scn.gov/facility/CUMC",
+			        "value" : "11223344",
+			        "assigner" : {
+			          "reference" : "Organization/OrganizationExampleOther-SCN1"
+			        }
+			      },
+			      {
+			        "type" : {
+			          "coding" : [{
+			            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+			            "code" : "MA"
+			          }]
+			        },
+			        "system" : "http://www.medicaid.gov/",
+			        "value" : "AA12345C"
+			      },
+			      {
+			        "type" : {
+			          "coding" : [{
+			            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+			            "code" : "SS",
+			            "display" : "Social Security Number"
+			          }],
+			          "text" : "Social Security Number"
+			        },
+			        "system" : "http://www.ssa.gov/",
+			        "value" : "999-34-2964"
+			      }],
+			      "name" : [{
+			        "extension" : [{
+			          "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name",
+			          "valueString" : "Bob"
+			        }],
+			        "family" : "Doe",
+			        "given" : ["Jon"]
+			      }],
+			      "telecom" : [{
+			        "system" : "phone",
+			        "value" : "555-120-6047",
+			        "use" : "home"
+			      }],
+			      "gender" : "male",
+			      "birthDate" : "1981-07-16",
+			      "address" : [{
+			        "text" : "115 Broadway Apt2 New York, NY 10032",
+			        "line" : ["115 Broadway Apt2"],
+			        "city" : "New York",
+			        "district" : "MANHATTAN",
+			        "state" : "NY",
+			        "postalCode" : "10032"
+			      }]
+			    },
+			    "request" : {
+			      "method" : "POST",
+			      "url" : "http://shinny.org/us/ny/hrsn/Patient/PatientExample"
+			    }
+			  }]
+			}';
+    v_payload_text				:= '<?xml version="1.0" encoding="UTF-8"?>
+		<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 CDA.xsd">
+		    <id root="2.16.840.1.113883.19.5.99999.1"/>
+		    <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" displayName="Summary of episode note"/>
+		    <title>CCDA Sample</title>
+		    <effectiveTime value="20241016"/>
+		    <recordTarget>
+		        <patientRole>
+		            <id extension="12345" root="2.16.840.1.113883.19.5"/>
+		            <patient>
+		                <name>
+		                    <given>John</given>
+		                    <family>Doe</family>
+		                </name>
+		                <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1"/>
+		                <birthTime value="19900101"/>
+		            </patient>
+		        </patientRole>
+		    </recordTarget>
+		    <author>
+		        <time value="20241016"/>
+		        <assignedAuthor>
+		            <id root="2.16.840.1.113883.19.5.99999.2"/>
+		            <assignedPerson>
+		                <name>
+		                    <given>Jane</given>
+		                    <family>Smith</family>
+		                </name>
+		            </assignedPerson>
+		        </assignedAuthor>
+		    </author>
+		</ClinicalDocument>
+		';
+    
+
+    PERFORM techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => NULL,
+        payload_text             => v_payload_text,
+        rule_namespace           => v_rule_namespace,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => true
+    );
+    
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = v_interaction_key
+                            AND hub_intr.created_by              = v_created_by
+                            AND hub_intr.provenance              = v_provenance
+                   ),
+            'CCDA - Successfully inserted into the table hub_interaction'
+        );
+        
+    /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.nature                   = v_nature
+                             AND sat_intr.nature_denorm            = v_nature->>'nature'
+                             AND sat_intr.content_type             = v_content_type
+                             AND sat_intr.to_state                 = v_to_state
+                             AND sat_intr.state_transition_reason  = v_state_transition_reason
+                             AND sat_intr.payload_text             = v_payload_text
+                             AND sat_intr.elaboration              = v_elaboration
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                    ),
+             'CCDA - Successfully inserted one record into the table sat_interaction_http_request with "Original CCDA Payload" as nature'
+         );
+        
+    /*Test 1 raw is inserted into sat_interaction_ccda_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_ccda_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.uri                      = v_interaction_key
+                             AND sat_intr.nature                   = v_nature->>'nature'
+                             AND sat_intr.to_state                 = v_to_state
+                             AND sat_intr.created_by               = v_created_by
+                             AND sat_intr.provenance               = v_provenance
+                    ),
+             'CCDA - Successfully inserted one record into the table sat_interaction_ccda_request with "Original CCDA Payload" as nature'
+         );
+
+    /*Test one record is inserted into sat_interaction_user table*/
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = v_interaction_key
+							AND sat_intr.nature 				= v_nature->>'nature'
+                            AND sat_intr.created_by				= v_created_by
+                            AND sat_intr.provenance				= v_provenance
+                   ),
+            'CCDA - Successfully inserted into the table sat_interaction_user'
+        );
+   
+    /* Second call to insert the FHIR bundle which is generated from CCDA json with interaction_key = '/Ccda'*/
+    v_nature                    := '{"nature": "org.techbd.service.http.Interactions$RequestResponseEncountered", "tenant_id": "N/A"}';
+    v_to_state                  := NULL; 
+    
+
+    PERFORM techbd_udi_ingress.register_interaction_http_request(
+        interaction_id           => v_interaction_id,
+        interaction_key          => v_interaction_key,
+        payload                  => v_hl7_json,
+        payload_text             => NULL,
+        rule_namespace           => v_rule_namespace,
+        elaboration              => v_elaboration,
+        nature                   => v_nature,
+        content_type             => v_content_type,
+        from_state               => v_from_state,
+        to_state                 => v_to_state,
+        state_transition_reason  => v_state_transition_reason,
+        created_at               => v_created_at,
+        created_by               => v_created_by,
+        provenance               => v_provenance,
+        hub_upsert_behavior      => true
+    );
+   
+    /*Test 3 raws are inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+	    CASE
+	        WHEN (
+	            SELECT count(hub_interaction_id) 
+	            FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+	            WHERE sat_intr.hub_interaction_id = v_interaction_id
+	            AND sat_intr.nature_denorm IN (
+	                'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	                'Original FHIR Payload', 
+	                'techByDesignDisposition'
+	            )
+	            AND sat_intr.created_by = v_created_by
+	            AND sat_intr.provenance = v_provenance
+	        ) = 3
+	        THEN TRUE 
+	        ELSE FALSE 
+	    END,
+	    'CCDA - Successfully inserted 3 records into the table sat_interaction_http_request'
+	);
+
+   /*Test 3 raws are inserted into sat_interaction_fhir_request table*/
+   RETURN NEXT ok(
+	    CASE
+	        WHEN (
+	            SELECT count(hub_interaction_id) 
+	            FROM techbd_udi_ingress.sat_interaction_fhir_request sat_intr
+	            WHERE sat_intr.hub_interaction_id = v_interaction_id
+	            AND sat_intr.uri = v_interaction_key
+	            AND sat_intr.nature IN (
+	                'org.techbd.service.http.Interactions$RequestResponseEncountered', 
+	                'Original FHIR Payload', 
+	                'techByDesignDisposition'
+	            )
+	            AND sat_intr.created_by = v_created_by
+	            AND sat_intr.provenance = v_provenance
+	        ) = 3
+	        THEN TRUE 
+	        ELSE FALSE 
+	    END,
+	    'CCDA - Successfully inserted 3 records into the table sat_interaction_fhir_request'
+	); 
+     
+	/*======================END of CCDA Testing==========================*/
 
 	/*===================================================================*/
 	/*Test the exception handling with Unique Constraint Violation*/
