@@ -78,12 +78,13 @@ public class CsvController {
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
       @Parameter(description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       @Parameter(description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
+      @Parameter(description = "Optional parameter to specify if transformed validation issue needs to be appended.", required = false) @RequestParam(value = "append-validation-issue", required = false, defaultValue = "true")  boolean appendValidationIssue,
       HttpServletRequest request,
       HttpServletResponse response) throws Exception {
 
     if (tenantId == null || tenantId.trim().isEmpty()) {
       throw new IllegalArgumentException("Tenant ID must be provided");
     }
-    return csvService.processZipFile(file, request, response, tenantId,origin,sftpSessionId);
+    return csvService.processZipFile(file, request, response, tenantId,origin,sftpSessionId,appendValidationIssue);
   }
 }

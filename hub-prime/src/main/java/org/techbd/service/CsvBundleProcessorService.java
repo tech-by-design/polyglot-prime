@@ -65,7 +65,7 @@ public class CsvBundleProcessorService {
             final List<String> filesNotProcessed,
             final HttpServletRequest request,
             final HttpServletResponse response,
-            final String tenantId, final String originalFileName) {
+            final String tenantId, final String originalFileName,boolean appendValidationIssue) {
         final List<Object> resultBundles = new ArrayList<>();
         final List<Object> miscErrors = new ArrayList<>();
         boolean isAllCsvConvertedToFhir = true;
@@ -103,7 +103,7 @@ public class CsvBundleProcessorService {
                         resultBundles.addAll(processScreening(groupKey, demographicData, screeningProfileData,
                                 qeAdminData, screeningObservationData, request, response, groupInteractionId,
                                 masterInteractionId,
-                                tenantId, outcome.isValid(), outcome, isAllCsvConvertedToFhir));
+                                tenantId, outcome.isValid(), outcome, isAllCsvConvertedToFhir,appendValidationIssue));
                     }
                 } else {
                     isAllCsvConvertedToFhir = false;
@@ -295,7 +295,7 @@ public class CsvBundleProcessorService {
             final String groupInteractionId,
             final String masterInteractionId,
             final String tenantId, final boolean isValid, final PayloadAndValidationOutcome payloadAndValidationOutcome,
-            boolean isAllCsvConvertedToFhir)
+            boolean isAllCsvConvertedToFhir,boolean appendValidationIssue)
             throws IOException {
 
         final List<Object> results = new ArrayList<>();
@@ -342,7 +342,7 @@ public class CsvBundleProcessorService {
                                 request, response,
                                 updatedProvenance,
                                 true, null, interactionId, groupInteractionId,
-                                masterInteractionId, SourceType.CSV.name(), null,false));
+                                masterInteractionId, SourceType.CSV.name(), null,appendValidationIssue));
                     } else {
                         LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);

@@ -121,7 +121,7 @@ class CsvBundleProcessorServiceTest {
                 .thenReturn(mockOutcome);
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
                 payloadAndValidationOutcomes,new ArrayList<>(),
-                request, response, "tenantId","test.zip");
+                request, response, "tenantId","test.zip",true);
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(2, result.size());
@@ -191,7 +191,7 @@ class CsvBundleProcessorServiceTest {
 
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
                 payloadAndValidationOutcomes,new ArrayList<>(),
-                request, response, "tenantId","test.zip");
+                request, response, "tenantId","test.zip",true);
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(2, result.size());
@@ -251,7 +251,7 @@ class CsvBundleProcessorServiceTest {
                 .thenThrow(new RuntimeException("Mock failure"));
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
                 payloadAndValidationOutcomes,new ArrayList<>(),
-                request, response, "tenantId","test.zip");
+                request, response, "tenantId","test.zip",true);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
