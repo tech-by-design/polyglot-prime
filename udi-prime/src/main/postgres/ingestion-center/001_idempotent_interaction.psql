@@ -2474,7 +2474,7 @@ BEGIN
         VALUES (
             gen_random_uuid()::TEXT, 
             insert_validation_issues.hub_interaction_id,
-            issue_set.issue ->> 'message'::text, 
+            issue_set.issue ->> 'diagnostics'::text, 
             issue_set.date_time,
             issue_set.validation_engine,
             issue_set.ig_version,
