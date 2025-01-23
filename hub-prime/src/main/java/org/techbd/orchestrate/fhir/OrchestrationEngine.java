@@ -1,6 +1,5 @@
 package org.techbd.orchestrate.fhir;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -22,8 +21,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
+import org.hl7.fhir.r4.model.OperationOutcome;
+import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
+import org.hl7.fhir.r4.model.OperationOutcome.IssueSeverity;
 import org.apache.commons.text.StringEscapeUtils;
 import org.hl7.fhir.common.hapi.validation.support.CachingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
@@ -36,10 +36,10 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.util.JsonText.JsonTextSerializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
@@ -147,8 +147,8 @@ public class OrchestrationEngine {
         if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
             synchronized (this) {
                 Set<String> sessionIdsToRemove = Arrays.stream(sessionsToRemove)
-                                                        .map(OrchestrationSession::getSessionId)
-                                                        .collect(Collectors.toSet());
+                        .map(OrchestrationSession::getSessionId)
+                        .collect(Collectors.toSet());
                 Iterator<OrchestrationSession> iterator = this.sessions.iterator();
                 while (iterator.hasNext()) {
                     OrchestrationSession session = iterator.next();
@@ -159,7 +159,6 @@ public class OrchestrationEngine {
             }
         }
     }
-    
 
     public synchronized ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, Map<String, String>> igPackages,
@@ -231,8 +230,6 @@ public class OrchestrationEngine {
 
         boolean isValid();
 
-        List<ValidationIssue> getIssues();
-
         String getOperationOutcome();
 
         Instant getCompletedAt();
@@ -241,21 +238,13 @@ public class OrchestrationEngine {
     public record SourceLocation(Integer line, Integer column, String diagnostics) {
     }
 
-    public interface ValidationIssue {
-        String getMessage();
-
-        SourceLocation getLocation();
-
-        String getSeverity();
-    }
-
     public interface ValidationEngine {
         record Observability(String identity, String name, Instant initAt, Instant constructedAt) {
         }
 
         Observability observability();
 
-        ValidationResult validate(@NotNull final String payload,final String interactionId,final boolean isAppendValidationIssue);
+        ValidationResult validate(@NotNull final String payload, final String interactionId);
     }
 
     public static class HapiValidationEngine implements OrchestrationEngine.ValidationEngine {
@@ -332,16 +321,17 @@ public class OrchestrationEngine {
         }
 
         @Override
-        public OrchestrationEngine.ValidationResult validate(@NotNull final String payload,final String interactionId,final boolean appendValidationIssue) {
+        public OrchestrationEngine.ValidationResult validate(@NotNull final String payload,
+                final String interactionId) {
             final var initiatedAt = Instant.now();
             try {
-                LOG.info("VALIDATOR -BEGIN initiated At : {} for interactionid:{} ", initiatedAt,interactionId);
-                LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}",interactionId);
+                LOG.info("VALIDATOR -BEGIN initiated At : {} for interactionid:{} ", initiatedAt, interactionId);
+                LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
                 final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
                 LOG.debug("BUNDLE PAYLOAD parse -END");
                 final var hapiVR = fhirValidator.validateWithResult(bundle);
                 final var completedAt = Instant.now();
-                LOG.info("VALIDATOR -END completed at :{} for interactionId:{} ", completedAt,interactionId);
+                LOG.info("VALIDATOR -END completed at :{} for interactionId:{} ", completedAt, interactionId);
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
                     @JsonSerialize(using = JsonTextSerializer.class)
@@ -353,34 +343,6 @@ public class OrchestrationEngine {
                     @Override
                     public boolean isValid() {
                         return hapiVR.isSuccessful();
-                    }
-
-                    @Override
-                    public List<OrchestrationEngine.ValidationIssue> getIssues() {
-                        if (appendValidationIssue) {
-                        return hapiVR.getMessages().stream()
-                                .map(issue -> new OrchestrationEngine.ValidationIssue() {
-                                    @Override
-                                    public String getMessage() {
-                                        return issue.getMessage();
-                                    }
-
-                                    @Override
-                                    public SourceLocation getLocation() {
-                                        return new SourceLocation(issue.getLocationLine(), issue.getLocationCol(),
-                                                issue.getLocationString());
-                                    }
-
-                                    @Override
-                                    public String getSeverity() {
-                                        return issue.getSeverity().toString();
-                                    }
-
-                                })
-                                .collect(Collectors.toList());
-                            } else {
-                                return null;
-                            }
                     }
 
                     @Override
@@ -414,32 +376,18 @@ public class OrchestrationEngine {
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
                     public String getOperationOutcome() {
-                        return null;
+                        OperationOutcome operationOutcome = new OperationOutcome();
+                        OperationOutcomeIssueComponent issue = new OperationOutcomeIssueComponent();
+                        issue.setSeverity(IssueSeverity.FATAL);
+                        issue.setDiagnostics(e.getMessage());
+                        issue.setCode(OperationOutcome.IssueType.EXCEPTION);
+                        operationOutcome.addIssue(issue);
+                        return FhirContext.forR4().newJsonParser().encodeResourceToString(operationOutcome);
                     }
 
                     @Override
                     public boolean isValid() {
                         return false;
-                    }
-
-                    @Override
-                    public List<OrchestrationEngine.ValidationIssue> getIssues() {
-                        return List.of(new OrchestrationEngine.ValidationIssue() {
-                            @Override
-                            public String getMessage() {
-                                return e.getMessage();
-                            }
-
-                            @Override
-                            public SourceLocation getLocation() {
-                                return new SourceLocation(null, null, e.getClass().getName());
-                            }
-
-                            @Override
-                            public String getSeverity() {
-                                return "FATAL";
-                            }
-                        });
                     }
 
                     @Override
@@ -476,16 +424,12 @@ public class OrchestrationEngine {
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
             private String interactionId;
-            private boolean appendValidationIssue;
 
             public Builder withInteractionId(@NotNull final String interactionId) {
                 this.interactionId = interactionId;
                 return this;
             }
-            public Builder withhAppendValidationIssue(@NotNull final boolean appendValidationIssue) {
-                this.appendValidationIssue = appendValidationIssue;
-                return this;
-            }
+
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
                 return this;
@@ -518,8 +462,6 @@ public class OrchestrationEngine {
         private final Instant engineConstructedAt;
         private final String fhirProfileUrl;
         private final String interactionId;
-        private final boolean appendValidationIssue;
-
         private String igVersion;
 
         private Hl7ValidationEngineEmbedded(final Builder builder) {
@@ -528,12 +470,11 @@ public class OrchestrationEngine {
             observability = new Observability(Hl7ValidationEngineEmbedded.class.getName(),
                     "HL7 Official Embedded (TODO: version)", engineInitAt,
                     engineConstructedAt);
-            this.interactionId =builder.interactionId;
-            this.appendValidationIssue = builder.appendValidationIssue;
+            this.interactionId = builder.interactionId;
         }
 
         @Override
-        public ValidationResult validate(@NotNull final String payload,final String interactionId,final boolean appendValidationIssue) {
+        public ValidationResult validate(@NotNull final String payload, final String interactionId) {
             final var initiatedAt = Instant.now();
             final var completedAt = Instant.now();
             return new ValidationResult() {
@@ -545,11 +486,6 @@ public class OrchestrationEngine {
                 @Override
                 public boolean isValid() {
                     return true;
-                }
-
-                @Override
-                public List<ValidationIssue> getIssues() {
-                    return List.of();
                 }
 
                 @Override
@@ -582,7 +518,6 @@ public class OrchestrationEngine {
         public static class Builder {
             private String fhirProfileUrl;
             private String interactionId;
-            private boolean appendValidationIssue;
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
@@ -591,11 +526,6 @@ public class OrchestrationEngine {
 
             public Builder withInteractionId(@NotNull final String interactionId) {
                 this.interactionId = interactionId;
-                return this;
-            }
-
-            public Builder withAppendValidationIssue(@NotNull final boolean appendValidationIssue) {
-                this.appendValidationIssue = appendValidationIssue;
                 return this;
             }
 
@@ -621,7 +551,6 @@ public class OrchestrationEngine {
         private final String fileType;
         private final String fileName;
         private final String interactionId;
-        private final boolean appendValidationIssue;
 
         private Hl7ValidationEngineApi(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
@@ -634,11 +563,10 @@ public class OrchestrationEngine {
                     "HL7 Official API (TODO: version)", engineInitAt,
                     engineConstructedAt);
             this.interactionId = builder.interactionId;
-            this.appendValidationIssue = builder.appendValidationIssue;       
         }
 
         @Override
-        public ValidationResult validate(@NotNull final String payload,final String interactionId,final boolean appendValidationIssue) {
+        public ValidationResult validate(@NotNull final String payload, final String interactionId) {
             final var initiatedAt = Instant.now();
 
             final String escapedPayload = StringEscapeUtils.escapeJson(payload);
@@ -692,58 +620,6 @@ public class OrchestrationEngine {
                                 return responseBody.contains("OperationOutcome");
                             }
 
-                            public List<OrchestrationEngine.ValidationIssue> getIssues() {
-                                final List<OrchestrationEngine.ValidationIssue> issuesList = new ArrayList<>();
-
-                                try {
-                                    final var mapper = new ObjectMapper();
-                                    final var root = mapper.readTree(responseBody);
-                                    final var outcomes = root.path("outcomes");
-
-                                    if (outcomes.isArray()) {
-                                        for (final var outcome : outcomes) {
-                                            final var issues = outcome.path("issues");
-                                            if (issues.isArray()) {
-                                                issuesList.addAll(extractIssues(issues));
-                                            }
-                                        }
-                                    }
-                                } catch (final IOException e) {
-                                    e.printStackTrace();
-                                }
-
-                                return issuesList;
-                            }
-
-                            private List<OrchestrationEngine.ValidationIssue> extractIssues(final JsonNode issues) {
-                                return StreamSupport.stream(issues.spliterator(), false)
-                                        .map(issue -> new OrchestrationEngine.ValidationIssue() {
-                                            @Override
-                                            public String getMessage() {
-                                                return issue.path("message").asText();
-                                            }
-
-                                            @Override
-                                            public OrchestrationEngine.SourceLocation getLocation() {
-                                                final Integer line = issue.path("line").isInt()
-                                                        ? issue.path("line").intValue()
-                                                        : null;
-                                                final Integer column = issue.path("col").isInt()
-                                                        ? issue.path("col").intValue()
-                                                        : null;
-                                                final String diagnostics = "ca.uhn.fhir.parser.DataFormatException";
-                                                return new OrchestrationEngine.SourceLocation(line, column,
-                                                        diagnostics);
-                                            }
-
-                                            @Override
-                                            public String getSeverity() {
-                                                return issue.path("level").asText();
-                                            }
-                                        })
-                                        .collect(Collectors.toList());
-                            }
-
                             @Override
                             public String getProfileUrl() {
                                 return Hl7ValidationEngineApi.this.fhirProfileUrl;
@@ -775,20 +651,17 @@ public class OrchestrationEngine {
         public static class Builder {
             private String fhirProfileUrl;
             private String interactionId;
-            private boolean appendValidationIssue;
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
                 return this;
             }
+
             public Builder withInteractionId(@NotNull final String interactionId) {
                 this.interactionId = interactionId;
                 return this;
             }
-            public Builder withAppendValidationIssue(@NotNull final boolean appendValidationIssue) {
-                this.appendValidationIssue = appendValidationIssue;
-                return this;
-            }            
+
             public Hl7ValidationEngineApi build() {
                 return new Hl7ValidationEngineApi(this);
             }
@@ -823,7 +696,6 @@ public class OrchestrationEngine {
         private final List<ValidationResult> validationResults;
         private final String fhirProfileUrl;
         private String igVersion;
-        private boolean appendValidationIssue;
         private String interactionId;
 
         private OrchestrationSession(final Builder builder) {
@@ -833,7 +705,6 @@ public class OrchestrationEngine {
             this.validationResults = new ArrayList<>();
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.device = builder.device;
-            this.appendValidationIssue = builder.appendValidationIssue;
             this.interactionId = builder.interactionId;
         }
 
@@ -865,10 +736,6 @@ public class OrchestrationEngine {
             return sessionId;
         }
 
-        public boolean isAppendValidationIssue() {
-            return appendValidationIssue;
-        }
-
         public String getInteractionId() {
             return interactionId;
         }
@@ -876,7 +743,7 @@ public class OrchestrationEngine {
         public synchronized void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
-                    final ValidationResult result = engine.validate(payload,interactionId,appendValidationIssue);
+                    final ValidationResult result = engine.validate(payload, interactionId);
                     validationResults.add(result);
                 }
             }
@@ -892,7 +759,6 @@ public class OrchestrationEngine {
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
             private String sessionId;
-            private boolean appendValidationIssue;
             private String interactionId;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
@@ -923,15 +789,11 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Builder withAppendValidationIssue(boolean appendValidationIssue) {
-                this.appendValidationIssue =appendValidationIssue;
-                return this;
-            }
-
             public Builder withInteractionId(String interactionId) {
                 this.interactionId = interactionId;
                 return this;
             }
+
             public Builder withFhirIGPackages(@NotNull final Map<String, Map<String, String>> igPackages) {
                 this.igPackages = igPackages;
                 return this;

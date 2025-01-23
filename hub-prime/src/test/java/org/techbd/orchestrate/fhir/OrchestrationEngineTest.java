@@ -1,12 +1,17 @@
 package org.techbd.orchestrate.fhir;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.hl7.fhir.r4.model.OperationOutcome;
+import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
-import static org.assertj.core.api.Assertions.assertThat;
-import java.util.HashMap;
+import ca.uhn.fhir.context.FhirContext;
 
 class OrchestrationEngineTest {
 
@@ -34,8 +39,10 @@ class OrchestrationEngineTest {
         List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0).getValidationResults();
         assertThat(results).hasSize(1);
         assertThat(results.get(0).isValid()).isFalse();
-        assertThat(results.get(0).getIssues()).extracting("message").containsExactly(
-                "HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: '<' (must be '{')");
+        OperationOutcome operationOutcome = (OperationOutcome) FhirContext.forR4().newJsonParser().parseResource(results.get(0).getOperationOutcome());
+        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+        assertThat(issues).extracting("diagnostics").containsExactly(
+                "HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: 'n' (must be '{')");
     }
 
     @Test
@@ -61,9 +68,11 @@ class OrchestrationEngineTest {
         assertThat(retrievedSession1.getFhirProfileUrl()).isEqualTo("http://example.com/fhirProfile");
         assertThat(retrievedSession1.getValidationResults()).hasSize(1);
         assertThat(retrievedSession1.getValidationResults().get(0).isValid()).isFalse();
-        assertThat(retrievedSession1.getValidationResults().get(0).getIssues()).extracting("message")
+        OperationOutcome operationOutcome = (OperationOutcome) FhirContext.forR4().newJsonParser().parseResource(retrievedSession1.getValidationResults().get(0).getOperationOutcome());
+        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+        assertThat(issues).extracting("diagnostics")
                 .containsExactly(
-                        "HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: '<' (must be '{')");
+                        "HAPI-1861: Failed to parse JSON encoded FHIR content: HAPI-1859: Content does not appear to be FHIR JSON, first non-whitespace character was: 'p' (must be '{')");
 
         OrchestrationEngine.OrchestrationSession retrievedSession2 = engine.getSessions().get(1);
         assertThat(retrievedSession2.getPayloads()).containsExactly("payload2");

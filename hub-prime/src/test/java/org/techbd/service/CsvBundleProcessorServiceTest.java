@@ -117,11 +117,11 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome mockOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString()))
                 .thenReturn(mockOutcome);
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
                 payloadAndValidationOutcomes,new ArrayList<>(),
-                request, response, "tenantId","test.zip",true);
+                request, response, "tenantId","test.zip");
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(2, result.size());
@@ -131,7 +131,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString());
     }
 
     @Test
@@ -186,12 +186,12 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome mockOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString()))
                 .thenReturn(mockOutcome);
 
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
                 payloadAndValidationOutcomes,new ArrayList<>(),
-                request, response, "tenantId","test.zip",true);
+                request, response, "tenantId","test.zip");
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(2, result.size());
@@ -200,7 +200,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString());
     }
 
     @Test
@@ -246,12 +246,12 @@ class CsvBundleProcessorServiceTest {
         OperationOutcome successfulOutcome = new OperationOutcome();
         when(fhirService.processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(), any(),
                 anyString(),
-                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean()))
+                eq(false), eq(false), eq(false), eq(request), eq(response), any(), eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString()))
                 .thenReturn(successfulOutcome)
                 .thenThrow(new RuntimeException("Mock failure"));
         List<Object> result = csvBundleProcessorService.processPayload(masterInteractionId,
                 payloadAndValidationOutcomes,new ArrayList<>(),
-                request, response, "tenantId","test.zip",true);
+                request, response, "tenantId","test.zip");
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -261,7 +261,7 @@ class CsvBundleProcessorServiceTest {
         verify(fhirService, times(2)).processBundle(eq(mockBundle), anyString(), any(), any(), any(), any(),
                 any(),
                 anyString(), eq(false), eq(false), eq(false), eq(request), eq(response), any(),
-                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString(),anyBoolean());
+                eq(true), any(), anyString(), anyString(),anyString(),anyString(),anyString());
     }
 
     private String getMockBundleJson() {
