@@ -120,7 +120,7 @@ public class FHIRService {
                         HttpServletRequest request, HttpServletResponse response, String provenance,
                         boolean includeOperationOutcome, String mtlsStrategy, String interactionId,
                         String groupInteractionId, String masterInteractionId, String sourceType,
-                        String requestUriToBeOverriden, boolean appendValidationIssue)
+                        String requestUriToBeOverriden)
                         throws IOException {
                 Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
                 try {
@@ -151,8 +151,7 @@ public class FHIRService {
                                 try {
                                         immediateResult = validate(request, payload, fhirProfileUrl,
                                                         uaValidationStrategyJson,
-                                                        includeRequestInOutcome, interactionId, provenance, sourceType,
-                                                        appendValidationIssue);
+                                                        includeRequestInOutcome, interactionId, provenance, sourceType);
                                 } finally {
                                         validateSpan.end();
                                 }
@@ -178,7 +177,7 @@ public class FHIRService {
                                                         includeIncomingPayloadInDB, tenantId, payload,
                                                         provenance, null, includeOperationOutcome, mtlsStrategy,
                                                         interactionId, groupInteractionId, masterInteractionId,
-                                                        sourceType, requestUriToBeOverriden, appendValidationIssue);
+                                                        sourceType, requestUriToBeOverriden);
                                         Instant end = Instant.now();
                                         Duration timeElapsed = Duration.between(start, end);
                                         LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
@@ -191,8 +190,7 @@ public class FHIRService {
                                                         includeIncomingPayloadInDB, tenantId, payload,
                                                         provenance, payloadWithDisposition, includeOperationOutcome,
                                                         mtlsStrategy, interactionId, groupInteractionId,
-                                                        masterInteractionId, sourceType, requestUriToBeOverriden,
-                                                        appendValidationIssue);
+                                                        masterInteractionId, sourceType, requestUriToBeOverriden);
                                         Instant end = Instant.now();
                                         Duration timeElapsed = Duration.between(start, end);
                                         LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
@@ -423,8 +421,7 @@ public class FHIRService {
 
         private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
                         String uaValidationStrategyJson,
-                        boolean includeRequestInOutcome, String interactionId, String provenance, String sourceType,
-                        boolean appendValidationIssue) {
+                        boolean includeRequestInOutcome, String interactionId, String provenance, String sourceType) {
                 Span span = tracer.spanBuilder("FhirService.validate").startSpan();
                 try {
                         final var start = Instant.now();
@@ -434,7 +431,6 @@ public class FHIRService {
                         final var sessionBuilder = engine.session()
                                         .withSessionId(UUID.randomUUID().toString())
                                         .onDevice(Device.createDefault())
-                                        .withAppendValidationIssue(appendValidationIssue)
                                         .withInteractionId(interactionId)
                                         .withPayloads(List.of(payload))
                                         .withFhirProfileUrl(fhirProfileUrl)
@@ -508,8 +504,7 @@ public class FHIRService {
                         String provenance,
                         Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome,
                         String mtlsStrategy, String interactionId, String groupInteractionId,
-                        String masterInteractionId, String sourceType, String requestUriToBeOverriden,
-                        boolean appendValidationIssue) {
+                        String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
                 Span span = tracer.spanBuilder("FhirService.sentToScoringEngine").startSpan();
                 try {
                         interactionId = null != interactionId ? interactionId : getBundleInteractionId(request);
@@ -525,7 +520,7 @@ public class FHIRService {
                                                         interactionId);
                                         bundlePayloadWithDisposition = preparePayload(request,
                                                         payload,
-                                                        validationPayloadWithDisposition, appendValidationIssue);
+                                                        validationPayloadWithDisposition);
                                 } else {
                                         LOG.debug("FHIRService:: sendToScoringEngine Send payload without operation outcome interaction id: {}",
                                                         interactionId);
@@ -1202,7 +1197,7 @@ public class FHIRService {
         }
 
         private Map<String, Object> preparePayload(HttpServletRequest request, String bundlePayload,
-                        Map<String, Object> payloadWithDisposition, boolean appendValidationIssue) {
+                        Map<String, Object> payloadWithDisposition) {
                 final var interactionId = getBundleInteractionId(request);
                 LOG.debug("FHIRService:: addValidationResultToPayload BEGIN for interaction id : {}", interactionId);
 
@@ -1210,8 +1205,7 @@ public class FHIRService {
 
                 try {
                         Map<String, Object> extractedOutcome = Optional
-                                        .ofNullable(extractIssueAndDisposition(interactionId, payloadWithDisposition,
-                                                        appendValidationIssue))
+                                        .ofNullable(extractIssueAndDisposition(interactionId, payloadWithDisposition))
                                         .filter(outcome -> !outcome.isEmpty())
                                         .orElseGet(() -> {
                                                 LOG.warn("FHIRService:: resource type operation outcome or issues or techByDisposition is missing or empty for interaction id : {}",
@@ -1254,7 +1248,7 @@ public class FHIRService {
 
         @SuppressWarnings("unchecked")
         public Map<String, Object> extractIssueAndDisposition(String interactionId,
-                        Map<String, Object> operationOutcomePayload, boolean appendValidationIssue) {
+                        Map<String, Object> operationOutcomePayload) {
                 LOG.debug("FHIRService:: extractResourceTypeAndDisposition BEGIN for interaction id : {}",
                                 interactionId);
 
@@ -1280,74 +1274,14 @@ public class FHIRService {
                                         Map<String, Object> result = new HashMap<>();
                                         result.put("resourceType", operationOutcomeMap.get("resourceType"));
 
-                                        // Get issues based on appendValidationIssue flag
-                                        if (appendValidationIssue) {
-                                                result.put("issue", validationResult.get("issues"));
-                                        } else {
-                                                Map<String, Object> operationOutcome = (Map<String, Object>) validationResult
-                                                                .get("operationOutcome");
-                                                if (operationOutcome != null) {
-                                                        result.put("issue", operationOutcome.get("issue"));
-                                                } else {
-                                                        LOG.warn("FHIRService:: operationOutcome is missing in validationResult for interaction id : {}",
-                                                                        interactionId);
-                                                }
-                                        }
-
-                                        List<?> techByDesignDisposition = (List<?>) operationOutcomeMap
-                                                        .get("techByDesignDisposition");
-                                        if (techByDesignDisposition != null && !techByDesignDisposition.isEmpty()) {
-                                                result.put("techByDesignDisposition", techByDesignDisposition);
-                                        }
-
-                                        return Optional.of(result);
-                                })
-                                .orElseGet(() -> {
-                                        LOG.warn("FHIRService:: Missing required fields in operationOutcome for interaction id : {}",
-                                                        interactionId);
-                                        return null;
-                                });
-        }
-
-        @SuppressWarnings("unchecked")
-        public Map<String, Object> extractIssueAndDisposition(String interactionId,
-                        Map<String, Object> operationOutcomePayload) {
-                LOG.debug("FHIRService:: extractResourceTypeAndDisposition BEGIN for interaction id : {}",
-                                interactionId);
-
-                if (operationOutcomePayload == null) {
-                        LOG.warn("FHIRService:: operationOutcomePayload is null for interaction id : {}",
-                                        interactionId);
-                        return null;
-                }
-
-                return Optional.ofNullable(operationOutcomePayload.get("OperationOutcome"))
-                                .filter(Map.class::isInstance)
-                                .map(Map.class::cast)
-                                .flatMap(operationOutcomeMap -> {
-                                        List<?> validationResults = (List<?>) operationOutcomeMap
-                                                        .get("validationResults");
-                                        if (validationResults == null || validationResults.isEmpty()) {
-                                                return Optional.empty();
-                                        }
-
-                                        // Extract the first validationResult
-                                        Map<String, Object> validationResult = (Map<String, Object>) validationResults
-                                                        .get(0);
-
-                                        // Navigate to operationOutcome.issue
                                         Map<String, Object> operationOutcome = (Map<String, Object>) validationResult
                                                         .get("operationOutcome");
-                                        List<?> issues = operationOutcome != null
-                                                        ? (List<?>) operationOutcome.get("issue")
-                                                        : null;
-
-                                        // Prepare the result
-                                        Map<String, Object> result = new HashMap<>();
-                                        result.put("resourceType", operationOutcomeMap.get("resourceType"));
-                                        result.put("issue", issues);
-
-                                        // Add techByDesignDisposition if available
+                                        if (operationOutcome != null) {
+                                                result.put("issue", operationOutcome.get("issue"));
+                                        } else {
+                                                LOG.warn("FHIRService:: operationOutcome is missing in validationResult for interaction id : {}",
+                                                                interactionId);
+                                        }
                                         List<?> techByDesignDisposition = (List<?>) operationOutcomeMap
                                                         .get("techByDesignDisposition");
                                         if (techByDesignDisposition != null && !techByDesignDisposition.isEmpty()) {

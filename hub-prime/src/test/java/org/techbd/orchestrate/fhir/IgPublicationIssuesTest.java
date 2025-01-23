@@ -13,20 +13,19 @@ import java.util.function.Predicate;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationIssue;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationResult;
 
 public class IgPublicationIssuesTest {
     private OrchestrationEngine engine;
     private static final String FHIR_PROFILE_URL = "https://shinny.org/us/ny/hrsn/StructureDefinition-SHINNYBundleProfile.json";
-    private static final Predicate<ValidationIssue> IS_UNEXPECTED_IG_ISSUE = issue -> issue.getMessage()
-            .contains("has not been checked because it is unknown") ||
-            issue.getMessage().contains("Unknown profile") ||
-            issue.getMessage().contains("Unknown extension") ||
-            issue.getMessage().contains("Unknown Code System") ||
-            (issue.getMessage().startsWith("ValueSet") && issue.getMessage().endsWith("not found")) ||
+    // private static final Predicate<ValidationIssue> IS_UNEXPECTED_IG_ISSUE = issue -> issue.getMessage()
+    //         .contains("has not been checked because it is unknown") ||
+    //         issue.getMessage().contains("Unknown profile") ||
+    //         issue.getMessage().contains("Unknown extension") ||
+    //         issue.getMessage().contains("Unknown Code System") ||
+    //         (issue.getMessage().startsWith("ValueSet") && issue.getMessage().endsWith("not found")) ||
 
-            issue.getMessage().endsWith(" not found");
+    //         issue.getMessage().endsWith(" not found");
     private static final String ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS = "Unknown extension http://shinny.org/StructureDefinition/shinny-personal-pronouns";
     private static final String ERROR_MESSAGE_CTS_VALUE_SET = "ValueSet 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.24' not found";
     private static final String ERROR_MESSAGE_CTM_CTS_VALUE_SET = "ValueSet 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.32' not found";
@@ -297,15 +296,15 @@ public class IgPublicationIssuesTest {
         }
     }
 
-    private void assertUnexpectedIgError(final SoftAssertions softly,
-            final List<OrchestrationEngine.ValidationResult> results,
-            final String unexpectedIgErrorMessage) {
-        final boolean containsTest = results.get(0).getIssues().stream()
-                .anyMatch(message -> message.getMessage().contains(unexpectedIgErrorMessage));
-        softly.assertThat(containsTest)
-                .withFailMessage(unexpectedIgErrorMessage)
-                .isFalse();
-    }
+    // private void assertUnexpectedIgError(final SoftAssertions softly,
+    //         final List<OrchestrationEngine.ValidationResult> results,
+    //         final String unexpectedIgErrorMessage) {
+    //     final boolean containsTest = results.get(0).getIssues().stream()
+    //             .anyMatch(message -> message.getMessage().contains(unexpectedIgErrorMessage));
+    //     softly.assertThat(containsTest)
+    //             .withFailMessage(unexpectedIgErrorMessage)
+    //             .isFalse();
+    // }
 
     private List<OrchestrationEngine.ValidationResult> getValidationErrors(final String exampleUrl)
             throws IOException {
