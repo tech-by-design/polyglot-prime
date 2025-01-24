@@ -134,27 +134,16 @@ public class FHIRService {
                         final var jooqCfg = dslContext.configuration();
                         Map<String, Object> payloadWithDisposition = null;
                         try {
-                                Span validateJsonSpan = tracer.spanBuilder("FHIRService.validateJson").startSpan();
-                                try {
-                                        validateJson(payload, interactionId);
-                                } finally {
-                                        validateJsonSpan.end();
-                                }
+                                validateJson(payload, interactionId);
                                 if (null == dataLakeApiContentType) {
                                         dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
                                 }
                                 final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
                                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                                 : appConfig.getDefaultSdohFhirProfileUrl();
-                                Span validateSpan = tracer.spanBuilder("FHIRService.validate").startSpan();
-                                Map<String, Object> immediateResult = null;
-                                try {
-                                        immediateResult = validate(request, payload, fhirProfileUrl,
+                                Map<String, Object> immediateResult = validate(request, payload, fhirProfileUrl,
                                                         uaValidationStrategyJson,
                                                         includeRequestInOutcome, interactionId, provenance, sourceType);
-                                } finally {
-                                        validateSpan.end();
-                                }
                                 final var result = Map.of("OperationOutcome", immediateResult);
                                 if ("true".equals(healthCheck)) {
                                         LOG.info("%s is true, skipping Scoring Engine submission."
@@ -226,11 +215,17 @@ public class FHIRService {
         }
 
         public void validateJson(String jsonString, String interactionId) {
+                Span validateJsonSpan = tracer.spanBuilder("FHIRService.validateJson").startSpan();
                 try {
-                        Configuration.objectMapper.readTree(jsonString);
-                } catch (Exception e) {
-                        throw new JsonValidationException(ErrorCode.INVALID_JSON);
+                        try {
+                                Configuration.objectMapper.readTree(jsonString);
+                        } catch (Exception e) {
+                                throw new JsonValidationException(ErrorCode.INVALID_JSON);
+                        }
+                } finally {
+                        validateJsonSpan.end();
                 }
+
         }
 
         public static Map<String, Map<String, Object>> buildOperationOutcome(JsonValidationException ex,
@@ -434,6 +429,7 @@ public class FHIRService {
                                         .withInteractionId(interactionId)
                                         .withPayloads(List.of(payload))
                                         .withFhirProfileUrl(fhirProfileUrl)
+                                        .withTracer(tracer)
                                         .withFhirIGPackages(igPackages)
                                         .withIgVersion(igVersion)
                                         .addHapiValidationEngine() // by default
@@ -1267,21 +1263,24 @@ public class FHIRService {
                                         if (validationResults == null || validationResults.isEmpty()) {
                                                 return Optional.empty();
                                         }
+
+                                        // Extract the first validationResult
                                         Map<String, Object> validationResult = (Map<String, Object>) validationResults
                                                         .get(0);
 
-                                        // Extract resourceType, issue and techByDesignDisposition
-                                        Map<String, Object> result = new HashMap<>();
-                                        result.put("resourceType", operationOutcomeMap.get("resourceType"));
-
+                                        // Navigate to operationOutcome.issue
                                         Map<String, Object> operationOutcome = (Map<String, Object>) validationResult
                                                         .get("operationOutcome");
-                                        if (operationOutcome != null) {
-                                                result.put("issue", operationOutcome.get("issue"));
-                                        } else {
-                                                LOG.warn("FHIRService:: operationOutcome is missing in validationResult for interaction id : {}",
-                                                                interactionId);
-                                        }
+                                        List<?> issues = operationOutcome != null
+                                                        ? (List<?>) operationOutcome.get("issue")
+                                                        : null;
+
+                                        // Prepare the result
+                                        Map<String, Object> result = new HashMap<>();
+                                        result.put("resourceType", operationOutcomeMap.get("resourceType"));
+                                        result.put("issue", issues);
+
+                                        // Add techByDesignDisposition if available
                                         List<?> techByDesignDisposition = (List<?>) operationOutcomeMap
                                                         .get("techByDesignDisposition");
                                         if (techByDesignDisposition != null && !techByDesignDisposition.isEmpty()) {
