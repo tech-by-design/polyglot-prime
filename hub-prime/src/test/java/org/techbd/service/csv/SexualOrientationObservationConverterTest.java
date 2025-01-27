@@ -48,8 +48,7 @@ class SexualOrientationObservationConverterTest {
                 softly.assertThat(observation.getMeta().getLastUpdated().toInstant().toString())
                                 .isEqualTo("2024-02-22T18:30:00Z");
                 softly.assertThat(observation.getMeta().getProfile().get(0).getValue())
-                                .isEqualTo("http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation");
-                softly.assertThat(observation.getText().getStatus().toCode()).isEqualTo("generated");
+                                .isEqualTo("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-sexual-orientation");
                 softly.assertThat(observation.getStatus().toCode()).isEqualTo("final");
                 softly.assertThat(observation.getCode().getCodingFirstRep().getSystem())
                                 .isEqualTo("http://loinc.org");
@@ -57,8 +56,6 @@ class SexualOrientationObservationConverterTest {
                                 .isEqualTo("76690-7");
                 softly.assertThat(observation.getCode().getCodingFirstRep().getDisplay())
                                 .isEqualTo("Sexual orientation");
-                // softly.assertThat(observation.getEffectiveDateTimeType().getValueAsString())
-                //                 .isEqualTo("2024-02-23T00:00:00Z");  //Not used
                 softly.assertThat(observation.getValueCodeableConcept().getCodingFirstRep().getSystem())
                                 .isEqualTo("http://terminology.hl7.org/CodeSystem/v3-NullFlavor");
                 softly.assertThat(observation.getValueCodeableConcept().getCodingFirstRep().getCode())

@@ -1,343 +1,146 @@
 package org.techbd;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.techbd.model.csv.FileDetail;
+import org.techbd.model.csv.FileType;
+import org.techbd.orchestrate.csv.FileProcessor;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.techbd.model.csv.FileDetail;
-import org.techbd.orchestrate.csv.FileProcessor;
-
+import static org.junit.jupiter.api.Assertions.*;
 
 class FileProcessorTest {
+    @TempDir
+    Path tempDir;
+    
+    private Path demographicFile;
+    private Path qeAdminFile;
+    private Path screeningProfileFile;
+    private Path screeningObservationFile;
+    private Path invalidFile;
 
-        private static final String SAMPLE_CSV_CONTENT = 
-        "PATIENT_MR_ID_VALUE,PATIENT_MA_ID_VALUE,PATIENT_SS_ID_VALUE,GIVEN_NAME,MIDDLE_NAME,FAMILY_NAME,GENDER,EXTENSION_SEX_AT_BIRTH_CODE_VALUE,PATIENT_BIRTH_DATE,ADDRESS1,CITY,DISTRICT,STATE,ZIP,TELECOM_VALUE,EXTENSION_PERSONAL_PRONOUNS_CODE,EXTENSION_PERSONAL_PRONOUNS_DISPLAY,EXTENSION_PERSONAL_PRONOUNS_SYSTEM,EXTENSION_GENDER_IDENTITY_CODE,EXTENSION_GENDER_IDENTITY_DISPLAY,EXTENSION_GENDER_IDENTITY_SYSTEM,PREFERRED_LANGUAGE_CODE_SYSTEM_NAME,PREFERRED_LANGUAGE_CODE_SYSTEM_CODE,EXTENSION_OMBCATEGORY_RACE_CODE,EXTENSION_OMBCATEGORY_RACE_CODE_DESCRIPTION,EXTENSION_OMBCATEGORY_RACE_CODE_SYSTEM_NAME,EXTENSION_OMBCATEGORY_ETHNICITY_CODE,EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION,EXTENSION_OMBCATEGORY_ETHNICITY_CODE_SYSTEM_NAME,PATIENT_LAST_UPDATED,RELATIONSHIP_PERSON_CODE,RELATIONSHIP_PERSON_DESCRIPTION,RELATIONSHIP_PERSON_GIVEN_NAME,RELATIONSHIP_PERSON_FAMILY_NAME,RELATIONSHIP_PERSON_TELECOM_VALUE,SEXUAL_ORIENTATION_VALUE_CODE,SEXUAL_ORIENTATION_VALUE_CODE_DESCRIPTION,SEXUAL_ORIENTATION_VALUE_CODE_SYSTEM_NAME,SEXUAL_ORIENTATION_LAST_UPDATED\n" +
-        "11223344,AA12345C,999-34-2964,Jon,Bob,Doe,male,M,1981-07-16,115 Broadway Apt2,New York,MANHATTAN,NY,10032,1234567890,LA29518-0,he/him/his/his/himself,http://loinc.org,446151000124109,Identifies as male gender (finding),http://snomed.info/sct,urn:ietf:bcp:47,en,2028-9,Asian,urn:oid:2.16.840.1.113883.6.238,2135-2,Hispanic or Latino,urn:oid:2.16.840.1.113883.6.238,2024-02-23T00:00:00.00Z,MTH,Mother,Joyce,Doe,1234567890,UNK,Unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,2024-02-23T00:00:00Z";
+    @BeforeEach
+    void setUp() throws IOException {
+        // Create test files with sample content
+        demographicFile = createFile("DEMOGRAPHIC_DATA_group1.csv", "demographic data");
+        qeAdminFile = createFile("QE_ADMIN_DATA_group1.csv", "qe admin data");
+        screeningProfileFile = createFile("SCREENING_PROFILE_DATA_group1.csv", "screening profile data");
+        screeningObservationFile = createFile("SCREENING_OBSERVATION_DATA_group1.csv", "screening observation data");
+        invalidFile = createFile("INVALID_FILE_group1.csv", "invalid data");
+    }
 
-        @BeforeEach
-        void setUp() {
-                try (MockedStatic<Files> mockedFiles = Mockito.mockStatic(Files.class)) {
-                        mockedFiles.when(() -> Files.readString(Mockito.any(Path.class)))
-                                        .thenReturn(SAMPLE_CSV_CONTENT);
-                }
-        }
+    private Path createFile(String fileName, String content) throws IOException {
+        Path filePath = tempDir.resolve(fileName);
+        Files.writeString(filePath, content);
+        return filePath;
+    }
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withAllRequiredModels() throws IOException {
-                List<String> mockFilePaths = List.of(
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_observation_data_1.csv",
-                                "screening_resources_data_1.csv");
-                Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(mockFilePaths);
-                assertNotNull(groupedFiles);
-                groupedFiles.keySet().iterator().next();
-                assertTrue(groupedFiles.containsKey("_1"));
-                assertEquals(1, groupedFiles.size(), "There should be one group for _1.csv");
-                assertEquals(7, groupedFiles.get("_1").size(), "There should be 7 files grouped under _1.csv");
-                assertTrue(groupedFiles.get("_1").stream()
-                                .anyMatch(fileDetail -> fileDetail.filename().equals("demographic_data_1.csv")));
-                assertTrue(groupedFiles.get("_1").stream()
-                                .anyMatch(fileDetail -> fileDetail.filename().equals("qe_admin_data_1.csv")));
-                assertTrue(groupedFiles.get("_1").stream()
-                                .anyMatch(fileDetail -> fileDetail.filename().equals("screening_consent_data_1.csv")));
-                assertTrue(groupedFiles.get("_1").stream()
-                                .anyMatch(fileDetail -> fileDetail.filename()
-                                                .equals("screening_encounter_data_1.csv")));
-                assertTrue(groupedFiles.get("_1").stream()
-                                .anyMatch(fileDetail -> fileDetail.filename().equals("screening_location_data_1.csv")));
-                assertTrue(groupedFiles.get("_1").stream()
-                                .anyMatch(fileDetail -> fileDetail.filename()
-                                                .equals("screening_observation_data_1.csv")));
-                assertTrue(groupedFiles.get("_1").stream()
-                                .anyMatch(fileDetail -> fileDetail.filename()
-                                                .equals("screening_resources_data_1.csv")));
-        }
+    @Test
+    void testSuccessfulFileProcessing() throws IOException {
+        // Arrange
+        List<String> filePaths = Arrays.asList(
+            demographicFile.toString(),
+            qeAdminFile.toString(),
+            screeningProfileFile.toString(),
+            screeningObservationFile.toString()
+        );
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withAllRequiredModelsAndAdditionalGroup() throws Throwable {
-                List<String> mockFilePaths = List.of(
-                                // Files for the first group (_1.csv)
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_observation_data_1.csv",
-                                "screening_resources_data_1.csv",
-                                // Files for the second group (_testcase_1_group)
-                                "demographic_data_testcase_1_group.csv",
-                                "qe_admin_data_testcase_1_group.csv",
-                                "screening_consent_data_testcase_1_group.csv",
-                                "screening_encounter_data_testcase_1_group.csv",
-                                "screening_location_data_testcase_1_group.csv",
-                                "screening_observation_data_testcase_1_group.csv",
-                                "screening_resources_data_testcase_1_group.csv");
+        // Act
+        Map<String, List<FileDetail>> result = FileProcessor.processAndGroupFiles(filePaths);
 
-                // Process the files
-                Map<String, List<FileDetail>> groupedFiles = FileProcessor.processAndGroupFiles(mockFilePaths);
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.containsKey("_group1"));
+        List<FileDetail> group1Files = result.get("_group1");
+        assertEquals(4, group1Files.size());
+        
+        // Verify all file types are present
+        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.DEMOGRAPHIC_DATA));
+        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.QE_ADMIN_DATA));
+        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.SCREENING_PROFILE_DATA));
+        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.SCREENING_OBSERVATION_DATA));
+    }
 
-                // Assertions
-                assertNotNull(groupedFiles, "Grouped files map should not be null");
-                assertEquals(2, groupedFiles.size(), "There should be two groups in the map");
+    @Test
+    void testInvalidFileHandling() throws IOException {
+        // Arrange
+        List<String> filePaths = Arrays.asList(
+            invalidFile.toString(),
+            demographicFile.toString()
+        );
 
-                // Check for the first group (_1.csv)
-                String firstKey = "_1";
-                assertTrue(groupedFiles.containsKey(firstKey), "First group key should exist in the map");
-                List<FileDetail> firstGroupFiles = groupedFiles.get(firstKey);
-                assertNotNull(firstGroupFiles, "First group file list should not be null");
-                assertEquals(7, firstGroupFiles.size(), "First group should have 7 files");
-                assertTrue(firstGroupFiles.stream().anyMatch(file -> file.filename().equals("demographic_data_1.csv")));
-                assertTrue(firstGroupFiles.stream().anyMatch(file -> file.filename().equals("qe_admin_data_1.csv")));
-                assertTrue(firstGroupFiles.stream()
-                                .anyMatch(file -> file.filename().equals("screening_consent_data_1.csv")));
-                assertTrue(firstGroupFiles.stream()
-                                .anyMatch(file -> file.filename().equals("screening_encounter_data_1.csv")));
-                assertTrue(firstGroupFiles.stream()
-                                .anyMatch(file -> file.filename().equals("screening_location_data_1.csv")));
-                assertTrue(
-                                firstGroupFiles.stream().anyMatch(
-                                                file -> file.filename().equals("screening_observation_data_1.csv")));
-                assertTrue(firstGroupFiles.stream()
-                                .anyMatch(file -> file.filename().equals("screening_resources_data_1.csv")));
+        // Act
+        Map<String, List<FileDetail>> result = FileProcessor.processAndGroupFiles(filePaths);
 
-                // Check for the second group (_testcase_1_group)
-                String secondKey = "_testcase_1_group";
-                assertTrue(groupedFiles.containsKey(secondKey), "Second group key should exist in the map");
-                List<FileDetail> secondGroupFiles = groupedFiles.get(secondKey);
-                assertNotNull(secondGroupFiles, "Second group file list should not be null");
-                assertEquals(7, secondGroupFiles.size(), "Second group should have 7 files");
-                assertTrue(secondGroupFiles.stream()
-                                .anyMatch(file -> file.filename().equals("demographic_data_testcase_1_group.csv")));
-                assertTrue(secondGroupFiles.stream()
-                                .anyMatch(file -> file.filename().equals("qe_admin_data_testcase_1_group.csv")));
-                assertTrue(secondGroupFiles.stream()
-                                .anyMatch(file -> file.filename()
-                                                .equals("screening_consent_data_testcase_1_group.csv")));
-                assertTrue(secondGroupFiles.stream()
-                                .anyMatch(file -> file.filename()
-                                                .equals("screening_encounter_data_testcase_1_group.csv")));
-                assertTrue(secondGroupFiles.stream()
-                                .anyMatch(file -> file.filename()
-                                                .equals("screening_location_data_testcase_1_group.csv")));
-                assertTrue(secondGroupFiles.stream()
-                                .anyMatch(file -> file.filename()
-                                                .equals("screening_observation_data_testcase_1_group.csv")));
-                assertTrue(secondGroupFiles.stream()
-                                .anyMatch(file -> file.filename()
-                                                .equals("screening_resources_data_testcase_1_group.csv")));
-        }
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.containsKey("filesNotProcessed"));
+        List<FileDetail> notProcessed = result.get("filesNotProcessed");
+        assertEquals(1, notProcessed.size());
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingDemographicData() {
-                List<String> mockFilePaths = List.of(
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_observation_data_1.csv",
-                                "screening_resources_data_1.csv");
-                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                        FileProcessor.processAndGroupFiles(mockFilePaths);
-                });
-                assertTrue(exception.getMessage().contains("Missing required file: demographic_data_1.csv"));
-        }
+    }
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingQeAdminData() {
-                List<String> mockFilePaths = List.of(
-                                "demographic_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_observation_data_1.csv",
-                                "screening_resources_data_1.csv");
-                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                        FileProcessor.processAndGroupFiles(mockFilePaths);
-                });
-                assertTrue(exception.getMessage().contains("Missing required file: qe_admin_data_1.csv"));
-        }
+    @Test
+    void testMissingRequiredFiles() throws IOException {
+        // Arrange
+        List<String> filePaths = Arrays.asList(
+            demographicFile.toString(),
+            qeAdminFile.toString()
+        );
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingScreeningConsentData() {
-                List<String> mockFilePaths = List.of(
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_observation_data_1.csv",
-                                "screening_resources_data_1.csv");
-                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                        FileProcessor.processAndGroupFiles(mockFilePaths);
-                });
+        // Act
+        Map<String, List<FileDetail>> result = FileProcessor.processAndGroupFiles(filePaths);
 
-                assertTrue(exception.getMessage().contains("Missing required file: screening_consent_data_1.csv"));
-        }
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.containsKey("_group1"));
+        List<FileDetail> group1Files = result.get("_group1");
+        assertEquals(2, group1Files.size());
+        
+    }
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingScreeningEncounterData() {
-                List<String> mockFilePaths = List.of(
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_observation_data_1.csv",
-                                "screening_resources_data_1.csv");
-                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                        FileProcessor.processAndGroupFiles(mockFilePaths);
-                });
-                assertTrue(exception.getMessage().contains("Missing required file: screening_encounter_data_1.csv"));
-        }
+    @Test
+    void testEmptyFileList() throws IOException {
+        // Arrange
+        List<String> filePaths = List.of();
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingScreeningLocationData() {
-                List<String> mockFilePaths = List.of(
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_observation_data_1.csv",
-                                "screening_resources_data_1.csv");
-                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                        FileProcessor.processAndGroupFiles(mockFilePaths);
-                });
-                assertTrue(exception.getMessage().contains("Missing required file: screening_location_data_1.csv"));
-        }
+        // Act
+        Map<String, List<FileDetail>> result = FileProcessor.processAndGroupFiles(filePaths);
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingScreeningObservationData() {
-                List<String> mockFilePaths = List.of(
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_resources_data_1.csv");
-                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                        FileProcessor.processAndGroupFiles(mockFilePaths);
-                });
-                assertTrue(exception.getMessage().contains("Missing required file: screening_observation_data_1.csv"));
-        }
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.containsKey("filesNotProcessed"));
+        assertTrue(result.get("filesNotProcessed").isEmpty());
+    }
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingScreeningResourceData() {
-                List<String> mockFilePaths = List.of(
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_observation_data_1.csv");
-                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                        FileProcessor.processAndGroupFiles(mockFilePaths);
-                });
-                assertTrue(exception.getMessage().contains("Missing required file: screening_resources_data_1.csv"));
-        }
+    @Test
+    void testMultipleGroups() throws IOException {
+        // Arrange
+        Path demographicFile2 = createFile("DEMOGRAPHIC_DATA_group2.csv", "demographic data 2");
+        Path qeAdminFile2 = createFile("QE_ADMIN_DATA_group2.csv", "qe admin data 2");
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withInvalidFileType() {
-                List<String> mockFilePaths = List.of("invalid_data_1.csv");
-                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-                        FileProcessor.processAndGroupFiles(mockFilePaths);
-                });
-                assertTrue(exception.getMessage().contains("Unknown file type in filename: invalid_data_1.csv"));
-        }
+        List<String> filePaths = Arrays.asList(
+            demographicFile.toString(),
+            qeAdminFile.toString(),
+            demographicFile2.toString(),
+            qeAdminFile2.toString()
+        );
 
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingFile_throwsIllegalArgumentException() {
-                List<String> mockFilePaths = List.of(
-                                // Files for the first group (_1.csv), missing one file
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_resources_data_1.csv", // Missing "screening_observation_data_1.csv"
-                                // Files for the second group (_testcase_1_group)
-                                "demographic_data_testcase_1_group.csv",
-                                "qe_admin_data_testcase_1_group.csv",
-                                "screening_consent_data_testcase_1_group.csv",
-                                "screening_encounter_data_testcase_1_group.csv",
-                                "screening_location_data_testcase_1_group.csv",
-                                "screening_observation_data_testcase_1_group.csv",
-                                "screening_resources_data_testcase_1_group.csv");
+        // Act
+        Map<String, List<FileDetail>> result = FileProcessor.processAndGroupFiles(filePaths);
 
-                // Assertion to check for exception
-                IllegalArgumentException exception = assertThrows(
-                                IllegalArgumentException.class,
-                                () -> FileProcessor.processAndGroupFiles(mockFilePaths),
-                                "An IllegalArgumentException should be thrown when a required file is missing");
-
-                // Optionally check the exception message
-                assertEquals(
-                                "Missing required file: screening_observation_data_1.csv",
-                                exception.getMessage(),
-                                "Exception message should indicate the missing file");
-        }
-
-        @Test
-        @Disabled
-        void testProcessAndGroupFiles_withMissingFile_With3Group_throwsIllegalArgumentException() {
-                List<String> mockFilePaths = List.of(
-                                // Files for the first group (_1.csv), missing one file
-                                "demographic_data_1.csv",
-                                "qe_admin_data_1.csv",
-                                "screening_consent_data_1.csv",
-                                "screening_encounter_data_1.csv",
-                                "screening_location_data_1.csv",
-                                "screening_resources_data_1.csv", // Missing "screening_observation_data_1.csv"
-
-                                // Files for the second group (_testcase_1_group), missing one file
-                                "demographic_data_testcase_1_group.csv",
-                                "qe_admin_data_testcase_1_group.csv",
-                                "screening_consent_data_testcase_1_group.csv",
-                                "screening_encounter_data_testcase_1_group.csv",
-                                "screening_location_data_testcase_1_group.csv",
-                                // Missing "screening_observation_data_testcase_1_group.csv"
-                                "screening_resources_data_testcase_1_group.csv",
-
-                                // Files for the third group (_testcase_2_group), complete
-                                "demographic_data_testcase_2_group.csv",
-                                "qe_admin_data_testcase_2_group.csv",
-                                "screening_consent_data_testcase_2_group.csv",
-                                "screening_encounter_data_testcase_2_group.csv",
-                                "screening_location_data_testcase_2_group.csv",
-                                "screening_observation_data_testcase_2_group.csv",
-                                "screening_resources_data_testcase_2_group.csv");
-
-                // Assertion to check for exception
-                IllegalArgumentException exception = assertThrows(
-                                IllegalArgumentException.class,
-                                () -> FileProcessor.processAndGroupFiles(mockFilePaths),
-                                "An IllegalArgumentException should be thrown when a required file is missing");
-
-                assertTrue(exception.getMessage().contains("Missing required file"));
-        }
-
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.containsKey("_group1"));
+        assertTrue(result.containsKey("_group2"));
+        assertEquals(2, result.get("_group1").size());
+        assertEquals(2, result.get("_group2").size());
+    }
 }

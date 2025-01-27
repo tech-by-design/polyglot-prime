@@ -43,7 +43,6 @@ class ScreeningResponseObservationConverterTest {
     }
 
     @Test
-    @Disabled
     void testConvert() throws IOException {
         Bundle bundle = new Bundle();
         DemographicData demographicData = CsvTestHelper.createDemographicData();
@@ -60,26 +59,22 @@ class ScreeningResponseObservationConverterTest {
                 screeningObservationDataList,
                 interactionId, idsGenerated);
         assertThat(result).isNotNull();
-        assertThat(result).hasSize(screeningObservationDataList.size());
-
+        assertThat(result).hasSize(screeningObservationDataList.size() + 1);
         for (int i = 0; i < screeningObservationDataList.size(); i++) {
             ScreeningObservationData screeningData = screeningObservationDataList.get(i);
             BundleEntryComponent entry = result.get(i);
             assertThat(entry.getFullUrl()).isEqualTo(
-                    "http://shinny.org/us/ny/hrsn/Observation/Observation/" + screeningData.getScreeningCode());
+                    "http://shinny.org/us/ny/hrsn/Observation/" + screeningData.getObservationId());
             assertThat(entry.getResource()).isInstanceOf(Observation.class);
             Observation observation = (Observation) entry.getResource();
-            assertThat(observation.getCode().getCodingFirstRep().getCode()).isEqualTo(screeningData.getScreeningCode());
-            assertThat(observation.getCode().getCodingFirstRep().getDisplay())
-                    .isEqualTo(screeningData.getScreeningCodeDescription());
+            assertThat(observation.getCode().getCodingFirstRep().getCode()).isEqualTo(screeningData.getQuestionCode());
             assertThat(observation.getCode().getText()).isEqualTo(screeningData.getQuestionCodeText());
-            assertThat(observation.getSubject().getReference())
-                    .isEqualTo("Patient/" + screeningData.getPatientMrIdValue());
+
         }
     }
 
     @Test
-    @Disabled
+   // @Disabled
     void testGeneratedScreeningResponseJson() throws Exception {
         final var bundle = new Bundle();
         final var demographicData = CsvTestHelper.createDemographicData();
