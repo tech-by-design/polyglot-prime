@@ -10,17 +10,32 @@ import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.HapiValidationEngine;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 
 import ca.uhn.fhir.context.FhirContext;
+import io.opentelemetry.api.trace.Tracer;
 
+@ExtendWith(MockitoExtension.class)
 class OrchestrationEngineTest {
 
+    @Mock
+    private Tracer tracer;
+
+    @InjectMocks
     private OrchestrationEngine engine;
 
-    @BeforeEach
-    void setUp() {
-        engine = new OrchestrationEngine();
-    }
+    @Mock
+    private OrchestrationSession session;
+
+    @Mock
+    private HapiValidationEngine hapiValidationEngine;
 
     @Test
     void testOrchestrateSingleSession() {
@@ -102,9 +117,9 @@ class OrchestrationEngineTest {
         codeSystemMap.put("shinnyConsentProvisionTypesVS", "http://example.com/shinnyConsentProvision");
         assertThat(engine.getSessions()).hasSize(2);
         assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                "http://example.com/fhirProfile", igPackages, igVersion))
+                "http://example.com/fhirProfile", igPackages, igVersion,tracer))
                 .isSameAs(engine.getValidationEngine(
                         OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                        "http://example.com/fhirProfile", igPackages, igVersion));
+                        "http://example.com/fhirProfile", igPackages, igVersion,tracer));
     }
 }

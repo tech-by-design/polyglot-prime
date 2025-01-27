@@ -8,15 +8,19 @@ import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 import org.assertj.core.api.SoftAssertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationResult;
 
+import io.opentelemetry.api.trace.Tracer;
+
 public class IgPublicationIssuesTest {
+    @InjectMocks
     private OrchestrationEngine engine;
+    @Mock
+    private Tracer tracer;
     private static final String FHIR_PROFILE_URL = "https://shinny.org/us/ny/hrsn/StructureDefinition-SHINNYBundleProfile.json";
     // private static final Predicate<ValidationIssue> IS_UNEXPECTED_IG_ISSUE = issue -> issue.getMessage()
     //         .contains("has not been checked because it is unknown") ||
@@ -51,11 +55,7 @@ public class IgPublicationIssuesTest {
     private static final String URL_TASK_EXAMPLE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskExample.json";
     private static final String URL_TASK_OUTPUT_PROCEDURE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskOutputProcedureExample.json";
 
-    @BeforeEach
-    void setUp() {
-        engine = new OrchestrationEngine();
-    }
-
+  
     // @Test
     // void testBundle_AHCHRSNScreeningResponseExample() throws IOException {
     //     final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
