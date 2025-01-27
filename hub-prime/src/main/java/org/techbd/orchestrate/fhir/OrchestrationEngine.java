@@ -375,6 +375,7 @@ public class OrchestrationEngine {
                 final var completedAt = Instant.now();
                 return new OrchestrationEngine.ValidationResult() {
                     @Override
+                    @JsonSerialize(using = JsonTextSerializer.class)
                     public String getOperationOutcome() {
                         OperationOutcome operationOutcome = new OperationOutcome();
                         OperationOutcomeIssueComponent issue = new OperationOutcomeIssueComponent();
