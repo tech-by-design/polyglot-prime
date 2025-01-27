@@ -391,7 +391,7 @@ public class PrimeController {
         } else {
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("<span title=\"No data found in %s\">No Records Available</span>".formatted(tenantId));
+                        .body("<span title=\"No data found in %s\" class=\"text-lg\">No records available</span>".formatted(tenantId));
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.noContent().build();
             } else {
@@ -441,7 +441,7 @@ public class PrimeController {
         } else {
             if ("html".equalsIgnoreCase(extension)) {
                 return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
-                        .body("<span title=\"No data found in %s\">No Records Available</span>".formatted(tenantId));
+                        .body("<span title=\"No data found in %s\" class=\"text-lg\">No records available</span>".formatted(tenantId));
             } else if ("json".equalsIgnoreCase(extension)) {
                 return ResponseEntity.noContent().build();
             } else {
