@@ -393,19 +393,20 @@ public class OrchestrationEngine {
                         }
                     };
 
-                } catch (final Exception e) {
-                    final var completedAt = Instant.now();
-                    return new OrchestrationEngine.ValidationResult() {
-                        @Override
-                        public String getOperationOutcome() {
-                            OperationOutcome operationOutcome = new OperationOutcome();
-                            OperationOutcomeIssueComponent issue = new OperationOutcomeIssueComponent();
-                            issue.setSeverity(IssueSeverity.FATAL);
-                            issue.setDiagnostics(e.getMessage());
-                            issue.setCode(OperationOutcome.IssueType.EXCEPTION);
-                            operationOutcome.addIssue(issue);
-                            return FhirContext.forR4().newJsonParser().encodeResourceToString(operationOutcome);
-                        }
+            } catch (final Exception e) {
+                final var completedAt = Instant.now();
+                return new OrchestrationEngine.ValidationResult() {
+                    @Override
+                    @JsonSerialize(using = JsonTextSerializer.class)
+                    public String getOperationOutcome() {
+                        OperationOutcome operationOutcome = new OperationOutcome();
+                        OperationOutcomeIssueComponent issue = new OperationOutcomeIssueComponent();
+                        issue.setSeverity(IssueSeverity.FATAL);
+                        issue.setDiagnostics(e.getMessage());
+                        issue.setCode(OperationOutcome.IssueType.EXCEPTION);
+                        operationOutcome.addIssue(issue);
+                        return FhirContext.forR4().newJsonParser().encodeResourceToString(operationOutcome);
+                    }
 
                         @Override
                         public boolean isValid() {

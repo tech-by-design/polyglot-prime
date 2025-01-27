@@ -771,7 +771,9 @@ const migrateSP = pgSQLa.storedProcedure(
       
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS severity TEXT NULL;     
       
-      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS csv_zip_file_content Bytea NULL;     
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN IF NOT EXISTS csv_zip_file_content Bytea NULL;   
+      
+      TRUNCATE TABLE techbd_udi_ingress.json_action_rule;
 
       INSERT INTO techbd_udi_ingress.json_action_rule(
         action_rule_id,
@@ -792,7 +794,7 @@ const migrateSP = pgSQLa.storedProcedure(
       VALUES(
         '36eb7e17-107a-44ad-834e-9699b435708f',
         'NYeC Rule',
-        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*] ? (@.location.diagnostics == "Bundle.meta")',
+        '$.response.responseBody.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*Meta.lastUpdated: minimum required = 1" && @.location[*] like_regex ".*Bundle.meta" && @.severity like_regex ".*error")',
         'reject',
         NULL,
         NULL,
@@ -825,7 +827,7 @@ const migrateSP = pgSQLa.storedProcedure(
       VALUES(
         '189b6342-3797-459f-9a4a-b8a71015f082',
         'NYeC Rule',
-        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*HAPI-1821: \\\\[element=\\\"lastUpdated\\\"\\\\].*")',
+        '$.response.responseBody.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*lastUpdated.*" && @.severity like_regex ".*fatal.*")',
         'reject',
         NULL,
         NULL,
