@@ -325,14 +325,14 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(new SnapshotGeneratingValidationSupport(fhirContext));
                 supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
 
-                final var prePopulateSupport = new PrePopulateSupport();
+                final var prePopulateSupport = new PrePopulateSupport(tracer);
                 var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
                 prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
 
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
                 prePopulatedValidationSupport = null;
 
-                final var postPopulateSupport = new PostPopulateSupport();
+                final var postPopulateSupport = new PostPopulateSupport(tracer);
                 postPopulateSupport.update(supportChain);
 
                 final var cache = new CachingValidationSupport(supportChain);
