@@ -77,7 +77,7 @@
 <th>Missing Classes</th></tr>
 <tr class="b">
 <td>295</td>
-<td>34</td>
+<td>35</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -111,7 +111,7 @@
 <td>1</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder</a></td>
-<td>3</td></tr>
+<td>4</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.PostPopulateSupport">org.techbd.orchestrate.fhir.PostPopulateSupport</a></td>
 <td>1</td></tr>
@@ -239,7 +239,7 @@
 <td>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine.initializeFhirValidator() makes inefficient use of keySet iterator instead of entrySet iterator</td>
 <td>PERFORMANCE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#WMI_WRONG_MAP_ITERATOR">WMI_WRONG_MAP_ITERATOR</a></td>
-<td>287</td>
+<td>304</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine$Builder"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine$Builder</h2>
 <table class="table table-striped">
@@ -253,7 +253,7 @@
 <td>Unread field: org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine$Builder.interactionId</td>
 <td>PERFORMANCE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#URF_UNREAD_FIELD">URF_UNREAD_FIELD</a></td>
-<td>430</td>
+<td>456</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</h2>
 <table class="table table-striped">
@@ -267,7 +267,7 @@
 <td>Unwritten field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession.igVersion</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UWF_UNWRITTEN_FIELD">UWF_UNWRITTEN_FIELD</a></td>
-<td>733</td>
+<td>764</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder</h2>
 <table class="table table-striped">
@@ -281,19 +281,25 @@
 <td>Inconsistent synchronization of org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.fhirProfileUrl; locked 75% of time</td>
 <td>MT_CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#IS2_INCONSISTENT_SYNC">IS2_INCONSISTENT_SYNC</a></td>
-<td>784</td>
+<td>816</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Inconsistent synchronization of org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.igPackages; locked 50% of time</td>
 <td>MT_CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#IS2_INCONSISTENT_SYNC">IS2_INCONSISTENT_SYNC</a></td>
-<td>799</td>
+<td>831</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Inconsistent synchronization of org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.igVersion; locked 50% of time</td>
 <td>MT_CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#IS2_INCONSISTENT_SYNC">IS2_INCONSISTENT_SYNC</a></td>
-<td>804</td>
+<td>836</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>Inconsistent synchronization of org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.tracer; locked 50% of time</td>
+<td>MT_CORRECTNESS</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#IS2_INCONSISTENT_SYNC">IS2_INCONSISTENT_SYNC</a></td>
+<td>841</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.PostPopulateSupport"></a><section>
 <h2>org.techbd.orchestrate.fhir.PostPopulateSupport</h2>
 <table class="table table-striped">
@@ -457,37 +463,37 @@
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String, String, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>817</td>
+<td>813</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources, String, String, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>674</td>
+<td>670</td>
 <td>High</td></tr>
 <tr class="b">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map, String, String, String, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>301</td>
+<td>296</td>
 <td>High</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, boolean, String, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>863</td>
+<td>859</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, boolean, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources, String, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>718</td>
+<td>714</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>1580</td>
+<td>1579</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator"></a><section>
 <h2>org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator</h2>
 <table class="table table-striped">
