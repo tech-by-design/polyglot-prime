@@ -2028,7 +2028,7 @@ DECLARE
     v_pg_detail 		TEXT;
     v_pg_hint 			TEXT;
     v_pg_context 		TEXT;
-   	v_issue_message		TEXT;
+   	v_issue_message		JSONB;
    	v_message_path		TEXT;
    	v_action_payload	JSONB;
     v_is_accept_flag	NUMERIC := 1;
@@ -2053,7 +2053,13 @@ BEGIN
         END IF;
 		
 	     -- Check if the json_path content exists in v_temp_json
-        v_found_flag := jsonb_path_exists( v_temp_json, v_json_path::jsonpath); -- Casting to jsonpath;   
+	BEGIN
+        	v_found_flag := jsonb_path_exists( v_temp_json, v_json_path::jsonpath); -- Casting to jsonpath;   
+    	EXCEPTION
+        	WHEN OTHERS THEN
+            	RAISE NOTICE 'Invalid JSONPath syntax: %', v_json_path;
+            	CONTINUE;
+    	END;
 
 		IF v_found_flag = false THEN
 			CONTINUE;
@@ -2061,15 +2067,24 @@ BEGIN
 	
 		IF v_current_rule.action = 'reject' OR v_current_rule.action = 'discard' THEN  					                                    	         
 		
-			-- Dynamically build the path to extract the "message" based on v_json_path
-            v_message_path := v_json_path || '.message';          
+			-- Dynamically build the path to extract the "diagnostics" based on v_json_path
+            v_message_path := v_json_path || '.diagnostics';        
 
-            -- Retrieve the corresponding "message" value dynamically using v_message_path
-            SELECT jsonb_path_query(v_temp_json, v_message_path::jsonpath) 
+            -- Retrieve the corresponding "diagnostics" value dynamically using v_message_path
+            SELECT jsonb_path_query_first(v_temp_json, v_message_path::jsonpath) 
             INTO v_issue_message;   
+
+			IF v_issue_message IS NULL THEN
+				-- Dynamically build the path to extract the "message" based on v_json_path
+            	v_message_path := v_json_path || '.message';   
+				
+				-- Retrieve the corresponding "message" value dynamically using v_message_path
+	            SELECT jsonb_path_query_first(v_temp_json, v_message_path::jsonpath) 
+	            INTO v_issue_message;   
+			END IF;
            
             IF v_issue_message IS NULL THEN
-           		SELECT jsonb_path_query(v_temp_json, v_json_path::jsonpath) 
+           		SELECT jsonb_path_query_first(v_temp_json, v_json_path::jsonpath) 
             	INTO v_issue_message;   
             END IF;
            
