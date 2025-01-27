@@ -36,12 +36,12 @@ public class CsvController {
   private void validateFile(MultipartFile file) {
     if (file == null || file.isEmpty() || file.getOriginalFilename() == null
         || file.getOriginalFilename().trim().isEmpty()) {
-      throw new IllegalArgumentException("Validation Error: Uploaded file is missing or empty.");
+      throw new IllegalArgumentException(" Uploaded file is missing or empty.");
     }
 
     String originalFilename = file.getOriginalFilename();
     if (!originalFilename.toLowerCase().endsWith(".zip")) {
-      throw new IllegalArgumentException("Validation Error: Uploaded file must have a .zip extension.");
+      throw new IllegalArgumentException(" Uploaded file must have a .zip extension.");
     }
   }
 

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MultipartException;
 
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -111,7 +112,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotWritableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ApiResponse(responseCode = "500", description = "Bad Request", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Unable to process the response due to an internal error\"}")))
+    @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Unable to process the response due to an internal error\"}")))
     public ResponseEntity<ErrorResponse> handleHttpMessageNotWritableException(HttpMessageNotWritableException ex) {
         return handleException(ex, "We encountered an error while processing your file.",
                     HttpStatus.BAD_REQUEST);
@@ -135,5 +136,14 @@ public class GlobalExceptionHandler {
                 tenantId, sessionId, userAgent, remoteAddress, method, queryString, requestUri, ex);
         ErrorResponse response = new ErrorResponse("Error", String.format("Validation Error: %s", customMessage));
         return new ResponseEntity<>(response, status);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ApiResponse(responseCode = "400", description = "File Upload Error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"File upload failed. Please upload the file again.\"}")))
+    public ResponseEntity<String> handleMultipartException(MultipartException e) {
+        LOG.error("Multipart request parsing failed", e);
+        String responseBody = "{\"status\":\"Error\",\"message\":\"File upload failed. Please upload the file again.\"}";
+        return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
     }
 }
