@@ -40,6 +40,7 @@ import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 
+import io.micrometer.common.util.StringUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.swagger.v3.oas.annotations.Operation;
@@ -165,6 +166,7 @@ public class FhirController {
                                         </code> """, required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
                         @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
                         @Parameter(description = "Optional header to specify the request URI to override. This parameter is used for requests forwarded from Mirth Connect, where we override it with the initial request URI from Mirth Connect.", required = false) @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,
+                        @Parameter(description = "An optional header to provide a UUID that if provided will be used as interaction id.", required = false) @RequestHeader(value = "X-Correlation-ID", required = false) String coRrelationId,
                         @Parameter(description = """
                                         Optional header to specify the Datalake API content type.
                                         Value provided with this header will be used to set the <code>Content-Type</code> header while invoking the Datalake API.
@@ -187,7 +189,7 @@ public class FhirController {
                                         """, required = false) @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
                         @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
                         @Parameter(description = "Optional parameter to specify source of the request.", required = false) @RequestParam(value = "source", required = false, defaultValue = "FHIR") String source,
-                         HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
+                        HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
                 try {
                         if (tenantId == null || tenantId.trim().isEmpty()) {
@@ -198,7 +200,13 @@ public class FhirController {
                         if (Boolean.TRUE.equals(deleteSessionCookie)) {
                                 deleteJSessionCookie(request, response);
                         }
-
+                        if (StringUtils.isNotEmpty(coRrelationId)) {
+                                try {
+                                        UUID.fromString(coRrelationId);
+                                } catch (IllegalArgumentException e) {
+                                        throw new IllegalArgumentException("X-Correlation-ID should be a valid UUID");
+                                }
+                        }
                         final var provenance = "%s.validateBundleAndForward(%s)".formatted(
                                         FhirController.class.getName(),
                                         isSync ? "sync" : "async");
@@ -209,7 +217,7 @@ public class FhirController {
                                         includeRequestInOutcome,
                                         includeIncomingPayloadInDB,
                                         request, response, provenance, includeOperationOutcome, mtlsStrategy, null,
-                                        null, null, source, requestUriToBeOverridden);
+                                        null, null, source, requestUriToBeOverridden, coRrelationId);
                 } finally {
                         span.end();
                 }
@@ -266,7 +274,7 @@ public class FhirController {
                         @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
                         @Parameter(description = "Parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
                         @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
-                         HttpServletRequest request, HttpServletResponse response) {
+                        HttpServletRequest request, HttpServletResponse response) {
                 Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
                 try {
 
@@ -305,7 +313,9 @@ public class FhirController {
                         try {
                                 engine.orchestrate(session);
                                 final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome",
-                                                "help", "If you need help understanding how to decipher OperationOutcome please see "+appConfig.getOperationOutcomeHelpUrl(),
+                                                "help",
+                                                "If you need help understanding how to decipher OperationOutcome please see "
+                                                                + appConfig.getOperationOutcomeHelpUrl(),
                                                 "validationResults",
                                                 session.getValidationResults(), "device",
                                                 session.getDevice()));

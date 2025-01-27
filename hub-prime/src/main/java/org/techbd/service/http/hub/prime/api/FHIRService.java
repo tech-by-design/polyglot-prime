@@ -120,7 +120,7 @@ public class FHIRService {
                         HttpServletRequest request, HttpServletResponse response, String provenance,
                         boolean includeOperationOutcome, String mtlsStrategy, String interactionId,
                         String groupInteractionId, String masterInteractionId, String sourceType,
-                        String requestUriToBeOverriden)
+                        String requestUriToBeOverriden, String coRrelationId)
                         throws IOException {
                 Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
                 try {
@@ -142,8 +142,8 @@ public class FHIRService {
                                                 : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
                                                                 : appConfig.getDefaultSdohFhirProfileUrl();
                                 Map<String, Object> immediateResult = validate(request, payload, fhirProfileUrl,
-                                                        uaValidationStrategyJson,
-                                                        includeRequestInOutcome, interactionId, provenance, sourceType);
+                                                uaValidationStrategyJson,
+                                                includeRequestInOutcome, interactionId, provenance, sourceType);
                                 final var result = Map.of("OperationOutcome", immediateResult);
                                 if ("true".equals(healthCheck)) {
                                         LOG.info("%s is true, skipping Scoring Engine submission."
@@ -155,7 +155,8 @@ public class FHIRService {
                                 }
                                 payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                                 response, payload, result, interactionId, groupInteractionId,
-                                                masterInteractionId, sourceType, requestUriToBeOverriden);
+                                                masterInteractionId, sourceType, requestUriToBeOverriden,
+                                                coRrelationId);
                                 if (isActionDiscard(payloadWithDisposition)) {
                                         return payloadWithDisposition;
                                 }
@@ -190,7 +191,7 @@ public class FHIRService {
                                 payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
                                                 response, payload, buildOperationOutcome(ex, interactionId),
                                                 interactionId, groupInteractionId, masterInteractionId, sourceType,
-                                                requestUriToBeOverriden);
+                                                requestUriToBeOverriden, coRrelationId);
                         }
                         Instant end = Instant.now();
                         Duration timeElapsed = Duration.between(start, end);
@@ -282,14 +283,18 @@ public class FHIRService {
                         HttpServletRequest request, HttpServletResponse response,
                         String payload, Map<String, Map<String, Object>> validationResult, String interactionId,
                         String groupInteractionId, String masterInteractionId, String sourceType,
-                        String requestUriToBeOverriden)
+                        String requestUriToBeOverriden,String coRrelationId)
                         throws IOException {
                 Span span = tracer.spanBuilder("FHIRService.registerBundleInteraction").startSpan();
                 try {
                         final Interactions interactions = new Interactions();
                         final var mutatableReq = new ContentCachingRequestWrapper(request);
                         RequestEncountered requestEncountered = null;
-                        if (null != interactionId) {
+                        if (StringUtils.isNotEmpty(coRrelationId)) {
+                                requestEncountered = new Interactions.RequestEncountered(mutatableReq,
+                                                payload.getBytes(),
+                                                UUID.fromString(coRrelationId));
+                        } else if (null != interactionId) {
                                 // If its a converted CSV payload ,it will already have an interaction id.hence
                                 // do not create new interactionId
                                 requestEncountered = new Interactions.RequestEncountered(mutatableReq,
@@ -301,7 +306,7 @@ public class FHIRService {
                                 requestEncountered = new Interactions.RequestEncountered(mutatableReq,
                                                 payload.getBytes(),
                                                 UUID.fromString(getBundleInteractionId(request)));
-                        } else {
+                        }  else {
                                 requestEncountered = new Interactions.RequestEncountered(mutatableReq,
                                                 payload.getBytes());
                         }
@@ -337,9 +342,11 @@ public class FHIRService {
                                                 rre.tenant(), e);
                         }
                         return null;
-                } finally {
-                        span.end();
-                }
+                }finally
+
+        {
+                span.end();
+        }
         }
 
         private void prepareRequest(RegisterInteractionHttpRequest rihr, RequestResponseEncountered rre,
