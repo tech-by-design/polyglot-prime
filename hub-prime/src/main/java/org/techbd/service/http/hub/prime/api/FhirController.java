@@ -294,6 +294,7 @@ public class FhirController {
                                         .withInteractionId(InteractionsFilter.getActiveRequestEnc(request).requestId()
                                                         .toString())
                                         .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
                                         .withFhirProfileUrl(fhirProfileUrl)
                                         .withFhirIGPackages(igPackages)
                                         .withIgVersion(igVersion)

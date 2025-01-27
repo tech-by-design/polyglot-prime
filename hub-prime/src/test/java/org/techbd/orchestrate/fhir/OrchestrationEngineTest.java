@@ -135,9 +135,9 @@ class OrchestrationEngineTest {
         codeSystemMap.put("shinnyConsentProvisionTypesVS", "http://example.com/shinnyConsentProvision");
         assertThat(engine.getSessions()).hasSize(2);
         assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                "http://example.com/fhirProfile", igPackages, igVersion,tracer))
+                "http://example.com/fhirProfile", igPackages, igVersion,tracer,"test"))
                 .isSameAs(engine.getValidationEngine(
                         OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                        "http://example.com/fhirProfile", igPackages, igVersion,tracer));
+                        "http://example.com/fhirProfile", igPackages, igVersion,tracer,"test"));
     }
 }

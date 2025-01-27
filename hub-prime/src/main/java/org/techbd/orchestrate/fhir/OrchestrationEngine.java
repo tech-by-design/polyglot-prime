@@ -175,7 +175,7 @@ public class OrchestrationEngine {
 
     public synchronized ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, Map<String, String>> igPackages,
-            final String igVersion,final Tracer tracer) {
+            final String igVersion,final Tracer tracer,String interactionId) {
         final ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
         return validationEngineCache.computeIfAbsent(key, k -> {
             switch (type) {
@@ -184,6 +184,7 @@ public class OrchestrationEngine {
                             .withIgPackages(igPackages)
                             .withIgVersion(igVersion)
                             .withTracer(tracer)
+                            .withInteractionId(interactionId)
                             .build();
                 case HL7_EMBEDDED:
                     return new Hl7ValidationEngineEmbedded.Builder().withFhirProfileUrl(fhirProfileUrl).build();
@@ -271,6 +272,7 @@ public class OrchestrationEngine {
         private final String igVersion;
         private final FhirValidator fhirValidator;
         private final Tracer tracer;
+        private final String interactionId;
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.fhirContext = FhirContext.forR4();
@@ -284,6 +286,7 @@ public class OrchestrationEngine {
             this.igPackages = builder.igPackages;
             this.igVersion = builder.igVersion;
             this.tracer = builder.tracer;
+            this.interactionId = builder.interactionId;
             this.fhirValidator = initializeFhirValidator();
         }
 
@@ -293,25 +296,25 @@ public class OrchestrationEngine {
                 final var supportChain = new ValidationSupportChain();
                 final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
 
-                LOG.info("Version of igPackage - " + igVersion);
-                LOG.info("Add IG Packages to npmPackageValidationSupport -BEGIN");
+                LOG.info("Version of igPackage : {} for interaction Id : {} " , igVersion,interactionId);
+                LOG.info("Add IG Packages to npmPackageValidationSupport -BEGIN for interaction Id : {}",interactionId);
                 NpmPackageValidationSupport npmPackageValidationSupport = new NpmPackageValidationSupport(fhirContext);
 
                 if (igPackages != null && igPackages.containsKey("fhir-v4")) {
                     Map<String, String> igMap = igPackages.get("fhir-v4");
-                    LOG.info("No. of packages to be add : {} ", igMap.size());
+                    LOG.info("No. of packages to be add : {}  for interaction Id : {}", igMap.size(),interactionId);
                     for (String igKey : igMap.keySet()) {
                         String packagePath = igMap.get(igKey);
                         try {
-                            LOG.info("Add IG Package {} -BEGIN", packagePath);
+                            LOG.info("Add IG Package {} -BEGIN for interaction Id : {} ", packagePath,interactionId);
                             npmPackageValidationSupport.loadPackageFromClasspath(packagePath + "/package.tgz");
-                            LOG.info("Add IG Package {} -END", packagePath);
+                            LOG.info("Add IG Package {} -END for interaction Id : {} ", packagePath,interactionId);
                         } catch (Exception e) {
-                            LOG.error("Failed to load the package {}", packagePath, e);
+                            LOG.error("Failed to load the package {} for interactionId : {} ", packagePath, interactionId, e);
                         }
                     }
                 } else {
-                    LOG.error("IG Package path not defined");
+                    LOG.error("IG Package path not defined for Interaction  Id :{} ",interactionId);
                 }
 
                 supportChain.addValidationSupport(npmPackageValidationSupport);
@@ -322,14 +325,14 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(new SnapshotGeneratingValidationSupport(fhirContext));
                 supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
 
-                final var prePopulateSupport = new PrePopulateSupport();
+                final var prePopulateSupport = new PrePopulateSupport(tracer);
                 var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
                 prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
 
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
                 prePopulatedValidationSupport = null;
 
-                final var postPopulateSupport = new PostPopulateSupport();
+                final var postPopulateSupport = new PostPopulateSupport(tracer);
                 postPopulateSupport.update(supportChain);
 
                 final var cache = new CachingValidationSupport(supportChain);
@@ -353,7 +356,7 @@ public class OrchestrationEngine {
                     LOG.debug("BUNDLE PAYLOAD parse -END");
                     final var hapiVR = fhirValidator.validateWithResult(bundle);
                     final var completedAt = Instant.now();
-                    LOG.info("VALIDATOR -END completed at :{} for interactionId:{} ", completedAt, interactionId);
+                    LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} ", Duration.between(initiatedAt, completedAt).toMillis(), interactionId);
                     return new OrchestrationEngine.ValidationResult() {
                         @Override
                         @JsonSerialize(using = JsonTextSerializer.class)
@@ -899,21 +902,21 @@ public class OrchestrationEngine {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,
                                 this.igPackages,
-                                this.igVersion,this.tracer));
+                                this.igVersion,this.tracer,this.interactionId));
                 return this;
             }
 
             public synchronized Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,
-                                null, null,null));
+                                null, null,null,null));
                 return this;
             }
 
             public synchronized Builder addHl7ValidationApiEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null,
-                                null,null));
+                                null,null,null));
                 return this;
             }
 
