@@ -844,30 +844,35 @@ GROUP BY
  * Comprehensive view of Latest FHIR Interactions per Tenant IDs* 
  ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_fhir CASCADE;
- CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_fhir AS
- WITH ranked_records AS (
-    SELECT 
-        sihr.sat_interaction_fhir_request_id,
-        sihr.hub_interaction_id AS interaction_id,
-        sihr.tenant_id AS tenant_id,
-        sihr.created_at AS interaction_created_at,
-        row_number() OVER (PARTITION BY (upper(sihr.tenant_id)) ORDER BY sihr.created_at DESC) AS rn,
-        COUNT(*)
- OVER (PARTITION BY (upper(sihr.tenant_id))) AS interaction_count
-    FROM 
-        techbd_udi_ingress.sat_interaction_fhir_request sihr 
-    WHERE sihr.uri = ANY (ARRAY['/Bundle'::text, '/Bundle/$validate'::text, '/Bundle/'::text, '/Bundle/$validate/'::text, '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/','/flatfile/csv/$validate','/flatfile/csv/$validate/'
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_fhir AS
+with ranked_records as (
+select
+	sihr.sat_interaction_fhir_request_id,
+	sihr.hub_interaction_id as interaction_id,
+	sihr.tenant_id as tenant_id,
+	sihr.created_at as interaction_created_at,
+	row_number() over (partition by (sihr.tenant_id_lower) order by sihr.created_at desc) as rn,
+	COUNT(*)
+ over (partition by (sihr.tenant_id_lower)) as interaction_count
+from
+	techbd_udi_ingress.sat_interaction_fhir_request sihr
+where
+	sihr.uri = any (array['/Bundle'::text,
+	'/Bundle/$validate'::text,
+	'/Bundle/'::text,
+	'/Bundle/$validate/'::text
      ])
 )
-SELECT 
-    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
-    interaction_id,
-    tenant_id,
-    interaction_created_at,
-    interaction_count
-FROM 
-    ranked_records
-WHERE rn = 1;
+select
+	sat_interaction_fhir_request_id as sat_interaction_http_request_id,
+	interaction_id,
+	tenant_id,
+	interaction_created_at,
+	interaction_count
+from
+	ranked_records
+where
+	rn = 1;
 
 
 /**
@@ -4180,54 +4185,34 @@ ORDER BY
 
 /*******************************************************************************************
 This view takes data from sat_interaction_fhir_request table to 
-provide a consolidated view of CCDA FHIR requests via CSV, including resource types, 
+provide a consolidated view of CCDA FHIR requests via HTTPS, including resource types, 
 interaction details, request attributes, and validation issues.
 ******************************************************************************************/
+
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_ccda_fhir_request CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_ccda_fhir_request
-AS SELECT hub_interaction_id AS interaction_id,
-    uri,
-    bundle_id,
-    created_at AS interaction_created_at,
-    created_by AS interaction_created_by,
-    provenance AS interaction_provenance,
-    sat_interaction_fhir_request_id AS sat_interaction_http_request_id,
-    nature,
-    tenant_id,
-    user_agent,
-    client_ip_address,
-    'application/json'::text AS content_type,
-    payload,
-    elaboration,
-    from_state,
-    to_state,
-    state_transition_reason,
-    created_at AS request_created_at,
-    created_by AS request_created_by,
-    provenance AS request_provenance,
-    issues_count,
-    resource_type_set AS resource_types,
-    interaction_start_time::text AS start_time,
-    interaction_end_time::text AS finish_time,
-    EXTRACT(epoch FROM interaction_end_time::timestamp without time zone - interaction_start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
-    patient_id,
-    patient_mrn,
-    patient_mrn_source_system,
-    organization_id,
-    organization_name,
-    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
-    CASE
-        WHEN 'ServiceRequest' = ANY(string_to_array(resource_type_set, ', ')) OR 'Task' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Referral'
-        WHEN 'Consent' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Screening'
-        WHEN 'Condition' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Assessment'
-        ELSE NULL
-    END AS bundle_resource_type,   
-    source_hub_interaction_id    
-   FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
-   WHERE source_type='CCDA';     
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_request CASCADE;	
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
+AS SELECT 
+    sat_interaction_ccda_request_id,
+	hub_interaction_id,
+	tenant_id,
+	tenant_id_lower,
+	uri,
+	nature,
+	payload ,
+	ccda_payload_text,
+	client_ip_address,
+	user_agent,
+	from_state,
+	to_state,
+	state_transition_reason,
+	elaboration ,
+	origin,
+	created_at,
+	created_by,
+	provenance 
+   FROM techbd_udi_ingress.sat_interaction_ccda_request sicr;      
 
 
 /*******************************************************************************************
@@ -4241,13 +4226,12 @@ AS SELECT hub_interaction_id AS interaction_id,
         sihr.hub_interaction_id AS interaction_id,
         sihr.tenant_id AS tenant_id,
         sihr.created_at AS interaction_created_at,
-        row_number() OVER (PARTITION BY (upper(sihr.tenant_id)) ORDER BY sihr.created_at DESC) AS rn,
+        row_number() OVER (PARTITION BY (sihr.tenant_id_lower) ORDER BY sihr.created_at DESC) AS rn,
         COUNT(*)
- OVER (PARTITION BY (upper(sihr.tenant_id))) AS interaction_count
+ OVER (PARTITION BY (sihr.tenant_id_lower)) AS interaction_count
     FROM 
         techbd_udi_ingress.sat_interaction_fhir_request sihr 
-    WHERE sihr.uri = ANY (ARRAY[ '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/','/flatfile/csv/$validate','/flatfile/csv/$validate/'
-     ]) 
+    WHERE sihr.source_type = 'CSV' 
 )
 SELECT 
     sat_interaction_fhir_request_id as sat_interaction_http_request_id,
@@ -4440,3 +4424,33 @@ EXCEPTION
 END;
 $function$
 ;
+
+
+
+/*******************************************************************************************
+ * Comprehensive view of Latest CCDA via HTTPs Interactions per Tenant IDs* 
+ ******************************************************************************************/
+ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_ccda_https CASCADE;
+ CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_ccda_https AS
+ WITH ranked_records AS (
+    SELECT 
+        sihr.sat_interaction_fhir_request_id,
+        sihr.hub_interaction_id AS interaction_id,
+        sihr.tenant_id AS tenant_id,
+        sihr.created_at AS interaction_created_at,
+        row_number() OVER (PARTITION BY (sihr.tenant_id_lower) ORDER BY sihr.created_at DESC) AS rn,
+        COUNT(*)
+ OVER (PARTITION BY (sihr.tenant_id_lower)) AS interaction_count
+    FROM 
+        techbd_udi_ingress.sat_interaction_fhir_request sihr 
+    WHERE sihr.source_type = 'CCDA' 
+)
+SELECT 
+    sat_interaction_fhir_request_id as sat_interaction_http_request_id,
+    interaction_id,
+    tenant_id,
+    interaction_created_at,
+    interaction_count
+FROM 
+    ranked_records
+WHERE rn = 1; 
