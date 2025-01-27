@@ -165,6 +165,7 @@ public class FhirController {
                                         </code> """, required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
                         @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
                         @Parameter(description = "Optional header to specify the request URI to override. This parameter is used for requests forwarded from Mirth Connect, where we override it with the initial request URI from Mirth Connect.", required = false) @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,
+                        @Parameter(description = "An optional header to provide a UUID for uniquely identifying the request in external systems.", required = false) @RequestHeader(value = "X-Correlation-ID", required = false) String coRrelationId,
                         @Parameter(description = """
                                         Optional header to specify the Datalake API content type.
                                         Value provided with this header will be used to set the <code>Content-Type</code> header while invoking the Datalake API.
@@ -209,7 +210,7 @@ public class FhirController {
                                         includeRequestInOutcome,
                                         includeIncomingPayloadInDB,
                                         request, response, provenance, includeOperationOutcome, mtlsStrategy, null,
-                                        null, null, source, requestUriToBeOverridden);
+                                        null, null, source, requestUriToBeOverridden,coRrelationId);
                 } finally {
                         span.end();
                 }
