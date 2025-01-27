@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.hl7.fhir.r4.model.OperationOutcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -164,27 +163,47 @@ public class CsvBundleProcessorService {
         }
     }
 
-    public String addBundleProvenance(final Map<String, Object> existingProvenance, final List<String> bundleGeneratedFrom,
-            final String patientMrnId, final String encounterId, final Instant initiatedAt, final Instant completedAt) throws Exception {
-        final Map<String, Object> newProvenance = new HashMap<>();
-        newProvenance.put("resourceType", "Provenance");
-        newProvenance.put("description",
-                "Bundle created from provided files for the given patientMrnId and encounterId");
-        newProvenance.put("validatedFiles", bundleGeneratedFrom);
-        newProvenance.put("initiatedAt", initiatedAt.toString());
-        newProvenance.put("completedAt", completedAt.toString());
-        newProvenance.put("patientMrnId", patientMrnId);
-        newProvenance.put("encounterId", encounterId);
-        final Map<String, Object> agent = new HashMap<>();
-        final Map<String, String> whoCoding = new HashMap<>();
-        whoCoding.put("system", "generator");
-        whoCoding.put("display", "TechByDesign");
-        agent.put("who", Collections.singletonMap("coding", List.of(whoCoding)));
-        newProvenance.put("agent", List.of(agent));
-        final List<Map<String, Object>> provenanceList = new ArrayList<>();
-        provenanceList.add(existingProvenance);
-        provenanceList.add(newProvenance);
-        return Configuration.objectMapper.writeValueAsString(provenanceList);
+    public String addBundleProvenance(final Map<String, Object> existingProvenance,
+                    final List<String> bundleGeneratedFrom,
+                    final String patientMrnId, final String encounterId, final Instant initiatedAt,
+                    final Instant completedAt)
+                    throws Exception {
+
+            final Map<String, Object> parameters = new HashMap<>();
+            parameters.put("resourceType", "Parameters");
+
+            final List<Map<String, Object>> parameterList = new ArrayList<>();
+
+            parameterList.add(Map.of("name", "description",
+                            "valueString",
+                            "Bundle created from provided files for the given patientMrnId and encounterId"));
+
+            List<Map<String, Object>> fileParts = new ArrayList<>();
+            for (String file : bundleGeneratedFrom) {
+                    fileParts.add(Map.of("name", "file", "valueString", file));
+            }
+            parameterList.add(Map.of("name", "validatedFiles", "part", fileParts));
+
+            parameterList.add(Map.of("name", "initiatedAt", "valueDateTime", initiatedAt.toString()));
+            parameterList.add(Map.of("name", "completedAt", "valueDateTime", completedAt.toString()));
+
+            parameterList.add(Map.of("name", "patientMrnId", "valueString", patientMrnId));
+            parameterList.add(Map.of("name", "encounterId", "valueString", encounterId));
+
+            List<Map<String, Object>> codingParts = new ArrayList<>();
+            codingParts.add(Map.of("name", "system", "valueString", "generator"));
+            codingParts.add(Map.of("name", "display", "valueString", "TechByDesign"));
+
+            List<Map<String, Object>> whoParts = new ArrayList<>();
+            whoParts.add(Map.of("name", "coding", "part", codingParts));
+
+            Map<String, Object> agentPart = Map.of("name", "agent", "part",
+                            List.of(Map.of("name", "who", "part", whoParts)));
+            parameterList.add(agentPart);
+
+            parameters.put("parameter", parameterList);
+
+            return Configuration.objectMapper.writeValueAsString(parameters);
     }
 
     public void addHapiFhirValidation(final Map<String, Object> provenance, final String validationDescription) {
