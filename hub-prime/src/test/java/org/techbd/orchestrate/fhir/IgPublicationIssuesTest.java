@@ -326,7 +326,7 @@ public class IgPublicationIssuesTest {
         final Map<String, Map<String, String>> igPackages = new HashMap<>();
 
         Map<String, String> igMap = new HashMap<>();
-        igMap.put("shinNy", "ig-packages/shin-ny-ig/v1.2.2");
+        igMap.put("shinNy", "ig-packages/shin-ny-ig/v1.2.3");
         igMap.put("usCore", "ig-packages/fhir-v4/us-core/stu-7.0.0");
         igMap.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0");
         igMap.put("uvSdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
@@ -336,7 +336,7 @@ public class IgPublicationIssuesTest {
     }
 
     private String getIgVersion() {
-        final String igVersion = "1.2.2";
+        final String igVersion = "1.2.3";
         return igVersion;
     }
 

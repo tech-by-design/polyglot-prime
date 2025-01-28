@@ -98,7 +98,7 @@ org:
           prime:
             version: @project.version@
             fhirVersion: r4
-            igVersion: 1.2.2
+            igVersion: 1.2.3
             igPackages:
                 fhir-v4:
                     # Path to SHIN-NY IG package downloaded from URL: https://shinny.org/us/ny/hrsn/downloads.html
