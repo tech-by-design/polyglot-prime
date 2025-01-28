@@ -126,9 +126,9 @@ public class FHIRService {
                 try {
                         final var start = Instant.now();
                         LOG.info("Bundle processing start at {} for interaction id {}.",
-                                        start, getBundleInteractionId(request));
+                                        start, getBundleInteractionId(request,coRrelationId));
                         if (null == interactionId) {
-                                interactionId = getBundleInteractionId(request);
+                                interactionId = getBundleInteractionId(request,coRrelationId);
                         }
                         final var dslContext = udiPrimeJpaConfig.dsl();
                         final var jooqCfg = dslContext.configuration();
@@ -162,12 +162,12 @@ public class FHIRService {
                                 }
                                 if (null == payloadWithDisposition) {
                                         LOG.warn("FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
-                                                        getBundleInteractionId(request));
+                                                        getBundleInteractionId(request,coRrelationId));
                                         sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
                                                         includeIncomingPayloadInDB, tenantId, payload,
                                                         provenance, null, includeOperationOutcome, mtlsStrategy,
                                                         interactionId, groupInteractionId, masterInteractionId,
-                                                        sourceType, requestUriToBeOverriden);
+                                                        sourceType, requestUriToBeOverriden,coRrelationId);
                                         Instant end = Instant.now();
                                         Duration timeElapsed = Duration.between(start, end);
                                         LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
@@ -180,7 +180,7 @@ public class FHIRService {
                                                         includeIncomingPayloadInDB, tenantId, payload,
                                                         provenance, payloadWithDisposition, includeOperationOutcome,
                                                         mtlsStrategy, interactionId, groupInteractionId,
-                                                        masterInteractionId, sourceType, requestUriToBeOverriden);
+                                                        masterInteractionId, sourceType, requestUriToBeOverriden,coRrelationId);
                                         Instant end = Instant.now();
                                         Duration timeElapsed = Duration.between(start, end);
                                         LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
@@ -300,12 +300,12 @@ public class FHIRService {
                                 requestEncountered = new Interactions.RequestEncountered(mutatableReq,
                                                 payload.getBytes(),
                                                 UUID.fromString(interactionId));
-                        } else if (null != getBundleInteractionId(request)) {
+                        } else if (null != getBundleInteractionId(request,coRrelationId)) {
                                 // If its a converted HL7 payload ,it will already have an interaction id.hence
                                 // do not create new interactionId
                                 requestEncountered = new Interactions.RequestEncountered(mutatableReq,
                                                 payload.getBytes(),
-                                                UUID.fromString(getBundleInteractionId(request)));
+                                                UUID.fromString(getBundleInteractionId(request,coRrelationId)));
                         }  else {
                                 requestEncountered = new Interactions.RequestEncountered(mutatableReq,
                                                 payload.getBytes());
@@ -507,10 +507,13 @@ public class FHIRService {
                         String provenance,
                         Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome,
                         String mtlsStrategy, String interactionId, String groupInteractionId,
-                        String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
+                        String masterInteractionId, String sourceType, String requestUriToBeOverriden,String coRrelationId) {
                 Span span = tracer.spanBuilder("FhirService.sentToScoringEngine").startSpan();
                 try {
-                        interactionId = null != interactionId ? interactionId : getBundleInteractionId(request);
+                        interactionId = null != interactionId ? interactionId : getBundleInteractionId(request,coRrelationId);
+                        if (StringUtils.isNotEmpty(coRrelationId)) {
+                                interactionId =coRrelationId;
+                        }
                         LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {} for", interactionId);
 
                         try {
@@ -523,7 +526,7 @@ public class FHIRService {
                                                         interactionId);
                                         bundlePayloadWithDisposition = preparePayload(request,
                                                         payload,
-                                                        validationPayloadWithDisposition);
+                                                        validationPayloadWithDisposition,interactionId);
                                 } else {
                                         LOG.debug("FHIRService:: sendToScoringEngine Send payload without operation outcome interaction id: {}",
                                                         interactionId);
@@ -557,7 +560,7 @@ public class FHIRService {
                         } catch (
 
                         Exception e) {
-                                handleError(validationPayloadWithDisposition, e, request);
+                                handleError(validationPayloadWithDisposition, e, request,interactionId);
                         } finally {
                                 LOG.info("FHIRService:: sendToScoringEngine END for interaction id: {}", interactionId);
                         }
@@ -628,7 +631,7 @@ public class FHIRService {
                                 : request.getRequestURI();
 
                 try {
-                        registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
+                        registerStateForward(jooqCfg, provenance, getBundleInteractionId(request,interactionId),
                                         requestURI, tenantId,
                                         Optional.ofNullable(bundlePayloadWithDisposition)
                                                         .orElse(new HashMap<>()),
@@ -888,7 +891,7 @@ public class FHIRService {
                                 : request.getRequestURI();
 
                 try {
-                        registerStateForward(jooqCfg, provenance, getBundleInteractionId(request),
+                        registerStateForward(jooqCfg, provenance, getBundleInteractionId(request,interactionId),
                                         requestURI, tenantId,
                                         Optional.ofNullable(bundlePayloadWithDisposition)
                                                         .orElse(new HashMap<>()),
@@ -1026,7 +1029,7 @@ public class FHIRService {
                                         filter(clientRequest, request, jooqCfg, provenance, tenantId, payload,
                                                         bundlePayloadWithDisposition,
                                                         includeIncomingPayloadInDB, groupInteractionId,
-                                                        masterInteractionId, sourceType, requestUriToBeOverriden);
+                                                        masterInteractionId, sourceType, requestUriToBeOverriden,interactionId);
                                         return Mono.just(clientRequest);
                                 }))
                                 .build();
@@ -1080,9 +1083,8 @@ public class FHIRService {
                         String payload,
                         Map<String, Object> bundlePayloadWithDisposition,
                         boolean includeIncomingPayloadInDB, String groupInteractionId, String masterInteractionId,
-                        String sourceType, String requestUriToBeOverriden) {
+                        String sourceType, String requestUriToBeOverriden,String interactionId) {
 
-                final var interactionId = getBundleInteractionId(request);
                 LOG.debug("FHIRService:: sendToScoringEngine Filter request before post - BEGIN interaction id: {}",
                                 interactionId);
                 final var requestURI = StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
@@ -1096,7 +1098,7 @@ public class FHIRService {
 
                 final var outboundHttpMessage = requestBuilder.toString();
 
-                registerStateForward(jooqCfg, provenance, getBundleInteractionId(request), requestURI, tenantId,
+                registerStateForward(jooqCfg, provenance, getBundleInteractionId(request,interactionId), requestURI, tenantId,
                                 Optional.ofNullable(bundlePayloadWithDisposition).orElse(new HashMap<>()),
                                 outboundHttpMessage, includeIncomingPayloadInDB, payload, groupInteractionId,
                                 masterInteractionId, sourceType);
@@ -1119,7 +1121,6 @@ public class FHIRService {
                 try {
                         LOG.debug("FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
                                         interactionId, tenantId);
-
                         webClient.post()
                                         .uri("?processingAgent=" + tenantId)
                                         .body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
@@ -1192,16 +1193,15 @@ public class FHIRService {
 
         private void handleError(Map<String, Object> validationPayloadWithDisposition,
                         Exception e,
-                        HttpServletRequest request) {
+                        HttpServletRequest request,String interactionId) {
 
                 validationPayloadWithDisposition.put("exception", e.toString());
                 LOG.error("ERROR:: FHIRService:: sendToScoringEngine Exception while sending to scoring engine payload with interaction id: {}",
-                                getBundleInteractionId(request), e);
+                                getBundleInteractionId(request,interactionId), e);
         }
 
         private Map<String, Object> preparePayload(HttpServletRequest request, String bundlePayload,
-                        Map<String, Object> payloadWithDisposition) {
-                final var interactionId = getBundleInteractionId(request);
+                        Map<String, Object> payloadWithDisposition,String interactionId) {
                 LOG.debug("FHIRService:: addValidationResultToPayload BEGIN for interaction id : {}", interactionId);
 
                 Map<String, Object> resultMap = null;
@@ -1594,7 +1594,10 @@ public class FHIRService {
                 }
         }
 
-        private String getBundleInteractionId(HttpServletRequest request) {
+        private String getBundleInteractionId(HttpServletRequest request,String coRrelationId) {
+                if (StringUtils.isNotEmpty(coRrelationId)) {
+                        return coRrelationId;
+                }
                 return InteractionsFilter.getActiveRequestEnc(request).requestId()
                                 .toString();
         }
