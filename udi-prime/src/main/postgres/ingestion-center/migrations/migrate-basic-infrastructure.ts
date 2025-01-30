@@ -975,6 +975,9 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic 
         ADD COLUMN IF NOT EXISTS bundle_id text NULL;
+        
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
+	      ADD COLUMN IF NOT EXISTS bundle_type TEXT NULL;
 
 
       ${dependenciesSQL}
