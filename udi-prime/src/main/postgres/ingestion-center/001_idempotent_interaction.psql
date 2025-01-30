@@ -131,15 +131,7 @@ AS SELECT hub_interaction_id AS interaction_id,
     organization_id,
     organization_name,
     concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
-    CASE
-        WHEN 'ServiceRequest' = ANY(string_to_array(resource_type_set, ', ')) OR 'Task' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Referral'
-        WHEN 'Consent' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Screening'
-        WHEN 'Condition' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Assessment'
-        ELSE NULL
-    END AS bundle_resource_type,
+    htt_req.bundle_type AS bundle_resource_type,
     CASE 
     	WHEN (source_type = 'CSV') then 'CSV'
         WHEN (source_type = 'CCDA') then 'CCDA'
@@ -1611,6 +1603,7 @@ DECLARE
     v_elaboration 					JSONB 	:= NULL;
     v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
    	v_is_bundle_valid				BOOLEAN	:= NULL;
+   	v_bundle_type				TEXT 	:= NULL;
 
 BEGIN
 
@@ -1652,7 +1645,7 @@ BEGIN
 		fhir_req.validation_initiated_at, 	fhir_req.validation_completed_at,	fhir_req.validation_engine,
 		fhir_req.ig_version,				fhir_req.profile_url,				fhir_req.medicaid_cin,
 		fhir_req.interaction_start_time,	fhir_req.interaction_end_time,		fhir_req.bundle_session_id,
-        fhir_req.patient_mrn_source_system, fhir_req.is_bundle_valid
+        fhir_req.patient_mrn_source_system, fhir_req.is_bundle_valid,           fhir_req.bundle_type
 		INTO 		
 		v_client_ip_address,				v_user_agent,						v_bundle_id,
 		v_bundle_last_updated,				v_organization_id,					v_organization_name,
@@ -1660,7 +1653,7 @@ BEGIN
 		v_validation_initiated_at,			v_validation_completed_at,			v_validation_engine,
 		v_ig_version,						v_profile_url,						v_medicaid_cin,
 		v_interaction_start_time,			v_interaction_end_time,				v_bundle_session_id,
-        v_patient_mrn_source_system,        v_is_bundle_valid 	
+        v_patient_mrn_source_system,        v_is_bundle_valid,                  v_bundle_type 	
 		FROM
 		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
 		WHERE 1 = 1
@@ -1743,7 +1736,51 @@ BEGIN
 		SELECT STRING_AGG(DISTINCT entry->'resource'->>'resourceType', ', ') 
 		INTO v_resource_type_set
 		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
-		WHERE entry ? 'resource';		
+		WHERE entry ? 'resource';	
+
+        WITH categories AS (
+            SELECT 
+                STRING_AGG(category, ', ') AS bundle_type
+            FROM (
+                SELECT 'Screening' AS category
+                FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
+                WHERE entry->'resource'->>'resourceType' = 'Observation'
+                AND EXISTS (
+                    SELECT 1 
+                    FROM jsonb_array_elements(entry->'resource'->'code'->'coding') AS coding
+                    WHERE coding->>'code' IN ('96777-8', '97023-6', 'NYS-AHC-HRSN')
+                )
+                AND 'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response' = ANY (ARRAY(
+                    SELECT jsonb_array_elements_text(entry->'resource'->'meta'->'profile')
+                ))
+
+                UNION
+
+                SELECT 'Assessment'
+                FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
+                WHERE entry->'resource'->>'resourceType' = 'Condition'
+                AND 'http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNY-SDOHCC-Condition' = ANY (ARRAY(
+                    SELECT jsonb_array_elements_text(entry->'resource'->'meta'->'profile')
+                ))
+
+                UNION
+
+                SELECT 'Referral'
+                FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
+                WHERE (entry->'resource'->>'resourceType' = 'ServiceRequest'
+                    AND 'http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYSDOHServiceRequest' = ANY (ARRAY(
+                        SELECT jsonb_array_elements_text(entry->'resource'->'meta'->'profile')
+                    )))
+                OR (entry->'resource'->>'resourceType' = 'Task'
+                    AND 'http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYSDOHTaskForReferralManagement' = ANY (ARRAY(
+                        SELECT jsonb_array_elements_text(entry->'resource'->'meta'->'profile')
+                    )))
+            ) AS category_list
+        )
+        SELECT bundle_type INTO v_bundle_type FROM categories;
+
+
+	
 	
 	END IF; /*End of : org.techbd.service.http.Interactions$RequestResponseEncountered*/
 	
@@ -1827,7 +1864,8 @@ BEGIN
         source_type,
         source_hub_interaction_id,
         group_hub_interaction_id,
-        is_bundle_valid
+        is_bundle_valid,
+        bundle_type
     )
     VALUES (
         gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
@@ -1870,7 +1908,8 @@ BEGIN
         source_type,
         source_hub_interaction_id,
         group_hub_interaction_id,
-        v_is_bundle_valid
+        v_is_bundle_valid,
+        v_bundle_type
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     IF (v_return IS NOT NULL) THEN
@@ -3317,13 +3356,13 @@ SELECT
     organization_id,
     organization_name,
     COUNT(CASE 
-            WHEN resource_type_set LIKE '%Consent%' THEN 1 
+            WHEN bundle_type LIKE '%Screening%' THEN 1 
          END) AS count_screenings,
     COUNT(CASE 
-            WHEN resource_type_set LIKE '%ServiceRequest%' OR resource_type_set LIKE '%Task%' THEN 1 
+            WHEN bundle_type LIKE '%Referral%' THEN 1 
          END) AS count_referrals,
     COUNT(CASE 
-            WHEN resource_type_set LIKE '%Condition%' THEN 1 
+            WHEN bundle_type LIKE '%Assessment%' THEN 1 
          END) AS count_assessments
 FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
 WHERE  
@@ -3935,16 +3974,8 @@ AS SELECT hub_interaction_id AS interaction_id,
     patient_mrn_source_system,
     organization_id,
     organization_name,
-    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
-    CASE
-        WHEN 'ServiceRequest' = ANY(string_to_array(resource_type_set, ', ')) OR 'Task' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Referral'
-        WHEN 'Consent' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Screening'
-        WHEN 'Condition' = ANY(string_to_array(resource_type_set, ', '))
-            THEN 'Assessment'
-        ELSE NULL
-    END AS bundle_resource_type,   
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,  
+    bundle_type AS bundle_resource_type,
     source_hub_interaction_id    
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
    WHERE source_type='CSV'; 
@@ -4180,16 +4211,7 @@ Results are grouped by key fields and sorted in ascending order.
         WHEN tenant_id_lower = 'healthelink' AND SPLIT_PART(htt_req.patient_mrn_source_system, '/', 5) = 'WNYICCFH' THEN 'FindHelp'
         ELSE ''
     END AS it_vendor, 
-    CASE
-        WHEN 'ServiceRequest' = ANY(string_to_array(htt_req.resource_type_set, ', ')) 
-          OR 'Task' = ANY(string_to_array(htt_req.resource_type_set, ', '))
-            THEN 'Referral'
-        WHEN 'Consent' = ANY(string_to_array(htt_req.resource_type_set, ', '))
-            THEN 'Screening'
-        WHEN 'Condition' = ANY(string_to_array(htt_req.resource_type_set, ', '))
-            THEN 'Assessment'
-        ELSE NULL
-    END AS type, 
+    htt_req.bundle_type AS type,
     COUNT(*) AS count
 FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
 WHERE 
