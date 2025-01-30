@@ -23,7 +23,10 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.CanonicalType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,6 +71,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import ca.uhn.fhir.context.FhirContext;
 import io.micrometer.common.util.StringUtils;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.opentelemetry.api.trace.Span;
@@ -135,6 +139,7 @@ public class FHIRService {
 			Map<String, Object> payloadWithDisposition = null;
 			try {
 				validateJson(payload, interactionId);
+				validateBundleProfileUrl(payload, interactionId);
 				if (null == dataLakeApiContentType) {
 					dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
 				}
@@ -224,6 +229,28 @@ public class FHIRService {
 				Configuration.objectMapper.readTree(jsonString);
 			} catch (Exception e) {
 				throw new JsonValidationException(ErrorCode.INVALID_JSON);
+			}
+		} finally {
+			validateJsonSpan.end();
+		}
+
+	}
+
+	public void validateBundleProfileUrl(String jsonString, String interactionId) {
+		Span validateJsonSpan = tracer.spanBuilder("FHIRService.validateBundleProfileUrl").startSpan();
+		try {
+			final var bundle = FhirContext.forR4().newJsonParser().parseResource(Bundle.class,
+					jsonString);
+			List<CanonicalType> profileList = bundle.getMeta().getProfile();
+			if (CollectionUtils.isEmpty(profileList)) {
+				LOG.error("Bundle profile is not provided for interaction id :{}",
+						interactionId);
+				throw new JsonValidationException(ErrorCode.BUNDLE_PROFILE_URL_IS_NOT_PROVIDED);
+			}
+			if (profileList.stream().noneMatch(c -> c.getValue().equals(appConfig.getDefaultSdohFhirProfileUrl()))) {
+				LOG.error("Bundle profile URL provided is not valid for interaction id :{}",
+						interactionId);
+				throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
 			}
 		} finally {
 			validateJsonSpan.end();
