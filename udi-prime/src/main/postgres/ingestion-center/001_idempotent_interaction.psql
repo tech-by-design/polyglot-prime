@@ -3889,7 +3889,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http_stat CASCADE;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http_stat AS
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http AS
 WITH fhir_summary AS (
     SELECT
         source_hub_interaction_id,
@@ -3908,6 +3909,9 @@ SELECT
     sizfr.hub_interaction_id,
     sizfr.created_at,
     sizfr.uri,
+    sizfr.csv_zip_file_name,
+    sizfr.origin,
+    sizfr.sftp_session_id,
     SUM(CASE WHEN siffcr.demographic_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
     SUM(CASE WHEN siffcr.qe_admin_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
     SUM(CASE WHEN siffcr.screening_observation_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
@@ -3930,6 +3934,9 @@ GROUP BY
     sizfr.uri,
     sizfr.tenant_id_lower,
     sizfr.tenant_id,
+    sizfr.csv_zip_file_name,
+     sizfr.origin,
+    sizfr.sftp_session_id,
     fhir_summary.fhir_count,
     fhir_summary.fhir_count_success,
     fhir_summary.fhir_count_failed
@@ -4494,3 +4501,33 @@ SELECT
 FROM 
     ranked_records
 WHERE rn = 1; 
+
+
+/*******************************************************************************************
+This view takes data from sat_interaction_flat_file_csv_request table to 
+provide a consolidated view of CSV file interactions via HTTPS, including 
+interaction details, tenant information, and associated file payloads.
+*******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http_stat_file_data CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http_stat_file_data AS
+SELECT
+    zip_file_hub_interaction_id,
+    nature,
+    tenant_id,
+    tenant_id_lower,
+    hub_interaction_id,
+    demographic_data_payload_text,
+    qe_admin_data_payload_text,
+    demographic_data_file_name,
+    qe_admin_data_file_name,
+    screening_observation_data_payload_text,
+    screening_profile_data_payload_text,
+    screening_observation_data_file_name,
+    screening_profile_data_file_name
+FROM
+    techbd_udi_ingress.sat_interaction_flat_file_csv_request
+WHERE 
+    demographic_data_file_name != '' OR
+    qe_admin_data_file_name != '' OR
+    screening_observation_data_file_name != '' OR
+    screening_profile_data_file_name != '';

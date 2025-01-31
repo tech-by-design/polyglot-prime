@@ -46,8 +46,7 @@
                 const data = await response.json();
 
                 // Extract only the payload from the response
-                const payload = data[0]?.payload;
-                console.log('Payload:', payload);
+                const payload = data[0]?.payload; 
 
                 // Convert the payload to a JSON string
                 const jsonString = JSON.stringify(payload, null, 2);
@@ -140,7 +139,7 @@
                     { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" },
                     {
                         headerName: "Download Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true, headerTooltip: "The widget allows users to filter and sort records based on these fields to analyze interactions comprehensively"
+                        headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true
                     }
                 ])
                 .withServerSideDatasource(
