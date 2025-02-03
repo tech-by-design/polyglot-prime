@@ -4,30 +4,30 @@ import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
 import org.hl7.fhir.r4.model.ValueSet;
 import org.techbd.orchestrate.fhir.util.ConceptReaderUtils;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
+// import io.opentelemetry.api.trace.Span;
+// import io.opentelemetry.api.trace.Tracer;
 
 class PostPopulateSupport {
 
     private final String referenceCodesPath = "ig-packages/reference/";
-    private final Tracer tracer;
+    // private final Tracer tracer;
 
-    public PostPopulateSupport(final Tracer tracer) {
-        this.tracer = tracer;
-    }
+    // public PostPopulateSupport(final Tracer tracer) {
+    //     this.tracer = tracer;
+    // }
 
     void update(ValidationSupportChain validationSupportChain) {
-        Span span = tracer.spanBuilder("PostPopulateSupport.update").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PostPopulateSupport.update").startSpan();
+        // try {
             addObservationLoincCodes(validationSupportChain);
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 
     private void addObservationLoincCodes(ValidationSupportChain validationSupportChain) {
-        Span span = tracer.spanBuilder("PostPopulateSupport.addObservationLoincCodes").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PostPopulateSupport.addObservationLoincCodes").startSpan();
+        // try {
             ValueSet loinc_valueSet = (ValueSet) validationSupportChain
                     .fetchValueSet("http://hl7.org/fhir/ValueSet/observation-codes");
             try {
@@ -41,9 +41,9 @@ class PostPopulateSupport {
             } finally {
                 loinc_valueSet = null;
             }
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 
 }

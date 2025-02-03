@@ -1,8 +1,9 @@
 package org.techbd.orchestrate.fhir;
 
-import ca.uhn.fhir.context.FhirContext;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.hl7.fhir.common.hapi.validation.support.PrePopulatedValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
@@ -11,47 +12,46 @@ import org.hl7.fhir.r4.model.ValueSet;
 import org.techbd.orchestrate.fhir.util.ConceptReaderUtils;
 import org.techbd.orchestrate.fhir.util.FileUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import ca.uhn.fhir.context.FhirContext;
+// import io.opentelemetry.api.trace.Span;
+// import io.opentelemetry.api.trace.Tracer;
 
 public class PrePopulateSupport {
 
     private final String referenceCodesPath = "ig-packages/reference/";
-    private final Tracer tracer;
+    // private final Tracer tracer;
 
-    public PrePopulateSupport(final Tracer tracer) {
-        this.tracer = tracer;
-    }
+    // public PrePopulateSupport(final Tracer tracer) {
+    //     this.tracer = tracer;
+    // }
 
     public PrePopulatedValidationSupport build(FhirContext fhirContext) {
-        Span span = tracer.spanBuilder("PrePopulateSupport.build").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PrePopulateSupport.build").startSpan();
+        // try {
             PrePopulatedValidationSupport prePopulatedValidationSupport = new PrePopulatedValidationSupport(
                     fhirContext);
             loadValueSets(fhirContext, prePopulatedValidationSupport);
             return prePopulatedValidationSupport;
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 
     public void addCodeSystems(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        Span span = tracer.spanBuilder("PrePopulateSupport.addCodeSystems").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PrePopulateSupport.addCodeSystems").startSpan();
+        // try {
             addSnomedCodes(validationSupportChain, prePopulatedValidationSupport);
             addICD10Codes(validationSupportChain, prePopulatedValidationSupport);
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 
     private void addICD10Codes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        Span span = tracer.spanBuilder("PrePopulateSupport.addICD10Codes").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PrePopulateSupport.addICD10Codes").startSpan();
+        // try {
             CodeSystem existingIcd10 = (CodeSystem) validationSupportChain
                     .fetchCodeSystem("http://hl7.org/fhir/sid/icd-10-cm");
             if (existingIcd10 == null) {
@@ -67,15 +67,15 @@ public class PrePopulateSupport {
                 }
                 existingIcd10.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             }
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 
     private void addSnomedCodes(ValidationSupportChain validationSupportChain,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        Span span = tracer.spanBuilder("PrePopulateSupport.addSnomedCodes").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PrePopulateSupport.addSnomedCodes").startSpan();
+        // try {
             CodeSystem existingSnomed = (CodeSystem) validationSupportChain.fetchCodeSystem("http://snomed.info/sct");
             if (existingSnomed == null) {
                 CodeSystem newSnomed = new CodeSystem();
@@ -90,40 +90,40 @@ public class PrePopulateSupport {
                 }
                 existingSnomed.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
             }
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 
     public void loadValueSets(FhirContext fhirContext, PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        Span span = tracer.spanBuilder("PrePopulateSupport.loadValueSets").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PrePopulateSupport.loadValueSets").startSpan();
+        // try {
             loadValueSet("ig-packages/vs/2.16.840.1.113762.1.4.1021.32.json", fhirContext,
                     prePopulatedValidationSupport);
             loadValueSet("ig-packages/vs/2.16.840.1.113762.1.4.1240.11.json", fhirContext,
                     prePopulatedValidationSupport);
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 
     private void loadValueSet(String filePath, FhirContext fhirContext,
             PrePopulatedValidationSupport prePopulatedValidationSupport) {
-        Span span = tracer.spanBuilder("PrePopulateSupport.loadValueSet").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PrePopulateSupport.loadValueSet").startSpan();
+        // try {
             ValueSet valueSet = fhirContext.newJsonParser().parseResource(ValueSet.class,
                     FileUtils.readFile1(filePath));
             addExpansionToInclude(valueSet);
             prePopulatedValidationSupport.addValueSet(valueSet);
             valueSet = null;
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 
     private void addExpansionToInclude(ValueSet valueSet) {
-        Span span = tracer.spanBuilder("PrePopulateSupport.addExpansionToInclude").startSpan();
-        try {
+        // Span span = tracer.spanBuilder("PrePopulateSupport.addExpansionToInclude").startSpan();
+        // try {
             if (valueSet == null || valueSet.getExpansion().getContains().size() == 0
                     || valueSet.getExpansion().getContains().isEmpty())
                 return;
@@ -138,8 +138,8 @@ public class PrePopulateSupport {
             valueSet.getCompose().getInclude().clear();
             concepts.forEach((system, conceptList) -> valueSet.getCompose().getInclude()
                     .add(new ValueSet.ConceptSetComponent().setSystem(system).setConcept(conceptList)));
-        } finally {
-            span.end();
-        }
+        // } finally {
+        //     span.end();
+        // }
     }
 }
