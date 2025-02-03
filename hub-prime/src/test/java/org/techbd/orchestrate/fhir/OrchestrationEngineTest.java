@@ -1,16 +1,12 @@
 package org.techbd.orchestrate.fhir;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,8 +17,6 @@ import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationEngine;
 
 import ca.uhn.fhir.context.FhirContext;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,24 +37,24 @@ class OrchestrationEngineTest {
     @Mock
     private Map<ValidationEngine, ValidationEngine> validationEngineCache;
 
-    @Mock
-    private SpanBuilder spanBuilder;  // Mock the SpanBuilder
+//     @Mock
+//     private SpanBuilder spanBuilder;  // Mock the SpanBuilder
 
-    @Mock
-    private Span span;
+//     @Mock
+//     private Span span;
 
-     @BeforeEach
-    void setUp() {
-        when(tracer.spanBuilder(anyString())).thenReturn(spanBuilder);
-        when(spanBuilder.startSpan()).thenReturn(span);
-    }
+//      @BeforeEach
+//     void setUp() {
+//         when(tracer.spanBuilder(anyString())).thenReturn(spanBuilder);
+//         when(spanBuilder.startSpan()).thenReturn(span);
+//     }
 
 
     @Test
     void testOrchestrateSingleSession() {
         OrchestrationEngine.OrchestrationSession session = engine.session()
                 .withPayloads(List.of("not a valid payload"))
-                .withTracer(tracer)
+                // .withTracer(tracer)
                 .withFhirProfileUrl("http://example.com/fhirProfile")
                 .addHapiValidationEngine()
                 .build();
@@ -81,14 +75,14 @@ class OrchestrationEngineTest {
     void testOrchestrateMultipleSessions() {
         OrchestrationEngine.OrchestrationSession session1 = engine.session()
                 .withPayloads(List.of("payload1"))
-                .withTracer(tracer)
+                // .withTracer(tracer)
                 .withFhirProfileUrl("http://example.com/fhirProfile")
                 .addHapiValidationEngine()
                 .build();
 
         OrchestrationEngine.OrchestrationSession session2 = engine.session()
                 .withPayloads(List.of("payload2"))
-                .withTracer(tracer)
+                // .withTracer(tracer)
                 .withFhirProfileUrl("http://example.com/fhirProfile")
                 .addHl7ValidationApiEngine()
                 .build();
@@ -116,14 +110,14 @@ class OrchestrationEngineTest {
     void testValidationEngineCaching() {
         OrchestrationEngine.OrchestrationSession session1 = engine.session()
                 .withPayloads(List.of("payload1"))
-                .withTracer(tracer)
+                // .withTracer(tracer)
                 .withFhirProfileUrl("http://example.com/fhirProfile")
                 .addHapiValidationEngine()
                 .build();
 
         OrchestrationEngine.OrchestrationSession session2 = engine.session()
                 .withPayloads(List.of("payload2"))
-                .withTracer(tracer)
+                // .withTracer(tracer)
                 .withFhirProfileUrl("http://example.com/fhirProfile")
                 .addHapiValidationEngine()
                 .build();
@@ -135,9 +129,9 @@ class OrchestrationEngineTest {
         codeSystemMap.put("shinnyConsentProvisionTypesVS", "http://example.com/shinnyConsentProvision");
         assertThat(engine.getSessions()).hasSize(2);
         assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                "http://example.com/fhirProfile", igPackages, igVersion,tracer,"test"))
+                "http://example.com/fhirProfile", igPackages, igVersion,"test"))
                 .isSameAs(engine.getValidationEngine(
                         OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                        "http://example.com/fhirProfile", igPackages, igVersion,tracer,"test"));
+                        "http://example.com/fhirProfile", igPackages, igVersion,"test"));
     }
 }

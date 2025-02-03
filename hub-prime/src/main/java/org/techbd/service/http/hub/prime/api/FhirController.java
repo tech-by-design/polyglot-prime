@@ -1,7 +1,5 @@
 package org.techbd.service.http.hub.prime.api;
 
-import static org.techbd.udi.auto.jooq.ingress.Tables.*;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -39,10 +37,9 @@ import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
+import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
 import io.micrometer.common.util.StringUtils;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -64,21 +61,21 @@ public class FhirController {
         private final AppConfig appConfig;
         private final UdiPrimeJpaConfig udiPrimeJpaConfig;
         private final FHIRService fhirService;
-        private final Tracer tracer;
+        // private final Tracer tracer;
 
         public FhirController(@SuppressWarnings("PMD.UnusedFormalParameter") final Environment environment,
                         final AppConfig appConfig,
                         final UdiPrimeJpaConfig udiPrimeJpaConfig,
                         final FHIRService fhirService,
                         final OrchestrationEngine orchestrationEngine,
-                        final Tracer tracer,
+                        // final Tracer tracer,
                         @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
                         @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
                 this.appConfig = appConfig;
                 this.udiPrimeJpaConfig = udiPrimeJpaConfig;
                 this.fhirService = fhirService;
                 this.engine = orchestrationEngine;
-                this.tracer = tracer;
+                // this.tracer = tracer;
         }
 
         @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -190,8 +187,8 @@ public class FhirController {
                         @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
                         @Parameter(description = "Optional parameter to specify source of the request.", required = false) @RequestParam(value = "source", required = false, defaultValue = "FHIR") String source,
                         HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
-                Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
-                try {
+                // Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
+                // try {
                         if (tenantId == null || tenantId.trim().isEmpty()) {
                                 LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
                                 throw new IllegalArgumentException("Tenant ID must be provided");
@@ -218,9 +215,9 @@ public class FhirController {
                                         includeIncomingPayloadInDB,
                                         request, response, provenance, includeOperationOutcome, mtlsStrategy, null,
                                         null, null, source, requestUriToBeOverridden, coRrelationId);
-                } finally {
-                        span.end();
-                }
+                // } finally {
+                //         span.end();
+                // }
         }
 
         @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
@@ -275,8 +272,8 @@ public class FhirController {
                         @Parameter(description = "Parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
                         @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
                         HttpServletRequest request, HttpServletResponse response) {
-                Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
-                try {
+                // Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
+                // try {
 
                         if (tenantId == null || tenantId.trim().isEmpty()) {
                                 LOG.error("FHIRController:Bundle Validate:: Tenant ID is missing or empty");
@@ -302,7 +299,7 @@ public class FhirController {
                                         .withInteractionId(InteractionsFilter.getActiveRequestEnc(request).requestId()
                                                         .toString())
                                         .withPayloads(List.of(payload))
-                                        .withTracer(tracer)
+                                        // .withTracer(tracer)
                                         .withFhirProfileUrl(fhirProfileUrl)
                                         .withFhirIGPackages(igPackages)
                                         .withIgVersion(igVersion)
@@ -344,9 +341,9 @@ public class FhirController {
                                         LOG.info("FHIRController:Bundle Validate::  -END");
                                 }
                         }
-                } finally {
-                        span.end();
-                }
+                // } finally {
+                //         span.end();
+                // }
         }
 
         @GetMapping(value = "/Bundle/$status/{bundleSessionId}", produces = { "application/json", "text/html" })
