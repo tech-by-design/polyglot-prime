@@ -875,6 +875,74 @@ const migrateSP = pgSQLa.storedProcedure(
       )
       ON CONFLICT (action_rule_id) DO NOTHING;
 
+      INSERT INTO techbd_udi_ingress.json_action_rule (
+        action_rule_id,
+        "namespace",
+        json_path,
+        "action",
+        "condition",
+        reject_json,
+        modify_json,
+        priority,
+        updated_at,
+        updated_by,
+        last_applied_at,
+        created_at,
+        created_by,
+        provenance
+      )
+      VALUES (
+        'ffeb6342-3797-459f-9a4a-b8a71015f082',
+        'NYeC Rule',
+        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1001*")',
+        'discard',
+        NULL,
+        NULL,
+        NULL,
+        5000,
+        current_timestamp,
+        current_user,
+        current_timestamp,
+        current_timestamp,
+        current_user,
+        '{"Key" : "value"}'
+      )
+      ON CONFLICT (action_rule_id) DO NOTHING;
+
+      INSERT INTO techbd_udi_ingress.json_action_rule (
+        action_rule_id,
+        "namespace",
+        json_path,
+        "action",
+        "condition",
+        reject_json,
+        modify_json,
+        priority,
+        updated_at,
+        updated_by,
+        last_applied_at,
+        created_at,
+        created_by,
+        provenance
+      )
+      VALUES (
+        'ggeb6342-3797-459f-9a4a-b8a71015f082',
+        'NYeC Rule',
+        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1002*")',
+        'discard',
+        NULL,
+        NULL,
+        NULL,
+        5000,
+        current_timestamp,
+        current_user,
+        current_timestamp,
+        current_timestamp,
+        current_user,
+        '{"Key" : "value"}'
+      )
+      ON CONFLICT (action_rule_id) DO NOTHING;
+
 
 
       CREATE INDEX IF NOT exists json_action_rule_action_idx ON techbd_udi_ingress.json_action_rule USING btree (action);
