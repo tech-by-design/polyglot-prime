@@ -4259,7 +4259,8 @@ AS SELECT
 	created_at,
 	created_by,
 	provenance 
-   FROM techbd_udi_ingress.sat_interaction_ccda_request sicr;      
+   FROM techbd_udi_ingress.sat_interaction_ccda_request sicr
+   order by created_at DESC;        
 
 
 /*******************************************************************************************
