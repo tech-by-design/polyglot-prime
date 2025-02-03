@@ -110,7 +110,7 @@
                 const url = URL.createObjectURL(zipBlob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = csvZipFileName + '.zip';
+                link.download = csvZipFileName ;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -131,13 +131,14 @@
  
                 // Create the URL for the API call
                 const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${downloadviewName}/zip_file_hub_interaction_id/${zip_file_hub_interaction_id}.json`;
-
+                if (params.data.file_count === 0) {
+                    return '<button class="  text-gray-500 cursor-not-allowed px-2 py-1 " disabled><i class="fas fa-download"></i></button>';
+                }
                 // Create a download link placeholder
-                const downloadLink = `<a href="#" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
-        <i class="fas fa-download"></i>
-    </a>`;
-
-                return downloadLink;
+                return `<a href="#" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
+                    <i class="fas fa-download"></i>
+                </a>`;
+ 
             }
 
             
