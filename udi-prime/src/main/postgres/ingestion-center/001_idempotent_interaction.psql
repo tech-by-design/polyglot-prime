@@ -3588,7 +3588,7 @@ BEGIN
             max(sihr.created_at)::TIMESTAMP AS recently_created_at
         FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
         WHERE 
-            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/'])  
+            sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/'])  
             AND sihr.created_at >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD') 
             AND sihr.created_at < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
             AND sihr.tenant_id <> 'N/A' 
@@ -3865,7 +3865,7 @@ BEGIN
              FROM 
                 techbd_udi_ingress.sat_interaction_fhir_request sihr
              WHERE 
-                sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'',''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/''])
+                sihr.uri = ANY (ARRAY[''/Bundle/'', ''/Bundle'',''/flatfile/csv/Bundle'', ''/flatfile/csv/Bundle/'', ''/ccda/Bundle'', ''/ccda/Bundle/''])
 	            AND sihr.created_at >= TO_TIMESTAMP($2::text, ''YYYY-MM-DD'') 
 		        AND sihr.created_at < TO_TIMESTAMP($3::text, ''YYYY-MM-DD'') + INTERVAL ''1 day'' -- Parameters shifted by one
                 AND sihr.tenant_id <> ''N/A''
@@ -4222,7 +4222,7 @@ Results are grouped by key fields and sorted in ascending order.
     COUNT(*) AS count
 FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
 WHERE 
-    htt_req.uri =  ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/']) 
+    htt_req.uri =  ANY (ARRAY['/Bundle/', '/Bundle', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/']) 
     AND htt_req.is_bundle_valid = true  
     AND htt_req.nature = 'Forwarded HTTP Response'
 GROUP BY 
