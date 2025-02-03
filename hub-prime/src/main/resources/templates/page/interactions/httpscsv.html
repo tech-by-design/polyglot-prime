@@ -5,8 +5,11 @@
 <head>
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
     <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
- 
+     <!-- Include Font Awesome in your HTML -->
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <style>
         .grid-description {
             font-size: 14px;
@@ -18,9 +21,10 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'interaction_csv_http_stat'; 
+        const viewName = 'interaction_csv_http'; 
         const viewdetail = 'interaction_csv_http_fhir_request';
         const pipupviewName = 'interaction_http_fhir_request';  
+        const downloadviewName = 'interaction_csv_http_stat_file_data';
         const modalAide = new ModalAide();
         const fhirColumnDefs = [
             { headerName: "TechBD Interaction ID", field: "interaction_id", filter: "agTextColumnFilter", 
@@ -41,7 +45,7 @@
             { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", headerTooltip: "IP address of the client making the request" },
             { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" },
         ];
-        function getQuestionAndAnswerGridData(params) { 
+        function getFhirGridData(params) { 
             const hub_interaction_id = params.data.hub_interaction_id;
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/source_hub_interaction_id/${hub_interaction_id}.json`))
                 .then(response => {
@@ -58,7 +62,85 @@
                     console.error('Error fetching details data' + error);
                 });
         }               
+
+        // Define downloadZipFile globally
+        window.downloadZipFile = async function (apiUrl, csvZipFileName = 'csv_files') {
+            try {
+                // Fetch data from the API
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                // Get the JSON data
+                const data = await response.json();
+                if (!data || data.length === 0) {
+                    throw new Error('No data received from API');
+                }
+                
+                // Extract file names and payloads from multiple objects in the array
+                const files = [];
+                data.forEach(item => {
+                    if (item.demographic_data_file_name && item.demographic_data_payload_text) {
+                        files.push({ name: item.demographic_data_file_name, content: item.demographic_data_payload_text });
+                    }
+                    if (item.qe_admin_data_file_name && item.qe_admin_data_payload_text) {
+                        files.push({ name: item.qe_admin_data_file_name, content: item.qe_admin_data_payload_text });
+                    }
+                    if (item.screening_profile_data_file_name && item.screening_profile_data_payload_text) {
+                        files.push({ name: item.screening_profile_data_file_name, content: item.screening_profile_data_payload_text });
+                    }
+                    if (item.screening_observation_data_file_name && item.screening_observation_data_payload_text) {
+                        files.push({ name: item.screening_observation_data_file_name, content: item.screening_observation_data_payload_text });
+                    }
+                });
+                
+                if (files.length === 0) {
+                    throw new Error('No valid files found in API response');
+                }
+                
+                // Create a new ZIP file
+                const zip = new JSZip();
+                files.forEach(file => {
+                    zip.file(file.name , file.content); // Add files to zip
+                });
+                
+                // Generate the ZIP file and trigger download
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(zipBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = csvZipFileName ;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            
+            } catch (error) {
+                console.error('Error downloading ZIP file:', error);
+            }
+        };
+
+
+
         document.addEventListener('DOMContentLoaded', function () {
+
+            function downloadCellRenderer(params) {
+                const zip_file_hub_interaction_id = params.data.hub_interaction_id;
+                const csv_zip_file_name = params.data.csv_zip_file_name || '';
+ 
+                // Create the URL for the API call
+                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${downloadviewName}/zip_file_hub_interaction_id/${zip_file_hub_interaction_id}.json`;
+                if (params.data.file_count === 0) {
+                    return '<button class="  text-gray-500 cursor-not-allowed px-2 py-1 " disabled><i class="fas fa-download"></i></button>';
+                }
+                // Create a download link placeholder
+                return `<a href="#" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
+                    <i class="fas fa-download"></i>
+                </a>`;
+ 
+            }
+
             
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
@@ -69,7 +151,7 @@
                         headerTooltip: "The timestamp indicating when the interaction was initiated."
                     },                    
                     {
-                        headerName: "TechBD Interaction ID",
+                        headerName: "TechBD Zip File Interaction ID",
                         field: "hub_interaction_id",
                         filter: "agTextColumnFilter",
                         headerTooltip: "The unique zip file Interaction ID for the TechBD tenant associated with the CSV file."
@@ -82,7 +164,12 @@
                     { headerName: "File Count", field: "file_count", headerTooltip: "The total number of files processed, including demographic, administrative, observation, and profile files.", filter: "agNumberColumnFilter" },
                     { headerName: "FHIR Count", field: "fhir_count",  headerTooltip: "The total number of FHIR interactions associated with this HTTP request.", filter: "agNumberColumnFilter", cellRenderer: 'agGroupCellRenderer' },
                     { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.",  filter: "agNumberColumnFilter" },
-                    { headerName: "FHIR Failed Count", field: "fhir_count_failed",  headerTooltip: "The number of failed FHIR interactions where the HTTP response encountered an error.", filter: "agNumberColumnFilter" }
+                    { headerName: "Origin", field: "origin",  headerTooltip: "The origin of the interaction", filter: "agNumberColumnFilter" },
+                    { headerName: "SFTP Session ID", field: "sftp_session_id",  headerTooltip: "The SFTP session ID associated with the interaction", filter: "agNumberColumnFilter" },
+                    {
+                        headerName: "Download Zip File", field: "", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                        headerTooltip: "Download Zip File", filter: false, suppressFilter: true 
+                    }
                     
                 ])
                 .withServerSideDatasource(
@@ -103,7 +190,7 @@
                         }
                     },
                     getDetailRowData: params => {
-                        getQuestionAndAnswerGridData(params);
+                        getFhirGridData(params);
                     }
                 })
                 .withDetailRowAutoHeight(false)

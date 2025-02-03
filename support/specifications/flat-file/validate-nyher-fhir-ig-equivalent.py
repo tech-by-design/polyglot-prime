@@ -4,6 +4,7 @@ import json
 import os
 from frictionless import Package, transform, steps, extract
 from datetime import datetime, date
+import re  # Import required for regular expression handling
 
 def custom_json_encoder(obj):
     if isinstance(obj, (datetime, date)):
@@ -51,12 +52,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             for resource_name, file_path in file_mappings.items():
                 rows = extract(file_path)  # Extract data from CSV
                 results["originalData"][resource_name] = rows
-
-        # Parse CSV files into JSON format and store in results["originalData"]
-        # for resource_name, file_path in file_mappings.items():
-        #     with open(file_path, mode="r") as csv_file:
-        #         csv_reader = csv.DictReader(csv_file)
-        #         results["originalData"][resource_name] = [row for row in csv_reader]            
+        
 
         # Create the package descriptor dynamically, inserting paths from `file_mappings`
         resources = []
@@ -124,11 +120,27 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
         })
 
     except Exception as e:
-        results["errorsSummary"].append({                        
+        error_message = str(e)
+
+        # Check if the error is related to missing fields in transformation
+        if "selection is not a field or valid field index" in error_message:
+            # Extract the missing field name from the error message
+            match = re.search(r"'(.*?)'", error_message)
+            missing_field = match.group(1) if match else "Unknown field"
+
+            user_friendly_message = (
+                f"The field '{missing_field}' is missing or incorrectly named in the dataset. "
+                f"Please check if it exists in the CSV file and matches the expected schema."
+            )
+        else:
+            user_friendly_message = error_message  # Keep other errors as-is
+
+        results["errorsSummary"].append({
             "fieldName": None,
-            "message": str(e),
-            "type": "unexpected-error"
+            "message": user_friendly_message,
+            "type": "data-processing-errors"
         })
+
 
     # Write the results to a JSON file if output_path is provided, otherwise print to console
     if output_path:
