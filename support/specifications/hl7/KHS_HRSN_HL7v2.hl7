@@ -1,0 +1,24 @@
+MSH|^~\&|POWERFORM|OCF|ECLIPSYS|KALEIDA|20250130123034||ORU^R01|Q3734450344T3963655809||2.3||||||8859/1
+PID|1|1006099866^^^KALUI|1006099866^^^Eclipsys_MRN||ZZZZTESTINTEG^REHABTWO||19900101|M|||726 EXCHANGE ST^^BUFFALO^NY^14210^^^^14|14|||001|M||11664231^^^Eclipsys_FIN|555555555||||||0|||||N
+PV1|1|I|B5S^B0538^D^KH BGH^^^KH BGH|3|||67485^QOGAOFYTN^UUGKS^Q^^MD^MD^^Kaleida Dr. Number^^^^COMMDR|||REH|B5S|||1|||67485^QOGAOFYTN^UUGKS^Q^^MD^MD^^Kaleida Dr. Number^^^^COMMDR|11||900|||||||||||||||||||KH BGH||A|||20241107093252
+ORC|PA
+OBR|1||11811452410^HNAM_EVENTID|96777-8^AHC-HRSN Screening Tool - Form^^Accountable Health Communities Health Related Social Needs Screening Tool^Accountable Health Communities Health Related Social Needs Screening Tool|||20250130122900|20250130122900||||||||||||||20250130123033||GRP||||||||81233&VIOHOSET&QOSSNO&O&&IT Staff&&&Kaleida_Employee_Id||81233&VIOHOSET&QOSSNO&O&&IT Staff&&&Kaleida_Employee_Id
+OBX|1|CE|96778-6^AHC Current Issues Living Environment|11811452414|LA31996-4^Pests such as bugs, ants,~LA31999-8^Oven or stove not working|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|2|CE|71802-3^AHC Current Living Situation|11811452416|LA31993-1^I have a steady place to|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|3|CE|88123-5^AHC Food Gone, No Money To Buy P12M|11811452418|LA6729-3^Sometimes true|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|4|CE|88122-7^AHC Worried Food Running Out P12M|11811452420|LA28398-8^Never true|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|5|CE|96779-4^AHC Utilities Threaten Shut Off P12M|11811452422|LA32002-0^Already shut off|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|6|CE|93030-5^AHC No Transport Med/Appt/Work P12M|11811452424|LA32-8^No.|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|7|CE|95618-5^HITS Partner Physically Hurt You|11811452426|LA10066-1^Rarely|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|8|CE|95617-7^HITS Partner Insult or Talk Down to You|11811452428|LA16644-9^Fairly often|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|9|CE|95616-9^HITS Partner Threaten You With Harm|11811452430|LA6270-8^Never|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|10|CE|95615-1^HITS Partner Scream or Curse at You|11811452432|LA10082-8^Sometimes|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|11|NUM|95614-4^HITS Total Score|11811452434|10|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|12|CE|76513-1^AHC How Hard To Pay For Basics|11811452436|LA15832-1^Very hard|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|13|CE|96780-2^AHC Need Help Finding/Keeping Work/Job|11811452438|LA31982-4^Yes, help keeping work|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|14|CE|96781-0^AHC Need Help With IADL|11811452440|LA31978-2^I could use a little more|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|15|CE|93159-2^AHC How Often Feel Lonely Or Isolated|11811452442|Always^Always|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|16|CE|96781-0^AHC Need Help Getting More Education|11811452444|LA32-8^No.|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|17|CE|96781-0^AHC Speak Language Not English At Home|11811452446|Yes^Yes|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+OBX|18|CE|CD:2275946873^AHC-HRSN Patient Declined|11811452448|Patient Provided Response^Patient Provided Response|||||||||20250130122953||81233^VIOHOSET^QOSSNO^O^^IT Staff^^^Kaleida_Employee_Id
+
