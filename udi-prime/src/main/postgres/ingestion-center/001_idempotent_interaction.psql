@@ -4532,3 +4532,183 @@ WHERE
     qe_admin_data_file_name != '' OR
     screening_observation_data_file_name != '' OR
     screening_profile_data_file_name != '';
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_validation_response(TEXT, TEXT);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_validation_response(interaction_type TEXT, interaction_id TEXT) 
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+	v_payload			JSONB := NULL;
+	v_zip_generalErrors	TEXT  := NULL;
+    v_error_msg 		TEXT;
+    v_error_type 		TEXT;
+    v_sqlstate 			TEXT;
+    v_pg_detail 		TEXT;
+    v_pg_hint 			TEXT;
+    v_pg_context 		TEXT;
+BEGIN
+	
+	CASE interaction_type
+		WHEN 'CSV' THEN
+			IF NOT EXISTS (SELECT 1
+					FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+					WHERE hub_interaction_id = interaction_id) THEN 
+				RETURN jsonb_build_object('error', interaction_id::TEXT || ' is not a valid ' || interaction_type::TEXT || ' interaction id.');
+			ELSE
+				RETURN CASE WHEN nature = 'Converted to FHIR' AND to_state = 'CONVERTED_TO_FHIR' THEN 
+								jsonb_build_object('payload', validation_result_payload, 'message', 'Converted to FHIR')
+							ELSE validation_result_payload 
+						END
+					FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+					WHERE nature IN ('Converted to FHIR', 'CSV Validation Result') 
+					  AND hub_interaction_id = interaction_id 
+					  AND validation_result_payload IS NOT NULL 
+					  AND validation_result_payload != '{}'
+					ORDER BY --nature = 'CSV Validation Result' 
+						CASE 
+						    WHEN nature = 'Converted to FHIR' AND to_state = 'FHIR_CONVERTION_FAILED' THEN 1
+						    WHEN nature = 'CSV Validation Result' THEN 2
+						    ELSE 3  -- Other cases (like "Converted to FHIR" with "CONVERTED_TO_FHIR")
+						END
+					LIMIT 1;
+			END IF;
+		WHEN 'FHIR' THEN
+			IF NOT EXISTS (SELECT 1
+					FROM techbd_udi_ingress.sat_interaction_fhir_request 
+					WHERE hub_interaction_id = interaction_id) THEN 
+				RETURN jsonb_build_object('error', interaction_id::TEXT || ' is not a valid ' || interaction_type::TEXT || ' interaction id.');
+			ELSE
+				RETURN payload 
+					FROM techbd_udi_ingress.sat_interaction_fhir_request 
+					WHERE nature ='techByDesignDisposition' 
+					  AND hub_interaction_id = interaction_id 
+					  AND payload IS NOT NULL AND payload != '{}';
+			END IF;
+		WHEN 'ZIP' THEN
+			IF NOT EXISTS (SELECT 1
+					FROM techbd_udi_ingress.sat_interaction_zip_file_request 
+					WHERE hub_interaction_id = interaction_id) THEN 
+				RETURN jsonb_build_object('error', interaction_id::TEXT || ' is not a valid ' || interaction_type::TEXT || ' interaction id.');
+			END IF;
+			WITH 
+				flat_file AS (
+					SELECT 
+				        hub_interaction_id AS flat_file_hub_interaction_id, 
+				        /*jsonb_strip_nulls(jsonb_build_array(
+				            demographic_data_file_name, NULL,
+				            qe_admin_data_file_name, NULL,
+				            screening_observation_data_file_name, 
+				            screening_profile_data_file_name
+				        )) AS validatedCsvFiles, */
+						(
+					        SELECT jsonb_agg(file_name)
+					        FROM (
+					            SELECT demographic_data_file_name AS file_name
+					            UNION ALL
+					            SELECT qe_admin_data_file_name
+					            UNION ALL
+					            SELECT screening_observation_data_file_name
+					            UNION ALL
+					            SELECT screening_profile_data_file_name
+					        ) AS subquery
+					        WHERE file_name IS NOT NULL
+					    ) AS validatedCsvFiles,
+				        to_state, nature,
+				        format('/flatfile/csv/Bundle/status?interactionType=CSV&interactionId=%s', hub_interaction_id) AS csvStatusEndpoint
+				    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+				    WHERE zip_file_hub_interaction_id = interaction_id
+				),
+				failed_validation AS (
+				    SELECT flat_file_hub_interaction_id, validatedCsvFiles, csvStatusEndpoint
+				    FROM flat_file
+				    WHERE to_state = 'VALIDATION_FAILED'
+				),
+				successful_validation AS (
+				    SELECT flat_file_hub_interaction_id, validatedCsvFiles, csvStatusEndpoint
+				    FROM flat_file
+				    WHERE to_state = 'VALIDATION_SUCCESS'
+				),
+				zip_file_details AS (
+					SELECT general_errors, status
+					FROM techbd_udi_ingress.sat_interaction_zip_file_request 
+					WHERE hub_interaction_id = interaction_id LIMIT 1
+				),
+				failed_fhir AS (
+				    SELECT flat_file_hub_interaction_id, validatedCsvFiles, csvStatusEndpoint
+				    FROM flat_file
+				    WHERE nature = 'Converted to FHIR' AND to_state = 'FHIR_CONVERSION_FAILED'
+				),
+				successful_fhir AS (
+				    SELECT DISTINCT 
+				        fhir.hub_interaction_id AS fhir_hub_interaction_id, 
+				        ff.flat_file_hub_interaction_id,
+				        ff.validatedCsvFiles, 
+				        format('/flatfile/csv/Bundle/status?interactionType=FHIR&interactionId=%s', fhir.hub_interaction_id) AS fhirStatusEndpoint
+				    FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
+				    JOIN flat_file ff ON fhir.group_hub_interaction_id = ff.flat_file_hub_interaction_id
+				    WHERE ff.nature = 'Converted to FHIR' AND ff.to_state = 'CONVERTED_TO_FHIR' AND fhir.nature = 'Original FHIR Payload'
+				    AND UPPER(fhir.source_type) = 'CSV' AND fhir.source_hub_interaction_id = interaction_id
+				)
+				SELECT jsonb_build_object( 
+					'zipFileInteractionId', interaction_id,
+					'status', (SELECT status FROM zip_file_details),
+				    'csvValidationResults', jsonb_build_object(
+				        'failedCsvInteractions', (SELECT jsonb_agg(jsonb_build_object(
+							'message', 'Csv Validation Failed.Check the status endpoint for the details of failure',
+				            'csvInteractionId', flat_file_hub_interaction_id,
+				            'validatedCsvFiles', validatedCsvFiles,
+				            'statusEndpoint', csvStatusEndpoint
+				        )) FROM failed_validation),
+				        'successfulCsvInteractions', (SELECT jsonb_agg(jsonb_build_object(
+				            'message', 'Csv Validation is Successful',
+				            'csvInteractionId', flat_file_hub_interaction_id,
+				            'validatedCsvFiles', validatedCsvFiles,
+				            'statusEndpoint', csvStatusEndpoint,
+							'fhirProcessingResults', jsonb_build_object(
+						        'failedFhirConversions', (SELECT jsonb_agg(jsonb_build_object(
+						        	'message', 'Could not convert to FHIR.Check the status endpoint for the details of failure'
+						        )) FROM failed_fhir),
+						        'convertedToFhir', (SELECT jsonb_agg(jsonb_build_object(
+						        	'fhirInteractionId', fhir_hub_interaction_id,
+						            'statusEndpoint', fhirStatusEndpoint
+						        )) FROM successful_fhir)
+						    )
+				        )) FROM successful_validation)
+				    ),
+				    /*'fhirProcessingResults', jsonb_build_object(
+				        'failedFhirConversions', (SELECT jsonb_agg(jsonb_build_object(
+				        	'message', 'Could not convert to FHIR.Check the status endpoint for the details of failure',
+				            'csvInteractionId', flat_file_hub_interaction_id,
+				            'validatedCsvFiles', validatedCsvFiles,
+				            'statusEndpoint', csvStatusEndpoint
+				        )) FROM failed_fhir),
+				        'convertedToFhir', (SELECT jsonb_agg(jsonb_build_object(
+				        	'fhirInteractionId', fhir_hub_interaction_id,
+				            'csvInteractionId', flat_file_hub_interaction_id,
+				            'validatedCsvFiles', validatedCsvFiles,
+				            'statusEndpoint', fhirStatusEndpoint
+				        )) FROM successful_fhir)
+				    ),*/
+				    'generalErrors', (SELECT general_errors FROM zip_file_details) 
+				) INTO v_payload;
+			RETURN v_payload;
+		ELSE 
+			RETURN NULL;
+	END CASE;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg  = MESSAGE_TEXT,
+	        v_sqlstate   = RETURNED_SQLSTATE,
+	        v_pg_detail  = PG_EXCEPTION_DETAIL,
+	        v_pg_hint 	 = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    RAISE NOTICE 'Error occurred: %', SQLERRM; 
+		RETURN NULL;
+END;
+$function$;    
