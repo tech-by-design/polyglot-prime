@@ -29,7 +29,7 @@
           <ul class="breadcrumb">
         <li id="publishDate">Last Published: 2025-02-03<span class="divider">|</span>
 </li>
-          <li id="projectVersion">Version: 0.450.0</li>
+          <li id="projectVersion">Version: 0.451.0</li>
         <li class="pull-right"><a href="./">Tech by Design Hub (Prime)</a></li>
           </ul>
         </div>
@@ -279,7 +279,7 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>380</td></tr>
+<td>412</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>196</td></tr>
@@ -287,31 +287,31 @@
 <td colspan="2" style="text-align: left;">
 <pre>}
 
-        private void setUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
-                var curUserName = &quot;API_USER&quot;;
-                var gitHubLoginId = &quot;N/A&quot;;
-                final var sessionId = request.getRequestedSessionId();
-                var userRole = &quot;API_ROLE&quot;;
-                if (!Constant.isStatelessApiUrl(request.getRequestURI())) { // Call only if not a stateless URL
-                        final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
-                        if (curUser.isPresent()) {
-                                final var ghUser = curUser.get().ghUser();
-                                if (ghUser != null) {
-                                        curUserName = Optional.ofNullable(ghUser.name()).orElse(&quot;NO_DATA&quot;);
-                                        gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse(&quot;NO_DATA&quot;);
-                                        userRole = curUser.get().principal().getAuthorities().stream()
-                                                        .map(GrantedAuthority::getAuthority)
-                                                        .collect(Collectors.joining(&quot;,&quot;));
-                                        LOG.info(&quot;userRole: &quot; + userRole);
-                                        userRole = &quot;DEFAULT_ROLE&quot;; // TODO -set user role
-                                }
-                        }
-                }
-                rihr.setUserName(curUserName);
-                rihr.setUserId(gitHubLoginId);
-                rihr.setUserSession(sessionId);
-                rihr.setUserRole(userRole);
-        }</pre></td></tr></table>
+	private void setUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
+		var curUserName = &quot;API_USER&quot;;
+		var gitHubLoginId = &quot;N/A&quot;;
+		final var sessionId = request.getRequestedSessionId();
+		var userRole = &quot;API_ROLE&quot;;
+		if (!Constant.isStatelessApiUrl(request.getRequestURI())) { // Call only if not a stateless URL
+			final var curUser = GitHubUserAuthorizationFilter.getAuthenticatedUser(request);
+			if (curUser.isPresent()) {
+				final var ghUser = curUser.get().ghUser();
+				if (ghUser != null) {
+					curUserName = Optional.ofNullable(ghUser.name()).orElse(&quot;NO_DATA&quot;);
+					gitHubLoginId = Optional.ofNullable(ghUser.gitHubId()).orElse(&quot;NO_DATA&quot;);
+					userRole = curUser.get().principal().getAuthorities().stream()
+							.map(GrantedAuthority::getAuthority)
+							.collect(Collectors.joining(&quot;,&quot;));
+					LOG.info(&quot;userRole: &quot; + userRole);
+					userRole = &quot;DEFAULT_ROLE&quot;; // TODO -set user role
+				}
+			}
+		}
+		rihr.setUserName(curUserName);
+		rihr.setUserId(gitHubLoginId);
+		rihr.setUserSession(sessionId);
+		rihr.setUserRole(userRole);
+	}</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
 <th>File</th>
@@ -321,7 +321,7 @@
 <td>453</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>247</td></tr>
+<td>276</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>private void addObservabilityHeadersToResponse(final HttpServletRequest request, final HttpServletResponse response) {
@@ -392,7 +392,7 @@
 <td>211</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>382</td></tr>
+<td>414</td></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>198</td></tr>
