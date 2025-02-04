@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -237,23 +238,36 @@ public class FHIRService {
 	}
 
 	public void validateBundleProfileUrl(String jsonString, String interactionId) {
-		// Span validateJsonSpan = tracer.spanBuilder("FHIRService.validateBundleProfileUrl").startSpan();
+		// Span validateJsonSpan =
+		// tracer.spanBuilder("FHIRService.validateBundleProfileUrl").startSpan();
 		// try {
-			final var bundle = FhirContext.forR4().newJsonParser().parseResource(Bundle.class,
-					jsonString);
-			List<CanonicalType> profileList = bundle.getMeta().getProfile();
+		JsonNode rootNode;
+		try {
+			rootNode = Configuration.objectMapper.readTree(jsonString);
+			JsonNode metaNode = rootNode.path("meta").path("profile");
+
+			List<String> profileList = Optional.ofNullable(metaNode)
+					.filter(JsonNode::isArray)
+					.map(node -> StreamSupport.stream(node.spliterator(), false)
+							.map(JsonNode::asText)
+							.collect(Collectors.toList()))
+					.orElse(List.of());
+
 			if (CollectionUtils.isEmpty(profileList)) {
-				LOG.error("Bundle profile is not provided for interaction id :{}",
-						interactionId);
+				LOG.error("Bundle profile is not provided for interaction id: {}", interactionId);
 				throw new JsonValidationException(ErrorCode.BUNDLE_PROFILE_URL_IS_NOT_PROVIDED);
 			}
-			if (profileList.stream().noneMatch(c -> c.getValue().equals(appConfig.getDefaultSdohFhirProfileUrl()))) {
-				LOG.error("Bundle profile URL provided is not valid for interaction id :{}",
-						interactionId);
+
+			if (profileList.stream().noneMatch(profile -> profile.equals(appConfig.getDefaultSdohFhirProfileUrl()))) {
+				LOG.error("Bundle profile URL provided is not valid for interaction id: {}", interactionId);
 				throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
 			}
+		} catch (JsonProcessingException e) {
+			LOG.error("Json Processing exception while extracting profile url for interaction id :{}", e);
+		}
+
 		// } finally {
-		// 	validateJsonSpan.end();
+		// validateJsonSpan.end();
 		// }
 
 	}
