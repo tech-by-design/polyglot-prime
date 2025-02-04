@@ -1,0 +1,34 @@
+name: CI/CD Workflow for Qualityfolio
+on:
+  push:
+    paths:
+      - 'hub-prime/src/qualityfolio/TechbyDesignHub/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: qualityfolio
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: main
+          
+      - name: Check Surveilr Version
+        run: |
+          surveilr --version
+         
+      - name: Ingest Files with Surveilr
+        run: |
+          surveilr ingest files -r TechbyDesignHub
+        working-directory: hub-prime/src/qualityfolio
+
+      - name: Generate SQL files
+        run: |
+          surveilr shell https://www.surveilr.com/lib/service/qualityfolio/package.sql
+        working-directory: hub-prime/src/qualityfolio
+
+      - name: Deploy to production server
+        run: |
+          bash -i ${{ secrets.SCRIPT_PATH }}/qualityfolio.sh
