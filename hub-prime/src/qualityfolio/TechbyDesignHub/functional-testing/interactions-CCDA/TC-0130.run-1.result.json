@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0130",
+    "title": "Verify that one interaction row is displayed in the  FHIR via HTTPs FAILED tab when a FHIR JSON is sent to the /ccda/Bundle/ endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.830804Z",
+    "end_time": "2025-01-23T13:51:14.830804Z",
+    "total_duration": "37.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Interactions menu header and navigate to  FHIR via HTTPs FAILED tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.830804Z",
+            "end_time": "2025-01-23T13:51:14.830804Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the Nature column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.830804Z",
+            "end_time": "2025-01-23T13:51:14.830804Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Identify the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.830804Z",
+            "end_time": "2025-01-23T13:51:14.830804Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify that one interaction row is displayed:",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.830804Z",
+            "end_time": "2025-01-23T13:51:14.830804Z"
+        }
+    ]
+}

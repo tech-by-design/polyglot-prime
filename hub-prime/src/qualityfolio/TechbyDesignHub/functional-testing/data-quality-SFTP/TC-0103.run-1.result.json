@@ -1,0 +1,45 @@
+{
+    "test_case_fii": "TC-0103",
+    "title": "Verify that the number of bundles sent to Tech by Design is displayed in the TechBD Tenant ID to Tech by Design column when a CSV zip file is placed in the ingress folder via sftp",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.799509Z",
+    "end_time": "2025-01-23T13:51:16.799509Z",
+    "total_duration": "39.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Data Quality menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.799509Z",
+            "end_time": "2025-01-23T13:51:16.799509Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the Needs Attention tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.799509Z",
+            "end_time": "2025-01-23T13:51:16.799509Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Identify the latest interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.799509Z",
+            "end_time": "2025-01-23T13:51:16.799509Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Locate the TechBD Tenant ID to Tech by Design column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.799509Z",
+            "end_time": "2025-01-23T13:51:16.799509Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Verify that the number of bundles sent to Tech by Design is displayed in the TechBD Tenant ID to Tech by Design column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.799509Z",
+            "end_time": "2025-01-23T13:51:16.799509Z"
+        }
+    ]
+}

@@ -1,0 +1,45 @@
+{
+    "test_case_fii": "TC-0081",
+    "title": "Verify that the number of bundles successfully sent to the Data Lake is displayed in the Tech by Design to SHIN-NY Data Lake column when the CSV zip file is sent to the /flatfile/csv/Bundle endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.773836Z",
+    "end_time": "2025-01-23T13:51:17.773836Z",
+    "total_duration": "40.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Data Quality menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.773836Z",
+            "end_time": "2025-01-23T13:51:17.773836Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the Needs Attention tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.773836Z",
+            "end_time": "2025-01-23T13:51:17.773836Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Identify the latest interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.773836Z",
+            "end_time": "2025-01-23T13:51:17.773836Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Locate the Tech by Design to SHIN-NY Data Lake column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.773836Z",
+            "end_time": "2025-01-23T13:51:17.773836Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Verify that the number of bundles successfully sent to the Data Lake is displayed in the Tech by Design to SHIN-NY Data Lake column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.773836Z",
+            "end_time": "2025-01-23T13:51:17.773836Z"
+        }
+    ]
+}

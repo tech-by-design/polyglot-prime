@@ -1,0 +1,45 @@
+{
+    "test_case_fii": "TC-0088",
+    "title": "Verify that the patient's screening details are displayed in the Patients tab when the CSV zip file is sent to the /flatfile/csv/Bundle endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.783457Z",
+    "end_time": "2025-01-23T13:50:38.783457Z",
+    "total_duration": "1.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Content menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.783457Z",
+            "end_time": "2025-01-23T13:50:38.783457Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the Patients tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.783457Z",
+            "end_time": "2025-01-23T13:50:38.783457Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Open the view for the most recently sent Patient MRN.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.783457Z",
+            "end_time": "2025-01-23T13:50:38.783457Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Open the most recently sent Screening Details view.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.783457Z",
+            "end_time": "2025-01-23T13:50:38.783457Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Verify that the patient's screening details are displayed in the Patients tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.783457Z",
+            "end_time": "2025-01-23T13:50:38.783457Z"
+        }
+    ]
+}

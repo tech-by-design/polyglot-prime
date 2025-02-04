@@ -1,0 +1,24 @@
+{
+    "test_case_fii": "TC-0003",
+    "title": "Verify that the FHIR via HTTPs tab is loading with data",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.678286Z",
+    "end_time": "2025-01-23T13:51:08.678286Z",
+    "total_duration": "31.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the interactions menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.678286Z",
+            "end_time": "2025-01-23T13:51:08.678286Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Verify that the that data is displayed on the FHIR via HTTPs tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.678286Z",
+            "end_time": "2025-01-23T13:51:08.678286Z"
+        }
+    ]
+}

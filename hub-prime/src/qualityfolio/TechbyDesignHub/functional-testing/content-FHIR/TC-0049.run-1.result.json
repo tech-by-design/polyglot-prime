@@ -1,0 +1,45 @@
+{
+    "test_case_fii": "TC-0049",
+    "title": "Verify that the patient's screening details are displayed in the Patients tab when a FHIR JSON file is sent to the /Bundle endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.732803Z",
+    "end_time": "2025-01-23T13:50:57.733802Z",
+    "total_duration": "20.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Content menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.732803Z",
+            "end_time": "2025-01-23T13:50:57.733802Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the Patients tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.732803Z",
+            "end_time": "2025-01-23T13:50:57.733802Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Open the view for the most recently sent Patient MRN.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.732803Z",
+            "end_time": "2025-01-23T13:50:57.733802Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Open the most recently sent Screening Details view.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.732803Z",
+            "end_time": "2025-01-23T13:50:57.733802Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Verify that the patient's screening details are displayed in the Patients tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.732803Z",
+            "end_time": "2025-01-23T13:50:57.733802Z"
+        }
+    ]
+}

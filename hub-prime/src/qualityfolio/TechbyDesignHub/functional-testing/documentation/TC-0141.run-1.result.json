@@ -1,0 +1,31 @@
+{
+    "test_case_fii": "TC-0141",
+    "title": "Verify that the OpenAPI UI tab is loading with data",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.845613Z",
+    "end_time": "2025-01-23T13:51:32.845613Z",
+    "total_duration": "55.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Documentation menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.845613Z",
+            "end_time": "2025-01-23T13:51:32.845613Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the OpenAPI UI tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.845613Z",
+            "end_time": "2025-01-23T13:51:32.845613Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Verify that the data is displayed on the OpenAPI UI tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.845613Z",
+            "end_time": "2025-01-23T13:51:32.845613Z"
+        }
+    ]
+}

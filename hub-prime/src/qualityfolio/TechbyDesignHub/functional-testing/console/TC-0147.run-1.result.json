@@ -1,0 +1,31 @@
+{
+    "test_case_fii": "TC-0147",
+    "title": "Verify that the Schema tab is loading with data",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.851721Z",
+    "end_time": "2025-01-23T13:50:41.851721Z",
+    "total_duration": "4.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Console menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.851721Z",
+            "end_time": "2025-01-23T13:50:41.851721Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the Schema tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.851721Z",
+            "end_time": "2025-01-23T13:50:41.851721Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Verify that the data is displayed on the Schema tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.851721Z",
+            "end_time": "2025-01-23T13:50:41.851721Z"
+        }
+    ]
+}
