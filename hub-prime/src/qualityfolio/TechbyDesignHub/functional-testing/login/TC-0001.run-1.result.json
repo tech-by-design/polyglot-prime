@@ -1,0 +1,45 @@
+{
+    "test_case_fii": "TC-0001",
+    "title": "Verify Successful Login with GitHub IDs",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.675287Z",
+    "end_time": "2025-01-23T13:50:43.675287Z",
+    "total_duration": "6.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Open TechBD Hub url in web browser.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.675287Z",
+            "end_time": "2025-01-23T13:50:43.675287Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Click Login with GitHub",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.675287Z",
+            "end_time": "2025-01-23T13:50:43.675287Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Enter valid Username or email address.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.675287Z",
+            "end_time": "2025-01-23T13:50:43.675287Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Enter Password",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.675287Z",
+            "end_time": "2025-01-23T13:50:43.675287Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Click Sign In",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.675287Z",
+            "end_time": "2025-01-23T13:50:43.675287Z"
+        }
+    ]
+}

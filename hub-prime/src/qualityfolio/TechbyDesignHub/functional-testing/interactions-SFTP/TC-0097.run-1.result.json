@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0097",
+    "title": "Verify that the File Count is displaying when a CSV zip file is placed in the ingress folder via sftp",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.793510Z",
+    "end_time": "2025-01-23T13:51:11.793510Z",
+    "total_duration": "34.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Interactions menu header and navigate to CSV via HTTPs tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.793510Z",
+            "end_time": "2025-01-23T13:51:11.793510Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.793510Z",
+            "end_time": "2025-01-23T13:51:11.793510Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Locate the File Count column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.793510Z",
+            "end_time": "2025-01-23T13:51:11.793510Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify the following.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.793510Z",
+            "end_time": "2025-01-23T13:51:11.793510Z"
+        }
+    ]
+}
