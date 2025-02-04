@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -105,8 +104,8 @@ public class FHIRService {
 	public FHIRService(
 			final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig,
 			OrchestrationEngine engine
-	// , final Tracer tracer
-	) {
+                        // , final Tracer tracer
+                        ) {
 		this.appConfig = appConfig;
 		this.udiPrimeJpaConfig = udiPrimeJpaConfig;
 		this.engine = engine;
@@ -129,85 +128,85 @@ public class FHIRService {
 			throws IOException {
 		// Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
 		// try {
-		final var start = Instant.now();
-		LOG.info("Bundle processing start at {} for interaction id {}.",
-				start, getBundleInteractionId(request, coRrelationId));
-		if (null == interactionId) {
-			interactionId = getBundleInteractionId(request, coRrelationId);
-		}
-		final var dslContext = udiPrimeJpaConfig.dsl();
-		final var jooqCfg = dslContext.configuration();
-		Map<String, Object> payloadWithDisposition = null;
-		try {
-			validateJson(payload, interactionId);
-			validateBundleProfileUrl(payload, interactionId);
-			if (null == dataLakeApiContentType) {
-				dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
+			final var start = Instant.now();
+			LOG.info("Bundle processing start at {} for interaction id {}.",
+					start, getBundleInteractionId(request, coRrelationId));
+			if (null == interactionId) {
+				interactionId = getBundleInteractionId(request, coRrelationId);
 			}
-			final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
-					: (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
-							: appConfig.getDefaultSdohFhirProfileUrl();
-			Map<String, Object> immediateResult = validate(request, payload, fhirProfileUrl,
-					uaValidationStrategyJson,
-					includeRequestInOutcome, interactionId, provenance, sourceType);
-			final var result = Map.of("OperationOutcome", immediateResult);
-			if ("true".equals(healthCheck)) {
-				LOG.info("%s is true, skipping Scoring Engine submission."
-						.formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
-				return result; // Return without proceeding to scoring engine submission
+			final var dslContext = udiPrimeJpaConfig.dsl();
+			final var jooqCfg = dslContext.configuration();
+			Map<String, Object> payloadWithDisposition = null;
+			try {
+				validateJson(payload, interactionId);
+				validateBundleProfileUrl(payload, interactionId);
+				if (null == dataLakeApiContentType) {
+					dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
+				}
+				final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
+						: (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
+								: appConfig.getDefaultSdohFhirProfileUrl();
+				Map<String, Object> immediateResult = validate(request, payload, fhirProfileUrl,
+						uaValidationStrategyJson,
+						includeRequestInOutcome, interactionId, provenance, sourceType);
+				final var result = Map.of("OperationOutcome", immediateResult);
+				if ("true".equals(healthCheck)) {
+					LOG.info("%s is true, skipping Scoring Engine submission."
+							.formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
+					return result; // Return without proceeding to scoring engine submission
+				}
+				if (!SourceType.CSV.name().equals(sourceType)) {
+					addObservabilityHeadersToResponse(request, response);
+				}
+				payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
+						response, payload, result, interactionId, groupInteractionId,
+						masterInteractionId, sourceType, requestUriToBeOverriden,
+						coRrelationId);
+				if (isActionDiscard(payloadWithDisposition)) {
+					return payloadWithDisposition;
+				}
+				if (null == payloadWithDisposition) {
+					LOG.warn(
+							"FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
+							getBundleInteractionId(request, coRrelationId));
+					sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
+							includeIncomingPayloadInDB, tenantId, payload,
+							provenance, null, includeOperationOutcome, mtlsStrategy,
+							interactionId, groupInteractionId, masterInteractionId,
+							sourceType, requestUriToBeOverriden, coRrelationId);
+					Instant end = Instant.now();
+					Duration timeElapsed = Duration.between(start, end);
+					LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+							interactionId, timeElapsed.toMillis());
+					return result;
+				} else {
+					LOG.info(
+							"FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
+							interactionId);
+					sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
+							includeIncomingPayloadInDB, tenantId, payload,
+							provenance, payloadWithDisposition, includeOperationOutcome,
+							mtlsStrategy, interactionId, groupInteractionId,
+							masterInteractionId, sourceType, requestUriToBeOverriden, coRrelationId);
+					Instant end = Instant.now();
+					Duration timeElapsed = Duration.between(start, end);
+					LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+							interactionId, timeElapsed.toMillis());
+					return payloadWithDisposition;
+				}
+			} catch (JsonValidationException ex) {
+				payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
+						response, payload, buildOperationOutcome(ex, interactionId),
+						interactionId, groupInteractionId, masterInteractionId, sourceType,
+						requestUriToBeOverriden, coRrelationId);
 			}
-			if (!SourceType.CSV.name().equals(sourceType)) {
-				addObservabilityHeadersToResponse(request, response);
-			}
-			payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
-					response, payload, result, interactionId, groupInteractionId,
-					masterInteractionId, sourceType, requestUriToBeOverriden,
-					coRrelationId);
-			if (isActionDiscard(payloadWithDisposition)) {
-				return payloadWithDisposition;
-			}
-			if (null == payloadWithDisposition) {
-				LOG.warn(
-						"FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
-						getBundleInteractionId(request, coRrelationId));
-				sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
-						includeIncomingPayloadInDB, tenantId, payload,
-						provenance, null, includeOperationOutcome, mtlsStrategy,
-						interactionId, groupInteractionId, masterInteractionId,
-						sourceType, requestUriToBeOverriden, coRrelationId);
-				Instant end = Instant.now();
-				Duration timeElapsed = Duration.between(start, end);
-				LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
-						interactionId, timeElapsed.toMillis());
-				return result;
-			} else {
-				LOG.info(
-						"FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
-						interactionId);
-				sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
-						includeIncomingPayloadInDB, tenantId, payload,
-						provenance, payloadWithDisposition, includeOperationOutcome,
-						mtlsStrategy, interactionId, groupInteractionId,
-						masterInteractionId, sourceType, requestUriToBeOverriden, coRrelationId);
-				Instant end = Instant.now();
-				Duration timeElapsed = Duration.between(start, end);
-				LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
-						interactionId, timeElapsed.toMillis());
-				return payloadWithDisposition;
-			}
-		} catch (JsonValidationException ex) {
-			payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
-					response, payload, buildOperationOutcome(ex, interactionId),
-					interactionId, groupInteractionId, masterInteractionId, sourceType,
-					requestUriToBeOverriden, coRrelationId);
-		}
-		Instant end = Instant.now();
-		Duration timeElapsed = Duration.between(start, end);
-		LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
-				interactionId, timeElapsed.toMillis());
-		return payloadWithDisposition;
+			Instant end = Instant.now();
+			Duration timeElapsed = Duration.between(start, end);
+			LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+					interactionId, timeElapsed.toMillis());
+			return payloadWithDisposition;
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -224,51 +223,37 @@ public class FHIRService {
 	}
 
 	public void validateJson(String jsonString, String interactionId) {
-		// Span validateJsonSpan =
-		// tracer.spanBuilder("FHIRService.validateJson").startSpan();
+		// Span validateJsonSpan = tracer.spanBuilder("FHIRService.validateJson").startSpan();
 		// try {
-		try {
-			Configuration.objectMapper.readTree(jsonString);
-		} catch (Exception e) {
-			throw new JsonValidationException(ErrorCode.INVALID_JSON);
-		}
+			try {
+				Configuration.objectMapper.readTree(jsonString);
+			} catch (Exception e) {
+				throw new JsonValidationException(ErrorCode.INVALID_JSON);
+			}
 		// } finally {
-		// validateJsonSpan.end();
+		// 	validateJsonSpan.end();
 		// }
 
 	}
 
 	public void validateBundleProfileUrl(String jsonString, String interactionId) {
-		// Span validateJsonSpan =
-		// tracer.spanBuilder("FHIRService.validateBundleProfileUrl").startSpan();
+		// Span validateJsonSpan = tracer.spanBuilder("FHIRService.validateBundleProfileUrl").startSpan();
 		// try {
-		JsonNode rootNode;
-		try {
-			rootNode = Configuration.objectMapper.readTree(jsonString);
-			JsonNode metaNode = rootNode.path("meta").path("profile");
-
-			List<String> profileList = Optional.ofNullable(metaNode)
-					.filter(JsonNode::isArray)
-					.map(node -> StreamSupport.stream(node.spliterator(), false)
-							.map(JsonNode::asText)
-							.collect(Collectors.toList()))
-					.orElse(List.of());
-
+			final var bundle = FhirContext.forR4().newJsonParser().parseResource(Bundle.class,
+					jsonString);
+			List<CanonicalType> profileList = bundle.getMeta().getProfile();
 			if (CollectionUtils.isEmpty(profileList)) {
-				LOG.error("Bundle profile is not provided for interaction id: {}", interactionId);
+				LOG.error("Bundle profile is not provided for interaction id :{}",
+						interactionId);
 				throw new JsonValidationException(ErrorCode.BUNDLE_PROFILE_URL_IS_NOT_PROVIDED);
 			}
-
-			if (profileList.stream().noneMatch(profile -> profile.equals(appConfig.getDefaultSdohFhirProfileUrl()))) {
-				LOG.error("Bundle profile URL provided is not valid for interaction id: {}", interactionId);
+			if (profileList.stream().noneMatch(c -> c.getValue().equals(appConfig.getDefaultSdohFhirProfileUrl()))) {
+				LOG.error("Bundle profile URL provided is not valid for interaction id :{}",
+						interactionId);
 				throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
 			}
-		} catch (JsonProcessingException e) {
-			LOG.error("Json Processing exception while extracting profile url for interaction id :{}", e);
-		}
-
 		// } finally {
-		// validateJsonSpan.end();
+		// 	validateJsonSpan.end();
 		// }
 
 	}
@@ -329,71 +314,70 @@ public class FHIRService {
 			String groupInteractionId, String masterInteractionId, String sourceType,
 			String requestUriToBeOverriden, String coRrelationId)
 			throws IOException {
-		// Span span =
-		// tracer.spanBuilder("FHIRService.registerBundleInteraction").startSpan();
+		// Span span = tracer.spanBuilder("FHIRService.registerBundleInteraction").startSpan();
 		// try {
-		final Interactions interactions = new Interactions();
-		final var mutatableReq = new ContentCachingRequestWrapper(request);
-		RequestEncountered requestEncountered = null;
-		if (StringUtils.isNotEmpty(coRrelationId)) {
-			requestEncountered = new Interactions.RequestEncountered(mutatableReq,
-					payload.getBytes(),
-					UUID.fromString(coRrelationId));
-		} else if (null != interactionId) {
-			// If its a converted CSV payload ,it will already have an interaction id.hence
-			// do not create new interactionId
-			requestEncountered = new Interactions.RequestEncountered(mutatableReq,
-					payload.getBytes(),
-					UUID.fromString(interactionId));
-		} else if (null != getBundleInteractionId(request, coRrelationId)) {
-			// If its a converted HL7 payload ,it will already have an interaction id.hence
-			// do not create new interactionId
-			requestEncountered = new Interactions.RequestEncountered(mutatableReq,
-					payload.getBytes(),
-					UUID.fromString(getBundleInteractionId(request, coRrelationId)));
-		} else {
-			requestEncountered = new Interactions.RequestEncountered(mutatableReq,
-					payload.getBytes());
-		}
-		final var mutatableResp = new ContentCachingResponseWrapper(response);
-		setActiveRequestEnc(mutatableReq, requestEncountered);
-		final var rre = new Interactions.RequestResponseEncountered(requestEncountered,
-				new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
-						Configuration.objectMapper
-								.writeValueAsBytes(validationResult)));
-		interactions.addHistory(rre);
-		setActiveInteraction(mutatableReq, rre);
-		final var provenance = "%s.doFilterInternal".formatted(FHIRService.class.getName());
-		final var rihr = new RegisterInteractionHttpRequest();
+			final Interactions interactions = new Interactions();
+			final var mutatableReq = new ContentCachingRequestWrapper(request);
+			RequestEncountered requestEncountered = null;
+			if (StringUtils.isNotEmpty(coRrelationId)) {
+				requestEncountered = new Interactions.RequestEncountered(mutatableReq,
+						payload.getBytes(),
+						UUID.fromString(coRrelationId));
+			} else if (null != interactionId) {
+				// If its a converted CSV payload ,it will already have an interaction id.hence
+				// do not create new interactionId
+				requestEncountered = new Interactions.RequestEncountered(mutatableReq,
+						payload.getBytes(),
+						UUID.fromString(interactionId));
+			} else if (null != getBundleInteractionId(request, coRrelationId)) {
+				// If its a converted HL7 payload ,it will already have an interaction id.hence
+				// do not create new interactionId
+				requestEncountered = new Interactions.RequestEncountered(mutatableReq,
+						payload.getBytes(),
+						UUID.fromString(getBundleInteractionId(request, coRrelationId)));
+			} else {
+				requestEncountered = new Interactions.RequestEncountered(mutatableReq,
+						payload.getBytes());
+			}
+			final var mutatableResp = new ContentCachingResponseWrapper(response);
+			setActiveRequestEnc(mutatableReq, requestEncountered);
+			final var rre = new Interactions.RequestResponseEncountered(requestEncountered,
+					new Interactions.ResponseEncountered(mutatableResp, requestEncountered,
+							Configuration.objectMapper
+									.writeValueAsBytes(validationResult)));
+			interactions.addHistory(rre);
+			setActiveInteraction(mutatableReq, rre);
+			final var provenance = "%s.doFilterInternal".formatted(FHIRService.class.getName());
+			final var rihr = new RegisterInteractionHttpRequest();
 
-		try {
-			prepareRequest(rihr, rre, provenance, request, interactionId, groupInteractionId,
-					masterInteractionId, sourceType, requestUriToBeOverriden);
-			final var start = Instant.now();
-			rihr.execute(jooqCfg);
-			final var end = Instant.now();
-			LOG.info(
-					"FHIRService  - Time taken : {} milliseconds for DB call to REGISTER State None, Accept, Disposition: for interaction id: {} ",
-					Duration.between(start, end).toMillis(),
-					rre.interactionId().toString());
-			JsonNode payloadWithDisposition = rihr.getReturnValue();
-			LOG.info("REGISTER State None, Accept, Disposition: END for interaction id: {} ",
-					rre.interactionId().toString());
-			return Configuration.objectMapper.convertValue(payloadWithDisposition,
-					new TypeReference<Map<String, Object>>() {
-					});
-		} catch (Exception e) {
-			LOG.error(
-					"ERROR:: REGISTER State None, Accept, Disposition: for interaction id: {} tenant id: {}: CALL "
-							+ rihr.getName() + " error",
-					rre.interactionId().toString(),
-					rre.tenant(), e);
-		}
-		return null;
+			try {
+				prepareRequest(rihr, rre, provenance, request, interactionId, groupInteractionId,
+						masterInteractionId, sourceType, requestUriToBeOverriden);
+				final var start = Instant.now();
+				rihr.execute(jooqCfg);
+				final var end = Instant.now();
+				LOG.info(
+						"FHIRService  - Time taken : {} milliseconds for DB call to REGISTER State None, Accept, Disposition: for interaction id: {} ",
+						Duration.between(start, end).toMillis(),
+						rre.interactionId().toString());
+				JsonNode payloadWithDisposition = rihr.getReturnValue();
+				LOG.info("REGISTER State None, Accept, Disposition: END for interaction id: {} ",
+						rre.interactionId().toString());
+				return Configuration.objectMapper.convertValue(payloadWithDisposition,
+						new TypeReference<Map<String, Object>>() {
+						});
+			} catch (Exception e) {
+				LOG.error(
+						"ERROR:: REGISTER State None, Accept, Disposition: for interaction id: {} tenant id: {}: CALL "
+								+ rihr.getName() + " error",
+						rre.interactionId().toString(),
+						rre.tenant(), e);
+			}
+			return null;
 		// } finally
 
 		// {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -474,75 +458,75 @@ public class FHIRService {
 			boolean includeRequestInOutcome, String interactionId, String provenance, String sourceType) {
 		// Span span = tracer.spanBuilder("FhirService.validate").startSpan();
 		// try {
-		final var start = Instant.now();
-		LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
-		final var igPackages = appConfig.getIgPackages();
-		final var igVersion = appConfig.getIgVersion();
-		final var sessionBuilder = engine.session()
-				.withSessionId(UUID.randomUUID().toString())
-				.onDevice(Device.createDefault())
-				.withInteractionId(interactionId)
-				.withPayloads(List.of(payload))
-				.withFhirProfileUrl(fhirProfileUrl)
-				// .withTracer(tracer)
-				.withFhirIGPackages(igPackages)
-				.withIgVersion(igVersion)
-				.addHapiValidationEngine() // by default
-				// clearExisting is set to true so engines can be fully supplied through header
-				.withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-		final var session = sessionBuilder.build();
-		try {
-			engine.orchestrate(session);
-			// TODO: if there are errors that should prevent forwarding, stop here
-			// TODO: need to implement `immediate` (sync) webClient op, right now it's async
-			// only
-			// immediateResult is what's returned to the user while async operation
-			// continues
-			final var immediateResult = new HashMap<>(Map.of(
-					"resourceType", "OperationOutcome",
-					"help",
-					"If you need help understanding how to decipher OperationOutcome please see "
-							+ appConfig.getOperationOutcomeHelpUrl(),
-					"bundleSessionId", interactionId, // for tracking in
-														// database, etc.
-					"isAsync", true,
-					"validationResults", session.getValidationResults(),
-					"statusUrl",
-					getBaseUrl(request) + "/Bundle/$status/"
-							+ interactionId.toString(),
-					"device", session.getDevice()));
-			if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
-				immediateResult.put("provenance",
-						Configuration.objectMapper.readTree(provenance));
+			final var start = Instant.now();
+			LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
+			final var igPackages = appConfig.getIgPackages();
+			final var igVersion = appConfig.getIgVersion();
+			final var sessionBuilder = engine.session()
+					.withSessionId(UUID.randomUUID().toString())
+					.onDevice(Device.createDefault())
+					.withInteractionId(interactionId)
+					.withPayloads(List.of(payload))
+					.withFhirProfileUrl(fhirProfileUrl)
+					// .withTracer(tracer)
+					.withFhirIGPackages(igPackages)
+					.withIgVersion(igVersion)
+					.addHapiValidationEngine() // by default
+					// clearExisting is set to true so engines can be fully supplied through header
+					.withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+			final var session = sessionBuilder.build();
+			try {
+				engine.orchestrate(session);
+				// TODO: if there are errors that should prevent forwarding, stop here
+				// TODO: need to implement `immediate` (sync) webClient op, right now it's async
+				// only
+				// immediateResult is what's returned to the user while async operation
+				// continues
+				final var immediateResult = new HashMap<>(Map.of(
+						"resourceType", "OperationOutcome",
+						"help",
+						"If you need help understanding how to decipher OperationOutcome please see "
+								+ appConfig.getOperationOutcomeHelpUrl(),
+						"bundleSessionId", interactionId, // for tracking in
+															// database, etc.
+						"isAsync", true,
+						"validationResults", session.getValidationResults(),
+						"statusUrl",
+						getBaseUrl(request) + "/Bundle/$status/"
+								+ interactionId.toString(),
+						"device", session.getDevice()));
+				if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
+					immediateResult.put("provenance",
+							Configuration.objectMapper.readTree(provenance));
+				}
+				if (uaValidationStrategyJson != null) {
+					immediateResult.put("uaValidationStrategy",
+							Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+									uaValidationStrategyJson,
+									"issues",
+									sessionBuilder.getUaStrategyJsonIssues()));
+				}
+				if (includeRequestInOutcome) {
+					immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
+				}
+				return immediateResult; // Return the validation results
+			} catch (Exception e) {
+				// Log the error and create a failure response
+				LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
+				return Map.of(
+						"resourceType", "OperationOutcome",
+						"interactionId", interactionId,
+						"error", "Validation failed: " + e.getMessage());
+			} finally {
+				// Ensure the session is cleared to avoid memory leaks
+				engine.clear(session);
+				Instant end = Instant.now();
+				Duration timeElapsed = Duration.between(start, end);
+				LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds",
+						interactionId, timeElapsed.toMillis());
 			}
-			if (uaValidationStrategyJson != null) {
-				immediateResult.put("uaValidationStrategy",
-						Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
-								uaValidationStrategyJson,
-								"issues",
-								sessionBuilder.getUaStrategyJsonIssues()));
-			}
-			if (includeRequestInOutcome) {
-				immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
-			}
-			return immediateResult; // Return the validation results
-		} catch (Exception e) {
-			// Log the error and create a failure response
-			LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
-			return Map.of(
-					"resourceType", "OperationOutcome",
-					"interactionId", interactionId,
-					"error", "Validation failed: " + e.getMessage());
-		} finally {
-			// Ensure the session is cleared to avoid memory leaks
-			engine.clear(session);
-			Instant end = Instant.now();
-			Duration timeElapsed = Duration.between(start, end);
-			LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds",
-					interactionId, timeElapsed.toMillis());
-		}
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -556,68 +540,67 @@ public class FHIRService {
 			Map<String, Object> validationPayloadWithDisposition, boolean includeOperationOutcome,
 			String mtlsStrategy, String interactionId, String groupInteractionId,
 			String masterInteractionId, String sourceType, String requestUriToBeOverriden, String coRrelationId) {
-		// Span span =
-		// tracer.spanBuilder("FhirService.sentToScoringEngine").startSpan();
+		// Span span = tracer.spanBuilder("FhirService.sentToScoringEngine").startSpan();
 		// try {
-		interactionId = null != interactionId ? interactionId : getBundleInteractionId(request, coRrelationId);
-		if (StringUtils.isNotEmpty(coRrelationId)) {
-			interactionId = coRrelationId;
-		}
-		LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {} for", interactionId);
-
-		try {
-			Map<String, Object> bundlePayloadWithDisposition = null;
-			LOG.debug("FHIRService:: sendToScoringEngine includeOperationOutcome : {} interaction id: {}",
-					includeOperationOutcome, interactionId);
-			if (includeOperationOutcome && null != validationPayloadWithDisposition) { // todo
-																						// -revisit
-				LOG.debug(
-						"FHIRService:: sendToScoringEngine Prepare payload with operation outcome interaction id: {}",
-						interactionId);
-				bundlePayloadWithDisposition = preparePayload(request,
-						payload,
-						validationPayloadWithDisposition, interactionId);
-			} else {
-				LOG.debug(
-						"FHIRService:: sendToScoringEngine Send payload without operation outcome interaction id: {}",
-						interactionId);
-				bundlePayloadWithDisposition = Configuration.objectMapper.readValue(payload,
-						new TypeReference<Map<String, Object>>() {
-						});
+			interactionId = null != interactionId ? interactionId : getBundleInteractionId(request, coRrelationId);
+			if (StringUtils.isNotEmpty(coRrelationId)) {
+				interactionId = coRrelationId;
 			}
-			final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL)
-					.filter(s -> !s.isEmpty())
-					.orElse(appConfig.getDefaultDatalakeApiUrl());
-			final var defaultDatalakeApiAuthn = appConfig.getDefaultDataLakeApiAuthn();
+			LOG.info("FHIRService:: sendToScoringEngine BEGIN for interaction id: {} for", interactionId);
 
-			if (null == defaultDatalakeApiAuthn) {
-				LOG.info(
-						"###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
-						interactionId);
-				handleNoMtls(MTlsStrategy.NO_MTLS, interactionId, tenantId, dataLakeApiBaseURL,
-						jooqCfg, request,
-						bundlePayloadWithDisposition, payload, dataLakeApiContentType,
-						provenance, includeIncomingPayloadInDB, groupInteractionId,
-						masterInteractionId, sourceType, requestUriToBeOverriden);
-			} else {
-				handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId,
-						dataLakeApiBaseURL,
-						jooqCfg, request, bundlePayloadWithDisposition,
-						payload,
-						dataLakeApiContentType, provenance, includeIncomingPayloadInDB,
-						mtlsStrategy, groupInteractionId, masterInteractionId,
-						sourceType, requestUriToBeOverriden);
+			try {
+				Map<String, Object> bundlePayloadWithDisposition = null;
+				LOG.debug("FHIRService:: sendToScoringEngine includeOperationOutcome : {} interaction id: {}",
+						includeOperationOutcome, interactionId);
+				if (includeOperationOutcome && null != validationPayloadWithDisposition) { // todo
+																							// -revisit
+					LOG.debug(
+							"FHIRService:: sendToScoringEngine Prepare payload with operation outcome interaction id: {}",
+							interactionId);
+					bundlePayloadWithDisposition = preparePayload(request,
+							payload,
+							validationPayloadWithDisposition, interactionId);
+				} else {
+					LOG.debug(
+							"FHIRService:: sendToScoringEngine Send payload without operation outcome interaction id: {}",
+							interactionId);
+					bundlePayloadWithDisposition = Configuration.objectMapper.readValue(payload,
+							new TypeReference<Map<String, Object>>() {
+							});
+				}
+				final var dataLakeApiBaseURL = Optional.ofNullable(scoringEngineApiURL)
+						.filter(s -> !s.isEmpty())
+						.orElse(appConfig.getDefaultDatalakeApiUrl());
+				final var defaultDatalakeApiAuthn = appConfig.getDefaultDataLakeApiAuthn();
+
+				if (null == defaultDatalakeApiAuthn) {
+					LOG.info(
+							"###### defaultDatalakeApiAuthn is not defined #######.Hence proceeding with post to scoring engine without mTls for interaction id :{}",
+							interactionId);
+					handleNoMtls(MTlsStrategy.NO_MTLS, interactionId, tenantId, dataLakeApiBaseURL,
+							jooqCfg, request,
+							bundlePayloadWithDisposition, payload, dataLakeApiContentType,
+							provenance, includeIncomingPayloadInDB, groupInteractionId,
+							masterInteractionId, sourceType, requestUriToBeOverriden);
+				} else {
+					handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId,
+							dataLakeApiBaseURL,
+							jooqCfg, request, bundlePayloadWithDisposition,
+							payload,
+							dataLakeApiContentType, provenance, includeIncomingPayloadInDB,
+							mtlsStrategy, groupInteractionId, masterInteractionId,
+							sourceType, requestUriToBeOverriden);
+				}
+
+			} catch (
+
+			Exception e) {
+				handleError(validationPayloadWithDisposition, e, request, interactionId);
+			} finally {
+				LOG.info("FHIRService:: sendToScoringEngine END for interaction id: {}", interactionId);
 			}
-
-		} catch (
-
-		Exception e) {
-			handleError(validationPayloadWithDisposition, e, request, interactionId);
-		} finally {
-			LOG.info("FHIRService:: sendToScoringEngine END for interaction id: {}", interactionId);
-		}
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -1202,32 +1185,32 @@ public class FHIRService {
 			String masterInteractionId, String sourceType) {
 		// Span span = tracer.spanBuilder("FhirService.sendPostRequest").startSpan();
 		// try {
-		LOG.debug(
-				"FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
-				interactionId, tenantId);
-		webClient.post()
-				.uri("?processingAgent=" + tenantId)
-				.body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
-						? bundlePayloadWithDisposition
-						: payload))
-				.header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
-						.orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
-				.retrieve()
-				.bodyToMono(String.class)
-				.subscribe(response -> {
-					handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
-							provenance, scoringEngineApiURL, groupInteractionId,
-							masterInteractionId, sourceType);
-				}, error -> {
-					registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId, error,
-							requestURI, tenantId, provenance, groupInteractionId,
-							masterInteractionId, sourceType);
-				});
+			LOG.debug(
+					"FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
+					interactionId, tenantId);
+			webClient.post()
+					.uri("?processingAgent=" + tenantId)
+					.body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
+							? bundlePayloadWithDisposition
+							: payload))
+					.header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
+							.orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
+					.retrieve()
+					.bodyToMono(String.class)
+					.subscribe(response -> {
+						handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
+								provenance, scoringEngineApiURL, groupInteractionId,
+								masterInteractionId, sourceType);
+					}, error -> {
+						registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId, error,
+								requestURI, tenantId, provenance, groupInteractionId,
+								masterInteractionId, sourceType);
+					});
 
-		LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}",
-				interactionId, tenantId);
+			LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}",
+					interactionId, tenantId);
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -1241,37 +1224,37 @@ public class FHIRService {
 			String sourceType) {
 		// Span span = tracer.spanBuilder("FhirService.handleResponse").startSpan();
 		// try {
-		LOG.debug("FHIRService:: handleResponse BEGIN for interaction id: {}", interactionId);
+			LOG.debug("FHIRService:: handleResponse BEGIN for interaction id: {}", interactionId);
 
-		try {
-			LOG.debug("FHIRService:: handleResponse Response received for :{} interaction id: {}",
-					interactionId, response);
-			final var responseMap = new ObjectMapper().readValue(response,
-					new TypeReference<Map<String, String>>() {
-					});
+			try {
+				LOG.debug("FHIRService:: handleResponse Response received for :{} interaction id: {}",
+						interactionId, response);
+				final var responseMap = new ObjectMapper().readValue(response,
+						new TypeReference<Map<String, String>>() {
+						});
 
-			if ("Success".equalsIgnoreCase(responseMap.get("status"))) {
-				LOG.info("FHIRService:: handleResponse SUCCESS for interaction id: {}",
-						interactionId);
-				registerStateComplete(jooqCfg, interactionId, requestURI, tenantId, response,
-						provenance, groupInteractionId, masterInteractionId,
-						sourceType);
-			} else {
-				LOG.warn("FHIRService:: handleResponse FAILURE for interaction id: {}",
-						interactionId);
-				registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, response,
-						provenance, groupInteractionId, masterInteractionId,
-						sourceType);
+				if ("Success".equalsIgnoreCase(responseMap.get("status"))) {
+					LOG.info("FHIRService:: handleResponse SUCCESS for interaction id: {}",
+							interactionId);
+					registerStateComplete(jooqCfg, interactionId, requestURI, tenantId, response,
+							provenance, groupInteractionId, masterInteractionId,
+							sourceType);
+				} else {
+					LOG.warn("FHIRService:: handleResponse FAILURE for interaction id: {}",
+							interactionId);
+					registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, response,
+							provenance, groupInteractionId, masterInteractionId,
+							sourceType);
+				}
+			} catch (Exception e) {
+				LOG.error("FHIRService:: handleResponse unexpected error for interaction id : {}, response: {}",
+						interactionId, response, e);
+				registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, e.getMessage(),
+						provenance, groupInteractionId, masterInteractionId, sourceType);
 			}
-		} catch (Exception e) {
-			LOG.error("FHIRService:: handleResponse unexpected error for interaction id : {}, response: {}",
-					interactionId, response, e);
-			registerStateFailed(jooqCfg, interactionId, requestURI, tenantId, e.getMessage(),
-					provenance, groupInteractionId, masterInteractionId, sourceType);
-		}
-		LOG.info("FHIRService:: handleResponse END for interaction id: {}", interactionId);
+			LOG.info("FHIRService:: handleResponse END for interaction id: {}", interactionId);
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -1432,56 +1415,55 @@ public class FHIRService {
 			Map<String, Object> payloadWithDisposition,
 			String outboundHttpMessage, boolean includeIncomingPayloadInDB, String payload,
 			String groupInteractionId, String masterInteractionId, String sourceType) {
-		// Span span =
-		// tracer.spanBuilder("FHIRService.registerStateForward").startSpan();
+		// Span span = tracer.spanBuilder("FHIRService.registerStateForward").startSpan();
 		// try {
-		LOG.info("REGISTER State Forward : BEGIN for inteaction id  : {} tenant id : {}",
-				bundleAsyncInteractionId, tenantId);
-		final var forwardedAt = OffsetDateTime.now();
-		final var initRIHR = new RegisterInteractionHttpRequest();
-		try {
-			// TODO -check the need of includeIncomingPayloadInDB and add this later if
-			// needed
-			// payloadWithDisposition.put("outboundHttpMessage", outboundHttpMessage);
-			// + "\n" + (includeIncomingPayloadInDB
-			// ? payload
-			// : "The incoming FHIR payload was not stored (to save space).\nThis is not an
-			// error or warning just an FYI - if you'd like to see the incoming FHIR payload
-			// `?include-incoming-payload-in-db=true` to request payload storage for each
-			// request that you'd like to store."));
-			initRIHR.setInteractionId(bundleAsyncInteractionId);
-			initRIHR.setGroupHubInteractionId(groupInteractionId);
-			initRIHR.setSourceHubInteractionId(masterInteractionId);
-			initRIHR.setInteractionKey(requestURI);
-			initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-					Map.of("nature", "Forward HTTP Request", "tenant_id",
-							tenantId)));
-			initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-			initRIHR.setPayload((JsonNode) Configuration.objectMapper
-					.valueToTree(payloadWithDisposition));
-			initRIHR.setFromState("DISPOSITION");
-			initRIHR.setToState("FORWARD");
-			initRIHR.setSourceType(sourceType);
-			initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app
-			// time
-			initRIHR.setCreatedBy(FHIRService.class.getName());
-			initRIHR.setProvenance(provenance);
-			final var start = Instant.now();
-			final var execResult = initRIHR.execute(jooqCfg);
-			final var end = Instant.now();
-			LOG.info(
-					"REGISTER State Forward : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
-							+ execResult,
-					bundleAsyncInteractionId, tenantId,
-					Duration.between(start, end).toMillis());
-		} catch (Exception e) {
-			LOG.error("ERROR:: REGISTER State Forward CALL for interaction id : {} tenant id : {}"
-					+ initRIHR.getName() + " initRIHR error", bundleAsyncInteractionId,
-					tenantId,
-					e);
-		}
+			LOG.info("REGISTER State Forward : BEGIN for inteaction id  : {} tenant id : {}",
+					bundleAsyncInteractionId, tenantId);
+			final var forwardedAt = OffsetDateTime.now();
+			final var initRIHR = new RegisterInteractionHttpRequest();
+			try {
+				// TODO -check the need of includeIncomingPayloadInDB and add this later if
+				// needed
+				// payloadWithDisposition.put("outboundHttpMessage", outboundHttpMessage);
+				// + "\n" + (includeIncomingPayloadInDB
+				// ? payload
+				// : "The incoming FHIR payload was not stored (to save space).\nThis is not an
+				// error or warning just an FYI - if you'd like to see the incoming FHIR payload
+				// `?include-incoming-payload-in-db=true` to request payload storage for each
+				// request that you'd like to store."));
+				initRIHR.setInteractionId(bundleAsyncInteractionId);
+				initRIHR.setGroupHubInteractionId(groupInteractionId);
+				initRIHR.setSourceHubInteractionId(masterInteractionId);
+				initRIHR.setInteractionKey(requestURI);
+				initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", "Forward HTTP Request", "tenant_id",
+								tenantId)));
+				initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+				initRIHR.setPayload((JsonNode) Configuration.objectMapper
+						.valueToTree(payloadWithDisposition));
+				initRIHR.setFromState("DISPOSITION");
+				initRIHR.setToState("FORWARD");
+				initRIHR.setSourceType(sourceType);
+				initRIHR.setCreatedAt(forwardedAt); // don't let DB set this, use app
+				// time
+				initRIHR.setCreatedBy(FHIRService.class.getName());
+				initRIHR.setProvenance(provenance);
+				final var start = Instant.now();
+				final var execResult = initRIHR.execute(jooqCfg);
+				final var end = Instant.now();
+				LOG.info(
+						"REGISTER State Forward : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
+								+ execResult,
+						bundleAsyncInteractionId, tenantId,
+						Duration.between(start, end).toMillis());
+			} catch (Exception e) {
+				LOG.error("ERROR:: REGISTER State Forward CALL for interaction id : {} tenant id : {}"
+						+ initRIHR.getName() + " initRIHR error", bundleAsyncInteractionId,
+						tenantId,
+						e);
+			}
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -1489,52 +1471,51 @@ public class FHIRService {
 			String requestURI, String tenantId,
 			String response, String provenance, String groupInteractionId, String masterInteractionId,
 			String sourceType) {
-		// Span span =
-		// tracer.spanBuilder("FHIRService.registerStateComplete").startSpan();
+		// Span span = tracer.spanBuilder("FHIRService.registerStateComplete").startSpan();
 		// try {
-		LOG.info("REGISTER State Complete : BEGIN for interaction id :  {} tenant id : {}",
-				bundleAsyncInteractionId, tenantId);
-		final var forwardRIHR = new RegisterInteractionHttpRequest();
-		try {
-			forwardRIHR.setInteractionId(bundleAsyncInteractionId);
-			forwardRIHR.setSourceHubInteractionId(masterInteractionId);
-			forwardRIHR.setGroupHubInteractionId(groupInteractionId);
-			forwardRIHR.setInteractionKey(requestURI);
-			forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-					Map.of("nature", "Forwarded HTTP Response",
-							"tenant_id", tenantId)));
-			forwardRIHR.setContentType(
-					MimeTypeUtils.APPLICATION_JSON_VALUE);
+			LOG.info("REGISTER State Complete : BEGIN for interaction id :  {} tenant id : {}",
+					bundleAsyncInteractionId, tenantId);
+			final var forwardRIHR = new RegisterInteractionHttpRequest();
 			try {
-				// expecting a JSON payload from the server
-				forwardRIHR.setPayload(Configuration.objectMapper
-						.readTree(response));
-			} catch (JsonProcessingException jpe) {
-				// in case the payload is not JSON store the string
-				forwardRIHR.setPayload((JsonNode) Configuration.objectMapper
-						.valueToTree(response));
+				forwardRIHR.setInteractionId(bundleAsyncInteractionId);
+				forwardRIHR.setSourceHubInteractionId(masterInteractionId);
+				forwardRIHR.setGroupHubInteractionId(groupInteractionId);
+				forwardRIHR.setInteractionKey(requestURI);
+				forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", "Forwarded HTTP Response",
+								"tenant_id", tenantId)));
+				forwardRIHR.setContentType(
+						MimeTypeUtils.APPLICATION_JSON_VALUE);
+				try {
+					// expecting a JSON payload from the server
+					forwardRIHR.setPayload(Configuration.objectMapper
+							.readTree(response));
+				} catch (JsonProcessingException jpe) {
+					// in case the payload is not JSON store the string
+					forwardRIHR.setPayload((JsonNode) Configuration.objectMapper
+							.valueToTree(response));
+				}
+				forwardRIHR.setFromState("FORWARD");
+				forwardRIHR.setToState("COMPLETE");
+				forwardRIHR.setSourceType(sourceType);
+				forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB
+				forwardRIHR.setCreatedBy(FHIRService.class.getName());
+				forwardRIHR.setProvenance(provenance);
+				final var start = Instant.now();
+				final var execResult = forwardRIHR.execute(jooqCfg);
+				final var end = Instant.now();
+				LOG.info(
+						"REGISTER State Complete : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds"
+								+ execResult,
+						bundleAsyncInteractionId, tenantId,
+						Duration.between(start, end).toMillis());
+			} catch (Exception e) {
+				LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
+						+ forwardRIHR.getName()
+						+ " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
 			}
-			forwardRIHR.setFromState("FORWARD");
-			forwardRIHR.setToState("COMPLETE");
-			forwardRIHR.setSourceType(sourceType);
-			forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB
-			forwardRIHR.setCreatedBy(FHIRService.class.getName());
-			forwardRIHR.setProvenance(provenance);
-			final var start = Instant.now();
-			final var execResult = forwardRIHR.execute(jooqCfg);
-			final var end = Instant.now();
-			LOG.info(
-					"REGISTER State Complete : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds"
-							+ execResult,
-					bundleAsyncInteractionId, tenantId,
-					Duration.between(start, end).toMillis());
-		} catch (Exception e) {
-			LOG.error("ERROR:: REGISTER State Complete CALL for interaction id : {} tenant id : {} "
-					+ forwardRIHR.getName()
-					+ " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
-		}
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -1542,54 +1523,53 @@ public class FHIRService {
 			String requestURI, String tenantId,
 			String response, String provenance, String groupInteractionId, String masterInteractionId,
 			String sourceType) {
-		// Span span =
-		// tracer.spanBuilder("FHIRService.registerStateFailed").startSpan();
+		// Span span = tracer.spanBuilder("FHIRService.registerStateFailed").startSpan();
 		// try {
-		LOG.info("REGISTER State Fail : BEGIN for interaction id :  {} tenant id : {}",
-				bundleAsyncInteractionId, tenantId);
-		final var forwardRIHR = new RegisterInteractionHttpRequest();
-		try {
-			forwardRIHR.setInteractionId(bundleAsyncInteractionId);
-			forwardRIHR.setInteractionKey(requestURI);
-			forwardRIHR.setGroupHubInteractionId(groupInteractionId);
-			forwardRIHR.setSourceHubInteractionId(masterInteractionId);
-			forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-					Map.of("nature", "Forwarded HTTP Response Error",
-							"tenant_id", tenantId)));
-			forwardRIHR.setContentType(
-					MimeTypeUtils.APPLICATION_JSON_VALUE);
+			LOG.info("REGISTER State Fail : BEGIN for interaction id :  {} tenant id : {}",
+					bundleAsyncInteractionId, tenantId);
+			final var forwardRIHR = new RegisterInteractionHttpRequest();
 			try {
-				// expecting a JSON payload from the server
-				forwardRIHR.setPayload(Configuration.objectMapper
-						.readTree(response));
-			} catch (JsonProcessingException jpe) {
-				// in case the payload is not JSON store the string
-				forwardRIHR.setPayload((JsonNode) Configuration.objectMapper
-						.valueToTree(response));
+				forwardRIHR.setInteractionId(bundleAsyncInteractionId);
+				forwardRIHR.setInteractionKey(requestURI);
+				forwardRIHR.setGroupHubInteractionId(groupInteractionId);
+				forwardRIHR.setSourceHubInteractionId(masterInteractionId);
+				forwardRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", "Forwarded HTTP Response Error",
+								"tenant_id", tenantId)));
+				forwardRIHR.setContentType(
+						MimeTypeUtils.APPLICATION_JSON_VALUE);
+				try {
+					// expecting a JSON payload from the server
+					forwardRIHR.setPayload(Configuration.objectMapper
+							.readTree(response));
+				} catch (JsonProcessingException jpe) {
+					// in case the payload is not JSON store the string
+					forwardRIHR.setPayload((JsonNode) Configuration.objectMapper
+							.valueToTree(response));
+				}
+				forwardRIHR.setFromState("FORWARD");
+				forwardRIHR.setToState("FAIL");
+				forwardRIHR.setSourceType(sourceType);
+				forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB
+				// set this, use
+				// app time
+				forwardRIHR.setCreatedBy(FHIRService.class.getName());
+				forwardRIHR.setProvenance(provenance);
+				final var start = Instant.now();
+				final var execResult = forwardRIHR.execute(jooqCfg);
+				final var end = Instant.now();
+				LOG.info(
+						"REGISTER State Fail : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds"
+								+ execResult,
+						bundleAsyncInteractionId, tenantId,
+						Duration.between(start, end).toMillis());
+			} catch (Exception e) {
+				LOG.error("ERROR:: REGISTER State Fail CALL for interaction id : {} tenant id : {} "
+						+ forwardRIHR.getName()
+						+ " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
 			}
-			forwardRIHR.setFromState("FORWARD");
-			forwardRIHR.setToState("FAIL");
-			forwardRIHR.setSourceType(sourceType);
-			forwardRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB
-			// set this, use
-			// app time
-			forwardRIHR.setCreatedBy(FHIRService.class.getName());
-			forwardRIHR.setProvenance(provenance);
-			final var start = Instant.now();
-			final var execResult = forwardRIHR.execute(jooqCfg);
-			final var end = Instant.now();
-			LOG.info(
-					"REGISTER State Fail : END for interaction id : {} tenant id : {} .Time Taken : {} milliseconds"
-							+ execResult,
-					bundleAsyncInteractionId, tenantId,
-					Duration.between(start, end).toMillis());
-		} catch (Exception e) {
-			LOG.error("ERROR:: REGISTER State Fail CALL for interaction id : {} tenant id : {} "
-					+ forwardRIHR.getName()
-					+ " forwardRIHR error", bundleAsyncInteractionId, tenantId, e);
-		}
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
@@ -1597,98 +1577,97 @@ public class FHIRService {
 			String bundleAsyncInteractionId, Throwable error,
 			String requestURI, String tenantId,
 			String provenance, String groupInteractionId, String masterInteractionId, String sourceType) {
-		// Span span =
-		// tracer.spanBuilder("FhirService.registerStateFailure").startSpan();
+		// Span span = tracer.spanBuilder("FhirService.registerStateFailure").startSpan();
 		// try {
-		LOG.error(
-				"Register State Failure - Exception while sending FHIR payload to datalake URL {} for interaction id {}",
-				dataLakeApiBaseURL, bundleAsyncInteractionId, error);
-		final var errorRIHR = new RegisterInteractionHttpRequest();
-		try {
-			errorRIHR.setInteractionId(bundleAsyncInteractionId);
-			errorRIHR.setGroupHubInteractionId(groupInteractionId);
-			errorRIHR.setSourceHubInteractionId(masterInteractionId);
-			errorRIHR.setInteractionKey(requestURI);
-			errorRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-					Map.of("nature", "Forwarded HTTP Response Error",
-							"tenant_id", tenantId)));
-			errorRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-			errorRIHR.setSourceType(sourceType);
-			final var rootCauseThrowable = NestedExceptionUtils
-					.getRootCause(error);
-			final var rootCause = rootCauseThrowable != null
-					? rootCauseThrowable.toString()
-					: "null";
-			final var mostSpecificCause = NestedExceptionUtils
-					.getMostSpecificCause(error).toString();
-			final var errorMap = new HashMap<String, Object>() {
-				{
-					put("dataLakeApiBaseURL", dataLakeApiBaseURL);
-					put("error", error.toString());
-					put("message", error.getMessage());
-					put("rootCause", rootCause);
-					put("mostSpecificCause", mostSpecificCause);
-					put("tenantId", tenantId);
+			LOG.error(
+					"Register State Failure - Exception while sending FHIR payload to datalake URL {} for interaction id {}",
+					dataLakeApiBaseURL, bundleAsyncInteractionId, error);
+			final var errorRIHR = new RegisterInteractionHttpRequest();
+			try {
+				errorRIHR.setInteractionId(bundleAsyncInteractionId);
+				errorRIHR.setGroupHubInteractionId(groupInteractionId);
+				errorRIHR.setSourceHubInteractionId(masterInteractionId);
+				errorRIHR.setInteractionKey(requestURI);
+				errorRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
+						Map.of("nature", "Forwarded HTTP Response Error",
+								"tenant_id", tenantId)));
+				errorRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+				errorRIHR.setSourceType(sourceType);
+				final var rootCauseThrowable = NestedExceptionUtils
+						.getRootCause(error);
+				final var rootCause = rootCauseThrowable != null
+						? rootCauseThrowable.toString()
+						: "null";
+				final var mostSpecificCause = NestedExceptionUtils
+						.getMostSpecificCause(error).toString();
+				final var errorMap = new HashMap<String, Object>() {
+					{
+						put("dataLakeApiBaseURL", dataLakeApiBaseURL);
+						put("error", error.toString());
+						put("message", error.getMessage());
+						put("rootCause", rootCause);
+						put("mostSpecificCause", mostSpecificCause);
+						put("tenantId", tenantId);
+					}
+				};
+				if (error instanceof final WebClientResponseException webClientResponseException) {
+					String responseBody = webClientResponseException
+							.getResponseBodyAsString();
+					errorMap.put("responseBody", responseBody);
+					String bundleId = "";
+					JsonNode rootNode = Configuration.objectMapper
+							.readTree(responseBody);
+					JsonNode bundleIdNode = rootNode.path("bundle_id"); // Adjust
+					// this
+					// path
+					// based
+					// on
+					// actual
+					if (!bundleIdNode.isMissingNode()) {
+						bundleId = bundleIdNode.asText();
+					}
+					LOG.error(
+							"Exception while sending FHIR payload to datalake URL {} for interaction id {} bundle id {} response from datalake {}",
+							dataLakeApiBaseURL,
+							bundleAsyncInteractionId, bundleId,
+							responseBody);
+					errorMap.put("statusCode", webClientResponseException
+							.getStatusCode().value());
+					final var responseHeaders = webClientResponseException
+							.getHeaders()
+							.entrySet()
+							.stream()
+							.collect(Collectors.toMap(
+									Map.Entry::getKey,
+									entry -> String.join(
+											",",
+											entry.getValue())));
+					errorMap.put("headers", responseHeaders);
+					errorMap.put("statusText", webClientResponseException
+							.getStatusText());
 				}
-			};
-			if (error instanceof final WebClientResponseException webClientResponseException) {
-				String responseBody = webClientResponseException
-						.getResponseBodyAsString();
-				errorMap.put("responseBody", responseBody);
-				String bundleId = "";
-				JsonNode rootNode = Configuration.objectMapper
-						.readTree(responseBody);
-				JsonNode bundleIdNode = rootNode.path("bundle_id"); // Adjust
-				// this
-				// path
-				// based
-				// on
-				// actual
-				if (!bundleIdNode.isMissingNode()) {
-					bundleId = bundleIdNode.asText();
-				}
-				LOG.error(
-						"Exception while sending FHIR payload to datalake URL {} for interaction id {} bundle id {} response from datalake {}",
-						dataLakeApiBaseURL,
-						bundleAsyncInteractionId, bundleId,
-						responseBody);
-				errorMap.put("statusCode", webClientResponseException
-						.getStatusCode().value());
-				final var responseHeaders = webClientResponseException
-						.getHeaders()
-						.entrySet()
-						.stream()
-						.collect(Collectors.toMap(
-								Map.Entry::getKey,
-								entry -> String.join(
-										",",
-										entry.getValue())));
-				errorMap.put("headers", responseHeaders);
-				errorMap.put("statusText", webClientResponseException
-						.getStatusText());
+				errorRIHR.setPayload((JsonNode) Configuration.objectMapper
+						.valueToTree(errorMap));
+				errorRIHR.setFromState("FORWARD");
+				errorRIHR.setToState("FAIL");
+				errorRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
+				errorRIHR.setCreatedBy(FHIRService.class.getName());
+				errorRIHR.setProvenance(provenance);
+				final var start = Instant.now();
+				final var execResult = errorRIHR.execute(jooqCfg);
+				final var end = Instant.now();
+				LOG.error("Register State Failure - END for interaction id : {} tenant id : {} forwardRIHR execResult"
+						+ execResult + ". Time Taken : {} milliseconds ",
+						bundleAsyncInteractionId,
+						tenantId, Duration.between(start, end).toMillis());
+			} catch (Exception e) {
+				LOG.error("ERROR :: Register State Failure - for interaction id : {} tenant id : {} CALL "
+						+ errorRIHR.getName() + " errorRIHR error", bundleAsyncInteractionId,
+						tenantId,
+						e);
 			}
-			errorRIHR.setPayload((JsonNode) Configuration.objectMapper
-					.valueToTree(errorMap));
-			errorRIHR.setFromState("FORWARD");
-			errorRIHR.setToState("FAIL");
-			errorRIHR.setCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
-			errorRIHR.setCreatedBy(FHIRService.class.getName());
-			errorRIHR.setProvenance(provenance);
-			final var start = Instant.now();
-			final var execResult = errorRIHR.execute(jooqCfg);
-			final var end = Instant.now();
-			LOG.error("Register State Failure - END for interaction id : {} tenant id : {} forwardRIHR execResult"
-					+ execResult + ". Time Taken : {} milliseconds ",
-					bundleAsyncInteractionId,
-					tenantId, Duration.between(start, end).toMillis());
-		} catch (Exception e) {
-			LOG.error("ERROR :: Register State Failure - for interaction id : {} tenant id : {} CALL "
-					+ errorRIHR.getName() + " errorRIHR error", bundleAsyncInteractionId,
-					tenantId,
-					e);
-		}
 		// } finally {
-		// span.end();
+		// 	span.end();
 		// }
 	}
 
