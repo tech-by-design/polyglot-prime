@@ -3,7 +3,7 @@
 ## Follow the below instructions for a successful Summer'24 to Winter'24 CSV schema migration:
 
 1. **Additional CSV files:**
-  - To maintain the ordinality and cardinality of the data in alignment with the IG v1.2, remove the **screening.csv** file of Summer'24 and add **screening_observation_data.csv** and **screening_profile_data.csv**. Make sure that now you have got the following CSV files:
+  - To maintain the ordinality and cardinality of the data in alignment with the IG v1.2, remove the **screening.csv** file of Summer'24 and add **screening_observation_data.csv** and **screening_profile_data.csv**. These CSV files are **comma-separated (comma-delimited)**. Make sure that now you have the following CSV files:
     - **demographic_data.csv**
     - **qe_admin_data.csv**
     - **screening_observation_data.csv**

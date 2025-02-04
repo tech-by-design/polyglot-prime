@@ -162,11 +162,13 @@ Before you can use this tool, make sure you have the following installed on your
 - The `validate-nyher-fhir-ig-equivalent.py` script integrates with Frictionless for accurate and detailed validation.
 - The `output.json` file provides a machine-readable validation report. To understand its structure, refer to the [Frictionless JSON documentation][(https://framework.frictionlessdata.io/docs/guides/validate](https://framework.frictionlessdata.io/docs/guides/validating-data.html)).
 
-## About the File Naming Convention
+## About the File Format and Naming Convention
 
 The CSV file names in this project follow a strict naming convention to ensure consistency and compatibility with the validation process. Each file name is structured as follows:
 
 **`<DATA_TYPE>_<GROUP_IDENTIFIER>.csv`**
+
+All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting.
 
 ### Components of the File Name
 
