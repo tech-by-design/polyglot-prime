@@ -47,6 +47,8 @@ import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
 import ca.uhn.fhir.validation.FhirValidator;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -126,13 +128,12 @@ public class OrchestrationEngine {
     private final List<OrchestrationSession> sessions;
     private final Map<ValidationEngineKey, ValidationEngine> validationEngineCache;
     private static final Logger LOG = LoggerFactory.getLogger(OrchestrationEngine.class);
-    // private final Tracer tracer;
-    public OrchestrationEngine(
-        // final Tracer tracer
-        ) {
+    private final Tracer tracer;
+
+    public OrchestrationEngine(final Tracer tracer) {
         this.sessions = new ArrayList<>();
         this.validationEngineCache = new HashMap<>();
-        // this.tracer = tracer;
+        this.tracer = tracer;
     }
 
     public List<OrchestrationSession> getSessions() {
@@ -140,20 +141,20 @@ public class OrchestrationEngine {
     }
 
     public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
-        // Span span = tracer.spanBuilder("OrchestrationEngine.orchestrate").startSpan();
-        // try {
+        Span span = tracer.spanBuilder("OrchestrationEngine.orchestrate").startSpan();
+        try {
             for (final OrchestrationSession session : sessions) {
                 this.sessions.add(session);
                 session.validate();
             }
-        // } finally {
-        //     span.end();
-        // }
+        } finally {
+            span.end();
+        }
     }
 
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
-        // Span span = tracer.spanBuilder("OrchestrationEngine.clear").startSpan();
-        // try {
+        Span span = tracer.spanBuilder("OrchestrationEngine.clear").startSpan();
+        try {
             if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
                 synchronized (this) {
                     Set<String> sessionIdsToRemove = Arrays.stream(sessionsToRemove)
@@ -168,16 +169,14 @@ public class OrchestrationEngine {
                     }
                 }
             }
-        // } finally {
-        //     span.end();
-        // }
+        } finally {
+            span.end();
+        }
     }
 
     public synchronized ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, Map<String, String>> igPackages,
-            final String igVersion
-            // ,final Tracer tracer
-            ,String interactionId) {
+            final String igVersion, final Tracer tracer, String interactionId) {
         final ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
         return validationEngineCache.computeIfAbsent(key, k -> {
             switch (type) {
@@ -185,7 +184,7 @@ public class OrchestrationEngine {
                     return new HapiValidationEngine.Builder().withFhirProfileUrl(fhirProfileUrl)
                             .withIgPackages(igPackages)
                             .withIgVersion(igVersion)
-                            // .withTracer(tracer)
+                            .withTracer(tracer)
                             .withInteractionId(interactionId)
                             .build();
                 case HL7_EMBEDDED:
@@ -273,8 +272,9 @@ public class OrchestrationEngine {
         private final Map<String, Map<String, String>> igPackages;
         private final String igVersion;
         private final FhirValidator fhirValidator;
-        // private final Tracer tracer;
+        private final Tracer tracer;
         private final String interactionId;
+
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.fhirContext = FhirContext.forR4();
@@ -287,36 +287,38 @@ public class OrchestrationEngine {
                     engineConstructedAt);
             this.igPackages = builder.igPackages;
             this.igVersion = builder.igVersion;
-            // this.tracer = builder.tracer;
+            this.tracer = builder.tracer;
             this.interactionId = builder.interactionId;
             this.fhirValidator = initializeFhirValidator();
         }
 
         public FhirValidator initializeFhirValidator() {
-            // Span span = tracer.spanBuilder("OrchestrationEngine.initializeFhirValidator").startSpan();
-            // try {
+            Span span = tracer.spanBuilder("OrchestrationEngine.initializeFhirValidator").startSpan();
+            try {
                 final var supportChain = new ValidationSupportChain();
                 final var defaultSupport = new DefaultProfileValidationSupport(fhirContext);
 
-                LOG.info("Version of igPackage : {} for interaction Id : {} " , igVersion,interactionId);
-                LOG.info("Add IG Packages to npmPackageValidationSupport -BEGIN for interaction Id : {}",interactionId);
+                LOG.info("Version of igPackage : {} for interaction Id : {} ", igVersion, interactionId);
+                LOG.info("Add IG Packages to npmPackageValidationSupport -BEGIN for interaction Id : {}",
+                        interactionId);
                 NpmPackageValidationSupport npmPackageValidationSupport = new NpmPackageValidationSupport(fhirContext);
 
                 if (igPackages != null && igPackages.containsKey("fhir-v4")) {
                     Map<String, String> igMap = igPackages.get("fhir-v4");
-                    LOG.info("No. of packages to be add : {}  for interaction Id : {}", igMap.size(),interactionId);
+                    LOG.info("No. of packages to be add : {}  for interaction Id : {}", igMap.size(), interactionId);
                     for (String igKey : igMap.keySet()) {
                         String packagePath = igMap.get(igKey);
                         try {
-                            LOG.info("Add IG Package {} -BEGIN for interaction Id : {} ", packagePath,interactionId);
+                            LOG.info("Add IG Package {} -BEGIN for interaction Id : {} ", packagePath, interactionId);
                             npmPackageValidationSupport.loadPackageFromClasspath(packagePath + "/package.tgz");
-                            LOG.info("Add IG Package {} -END for interaction Id : {} ", packagePath,interactionId);
+                            LOG.info("Add IG Package {} -END for interaction Id : {} ", packagePath, interactionId);
                         } catch (Exception e) {
-                            LOG.error("Failed to load the package {} for interactionId : {} ", packagePath, interactionId, e);
+                            LOG.error("Failed to load the package {} for interactionId : {} ", packagePath,
+                                    interactionId, e);
                         }
                     }
                 } else {
-                    LOG.error("IG Package path not defined for Interaction  Id :{} ",interactionId);
+                    LOG.error("IG Package path not defined for Interaction  Id :{} ", interactionId);
                 }
 
                 supportChain.addValidationSupport(npmPackageValidationSupport);
@@ -327,34 +329,30 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(new SnapshotGeneratingValidationSupport(fhirContext));
                 supportChain.addValidationSupport(new InMemoryTerminologyServerValidationSupport(fhirContext));
 
-                final var prePopulateSupport = new PrePopulateSupport(
-                    // tracer
-                    );
+                final var prePopulateSupport = new PrePopulateSupport(tracer);
                 var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
                 prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
 
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
                 prePopulatedValidationSupport = null;
 
-                final var postPopulateSupport = new PostPopulateSupport(
-                    // tracer
-                    );
+                final var postPopulateSupport = new PostPopulateSupport(tracer);
                 postPopulateSupport.update(supportChain);
 
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
                 return fhirContext.newValidator().registerValidatorModule(instanceValidator);
-            // } finally {
-            //     span.end();
-            // }
+            } finally {
+                span.end();
+            }
         }
 
         @Override
         public OrchestrationEngine.ValidationResult validate(@NotNull final String payload,
                 final String interactionId) {
             final var initiatedAt = Instant.now();
-            // Span span = tracer.spanBuilder("OrchestrationEngine.validate").startSpan();
-            // try {
+            Span span = tracer.spanBuilder("OrchestrationEngine.validate").startSpan();
+            try {
                 try {
                     LOG.info("VALIDATOR -BEGIN initiated At : {} for interactionid:{} ", initiatedAt, interactionId);
                     LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
@@ -362,7 +360,8 @@ public class OrchestrationEngine {
                     LOG.debug("BUNDLE PAYLOAD parse -END");
                     final var hapiVR = fhirValidator.validateWithResult(bundle);
                     final var completedAt = Instant.now();
-                    LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} ", Duration.between(initiatedAt, completedAt).toMillis(), interactionId);
+                    LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} ",
+                            Duration.between(initiatedAt, completedAt).toMillis(), interactionId);
                     return new OrchestrationEngine.ValidationResult() {
                         @Override
                         @JsonSerialize(using = JsonTextSerializer.class)
@@ -402,20 +401,20 @@ public class OrchestrationEngine {
                         }
                     };
 
-            } catch (final Exception e) {
-                final var completedAt = Instant.now();
-                return new OrchestrationEngine.ValidationResult() {
-                    @Override
-                    @JsonSerialize(using = JsonTextSerializer.class)
-                    public String getOperationOutcome() {
-                        OperationOutcome operationOutcome = new OperationOutcome();
-                        OperationOutcomeIssueComponent issue = new OperationOutcomeIssueComponent();
-                        issue.setSeverity(IssueSeverity.FATAL);
-                        issue.setDiagnostics(e.getMessage());
-                        issue.setCode(OperationOutcome.IssueType.EXCEPTION);
-                        operationOutcome.addIssue(issue);
-                        return FhirContext.forR4().newJsonParser().encodeResourceToString(operationOutcome);
-                    }
+                } catch (final Exception e) {
+                    final var completedAt = Instant.now();
+                    return new OrchestrationEngine.ValidationResult() {
+                        @Override
+                        @JsonSerialize(using = JsonTextSerializer.class)
+                        public String getOperationOutcome() {
+                            OperationOutcome operationOutcome = new OperationOutcome();
+                            OperationOutcomeIssueComponent issue = new OperationOutcomeIssueComponent();
+                            issue.setSeverity(IssueSeverity.FATAL);
+                            issue.setDiagnostics(e.getMessage());
+                            issue.setCode(OperationOutcome.IssueType.EXCEPTION);
+                            operationOutcome.addIssue(issue);
+                            return FhirContext.forR4().newJsonParser().encodeResourceToString(operationOutcome);
+                        }
 
                         @Override
                         public boolean isValid() {
@@ -448,9 +447,9 @@ public class OrchestrationEngine {
                         }
                     };
                 }
-            // } finally {
-            //     span.end();
-            // }
+            } finally {
+                span.end();
+            }
 
         }
 
@@ -459,7 +458,7 @@ public class OrchestrationEngine {
             private Map<String, Map<String, String>> igPackages;
             private String igVersion;
             private String interactionId;
-            // private Tracer tracer;
+            private Tracer tracer;
 
             public Builder withInteractionId(@NotNull final String interactionId) {
                 this.interactionId = interactionId;
@@ -481,10 +480,10 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            // public Builder withTracer(@NotNull final Tracer tracer) {
-            //     this.tracer = tracer;
-            //     return this;
-            // }
+            public Builder withTracer(@NotNull final Tracer tracer) {
+                this.tracer = tracer;
+                return this;
+            }
 
             public HapiValidationEngine build() {
                 return new HapiValidationEngine(this);
@@ -801,7 +800,7 @@ public class OrchestrationEngine {
             private String igVersion;
             private String sessionId;
             private String interactionId;
-            // private Tracer tracer;
+            private Tracer tracer;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
@@ -846,10 +845,10 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            // public Builder withTracer(@NotNull final Tracer tracer) {
-            //     this.tracer = tracer;
-            //     return this;
-            // }
+            public Builder withTracer(@NotNull final Tracer tracer) {
+                this.tracer = tracer;
+                return this;
+            }
 
             public Builder withUserAgentValidationStrategy(final String uaStrategyJson, final boolean clearExisting) {
                 if (uaStrategyJson != null) {
@@ -908,23 +907,21 @@ public class OrchestrationEngine {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,
                                 this.igPackages,
-                                this.igVersion
-                                // ,this.tracer
-                                ,this.interactionId));
+                                this.igVersion, this.tracer, this.interactionId));
                 return this;
             }
 
             public synchronized Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,
-                                null, null,null));
+                                null, null, null, null));
                 return this;
             }
 
             public synchronized Builder addHl7ValidationApiEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null,
-                                null,null));
+                                null, null, null));
                 return this;
             }
 
