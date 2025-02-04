@@ -1,0 +1,45 @@
+{
+    "test_case_fii": "TC-0111",
+    "title": "Verify that the patient's screening details under the organization are displayed in the Organizations tab when a CSV zip file is placed in the ingress folder via sftp",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.809516Z",
+    "end_time": "2025-01-23T13:50:39.809516Z",
+    "total_duration": "2.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Content menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.809516Z",
+            "end_time": "2025-01-23T13:50:39.809516Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the Organizations tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.809516Z",
+            "end_time": "2025-01-23T13:50:39.809516Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Open the view for the most recently sent Patient MRN.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.809516Z",
+            "end_time": "2025-01-23T13:50:39.809516Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Open the most recently sent Screening Details view.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.809516Z",
+            "end_time": "2025-01-23T13:50:39.809516Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Verify that the patient's screening details under the organization are displayed in the Organizations tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.809516Z",
+            "end_time": "2025-01-23T13:50:39.809516Z"
+        }
+    ]
+}

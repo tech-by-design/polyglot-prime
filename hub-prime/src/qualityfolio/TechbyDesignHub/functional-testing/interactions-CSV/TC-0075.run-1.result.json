@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0075",
+    "title": "Verify tha the FHIR Success Count is displaying correctly when the CSV zip file is sent to /flatfile/csv/Bundle/ endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.764804Z",
+    "end_time": "2025-01-23T13:51:06.764804Z",
+    "total_duration": "29.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Interactions menu header and navigate to CSV via HTTPs tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.764804Z",
+            "end_time": "2025-01-23T13:51:06.764804Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.764804Z",
+            "end_time": "2025-01-23T13:51:06.764804Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Locate the FHIR Success Count column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.764804Z",
+            "end_time": "2025-01-23T13:51:06.764804Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify the following.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.764804Z",
+            "end_time": "2025-01-23T13:51:06.764804Z"
+        }
+    ]
+}

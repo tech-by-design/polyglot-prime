@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0004",
+    "title": "Verify that five rows of interactions are displayed in the FHIR via HTTPs tab, all sharing the same interaction ID, when a FHIR JSON file is sent to the /Bundle endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.679287Z",
+    "end_time": "2025-01-23T13:50:43.679287Z",
+    "total_duration": "6.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Interactions menu header and navigate to FHIR via HTTPs tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.679287Z",
+            "end_time": "2025-01-23T13:50:43.679287Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the Nature column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.679287Z",
+            "end_time": "2025-01-23T13:50:43.679287Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Identify the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.679287Z",
+            "end_time": "2025-01-23T13:50:43.679287Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify that five rows of interactions are displayed, all sharing the same interaction ID:",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.679287Z",
+            "end_time": "2025-01-23T13:50:43.679287Z"
+        }
+    ]
+}

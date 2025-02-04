@@ -1,0 +1,52 @@
+{
+    "test_case_fii": "TC-0015",
+    "title": "Verify that sorting works for TechBD Tenant ID on the FHIR via HTTPs tab",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.692287Z",
+    "end_time": "2025-01-23T13:50:59.692287Z",
+    "total_duration": "22.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the interactions menu header and navigate to FHIR via HTTPs tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.692287Z",
+            "end_time": "2025-01-23T13:50:59.692287Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the TechBD Tenant ID column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.692287Z",
+            "end_time": "2025-01-23T13:50:59.692287Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Click on the sort icon.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.692287Z",
+            "end_time": "2025-01-23T13:50:59.692287Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify that the sorting result is displayed in ascending order.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.692287Z",
+            "end_time": "2025-01-23T13:50:59.692287Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Click on the sort icon again.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.692287Z",
+            "end_time": "2025-01-23T13:50:59.692287Z"
+        },
+        {
+            "step": 6,
+            "stepname": "Verify that the sorting result is now displayed in descending order.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.692287Z",
+            "end_time": "2025-01-23T13:50:59.692287Z"
+        }
+    ]
+}

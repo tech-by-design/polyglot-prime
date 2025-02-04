@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0119",
+    "title": "Verify that five rows of interactions are displayed in the FHIR via HTTPs tab, all sharing the same interaction ID, when a xml file is sent to the /ccda/Bundle/ endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.818838Z",
+    "end_time": "2025-01-23T13:51:23.818838Z",
+    "total_duration": "46.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Interactions menu header and navigate to FHIR via HTTPs tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.818838Z",
+            "end_time": "2025-01-23T13:51:23.818838Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the Nature column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.818838Z",
+            "end_time": "2025-01-23T13:51:23.818838Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Identify the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.818838Z",
+            "end_time": "2025-01-23T13:51:23.818838Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify that five rows of interactions are displayed, all sharing the same interaction ID:",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.818838Z",
+            "end_time": "2025-01-23T13:51:23.818838Z"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0022",
+    "title": "Verify that techByDesignDisposition displays as accept when a FHIR JSON file is sent to the /Bundle/ endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.700255Z",
+    "end_time": "2025-01-23T13:51:36.700255Z",
+    "total_duration": "59.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the interactions menu header and navigate to FHIR via HTTPs tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.700255Z",
+            "end_time": "2025-01-23T13:51:36.700255Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.700255Z",
+            "end_time": "2025-01-23T13:51:36.700255Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Click on the interaction ID with the nature techByDesignDisposition.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.700255Z",
+            "end_time": "2025-01-23T13:51:36.700255Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify that accept is displayed in the techByDesignDisposition block within the payload.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.700255Z",
+            "end_time": "2025-01-23T13:51:36.700255Z"
+        }
+    ]
+}

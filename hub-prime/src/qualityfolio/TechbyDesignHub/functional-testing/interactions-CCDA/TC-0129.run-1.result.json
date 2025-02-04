@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0129",
+    "title": "Verify that the payload is displayed for the Forwarded HTTP Response Error interaction when a FHIR JSON is sent to the /ccda/Bundle endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.829804Z",
+    "end_time": "2025-01-23T13:50:42.829804Z",
+    "total_duration": "5.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the interactions menu header and navigate to FHIR via HTTPs FAILED tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.829804Z",
+            "end_time": "2025-01-23T13:50:42.829804Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.829804Z",
+            "end_time": "2025-01-23T13:50:42.829804Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Click on the interaction ID with the nature Forwarded HTTP Response Error.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.829804Z",
+            "end_time": "2025-01-23T13:50:42.829804Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify that the payload is displayed correctly.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.829804Z",
+            "end_time": "2025-01-23T13:50:42.829804Z"
+        }
+    ]
+}

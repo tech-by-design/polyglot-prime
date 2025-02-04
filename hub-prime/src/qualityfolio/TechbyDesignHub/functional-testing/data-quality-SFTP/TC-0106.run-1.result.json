@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0106",
+    "title": "Verify that detailed overview of files within the submitted zip archive that could not be processed are displaying in the File Not Processed tab when a CSV zip file with incorrect file format is placed in the ingress folder via sftp",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.803509Z",
+    "end_time": "2025-01-23T13:50:55.803509Z",
+    "total_duration": "18.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Data Quality menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.803509Z",
+            "end_time": "2025-01-23T13:50:55.803509Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the CSV Data Quality tab - File Not Processed tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.803509Z",
+            "end_time": "2025-01-23T13:50:55.803509Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Identify the latest interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.803509Z",
+            "end_time": "2025-01-23T13:50:55.803509Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify that specific issues, such as missing files or incorrect file formats, along with their associated error messages are displaying.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.803509Z",
+            "end_time": "2025-01-23T13:50:55.803509Z"
+        }
+    ]
+}

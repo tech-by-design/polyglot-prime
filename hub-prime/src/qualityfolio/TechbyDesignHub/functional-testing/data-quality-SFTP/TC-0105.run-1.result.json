@@ -1,0 +1,52 @@
+{
+    "test_case_fii": "TC-0105",
+    "title": "Verify that the number of bundles discarded from being sent to the Data Lake is displayed in the Performance-Test to Tech by Design tab when a CSV zip file is placed in the ingress folder via sftp",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.802509Z",
+    "end_time": "2025-01-23T13:50:47.802509Z",
+    "total_duration": "10.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Data Quality menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.802509Z",
+            "end_time": "2025-01-23T13:50:47.802509Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the Needs Attention tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.802509Z",
+            "end_time": "2025-01-23T13:50:47.802509Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Identify the latest interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.802509Z",
+            "end_time": "2025-01-23T13:50:47.802509Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Click the QE name hyperlink.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.802509Z",
+            "end_time": "2025-01-23T13:50:47.802509Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Navigate to the Performance-Test to Tech by Design tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.802509Z",
+            "end_time": "2025-01-23T13:50:47.802509Z"
+        },
+        {
+            "step": 6,
+            "stepname": "Verify that the number of bundles discarded from being sent to the Data Lake is displayed in the Performance-Test to Tech by Design tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.802509Z",
+            "end_time": "2025-01-23T13:50:47.802509Z"
+        }
+    ]
+}

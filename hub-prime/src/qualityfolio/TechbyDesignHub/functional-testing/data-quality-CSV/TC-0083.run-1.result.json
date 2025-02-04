@@ -1,0 +1,31 @@
+{
+    "test_case_fii": "TC-0083",
+    "title": "Verify that CSV Data Quality tab is loading",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.775802Z",
+    "end_time": "2025-01-23T13:50:47.775802Z",
+    "total_duration": "10.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Data Quality menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.775802Z",
+            "end_time": "2025-01-23T13:50:47.775802Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the CSV Data Quality tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.775802Z",
+            "end_time": "2025-01-23T13:50:47.775802Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Verify that CSV Data Quality tab is loading.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.775802Z",
+            "end_time": "2025-01-23T13:50:47.775802Z"
+        }
+    ]
+}

@@ -1,0 +1,45 @@
+{
+    "test_case_fii": "TC-0086",
+    "title": "Verify that errors related to the integrity of data within the submitted CSV file are displaying in the Data Integrity Errors tab when a CSV zip file with incorrect data is sent to the /flatfile/csv/Bundle endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.780913Z",
+    "end_time": "2025-01-23T13:50:56.780913Z",
+    "total_duration": "19.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Data Quality menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.780913Z",
+            "end_time": "2025-01-23T13:50:56.780913Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Navigate to the CSV Data Quality tab",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.780913Z",
+            "end_time": "2025-01-23T13:50:56.780913Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Click on the Incomplete Groups tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.780913Z",
+            "end_time": "2025-01-23T13:50:56.780913Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Identify the latest interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.780913Z",
+            "end_time": "2025-01-23T13:50:56.780913Z"
+        },
+        {
+            "step": 5,
+            "stepname": "Verify that issues such as foreign key violations, incorrect values, and constraint errors for specific rows and fields in the data.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.780913Z",
+            "end_time": "2025-01-23T13:50:56.780913Z"
+        }
+    ]
+}
