@@ -1,0 +1,31 @@
+{
+    "test_case_fii": "TC-0034",
+    "title": "Verify that the Performance Overview tab is loading with data when a FHIR JSON file is sent to the /Bundle endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.715293Z",
+    "end_time": "2025-01-23T13:51:04.715293Z",
+    "total_duration": "27.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the interactions menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.715293Z",
+            "end_time": "2025-01-23T13:51:04.715293Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Click on the Performance Overview tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.715293Z",
+            "end_time": "2025-01-23T13:51:04.715293Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Verify that the data is displayed on the Performance Overview tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.715293Z",
+            "end_time": "2025-01-23T13:51:04.715293Z"
+        }
+    ]
+}

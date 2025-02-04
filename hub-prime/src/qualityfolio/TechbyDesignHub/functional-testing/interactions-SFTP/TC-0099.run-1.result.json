@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0099",
+    "title": "Verify tha the FHIR Success Count is displaying correctly when a CSV zip file is placed in the ingress folder via sftp",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.795509Z",
+    "end_time": "2025-01-23T13:51:29.795509Z",
+    "total_duration": "52.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Interactions menu header and navigate to CSV via HTTPs tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.795509Z",
+            "end_time": "2025-01-23T13:51:29.795509Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.795509Z",
+            "end_time": "2025-01-23T13:51:29.795509Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Locate the FHIR Success Count column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.795509Z",
+            "end_time": "2025-01-23T13:51:29.795509Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify the following.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.795509Z",
+            "end_time": "2025-01-23T13:51:29.795509Z"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0002",
+    "title": "Verify logout functionality",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.676287Z",
+    "end_time": "2025-01-23T13:50:45.676287Z",
+    "total_duration": "8.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click user icon.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.676287Z",
+            "end_time": "2025-01-23T13:50:45.676287Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Click logout button.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.676287Z",
+            "end_time": "2025-01-23T13:50:45.676287Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Signout from GitHub",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.676287Z",
+            "end_time": "2025-01-23T13:50:45.676287Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Cick Sign out",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.676287Z",
+            "end_time": "2025-01-23T13:50:45.676287Z"
+        }
+    ]
+}

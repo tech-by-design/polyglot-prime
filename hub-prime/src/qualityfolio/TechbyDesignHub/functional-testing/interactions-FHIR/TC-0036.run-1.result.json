@@ -1,0 +1,31 @@
+{
+    "test_case_fii": "TC-0036",
+    "title": "Verify that the User Sessions tab is loading with data when a FHIR JSON file is sent to the /Bundle endpoint",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.718292Z",
+    "end_time": "2025-01-23T13:51:19.718292Z",
+    "total_duration": "42.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the interactions menu header.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.718292Z",
+            "end_time": "2025-01-23T13:51:19.718292Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Click on the User Sessions tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.718292Z",
+            "end_time": "2025-01-23T13:51:19.718292Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Verify that the data is displayed on the User Sessions tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.718292Z",
+            "end_time": "2025-01-23T13:51:19.718292Z"
+        }
+    ]
+}

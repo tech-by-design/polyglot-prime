@@ -1,0 +1,38 @@
+{
+    "test_case_fii": "TC-0102",
+    "title": "Verify that five rows of interactions are displayed in the HTTP Interactions tab, all sharing the same interaction ID, when a CSV zip file is placed in the ingress folder via sftp",
+    "status": "passed",
+    "start_time": "2025-01-23T13:50:37.798509Z",
+    "end_time": "2025-01-23T13:50:49.798509Z",
+    "total_duration": "12.00 seconds",
+    "steps": [
+        {
+            "step": 1,
+            "stepname": "Click on the Interactions menu header and navigate to HTTP Interactions tab.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.798509Z",
+            "end_time": "2025-01-23T13:50:49.798509Z"
+        },
+        {
+            "step": 2,
+            "stepname": "Locate the Nature column.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.798509Z",
+            "end_time": "2025-01-23T13:50:49.798509Z"
+        },
+        {
+            "step": 3,
+            "stepname": "Identify the most recent interaction sent.",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.798509Z",
+            "end_time": "2025-01-23T13:50:49.798509Z"
+        },
+        {
+            "step": 4,
+            "stepname": "Verify that five rows of interactions are displayed, all sharing the same interaction ID:",
+            "status": "passed",
+            "start_time": "2025-01-23T13:50:37.798509Z",
+            "end_time": "2025-01-23T13:50:49.798509Z"
+        }
+    ]
+}
