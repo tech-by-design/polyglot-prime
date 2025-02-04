@@ -4240,28 +4240,47 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_ccda_fhir_request CASCADE
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_request CASCADE;	
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
-AS SELECT 
-    sat_interaction_ccda_request_id,
+AS
+with fhir_summary as (
+select
 	hub_interaction_id,
-	tenant_id,
-	tenant_id_lower,
-	uri,
-	nature,
-	payload ,
-	ccda_payload_text,
-	client_ip_address,
-	user_agent,
-	from_state,
-	to_state,
-	state_transition_reason,
-	elaboration ,
-	origin,
-	created_at,
-	created_by,
-	provenance 
-   FROM techbd_udi_ingress.sat_interaction_ccda_request sicr
-   order by created_at DESC;        
-
+	CASE WHEN COUNT(hub_interaction_id) > 0 THEN 'True' ELSE 'False' END AS fhir_conversion_status  
+from
+	techbd_udi_ingress.sat_interaction_fhir_request
+where
+	(nature = 'Original FHIR Payload' or nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered')
+	and source_type = 'CCDA'
+group by
+	hub_interaction_id     
+)
+select
+	sicr.sat_interaction_ccda_request_id,
+	sicr.hub_interaction_id,
+	sicr.tenant_id,
+	sicr.tenant_id_lower,
+	sicr.uri,
+	sicr.nature,
+	sicr.payload,
+	fhir_summary.fhir_conversion_status as fhir_conversion_status,
+	sicr.ccda_payload_text,
+	sicr.client_ip_address,
+	sicr.user_agent,
+	sicr.from_state,
+	sicr.to_state,
+	sicr.state_transition_reason,
+	sicr.elaboration,
+	sicr.origin,
+	sicr.created_at,
+	sicr.created_by,
+	sicr.provenance
+from
+	techbd_udi_ingress.sat_interaction_ccda_request sicr
+left join fhir_summary
+    on
+	sicr.hub_interaction_id = fhir_summary.hub_interaction_id
+order by
+	sicr.created_at desc;
+    
 
 /*******************************************************************************************
  * Comprehensive view of Latest CSV via HTTPs Interactions per Tenant IDs* 
