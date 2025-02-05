@@ -336,8 +336,7 @@ public class CsvBundleProcessorService {
                                 interactionId, request,
                                 bundle, null, tenantId);
                         results.add(fhirService.processBundle(
-                                bundle, tenantId, null, null, null, null, null,
-                                Boolean.toString(false), false,
+                                bundle, tenantId, null, null, null, null, false,
                                 false, false,
                                 request, response,
                                 updatedProvenance,

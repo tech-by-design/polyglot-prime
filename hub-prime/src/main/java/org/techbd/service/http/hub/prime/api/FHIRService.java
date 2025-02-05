@@ -110,103 +110,101 @@ public class FHIRService {
 		this.tracer = tracer;
 	}
 
-	public Object processBundle(final @RequestBody @Nonnull String payload,
-			String tenantId,
-			String fhirProfileUrlParam, String fhirProfileUrlHeader, String uaValidationStrategyJson,
-			String customDataLakeApi,
-			String dataLakeApiContentType,
-			String healthCheck,
-			boolean isSync,
-			boolean includeRequestInOutcome,
-			boolean includeIncomingPayloadInDB,
-			HttpServletRequest request, HttpServletResponse response, String provenance,
-			boolean includeOperationOutcome, String mtlsStrategy, String interactionId,
-			String groupInteractionId, String masterInteractionId, String sourceType,
-			String requestUriToBeOverriden, String coRrelationId)
-			throws IOException {
-		Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
-		try {
-			final var start = Instant.now();
-			LOG.info("Bundle processing start at {} for interaction id {}.",
-					start, getBundleInteractionId(request, coRrelationId));
-			if (null == interactionId) {
-				interactionId = getBundleInteractionId(request, coRrelationId);
-			}
-			final var dslContext = udiPrimeJpaConfig.dsl();
-			final var jooqCfg = dslContext.configuration();
-			Map<String, Object> payloadWithDisposition = null;
-			try {
-				validateJson(payload, interactionId);
-				validateBundleProfileUrl(payload, interactionId);
-				if (null == dataLakeApiContentType) {
-					dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
-				}
-				final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
-						: (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
-								: appConfig.getDefaultSdohFhirProfileUrl();
-				Map<String, Object> immediateResult = validate(request, payload, fhirProfileUrl,
-						uaValidationStrategyJson,
-						includeRequestInOutcome, interactionId, provenance, sourceType);
-				final var result = Map.of("OperationOutcome", immediateResult);
-				if ("true".equals(healthCheck)) {
-					LOG.info("%s is true, skipping Scoring Engine submission."
-							.formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
-					return result; // Return without proceeding to scoring engine submission
-				}
-				if (!SourceType.CSV.name().equals(sourceType)) {
-					addObservabilityHeadersToResponse(request, response);
-				}
-				payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
-						response, payload, result, interactionId, groupInteractionId,
-						masterInteractionId, sourceType, requestUriToBeOverriden,
-						coRrelationId);
-				if (isActionDiscard(payloadWithDisposition)) {
-					return payloadWithDisposition;
-				}
-				if (null == payloadWithDisposition) {
-					LOG.warn(
-							"FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
-							getBundleInteractionId(request, coRrelationId));
-					sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
-							includeIncomingPayloadInDB, tenantId, payload,
-							provenance, null, includeOperationOutcome, mtlsStrategy,
-							interactionId, groupInteractionId, masterInteractionId,
-							sourceType, requestUriToBeOverriden, coRrelationId);
-					Instant end = Instant.now();
-					Duration timeElapsed = Duration.between(start, end);
-					LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
-							interactionId, timeElapsed.toMillis());
-					return result;
-				} else {
-					LOG.info(
-							"FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
-							interactionId);
-					sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
-							includeIncomingPayloadInDB, tenantId, payload,
-							provenance, payloadWithDisposition, includeOperationOutcome,
-							mtlsStrategy, interactionId, groupInteractionId,
-							masterInteractionId, sourceType, requestUriToBeOverriden, coRrelationId);
-					Instant end = Instant.now();
-					Duration timeElapsed = Duration.between(start, end);
-					LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
-							interactionId, timeElapsed.toMillis());
-					return payloadWithDisposition;
-				}
-			} catch (JsonValidationException ex) {
-				payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
-						response, payload, buildOperationOutcome(ex, interactionId),
-						interactionId, groupInteractionId, masterInteractionId, sourceType,
-						requestUriToBeOverriden, coRrelationId);
-			}
-			Instant end = Instant.now();
-			Duration timeElapsed = Duration.between(start, end);
-			LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
-					interactionId, timeElapsed.toMillis());
-			return payloadWithDisposition;
-		} finally {
-			span.end();
-		}
-	}
+        public Object processBundle(final @RequestBody @Nonnull String payload,
+                        String tenantId,
+                       // String fhirProfileUrlParam, //String fhirProfileUrlHeader, 
+                        String uaValidationStrategyJson,
+                        String customDataLakeApi,
+                        String dataLakeApiContentType,
+                        String healthCheck,
+                        boolean isSync,
+                        boolean includeRequestInOutcome,
+                        boolean includeIncomingPayloadInDB,
+                        HttpServletRequest request, HttpServletResponse response, String provenance,
+                        boolean includeOperationOutcome, String mtlsStrategy, String interactionId,
+                        String groupInteractionId, String masterInteractionId, String sourceType,
+                        String requestUriToBeOverriden, String coRrelationId)
+                        throws IOException {
+                Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
+                try {
+                        final var start = Instant.now();
+                        LOG.info("Bundle processing start at {} for interaction id {}.",
+                                        start, getBundleInteractionId(request,coRrelationId));
+                        if (null == interactionId) {
+                                interactionId = getBundleInteractionId(request,coRrelationId);
+                        }
+                        final var dslContext = udiPrimeJpaConfig.dsl();
+                        final var jooqCfg = dslContext.configuration();
+                        Map<String, Object> payloadWithDisposition = null;
+                        try {
+                                validateJson(payload, interactionId);
+                                if (null == dataLakeApiContentType) {
+                                        dataLakeApiContentType = MediaType.APPLICATION_JSON_VALUE;
+                                }
+                               // final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
+                                               // : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
+                                                            //    : appConfig.getDefaultSdohFhirProfileUrl();
+                                Map<String, Object> immediateResult = validate(request, payload, //fhirProfileUrl,
+                                                uaValidationStrategyJson,
+                                                includeRequestInOutcome, interactionId, provenance, sourceType);
+                                final var result = Map.of("OperationOutcome", immediateResult);
+                                if ("true".equals(healthCheck)) {
+                                        LOG.info("%s is true, skipping Scoring Engine submission."
+                                                        .formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
+                                        return result; // Return without proceeding to scoring engine submission
+                                }
+                                if (!SourceType.CSV.name().equals(sourceType)) {
+                                        addObservabilityHeadersToResponse(request, response);
+                                }
+                                payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
+                                                response, payload, result, interactionId, groupInteractionId,
+                                                masterInteractionId, sourceType, requestUriToBeOverriden,
+                                                coRrelationId);
+                                if (isActionDiscard(payloadWithDisposition)) {
+                                        return payloadWithDisposition;
+                                }
+                                if (null == payloadWithDisposition) {
+                                        LOG.warn("FHIRService:: ERROR:: Disposition payload is not available.Send Bundle payload to scoring engine for interaction id {}.",
+                                                        getBundleInteractionId(request,coRrelationId));
+                                        sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
+                                                        includeIncomingPayloadInDB, tenantId, payload,
+                                                        provenance, null, includeOperationOutcome, mtlsStrategy,
+                                                        interactionId, groupInteractionId, masterInteractionId,
+                                                        sourceType, requestUriToBeOverriden,coRrelationId);
+                                        Instant end = Instant.now();
+                                        Duration timeElapsed = Duration.between(start, end);
+                                        LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+                                                        interactionId, timeElapsed.toMillis());
+                                        return result;
+                                } else {
+                                        LOG.info("FHIRService:: Received Disposition payload.Send Disposition payload to scoring engine for interaction id {}.",
+                                                        interactionId);
+                                        sendToScoringEngine(jooqCfg, request, customDataLakeApi, dataLakeApiContentType,
+                                                        includeIncomingPayloadInDB, tenantId, payload,
+                                                        provenance, payloadWithDisposition, includeOperationOutcome,
+                                                        mtlsStrategy, interactionId, groupInteractionId,
+                                                        masterInteractionId, sourceType, requestUriToBeOverriden,coRrelationId);
+                                        Instant end = Instant.now();
+                                        Duration timeElapsed = Duration.between(start, end);
+                                        LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+                                                        interactionId, timeElapsed.toMillis());
+                                        return payloadWithDisposition;
+                                }
+                        } catch (JsonValidationException ex) {
+                                payloadWithDisposition = registerBundleInteraction(jooqCfg, request,
+                                                response, payload, buildOperationOutcome(ex, interactionId),
+                                                interactionId, groupInteractionId, masterInteractionId, sourceType,
+                                                requestUriToBeOverriden, coRrelationId);
+                        }
+                        Instant end = Instant.now();
+                        Duration timeElapsed = Duration.between(start, end);
+                        LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
+                                        interactionId, timeElapsed.toMillis());
+                        return payloadWithDisposition;
+                } finally {
+                        span.end();
+                }
+        }
 
 	@SuppressWarnings("unchecked")
 	public static boolean isActionDiscard(Map<String, Object> payloadWithDisposition) {
@@ -464,82 +462,82 @@ public class FHIRService {
 		request.setAttribute("activeHttpInteraction", rre);
 	}
 
-	private Map<String, Object> validate(HttpServletRequest request, String payload, String fhirProfileUrl,
-			String uaValidationStrategyJson,
-			boolean includeRequestInOutcome, String interactionId, String provenance, String sourceType) {
-		Span span = tracer.spanBuilder("FhirService.validate").startSpan();
-		try {
-			final var start = Instant.now();
-			LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
-			final var igPackages = appConfig.getIgPackages();
-			final var igVersion = appConfig.getIgVersion();
-			final var sessionBuilder = engine.session()
-					.withSessionId(UUID.randomUUID().toString())
-					.onDevice(Device.createDefault())
-					.withInteractionId(interactionId)
-					.withPayloads(List.of(payload))
-					.withFhirProfileUrl(fhirProfileUrl)
-					.withTracer(tracer)
-					.withFhirIGPackages(igPackages)
-					.withIgVersion(igVersion)
-					.addHapiValidationEngine() // by default
-					// clearExisting is set to true so engines can be fully supplied through header
-					.withUserAgentValidationStrategy(uaValidationStrategyJson, true);
-			final var session = sessionBuilder.build();
-			try {
-				engine.orchestrate(session);
-				// TODO: if there are errors that should prevent forwarding, stop here
-				// TODO: need to implement `immediate` (sync) webClient op, right now it's async
-				// only
-				// immediateResult is what's returned to the user while async operation
-				// continues
-				final var immediateResult = new HashMap<>(Map.of(
-						"resourceType", "OperationOutcome",
-						"help",
-						"If you need help understanding how to decipher OperationOutcome please see "
-								+ appConfig.getOperationOutcomeHelpUrl(),
-						"bundleSessionId", interactionId, // for tracking in
-															// database, etc.
-						"isAsync", true,
-						"validationResults", session.getValidationResults(),
-						"statusUrl",
-						getBaseUrl(request) + "/Bundle/$status/"
-								+ interactionId.toString(),
-						"device", session.getDevice()));
-				if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
-					immediateResult.put("provenance",
-							Configuration.objectMapper.readTree(provenance));
-				}
-				if (uaValidationStrategyJson != null) {
-					immediateResult.put("uaValidationStrategy",
-							Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
-									uaValidationStrategyJson,
-									"issues",
-									sessionBuilder.getUaStrategyJsonIssues()));
-				}
-				if (includeRequestInOutcome) {
-					immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
-				}
-				return immediateResult; // Return the validation results
-			} catch (Exception e) {
-				// Log the error and create a failure response
-				LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
-				return Map.of(
-						"resourceType", "OperationOutcome",
-						"interactionId", interactionId,
-						"error", "Validation failed: " + e.getMessage());
-			} finally {
-				// Ensure the session is cleared to avoid memory leaks
-				engine.clear(session);
-				Instant end = Instant.now();
-				Duration timeElapsed = Duration.between(start, end);
-				LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds",
-						interactionId, timeElapsed.toMillis());
-			}
-		} finally {
-			span.end();
-		}
-	}
+        private Map<String, Object> validate(HttpServletRequest request, String payload, //String fhirProfileUrl,
+                        String uaValidationStrategyJson,
+                        boolean includeRequestInOutcome, String interactionId, String provenance, String sourceType) {
+                Span span = tracer.spanBuilder("FhirService.validate").startSpan();
+                try {
+                        final var start = Instant.now();
+                        LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
+                        final var igPackages = appConfig.getIgPackages();
+                        final var igVersion = appConfig.getIgVersion();
+                        final var sessionBuilder = engine.session()
+                                        .withSessionId(UUID.randomUUID().toString())
+                                        .onDevice(Device.createDefault())
+                                        .withInteractionId(interactionId)
+                                        .withPayloads(List.of(payload))
+                                       // .withFhirProfileUrl(fhirProfileUrl)
+                                        .withTracer(tracer)
+                                        .withFhirIGPackages(igPackages)
+                                        .withIgVersion(igVersion)
+                                        .addHapiValidationEngine() // by default
+                                        // clearExisting is set to true so engines can be fully supplied through header
+                                        .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+                        final var session = sessionBuilder.build();
+                        try {
+                                engine.orchestrate(session);
+                                // TODO: if there are errors that should prevent forwarding, stop here
+                                // TODO: need to implement `immediate` (sync) webClient op, right now it's async
+                                // only
+                                // immediateResult is what's returned to the user while async operation
+                                // continues
+                                final var immediateResult = new HashMap<>(Map.of(
+                                                "resourceType", "OperationOutcome",
+                                                "help",
+                                                "If you need help understanding how to decipher OperationOutcome please see "
+                                                                + appConfig.getOperationOutcomeHelpUrl(),
+                                                "bundleSessionId", interactionId, // for tracking in
+                                                                                  // database, etc.
+                                                "isAsync", true,
+                                                "validationResults", session.getValidationResults(),
+                                                "statusUrl",
+                                                getBaseUrl(request) + "/Bundle/$status/"
+                                                                + interactionId.toString(),
+                                                "device", session.getDevice()));
+                                if (SourceType.CSV.name().equals(sourceType) && StringUtils.isNotEmpty(provenance)) {
+                                        immediateResult.put("provenance",
+                                                        Configuration.objectMapper.readTree(provenance));
+                                }
+                                if (uaValidationStrategyJson != null) {
+                                        immediateResult.put("uaValidationStrategy",
+                                                        Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
+                                                                        uaValidationStrategyJson,
+                                                                        "issues",
+                                                                        sessionBuilder.getUaStrategyJsonIssues()));
+                                }
+                                if (includeRequestInOutcome) {
+                                        immediateResult.put("request", InteractionsFilter.getActiveRequestEnc(request));
+                                }
+                                return immediateResult; // Return the validation results
+                        } catch (Exception e) {
+                                // Log the error and create a failure response
+                                LOG.error("FHIRService - Validate - FAILED for interactionId: {}", interactionId, e);
+                                return Map.of(
+                                                "resourceType", "OperationOutcome",
+                                                "interactionId", interactionId,
+                                                "error", "Validation failed: " + e.getMessage());
+                        } finally {
+                                // Ensure the session is cleared to avoid memory leaks
+                                engine.clear(session);
+                                Instant end = Instant.now();
+                                Duration timeElapsed = Duration.between(start, end);
+                                LOG.info("FHIRService  - Validate -END for interaction id: {} Time Taken : {}  milliseconds",
+                                                interactionId, timeElapsed.toMillis());
+                        }
+                } finally {
+                        span.end();
+                }
+        }
 
 	private void sendToScoringEngine(org.jooq.Configuration jooqCfg, HttpServletRequest request,
 			String scoringEngineApiURL,

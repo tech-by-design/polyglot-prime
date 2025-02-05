@@ -177,11 +177,6 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
         finalCondition = null;
 
-        // // Adding columns to select
-        // if (request.valueCols() != null)
-        // request.valueCols().forEach(col ->
-        // selectFields.add(typableTable.column(col.field())));
-        // Check if groupKeys are available
         if (request.groupKeys() != null && !request.groupKeys().isEmpty()) {
             // Adding the select field '*'
             selectFields.add(DSL.field("*"));
@@ -252,7 +247,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     filter.conditions().forEach((filterModel) -> {
 
                         LOG.info("filter.operator() exist");
-                        // ******** */
+                     
                         final var condition = createConditionSub(field, filterModel.type(), filterModel.filter(),
                                 filterModel.secondFilter(), filterModel.dateFrom(), filterModel.dateTo());
                         LOG.info("filter.operator() : {}", filter.operator());

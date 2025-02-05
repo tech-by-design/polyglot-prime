@@ -32,7 +32,7 @@ public class ScoringEngineApiTest {
     private static final String URL_QA_SCORING_ENGINE_API = "https://qa.hrsn.nyehealth.org/HRSNBundle";
     private static final Logger LOG = LoggerFactory.getLogger(ScoringEngineApiTest.class.getName());
 
-//    @Test
+   @Test
     public void testScoringEngineApi() throws Exception {
         try {
             KeyDetails keyDetails = getSecretsFromAWSSecretManager();
