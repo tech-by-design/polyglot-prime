@@ -295,11 +295,12 @@ public class FhirController {
                         LOG.info("FHIRController:Bundle Validate :: Getting shinny Urls from config - Before: ");
                         final var igPackages = appConfig.getIgPackages();
                         final var igVersion = appConfig.getIgVersion();
+                        final var interactionId =  InteractionsFilter.getActiveRequestEnc(request).requestId()
+                        .toString();
                         final var sessionBuilder = engine.session()
                                         .withSessionId(UUID.randomUUID().toString())
                                         .onDevice(Device.createDefault())
-                                        .withInteractionId(InteractionsFilter.getActiveRequestEnc(request).requestId()
-                                                        .toString())
+                                        .withInteractionId(interactionId)
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
                                         .withFhirProfileUrl(fhirProfileUrl)
@@ -317,7 +318,8 @@ public class FhirController {
                                                                 + appConfig.getOperationOutcomeHelpUrl(),
                                                 "validationResults",
                                                 session.getValidationResults(), "device",
-                                                session.getDevice()));
+                                                session.getDevice(),
+                                                "bundleSessionId", interactionId));
                                 final var result = Map.of("OperationOutcome", opOutcome);
                                 if (uaValidationStrategyJson != null) {
                                         opOutcome.put("uaValidationStrategy",
@@ -335,6 +337,7 @@ public class FhirController {
                                 LOG.error("FHIRController: Bundle Validate:: Validation failed", e);
                                 return Map.of(
                                                 "resourceType", "OperationOutcome",
+                                                "bundleSessionId", interactionId, 
                                                 "error", "Validation failed: " + e.getMessage());
                         } finally {
                                 // Ensure the session is cleared to avoid memory leaks
