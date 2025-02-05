@@ -339,7 +339,8 @@
 		</dependency> 
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
-			<artifactId>opentelemetry-sdk-logs</artifactId>
+			<artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+			<version>1.46.0</version>
 		</dependency>
 	</dependencies>
 
