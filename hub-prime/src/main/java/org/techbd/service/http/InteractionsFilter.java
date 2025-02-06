@@ -171,7 +171,11 @@ public class InteractionsFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(mutatableReq, mutatableResp);
-
+        if (mutatableResp.getStatus() >= 400 && mutatableResp.getStatus() < 500) {
+            LOG.error("Exception in InteractionFilter while processing request to URI : {} ",requestURI);
+            mutatableResp.copyBodyToResponse();
+            return;
+        } 
         final var requestBody = persistReqPayloadDB ? mutatableReq.getContentAsByteArray()
                 : "persistPayloads = false".getBytes(StandardCharset.UTF_8);
         requestEncountered = requestEncountered.withRequestBody(requestBody);
