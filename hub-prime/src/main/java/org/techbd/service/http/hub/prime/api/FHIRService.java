@@ -479,7 +479,7 @@ public class FHIRService {
 					.onDevice(Device.createDefault())
 					.withInteractionId(interactionId)
 					.withPayloads(List.of(payload))
-					
+					.withFhirProfileUrl(appConfig.getDefaultSdohFhirProfileUrl())
 					.withTracer(tracer)
 					.withFhirIGPackages(igPackages)
 					.withIgVersion(igVersion)
