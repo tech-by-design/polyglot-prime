@@ -215,7 +215,7 @@ public class CsvBundleProcessorService {
             final var dslContext = udiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             initRIHR.setOrigin("http");
-            initRIHR.setInteractionId(interactionId);
+            initRIHR.setInteractionId(groupInteractionId);
             initRIHR.setGroupHubInteractionId(groupInteractionId);
             initRIHR.setSourceHubInteractionId(masterInteractionId);
             initRIHR.setInteractionKey(request.getRequestURI());
