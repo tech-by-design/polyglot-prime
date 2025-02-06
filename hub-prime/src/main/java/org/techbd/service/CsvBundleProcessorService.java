@@ -336,12 +336,10 @@ public class CsvBundleProcessorService {
                                 interactionId, request,
                                 bundle, null, tenantId);
                         results.add(fhirService.processBundle(
-                                bundle, tenantId, null, null, null, null, null,
-                                Boolean.toString(false), false,
-                                false, false,
+                                bundle, tenantId, null, null, null, false,
                                 request, response,
                                 updatedProvenance,
-                                true, null, interactionId, groupInteractionId,
+                                null, interactionId, groupInteractionId,
                                 masterInteractionId, SourceType.CSV.name(), null,null));
                     } else {
                         LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",

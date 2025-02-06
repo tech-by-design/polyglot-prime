@@ -75,10 +75,8 @@ public class Hl7Service {
                     LOG.info(
                             "HL7Service::processHl7Message END -start processing FHIR Json for interactionid : {} tenantId :{} ",
                             interactionId, tenantId);
-                    return fhirService.processBundle(shinnyFhirJson, tenantId, null, null, null, null, null,
-                            Boolean.toString(false), false,
-                            false,
-                            false, request, response, null, true,null,null, null,null,SourceType.HL7.name(),null,null);
+                    return fhirService.processBundle(shinnyFhirJson, tenantId, null, null, null, false,
+                            request, response, null, null,null, null,null,SourceType.HL7.name(),null,null);
                 }
             }
         } catch (Exception ex) {
