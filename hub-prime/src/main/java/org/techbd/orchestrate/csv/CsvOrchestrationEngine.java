@@ -470,11 +470,12 @@ public class CsvOrchestrationEngine {
                 final String validationResults,
                 final List<FileDetail> fileDetails, final HttpServletRequest request, final long zipFileSize,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) throws Exception {
-            final Map<String, Object> provenance = populateProvenance(groupInteractionId, fileDetails, initiatedAt,
+            final Map<String, Object> provenance = populateProvenance(masterInteractionId,groupInteractionId, fileDetails, initiatedAt,
                     completedAt, originalFileName);
             return Map.of(
                     "resourceType", "OperationOutcome",
-                    "interactionId", groupInteractionId,
+                    "zipFileInteractionId",masterInteractionId,
+                    "groupInteractionId", groupInteractionId,
                     "validationResults", Configuration.objectMapper.readTree(validationResults),
                     "provenance", provenance);
         }
@@ -492,7 +493,7 @@ public class CsvOrchestrationEngine {
             final String userAgent = request.getHeader("User-Agent");
             final Device device = Device.INSTANCE;
             result.put("resourceType", "OperationOutcome");
-            result.put("bundleSessionId", masterInteractionId);
+            result.put("zipFileInteractionId", masterInteractionId);
             result.put("originalFileName", originalFileName);
             result.put("validationResults", combinedValidationResult);
             result.put("requestUri", request.getRequestURI());
@@ -507,7 +508,7 @@ public class CsvOrchestrationEngine {
             return result;
         }
 
-        private static Map<String, Object> populateProvenance(final String interactionId,
+        private static Map<String, Object> populateProvenance(final String masterInteractionId,final String groupInteractionId,
                 final List<FileDetail> fileDetails,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) {
             final List<String> fileNames = fileDetails.stream()
@@ -515,7 +516,8 @@ public class CsvOrchestrationEngine {
                     .collect(Collectors.toList());
             return Map.of(
                     "resourceType", "Provenance",
-                    "interactionId", interactionId,
+                    "zipFileInteractionId",masterInteractionId,
+                    "groupInteractionId", groupInteractionId,
                     "agent", List.of(Map.of(
                             "who", Map.of(
                                     "coding", List.of(Map.of(
@@ -629,7 +631,7 @@ public class CsvOrchestrationEngine {
                     "message", diagnosticsMessage.toString());
 
             return Map.of(
-                    "masterInteractionId", masterInteractionId,
+                    "zipFileInteractionId", masterInteractionId,
                     "originalFileName", originalFileName,
                     "validationResults", Map.of(
                             "errors", List.of(errorDetails),
@@ -677,7 +679,7 @@ public class CsvOrchestrationEngine {
 
             Map<String, Object> operationOutcome = new HashMap<>();
             operationOutcome.put("resourceType", "OperationOutcome");
-            operationOutcome.put("interactionId", masterInteractionId);
+            operationOutcome.put("zipFileInteractionId", masterInteractionId);
 
             // Validation Results with Detailed Errors
             Map<String, Object> validationResults = new HashMap<>();
@@ -698,7 +700,7 @@ public class CsvOrchestrationEngine {
             // Provenance Details
             Map<String, Object> provenance = new HashMap<>();
             provenance.put("resourceType", "Provenance");
-            provenance.put("interactionId", groupInteractionId);
+            provenance.put("groupInteractionId", groupInteractionId);
 
             // Agent Details
             List<Map<String, Object>> agents = new ArrayList<>();
