@@ -2263,7 +2263,7 @@ BEGIN
     FOR session_diagnostic_set IN
         SELECT
             issue.value ->> 'severity'::text AS severity,
-            issue.value ->> 'diagnostics'::text AS message,
+            COALESCE(issue.value ->> 'diagnostics', issue.value ->> 'message') AS message,
             ((issue.value -> 'extension'::text) -> 0) ->> 'valueInteger'::text AS line,
             ((issue.value -> 'extension'::text) -> 1) ->> 'valueInteger'::text AS "column",
             (issue.value -> 'location'::text) ->> 0 AS diagnostics,
@@ -2272,7 +2272,9 @@ BEGIN
         FROM LATERAL jsonb_array_elements(
             (((insert_fhir_session_diagnostic.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text
         ) validationresult(value),
-        LATERAL jsonb_array_elements(validationresult.value ->'operationOutcome'::text -> 'issue'::text) issue(value)
+        LATERAL jsonb_array_elements(
+            COALESCE(validationresult.value -> 'operationOutcome' -> 'issue', validationresult.value -> 'issues')
+        ) issue(value)
     LOOP
         -- Insert extracted data into the target table
         INSERT INTO techbd_udi_ingress.sat_interaction_fhir_session_diagnostic (
