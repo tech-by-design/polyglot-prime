@@ -149,30 +149,6 @@ public class FhirController {
                         @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true) final @RequestBody @Nonnull String payload,
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
                         // "profile" is the same name that HL7 validator uses
-                        // @Parameter(description = "Profile URL for the API.", required = false)
-                        // @RequestParam(value = "profile", required = false) String
-                        // fhirProfileUrlParam,
-                        // @Parameter(description = "Optional header to specify the Structure definition
-                        // profile URL. If not specified, the default settings mentioned in the
-                        // application configuration will be used.", required = false)
-                        // @RequestHeader(value =
-                        // AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required =
-                        // false) String fhirProfileUrlHeader,
-                        // @Parameter(description = """
-                        // Optional header to specify the validation strategy. If not specified, the
-                        // default settings mentioned in the application configuration will be used.
-                        // Example for validation strategy JSON:
-                        // <code>
-                        // {
-                        // "engines": [
-                        // "HAPI",
-                        // "HL7-Official-API",
-                        // "HL7-Official-Embedded"
-                        // ]
-                        // }
-                        // </code> """, required = false) @RequestHeader(value =
-                        // AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required =
-                        // false) String uaValidationStrategyJson,
                         @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
                         @Parameter(description = "Optional header to specify the request URI to override. This parameter is used for requests forwarded from Mirth Connect, where we override it with the initial request URI from Mirth Connect.", required = false) @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,
                         @Parameter(description = "An optional header to provide a UUID that if provided will be used as interaction id.", required = false) @RequestHeader(value = "X-Correlation-ID", required = false) String coRrelationId,
@@ -183,19 +159,7 @@ public class FhirController {
                                         """, required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
                         @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
                         @Parameter(hidden = true, description = "Optional parameter to decide whether the Datalake submission to be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false) boolean isSync,
-                        // @Parameter(description = "Optional parameter to decide whether the request is
-                        // to be included in the outcome.", required = false) @RequestParam(value =
-                        // "include-request-in-outcome", required = false) boolean
-                        // includeRequestInOutcome,
-                        // @Parameter(hidden = true, description = "Optional parameter to decide whether
-                        // the incoming payload is to be saved in the database.", required = false)
-                        // @RequestParam(value = "include-incoming-payload-in-db", required = false)
-                        // boolean includeIncomingPayloadInDB,
-                        // @Parameter(description = "An optional parameter determines whether validation
-                        // results are sent to the scoring engine. If set to <code>false</code>, only
-                        // the bundle is sent; if <code>true</code>, the operation outcome is also
-                        // sent.", required = false) @RequestParam(value = "include-operation-outcome",
-                        // required = false, defaultValue = "true") boolean includeOperationOutcome,
+
                         @Parameter(hidden = true, description = """
                                         An optional parameter specifies whether the scoring engine API should be called with or without mTLS.<br>
                                         The allowed values for <code>mTlsStrategy</code> are:
@@ -288,11 +252,7 @@ public class FhirController {
                         @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true) final @RequestBody @Nonnull String payload,
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
                         // "profile" is the same name that HL7 validator uses
-                        @Parameter(description = "Parameter to specify the profile. This is an optional parameter. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestParam(value = "profile", required = false) String fhirProfileUrlParam,
-                        @Parameter(description = "Optional header to specify the Structure definition profile URL. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_STRUCT_DEFN_PROFILE_URI, required = false) String fhirProfileUrlHeader,
-                        @Parameter(description = "Optional header to specify the validation strategy. If not specified, the default settings mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY, required = false) String uaValidationStrategyJson,
-                        @Parameter(description = "Parameter to decide whether the request is to be included in the outcome.", required = false) @RequestParam(value = "include-request-in-outcome", required = false) boolean includeRequestInOutcome,
-                        @Parameter(description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
+                        @Parameter(hidden = true, description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
                         HttpServletRequest request, HttpServletResponse response) {
                 Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
                 try {
@@ -309,9 +269,7 @@ public class FhirController {
                         request = new CustomRequestWrapper(request, payload);
 
                         LOG.info("FHIRController:Bundle Validate::  -BEGIN");
-                        final var fhirProfileUrl = (fhirProfileUrlParam != null) ? fhirProfileUrlParam
-                                        : (fhirProfileUrlHeader != null) ? fhirProfileUrlHeader
-                                                        : appConfig.getDefaultSdohFhirProfileUrl();
+
                         LOG.info("FHIRController:Bundle Validate :: Getting shinny Urls from config - Before: ");
                         final var igPackages = appConfig.getIgPackages();
                         final var igVersion = appConfig.getIgVersion();
@@ -323,12 +281,10 @@ public class FhirController {
                                         .withInteractionId(interactionId)
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
-                                        .withFhirProfileUrl(fhirProfileUrl)
                                         .withFhirIGPackages(igPackages)
                                         .withIgVersion(igVersion)
-                                        .addHapiValidationEngine() // by default
-                                        // clearExisting is set to true so engines can be fully supplied through header
-                                        .withUserAgentValidationStrategy(uaValidationStrategyJson, true);
+                                        .addHapiValidationEngine(); // by default
+
                         final var session = sessionBuilder.build();
                         try {
                                 engine.orchestrate(session);
@@ -341,16 +297,7 @@ public class FhirController {
                                                 session.getDevice(),
                                                 "bundleSessionId", interactionId));
                                 final var result = Map.of("OperationOutcome", opOutcome);
-                                if (uaValidationStrategyJson != null) {
-                                        opOutcome.put("uaValidationStrategy",
-                                                        Map.of(AppConfig.Servlet.HeaderName.Request.FHIR_VALIDATION_STRATEGY,
-                                                                        uaValidationStrategyJson,
-                                                                        "issues",
-                                                                        sessionBuilder.getUaStrategyJsonIssues()));
-                                }
-                                if (includeRequestInOutcome) {
-                                        opOutcome.put("request", InteractionsFilter.getActiveRequestEnc(request));
-                                }
+
                                 LOG.info("FHIRController: Bundle Validate:: Validation completed successfully");
                                 return result;
                         } catch (Exception e) {
