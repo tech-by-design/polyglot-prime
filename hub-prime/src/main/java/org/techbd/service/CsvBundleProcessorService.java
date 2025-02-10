@@ -448,7 +448,7 @@ private List<Object> processScreening(final String groupKey,
                 "message", diagnosticsMessage);
 
         return Map.of(
-                "masterInteractionId", masterInteractionId,
+                "zipFileInteractionId", masterInteractionId,
                 "groupInteractionId", groupInteractionId,
                 "patientMrId", patientMrIdValue,
                 "encounterId", encounterId,
