@@ -408,7 +408,7 @@ public class CsvBundleProcessorService {
                 "message", diagnosticsMessage);
 
         return Map.of(
-                "zipFileInteractionId", masterInteractionId,
+                "masterInteractionId", masterInteractionId,
                 "groupInteractionId", groupInteractionId,
                 "patientMrId", patientMrIdValue,
                 "encounterId", encounterId,
@@ -442,7 +442,7 @@ public class CsvBundleProcessorService {
                 "message", diagnosticsMessage.toString());
 
         return Map.of(
-                "zipFileInteractionId", masterInteractionId,
+                "masterInteractionId", masterInteractionId,
                 "originalFileName", originalFileName,
                 "validationResults", Map.of(
                         "errors", List.of(errorDetails),
