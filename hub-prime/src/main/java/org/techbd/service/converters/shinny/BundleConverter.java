@@ -36,7 +36,7 @@ public class BundleConverter {
         Meta meta = new Meta();
         meta.setLastUpdated(new Date());
         meta.setVersionId(igVersion);
-        meta.setProfile(List.of(new CanonicalType("http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")));
+        meta.setProfile(List.of(new CanonicalType("http://test.shinny.org/StructureDefinition/SHINNYBundleProfile")));
         bundle.setMeta(meta);
         LOG.info("Empty FHIR Bundle template generated with Meta and one empty entry for interactionId : {}.",
                 interactionId);
