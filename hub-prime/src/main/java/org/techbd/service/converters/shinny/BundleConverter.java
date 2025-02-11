@@ -2,6 +2,7 @@ package org.techbd.service.converters.shinny;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.hl7.fhir.r4.model.Bundle;
@@ -13,11 +14,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.util.CsvConversionUtil;
+import org.techbd.util.YamlUtil;
 
 @Component
 public class BundleConverter {
 
     private static final Logger LOG = LoggerFactory.getLogger(BundleConverter.class.getName());
+    private static String BUNDLE_PROFILE_URL = getProfileUrlMap().get("bundle");
     public ResourceType getResourceType() {
         return ResourceType.Bundle;
     }
@@ -36,10 +39,13 @@ public class BundleConverter {
         Meta meta = new Meta();
         meta.setLastUpdated(new Date());
         meta.setVersionId(igVersion);
-        meta.setProfile(List.of(new CanonicalType("http://test.shinny.org/StructureDefinition/SHINNYBundleProfile")));
+        meta.setProfile(List.of(new CanonicalType(BUNDLE_PROFILE_URL)));
         bundle.setMeta(meta);
         LOG.info("Empty FHIR Bundle template generated with Meta and one empty entry for interactionId : {}.",
                 interactionId);
         return bundle;
+    }
+    private static Map<String, String> getProfileUrlMap() {
+        return YamlUtil.getYamlResourceAsMap("src/main/resources/shinny/shinny-artifacts/profile.yml");
     }
 }
