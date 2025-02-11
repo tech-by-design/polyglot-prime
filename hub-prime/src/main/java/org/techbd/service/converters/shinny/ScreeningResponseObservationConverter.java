@@ -43,7 +43,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         private static final String CATEGORY_URL = "http://terminology.hl7.org/CodeSystem/observation-category";
         private static final String SDOH_CATEGORY_URL = "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes";
         private static final String LOINC_URL = "http://loinc.org";
-        private static final String PROFILE_URL = "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response";
+        private static final String PROFILE_URL = PROFILE_MAP.get("observation");
 
         private static final Set<String> INTERPERSONAL_SAFETY_REFS = Set.of(
                         "95618-5",
