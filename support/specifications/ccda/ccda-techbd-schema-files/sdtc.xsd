@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema targetNamespace="urn:hl7-org:sdtc" xmlns="urn:hl7-org:sdtc" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="deceasedInd">
+		<xs:complexType>
+			<xs:attribute name="value" use="required" type="xs:boolean"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="desc">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+</xs:schema>

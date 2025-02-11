@@ -31,29 +31,68 @@ The first step in this project is to understand what 1115 Waiver data elements a
 - **Alignment with FHIR**: Create a data mapping document that aligns CCD data fields with the FHIR structure used by TechBD (matching the NYeC FHIR IG).
 - **Transformations and Changes**: This mapping will clearly indicate transformations, data type changes, and conditions where the mapping might differ from the NYeC FHIR IG.
 
-### Files Overview
+## Files Overview
+XSD files define the structure and rules for XML documents, ensuring data adheres to a specified schema. They help validate and enforce consistency in XML data. The XSD files from Gravity are kept under the title 'CCDA Gravity Schema Files,' while an updated version of XSD files, which additionally includes the namespace 'sdtc,' is kept under 'CCDA TechBd Schema Files.' The TechBd schema files will be used for validating the CCDA XML files. 
 
-### 1. `POCD_MT000040.xsd`
+### CCDA Gravity Schema Files
+
+#### 1. `POCD_MT000040.xsd`
 An XML schema defining the structure and validation rules for CCDA (Consolidated Clinical Document Architecture) documents.
 
-### 2. `datatypes.xsd`
+#### 2. `datatypes.xsd`
 An auxiliary XML schema providing definitions for data types used in CCDA documents, referenced by POCD_MT000040.xsd.
 
-### 3. `CDA.xsl`
+#### 3. `CDA.xsl`
 A stylesheet file typically used for transforming CCDA XML documents for display or processing.
 
-### 4. `CDA.xsd`
+#### 4. `CDA.xsd`
 The main schema for Clinical Document Architecture, including structural rules and data definitions for clinical documents.
 
-### 5. `NarrativeBlock.xsd`
+#### 5. `NarrativeBlock.xsd`
 A schema defining narrative block elements used in CCDA to include human-readable sections in clinical documents.
 
-### 6. `datatypes-base.xsd`
+#### 6. `datatypes-base.xsd`
 A base schema file with foundational data types referenced by datatypes.xsd and other XSD files.
 
-### 7. `voc.xsd`
+#### 7. `voc.xsd`
 A vocabulary schema containing controlled terminologies and code system references for CCDA elements.
 
+### CCDA TechBd Schema Files
+To validate a CCDA XML file with the XSD files, please ensure to add the following:
+1. `<?xml version="1.0"?>` at the very beginning of the file.
+2. Schema namespace attribute `xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"` and the Schema Location attribute `xsi:schemaLocation="urn:hl7-org:v3 ../ccda-techbd-schema-files/CDA.xsd"` to the `ClinicalDocument` element.
+
+```xml
+<?xml version="1.0"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 ../ccda-techbd-schema-files/CDA.xsd">
+  <realmCode code="US" />
+  <typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3" />
+</ClinicalDocument>
+```
+#### 1. `POCD_MT000040.xsd`
+An XML schema defining the structure and validation rules for CCDA (Consolidated Clinical Document Architecture) documents.
+The `POCD_MT000040.Patient` element has been updated to replace `<xs:sequence>` with `<xs:choice maxOccurs="unbounded">`, allowing child elements to appear in any order, and adds the `sdtc:deceasedInd` element. Additionally, the `POCD_MT000040.Person` element has been updated to allow the `sdtc:desc` as a child element, permitting an additional `desc` element of type `xs:string`.
+
+#### 2. `datatypes.xsd`
+An auxiliary XML schema providing definitions for data types used in CCDA documents, referenced by POCD_MT000040.xsd.
+
+#### 3. `CDA.xsl`
+A stylesheet file typically used for transforming CCDA XML documents for display or processing.
+
+#### 4. `CDA.xsd`
+The main schema for Clinical Document Architecture, including structural rules and data definitions for clinical documents.
+
+#### 5. `NarrativeBlock.xsd`
+A schema defining narrative block elements used in CCDA to include human-readable sections in clinical documents.
+
+#### 6. `datatypes-base.xsd`
+A base schema file with foundational data types referenced by datatypes.xsd and other XSD files.
+
+#### 7. `voc.xsd`
+A vocabulary schema containing controlled terminologies and code system references for CCDA elements.
+
+#### 8. `sdtc.xsd`
+This XSD schema defines two elements, deceasedInd and desc, within the namespace "urn:hl7-org:sdtc." The deceasedInd element is a complex type with a required boolean attribute named "value," while the desc element is a simple type restricted to the string values.
 
 # CCDA Validation Using XML-Spy
 
@@ -92,6 +131,17 @@ support/
             ├── NYHRSN-CCDA-examples/  # Contains example CCDA files
                 │   ├── AHCHRSNScreeningResponseCCDExample.xml
                 │   └── Additional_CCDA_Examples.xml (in futur0)
+        └── ccda-techbd-schema-files/
+            ├── POCD_MT000040.xsd  # Main schema for CCDA validation
+            ├── datatypes.xsd  # Schema for CCDA data types
+            ├── CDA.xsd  # Main schema for Clinical Document Architecture
+            ├── NarrativeBlock.xsd  # Defines human-readable sections in CCDA
+            ├── datatypes-base.xsd  # Base schema for foundational data types
+            └── voc.xsd  # Vocabulary schema for terminologies and code systems
+            └── sdtc.xsd  # Defines schema for deceasedInd and desc elements
+            ├── sample-ccda-xml-files/  # Contains examples of updated CCDA files
+                ├── AHC_Sample_CDA.xml
+                └── Additional_CCDA_Examples.xml (in futur0)
 ```
 
 ## How to Validate a CCDA File
