@@ -1740,22 +1740,28 @@ BEGIN
                 SELECT 'Assessment'
                 FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
                 WHERE entry->'resource'->>'resourceType' = 'Condition'
-                AND 'http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNY-SDOHCC-Condition' = ANY (ARRAY(
-                    SELECT jsonb_array_elements_text(entry->'resource'->'meta'->'profile')
-                ))
+                AND EXISTS (
+                    SELECT 1
+                    FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
+                    WHERE RIGHT(profile, LENGTH('SHINNY-SDOHCC-Condition')) = 'SHINNY-SDOHCC-Condition'
+                )
 
                 UNION
 
                 SELECT 'Referral'
                 FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
                 WHERE (entry->'resource'->>'resourceType' = 'ServiceRequest'
-                    AND 'http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYSDOHServiceRequest' = ANY (ARRAY(
-                        SELECT jsonb_array_elements_text(entry->'resource'->'meta'->'profile')
-                    )))
+                    AND EXISTS (
+                        SELECT 1
+                        FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
+                        WHERE RIGHT(profile, LENGTH('SHINNYSDOHServiceRequest')) = 'SHINNYSDOHServiceRequest'
+                    ))
                 OR (entry->'resource'->>'resourceType' = 'Task'
-                    AND 'http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYSDOHTaskForReferralManagement' = ANY (ARRAY(
-                        SELECT jsonb_array_elements_text(entry->'resource'->'meta'->'profile')
-                    )))
+                    AND EXISTS (
+                        SELECT 1
+                        FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
+                        WHERE RIGHT(profile, LENGTH('SHINNYSDOHTaskForReferralManagement')) = 'SHINNYSDOHTaskForReferralManagement'
+                    ))
             ) AS category_list
         )
         SELECT bundle_type INTO v_bundle_type FROM categories;
