@@ -16,6 +16,14 @@
   <xsl:variable name="organizationResourceId" select="translate(concat(generate-id(//ccda:author), $patientRoleId, $currentTimestamp), ':-+', '')"/>
   <xsl:variable name="bundleTimestamp" select="//ccda:header/ccda:effectiveTime/ccda:value"/>
 
+  <xsl:variable name="bundleMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/SHINNYBundleProfile'"/>
+  <xsl:variable name="patientMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-patient'"/>
+  <xsl:variable name="consentMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-Consent'"/>
+  <xsl:variable name="encounterMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-encounter'"/>
+  <xsl:variable name="organizationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shin-ny-organization'"/>
+  <xsl:variable name="observationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-observation-screening-response'"/>
+  <xsl:variable name="observationSexualOrientationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-observation-sexual-orientation'"/>
+  
   <xsl:template match="/">
   {
     "resourceType": "Bundle",
@@ -23,7 +31,7 @@
     "meta": {
       "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
       "profile": [
-        "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"
+        "<xsl:value-of select='$bundleMetaProfileUrl'/>"
       ]
     },
     "type": "transaction"
@@ -70,7 +78,7 @@
         "id": "<xsl:value-of select='$patientResourceId'/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient"]
+          "profile" : ["<xsl:value-of select='$patientMetaProfileUrl'/>"]
         },
         <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:languageCode/ccda:code)">
         "language" : "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/ccda:code"/>",
@@ -256,7 +264,7 @@
         "id": "<xsl:value-of select="$encounterResourceId"/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter"]
+          "profile" : ["<xsl:value-of select='$encounterMetaProfileUrl'/>"]
         },
         "status": "finished",
         "type": [
@@ -345,7 +353,7 @@
         "id": "<xsl:value-of select='$consentResourceId'/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent"]
+          "profile" : ["<xsl:value-of select='$consentMetaProfileUrl'/>"]
         },
         "status": "<xsl:value-of select="ccda:statusCode/ccda:code"/>"
         <xsl:if test="string(ccda:entry/ccda:act/ccda:code/ccda:code)">
@@ -436,7 +444,7 @@
         "id": "<xsl:value-of select="$organizationResourceId"/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization"]
+          "profile" : ["<xsl:value-of select='$organizationMetaProfileUrl'/>"]
         },
         "active": true,
         <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:name) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:id/ccda:extension)">
@@ -513,7 +521,7 @@
           "id": "<xsl:value-of select='$observationResourceId'/>",
           "meta" : {
             "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-            "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-sexual-orientation"]
+            "profile" : ["<xsl:value-of select='$observationSexualOrientationMetaProfileUrl'/>"]
           },
           "status": "<xsl:value-of select='ccda:statusCode/ccda:code'/>",
           "category": [
@@ -607,7 +615,7 @@
           "id": "<xsl:value-of select='$observationResourceId'/>",
           "meta" : {
             "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-            "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
+            "profile" : ["<xsl:value-of select='$observationMetaProfileUrl'/>"]
           },
           "status": "<xsl:value-of select='ccda:statusCode/ccda:code'/>",
           "category": [
