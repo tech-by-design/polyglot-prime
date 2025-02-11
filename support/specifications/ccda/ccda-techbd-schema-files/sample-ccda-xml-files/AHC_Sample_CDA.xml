@@ -1,0 +1,1893 @@
+<?xml version="1.0"?>
+<ClinicalDocument xmlns="urn:hl7-org:v3" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="urn:hl7-org:v3 ../ccda-techbd-schema-files/CDA.xsd">
+  <realmCode code="US" />
+  <typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3" />
+  <templateId root="1.2.840.114350.1.72.1.51693" />
+  <templateId root="2.16.840.1.113883.10.20.22.1.1" />
+  <templateId root="2.16.840.1.113883.10.20.22.1.1" extension="2015-08-01" />
+  <templateId root="2.16.840.1.113883.10.20.22.1.1" extension="2023-05-01" />
+  <templateId root="2.16.840.1.113883.10.20.22.1.2" />
+  <templateId root="2.16.840.1.113883.10.20.22.1.2" extension="2015-08-01" />
+  <id assigningAuthorityName="EPC" extension="14ab9c0b-e25c-11ef-b8c9-0050568b0c08" root="1.2.840.114350.1.13.861.1.7.1.1" />
+  <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Summarization of Episode Note" />
+  <title>Clinical Summary</title>
+  <effectiveTime value="20250203122418-0600" />
+  <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" displayName="Normal" />
+  <languageCode code="en-US" />
+  <recordTarget>
+    <patientRole>
+      <id assigningAuthorityName="EPI" extension="14387819" root="1.2.840.114350.1.1" />
+      <id extension="1942912" root="1.2.840.114350.1.13.861.1.7.5.737384.1104" />
+      <id extension="1942572" root="1.2.840.114350.1.13.861.1.7.5.737384.1118" />
+      <id assigningAuthorityName="JMR123" extension="330-28-3883" root="1.2.840.114350.1.13.861.1.7.5.737384.1193" />
+      <addr nullFlavor="UNK" />
+      <telecom nullFlavor="UNK" />
+      <patient>
+        <name use="L">
+          <given>Test</given>
+          <family>Wisby</family>
+          <validTime>
+            <low value="20250203121923-0600" />
+            <high nullFlavor="NA" />
+          </validTime>
+        </name>
+        <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1" codeSystemName="AdministrativeGenderCode" displayName="Male" />
+        <birthTime value="19910829" />
+        <sdtc:deceasedInd value="false" xmlns:sdtc="urn:hl7-org:sdtc" />
+        <maritalStatusCode nullFlavor="UNK" />
+        <raceCode nullFlavor="UNK" />
+        <ethnicGroupCode nullFlavor="UNK" />
+        <languageCommunication>
+          <languageCode nullFlavor="UNK" />
+        </languageCommunication>
+      </patient>
+      <providerOrganization>
+        <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+        <name>Facility</name>
+        <telecom use="WP" value="tel:271-9000" />
+        <addr use="WP">
+          <streetAddressLine>MODEL DRIVE</streetAddressLine>
+          <city>Madison</city>
+          <state>WI</state>
+          <postalCode>53711</postalCode>
+        </addr>
+      </providerOrganization>
+    </patientRole>
+  </recordTarget>
+  <author>
+    <time value="20250203122418-0600" />
+    <assignedAuthor>
+      <id extension="11.4" root="1.2.840.114350.1.1" />
+      <addr nullFlavor="NA" />
+      <telecom nullFlavor="NA" />
+      <assignedAuthoringDevice>
+        <manufacturerModelName>Epic - Version 11.4</manufacturerModelName>
+        <softwareName>Epic - Version 11.4</softwareName>
+      </assignedAuthoringDevice>
+      <representedOrganization>
+        <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+        <name>Facility</name>
+        <telecom use="WP" value="tel:271-9000" />
+        <addr use="WP">
+          <streetAddressLine>MODEL DRIVE</streetAddressLine>
+          <city>Madison</city>
+          <state>WI</state>
+          <postalCode>53711</postalCode>
+        </addr>
+      </representedOrganization>
+    </assignedAuthor>
+  </author>
+  <custodian>
+    <assignedCustodian>
+      <representedCustodianOrganization>
+        <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+        <name>Facility</name>
+        <telecom use="WP" value="tel:271-9000" />
+        <addr use="WP">
+          <streetAddressLine>MODEL DRIVE</streetAddressLine>
+          <city>Madison</city>
+          <state>WI</state>
+          <postalCode>53711</postalCode>
+        </addr>
+      </representedCustodianOrganization>
+    </assignedCustodian>
+  </custodian>
+  <legalAuthenticator>
+    <time value="20250203122418-0600" />
+    <signatureCode code="S" />
+    <assignedEntity>
+      <id extension=" HBBCKGRND" root="1.2.840.114350.1.13.861.1.7.2.697780" />
+      <code nullFlavor="UNK" />
+      <addr nullFlavor="UNK" />
+      <telecom nullFlavor="UNK" />
+      <assignedPerson>
+        <name nullFlavor="UNK" />
+        <sdtc:desc xmlns:sdtc="urn:hl7-org:sdtc">Hb, Background</sdtc:desc>
+      </assignedPerson>
+    </assignedEntity>
+  </legalAuthenticator>
+  <documentationOf typeCode="DOC">
+    <serviceEvent classCode="PCPR">
+      <effectiveTime>
+        <low value="19910829" />
+        <high value="20250203" />
+      </effectiveTime>
+      <performer typeCode="PRF">
+        <functionCode code="PCP" codeSystem="2.16.840.1.113883.5.88" codeSystemName="ParticipationFunction" displayName="Primary Care Provider">
+          <originalText>Primary Care Provider</originalText>
+        </functionCode>
+        <time>
+          <low nullFlavor="NI" />
+          <high nullFlavor="NI" />
+        </time>
+        <assignedEntity nullFlavor="NI">
+          <id nullFlavor="UNK" />
+          <addr nullFlavor="UNK" />
+          <telecom nullFlavor="NA" />
+          <assignedPerson nullFlavor="NA">
+            <name nullFlavor="UNK" />
+          </assignedPerson>
+          <representedOrganization classCode="ORG">
+            <name>Facility</name>
+            <telecom use="WP" value="tel:271-9000" />
+            <telecom value="fax:+1-608-271-9000" />
+            <addr use="WP">
+              <streetAddressLine>MODEL DRIVE</streetAddressLine>
+              <city>Madison</city>
+              <state>WI</state>
+              <postalCode>53711</postalCode>
+            </addr>
+          </representedOrganization>
+        </assignedEntity>
+      </performer>
+    </serviceEvent>
+  </documentationOf>
+  <component>
+    <structuredBody>
+      <component>
+        <section>
+          <code code="X-DOCCMT" codeSystem="1.2.840.114350.1.72.2" displayName="Document Comments" />
+          <title>Source Comments</title>
+          <text>Adding patient-level source comments to I DXC 540.<footnote>Current Development Environment</footnote></text>
+        </section>
+      </component>
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.6" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.6" extension="2015-08-01" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.6.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.6.1" extension="2015-08-01" />
+          <id root="14B10439-E25C-11EF-B8C9-0050568B0C08" />
+          <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Allergies and adverse reactions Document" />
+          <title>Allergies</title>
+          <text>
+            <content ID="nof3">Not on File</content>
+          </text>
+        </section>
+      </component>
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.1" extension="2014-06-09" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.1.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.1.1" extension="2014-06-09" />
+          <id root="14B2C93D-E25C-11EF-B8C9-0050568B0C08" />
+          <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Medication use Narrative" />
+          <title>Medications</title>
+          <text>
+            <content ID="nof5">Not on file</content>
+          </text>
+        </section>
+      </component>
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.5" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.5" extension="2015-08-01" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.5.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.5.1" extension="2015-08-01" />
+          <id root="14B3649A-E25C-11EF-B8C9-0050568B0C08" />
+          <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem list - Reported" />
+          <title>Active Problems</title>
+          <text>
+            <paragraph ID="nof7">Not on file</paragraph>
+          </text>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.22" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.22" extension="2015-08-01" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.22.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.22.1" extension="2015-08-01" />
+          <code code="46240-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Hospitalizations+Outpatient visits Narrative" />
+          <title>Encounters</title>
+          <text>
+            <table>
+              <colgroup>
+                <col width="10%" />
+                <col width="15%" />
+                <col width="25%" span="3" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Department</th>
+                  <th>Care Team</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="encounter10" styleCode="xRowNormal">
+                  <td>02/03/2025</td>
+                  <td ID="encounter10type">Office Visit</td>
+                  <td>
+                    <paragraph>Candy Kingdom</paragraph>
+                    <paragraph>555 Epic Way</paragraph>
+                    <paragraph>Building 101</paragraph>
+                    <paragraph>West Wing</paragraph>
+                    <paragraph>Unit AAB</paragraph>
+                    <paragraph>MADISON, WI 53717</paragraph>
+                    <paragraph>608-555-5555</paragraph>
+                  </td>
+                  <td>
+                    <paragraph>Wisby, Matt, Rap God</paragraph>
+                  </td>
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+            <footnote ID="subTitle9" styleCode="xSectionSubTitle">from Last 3 Months</footnote>
+          </text>
+          <entry>
+            <encounter classCode="ENC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.49" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.49" extension="2015-08-01" />
+              <id assigningAuthorityName="EPIC" extension="10011549402" root="1.2.840.114350.1.13.861.1.7.3.698084.8" />
+              <id assigningAuthorityName="EPIC" extension="10011549402" root="1.2.840.114350.1.72.75210" />
+              <code code="AMB" codeSystem="2.16.840.1.113883.5.4">
+                <originalText>
+                  <reference value="#encounter10type" />
+                </originalText>
+                <translation code="101" codeSystem="1.2.840.114350.1.13.861.1.7.4.698084.30" codeSystemName="Epic.EncounterType" />
+                <translation code="101" codeSystem="1.2.840.114350.1.72.1.30" />
+                <translation code="0" codeSystem="1.2.840.114350.1.72.1.30.1" />
+              </code>
+              <text>
+                <reference value="#encounter10" />
+              </text>
+              <statusCode code="normal" />
+              <effectiveTime>
+                <low value="20250203" />
+              </effectiveTime>
+              <performer typeCode="PRF">
+                <time>
+                  <low nullFlavor="UNK" />
+                  <high nullFlavor="UNK" />
+                </time>
+                <assignedEntity classCode="ASSIGNED">
+                  <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                  <code code="208D00000X" codeSystem="2.16.840.1.113883.6.101" displayName="General Practice Physician" />
+                  <addr use="WP">
+                    <streetAddressLine>abc;</streetAddressLine>
+                    <streetAddressLine>def;</streetAddressLine>
+                    <city nullFlavor="UNK" />
+                    <state nullFlavor="UNK" />
+                    <postalCode nullFlavor="UNK" />
+                  </addr>
+                  <telecom value="mailto:mwisby@epic.com" />
+                  <assignedPerson>
+                    <name>
+                      <given>Matt</given>
+                      <family>Wisby</family>
+                      <suffix qualifier="AC">Rap God</suffix>
+                    </name>
+                  </assignedPerson>
+                  <representedOrganization classCode="ORG">
+                    <name>Facility</name>
+                    <addr use="WP">
+                      <streetAddressLine>MODEL DRIVE</streetAddressLine>
+                      <city>Madison</city>
+                      <state>WI</state>
+                      <postalCode>53711</postalCode>
+                    </addr>
+                  </representedOrganization>
+                </assignedEntity>
+              </performer>
+              <author>
+                <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                <time value="20250203121928-0600" />
+                <assignedAuthor>
+                  <id root="2.16.840.1.113883.4.6" nullFlavor="UNK" />
+                  <addr nullFlavor="UNK" />
+                  <telecom nullFlavor="UNK" />
+                  <representedOrganization>
+                    <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+                    <id root="2.16.840.1.113883.4.2" nullFlavor="UNK" />
+                    <id root="2.16.840.1.113883.4.6" nullFlavor="UNK" />
+                    <name>Facility</name>
+                    <telecom use="WP" value="tel:271-9000" />
+                    <telecom value="fax:+1-608-271-9000" />
+                    <addr use="WP">
+                      <streetAddressLine>MODEL DRIVE</streetAddressLine>
+                      <city>Madison</city>
+                      <state>WI</state>
+                      <postalCode>53711</postalCode>
+                    </addr>
+                  </representedOrganization>
+                </assignedAuthor>
+              </author>
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.32" />
+                  <id extension="16602" root="1.2.840.114350.1.13.861.1.7.2.686980" />
+                  <code nullFlavor="UNK">
+                    <originalText>Family Practice</originalText>
+                    <translation code="19" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4150" codeSystemName="Epic.DepartmentSpecialty" displayName="Family Medicine" />
+                  </code>
+                  <addr use="WP">
+                    <streetAddressLine>555 Epic Way</streetAddressLine>
+                    <streetAddressLine>Building 101</streetAddressLine>
+                    <streetAddressLine>West Wing</streetAddressLine>
+                    <streetAddressLine>Unit AAB</streetAddressLine>
+                    <city>MADISON</city>
+                    <state>WI</state>
+                    <postalCode>53717</postalCode>
+                  </addr>
+                  <playingEntity classCode="PLC">
+                    <name>Candy Kingdom</name>
+                    <desc>Family Practice</desc>
+                  </playingEntity>
+                </participantRole>
+              </participant>
+            </encounter>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.17" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.17" extension="2015-08-01" />
+          <code code="29762-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Social history Narrative" />
+          <title>Social History</title>
+          <text>
+            <table ID="sochist16">
+              <colgroup>
+                <col width="25%" span="2" />
+                <col width="13%" />
+                <col width="12%" />
+                <col width="25%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Tobacco Use</th>
+                  <th>Types</th>
+                  <th>Packs/Day</th>
+                  <th>Years Used</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Smoking Tobacco: Never Assessed</td>
+                  <td />
+                  <td ID="sochist16packsperday" />
+                  <td />
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess8">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>AHC Utilities</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess8pair1">
+                  <td ID="sdohassess8pair1ques">In the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?</td>
+                  <td ID="sdohassess8pair1ans">No</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess1">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Hunger Vital Sign</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess1pair1">
+                  <td ID="sdohassess1pair1ques">Within the past 12 months, you worried that your food would run out before you got the money to buy more.</td>
+                  <td ID="sdohassess1pair1ans">Sometimes true</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess1pair2">
+                  <td ID="sdohassess1pair2ques">Within the past 12 months, the food you bought just didn't last and you didn't have money to get more.</td>
+                  <td ID="sdohassess1pair2ans">Never true</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess3">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>AHC - Inadequate Housing</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess3pair1">
+                  <td ID="sdohassess3pair1ques">What is your living situation today?</td>
+                  <td ID="sdohassess3pair1ans">I have a place to live today, but I am worried about losing it in the future</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess3pair2">
+                  <td ID="sdohassess3pair2ques">Think about the place you live. Do you have problems with any of the following?</td>
+                  <td ID="sdohassess3pair2ans">Lack of heat;Oven or stove not working</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess2">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>AHC - Transportation</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess2pair1">
+                  <td ID="sdohassess2pair1ques">In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?</td>
+                  <td ID="sdohassess2pair1ans">No</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess4">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>AHC - Personal Safety</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess4pair1">
+                  <td ID="sdohassess4pair1ques">How often does anyone, including family and friends, physically hurt you?</td>
+                  <td ID="sdohassess4pair1ans">Never</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess4pair2">
+                  <td ID="sdohassess4pair2ques">How often does anyone, including family and friends, insult or talk down to you?</td>
+                  <td ID="sdohassess4pair2ans">Never</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess4pair3">
+                  <td ID="sdohassess4pair3ques">How often does anyone, including family and friends, threaten you with harm?</td>
+                  <td ID="sdohassess4pair3ans">Never</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess4pair4">
+                  <td ID="sdohassess4pair4ques">How often does anyone, including family and friends, scream or curse at you?</td>
+                  <td ID="sdohassess4pair4ans">Never</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess5">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>AHC - Employment</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess5pair1">
+                  <td ID="sdohassess5pair1ques">Do you want help finding or keeping work or a job?</td>
+                  <td ID="sdohassess5pair1ans">Yes, help keeping work</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess9">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>AHC - Education</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess9pair1">
+                  <td ID="sdohassess9pair1ques">Speaks Language Other Than English at Home</td>
+                  <td ID="sdohassess9pair1ans" />
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess9pair2">
+                  <td ID="sdohassess9pair2ques">Do you want help with school or training? For example, starting or completing job training or getting a high school diploma, GED or equivalent.</td>
+                  <td ID="sdohassess9pair2ans">No</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess7">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>AHC - Education</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess7pair1">
+                  <td ID="sdohassess7pair1ques">Do you want help with school or training? For example, starting or completing job training or getting a high school diploma, GED or equivalent.</td>
+                  <td ID="sdohassess7pair1ans">No</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table ID="sdohassess6">
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>JRD Many Questions Source</th>
+                  <th>Answer</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="sdohassess6pair1">
+                  <td ID="sdohassess6pair1ques" />
+                  <td ID="sdohassess6pair1ans">Not on file</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair2">
+                  <td ID="sdohassess6pair2ques">Frequency of Illegal Drug Use in the Past Year</td>
+                  <td ID="sdohassess6pair2ans">Not on file</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair3">
+                  <td ID="sdohassess6pair3ques">Think about the place you live. Do you have problems with any of the following?</td>
+                  <td ID="sdohassess6pair3ans">Lack of heat;Oven or stove not working</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair4">
+                  <td ID="sdohassess6pair4ques">Frequency of Binge Drinking</td>
+                  <td ID="sdohassess6pair4ans">Not on file</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair5">
+                  <td ID="sdohassess6pair5ques">Frequency of Alcohol Consumption</td>
+                  <td ID="sdohassess6pair5ans">Not on file</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair6">
+                  <td ID="sdohassess6pair6ques">Average Number of Drinks</td>
+                  <td ID="sdohassess6pair6ans">Not on file</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair7">
+                  <td ID="sdohassess6pair7ques">Smokeless Tobacco Use</td>
+                  <td ID="sdohassess6pair7ans">Unknown</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair8">
+                  <td ID="sdohassess6pair8ques">Smoking Tobacco Use</td>
+                  <td ID="sdohassess6pair8ans">Never Assessed</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair9">
+                  <td ID="sdohassess6pair9ques">Passive Exposure</td>
+                  <td ID="sdohassess6pair9ans">Not on file</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair10">
+                  <td ID="sdohassess6pair10ques">Speaks Language Other Than English at Home</td>
+                  <td ID="sdohassess6pair10ans">Not on file</td>
+                  <td>02/03/2025</td>
+                </tr>
+                <tr ID="sdohassess6pair11">
+                  <td ID="sdohassess6pair11ques">Frequency of Prescription Drug Use for Non-medical Reasons in the Past Year</td>
+                  <td ID="sdohassess6pair11ans">Not on file</td>
+                  <td>02/03/2025</td>
+                </tr>
+              </tbody>
+            </table>
+            <table>
+              <colgroup>
+                <col width="50%" />
+                <col width="25%" span="2" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Sex and Gender Information</th>
+                  <th>Value</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ID="BirthSex19">
+                  <td>Sex Assigned at Birth</td>
+                  <td ID="BirthSex19Value">Not on file</td>
+                  <td />
+                </tr>
+                <tr ID="LegalSex20">
+                  <td>Legal Sex</td>
+                  <td ID="LegalSex20Value">Male</td>
+                  <td>02/03/2025 12:19 PM CST</td>
+                </tr>
+                <tr ID="GenderIdentity17">
+                  <td>Gender Identity</td>
+                  <td ID="GenderIdentity17Value">Not on file</td>
+                  <td />
+                </tr>
+                <tr ID="SexualOrientation18">
+                  <td>Sexual Orientation</td>
+                  <td ID="SexualOrientation18Value">Not on file</td>
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.78" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.78" extension="2014-06-09" />
+              <id extension="Z549669^^72166-2" root="1.2.840.114350.1.13.861.1.7.1.1040.1" />
+              <code code="72166-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Tobacco smoking status NHIS" />
+              <text>
+                <reference value="#sochist16" />
+              </text>
+              <statusCode code="completed" />
+              <effectiveTime nullFlavor="UNK" />
+              <value code="266927001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Tobacco smoking consumption unknown" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515686-95001-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515686-95001-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code nullFlavor="OTH">
+                    <originalText>AHC Utilities</originalText>
+                    <translation code="X-SDOH-SDC-95001" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="AHC Utilities" />
+                  </code>
+                  <text>
+                    <reference value="#sdohassess8" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>Not At Risk</originalText>
+                    <translation code="X-SDOH-RISK-1" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Low Risk" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000075-5809515686-95001-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="96779-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12Mo">
+                        <originalText>
+                          <reference value="#sdohassess8pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess8pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA32-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="No" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess8pair1ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                          <code code="208D00000X" codeSystem="2.16.840.1.113883.6.101" displayName="General Practice Physician" />
+                          <addr use="WP">
+                            <streetAddressLine>abc;</streetAddressLine>
+                            <streetAddressLine>def;</streetAddressLine>
+                            <city nullFlavor="UNK" />
+                            <state nullFlavor="UNK" />
+                            <postalCode nullFlavor="UNK" />
+                          </addr>
+                          <telecom nullFlavor="UNK" />
+                          <assignedPerson>
+                            <name use="L">
+                              <given>Matt</given>
+                              <family>Wisby</family>
+                              <suffix qualifier="AC"> Rap God</suffix>
+                            </name>
+                          </assignedPerson>
+                          <representedOrganization>
+                            <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+                            <id root="2.16.840.1.113883.4.2" nullFlavor="UNK" />
+                            <id root="2.16.840.1.113883.4.6" nullFlavor="UNK" />
+                            <name>Facility</name>
+                            <telecom use="WP" value="tel:271-9000" />
+                            <telecom value="fax:+1-608-271-9000" />
+                            <addr use="WP">
+                              <streetAddressLine>MODEL DRIVE</streetAddressLine>
+                              <city>Madison</city>
+                              <state>WI</state>
+                              <postalCode>53711</postalCode>
+                            </addr>
+                          </representedOrganization>
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-23" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Utilities" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515686-97051-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515686-97051-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code code="88121-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Hunger Vital Sign [HVS]">
+                    <originalText>Hunger Vital Sign</originalText>
+                  </code>
+                  <text>
+                    <reference value="#sdohassess1" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>Food Insecurity Present</originalText>
+                    <translation code="X-SDOH-RISK-3" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="High Risk" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1572879820-5809515686-97051-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="88122-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="(I/We) worried whether (my/our) food would run out before (I/we) got money to buy more.  ">
+                        <originalText>
+                          <reference value="#sdohassess1pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess1pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA6729-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sometimes true" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess1pair1ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1572879821-5809515686-97051-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="88123-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="The food that (I/we) bought just didn't last, and (I/we) didn't have money to get more.">
+                        <originalText>
+                          <reference value="#sdohassess1pair2ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess1pair2" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA28398-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never true" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess1pair2ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-8" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Food Insecurity" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515686-97062-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515686-97062-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code nullFlavor="OTH">
+                    <originalText>AHC - Inadequate Housing</originalText>
+                    <translation code="X-SDOH-SDC-97062" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="AHC - Inadequate Housing" />
+                  </code>
+                  <text>
+                    <reference value="#sdohassess3" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>At Risk</originalText>
+                    <translation code="X-SDOH-RISK-3" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="High Risk" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000065-5809515686-97062-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="71802-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Housing status">
+                        <originalText>
+                          <reference value="#sdohassess3pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess3pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA31994-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="I have a place to live today, but I am worried about losing it in the future" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess3pair1ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000066-5809515686-97062-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live">
+                        <originalText>
+                          <reference value="#sdohassess3pair2ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess3pair2" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA31998-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Lack of heat" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess3pair2ans" />
+                        </originalText>
+                      </value>
+                      <value code="LA31999-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Oven or stove not working" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess3pair2ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-10" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Housing Stability" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-15" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Inadequate Housing" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515686-97063-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515686-97063-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code nullFlavor="OTH">
+                    <originalText>AHC - Transportation</originalText>
+                    <translation code="X-SDOH-SDC-97063" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="AHC - Transportation" />
+                  </code>
+                  <text>
+                    <reference value="#sdohassess2" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>Not At Risk</originalText>
+                    <translation code="X-SDOH-RISK-1" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Low Risk" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000068-5809515686-97063-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="93030-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living">
+                        <originalText>
+                          <reference value="#sdohassess2pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess2pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA32-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="No" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess2pair1ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-9" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Transportation Needs" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515686-97064-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515686-97064-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code nullFlavor="OTH">
+                    <originalText>AHC - Personal Safety</originalText>
+                    <translation code="X-SDOH-SDC-97064" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="AHC - Personal Safety" />
+                  </code>
+                  <text>
+                    <reference value="#sdohassess4" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>Not At Risk</originalText>
+                    <translation code="X-SDOH-RISK-1" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Low Risk" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000069-5809515686-97064-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="95618-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Physically hurt you">
+                        <originalText>
+                          <reference value="#sdohassess4pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess4pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess4pair1ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000072-5809515686-97064-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="95617-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Insult you or talk down to you">
+                        <originalText>
+                          <reference value="#sdohassess4pair2ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess4pair2" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess4pair2ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000073-5809515686-97064-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="95616-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Threaten you with physical harm">
+                        <originalText>
+                          <reference value="#sdohassess4pair3ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess4pair3" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess4pair3ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000074-5809515686-97064-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="95615-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Scream or curse at you">
+                        <originalText>
+                          <reference value="#sdohassess4pair4ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess4pair4" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA6270-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Never" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess4pair4ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-24" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Personal Safety" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515686-97066-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515686-97066-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code nullFlavor="OTH">
+                    <originalText>AHC - Employment</originalText>
+                    <translation code="X-SDOH-SDC-97066" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="AHC - Employment" />
+                  </code>
+                  <text>
+                    <reference value="#sdohassess5" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>At Risk</originalText>
+                    <translation code="X-SDOH-RISK-3" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="High Risk" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000081-5809515686-97066-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="96780-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Wants help finding or keeping work or a job">
+                        <originalText>
+                          <reference value="#sdohassess5pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess5pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA31982-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Yes, help keeping work" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess5pair1ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-18" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Employment Status" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515686-97068-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515686-97068-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code nullFlavor="OTH">
+                    <originalText>AHC - Education</originalText>
+                    <translation code="X-SDOH-SDC-97068" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="AHC - Education" />
+                  </code>
+                  <text>
+                    <reference value="#sdohassess9" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>Unknown</originalText>
+                    <translation code="X-SDOH-RISK-0" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Unknown" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000086-5809515686-97068-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="97027-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Speaks a language other than English at home">
+                        <originalText>
+                          <reference value="#sdohassess9pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess9pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="97027-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Speaks a language other than English at home" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess9pair1ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000087-5809515686-97068-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="96782-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Wants help with school or training">
+                        <originalText>
+                          <reference value="#sdohassess9pair2ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess9pair2" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA32-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="No" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess9pair2ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-17" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Educational Attainment" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515686-97075-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515686-97075-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code nullFlavor="OTH">
+                    <originalText>AHC - Education</originalText>
+                    <translation code="X-SDOH-SDC-97075" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="AHC - Education" />
+                  </code>
+                  <text>
+                    <reference value="#sdohassess7" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>Not At Risk</originalText>
+                    <translation code="X-SDOH-RISK-1" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Low Risk" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000087-5809515686-97075-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="96782-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Wants help with school or training">
+                        <originalText>
+                          <reference value="#sdohassess7pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess7pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA32-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="No" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess7pair1ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-17" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Educational Attainment" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <id extension="5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
+                <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
+              </code>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203" />
+              <entryRelationship typeCode="SPRT">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
+                  <id extension="5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <code nullFlavor="UNK">
+                    <originalText>JRD Many Questions Source</originalText>
+                  </code>
+                  <text>
+                    <reference value="#sdohassess6" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250203" />
+                  <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                  <interpretationCode nullFlavor="OTH">
+                    <originalText>Not on file</originalText>
+                    <translation code="X-SDOH-RISK-0" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Unknown" />
+                  </interpretationCode>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1572879823-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="76542-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Do you feel stress - tense, restless, nervous, or anxious, or unable to sleep at night because your mind is troubled all the time - these days [OSQ]">
+                        <originalText>
+                          <reference value="#sdohassess6pair1ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair1" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair1ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000095-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="68524-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="How many times in the past Y have you used an illegal drug or used a prescription medication for non-medical reasons">
+                        <originalText>
+                          <reference value="#sdohassess6pair2ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair2" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair2ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000066-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live">
+                        <originalText>
+                          <reference value="#sdohassess6pair3ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair3" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="LA31998-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Lack of heat" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair3ans" />
+                        </originalText>
+                      </value>
+                      <value code="LA31999-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Oven or stove not working" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair3ans" />
+                        </originalText>
+                      </value>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                        <time value="20250203122125-0600" />
+                        <assignedAuthor>
+                          <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                          <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                        </assignedAuthor>
+                      </author>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1572879838-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="68520-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="How often do you have 6 or more drinks on 1 occasion?">
+                        <originalText>
+                          <reference value="#sdohassess6pair4ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair4" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair4ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1572879836-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="68518-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="How often to you have a drink containing alcohol?">
+                        <originalText>
+                          <reference value="#sdohassess6pair5ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair5" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair5ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1572879837-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="68519-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="How many standard drinks containing alcohol do you have on a typical day?">
+                        <originalText>
+                          <reference value="#sdohassess6pair6ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair6" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair6ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="cer97078-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="88031-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Smokeless tobacco status">
+                        <originalText>
+                          <reference value="#sdohassess6pair7ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair7" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value code="405746006" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Current non smoker but past smoking history unknown (finding)" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair7ans" />
+                        </originalText>
+                      </value>
+                      <value code="LA4489-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Unknown" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair7ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="cer97028-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="72166-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Tobacco smoking status">
+                        <originalText>
+                          <reference value="#sdohassess6pair8ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair8" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair8ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="cer97148-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code nullFlavor="UNK">
+                        <originalText>
+                          <reference value="#sdohassess6pair9ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair9" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair9ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000086-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="97027-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Speaks a language other than English at home">
+                        <originalText>
+                          <reference value="#sdohassess6pair10ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair10" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair10ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
+                      <id extension="flo1570000094-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <code code="95530-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Prescription drug use for non-medical reasons in the past 1Y">
+                        <originalText>
+                          <reference value="#sdohassess6pair11ques" />
+                        </originalText>
+                      </code>
+                      <text>
+                        <reference value="#sdohassess6pair11" />
+                      </text>
+                      <statusCode code="completed" />
+                      <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <originalText>
+                          <reference value="#sdohassess6pair11ans" />
+                        </originalText>
+                      </value>
+                    </observation>
+                  </entryRelationship>
+                  <entryRelationship typeCode="COMP">
+                    <observation classCode="OBS" moodCode="EVN">
+                      <code code="X-SDOH-DOMAIN-ID" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Domain ID" />
+                      <value code="X-SDOH-DOMAIN-16" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="Homelessness" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
+                    </observation>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.200" extension="2016-06-01" />
+              <id extension="Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.20" />
+              <code code="76689-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sex assigned at birth" />
+              <text>
+                <reference value="#BirthSex19" />
+              </text>
+              <statusCode code="completed" />
+              <effectiveTime value="19910829" />
+              <value codeSystem="2.16.840.1.113883.5.1" codeSystemName="HL7 Gender" xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <originalText>
+                  <reference value="#BirthSex19Value" />
+                </originalText>
+              </value>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.507" extension="2023-06-28" />
+              <id extension="Z549669^67239^46098-0" root="1.2.840.114350.1.13.861.1.7.1.1040.23" />
+              <code code="46098-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sex" />
+              <text>
+                <reference value="#LegalSex20" />
+              </text>
+              <statusCode code="completed" />
+              <effectiveTime value="20250203121922-0600" />
+              <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <originalText>
+                  <reference value="#LegalSex20Value" />
+                </originalText>
+              </value>
+              <author>
+                <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                <time value="20250203121922-0600" />
+                <assignedAuthor>
+                  <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                  <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                </assignedAuthor>
+              </author>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.34.3.45" extension="2022-06-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <id extension="Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.46" />
+              <code code="76691-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Gender identity" />
+              <text>
+                <reference value="#GenderIdentity17" />
+              </text>
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low nullFlavor="UNK" />
+              </effectiveTime>
+              <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <originalText>
+                  <reference value="#GenderIdentity17Value" />
+                </originalText>
+              </value>
+            </observation>
+          </entry>
+          <entry>
+            <observation classCode="OBS" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.501" extension="2022-06-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
+              <id extension="Z549669.1" root="1.2.840.114350.1.13.861.1.7.1.1040.45" />
+              <code code="76690-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sexual orientation" />
+              <text>
+                <reference value="#SexualOrientation18" />
+              </text>
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low nullFlavor="UNK" />
+              </effectiveTime>
+              <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <originalText>
+                  <reference value="#SexualOrientation18Value" />
+                </originalText>
+              </value>
+            </observation>
+          </entry>
+        </section>
+      </component>
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.4" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.4" extension="2015-08-01" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.4.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.4.1" extension="2015-08-01" />
+          <code code="8716-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Vital signs" />
+          <title>Last Filed Vital Signs</title>
+          <text>
+            <content ID="nof25">Not on file</content>
+          </text>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.10" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.10" extension="2014-06-09" />
+          <code code="18776-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Plan of care note" />
+          <title>Plan of Treatment</title>
+          <text>
+            <paragraph>Not on file</paragraph>
+          </text>
+        </section>
+      </component>
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.3" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.3" extension="2015-08-01" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.3.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.3.1" extension="2015-08-01" />
+          <templateId root="1.2.840.114350.1.72.3.2" />
+          <templateId root="1.2.840.114350.1.72.3.2" extension="2017-04-01" />
+          <id root="14D24278-E25C-11EF-B8C9-0050568B0C08" />
+          <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Relevant diagnostic tests/laboratory data Narrative" />
+          <title>Results</title>
+          <text>
+            <content ID="nof33">Not on file</content>
+            <footnote ID="subTitle32" styleCode="xSectionSubTitle">from Last 3 Months</footnote>
+          </text>
+        </section>
+      </component>
+      <component>
+        <section>
+          <code code="X-DOCCMTADDL" codeSystem="1.2.840.114350.1.72.2" displayName="Additional Document Comments" />
+          <title>Additional Source Comments</title>
+          <text>Adding some additional source comments to the Additional Source Comments Sections using I DXC 542.<footnote>Current Development Environment</footnote></text>
+        </section>
+      </component>
+    </structuredBody>
+  </component>
+</ClinicalDocument>
