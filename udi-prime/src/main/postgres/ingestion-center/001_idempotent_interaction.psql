@@ -1731,9 +1731,11 @@ BEGIN
                     FROM jsonb_array_elements(entry->'resource'->'code'->'coding') AS coding
                     WHERE coding->>'code' IN ('96777-8', '97023-6', 'NYS-AHC-HRSN')
                 )
-                AND 'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response' = ANY (ARRAY(
-                    SELECT jsonb_array_elements_text(entry->'resource'->'meta'->'profile')
-                ))
+                AND EXISTS (
+                    SELECT 1
+                    FROM jsonb_array_elements_text(entry->'resource'->'meta'->'profile') AS profile
+                    WHERE RIGHT(profile, LENGTH('shinny-observation-screening-response')) = 'shinny-observation-screening-response'
+                )
 
                 UNION
 
