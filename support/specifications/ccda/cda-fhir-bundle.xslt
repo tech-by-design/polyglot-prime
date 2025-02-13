@@ -16,14 +16,24 @@
   <xsl:variable name="organizationResourceId" select="translate(concat(generate-id(//ccda:author), $patientRoleId, $currentTimestamp), ':-+', '')"/>
   <xsl:variable name="bundleTimestamp" select="//ccda:header/ccda:effectiveTime/ccda:value"/>
 
-  <xsl:variable name="bundleMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/SHINNYBundleProfile'"/>
+  <!-- V 1.3.0 Profile URLs -->
+  <!-- <xsl:variable name="bundleMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/SHINNYBundleProfile'"/>
   <xsl:variable name="patientMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-patient'"/>
   <xsl:variable name="consentMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-Consent'"/>
   <xsl:variable name="encounterMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-encounter'"/>
   <xsl:variable name="organizationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shin-ny-organization'"/>
   <xsl:variable name="observationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-observation-screening-response'"/>
-  <xsl:variable name="observationSexualOrientationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-observation-sexual-orientation'"/>
+  <xsl:variable name="observationSexualOrientationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-observation-sexual-orientation'"/> -->
   
+  <!-- V 1.2.3 Profile URLs -->
+  <xsl:variable name="bundleMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile'"/>
+  <xsl:variable name="patientMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient'"/>
+  <xsl:variable name="consentMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent'"/>
+  <xsl:variable name="encounterMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter'"/>
+  <xsl:variable name="organizationMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization'"/>
+  <xsl:variable name="observationMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response'"/>
+  <xsl:variable name="observationSexualOrientationMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-sexual-orientation'"/>
+
   <xsl:template match="/">
   {
     "resourceType": "Bundle",
