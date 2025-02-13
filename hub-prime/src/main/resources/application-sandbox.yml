@@ -7,6 +7,19 @@ org:
           saveUserDataToInteractions: true
         hub:
           prime:
+            igVersion: 1.2.3
+            baseFHIRURL: http://shinny.org/us/ny/hrsn
+            structureDefinitionsUrls:
+              bundle: /StructureDefinition/SHINNYBundleProfile
+              patient: /StructureDefinition/shinny-patient
+              consent: /StructureDefinition/shinny-Consent
+              encounter: /StructureDefinition/shinny-encounter
+              organization: /StructureDefinition/shin-ny-organization
+              observation: /StructureDefinition/shinny-observation-screening-response
+              questionnaire: /StructureDefinition/shinny-questionnaire
+              practitioner: /StructureDefinition/shin-ny-practitioner
+              questionnaireResponse: /StructureDefinition/shinny-questionnaire
+              observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
             csv:
               validation:
                 pythonScriptPath: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py}

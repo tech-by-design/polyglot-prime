@@ -40,6 +40,19 @@ org:
         hub:
           prime:
             defaultDatalakeApiUrl: https://qa.hrsn.nyehealth.org/HRSNBundle
+            igVersion: 1.2.3
+            baseFHIRURL: http://shinny.org/us/ny/hrsn
+            structureDefinitionsUrls:
+              bundle: /StructureDefinition/SHINNYBundleProfile
+              patient: /StructureDefinition/shinny-patient
+              consent: /StructureDefinition/shinny-Consent
+              encounter: /StructureDefinition/shinny-encounter
+              organization: /StructureDefinition/shin-ny-organization
+              observation: /StructureDefinition/shinny-observation-screening-response
+              questionnaire: /StructureDefinition/shinny-questionnaire
+              practitioner: /StructureDefinition/shin-ny-practitioner
+              questionnaireResponse: /StructureDefinition/shinny-questionnaire
+              observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
             defaultDataLakeApiAuthn:
               # The allowed values for mTlsStrategy are as follows:
               # - no-mTls: No mTLS is used. The WebClient sends a standard HTTP POST request to the scoring engine API without mutual TLS (mTLS).
