@@ -354,14 +354,14 @@ public class OrchestrationEngine {
             Span span = tracer.spanBuilder("OrchestrationEngine.validate").startSpan();
             try {
                 try {
-                    LOG.info("VALIDATOR -BEGIN initiated At : {} for interactionid:{} ", initiatedAt, interactionId);
+                    LOG.info("VALIDATOR -BEGIN initiated At : {} for interactionid:{} with ig version :{} ", initiatedAt, interactionId,igVersion);
                     LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
                     final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
                     LOG.debug("BUNDLE PAYLOAD parse -END");
                     final var hapiVR = fhirValidator.validateWithResult(bundle);
                     final var completedAt = Instant.now();
-                    LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} ",
-                            Duration.between(initiatedAt, completedAt).toMillis(), interactionId);
+                    LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} with ig version :{}",
+                            Duration.between(initiatedAt, completedAt).toMillis(), interactionId,igVersion);
                     return new OrchestrationEngine.ValidationResult() {
                         @Override
                         @JsonSerialize(using = JsonTextSerializer.class)
