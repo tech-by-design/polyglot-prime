@@ -25,6 +25,7 @@ import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
+import org.techbd.util.FHIRUtil;
 
 @Component
 @Order(3)
@@ -38,7 +39,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
     }
 
     public CanonicalType getProfileUrl() {
-        return new CanonicalType(PROFILE_MAP.get("observationSexualOrientation"));
+        return new CanonicalType(FHIRUtil.getProfileUrl("observationSexualOrientation"));
     }
 
     @Override

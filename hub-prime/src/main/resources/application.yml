@@ -98,7 +98,7 @@ org:
           prime:
             version: @project.version@
             fhirVersion: r4
-            igVersion: 1.2.3
+            igVersion: 1.3.0
             igPackages:
                 fhir-v4:
                     # Path to SHIN-NY IG package downloaded from URL: https://shinny.org/us/ny/hrsn/downloads.html
@@ -109,7 +109,18 @@ org:
                     sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
                     # Path to UV-SDC IG package downloaded from URL: https://hl7.org/fhir/uv/sdc/downloads.html
                     uvSdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
-            defaultSdohFhirProfileUrl: http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile
+            baseFHIRURL: http://test.shinny.org
+            structureDefinitionsUrls:
+              bundle: /StructureDefinition/SHINNYBundleProfile
+              patient: /StructureDefinition/shinny-patient
+              consent: /StructureDefinition/shinny-Consent
+              encounter: /StructureDefinition/shinny-encounter
+              organization: /StructureDefinition/shin-ny-organization
+              observation: /StructureDefinition/shinny-observation-screening-response
+              questionnaire: /StructureDefinition/shinny-questionnaire
+              practitioner: /StructureDefinition/shin-ny-practitioner
+              questionnaireResponse: /StructureDefinition/shinny-questionnaire
+              observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
             operationOutcomeHelpUrl: "https://techbd.org/get-help/"
             fhirUmlsApiKey: umls_api_key

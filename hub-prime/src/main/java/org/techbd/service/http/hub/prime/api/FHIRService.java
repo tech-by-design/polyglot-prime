@@ -64,6 +64,7 @@ import org.techbd.service.http.hub.prime.AppConfig.MTlsResources;
 import org.techbd.service.http.hub.prime.AppConfig.PostStdinPayloadToNyecDataLakeExternal;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.util.FHIRUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -256,7 +257,7 @@ public class FHIRService {
 				}
 
 				if (profileList.stream()
-						.noneMatch(profile -> profile.equals(appConfig.getDefaultSdohFhirProfileUrl()))) {
+						.noneMatch(profile -> profile.equals(FHIRUtil.getBundleProfileUrl()))) {
 					LOG.error("Bundle profile URL provided is not valid for interaction id: {}", interactionId);
 					throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
 				}
@@ -479,7 +480,7 @@ public class FHIRService {
 					.onDevice(Device.createDefault())
 					.withInteractionId(interactionId)
 					.withPayloads(List.of(payload))
-					.withFhirProfileUrl(appConfig.getDefaultSdohFhirProfileUrl())
+					.withFhirProfileUrl(FHIRUtil.getBundleProfileUrl())
 					.withTracer(tracer)
 					.withFhirIGPackages(igPackages)
 					.withIgVersion(igVersion)

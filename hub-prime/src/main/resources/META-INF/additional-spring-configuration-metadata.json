@@ -518,5 +518,60 @@
     "name": "org.techbd.service.http.hub.prime.operationOutcomeHelpUrl",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.operationOutcomeHelpUrl'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.baseFHIRURL",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.baseFHIRURL'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.bundle",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.bundle'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.patient",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.patient'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.consent",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.consent'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.encounter",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.encounter'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.observation",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.observation'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.organization",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.organization'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.questionnaire",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.questionnaire'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.practitioner",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.practitioner'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.questionnaireResponse",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.questionnaireResponse'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.observationSexualOrientation",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.observationSexualOrientation'"
   }
 ]}

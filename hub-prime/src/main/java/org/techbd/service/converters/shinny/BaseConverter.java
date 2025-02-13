@@ -1,8 +1,5 @@
 package org.techbd.service.converters.shinny;
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -10,19 +7,12 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
-
-import org.techbd.util.YamlUtil;
+import org.techbd.util.FHIRUtil;
 
 public abstract class BaseConverter implements IConverter {
 
-    public static Map<String, String> PROFILE_MAP = getProfileUrlMap();
-
-    public static Map<String, String> getProfileUrlMap() {
-        return YamlUtil.getYamlResourceAsMap("src/main/resources/shinny/shinny-artifacts/profile.yml");
-    }
-
     public CanonicalType getProfileUrl() {
-        return new CanonicalType(PROFILE_MAP.get(getResourceType().name().toLowerCase()));
+        return new CanonicalType(FHIRUtil.getProfileUrl(getResourceType().name().toLowerCase()));
     }
 
     public static Extension createExtension(String url, String value, String system, String code, String display) {
