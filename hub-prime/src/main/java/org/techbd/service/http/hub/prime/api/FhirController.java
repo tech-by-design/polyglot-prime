@@ -37,6 +37,8 @@ import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.CustomRequestWrapper;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
+import org.techbd.util.FHIRUtil;
+
 import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
 
 import io.micrometer.common.util.StringUtils;
@@ -280,7 +282,7 @@ public class FhirController {
                                         .onDevice(Device.createDefault())
                                         .withInteractionId(interactionId)
                                         .withPayloads(List.of(payload))
-                                        .withFhirProfileUrl(appConfig.getDefaultSdohFhirProfileUrl())
+                                        .withFhirProfileUrl(FHIRUtil.getBundleProfileUrl())
                                         .withTracer(tracer)
                                         .withFhirIGPackages(igPackages)
                                         .withIgVersion(igVersion)
