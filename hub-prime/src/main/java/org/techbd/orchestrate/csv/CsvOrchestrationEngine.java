@@ -30,7 +30,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.vfs2.FileObject;
-import org.hl7.fhir.r4.model.OperationOutcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -970,7 +969,7 @@ public class CsvOrchestrationEngine {
 
             } catch (IOException | InterruptedException e) {
                 log.error("Error during CSV validation: {}", e.getMessage(), e);
-                throw new RuntimeException("Error during CSV validation", e);
+                throw new RuntimeException("Error during CSV validation : "+e.getMessage(), e);
             }
         }
 
