@@ -6,12 +6,6 @@ from frictionless import Package, transform, steps, extract
 from datetime import datetime, date
 import re  # Import required for regular expression handling
 
-def custom_json_encoder(obj):
-    if isinstance(obj, (datetime, date)):
-        # Convert both datetime and date objects to ISO 8601 format
-        return obj.isoformat()
-    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
-
 
 def validate_package(spec_path, file1, file2, file3, file4, output_path):
     results = {
@@ -145,10 +139,10 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
     # Write the results to a JSON file if output_path is provided, otherwise print to console
     if output_path:
         with open(output_path, 'w') as json_file:
-            json.dump(results, json_file, indent=4, default=custom_json_encoder)
+            json.dump(results, json_file, indent=4, default=str)
         print(f"Validation results written to '{output_path}'.")
     else:
-        print(json.dumps(results, indent=4, default=custom_json_encoder))
+        print(json.dumps(results, indent=4, default=str))
 
 
 
