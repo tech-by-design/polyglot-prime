@@ -31,6 +31,7 @@ import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
+import org.techbd.util.FHIRUtil;
 
 @Component
 @Order(6)
@@ -43,7 +44,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         private static final String CATEGORY_URL = "http://terminology.hl7.org/CodeSystem/observation-category";
         private static final String SDOH_CATEGORY_URL = "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes";
         private static final String LOINC_URL = "http://loinc.org";
-        private static final String PROFILE_URL = PROFILE_MAP.get("observation");
 
         private static final Set<String> INTERPERSONAL_SAFETY_REFS = Set.of(
                         "95618-5",
@@ -302,7 +302,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Set meta information
                 Meta meta = new Meta();
-                meta.addProfile(PROFILE_URL);
+                meta.addProfile(FHIRUtil.getProfileUrl("observation"));
                 meta.setLastUpdated(DateUtil.convertStringToDate(demographicData.getPatientLastUpdated()));
                 groupObservation.setMeta(meta);
 

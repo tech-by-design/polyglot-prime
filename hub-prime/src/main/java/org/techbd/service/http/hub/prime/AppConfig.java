@@ -38,12 +38,10 @@ public class AppConfig {
     }
 
     private String version;
-    private String defaultSdohFhirProfileUrl;
     private String defaultDatalakeApiUrl;
     private String operationOutcomeHelpUrl;
     private Map<String, String> structureDefinitionsUrls;
-    private Map<String, String> codeSystemUrls;
-    private Map<String, String> valueSetUrls;
+    private String baseFHIRURL;
     private DefaultDataLakeApiAuthn defaultDataLakeApiAuthn;
     private String fhirVersion;
     private Map<String, Map<String, String>> igPackages;
@@ -62,14 +60,6 @@ public class AppConfig {
      */
     public void setVersion(String version) {
         this.version = version;
-    }
-
-    public String getDefaultSdohFhirProfileUrl() {
-        return defaultSdohFhirProfileUrl;
-    }
-
-    public void setDefaultSdohFhirProfileUrl(String defaultSdohFhirProfileUrl) {
-        this.defaultSdohFhirProfileUrl = defaultSdohFhirProfileUrl;
     }
 
     public String getDefaultDatalakeApiUrl() {
@@ -94,22 +84,6 @@ public class AppConfig {
         return structureDefinitionsUrls;
     }
 
-    public void setCodeSystemUrls(Map<String, String> codeSystemUrls) {
-        this.codeSystemUrls = codeSystemUrls;
-    }
-
-    public void setValueSetUrls(Map<String, String> valueSetUrls) {
-        this.valueSetUrls = valueSetUrls;
-    }
-
-    public Map<String, String> getCodeSystemUrls() {
-        return codeSystemUrls;
-    }
-
-    public Map<String, String> getValueSetUrls() {
-        return valueSetUrls;
-    }
-
     public DefaultDataLakeApiAuthn getDefaultDataLakeApiAuthn() {
         return defaultDataLakeApiAuthn;
     }
@@ -117,7 +91,13 @@ public class AppConfig {
     public void setDefaultDataLakeApiAuthn(DefaultDataLakeApiAuthn defaultDataLakeApiAuthn) {
         this.defaultDataLakeApiAuthn = defaultDataLakeApiAuthn;
     }
+    public String getBaseFHIRURL() {
+        return baseFHIRURL;
+    }
 
+    public void setBaseFHIRURL(String baseFHIRURL) {
+        this.baseFHIRURL = baseFHIRURL;
+    }
     public record DefaultDataLakeApiAuthn(
             String mTlsStrategy,
             MTlsAwsSecrets mTlsAwsSecrets,
