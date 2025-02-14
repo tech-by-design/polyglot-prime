@@ -16,23 +16,18 @@
   <xsl:variable name="organizationResourceId" select="translate(concat(generate-id(//ccda:author), $patientRoleId, $currentTimestamp), ':-+', '')"/>
   <xsl:variable name="bundleTimestamp" select="//ccda:header/ccda:effectiveTime/ccda:value"/>
 
-  <!-- V 1.3.0 Profile URLs -->
-  <!-- <xsl:variable name="bundleMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/SHINNYBundleProfile'"/>
-  <xsl:variable name="patientMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-patient'"/>
-  <xsl:variable name="consentMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-Consent'"/>
-  <xsl:variable name="encounterMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-encounter'"/>
-  <xsl:variable name="organizationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shin-ny-organization'"/>
-  <xsl:variable name="observationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-observation-screening-response'"/>
-  <xsl:variable name="observationSexualOrientationMetaProfileUrl" select="'http://test.shinny.org/StructureDefinition/shinny-observation-sexual-orientation'"/> -->
-  
-  <!-- V 1.2.3 Profile URLs -->
-  <xsl:variable name="bundleMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile'"/>
-  <xsl:variable name="patientMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient'"/>
-  <xsl:variable name="consentMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent'"/>
-  <xsl:variable name="encounterMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter'"/>
-  <xsl:variable name="organizationMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization'"/>
-  <xsl:variable name="observationMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response'"/>
-  <xsl:variable name="observationSexualOrientationMetaProfileUrl" select="'http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-sexual-orientation'"/>
+  <!-- Parameters to get FHIR resource profile URLs -->
+  <xsl:param name="baseFhirUrl"/>
+  <xsl:param name="bundleMetaProfileUrl"/>
+  <xsl:param name="patientMetaProfileUrl"/>
+  <xsl:param name="consentMetaProfileUrl"/>
+  <xsl:param name="encounterMetaProfileUrl"/>
+  <xsl:param name="organizationMetaProfileUrl"/>
+  <xsl:param name="observationMetaProfileUrl"/>
+  <xsl:param name="observationSexualOrientationMetaProfileUrl"/>
+  <xsl:param name="questionnaireMetaProfileUrl"/>
+  <xsl:param name="questionnaireResponseMetaProfileUrl"/>
+  <xsl:param name="practitionerMetaProfileUrl"/>
 
   <xsl:template match="/">
   {
@@ -82,7 +77,7 @@
   <xsl:template match="ccda:patientRole">
     <xsl:if test="position() > 1">,</xsl:if>
     {
-      "fullUrl" : "http://shinny.org/us/ny/hrsn/Patient/<xsl:value-of select='$patientResourceId'/>",
+      "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
       "resource": {
         "resourceType": "Patient",
         "id": "<xsl:value-of select='$patientResourceId'/>",
@@ -258,7 +253,7 @@
       </xsl:if>
       "request" : {
         "method" : "POST",
-        "url" : "http://shinny.org/us/ny/hrsn/Patient/<xsl:value-of select='$patientResourceId'/>"
+        "url" : "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>"
       }
     }
   }
@@ -268,7 +263,7 @@
   <xsl:template match="ccda:encompassingEncounter">
     <xsl:if test="position() > 1">,</xsl:if>
     {
-      "fullUrl" : "http://shinny.org/us/ny/hrsn/Encounter/<xsl:value-of select="$encounterResourceId"/>",
+      "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>",
       "resource": {
         "resourceType": "Encounter",
         "id": "<xsl:value-of select="$encounterResourceId"/>",
@@ -348,7 +343,7 @@
       },
       "request" : {
         "method" : "POST",
-        "url" : "http://shinny.org/us/ny/hrsn/Encounter/<xsl:value-of select="$encounterResourceId"/>"
+        "url" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>"
       }
     }
   </xsl:template>
@@ -357,7 +352,7 @@
   <xsl:template match="ccda:consent">
     <xsl:if test="position() > 1">,</xsl:if>
     {
-      "fullUrl" : "http://shinny.org/us/ny/hrsn/Consent/<xsl:value-of select='$consentResourceId'/>",
+      "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Consent/<xsl:value-of select='$consentResourceId'/>",
       "resource": {
         "resourceType": "Consent",
         "id": "<xsl:value-of select='$consentResourceId'/>",
@@ -439,7 +434,7 @@
       },
       "request" : {
         "method" : "POST",
-        "url" : "http://shinny.org/us/ny/hrsn/Consent/<xsl:value-of select='$consentResourceId'/>"
+        "url" : "<xsl:value-of select='$baseFhirUrl'/>/Consent/<xsl:value-of select='$consentResourceId'/>"
       }
     }
   </xsl:template>
@@ -448,7 +443,7 @@
   <xsl:template match="ccda:author">
     <xsl:if test="position() > 1">,</xsl:if>
     {
-      "fullUrl" : "http://shinny.org/us/ny/hrsn/Organization/<xsl:value-of select="$organizationResourceId"/>",
+      "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select="$organizationResourceId"/>",
       "resource": {
         "resourceType": "Organization",
         "id": "<xsl:value-of select="$organizationResourceId"/>",
@@ -514,7 +509,7 @@
       },
       "request" : {
         "method" : "POST",
-        "url" : "http://shinny.org/us/ny/hrsn/Organization/<xsl:value-of select="$organizationResourceId"/>"
+        "url" : "<xsl:value-of select='$baseFhirUrl'/>/Organization/<xsl:value-of select="$organizationResourceId"/>"
       }
     }
   </xsl:template>
@@ -525,7 +520,7 @@
       <xsl:if test="position() > 1">,</xsl:if>
       <xsl:variable name="observationResourceId" select="translate(concat(generate-id(ccda:code/ccda:code), position(), $patientRoleId, $currentTimestamp), ':-+', '')"/>
       {
-        "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='$observationResourceId'/>",
+        "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>",
         "resource": {
           "resourceType": "Observation",
           "id": "<xsl:value-of select='$observationResourceId'/>",
@@ -607,7 +602,7 @@
         },
         "request" : {
           "method" : "POST",
-          "url" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='$observationResourceId'/>"
+          "url" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>"
         }
       }
     </xsl:if>
@@ -619,7 +614,7 @@
       <xsl:if test="position() > 1">,</xsl:if>
       <xsl:variable name="observationResourceId" select="translate(concat(generate-id(ccda:code/ccda:code), position(), $patientRoleId, $currentTimestamp), ':-+', '')"/>
       {
-        "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='$observationResourceId'/>",
+        "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>",
         "resource": {
           "resourceType": "Observation",
           "id": "<xsl:value-of select='$observationResourceId'/>",
@@ -713,7 +708,7 @@
         },
         "request" : {
           "method" : "POST",
-          "url" : "http://shinny.org/us/ny/hrsn/Observation/<xsl:value-of select='$observationResourceId'/>"
+          "url" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>"
         }
       }
     </xsl:if>
