@@ -936,7 +936,6 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 		<xs:attribute name="classCode" type="RoleClassRoot" use="optional" default="ROL"/>
 	</xs:complexType>
 	<xs:complexType name="POCD_MT000040.Patient">
-		<!-- <xs:sequence> -->
 		<xs:choice maxOccurs="unbounded">  <!-- Allow elements in any order -->
 			<xs:element name="realmCode" type="CS" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="typeId" type="POCD_MT000040.InfrastructureRoot.typeId" minOccurs="0"/>
@@ -949,12 +948,12 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 			<xs:element name="religiousAffiliationCode" type="CE" minOccurs="0"/>
 			<xs:element name="raceCode" type="CE" minOccurs="0"/>
 			<xs:element name="ethnicGroupCode" type="CE" minOccurs="0"/>
+			<!-- <xs:element name="deceasedInd" type="xs:boolean" minOccurs="0" xmlns:sdtc="urn:hl7-org:sdtc"/> -->
+			<xs:element ref="sdtc:deceasedInd" minOccurs="0"/>
 			<xs:element name="guardian" type="POCD_MT000040.Guardian" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="birthplace" type="POCD_MT000040.Birthplace" minOccurs="0"/>
 			<xs:element name="languageCommunication" type="POCD_MT000040.LanguageCommunication" minOccurs="0" maxOccurs="unbounded"/>
-			<xs:element ref="sdtc:deceasedInd" minOccurs="0"/>
 		</xs:choice>
-		<!-- </xs:sequence> -->
 		<xs:attribute name="nullFlavor" type="NullFlavor" use="optional"/>
 		<xs:attribute name="classCode" type="EntityClass" use="optional" fixed="PSN"/>
 		<xs:attribute name="determinerCode" type="EntityDeterminer" use="optional" fixed="INSTANCE"/>
@@ -992,6 +991,7 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 			<xs:element name="templateId" type="II" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="time" type="IVL_TS" minOccurs="0"/>
 			<xs:element name="modeCode" type="CE" minOccurs="0"/>
+			<xs:element ref="sdtc:functionCode" minOccurs="0"/>
 			<xs:element name="assignedEntity" type="POCD_MT000040.AssignedEntity"/>
 		</xs:sequence>
 		<xs:attribute name="nullFlavor" type="NullFlavor" use="optional"/>
@@ -1005,7 +1005,7 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 			<xs:element name="name" type="PN" minOccurs="0" maxOccurs="unbounded"/>
 			<!-- Allow sdtc:desc inside assignedPerson -->
 			<xs:element ref="sdtc:desc" minOccurs="0"/>
-			<xs:element name="desc" type="xs:string" minOccurs="0" xmlns:sdtc="urn:hl7-org:sdtc"/>
+			<xs:element name="desc" type="xs:string" minOccurs="0"/>
 		</xs:sequence>
 		<xs:attribute name="nullFlavor" type="NullFlavor" use="optional"/>
 		<xs:attribute name="classCode" type="EntityClass" use="optional" fixed="PSN"/>
