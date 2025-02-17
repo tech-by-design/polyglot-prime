@@ -139,12 +139,31 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
     # Write the results to a JSON file if output_path is provided, otherwise print to console
     if output_path:
         with open(output_path, 'w') as json_file:
-            json.dump(results, json_file, indent=4, default=str)
-        print(f"Validation results written to '{output_path}'.")
-    else:
-        print(json.dumps(results, indent=4, default=str))
+            try:
+                json.dump(results, json_file, indent=4, default=str)
+                print(f"Validation results written to '{output_path}'.")
+                return True
+            except Exception as e:
+                results["errorsSummary"].append({
+                "fieldName": None,
+                "message": f"Error converting results to JSON: {str(e)}",
+                "type": "data-processing-errors"
+                }) 
+                print(results)
+                return False
 
-
+    else: 
+        try:
+            print(json.dumps(results, indent=4, default=str))
+            return True
+        except Exception as e:
+            results["errorsSummary"].append({
+            "fieldName": None,
+            "message": f"Error converting results to JSON: {str(e)}",
+            "type": "data-processing-errors"
+            }) 
+            print(results)
+            return False
 
 if __name__ == "__main__":
 
