@@ -254,7 +254,7 @@
                     <xsl:for-each select="hl7:component/hl7:structuredBody/hl7:component/hl7:section">
                        <!-- <xsl:if test="hl7:code/@code = '29762-2'">   Social History -->
                             <component>
-                                <Section>
+                                <section>
                                     <!-- Extract TemplateId, Title, and Text if present -->
                                     <xsl:if test="hl7:templateId">
                                         <templateId>
@@ -271,6 +271,27 @@
                                             <xsl:value-of select="hl7:text"/>
                                         </text>
                                     </xsl:if>
+
+                                    <!-- Questionnaire -->
+                                    <xsl:if test = "hl7:templateId/@root = '2.16.840.1.113883.19.1000.2.1'">
+                                        <Questionnaire>
+                                        <xsl:for-each select="hl7:entry/hl7:act">
+                                            <templateId><root><xsl:value-of select="hl7:templateId/@root"/></root></templateId>
+                                            <code>
+                                                <code><xsl:value-of select="hl7:code/@code"/></code>
+                                                <displayName><xsl:value-of select="hl7:code/@displayName"/></displayName>
+                                                <codeSystem><xsl:value-of select="hl7:code/@codeSystem"/></codeSystem>
+                                                <codeSystemName><xsl:value-of select="hl7:code/@codeSystemName"/></codeSystemName>
+                                            </code>
+
+                                            <reference>
+                                                <typeCode><xsl:value-of select="hl7:reference/@typeCode"/></typeCode>
+                                                <id><xsl:value-of select="hl7:reference/hl7:externalAct/hl7:id/@root"/></id>
+                                            </reference>                                    
+                                        </xsl:for-each>
+                                        </Questionnaire>
+                                    </xsl:if>
+                                    <!-- End of Questionnaire -->
 
                                     <!-- Process observation Entries -->
                                     <xsl:for-each select="hl7:entry/hl7:observation">
@@ -343,6 +364,11 @@
                                                                     <codeSystem><xsl:value-of select="hl7:code/@codeSystem"/></codeSystem>
                                                                     <codeSystemName><xsl:value-of select="hl7:code/@codeSystemName"/></codeSystemName>
                                                                 </code>
+                                                                <value>
+                                                                    <code><xsl:value-of select="hl7:value/@code"/></code>
+                                                                    <displayName><xsl:value-of select="hl7:value/@displayName"/></displayName>
+                                                                    <codeSystem><xsl:value-of select="hl7:value/@codeSystem"/></codeSystem>
+                                                                </value>
                                                             </observation>
                                                         </xsl:for-each>
                                                     </entryRelationship>
@@ -350,7 +376,7 @@
                                             </entry>
                                         </xsl:if>
                                     </xsl:for-each>
-                                </Section>
+                                </section>
                             </component>
                      <!--   </xsl:if> -->
                     </xsl:for-each>
