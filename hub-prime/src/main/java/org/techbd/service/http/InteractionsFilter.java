@@ -5,17 +5,14 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -31,8 +28,6 @@ import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
-import org.techbd.util.ArtifactStore;
-import org.techbd.util.ArtifactStore.Artifact;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.util.StandardCharset;
@@ -56,15 +51,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
     @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
     private boolean saveUserDataToInteractions;
-
-    @Autowired
-    private JavaMailSender mailSender;
-
     @Autowired
     private UdiPrimeJpaConfig udiPrimeJpaConfig;
-
-    @Autowired
-    private ApplicationContext appContext;
 
     private InteractionPersistRules iprDB;
 
@@ -144,12 +132,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
         // payloads
         final var requestURI = origRequest.getRequestURI();
         final var createdAt = OffsetDateTime.now();
-
+        final var mutatableReq = new ContentCachingRequestWrapper(origRequest);
         final var persistInteractionDB = iprDB.requestMatcher().matches(origRequest);
         final var persistReqPayloadDB = iprDB.persistReqPayloadMatcher().matches(origRequest);
         final var persistRespPayloadDB = iprDB.persistRespPayloadMatcher().matches(origRequest);
-
-        final var mutatableReq = new ContentCachingRequestWrapper(origRequest);
 
         LOG.info("InteractionsFilter Persist DB %s %s (req body %s, resp body %s)".formatted(requestURI,
                 persistInteractionDB, persistReqPayloadDB, persistRespPayloadDB));
@@ -192,22 +178,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
         interactions.addHistory(rre);
         setActiveInteraction(mutatableReq, rre);
-
-        // we want to find our persistence strategy in either properties or in header;
-        // because X-TechBD-Interaction-Persistence-Strategy is global, document it in
-        // SwaggerConfig.customGlobalHeaders
-        final var strategyJson = Optional
-                .ofNullable(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PERSISTENCE_STRATEGY))
-                .orElse(defaultPersistStrategy);
-        final var asb = new ArtifactStore.Builder()
-                .strategyJson(strategyJson)
-                .provenanceJson(mutatableReq.getHeader(Interactions.Servlet.HeaderName.Request.PROVENANCE))
-                .mailSender(mailSender)
-                .appContext(appContext);
-
         final var provenance = "%s.doFilterInternal".formatted(InteractionsFilter.class.getName());
-        final var artifact = ArtifactStore.jsonArtifact(rre, rre.interactionId().toString(),
-                InteractionsFilter.class.getName() + ".interaction", asb.getProvenance());
 
         if (persistInteractionDB && !requestURI.equals("/Bundle") && !requestURI.equals("/Bundle/")
         && !requestURI.equals("/Hl7/v2")  && !requestURI.equals("/Hl7/v2/")
@@ -226,8 +197,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
                 rihr.setInteractionKey(requestURI);
                 rihr.setSourceType(SourceType.FHIR.name());
-                rihr.setPayload(Configuration.objectMapper
-                        .readTree(artifact.getJsonString().orElse("no artifact.getJsonString() in " + provenance)));
+                rihr.setPayload((JsonNode) Configuration.objectMapper.valueToTree(rre));
                 rihr.setCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
                 rihr.setCreatedBy(InteractionsFilter.class.getName());
                 rihr.setProvenance(provenance);
@@ -267,38 +237,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
                 LOG.error("ERROR:: REGISTER State None  for  interaction id : {} tenant id : {} : CALL " + rihr.getName() + " error",  rre.interactionId().toString(), rre.tenant(),e);
             }
         }
-
-        final var ps = asb.build();
-        mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_ARGS, strategyJson);
-        if (ps != null) {
-            final AtomicInteger info = new AtomicInteger(0);
-            final AtomicInteger issue = new AtomicInteger(0);
-            mutatableResp.setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_FACTORY,
-                    ps.getClass().getName());
-            ps.persist(
-                    artifact,
-                    Optional.of(new ArtifactStore.PersistenceReporter() {
-                        @Override
-                        public void info(String message) {
-                            mutatableResp
-                                    .setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_INSTANCE
-                                            + "-Info-" + info.getAndIncrement(), message);
-                        }
-
-                        @Override
-                        public void issue(String message) {
-                            mutatableResp
-                                    .setHeader(Interactions.Servlet.HeaderName.Response.PERSISTENCE_STRATEGY_INSTANCE
-                                            + "-Issue-" + issue.getAndIncrement(), message);
-                        }
-
-                        @Override
-                        public void persisted(Artifact artifact, String... location) {
-                            // not doing anything with this yet
-                        }
-                    }));
-        }
-
         mutatableResp.copyBodyToResponse();
     }
 
