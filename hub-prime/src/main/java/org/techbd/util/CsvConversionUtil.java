@@ -5,11 +5,12 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+import java.lang.reflect.Field;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.DemographicData;
@@ -17,7 +18,9 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 
+import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import com.opencsv.exceptions.CsvException;
 
 /**
  * Utility class for converting CSV data into domain-specific models grouped by
@@ -45,6 +48,10 @@ public class CsvConversionUtil {
                     "Error converting CSV data to DemographicData: Field 'patientMrIdValue' does not exist or is incorrect. Details: "
                             + e.getMessage());
             return new HashMap<>();
+        } catch (Exception ex) {
+            // Catching any other unexpected exceptions
+            LOG.error("Unexpected error while parsing Demographic Details: " + ex.getMessage(), ex);
+            return new HashMap<>();
         }
     }
 
@@ -63,6 +70,10 @@ public class CsvConversionUtil {
         } catch (IOException e) {
             //This will be a foreign key error in frictionless and hence the csv validation will fail and need not be converted to bundle.
             LOG.error("Error converting CSV data to ScreeningObservationData: Field 'encounterId' does not exist or is incorrect. Details: " + e.getMessage());
+            return new HashMap<>();
+        } catch (Exception ex) {
+            // Catching any other unexpected exceptions
+            LOG.error("Unexpected error while parsing Screening Observation Details: " + ex.getMessage(), ex);
             return new HashMap<>();
         }
     }
@@ -84,6 +95,10 @@ public class CsvConversionUtil {
              //This will be a foreign key error in frictionless and hence the csv validation will fail and need not be converted to bundle.
             LOG.error("Error converting CSV data to QeAdminData: Field 'patientMrIdValue' does not exist or is incorrect. Details: " + e.getMessage());
             return new HashMap<>();
+        } catch (Exception ex) {
+            // Catching any other unexpected exceptions
+            LOG.error("Unexpected error while parsing Qe Admin Details: " + ex.getMessage(), ex);
+            return new HashMap<>();
         }
     }
     
@@ -104,40 +119,68 @@ public class CsvConversionUtil {
             //This will be a foreign key error in frictionless and hence the csv validation will fail and need not be converted to bundle.
             LOG.error("Error converting CSV data to ScreeningProfileData: Field 'encounterId' does not exist or is incorrect. Details: " + e.getMessage());
             return new HashMap<>();
+        } catch (Exception ex) {
+            // Catching any other unexpected exceptions
+            LOG.error("Unexpected error while parsing Screening Profile Details: " + ex.getMessage(), ex);
+            return new HashMap<>();
         }
     }
     
 
-    /**
-     * Converts a CSV string into a list of objects of the specified class type and
-     * groups them by a specified field.
-     *
-     * @param <T>       the type of the objects in the list
-     * @param csvData   the CSV data as a string
-     * @param clazz     the class of the objects to convert to
-     * @param separator the character used as the CSV separator
-     * @param fieldName the field name to group by (e.g., "patientMrIdValue" or
-     *                  "encounterId")
-     * @return a map where the key is the field value (e.g., patient MR ID or
-     *         encounter ID) and the value is the list of objects with that value
-     * @throws IOException if an error occurs during reading or parsing the CSV
-     */
-    private static <T> Map<String, List<T>> convertCsvStringToObjectMap(String csvData, Class<T> clazz, char separator,
-            String fieldName)
-            throws IOException {
+       public static <T> Map<String, List<T>> convertCsvStringToObjectMap(String csvData, Class<T> clazz, char separator, String fieldName) throws IOException {
+        List<String[]> errorRows = new ArrayList<>();
+
         try (BufferedReader reader = new BufferedReader(new StringReader(csvData))) {
-            List<T> dataList = new CsvToBeanBuilder<T>(reader)
+            CsvToBean<T> csvToBean = new CsvToBeanBuilder<T>(reader)
                     .withType(clazz)
                     .withSeparator(separator)
                     .withIgnoreLeadingWhiteSpace(true)
-                    .build()
-                    .parse();
+                    .withIgnoreQuotations(true)
+                    .withThrowExceptions(false) // Do not fail on bad rows
+                    .build();
 
+            List<T> dataList = csvToBean.parse();
+            List<CsvException> errors = csvToBean.getCapturedExceptions();
+            for (T obj : dataList) {
+                if (obj instanceof DemographicData) {
+                    printDemographicData((DemographicData) obj);
+                }
+            }
+            for (CsvException error : errors) {
+                LOG.warn("Malformed CSV row skipped: {}", error.getLineNumber(), error);
+                errorRows.add(error.getLine()); // Store bad rows for debugging
+            }
+
+            // Grouping valid rows by fieldName
             return dataList.stream()
-                    .collect(Collectors.groupingBy(obj -> getFieldValue(obj, fieldName)));
+                    .collect(Collectors.groupingBy(obj -> {
+                        String fieldValue = getFieldValue(obj, fieldName);
+                        if (fieldValue == null) {
+                            LOG.error("Null value encountered for field '{}' in object: {}", fieldName, obj);
+                            throw new IllegalArgumentException("Field '" + fieldName + "' has a null value in object: " + obj);
+                        }
+                        return fieldValue;
+                    }));
+        } catch (Exception ex) {
+            LOG.error("Error processing CSV data. Field '{}': {}", fieldName, ex.getMessage(), ex);
+            throw ex;
         }
     }
+    private static void printDemographicData(DemographicData data) {
+        StringBuilder sb = new StringBuilder("\nDemographicData:\n");
 
+        try {
+            for (Field field : DemographicData.class.getDeclaredFields()) {
+                field.setAccessible(true);
+                sb.append(field.getName()).append(": ").append(field.get(data)).append("\n");
+            }
+        } catch (IllegalAccessException e) {
+            LOG.error("Error accessing DemographicData fields", e);
+        }
+
+        LOG.info(sb.toString());
+        System.out.println(sb.toString()); // Print to console
+    }
     /**
      * Extracts the value of a specified field from an object using reflection.
      *

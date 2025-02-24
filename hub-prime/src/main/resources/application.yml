@@ -17,6 +17,8 @@ logging:
             hub:
               prime:
                 api: INFO
+    com:
+      opencsv: TRACE
     ca:
       uhn: WARN
     root: INFO
