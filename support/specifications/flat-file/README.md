@@ -38,32 +38,32 @@ This project leverages the [Frictionless Data](https://frictionlessdata.io/) lib
 
 ### Open Data Editor (ODE)
 
-The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getting-started/) is an online tool designed for non-technical data practitioners to explore, validate, and detect errors in tabular datasets. It provides an intuitive web-based interface for identifying and correcting issues in open data.
+The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getting-started/) is a desktop tool designed for non-technical data practitioners to explore, create schemas, and work with tabular datasets. It provides an interface for creating data packages and basic data editing.
 
 #### Key Features:
-- **Online Access**: No installation required—access it directly through your browser.
-- **Error Detection**: Quickly identify errors in table formatting and data values.
-- **Schema Validation**: Validate datasets against predefined schemas such as the Frictionless JSON schema.
-- **Interactive Editing**: Fix errors and inconsistencies in real time within the web interface.
-- **Export Options**: Save corrected files for further use or sharing.
+- **Desktop Application**: Requires installation on your local machine.
+- **Basic Error Detection**: Identify basic formatting issues in data.
+- **Schema Creation**: Create schemas for your datasets and define field types and properties.
+- **Interactive Editing**: Edit data and metadata within the interface.
+- **Export Options**: Save files as data packages for further use.
 
 #### How to Use:
 1. Visit the [Open Data Editor website](https://opendataeditor.okfn.org/documentation/getting-started/) and install it.
-2. Upload your dataset (CSV files) from the example folder: [Example Data Package](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/flat-file/nyher-fhir-ig-example).
-3. Apply the Frictionless JSON schema for validation.
-4. Review and correct any issues detected.
-5. Download the validated and corrected dataset.
+2. Upload your dataset (CSV files) from the example folder: [Example Data](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/flat-file/nyher-fhir-ig-example).
+3. Define schema and field properties for your data.
+4. Review and edit data as needed.
+5. Export as a data package.
 
 ### Choosing Between Data Curator and ODE
 
 | Feature                  | Data Curator                      | Open Data Editor (ODE)           |
 |--------------------------|------------------------------------|-----------------------------------|
-| **Platform**             | Desktop application               | Web-based                        |
-| **Installation**         | Required                          | None                             |
-| **Schema Validation**    | Yes                               | Yes                              |
-| **Error Correction**     | Yes                               | Yes                              |
+| **Platform**             | Desktop application               | Desktop application                        |
+| **Installation**         | Required                          | Required                             |
+| **Schema Validation**    | Yes                               | No (only schema creation)               |
+| **Error Correction**     | Yes                               | Yes, Basic editing                              |
 | **Metadata Management**  | Supported                         | Limited                          |
-| **Ideal for**            | Offline workflows, detailed editing | Online workflows, quick validation |
+| **Ideal for**            | Data package validation, comprehensive data quality checks | Basic CSV editing, schema creation, simple data package creation |
 
 ---
 
