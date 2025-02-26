@@ -361,7 +361,7 @@
         <xsl:if test="string(ccda:encounterParticipant/@typeCode) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:id/@extension) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
         , "participant": [
                 {
-                    <xsl:if test="string(ccda:encounterParticipant/@typeCode)"> 
+                  <xsl:if test="string(ccda:encounterParticipant/@typeCode)"> 
                     "type": [
                         {
                             "coding": [
@@ -442,7 +442,7 @@
         <xsl:if test="string(ccda:entry/ccda:act/ccda:code/@code)">
           , "scope" : {
             "coding" : [{
-              "system" : "http://terminology.hl7.org/CodeSystem/consentscope",
+              "system" : "http://terminology.hl7.org/CodeSystem/consentscope", 
               "code" : "<xsl:value-of select="ccda:entry/ccda:act/ccda:code/@code"/>",
               "display" : "<xsl:value-of select="ccda:entry/ccda:act/ccda:code/@displayName"/>"
             }],
@@ -592,7 +592,7 @@
   </xsl:template>
 
   <!-- Sexual orientation Observation Template -->
-  <xsl:template name="SexualOrientation" match="ccda:sexualOrientation/ccda:entry/ccda:observation"> <!--/ccda:entry/ccda:observation-->
+  <xsl:template name="SexualOrientation" match="ccda:sexualOrientation/ccda:entry/ccda:observation">
     <xsl:if test="ccda:code/@code and string(ccda:code/@code) = '76690-7'">
       <xsl:variable name="observationResourceId" select="translate(concat(generate-id(ccda:code/@code), position(), $patientRoleId, $currentTimestamp), ':-+', '')"/>
       ,{
@@ -686,7 +686,7 @@
 
   <!-- Observation Template -->
   <xsl:template name="Observation" match="ccda:observations/ccda:entry">
-    <xsl:if test="string(ccda:observation/ccda:code/@code) != '76690-7'">
+    <xsl:if test="string(ccda:observation/ccda:code/@code) != '76690-7'"> 
       <xsl:variable name="observationResourceId" select="translate(concat(generate-id(ccda:observation/ccda:code/@code), position(), $patientRoleId, $currentTimestamp), ':-+', '')"/>
       ,{
         "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>",
@@ -906,4 +906,5 @@
           }
       }
   </xsl:template>
+
 </xsl:stylesheet>
