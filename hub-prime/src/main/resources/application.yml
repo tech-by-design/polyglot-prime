@@ -7,6 +7,8 @@
 
 logging:
   level:
+    com:
+      opencsv: ERROR
     org:
       springframework: INFO
       hibernate: ERROR

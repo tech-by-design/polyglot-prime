@@ -1,15 +1,20 @@
 package org.techbd.util;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.io.*;
 
+import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.DemographicData;
@@ -17,7 +22,9 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 
+import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import com.opencsv.exceptions.CsvException;
 
 /**
  * Utility class for converting CSV data into domain-specific models grouped by
@@ -122,21 +129,57 @@ public class CsvConversionUtil {
      *         encounter ID) and the value is the list of objects with that value
      * @throws IOException if an error occurs during reading or parsing the CSV
      */
-    private static <T> Map<String, List<T>> convertCsvStringToObjectMap(String csvData, Class<T> clazz, char separator,
-            String fieldName)
-            throws IOException {
-        try (BufferedReader reader = new BufferedReader(new StringReader(csvData))) {
-            List<T> dataList = new CsvToBeanBuilder<T>(reader)
+   
+   public static <T> Map<String, List<T>> convertCsvStringToObjectMap(String csvData, Class<T> clazz, char separator, String fieldName) throws IOException {
+    List<String[]> errorRows = new ArrayList<>();
+
+    try (InputStreamReader reader = new InputStreamReader(new BOMInputStream(new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
+         BufferedReader bufferedReader = new BufferedReader(reader)) {
+
+        // Read the first line and remove BOM if present
+        String firstLine = bufferedReader.readLine();
+        if (firstLine != null && firstLine.startsWith("\uFEFF")) {
+            firstLine = firstLine.substring(1);
+        }
+
+        // Reconstruct the CSV string without BOM
+        StringBuilder csvContent = new StringBuilder(firstLine);
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            csvContent.append("\n").append(line);
+        }
+
+        // Convert to reader
+        try (Reader csvReader = new StringReader(csvContent.toString())) {
+            CsvToBean<T> csvToBean = new CsvToBeanBuilder<T>(csvReader)
                     .withType(clazz)
                     .withSeparator(separator)
                     .withIgnoreLeadingWhiteSpace(true)
-                    .build()
-                    .parse();
+                    .withThrowExceptions(false) // Do not fail on bad rows
+                    .build();
 
+            List<T> dataList = csvToBean.parse();
+            List<CsvException> errors = csvToBean.getCapturedExceptions();
+
+            for (CsvException error : errors) {
+                LOG.error("Malformed CSV row skipped: {}", error.getLineNumber(), error);
+                errorRows.add(error.getLine()); // Store bad rows for debugging
+            }
+
+            // Group valid rows by fieldName
             return dataList.stream()
-                    .collect(Collectors.groupingBy(obj -> getFieldValue(obj, fieldName)));
+                    .collect(Collectors.groupingBy(obj -> {
+                        String fieldValue = getFieldValue(obj, fieldName);
+                        if (fieldValue == null) {
+                            LOG.error("Null value encountered for field '{}' in object: {}", fieldName, obj);
+                            throw new IllegalArgumentException("Field '" + fieldName + "' has a null value in object: " + obj);
+                        }
+                        return fieldValue;
+                    }));
         }
-    }
+    } 
+    
+}
 
     /**
      * Extracts the value of a specified field from an object using reflection.
