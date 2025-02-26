@@ -2,6 +2,7 @@ package org.techbd.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -11,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.lang.reflect.Field;
+import java.io.*;
+
+import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.DemographicData;
@@ -125,62 +129,60 @@ public class CsvConversionUtil {
             return new HashMap<>();
         }
     }
-    
-
-       public static <T> Map<String, List<T>> convertCsvStringToObjectMap(String csvData, Class<T> clazz, char separator, String fieldName) throws IOException {
+     //methord 1 : Manual removal of BOM
+     public static <T> Map<String, List<T>> convertCsvStringToObjectMap(String csvData, Class<T> clazz, char separator, String fieldName) throws IOException {
         List<String[]> errorRows = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(new StringReader(csvData))) {
-            CsvToBean<T> csvToBean = new CsvToBeanBuilder<T>(reader)
-                    .withType(clazz)
-                    .withSeparator(separator)
-                    .withIgnoreLeadingWhiteSpace(true)
-                    .withIgnoreQuotations(true)
-                    .withThrowExceptions(false) // Do not fail on bad rows
-                    .build();
-
-            List<T> dataList = csvToBean.parse();
-            List<CsvException> errors = csvToBean.getCapturedExceptions();
-            for (T obj : dataList) {
-                if (obj instanceof DemographicData) {
-                    printDemographicData((DemographicData) obj);
+    
+        try (InputStreamReader reader = new InputStreamReader(new BOMInputStream(new ByteArrayInputStream(csvData.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
+             BufferedReader bufferedReader = new BufferedReader(reader)) {
+    
+            // Read the first line and remove BOM if present
+            String firstLine = bufferedReader.readLine();
+            if (firstLine != null && firstLine.startsWith("\uFEFF")) {
+                firstLine = firstLine.substring(1);
+            }
+    
+            // Reconstruct the CSV string without BOM
+            StringBuilder csvContent = new StringBuilder(firstLine);
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                csvContent.append("\n").append(line);
+            }
+    
+            // Convert to reader
+            try (Reader csvReader = new StringReader(csvContent.toString())) {
+                CsvToBean<T> csvToBean = new CsvToBeanBuilder<T>(csvReader)
+                        .withType(clazz)
+                        .withSeparator(separator)
+                        .withIgnoreLeadingWhiteSpace(true)
+                        .withThrowExceptions(false) // Do not fail on bad rows
+                        .build();
+    
+                List<T> dataList = csvToBean.parse();
+                List<CsvException> errors = csvToBean.getCapturedExceptions();
+    
+                for (CsvException error : errors) {
+                    LOG.warn("Malformed CSV row skipped: {}", error.getLineNumber(), error);
+                    errorRows.add(error.getLine()); // Store bad rows for debugging
                 }
+    
+                // Group valid rows by fieldName
+                return dataList.stream()
+                        .collect(Collectors.groupingBy(obj -> {
+                            String fieldValue = getFieldValue(obj, fieldName);
+                            if (fieldValue == null) {
+                                LOG.error("Null value encountered for field '{}' in object: {}", fieldName, obj);
+                                throw new IllegalArgumentException("Field '" + fieldName + "' has a null value in object: " + obj);
+                            }
+                            return fieldValue;
+                        }));
             }
-            for (CsvException error : errors) {
-                LOG.warn("Malformed CSV row skipped: {}", error.getLineNumber(), error);
-                errorRows.add(error.getLine()); // Store bad rows for debugging
-            }
-
-            // Grouping valid rows by fieldName
-            return dataList.stream()
-                    .collect(Collectors.groupingBy(obj -> {
-                        String fieldValue = getFieldValue(obj, fieldName);
-                        if (fieldValue == null) {
-                            LOG.error("Null value encountered for field '{}' in object: {}", fieldName, obj);
-                            throw new IllegalArgumentException("Field '" + fieldName + "' has a null value in object: " + obj);
-                        }
-                        return fieldValue;
-                    }));
         } catch (Exception ex) {
             LOG.error("Error processing CSV data. Field '{}': {}", fieldName, ex.getMessage(), ex);
             throw ex;
         }
     }
-    private static void printDemographicData(DemographicData data) {
-        StringBuilder sb = new StringBuilder("\nDemographicData:\n");
 
-        try {
-            for (Field field : DemographicData.class.getDeclaredFields()) {
-                field.setAccessible(true);
-                sb.append(field.getName()).append(": ").append(field.get(data)).append("\n");
-            }
-        } catch (IllegalAccessException e) {
-            LOG.error("Error accessing DemographicData fields", e);
-        }
-
-        LOG.info(sb.toString());
-        System.out.println(sb.toString()); // Print to console
-    }
     /**
      * Extracts the value of a specified field from an object using reflection.
      *
