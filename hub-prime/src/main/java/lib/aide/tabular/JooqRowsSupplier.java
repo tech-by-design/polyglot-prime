@@ -424,9 +424,9 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var dslField = typableTable.column(field);
         return switch (type) {
             case "blank" ->
-            dslField.isNull();
+                dslField.isNull();
             case "notBlank" ->
-            dslField.isNotNull();
+                dslField.isNotNull();
             case "like" ->
                 dslField.likeIgnoreCase("%" + filter + "%");
             case "equals" ->
