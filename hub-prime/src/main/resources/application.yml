@@ -111,7 +111,7 @@ org:
                     sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
                     # Path to UV-SDC IG package downloaded from URL: https://hl7.org/fhir/uv/sdc/downloads.html
                     uvSdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
-            baseFHIRURL: http://test.shinny.org
+            baseFHIRURL: http://test.shinny.org/us/ny/hrsn
             structureDefinitionsUrls:
               bundle: /StructureDefinition/SHINNYBundleProfile
               patient: /StructureDefinition/shinny-patient
