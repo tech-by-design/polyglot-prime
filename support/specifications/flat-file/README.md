@@ -168,7 +168,7 @@ The CSV file names in this project follow a strict naming convention to ensure c
 
 **`<DATA_TYPE>_<GROUP_IDENTIFIER>.csv`**
 
-All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting.
+All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting, and they must be encoded in **UTF-8** to ensure proper validation and data processing.
 
 ### Components of the File Name
 
