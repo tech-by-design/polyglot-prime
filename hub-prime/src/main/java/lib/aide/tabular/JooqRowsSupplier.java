@@ -423,6 +423,10 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             Object dateFrom, Object dateTo) {
         final var dslField = typableTable.column(field);
         return switch (type) {
+            case "blank" ->
+                dslField.isNull();
+            case "notBlank" ->
+                dslField.isNotNull();
             case "like" ->
                 dslField.likeIgnoreCase("%" + filter + "%");
             case "equals" ->
