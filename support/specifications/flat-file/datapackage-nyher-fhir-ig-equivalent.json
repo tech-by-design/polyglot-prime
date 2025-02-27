@@ -1,7 +1,7 @@
 {
   "profile": "tabular-data-package",
   "name": "csv-validation-using-ig", 
-  "description": "Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. For example: \n\n- PATIENT_MR_ID_VALUE: Extracted from Bundle.entry.resource where resourceType = 'Patient', identifier where type.coding.code = 'MR', and value. \n- FACILITY_ACTIVE: Extracted from Bundle.entry.resource where resourceType = 'Organization' and active.",
+  "description": "Each field description outlines the FHIR resource paths that map to the corresponding CSV fields. It specifies the logical extraction path within a FHIR Bundle to locate the relevant data, ensuring clarity and consistency when deriving data fields from the source FHIR resources. CSV files must be encoded in **UTF-8** to ensure proper validation and processing. For example: \n\n- PATIENT_MR_ID_VALUE: Extracted from Bundle.entry.resource where resourceType = 'Patient', identifier where type.coding.code = 'MR', and value. \n- FACILITY_ACTIVE: Extracted from Bundle.entry.resource where resourceType = 'Organization' and active.",
   "resources": [
     {
       "profile": "tabular-data-resource",
