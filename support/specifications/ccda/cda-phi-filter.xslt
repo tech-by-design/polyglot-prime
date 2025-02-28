@@ -4,7 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="urn:hl7-org:v3"
     xmlns:voc="urn:hl7-org:v3/voc"    
-    xsi:schemaLocation="urn:hl7-org:v3 CCDA/XSD_TechBd/CDA.xsd"
+    xsi:schemaLocation="urn:hl7-org:v3 ../ccda-techbd-schema-files/CDA.xsd"
     exclude-result-prefixes="hl7">
 
     <xsl:output method="xml" indent="yes"/>
