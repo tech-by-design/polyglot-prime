@@ -432,7 +432,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             case "equals" ->
                 dslField.equalIgnoreCase(filter.toString());
             case "notEqual" ->
-                dslField.notEqual(DSL.param(field, filter));
+                DSL.condition("{0} NOT ILIKE {1}", dslField, DSL.param(field, filter));
             case "number" ->
                 dslField.eq(DSL.param(field, filter));
             case "date" ->
