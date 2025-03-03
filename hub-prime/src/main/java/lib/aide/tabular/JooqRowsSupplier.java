@@ -442,9 +442,9 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             case "notContains" ->
                 dslField.notLikeIgnoreCase("%" + filter + "%");
             case "startsWith" ->
-                dslField.startsWith(filter);
+                dslField.startsWithIgnoreCase(filter);
             case "endsWith" ->
-                dslField.endsWith(filter);
+                dslField.endsWithIgnoreCase(filter);
             case "lessOrEqual" ->
                 dslField.lessOrEqual(filter);
             case "greatersOrEqual" ->
