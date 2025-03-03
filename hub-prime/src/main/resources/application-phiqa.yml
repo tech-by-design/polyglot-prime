@@ -41,7 +41,7 @@ org:
           prime:
             defaultDatalakeApiUrl: https://qa.hrsn.nyehealth.org/HRSNBundle
             igVersion: 1.3.0
-            baseFHIRURL: http://test.shinny.org
+            baseFHIRURL: http://test.shinny.org/us/ny/hrsn
             structureDefinitionsUrls:
               bundle: /StructureDefinition/SHINNYBundleProfile
               patient: /StructureDefinition/shinny-patient
