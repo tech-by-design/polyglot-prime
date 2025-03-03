@@ -301,7 +301,7 @@ public class OrchestrationEngine {
             if (igPackages != null && igPackages.containsKey("fhir-v4")) {
                 FhirV4Config fhirV4Config = igPackages.get("fhir-v4");
                 Map<String, Map<String,String>> shinNyPackages = fhirV4Config.getShinnyPackages();
-                Map<String, String> hl7Packages = fhirV4Config.getHl7Packages();
+                Map<String, String> basePackages = fhirV4Config.getBasePackages();
         
                 for (Map<String, String> igPackageMap : shinNyPackages.values()) {
                     String packagePath = igPackageMap.get("package-path");
@@ -312,11 +312,10 @@ public class OrchestrationEngine {
                 
                     FhirBundleValidator bundleValidator = FhirBundleValidator.builder()
                         .fhirContext(FhirContext.forR4())
-                        .fhirValidator(initializeFhirValidator(packagePath, hl7Packages)) // Pass igPackageMap directly
+                        .fhirValidator(initializeFhirValidator(packagePath, basePackages)) // Pass igPackageMap directly
                         .baseFHIRUrl(profileBaseUrl)
                         .igVersion(igVersion)
-                        .build(); 
-                
+                        .build();                 
                     fhirBundleValidators.add(bundleValidator);
                 }
             } else {

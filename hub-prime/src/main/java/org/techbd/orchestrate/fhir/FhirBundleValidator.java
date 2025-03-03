@@ -28,6 +28,4 @@ public class FhirBundleValidator {
      public String getFhirProfileUrl() {
         return FHIRUtil.getProfileUrl(baseFHIRUrl, FHIRUtil.BUNDLE);
     }
-
-    
 }

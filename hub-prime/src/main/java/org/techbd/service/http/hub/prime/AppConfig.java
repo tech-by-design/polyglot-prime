@@ -55,7 +55,7 @@ public class AppConfig {
     @Setter
     public static class FhirV4Config {
         private Map<String, Map<String,String>> shinnyPackages; 
-        private Map<String, String> hl7Packages;
+        private Map<String, String> basePackages;
     }
     // @Getter
     // @Setter
