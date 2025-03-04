@@ -426,7 +426,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             case "blank" ->
                 dslField.isNull();
             case "notBlank" ->
-                dslField.isNotNull();
+                 dslField.isNotNull().and(DSL.condition("TRIM({0}) <> ''", dslField));
             case "like" ->
                 dslField.likeIgnoreCase("%" + filter + "%");
             case "equals" ->
@@ -440,8 +440,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             case "contains" ->
                 dslField.likeIgnoreCase("%" + filter + "%");
             case "notContains" ->
-                dslField.notLikeIgnoreCase("%" + filter + "%");
-            case "startsWith" ->
+                dslField.notLikeIgnoreCase("%" + filter + "%");  // Only works if supported
+             case "startsWith" ->
                 dslField.startsWithIgnoreCase(filter);
             case "endsWith" ->
                 dslField.endsWithIgnoreCase(filter);
