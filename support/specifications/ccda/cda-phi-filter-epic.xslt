@@ -12,6 +12,17 @@
 
     <!-- Root template -->
     <xsl:template match="/hl7:ClinicalDocument">
+        <!-- Check if xml-stylesheet exists -->
+        <xsl:choose>
+            <xsl:when test="processing-instruction('xml-stylesheet')">
+                <!-- Copy existing xml-stylesheet from input -->
+                <xsl:processing-instruction name="xml-stylesheet">
+                    <xsl:value-of select="processing-instruction('xml-stylesheet')"/>
+                </xsl:processing-instruction>
+            </xsl:when>
+        </xsl:choose>
+        <xsl:text>&#10;</xsl:text>
+
         <xsl:copy>
             <xsl:copy-of select="@*"/>
             
@@ -23,6 +34,8 @@
             <xsl:copy-of select="hl7:custodian"/>
             <xsl:copy-of select="hl7:authorization/hl7:consent"/>
             <xsl:copy-of select="hl7:componentOf/hl7:encompassingEncounter"/>
+            <xsl:copy-of select="hl7:legalAuthenticator"/>
+            <xsl:copy-of select="hl7:documentationOf"/>
 
             <component>
                 <structuredBody>
