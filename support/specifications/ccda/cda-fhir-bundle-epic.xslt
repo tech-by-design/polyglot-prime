@@ -979,7 +979,7 @@
               "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
               "profile" : ["<xsl:value-of select='$questionnaireResponseMetaProfileUrl'/>"]
             },
-            "status": "final",
+            "status": "completed",
             "questionnaire": "<xsl:value-of select='$baseFhirUrl'/>Questionnaire/<xsl:value-of select='$questionnaireResourceId'/>",
             "subject": {
                 "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
