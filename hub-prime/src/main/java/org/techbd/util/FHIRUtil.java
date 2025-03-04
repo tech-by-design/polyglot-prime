@@ -16,7 +16,7 @@ public class FHIRUtil {
 
     private final AppConfig appConfig;
 
-    private static Map<String, String> PROFILE_MAP;
+    public static Map<String, String> PROFILE_MAP;
     private static String BASE_FHIR_URL;
     public static final String BUNDLE = "bundle";
 

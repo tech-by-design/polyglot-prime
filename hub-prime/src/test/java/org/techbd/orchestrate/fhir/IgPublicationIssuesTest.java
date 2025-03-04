@@ -13,6 +13,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationResult;
+import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
 
 import io.opentelemetry.api.trace.Tracer;
 
@@ -322,16 +323,27 @@ public class IgPublicationIssuesTest {
         return results;
     }
 
-    private Map<String, Map<String, String>> getIgPackages() {
-        final Map<String, Map<String, String>> igPackages = new HashMap<>();
-
-        Map<String, String> igMap = new HashMap<>();
-        igMap.put("shinNy", "ig-packages/shin-ny-ig/v1.3.0");
-        igMap.put("usCore", "ig-packages/fhir-v4/us-core/stu-7.0.0");
-        igMap.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0");
-        igMap.put("uvSdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
-        igPackages.put("fhir-v4", igMap);
-
+    private Map<String, FhirV4Config> getIgPackages() {
+        final Map<String, FhirV4Config> igPackages = new HashMap<>();        
+        FhirV4Config fhirV4Config = new FhirV4Config();        
+        Map<String, String> basePackages = new HashMap<>();
+        basePackages.put("usCore", "ig-packages/fhir-v4/us-core/stu-7.0.0");
+        basePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0");
+        basePackages.put("uvSdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");        
+        Map<String, Map<String, String>> shinnyPackages = new HashMap<>();        
+        Map<String, String> shinnyV123 = new HashMap<>();
+        shinnyV123.put("profile-base-url", "http://shinny.org/us/ny/hrsn");
+        shinnyV123.put("package-path", "ig-packages/shin-ny-ig/v1.2.3");
+        shinnyV123.put("ig-version", "1.2.3");        
+        Map<String, String> shinnyV130 = new HashMap<>();
+        shinnyV130.put("profile-base-url", "http://test.shinny.org/us/ny/hrsn");
+        shinnyV130.put("package-path", "ig-packages/shin-ny-ig/v1.3.0");
+        shinnyV130.put("ig-version", "1.3.0");        
+        shinnyPackages.put("shinny-v1-2-3", shinnyV123);
+        shinnyPackages.put("shinny-v1-3-0", shinnyV130);        
+        fhirV4Config.setBasePackages(basePackages);
+        fhirV4Config.setShinnyPackages(shinnyPackages);        
+        igPackages.put("fhir-v4", fhirV4Config);        
         return igPackages;
     }
 
