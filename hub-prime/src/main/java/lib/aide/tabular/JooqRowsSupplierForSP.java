@@ -151,13 +151,13 @@ public class JooqRowsSupplierForSP {
                     case "notContains" ->
                         DSL.field(column).notContains((String) condition.filter());
                     case "equals" ->
-                        DSL.field(column).eq((String) condition.filter());
+                        DSL.field(column).equalIgnoreCase((String) condition.filter());
                     case "notEqual" ->
-                        DSL.field(column).ne((String) condition.filter());
+                        DSL.lower(DSL.field(column, String.class)).ne(DSL.lower(DSL.val((String) condition.filter())));
                     case "startsWith" ->
-                        DSL.field(column).startsWith((String) condition.filter());
+                        DSL.field(column).startsWithIgnoreCase((String) condition.filter());
                     case "endsWith" ->
-                        DSL.field(column).endsWith((String) condition.filter());
+                        DSL.field(column).endsWithIgnoreCase((String) condition.filter());
                     case "blank" ->
                         DSL.field(column).isNull();
                     case "notBlank" ->
@@ -238,13 +238,13 @@ public class JooqRowsSupplierForSP {
                     case "notContains" ->
                         DSL.field(column).notContains((String) filterModel.filter());
                     case "equals" ->
-                        DSL.field(column).eq((String) filterModel.filter());
+                        DSL.field(column).equalIgnoreCase((String) filterModel.filter());
                     case "notEqual" ->
-                        DSL.field(column).ne((String) filterModel.filter());
+                        DSL.lower(DSL.field(column, String.class)).ne(DSL.lower(DSL.val((String) filterModel.filter())));
                     case "startsWith" ->
-                        DSL.field(column).startsWith((String) filterModel.filter());
+                        DSL.field(column).startsWithIgnoreCase((String) filterModel.filter());
                     case "endsWith" ->
-                        DSL.field(column).endsWith((String) filterModel.filter());
+                        DSL.field(column).endsWithIgnoreCase((String) filterModel.filter());
                     case "blank" ->
                         DSL.field(column).isNull();
                     case "notBlank" ->
