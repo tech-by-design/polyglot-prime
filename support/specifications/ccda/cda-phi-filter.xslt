@@ -12,6 +12,17 @@
 
     <!-- Root template -->
     <xsl:template match="/">
+        <!-- Check if xml-stylesheet exists -->
+        <xsl:choose>
+            <xsl:when test="processing-instruction('xml-stylesheet')">
+                <!-- Copy existing xml-stylesheet from input -->
+                <xsl:processing-instruction name="xml-stylesheet">
+                    <xsl:value-of select="processing-instruction('xml-stylesheet')"/>
+                </xsl:processing-instruction>
+            </xsl:when>
+        </xsl:choose>
+        <xsl:text>&#10;</xsl:text>
+        
         <xsl:apply-templates select="hl7:ClinicalDocument"/>
     </xsl:template>
 
