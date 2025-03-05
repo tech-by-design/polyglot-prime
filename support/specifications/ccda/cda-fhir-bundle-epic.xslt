@@ -33,6 +33,17 @@
   <xsl:param name="questionnaireResponseMetaProfileUrl"/>
   <xsl:param name="practitionerMetaProfileUrl"/>
 
+  <xsl:variable name="bundleMetaProfileUrlFull" select="concat($baseFhirUrl, $bundleMetaProfileUrl)"/>
+  <xsl:variable name="patientMetaProfileUrlFull" select="concat($baseFhirUrl, $patientMetaProfileUrl)"/>
+  <xsl:variable name="consentMetaProfileUrlFull" select="concat($baseFhirUrl, $consentMetaProfileUrl)"/>
+  <xsl:variable name="encounterMetaProfileUrlFull" select="concat($baseFhirUrl, $encounterMetaProfileUrl)"/>
+  <xsl:variable name="organizationMetaProfileUrlFull" select="concat($baseFhirUrl, $organizationMetaProfileUrl)"/>
+  <xsl:variable name="observationMetaProfileUrlFull" select="concat($baseFhirUrl, $observationMetaProfileUrl)"/>
+  <xsl:variable name="observationSexualOrientationMetaProfileUrlFull" select="concat($baseFhirUrl, $observationSexualOrientationMetaProfileUrl)"/>
+  <xsl:variable name="questionnaireMetaProfileUrlFull" select="concat($baseFhirUrl, $questionnaireMetaProfileUrl)"/>
+  <xsl:variable name="questionnaireResponseMetaProfileUrlFull" select="concat($baseFhirUrl, $questionnaireResponseMetaProfileUrl)"/>
+  <xsl:variable name="practitionerMetaProfileUrlFull" select="concat($baseFhirUrl, $practitionerMetaProfileUrl)"/>
+
   <xsl:template match="/">
   {
     "resourceType": "Bundle",
@@ -40,7 +51,7 @@
     "meta": {
       "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
       "profile": [
-        "<xsl:value-of select='$bundleMetaProfileUrl'/>"
+        "<xsl:value-of select='$bundleMetaProfileUrlFull'/>"
       ]
     },
     "type": "transaction"
@@ -94,7 +105,7 @@
         "id": "<xsl:value-of select='$patientResourceId'/>",
         "meta": {
           "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
-          "profile": ["<xsl:value-of select='$patientMetaProfileUrl'/>"]
+          "profile": ["<xsl:value-of select='$patientMetaProfileUrlFull'/>"]
         }
         <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:languageCode/@code)">
         , "language": "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/@code"/>"
@@ -105,7 +116,7 @@
                     {
                         <xsl:if test="string(ccda:given)">
                             "extension": [{
-                              "url": "http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name",
+                              "url": "<xsl:value-of select='$baseFhirUrl'/>/StructureDefinition/middle-name",
                               "valueString" : "<xsl:value-of select="ccda:given"/>"
                             }]
                         </xsl:if>
@@ -433,7 +444,7 @@
         "id": "<xsl:value-of select="$encounterResourceId"/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["<xsl:value-of select='$encounterMetaProfileUrl'/>"]
+          "profile" : ["<xsl:value-of select='$encounterMetaProfileUrlFull'/>"]
         },
         "identifier" : [{          
           "system" : "urn:oid:<xsl:value-of select="ccda:id/@root"/>",
@@ -549,7 +560,7 @@
         "id": "<xsl:value-of select='$consentResourceId'/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["<xsl:value-of select='$consentMetaProfileUrl'/>"]
+          "profile" : ["<xsl:value-of select='$consentMetaProfileUrlFull'/>"]
         },
         "status": "<xsl:choose>
                       <xsl:when test="ccda:statusCode/@code='active'">active</xsl:when>
@@ -625,7 +636,7 @@
         "id": "<xsl:value-of select="$organizationResourceId"/>",
         "meta" : {
           "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-          "profile" : ["<xsl:value-of select='$organizationMetaProfileUrl'/>"]
+          "profile" : ["<xsl:value-of select='$organizationMetaProfileUrlFull'/>"]
         },
         "active": true,
         <xsl:if test="string(ccda:assignedAuthor/ccda:representedOrganization/ccda:name) or string(ccda:assignedAuthor/ccda:representedOrganization/ccda:id/@extension)">
@@ -756,7 +767,7 @@
           "id": "<xsl:value-of select='$observationResourceId'/>",
           "meta" : {
             "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-            "profile" : ["<xsl:value-of select='$observationSexualOrientationMetaProfileUrl'/>"]
+            "profile" : ["<xsl:value-of select='$observationSexualOrientationMetaProfileUrlFull'/>"]
           },
           "status": "<xsl:call-template name='mapObservationStatus'>
                         <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
@@ -829,7 +840,7 @@
           "id": "<xsl:value-of select='$observationResourceId'/>",
           "meta": {
             "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
-            "profile": ["<xsl:value-of select='$observationMetaProfileUrl'/>"]
+            "profile": ["<xsl:value-of select='$observationMetaProfileUrlFull'/>"]
           },
           "status": "<xsl:call-template name='mapObservationStatus'>
                         <xsl:with-param name='statusCode' select='ccda:observation/ccda:statusCode/@code'/>
@@ -928,7 +939,7 @@
             "id": "<xsl:value-of select='$questionnaireResourceId'/>",
             "meta" : {
               "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-              "profile" : ["<xsl:value-of select='$questionnaireMetaProfileUrl'/>"]
+              "profile" : ["<xsl:value-of select='$questionnaireMetaProfileUrlFull'/>"]
             },
             <xsl:if test="string(ccda:entry/ccda:observation/ccda:code/@codeSystem) or string(ccda:entry/ccda:observation/ccda:code/@code)">
             "identifier" : [{
@@ -977,7 +988,7 @@
             "id": "<xsl:value-of select='$QuestionnaireResponseResourceId'/>",
             "meta" : {
               "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-              "profile" : ["<xsl:value-of select='$questionnaireResponseMetaProfileUrl'/>"]
+              "profile" : ["<xsl:value-of select='$questionnaireResponseMetaProfileUrlFull'/>"]
             },
             "status": "completed",
             "questionnaire": "<xsl:value-of select='$baseFhirUrl'/>Questionnaire/<xsl:value-of select='$questionnaireResourceId'/>",
