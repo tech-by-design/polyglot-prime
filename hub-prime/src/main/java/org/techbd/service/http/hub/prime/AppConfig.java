@@ -6,6 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.techbd.conf.Configuration;
 
+import lombok.Getter;
+import lombok.Setter;
+
 @org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "org.techbd.service.http.hub.prime")
 @ConfigurationPropertiesScan
@@ -44,9 +47,24 @@ public class AppConfig {
     private String baseFHIRURL;
     private DefaultDataLakeApiAuthn defaultDataLakeApiAuthn;
     private String fhirVersion;
-    private Map<String, Map<String, String>> igPackages;
     private String igVersion;
     private CsvValidation csv;
+    private Map<String, FhirV4Config> igPackages;
+
+    @Getter
+    @Setter
+    public static class FhirV4Config {
+        private Map<String, Map<String,String>> shinnyPackages; 
+        private Map<String, String> basePackages;
+    }
+
+    public Map<String, FhirV4Config> getIgPackages() {
+        return igPackages;
+    }
+
+    public void setIgPackages(Map<String, FhirV4Config> igPackages) {
+        this.igPackages = igPackages;
+    }
 
     public String getVersion() {
         return version;
@@ -128,14 +146,6 @@ public class AppConfig {
 
     public void setFhirVersion(String fhirVersion) {
         this.fhirVersion = fhirVersion;
-    }
-
-    public Map<String, Map<String, String>> getIgPackages() {
-        return igPackages;
-    }
-
-    public void setIgPackages(Map<String, Map<String, String>> igPackages) {
-        this.igPackages = igPackages;
     }
 
     public void setIgVersion(String igVersion) {

@@ -256,8 +256,8 @@ public class FHIRService {
 					throw new JsonValidationException(ErrorCode.BUNDLE_PROFILE_URL_IS_NOT_PROVIDED);
 				}
 
-				if (profileList.stream()
-						.noneMatch(profile -> profile.equals(FHIRUtil.getBundleProfileUrl()))) {
+				List<String> allowedProfileUrls = FHIRUtil.getAllowedProfileUrls(appConfig);
+				if (profileList.stream().noneMatch(allowedProfileUrls::contains)) {
 					LOG.error("Bundle profile URL provided is not valid for interaction id: {}", interactionId);
 					throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
 				}
@@ -270,6 +270,7 @@ public class FHIRService {
 		}
 
 	}
+	
 
 	public static Map<String, Map<String, Object>> buildOperationOutcome(JsonValidationException ex,
 			String interactionId) {
