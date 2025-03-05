@@ -57,14 +57,7 @@ public class AppConfig {
         private Map<String, Map<String,String>> shinnyPackages; 
         private Map<String, String> basePackages;
     }
-    // @Getter
-    // @Setter
-    // public static class IgPackage {
-    //     private String profileBaseUrl;
-    //     private String packagePath;
-    //     private String igVersion;
-    // }
-    // Getter and Setter for fhirV4
+
     public Map<String, FhirV4Config> getIgPackages() {
         return igPackages;
     }
