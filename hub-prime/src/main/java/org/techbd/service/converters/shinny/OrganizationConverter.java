@@ -65,9 +65,9 @@ public class OrganizationConverter extends BaseConverter {
      */
     @Override
     public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated,String baseFHIRUrl) {
         Organization organization = new Organization();
-        setMeta(organization);
+        setMeta(organization,baseFHIRUrl);
         organization.setId(CsvConversionUtil.sha256(qeAdminData.getFacilityId())); // Assuming qrAdminData contains orgId
         idsGenerated.put(CsvConstants.ORGANIZATION_ID,organization.getId());
         String fullUrl = "http://shinny.org/us/ny/hrsn/Organization/" + organization.getId();

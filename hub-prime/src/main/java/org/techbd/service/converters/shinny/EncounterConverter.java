@@ -63,10 +63,10 @@ public class EncounterConverter extends BaseConverter {
     @Override
     public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData, QeAdminData qeAdminData,
             ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
-            String interactionId, Map<String, String> idsGenerated) {
+            String interactionId, Map<String, String> idsGenerated,String baseFHIRUrl) {
 
         Encounter encounter = new Encounter();
-        setMeta(encounter);
+        setMeta(encounter,baseFHIRUrl);
 
         encounter.setId(CsvConversionUtil.sha256(screeningProfileData.getEncounterId()));
         

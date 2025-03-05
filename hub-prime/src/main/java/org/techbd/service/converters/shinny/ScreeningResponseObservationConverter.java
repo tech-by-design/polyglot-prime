@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
+import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -32,6 +33,8 @@ import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 import org.techbd.util.FHIRUtil;
+
+import io.micrometer.common.util.StringUtils;
 
 @Component
 @Order(6)
@@ -77,7 +80,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         ScreeningProfileData screeningProfileData,
                         List<ScreeningObservationData> screeningObservationDataList,
                         String interactionId,
-                        Map<String, String> idsGenerated) {
+                        Map<String, String> idsGenerated,String baseFHIRUrl) {
 
                 LOG.info("ScreeningResponseObservationConverter::convert BEGIN for interaction id: {}", interactionId);
                 Map<String, String> questionAndAnswerCode = new HashMap<>();
@@ -92,7 +95,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation.setId(observationId);
                         data.setObservationId(observationId);
                         String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
-                        setMeta(observation);
+                        setMeta(observation,baseFHIRUrl);
                         Meta meta = observation.getMeta();
                         meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
                         // max date
@@ -233,7 +236,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 try {
                         return processScreeningGroups(demographicData, screeningProfileData,
-                                        screeningObservationDataList, idsGenerated, interactionId, bundleEntryComponents);
+                                        screeningObservationDataList, idsGenerated, interactionId, bundleEntryComponents,baseFHIRUrl);
                 } catch (Exception e) {
                         LOG.error("Error converting screening observations for interaction {}: {}",
                                         interactionId, e.getMessage(), e);
@@ -260,7 +263,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         ScreeningProfileData screeningProfileData,
                         List<ScreeningObservationData> screeningObservationDataList,
                         Map<String, String> idsGenerated,
-                        String interactionId, List<BundleEntryComponent> bundleEntryComponents) {
+                        String interactionId, List<BundleEntryComponent> bundleEntryComponents,String baseFhirUrl) {
 
                 // Group observations by screening code
                 Map<String, List<ScreeningObservationData>> screeningCodeGroups = screeningObservationDataList.stream()
@@ -277,7 +280,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         // Create and add group observation
                         BundleEntryComponent groupEntry = createGroupObservation(
                                         screeningCode, groupData, demographicData, screeningProfileData,
-                                        idsGenerated, interactionId);
+                                        idsGenerated, interactionId,baseFhirUrl);
                         bundleEntryComponents.add(groupEntry);
                 });
 
@@ -294,7 +297,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         DemographicData demographicData,
                         ScreeningProfileData screeningProfileData,
                         Map<String, String> idsGenerated,
-                        String interactionId) {
+                        String interactionId,String baseFhirUrl) {
 
                 Observation groupObservation = new Observation();
                 String observationId = CsvConversionUtil.sha256("group-" + screeningCode + screeningProfileData.getEncounterId());
@@ -302,7 +305,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Set meta information
                 Meta meta = new Meta();
-                meta.addProfile(FHIRUtil.getProfileUrl("observation"));
+                if (StringUtils.isNotEmpty(baseFhirUrl)) {
+                    meta.addProfile(FHIRUtil.getProfileUrl(baseFhirUrl,ResourceType.Observation.name().toLowerCase()));
+                } else{
+                    meta.addProfile(FHIRUtil.getProfileUrl(ResourceType.Observation.name().toLowerCase()));    
+                }
                 meta.setLastUpdated(DateUtil.convertStringToDate(demographicData.getPatientLastUpdated()));
                 groupObservation.setMeta(meta);
 

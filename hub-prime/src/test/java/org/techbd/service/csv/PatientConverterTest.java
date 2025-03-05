@@ -1,5 +1,6 @@
 package org.techbd.service.csv;
 
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,6 +16,7 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.StringType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,6 +28,7 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.converters.shinny.PatientConverter;
+import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -35,6 +38,16 @@ class PatientConverterTest {
         private static final Logger LOG = LoggerFactory.getLogger(PatientConverterTest.class.getName());
         @InjectMocks
         private PatientConverter patientConverter;
+
+        @BeforeEach
+        void setUp() throws Exception {
+                Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
+                profileMapField.setAccessible(true);
+                profileMapField.set(null, CsvTestHelper.getProfileMap());
+                Field baseFhirUrlField = FHIRUtil.class.getDeclaredField("BASE_FHIR_URL");
+                baseFhirUrlField.setAccessible(true);
+                baseFhirUrlField.set(null, CsvTestHelper.BASE_FHIR_URL);
+        }
 
         @Test
         // @Disabled
@@ -47,7 +60,7 @@ class PatientConverterTest {
                 final Map<String, String> idsGenerated = new HashMap<>();
                 final BundleEntryComponent result = patientConverter
                                 .convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                                                screeningDataList, "interactionId", idsGenerated)
+                                                screeningDataList, "interactionId", idsGenerated,null)
                                 .get(0);
                 final SoftAssertions softly = new SoftAssertions();
 
@@ -153,7 +166,7 @@ class PatientConverterTest {
                 final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
                 final var result = patientConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                                 screeningDataList,
-                                "interactionId", idsGenerated);
+                                "interactionId", idsGenerated,CsvTestHelper.BASE_FHIR_URL);
                 final Patient patient = (Patient) result.get(0).getResource();
                 final var filePath = "src/test/resources/org/techbd/csv/generated-json/patient.json";
                 final FhirContext fhirContext = FhirContext.forR4();

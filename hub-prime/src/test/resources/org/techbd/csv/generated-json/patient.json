@@ -1,47 +1,40 @@
 {
   "resourceType": "Patient",
-  "id": "EncounterExampleCUMC-11223344",
+  "id": "c8538406d9cbf420fefe69f60b40f6573cd4ccd4cfb21b3301118b086a367163",
   "meta": {
     "lastUpdated": "2024-02-23T00:00:00.000+05:30",
-    "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient" ]
+    "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient" ]
   },
   "language": "en",
-  "text": {
-    "status": "generated"
-  },
   "extension": [ {
     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
-    "valueExtension": {
+    "extension": [ {
       "url": "ombCategory",
-      "valueCodeableConcept": {
-        "coding": [ {
-          "system": "urn:oid:2.16.840.1.113883.6.238",
-          "code": "2028-9",
-          "display": "Asian"
-        } ]
+      "valueCoding": {
+        "system": "urn:oid:2.16.840.1.113883.6.238",
+        "code": "2028-9",
+        "display": "Asian"
       }
-    }
-  }, {
-    "url": "text",
-    "valueString": "Asian"
+    }, {
+      "url": "text",
+      "valueString": "Asian"
+    } ]
   }, {
     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
-    "valueExtension": {
+    "extension": [ {
       "url": "ombCategory",
-      "valueCodeableConcept": {
-        "coding": [ {
-          "system": "urn:oid:2.16.840.1.113883.6.238",
-          "code": "2135-2",
-          "display": "Hispanic or Latino"
-        } ]
+      "valueCoding": {
+        "system": "urn:oid:2.16.840.1.113883.6.238",
+        "code": "2135-2",
+        "display": "Hispanic or Latino"
       }
-    }
-  }, {
-    "url": "text",
-    "valueString": "Hispanic or Latino"
+    }, {
+      "url": "text",
+      "valueString": "Hispanic or Latino"
+    } ]
   }, {
     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
-    "valueString": "M"
+    "valueCode": "M"
   }, {
     "url": "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns",
     "valueCodeableConcept": {
@@ -69,7 +62,10 @@
       } ]
     },
     "system": "http://www.scn.gov/facility/CUMC",
-    "value": "11223344"
+    "value": "11223344",
+    "assigner": {
+      "reference": "Organization/null"
+    }
   }, {
     "type": {
       "coding": [ {
@@ -83,7 +79,7 @@
     "type": {
       "coding": [ {
         "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-        "code": "SSN",
+        "code": "SS",
         "display": "Social Security Number"
       } ],
       "text": "Social Security Number"
@@ -97,9 +93,7 @@
       "valueString": "Bob"
     } ],
     "family": "Doe",
-    "given": [ "Jon" ],
-    "prefix": [ "Mr., Dr., PhD, CCNA" ],
-    "suffix": [ "Jr., III" ]
+    "given": [ "Jon" ]
   } ],
   "telecom": [ {
     "system": "phone",

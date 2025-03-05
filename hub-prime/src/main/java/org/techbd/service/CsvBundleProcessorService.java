@@ -65,7 +65,7 @@ public class CsvBundleProcessorService {
             final List<String> filesNotProcessed,
             final HttpServletRequest request,
             final HttpServletResponse response,
-            final String tenantId, final String originalFileName) {
+            final String tenantId, final String originalFileName,String baseFHIRUrl) {
         final List<Object> resultBundles = new ArrayList<>();
         final List<Object> miscErrors = new ArrayList<>();
         boolean isAllCsvConvertedToFhir = true;
@@ -103,7 +103,7 @@ public class CsvBundleProcessorService {
                         resultBundles.addAll(processScreening(groupKey, demographicData, screeningProfileData,
                                 qeAdminData, screeningObservationData, request, response, groupInteractionId,
                                 masterInteractionId,
-                                tenantId, outcome.isValid(), outcome, isAllCsvConvertedToFhir));
+                                tenantId, outcome.isValid(), outcome, isAllCsvConvertedToFhir,baseFHIRUrl));
                     }
                 } else {
                     isAllCsvConvertedToFhir = false;
@@ -295,7 +295,7 @@ public class CsvBundleProcessorService {
             final String groupInteractionId,
             final String masterInteractionId,
             final String tenantId, final boolean isValid, final PayloadAndValidationOutcome payloadAndValidationOutcome,
-            boolean isAllCsvConvertedToFhir)
+            boolean isAllCsvConvertedToFhir,String baseFHIRUrl)
             throws IOException {
 
         final List<Object> results = new ArrayList<>();
@@ -326,7 +326,7 @@ public class CsvBundleProcessorService {
                             qeAdminList.get(0),
                             profile,
                             screeningObservationList,
-                            interactionId);
+                            interactionId,baseFHIRUrl);
                     final Instant completedAt = Instant.now();
                     if (bundle != null) {
                         final String updatedProvenance = addBundleProvenance(payloadAndValidationOutcome.provenance(),

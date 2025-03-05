@@ -1,9 +1,9 @@
 {
   "resourceType": "Encounter",
-  "id": "Encounter-interactionId",
+  "id": "fc6327a5436c51638223dd0908dbbb4aa26e8495a2c395605f71600c161973dc",
   "meta": {
     "lastUpdated": "2024-02-23T00:00:00.000+05:30",
-    "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter" ]
+    "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter" ]
   },
   "status": "finished",
   "class": {
@@ -12,20 +12,22 @@
   },
   "type": [ {
     "coding": [ {
-      "code": "405672008"
+      "system": "http://snomed.info/sct",
+      "code": "405672008",
+      "display": "Direct questioning (procedure)"
     } ],
     "text": "Direct questioning (procedure)"
   } ],
   "subject": {
-    "reference": "Patient/11223344"
+    "reference": "Patient/null"
   },
   "period": {
     "start": "2024-02-23T05:30:00+05:30",
-    "end": "2024-02-23T05:30:00+05:30"
+    "end": "2024-02-23T06:30:00+05:30"
   },
   "location": [ {
     "location": {
-      "reference": "Location/downtown location"
+      "reference": "Location/null"
     }
   } ]
 }

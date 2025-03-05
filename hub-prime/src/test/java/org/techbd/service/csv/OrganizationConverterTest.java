@@ -1,5 +1,6 @@
 package org.techbd.service.csv;
 
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,6 +15,7 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Organization;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +27,7 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.converters.shinny.OrganizationConverter;
+import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -34,6 +37,16 @@ class OrganizationConverterTest {
     private static final Logger LOG = LoggerFactory.getLogger(PatientConverterTest.class.getName());
     @InjectMocks
     private OrganizationConverter organizationConverter;
+
+    @BeforeEach
+    void setUp() throws Exception {
+            Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
+            profileMapField.setAccessible(true);
+            profileMapField.set(null, CsvTestHelper.getProfileMap());
+            Field baseFhirUrlField = FHIRUtil.class.getDeclaredField("BASE_FHIR_URL");
+            baseFhirUrlField.setAccessible(true);
+            baseFhirUrlField.set(null, CsvTestHelper.BASE_FHIR_URL);
+    }
 
     @Test
 //     @Disabled
@@ -48,7 +61,7 @@ class OrganizationConverterTest {
         // Call the convert method of the organization converter
         final BundleEntryComponent result = organizationConverter
                 .convert(bundle, demographicData, qrAdminData, screeningResourceData, screeningDataList,
-                        "interactionId",idsGenerated)
+                        "interactionId",idsGenerated,null)
                 .get(0);
 
         // Create soft assertions to verify the result
@@ -129,7 +142,7 @@ class OrganizationConverterTest {
         final ScreeningProfileData screeningResourceData =  CsvTestHelper.createScreeningProfileData();
         final var result = organizationConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId", idsGenerated);
+                "interactionId", idsGenerated,CsvTestHelper.BASE_FHIR_URL);
         final Organization organization = (Organization) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/organization.json";
         final FhirContext fhirContext = FhirContext.forR4();

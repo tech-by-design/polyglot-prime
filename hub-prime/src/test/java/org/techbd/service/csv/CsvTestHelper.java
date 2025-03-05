@@ -1,7 +1,9 @@
 package org.techbd.service.csv;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
@@ -10,6 +12,7 @@ import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConversionUtil;
 
 public class CsvTestHelper {
+    public static final String BASE_FHIR_URL="http://test.shinny.org/us/ny/hrsn";
     public static ScreeningProfileData createScreeningProfileData() throws IOException {
         final String csv = """
                 PATIENT_MR_ID_VALUE,ENCOUNTER_ID,ENCOUNTER_CLASS_CODE,ENCOUNTER_STATUS_CODE,ENCOUNTER_TYPE_CODE,ENCOUNTER_TYPE_CODE_DESCRIPTION,ENCOUNTER_TYPE_CODE_SYSTEM,ENCOUNTER_LAST_UPDATED,CONSENT_LAST_UPDATED,CONSENT_DATE_TIME,CONSENT_POLICY_AUTHORITY,CONSENT_PROVISION_TYPE,SCREENING_LAST_UPDATED,SCREENING_STATUS_CODE
@@ -51,4 +54,21 @@ public class CsvTestHelper {
                 """;
         return CsvConversionUtil.convertCsvStringToQeAdminData(csv).get("11223344").get(0);
     }
+    
+    public static Map<String, String> getProfileMap() {
+            Map<String, String> profileMap = new HashMap<>();
+            profileMap.put("bundle", "/StructureDefinition/SHINNYBundleProfile");
+            profileMap.put("patient", "/StructureDefinition/shinny-patient");
+            profileMap.put("consent", "/StructureDefinition/shinny-Consent");
+            profileMap.put("encounter", "/StructureDefinition/shinny-encounter");
+            profileMap.put("organization", "/StructureDefinition/shin-ny-organization");
+            profileMap.put("observation", "/StructureDefinition/shinny-observation-screening-response");
+            profileMap.put("questionnaire", "/StructureDefinition/shinny-questionnaire");
+            profileMap.put("practitioner", "/StructureDefinition/shin-ny-practitioner");
+            profileMap.put("questionnaireResponse", "/StructureDefinition/shinny-questionnaire");
+            profileMap.put("observationSexualOrientation",
+                            "/StructureDefinition/shinny-observation-sexual-orientation");
+            return profileMap;
+    }
+
 }

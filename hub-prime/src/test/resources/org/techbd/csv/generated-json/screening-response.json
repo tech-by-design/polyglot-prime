@@ -1,14 +1,12 @@
 {
   "resourceType": "Observation",
+  "id": "7c468175b75c8a20250ba152788263a034bcc2d001892366945703c283025ea8",
   "meta": {
-    "lastUpdated": "2023-07-12T00:00:00.000+05:30",
-    "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ]
+    "lastUpdated": "2024-02-23T05:30:00.000+05:30",
+    "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ]
   },
   "language": "en",
-  "text": {
-    "status": "generated"
-  },
-  "status": "final",
+  "status": "unknown",
   "category": [ {
     "coding": [ {
       "system": "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
@@ -29,16 +27,16 @@
   "code": {
     "coding": [ {
       "system": "http://loinc.org",
-      "code": "96777-8",
-      "display": "Accountable health communities (AHC) health-related social needs screening (HRSN) tool"
+      "code": "71802-3",
+      "display": "Housing status"
     } ],
     "text": "What is your living situation today?"
   },
   "subject": {
-    "reference": "Patient/11223344"
+    "reference": "Patient/null"
   },
-  "effectiveDateTime": "2023-07-12T00:00:00+05:30",
-  "issued": "2023-07-12T00:00:00.000+05:30",
+  "effectiveDateTime": "2023-07-12T21:38:00+05:30",
+  "issued": "2023-07-12T21:38:00.000+05:30",
   "valueCodeableConcept": {
     "coding": [ {
       "system": "http://loinc.org",

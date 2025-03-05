@@ -45,13 +45,13 @@ public class SexualOrientationObservationConverter extends BaseConverter {
     @Override
     public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData, QeAdminData qeAdminData,
             ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
-            String interactionId, Map<String, String> idsGenerated) {
+            String interactionId, Map<String, String> idsGenerated,String baseFHIRUrl) {
         LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
         if (StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCodeSystemName()) ||
                 StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCode()) ||
                 StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCodeDescription())) {
             Observation observation = new Observation();
-            setMeta(observation);
+            setMeta(observation,baseFHIRUrl);
             observation.setId(CsvConversionUtil.sha256("SexualOrientation-" + screeningProfileData.getPatientMrIdValue()
                     + screeningProfileData.getEncounterId()));
             Meta meta = observation.getMeta();

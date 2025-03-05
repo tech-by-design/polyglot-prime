@@ -13,6 +13,9 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.util.FHIRUtil;
+
+import io.micrometer.common.util.StringUtils;
 
 @Component
 public interface IConverter {
@@ -26,11 +29,23 @@ public interface IConverter {
     }
 
     List<BundleEntryComponent> convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated);
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated,String baseFHIRUrl);
 
+    default void setMeta(Resource resource,String baseFHIRUrl) {
+        if (null != resource.getMeta()) {
+            if (StringUtils.isNotEmpty(baseFHIRUrl)) {
+                resource.getMeta().setProfile(List.of(new CanonicalType(FHIRUtil.getProfileUrl(baseFHIRUrl,getResourceType().name().toLowerCase()))));
+            } else {
+                resource.getMeta().setProfile(List.of(getProfileUrl()));
+            }
+            // TODO -currently extension is not populated in shinny examples.Hence setting
+            // to null
+            resource.getMeta().setExtension(null);
+        }
+    }
     default void setMeta(Resource resource) {
         if (null != resource.getMeta()) {
-            resource.getMeta().setProfile(List.of(getProfileUrl()));
+             resource.getMeta().setProfile(List.of(getProfileUrl()));
             // TODO -currently extension is not populated in shinny examples.Hence setting
             // to null
             resource.getMeta().setExtension(null);

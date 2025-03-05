@@ -3,7 +3,7 @@
   "id": "401faef5898b5cf2724938b4369644bee72183c1c92f31d403a6b2538a069944",
   "meta": {
     "lastUpdated": "2024-02-23T00:00:00.000+05:30",
-    "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization" ]
+    "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization" ]
   },
   "identifier": [ {
     "type": {
@@ -11,7 +11,8 @@
         "display": "Care Ridge"
       } ]
     },
-    "value": "Care Ridge SCN"
+    "system": "http://www.scn.ny.gov/",
+    "value": "SCNExample"
   } ],
   "active": true,
   "type": [ {
@@ -24,6 +25,7 @@
   "name": "Care Ridge SCN",
   "address": [ {
     "text": "111 Care Ridge St, Plainview, NY 11803",
+    "line": [ "111 Care Ridge St" ],
     "city": "Plainview",
     "district": "Nassau County",
     "state": "NY",

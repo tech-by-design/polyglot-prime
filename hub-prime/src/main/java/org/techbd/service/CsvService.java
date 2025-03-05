@@ -131,7 +131,7 @@ public class CsvService {
      * @throws Exception If an error occurs during processing the zip file or CSV
      *                   parsing.
      */
-    public List<Object> processZipFile(final MultipartFile file,final HttpServletRequest request ,HttpServletResponse response ,final String tenantId,String origin,String sftpSessionId) throws Exception {
+    public List<Object> processZipFile(final MultipartFile file,final HttpServletRequest request ,HttpServletResponse response ,final String tenantId,String origin,String sftpSessionId,String baseFHIRUrl) throws Exception {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final var dslContext = udiPrimeJpaConfig.dsl();
@@ -149,7 +149,7 @@ public class CsvService {
             engine.orchestrate(session);
             return csvBundleProcessorService.processPayload(masterInteractionId,
             session.getPayloadAndValidationOutcomes(), session.getFilesNotProcessed(),request,
-             response,tenantId,file.getOriginalFilename());
+             response,tenantId,file.getOriginalFilename(),baseFHIRUrl);
         } finally {
             if (null == session) {
                 engine.clear(session);

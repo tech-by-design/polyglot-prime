@@ -15,6 +15,8 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.FHIRUtil;
 
+import io.micrometer.common.util.StringUtils;
+
 @Component
 public class BundleConverter {
 
@@ -31,14 +33,18 @@ public class BundleConverter {
      * @return a Bundle with type set to COLLECTION, one empty entry, and Meta
      *         information.
      */
-    public Bundle generateEmptyBundle(String interactionId,String igVersion,DemographicData demographicData) {
+    public Bundle generateEmptyBundle(String interactionId,String igVersion,DemographicData demographicData,String baseFHIRUrl) {
         Bundle bundle = new Bundle();
         bundle.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
         bundle.setType(Bundle.BundleType.TRANSACTION);
         Meta meta = new Meta();
         meta.setLastUpdated(new Date());
         meta.setVersionId(igVersion);
-        meta.setProfile(List.of(new CanonicalType(FHIRUtil.getBundleProfileUrl())));
+        if (StringUtils.isNotEmpty(baseFHIRUrl)) {
+            meta.setProfile(List.of(new CanonicalType(FHIRUtil.getProfileUrl(baseFHIRUrl,ResourceType.Bundle.name().toLowerCase()))));
+        } else {
+            meta.setProfile(List.of(new CanonicalType(FHIRUtil.getBundleProfileUrl())));
+        }
         bundle.setMeta(meta);
         LOG.info("Empty FHIR Bundle template generated with Meta and one empty entry for interactionId : {}.",
                 interactionId);
