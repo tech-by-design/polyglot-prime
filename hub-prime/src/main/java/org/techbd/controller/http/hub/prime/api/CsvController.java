@@ -75,6 +75,7 @@ public class CsvController {
   public ResponseEntity<Object> handleCsvUploadAndConversion(
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
+      @Parameter(description = "Optional parameter to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value from `application.yml` will be used.", required = false) @RequestHeader(value = "X-TechBD-Base-FHIR-URL", required = false) String baseFHIRURL,
       @Parameter(hidden = true, description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       @Parameter(hidden = true, description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
       HttpServletRequest request,
@@ -82,7 +83,7 @@ public class CsvController {
         
     validateFile(file);
     validateTenantId(tenantId);
-    List<Object> processedFiles = csvService.processZipFile(file, request, response, tenantId, origin, sftpSessionId);
+    List<Object> processedFiles = csvService.processZipFile(file, request, response, tenantId, origin, sftpSessionId,baseFHIRURL);
     return ResponseEntity.ok(processedFiles);
   
   }

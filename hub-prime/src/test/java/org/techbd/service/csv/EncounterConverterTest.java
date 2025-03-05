@@ -1,5 +1,6 @@
 package org.techbd.service.csv;
 
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +12,7 @@ import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Encounter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +25,7 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.converters.shinny.EncounterConverter;
+import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -33,6 +36,16 @@ class EncounterConverterTest {
 
     @InjectMocks
     private EncounterConverter encounterConverter;
+    
+    @BeforeEach
+    void setUp() throws Exception {
+            Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
+            profileMapField.setAccessible(true);
+            profileMapField.set(null, CsvTestHelper.getProfileMap());
+            Field baseFhirUrlField = FHIRUtil.class.getDeclaredField("BASE_FHIR_URL");
+            baseFhirUrlField.setAccessible(true);
+            baseFhirUrlField.set(null, CsvTestHelper.BASE_FHIR_URL);
+    }
 
     @Test
     // @Disabled
@@ -51,7 +64,7 @@ class EncounterConverterTest {
         // Call the convert method of the encounter converter
         final BundleEntryComponent result = encounterConverter
                 .convert(bundle, demographicData, qrAdminData, screeningResourceData,
-                        screeningDataList, "interactionId", idsGenerated)
+                        screeningDataList, "interactionId", idsGenerated,null)
                 .get(0);
         ;
 
@@ -94,7 +107,7 @@ class EncounterConverterTest {
 
         final var result = encounterConverter.convert(bundle, demographicData, qrAdminData, screeningResourceData,
                 screeningDataList,
-                "interactionId", idsGenerated);
+                "interactionId", idsGenerated,CsvTestHelper.BASE_FHIR_URL);
 
         final Encounter encounter = (Encounter) result.get(0).getResource();
         final var filePath = "src/test/resources/org/techbd/csv/generated-json/encounter.json";

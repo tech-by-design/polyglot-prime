@@ -69,10 +69,10 @@ public class ConsentConverter extends BaseConverter {
      */
     @Override
     public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated) {
+    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated,String baseFHIRUrl) {
 
         Consent consent = new Consent();
-        setMeta(consent);
+        setMeta(consent,baseFHIRUrl);
 
         consent.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
 
