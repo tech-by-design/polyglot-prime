@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
@@ -34,7 +35,7 @@ import io.opentelemetry.api.trace.Tracer;
 
 @ExtendWith(MockitoExtension.class)
 class OrchestrationEngineTest {
-
+        private static final String INTERACTION_ID=UUID.randomUUID().toString();
         @Mock
         private Tracer tracer;
 
@@ -71,6 +72,7 @@ class OrchestrationEngineTest {
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                 .withIgPackages(getIgPackages())
+                                .withInteractionId(INTERACTION_ID)
                                 .withTracer(tracer)
                                 .build());
                 Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
@@ -85,6 +87,7 @@ class OrchestrationEngineTest {
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
                                 .withFhirIGPackages(getIgPackages())
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                 .addHapiValidationEngine()
@@ -113,6 +116,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -123,6 +127,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession2 = engine.session()
                                 .withPayloads(List.of(payload2))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -155,6 +160,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession session1 = engine.session()
                                 .withPayloads(List.of("payload1"))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirProfileUrl("http://shinny.org/us/ny/hrsn")
                                 .withFhirIGPackages(getIgPackages())
                                 .addHapiValidationEngine()
@@ -163,6 +169,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession session2 = engine.session()
                                 .withPayloads(List.of("payload2"))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl("http://shinny.org/us/ny/hrsn")
                                 .addHapiValidationEngine()
@@ -190,6 +197,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -224,6 +232,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -263,6 +272,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -297,6 +307,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -336,6 +347,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
