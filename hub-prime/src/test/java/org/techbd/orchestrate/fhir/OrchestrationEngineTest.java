@@ -2,7 +2,6 @@ package org.techbd.orchestrate.fhir;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -29,7 +28,6 @@ import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
-import ca.uhn.fhir.validation.FhirValidator;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
@@ -295,7 +293,7 @@ class OrchestrationEngineTest {
         @Test
         void testIgVersion1_3_InValidBundle_PatientMRNMissingError() throws Exception {
                 String payload = Files.readString(Path.of(
-                                "src/test/resources/org/techbd/ig-examples/AHCHRSNScreeningResponseExample1.3.0 -PatientMRNMissing.json"));
+                                "src/test/resources/org/techbd/ig-examples/AHCHRSNScreeningResponseExample1.3.0 -PatientMRNMissingError.json"));
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
@@ -360,7 +358,7 @@ class OrchestrationEngineTest {
                                         assertThat(issue.getSeverity()).isEqualTo(OperationOutcome.IssueSeverity.FATAL);
                                         assertThat(issue.getCode()).isEqualTo(OperationOutcome.IssueType.EXCEPTION);
                                         assertThat(issue.getDiagnostics()).isEqualTo(
-                                                        "Cannot invoke \"org.techbd.orchestrate.fhir.FhirBundleValidator.getIgVersion()\" because \"bundleValidator\" is null");
+                                                        "The provided bundle profile URL is invalid. Please check and enter the correct bundle profile url");
                                 });
         }
 
