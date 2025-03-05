@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
 import org.techbd.service.CsvService;
+import org.techbd.service.http.hub.prime.AppConfig;
+import org.techbd.util.FHIRUtil;
 
+import io.micrometer.common.util.StringUtils;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nonnull;
@@ -28,9 +31,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class CsvController {
   private static final Logger log = LoggerFactory.getLogger(CsvController.class);
   private final CsvService csvService;
+  private final AppConfig appConfig;
 
-  public CsvController(CsvService csvService) {
+  public CsvController(CsvService csvService,AppConfig appConfig) {
     this.csvService = csvService;
+    this.appConfig = appConfig;
   }
 
   private void validateFile(MultipartFile file) {
@@ -83,6 +88,7 @@ public class CsvController {
         
     validateFile(file);
     validateTenantId(tenantId);
+    FHIRUtil.validateBaseFHIRProfileUrl(appConfig, baseFHIRURL);
     List<Object> processedFiles = csvService.processZipFile(file, request, response, tenantId, origin, sftpSessionId,baseFHIRURL);
     return ResponseEntity.ok(processedFiles);
   

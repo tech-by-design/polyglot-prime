@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
@@ -59,4 +60,18 @@ public class FHIRUtil {
         } 
         return allowedProfileUrls;
     }
+
+    public static void validateBaseFHIRProfileUrl(AppConfig appConfig, String baseFHIRProfileUrl) {
+        if (StringUtils.isNotEmpty(baseFHIRProfileUrl)) {
+            String profileUrl = getProfileUrl(baseFHIRProfileUrl, BUNDLE);
+            List<String> allowedUrls = getAllowedProfileUrls(appConfig);
+    
+            if (!allowedUrls.contains(profileUrl)) {
+                String supportedUrls = String.join(", ", allowedUrls);
+                throw new IllegalArgumentException("Invalid Base FHIR profile URL provided : " + baseFHIRProfileUrl +
+                        " in header 'X-TechBD-Base-FHIR-URL' . Supported  SHIN-NY IG URLs: " + supportedUrls);
+            }
+        }
+    }
+
 }
