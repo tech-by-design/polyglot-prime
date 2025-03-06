@@ -164,7 +164,7 @@ public class SwaggerConfig {
                                             .schema(new StringSchema()))
                                         .addParametersItem(new Parameter()
                                             .name("X-TechBD-Base-FHIR-URL")
-                                            .description("Optional header for Base-FHIR-URL")
+                                            .description("Optional header to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value will be used.")
                                             .required(false)
                                             .in("header")
                                             .schema(new StringSchema()))
