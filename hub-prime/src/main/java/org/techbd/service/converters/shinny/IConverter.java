@@ -43,6 +43,19 @@ public interface IConverter {
             resource.getMeta().setExtension(null);
         }
     }
+
+    default void setMeta(Resource resource,String baseFHIRUrl,String resourceType) {
+        if (null != resource.getMeta()) {
+            if (StringUtils.isNotEmpty(baseFHIRUrl) && StringUtils.isNotEmpty(resourceType)) {
+                resource.getMeta().setProfile(List.of(new CanonicalType(FHIRUtil.getProfileUrl(baseFHIRUrl,resourceType))));
+            } else {
+                resource.getMeta().setProfile(List.of(getProfileUrl()));
+            }
+            // TODO -currently extension is not populated in shinny examples.Hence setting
+            // to null
+            resource.getMeta().setExtension(null);
+        }
+    }
     default void setMeta(Resource resource) {
         if (null != resource.getMeta()) {
              resource.getMeta().setProfile(List.of(getProfileUrl()));

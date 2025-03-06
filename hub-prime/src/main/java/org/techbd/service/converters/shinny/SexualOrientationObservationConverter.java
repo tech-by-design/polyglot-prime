@@ -51,7 +51,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                 StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCode()) ||
                 StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCodeDescription())) {
             Observation observation = new Observation();
-            setMeta(observation,baseFHIRUrl);
+            setMeta(observation,baseFHIRUrl,"observationSexualOrientation");
             observation.setId(CsvConversionUtil.sha256("SexualOrientation-" + screeningProfileData.getPatientMrIdValue()
                     + screeningProfileData.getEncounterId()));
             Meta meta = observation.getMeta();
