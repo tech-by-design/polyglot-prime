@@ -24,6 +24,7 @@ public class FhirBundleValidator {
     private String igVersion;
     private String fhirProfileUrl;
     private FhirValidator fhirValidator;
+    private String packagePath;
 
      public String getFhirProfileUrl() {
         return FHIRUtil.getProfileUrl(baseFHIRUrl, FHIRUtil.BUNDLE);

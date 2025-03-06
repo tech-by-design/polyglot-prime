@@ -66,10 +66,10 @@ public class PatientConverter extends BaseConverter {
     @Override
     public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData, QeAdminData qeAdminData,
             ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
-            String interactionId, Map<String, String> idsGenerated) {
+            String interactionId, Map<String, String> idsGenerated,String baseFHIRUrl) {
         LOG.info("PatientConverter :: convert  BEGIN for transaction id :{}", interactionId);
         Patient patient = new Patient();
-        setMeta(patient);
+        setMeta(patient,baseFHIRUrl);
         patient.setId(CsvConversionUtil
                 .sha256(generateUniqueId(screeningProfileData.getEncounterId(), qeAdminData.getFacilityId(),
                         demographicData.getPatientMrIdValue())));

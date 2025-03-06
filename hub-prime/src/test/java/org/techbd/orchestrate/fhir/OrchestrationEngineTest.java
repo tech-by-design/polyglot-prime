@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
@@ -34,7 +35,7 @@ import io.opentelemetry.api.trace.Tracer;
 
 @ExtendWith(MockitoExtension.class)
 class OrchestrationEngineTest {
-
+        private static final String INTERACTION_ID=UUID.randomUUID().toString();
         @Mock
         private Tracer tracer;
 
@@ -71,6 +72,7 @@ class OrchestrationEngineTest {
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                 .withIgPackages(getIgPackages())
+                                .withInteractionId(INTERACTION_ID)
                                 .withTracer(tracer)
                                 .build());
                 Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
@@ -85,6 +87,7 @@ class OrchestrationEngineTest {
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
                                 .withFhirIGPackages(getIgPackages())
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                 .addHapiValidationEngine()
@@ -113,6 +116,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -123,6 +127,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession2 = engine.session()
                                 .withPayloads(List.of(payload2))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -155,6 +160,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession session1 = engine.session()
                                 .withPayloads(List.of("payload1"))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirProfileUrl("http://shinny.org/us/ny/hrsn")
                                 .withFhirIGPackages(getIgPackages())
                                 .addHapiValidationEngine()
@@ -163,6 +169,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession session2 = engine.session()
                                 .withPayloads(List.of("payload2"))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl("http://shinny.org/us/ny/hrsn")
                                 .addHapiValidationEngine()
@@ -190,6 +197,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -224,6 +232,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -263,6 +272,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -297,6 +307,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -336,6 +347,7 @@ class OrchestrationEngineTest {
                 OrchestrationEngine.OrchestrationSession realSession = engine.session()
                                 .withPayloads(List.of(payload))
                                 .withTracer(tracer)
+                                .withInteractionId(INTERACTION_ID)
                                 .withFhirIGPackages(getIgPackages())
                                 .withFhirProfileUrl(
                                                 "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -365,26 +377,37 @@ class OrchestrationEngineTest {
         private Map<String, FhirV4Config> getIgPackages() {
                 final Map<String, FhirV4Config> igPackages = new HashMap<>();
                 FhirV4Config fhirV4Config = new FhirV4Config();
+            
+                // Base packages for external dependencies
                 Map<String, String> basePackages = new HashMap<>();
-                basePackages.put("usCore", "ig-packages/fhir-v4/us-core/stu-7.0.0");
+                basePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0");
                 basePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0");
-                basePackages.put("uvSdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
+                basePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
+            
+                // Shinny Packages
                 Map<String, Map<String, String>> shinnyPackages = new HashMap<>();
+            
+                // Shinny version 1.2.3
                 Map<String, String> shinnyV123 = new HashMap<>();
                 shinnyV123.put("profile-base-url", "http://shinny.org/us/ny/hrsn");
-                shinnyV123.put("package-path", "ig-packages/shin-ny-ig/v1.2.3");
+                shinnyV123.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.2.3");
                 shinnyV123.put("ig-version", "1.2.3");
-                Map<String, String> shinnyV130 = new HashMap<>();
-                shinnyV130.put("profile-base-url", "http://test.shinny.org/us/ny/hrsn");
-                shinnyV130.put("package-path", "ig-packages/shin-ny-ig/v1.3.0");
-                shinnyV130.put("ig-version", "1.3.0");
                 shinnyPackages.put("shinny-v1-2-3", shinnyV123);
-                shinnyPackages.put("shinny-v1-3-0", shinnyV130);
+            
+                // Test Shinny version 1.3.0
+                Map<String, String> testShinnyV130 = new HashMap<>();
+                testShinnyV130.put("profile-base-url", "http://test.shinny.org/us/ny/hrsn");
+                testShinnyV130.put("package-path", "ig-packages/shin-ny-ig/test-shinny/v1.3.0");
+                testShinnyV130.put("ig-version", "1.3.0");
+                shinnyPackages.put("test-shinny-v1-3-0", testShinnyV130);
+            
                 fhirV4Config.setBasePackages(basePackages);
                 fhirV4Config.setShinnyPackages(shinnyPackages);
                 igPackages.put("fhir-v4", fhirV4Config);
+            
                 return igPackages;
-        }
+            }
+            
  
         private Map<String, String> getProfileMap() {
                 Map<String, String> profileMap = new HashMap<>();
