@@ -92,9 +92,10 @@ To add a new package for SHIN-NY IG, follow these steps:
    - [Application Configuration](https://github.com/tech-by-design/polyglot-prime/blob/8efe2441d7958c2e82b689f5d7980605a6b8b3e3/hub-prime/src/main/resources/application.yml#L96)
    - Add the following configuration:
      ```yaml
-     profile-base-url: http://shinny.org/us/ny/hrsn
-     package-path: ig-packages/shin-ny-ig/shinny/v1.3.0
-     ig-version: 1.3.0
+     shinny-v1-3-0:
+      profile-base-url: http://shinny.org/us/ny/hrsn
+      package-path: ig-packages/shin-ny-ig/shinny/v1.2.3
+      ig-version: 1.2.3
      ```
 
 ---
@@ -115,9 +116,10 @@ To add a new package for SHIN-NY IG, follow these steps:
    - [Application Configuration](https://github.com/tech-by-design/polyglot-prime/blob/8efe2441d7958c2e82b689f5d7980605a6b8b3e3/hub-prime/src/main/resources/application.yml#L100)
    - Add the following configuration:
      ```yaml
-     profile-base-url: http://shinny.org/us/ny/hrsn
-     package-path: ig-packages/shin-ny-ig/test-shinny/v1.3.0
-     ig-version: 1.3.0
+         test-shinny-v1-3-0:
+            profile-base-url: http://test.shinny.org/us/ny/hrsn
+            package-path: ig-packages/shin-ny-ig/test-shinny/v1.3.0
+            ig-version: 1.3.0
      ```
 ### 7. Potential Problems
 Additional Packages Loaded to Memory: The solution of preloading all IGs can cause unnecessary memory usage if you load a large number of IG packages. 
