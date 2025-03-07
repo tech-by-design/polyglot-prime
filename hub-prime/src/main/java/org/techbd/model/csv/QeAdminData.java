@@ -24,14 +24,23 @@ public class QeAdminData {
     @CsvBindByName(column = "FACILITY_NAME")
     private String facilityName;
 
-    @CsvBindByName(column = "ORGANIZATION_TYPE_DISPLAY")
-    private String organizationTypeDisplay;
-
     @CsvBindByName(column = "ORGANIZATION_TYPE_CODE")
     private String organizationTypeCode;
 
+    @CsvBindByName(column = "ORGANIZATION_TYPE_DISPLAY")
+    private String organizationTypeDisplay;
+
+    @CsvBindByName(column = "ORGANIZATION_TYPE_CODE_SYSTEM")
+    private String organizationTypeCodeSystem;
+
+    @CsvBindByName(column = "ENCOUNTER_LOCATION")
+    private String encounterLocation;
+
     @CsvBindByName(column = "FACILITY_ADDRESS1")
     private String facilityAddress1;
+
+    @CsvBindByName(column = "FACILITY_ADDRESS2")
+    private String facilityAddress2;
 
     @CsvBindByName(column = "FACILITY_CITY")
     private String facilityCity;
@@ -39,23 +48,14 @@ public class QeAdminData {
     @CsvBindByName(column = "FACILITY_STATE")
     private String facilityState;
 
-    @CsvBindByName(column = "FACILITY_DISTRICT")
-    private String facilityDistrict;
-
     @CsvBindByName(column = "FACILITY_ZIP")
     private String facilityZip;
 
+    @CsvBindByName(column = "FACILITY_COUNTY")
+    private String facilityCounty;
+
     @CsvBindByName(column = "FACILITY_LAST_UPDATED")
     private String facilityLastUpdated;
-
-    @CsvBindByName(column = "FACILITY_IDENTIFIER_TYPE_DISPLAY")
-    private String facilityIdentifierTypeDisplay;
-
-    @CsvBindByName(column = "FACILITY_IDENTIFIER_TYPE_VALUE")
-    private String facilityIdentifierTypeValue;
-
-    @CsvBindByName(column = "FACILITY_IDENTIFIER_TYPE_SYSTEM")
-    private String facilityIdentifierTypeSystem;
 
     // Default constructor
     public QeAdminData() {

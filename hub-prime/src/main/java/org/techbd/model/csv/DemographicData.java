@@ -19,11 +19,17 @@ public class DemographicData {
     @CsvBindByName(column = "PATIENT_MR_ID_VALUE")
     private String patientMrIdValue;
 
-    @CsvBindByName(column = "PATIENT_MA_ID_VALUE")
-    private String patientMaIdValue;
+    @CsvBindByName(column = "FACILITY_NAME")
+    private String facilityName;
+
+    @CsvBindByName(column = "PATIENT_MEDICAID_ID")
+    private String patientMedicaidId;
 
     @CsvBindByName(column = "PATIENT_SS_ID_VALUE")
     private String patientSsIdValue;
+
+    @CsvBindByName(column = "FAMILY_NAME")
+    private String familyName;
 
     @CsvBindByName(column = "GIVEN_NAME")
     private String givenName;
@@ -31,14 +37,23 @@ public class DemographicData {
     @CsvBindByName(column = "MIDDLE_NAME")
     private String middleName;
 
-    @CsvBindByName(column = "FAMILY_NAME")
-    private String familyName;
+    @CsvBindByName(column = "ADMINISTRATIVE_SEX_CODE")
+    private String administrativeSexCode;
 
-    @CsvBindByName(column = "GENDER")
-    private String gender;
+    @CsvBindByName(column = "ADMINISTRATIVE_SEX_CODE_DESCRIPTION")
+    private String administrativeSexCodeDescription;
 
-    @CsvBindByName(column = "EXTENSION_SEX_AT_BIRTH_CODE_VALUE")
-    private String extensionSexAtBirthCodeValue;
+    @CsvBindByName(column = "ADMINISTRATIVE_SEX_CODE_SYSTEM")
+    private String administrativeSexCodeSystem;
+
+    @CsvBindByName(column = "SEX_AT_BIRTH_CODE")
+    private String sexAtBirthCode;
+
+    @CsvBindByName(column = "SEX_AT_BIRTH_CODE_DESCRIPTION")
+    private String sexAtBirthCodeDescription;
+
+    @CsvBindByName(column = "SEX_AT_BIRTH_CODE_SYSTEM")
+    private String sexAtBirthCodeSystem;
 
     @CsvBindByName(column = "PATIENT_BIRTH_DATE")
     private String patientBirthDate;
@@ -46,11 +61,11 @@ public class DemographicData {
     @CsvBindByName(column = "ADDRESS1")
     private String address1;
 
+    @CsvBindByName(column = "ADDRESS2")
+    private String address2;
+
     @CsvBindByName(column = "CITY")
     private String city;
-
-    @CsvBindByName(column = "DISTRICT")
-    private String district;
 
     @CsvBindByName(column = "STATE")
     private String state;
@@ -58,82 +73,72 @@ public class DemographicData {
     @CsvBindByName(column = "ZIP")
     private String zip;
 
+    @CsvBindByName(column = "COUNTY")
+    private String county;
+
     @CsvBindByName(column = "TELECOM_VALUE")
     private String telecomValue;
 
-    @CsvBindByName(column = "EXTENSION_PERSONAL_PRONOUNS_CODE")
-    private String extensionPersonalPronounsCode;
+    @CsvBindByName(column = "TELCOM_USE")
+    private String telecomUse;
 
-    @CsvBindByName(column = "EXTENSION_PERSONAL_PRONOUNS_DISPLAY")
-    private String extensionPersonalPronounsDisplay;
+    @CsvBindByName(column = "RACE_CODE")
+    private String raceCode;
 
-    @CsvBindByName(column = "EXTENSION_PERSONAL_PRONOUNS_SYSTEM")
-    private String extensionPersonalPronounsSystem;
+    @CsvBindByName(column = "RACE_CODE_DESCRIPTION")
+    private String raceCodeDescription;
 
-    @CsvBindByName(column = "EXTENSION_GENDER_IDENTITY_CODE")
-    private String extensionGenderIdentityCode;
+    @CsvBindByName(column = "RACE_CODE_SYSTEM")
+    private String raceCodeSystem;
 
-    @CsvBindByName(column = "EXTENSION_GENDER_IDENTITY_DISPLAY")
-    private String extensionGenderIdentityDisplay;
+    @CsvBindByName(column = "ETHNICITY_CODE")
+    private String ethnicityCode;
 
-    @CsvBindByName(column = "EXTENSION_GENDER_IDENTITY_SYSTEM")
-    private String extensionGenderIdentitySystem;
+    @CsvBindByName(column = "ETHNICITY_CODE_DESCRIPTION")
+    private String ethnicityCodeDescription;
 
-    @CsvBindByName(column = "PREFERRED_LANGUAGE_CODE_SYSTEM_NAME")
-    private String preferredLanguageCodeSystemName;
+    @CsvBindByName(column = "ETHNICITY_CODE_SYSTEM")
+    private String ethnicityCodeSystem;
 
-    @CsvBindByName(column = "PREFERRED_LANGUAGE_CODE_SYSTEM_CODE")
-    private String preferredLanguageCodeSystemCode;
+    @CsvBindByName(column = "PERSONAL_PRONOUNS_CODE")
+    private String personalPronounsCode;
 
-    @CsvBindByName(column = "EXTENSION_OMBCATEGORY_RACE_CODE")
-    private String extensionOmbCategoryRaceCode;
+    @CsvBindByName(column = "PERSONAL_PRONOUNS_DESCRIPTION")
+    private String personalPronounsDescription;
 
-    @CsvBindByName(column = "EXTENSION_OMBCATEGORY_RACE_CODE_DESCRIPTION")
-    private String extensionOmbCategoryRaceCodeDescription;
+    @CsvBindByName(column = "PERSONAL_PRONOUNS_SYSTEM")
+    private String personalPronounsSystem;
 
-    @CsvBindByName(column = "EXTENSION_OMBCATEGORY_RACE_CODE_SYSTEM_NAME")
-    private String extensionOmbCategoryRaceCodeSystemName;
+    @CsvBindByName(column = "GENDER_IDENTITY_CODE")
+    private String genderIdentityCode;
 
-    @CsvBindByName(column = "EXTENSION_OMBCATEGORY_ETHNICITY_CODE")
-    private String extensionOmbCategoryEthnicityCode;
+    @CsvBindByName(column = "GENDER_IDENTITY_CODE_DESCRIPTION")
+    private String genderIdentityCodeDescription;
 
-    @CsvBindByName(column = "EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION")
-    private String extensionOmbCategoryEthnicityCodeDescription;
+    @CsvBindByName(column = "GENDER_IDENTITY_CODE_SYSTEM")
+    private String genderIdentityCodeSystem;
 
-    @CsvBindByName(column = "EXTENSION_OMBCATEGORY_ETHNICITY_CODE_SYSTEM_NAME")
-    private String extensionOmbCategoryEthnicityCodeSystemName;
+    @CsvBindByName(column = "PREFERRED_LANGUAGE_CODE")
+    private String preferredLanguageCode;
+
+    @CsvBindByName(column = "PREFERRED_LANGUAGE_CODE_DESCRIPTION")
+    private String preferredLanguageCodeDescription;
+
+    @CsvBindByName(column = "PREFERRED_LANGUAGE_CODE_SYSTEM")
+    private String preferredLanguageCodeSystem;
+
+    @CsvBindByName(column = "SEXUAL_ORIENTATION_CODE")
+    private String sexualOrientationCode;
+
+    @CsvBindByName(column = "SEXUAL_ORIENTATION_CODE_DESCRIPTION")
+    private String sexualOrientationCodeDescription;
+
+    @CsvBindByName(column = "SEXUAL_ORIENTATION_CODE_SYSTEM")
+    private String sexualOrientationCodeSystem;
 
     @CsvBindByName(column = "PATIENT_LAST_UPDATED")
     private String patientLastUpdated;
 
-    @CsvBindByName(column = "RELATIONSHIP_PERSON_CODE")
-    private String relationshipPersonCode;
-
-    @CsvBindByName(column = "RELATIONSHIP_PERSON_DESCRIPTION")
-    private String relationshipPersonDescription;
-
-    @CsvBindByName(column = "RELATIONSHIP_PERSON_GIVEN_NAME")
-    private String relationshipPersonGivenName;
-
-    @CsvBindByName(column = "RELATIONSHIP_PERSON_FAMILY_NAME")
-    private String relationshipPersonFamilyName;
-
-    @CsvBindByName(column = "RELATIONSHIP_PERSON_TELECOM_VALUE")
-    private String relationshipPersonTelecomValue;
-
-    @CsvBindByName(column = "SEXUAL_ORIENTATION_VALUE_CODE")
-    private String sexualOrientationValueCode;
-
-    @CsvBindByName(column = "SEXUAL_ORIENTATION_VALUE_CODE_DESCRIPTION")
-    private String sexualOrientationValueCodeDescription;
-
-    @CsvBindByName(column = "SEXUAL_ORIENTATION_VALUE_CODE_SYSTEM_NAME")
-    private String sexualOrientationValueCodeSystemName;
-
-    @CsvBindByName(column = "SEXUAL_ORIENTATION_LAST_UPDATED")
-    private String sexualOrientationLastUpdated;
-
-    // Default constructor
     public DemographicData() {
     }
 }
