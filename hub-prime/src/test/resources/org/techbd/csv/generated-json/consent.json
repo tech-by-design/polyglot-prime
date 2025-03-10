@@ -1,8 +1,7 @@
 {
   "resourceType": "Consent",
-  "id": "43b233ad88ecdc4cad4238f515a3c5b67248f93bf12d1ed37f392651c835ec9c",
+  "id": "7437062bd8fb496f04e6b85b592dd063d87c9cbff646b424b312ed5e817c3ae0",
   "meta": {
-    "lastUpdated": "2024-02-23T00:00:00.000+05:30",
     "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent" ]
   },
   "status": "active",
@@ -36,11 +35,5 @@
   "sourceAttachment": {
     "contentType": "application/pdf",
     "language": "en"
-  },
-  "policy": [ {
-    "authority": "urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5"
-  } ],
-  "provision": {
-    "type": "permit"
   }
 }

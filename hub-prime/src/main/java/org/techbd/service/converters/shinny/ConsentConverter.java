@@ -68,16 +68,17 @@ public class ConsentConverter extends BaseConverter {
      *         resource.
      */
     @Override
-    public List<BundleEntryComponent>  convert(Bundle bundle,DemographicData demographicData,QeAdminData qeAdminData ,
-    ScreeningProfileData screeningProfileData ,List<ScreeningObservationData> screeningObservationData,String interactionId,Map<String,String> idsGenerated,String baseFHIRUrl) {
+    public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData, QeAdminData qeAdminData,
+            ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
+            String interactionId, Map<String, String> idsGenerated, String baseFHIRUrl) {
 
         Consent consent = new Consent();
-        setMeta(consent,baseFHIRUrl);
+        setMeta(consent, baseFHIRUrl);
 
         consent.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
 
         Meta meta = consent.getMeta();
-        meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getConsentLastUpdated()));
+        // meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getConsentLastUpdated()));
 
         populateConsentStatusAndScope(consent, screeningProfileData);
 
@@ -87,22 +88,19 @@ public class ConsentConverter extends BaseConverter {
 
         populateConsentDateTime(consent, screeningProfileData);
 
-        populateOrganizationReference(consent,idsGenerated);
+        populateOrganizationReference(consent, idsGenerated);
 
         populateConsentState(consent, screeningProfileData);
 
         // // TODO:
         // populateSourceReference(consent, screeningProfileData);
 
-        populateConsentPolicy(consent, screeningProfileData);
-
-        populateConsentProvision(consent, screeningProfileData);
-
         populateSourceAttachment(consent);
         String fullUrl = "http://shinny.org/us/ny/hrsn/Consent/" + consent.getId();
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
-        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Consent/" + consent.getId()));
+        bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
+                .setUrl("http://shinny.org/us/ny/hrsn/Consent/" + consent.getId()));
         bundleEntryComponent.setResource(consent);
         return List.of(bundleEntryComponent);
     }
@@ -112,17 +110,17 @@ public class ConsentConverter extends BaseConverter {
 
         CodeableConcept scope = new CodeableConcept();
         Coding coding = new Coding();
-        coding.setCode("treatment"); //TODO : remove static reference
+        coding.setCode("treatment"); // TODO : remove static reference
         coding.setSystem("http://terminology.hl7.org/CodeSystem/consentscope");
         coding.setDisplay("Treatment");
         scope.addCoding(coding);
-        scope.setText("treatment"); //TODO : remove static reference
+        scope.setText("treatment"); // TODO : remove static reference
 
         consent.setScope(scope);
 
-       // Narrative text = new Narrative();
-       // text.setStatus(NarrativeStatus.GENERATED);
-       // consent.setText(text);
+        // Narrative text = new Narrative();
+        // text.setStatus(NarrativeStatus.GENERATED);
+        // consent.setText(text);
     }
 
     private static void populateConsentCategory(Consent consent, ScreeningProfileData data) {
@@ -131,8 +129,8 @@ public class ConsentConverter extends BaseConverter {
         CodeableConcept loincCategory = new CodeableConcept();
         Coding loincCoding = new Coding();
         loincCoding.setSystem("http://loinc.org");
-        loincCoding.setCode("59284-0"); //TODO : remove static reference
-        loincCoding.setDisplay("Consent Document"); //TODO : remove static reference
+        loincCoding.setCode("59284-0"); // TODO : remove static reference
+        loincCoding.setDisplay("Consent Document"); // TODO : remove static reference
 
         loincCategory.addCoding(loincCoding);
         categories.add(loincCategory);
@@ -140,7 +138,7 @@ public class ConsentConverter extends BaseConverter {
         CodeableConcept hl7Category = new CodeableConcept();
         Coding hl7Coding = new Coding();
         hl7Coding.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
-        hl7Coding.setCode("IDSCL"); //TODO : remove static reference
+        hl7Coding.setCode("IDSCL"); // TODO : remove static reference
 
         hl7Category.addCoding(hl7Coding);
         categories.add(hl7Category);
@@ -148,17 +146,18 @@ public class ConsentConverter extends BaseConverter {
         consent.setCategory(categories);
     }
 
-    private void populatePatientReference(Consent consent, Map<String,String> idsGenerated) {
-            consent.getPatient().setReference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID));
+    private void populatePatientReference(Consent consent, Map<String, String> idsGenerated) {
+        consent.getPatient().setReference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID));
     }
 
-    private void populateOrganizationReference(Consent consent,Map<String,String> idsGenerated) {
-            consent.getOrganizationFirstRep().setReference("Organization/"+idsGenerated.get(CsvConstants.ORGANIZATION_ID));
+    private void populateOrganizationReference(Consent consent, Map<String, String> idsGenerated) {
+        consent.getOrganizationFirstRep()
+                .setReference("Organization/" + idsGenerated.get(CsvConstants.ORGANIZATION_ID));
     }
 
     private void populateConsentState(Consent consent, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null) {
-            consent.setStatus(ConsentState.valueOf("active".toUpperCase())); //TODO : remove static reference
+            consent.setStatus(ConsentState.valueOf("active".toUpperCase())); // TODO : remove static reference
         }
     }
 
@@ -168,25 +167,6 @@ public class ConsentConverter extends BaseConverter {
     // screeningResourceData) {
     // consent.setSourceReference("QuestionnaireResponse/ConsentQuestionnaireResponse");
     // }
-
-    private void populateConsentPolicy(Consent consent, ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData == null || screeningResourceData.getConsentPolicyAuthority() == null) {
-            return;
-        }
-        Consent.ConsentPolicyComponent policy = new Consent.ConsentPolicyComponent();
-        policy.setAuthority(screeningResourceData.getConsentPolicyAuthority());
-
-        consent.addPolicy(policy);
-    }
-
-    private void populateConsentProvision(Consent consent, ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData == null || screeningResourceData.getConsentProvisionType() == null) {
-            return;
-        }
-        Consent.ProvisionComponent provision = new Consent.ProvisionComponent();
-        provision.setType(ConsentProvisionType.fromCode(screeningResourceData.getConsentProvisionType()));
-        consent.setProvision(provision);
-    }
 
     public static void populateConsentDateTime(Consent consent, ScreeningProfileData screeningResourceData) {
         String consentDateTime = screeningResourceData.getConsentDateTime();
