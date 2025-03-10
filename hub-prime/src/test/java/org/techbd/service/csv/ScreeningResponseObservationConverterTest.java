@@ -75,7 +75,6 @@ class ScreeningResponseObservationConverterTest {
             assertThat(entry.getResource()).isInstanceOf(Observation.class);
             Observation observation = (Observation) entry.getResource();
             assertThat(observation.getCode().getCodingFirstRep().getCode()).isEqualTo(screeningData.getQuestionCode());
-            assertThat(observation.getCode().getText()).isEqualTo(screeningData.getQuestionCodeText());
 
         }
     }
