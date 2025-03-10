@@ -1,6 +1,6 @@
 {
   "resourceType": "Observation",
-  "id": "7c468175b75c8a20250ba152788263a034bcc2d001892366945703c283025ea8",
+  "id": "72ab86764cbf6581ee377a546e0243f0df69516839ed68d2c0e0a31f35c645fd",
   "meta": {
     "lastUpdated": "2024-02-23T05:30:00.000+05:30",
     "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ]
@@ -28,9 +28,8 @@
     "coding": [ {
       "system": "http://loinc.org",
       "code": "71802-3",
-      "display": "Housing status"
-    } ],
-    "text": "What is your living situation today?"
+      "display": "What is your living situation today?"
+    } ]
   },
   "subject": {
     "reference": "Patient/null"
