@@ -115,11 +115,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                 "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                                                 "sdoh-category-unspecified", "SDOH Category Unspecified"));
 
-                                if (!data.getObservationCategorySnomedCode().isEmpty()) {
-                                        observation.addCategory(createCategory("http://snomed.info/sct",
-                                                        data.getObservationCategorySnomedCode(),
-                                                        data.getObservationCategorySnomedDisplay()));
-                                }
                         }
                         if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
                                 CodeableConcept value = new CodeableConcept();
@@ -134,7 +129,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                                 .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
                                                                 .setCode(data.getDataAbsentReasonCode())
                                                                 .setDisplay(data.getDataAbsentReasonDisplay()));
-                                dataAbsentReason.setText(data.getDataAbsentReasonText());
 
                                 observation.setDataAbsentReason(dataAbsentReason);
                         }
@@ -147,14 +141,9 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         CodeableConcept code = new CodeableConcept();
                         code.addCoding(new Coding("http://loinc.org", data.getQuestionCode(),
                                         data.getQuestionCodeDescription()));
-                        code.setText(data.getQuestionCodeText());
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
                                         idsGenerated.get(CsvConstants.PATIENT_ID)));
-                        if (data.getRecordedTime() != null) {
-                                observation.setEffective(new DateTimeType(DateUtil.convertStringToDate(data.getRecordedTime())));
-                        }
-                        observation.setIssued(DateUtil.convertStringToDate(data.getRecordedTime()));
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         switch (data.getQuestionCode()) {
