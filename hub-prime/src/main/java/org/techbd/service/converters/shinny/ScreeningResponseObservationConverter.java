@@ -90,7 +90,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 for (ScreeningObservationData data : screeningObservationDataList) {
                         Observation observation = new Observation();
                         String observationId = CsvConversionUtil
-                                        .sha256(data.getQuestionCodeDisplay().replace(" ", "") +
+                                        .sha256(data.getQuestionCodeDescription().replace(" ", "") +
                                                         data.getQuestionCode() + data.getEncounterId());
                         observation.setId(observationId);
                         data.setObservationId(observationId);
@@ -109,7 +109,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 observation.addCategory(createCategory(
                                                 "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                                                 data.getObservationCategorySdohCode(),
-                                                data.getObservationCategorySdohDisplay()));
+                                                data.getObservationCategorySdohText()));
                         } else {
                                 observation.addCategory(createCategory(
                                                 "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
@@ -146,7 +146,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                         "survey", null));
                         CodeableConcept code = new CodeableConcept();
                         code.addCoding(new Coding("http://loinc.org", data.getQuestionCode(),
-                                        data.getQuestionCodeDisplay()));
+                                        data.getQuestionCodeDescription()));
                         code.setText(data.getQuestionCodeText());
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
@@ -207,7 +207,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                 .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
                                                 .map(obs -> {
                                                         String derivedFromId = CsvConversionUtil.sha256(
-                                                                        obs.getQuestionCodeDisplay().replace(" ", "") +
+                                                                        obs.getQuestionCodeDescription().replace(" ", "") +
                                                                                         obs.getQuestionCode()
                                                                                         + obs.getEncounterId());
                                                         return new Reference("Observation/" + derivedFromId);
@@ -342,7 +342,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         groupObservation.addCategory(createCategory(
                                                         SDOH_CATEGORY_URL,
                                                         sdohCode,
-                                                        data.getObservationCategorySdohDisplay()));
+                                                        data.getObservationCategorySdohText()));
                                 });
 
                 // Set code
