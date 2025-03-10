@@ -143,7 +143,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         data.getQuestionCodeDescription()));
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
-                                        idsGenerated.get(CsvConstants.PATIENT_ID)));
+                                idsGenerated.get(CsvConstants.PATIENT_ID)));
+                        if (data.getScreeningStartDatetime() != null) {
+                            observation.setEffective(
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDatetime())));
+                        }
+                        observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDatetime()));
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         switch (data.getQuestionCode()) {
