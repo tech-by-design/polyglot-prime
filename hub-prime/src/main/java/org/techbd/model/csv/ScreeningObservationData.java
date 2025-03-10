@@ -78,6 +78,9 @@ public class ScreeningObservationData {
     @CsvBindByName(column = "SCREENING_START_DATETIME")
     private String screeningStartDatetime;
 
+    // @CsvBindByName(column = "OBSERVATION_ID")
+    private String observationId;
+
     @CsvBindByName(column = "SCREENING_END_DATETIME")
     private String screeningEndDatetime;
 
