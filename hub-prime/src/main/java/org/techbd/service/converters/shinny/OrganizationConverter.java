@@ -80,12 +80,7 @@ public class OrganizationConverter extends BaseConverter {
         populateIsActive(organization, qeAdminData);
         populateOrganizationType(organization, qeAdminData);
         populateOrganizationAddress(organization, qeAdminData);
-        
-        // Log JSON representation of Organization resource
-        FhirContext ctx = FhirContext.forR4();
-        String json = ctx.newJsonParser().setPrettyPrint(true).encodeResourceToString(organization);
-        LOG.info("FHIR Organization JSON: {}", json);
-       
+         
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Organization/" + organization.getId()));

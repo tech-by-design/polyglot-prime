@@ -2,7 +2,6 @@
   "resourceType": "Encounter",
   "id": "fc6327a5436c51638223dd0908dbbb4aa26e8495a2c395605f71600c161973dc",
   "meta": {
-    "lastUpdated": "2024-02-23T00:00:00.000+05:30",
     "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter" ]
   },
   "status": "finished",
