@@ -77,7 +77,7 @@
 <th>Missing Classes</th></tr>
 <tr class="b">
 <td>298</td>
-<td>36</td>
+<td>38</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -121,6 +121,12 @@
 <tr class="a">
 <td><a href="#org.techbd.service.CsvBundleProcessorService">org.techbd.service.CsvBundleProcessorService</a></td>
 <td>2</td></tr>
+<tr class="b">
+<td><a href="#org.techbd.service.converters.shinny.ConsentConverter">org.techbd.service.converters.shinny.ConsentConverter</a></td>
+<td>1</td></tr>
+<tr class="a">
+<td><a href="#org.techbd.service.converters.shinny.EncounterConverter">org.techbd.service.converters.shinny.EncounterConverter</a></td>
+<td>1</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.service.converters.shinny.ScreeningResponseObservationConverter">org.techbd.service.converters.shinny.ScreeningResponseObservationConverter</a></td>
 <td>1</td></tr>
@@ -360,6 +366,34 @@
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_LOAD_OF_KNOWN_NULL_VALUE">NP_LOAD_OF_KNOWN_NULL_VALUE</a></td>
 <td>353</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.ConsentConverter"></a><section>
+<h2>org.techbd.service.converters.shinny.ConsentConverter</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Dead store to meta in org.techbd.service.converters.shinny.ConsentConverter.convert(Bundle, DemographicData, QeAdminData, ScreeningProfileData, List, String, Map, String)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>80</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.EncounterConverter"></a><section>
+<h2>org.techbd.service.converters.shinny.EncounterConverter</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Dead store to meta in org.techbd.service.converters.shinny.EncounterConverter.convert(Bundle, DemographicData, QeAdminData, ScreeningProfileData, List, String, Map, String)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>77</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.ScreeningResponseObservationConverter"></a><section>
 <h2>org.techbd.service.converters.shinny.ScreeningResponseObservationConverter</h2>
 <table class="table table-striped">
