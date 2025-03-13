@@ -1047,6 +1047,11 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
 	      ADD COLUMN IF NOT EXISTS bundle_type TEXT NULL;
 
+      ALTER TABLE techbd_udi_ingress.sat_interaction_user 
+	      ADD COLUMN IF NOT EXISTS user_session_hash TEXT NULL;   
+
+      UPDATE techbd_udi_ingress.sat_interaction_user 
+        SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;        
 
       ${dependenciesSQL}
 

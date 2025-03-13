@@ -1360,6 +1360,7 @@ ORDER BY request_created_at DESC;
  *    In the event of an error, the function returns NULL.
  *******************************************************************************************************************************/
 
+
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_user_upserted(text, text, text, jsonb, text, text, text, text, text, jsonb, timestamptz, text, text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_user_upserted(hub_interaction_id text, hub_interaction_key text, nature text, payload jsonb, user_id text, user_name text, user_session text, user_role text, tenant_id text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text)
  RETURNS text
@@ -1423,6 +1424,7 @@ BEGIN
 	,user_id
 	,user_name
 	,user_session
+	,user_session_hash
 	,user_role
 	,client_ip_address
 	,user_agent
@@ -1442,6 +1444,7 @@ BEGIN
     sat_interaction_user_upserted.user_id,
     sat_interaction_user_upserted.user_name,
     sat_interaction_user_upserted.user_session,
+	md5(sat_interaction_user_upserted.user_session),
     sat_interaction_user_upserted.user_role,        
     COALESCE(v_client_ip_address_forwarded,v_client_ip_address),        
     v_user_agent,      
@@ -1484,18 +1487,19 @@ $function$
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_user_details CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_user_details
-AS SELECT sai.created_at,
-    sai.hub_interaction_id,
-    sai.uri,
-    sai.sat_interaction_user_id,
-    sai.user_id,
-    sai.user_name,
-    sai.user_session,
-    sai.user_role,
-    sai.client_ip_address,
-    sai.user_agent
+AS SELECT created_at,
+    hub_interaction_id,
+    uri,
+    sat_interaction_user_id,
+    user_id,
+    user_name,
+    user_session,
+    user_session_hash,
+    user_role,
+    client_ip_address,
+    user_agent
    FROM techbd_udi_ingress.sat_interaction_user sai
-  ORDER BY sai.created_at DESC;
+  ORDER BY created_at DESC;
 
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_user_list CASCADE;
@@ -1504,11 +1508,12 @@ AS SELECT min(created_at) AS created_at,
     min(user_id) AS user_id,
     min(user_name) AS user_name,
     min(user_role) AS user_role,
-    user_session
+    user_session,
+    user_session_hash
    FROM techbd_udi_ingress.interaction_user_details
   WHERE user_session IS NOT NULL
-  GROUP BY user_session
-  ORDER BY (min(created_at)) DESC;  
+  GROUP BY user_session, user_session_hash
+  ORDER BY (min(created_at)) DESC;
 
 /*******************************************************************************************************************************
 Procedure to handle the insertion or update of FHIR interaction data, managing default values and error handling.
