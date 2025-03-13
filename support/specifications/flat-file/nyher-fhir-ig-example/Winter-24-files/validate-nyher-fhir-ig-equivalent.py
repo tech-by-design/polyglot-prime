@@ -24,7 +24,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             "qe_admin_data": file1,
             "screening_profile_data": file2,             
             "screening_observation_data": file3,
-            "pt_info_data": file4,  
+            "demographic_data": file4,  
         } 
         # Check for missing files
         missing_files = {key: path for key, path in file_mappings.items() if not os.path.isfile(path)}
@@ -72,24 +72,22 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
         # Transform and validate
         common_transform_steps = [ 
             ("ORGANIZATION_TYPE_DISPLAY", "organization_type_display"),    
-            ("ENCOUNTER_STATUS_CODE_DESCRIPTION", "encounter_status_code_description"),
-            ("SCREENING_STATUS_CODE_DESCRIPTION", "screening_status_code_description"),
-            ("SCREENING_LANGUAGE_DESCRIPTION", "screening_language_description"),
-            ("PREFERRED_LANGUAGE_CODE_DESCRIPTION", "preferred_language_code_description"),
             ("SCREENING_CODE_DESCRIPTION", "screening_code_description"),
-            ("QUESTION_CODE_DESCRIPTION", "question_code_description"),  
+            ("QUESTION_CODE_TEXT", "question_code_text"),  
             ("ANSWER_CODE", "answer_code"),
             ("ANSWER_CODE_DESCRIPTION", "answer_code_description"), 
-            ("OBSERVATION_CATEGORY_SDOH_TEXT", "observation_category_sdoh_text"),
-            ("SEX_AT_BIRTH_CODE", "sex_at_birth_code"), 
-            ("GENDER_IDENTITY_CODE_DESCRIPTION", "gender_identity_code_description"),     
-            ("SEXUAL_ORIENTATION_CODE_DESCRIPTION", "sexual_orientation_code_description"), 
+            ("EXTENSION_SEX_AT_BIRTH_CODE_VALUE", "extension_sex_at_birth_code_value"),
+            ("RELATIONSHIP_PERSON_CODE", "relationship_person_code"),
+            ("RELATIONSHIP_PERSON_DESCRIPTION", "relationship_person_description"), 
+            ("EXTENSION_GENDER_IDENTITY_DISPLAY", "extension_gender_identity_display"),            
+            ("GENDER_IDENTITY_CODE", "gender_identity_code"),  
+            ("SEXUAL_ORIENTATION_VALUE_CODE_DESCRIPTION", "sexual_orientation_value_code_description"), 
             ("PREFERRED_LANGUAGE_CODE_SYSTEM_NAME", "preferred_language_code_system_name"), 
-            ("ADMINISTRATIVE_SEX_CODE_DESCRIPTION", "administrative_sex_code_description"),
-            ("SEX_AT_BIRTH_CODE_DESCRIPTION", "sex_at_birth_code_description"),
-            ("RACE_CODE", "race_code"),
-            ("RACE_CODE_DESCRIPTION", "race_code_description"),  
-            ("ETHNICITY_CODE_DESCRIPTION", "ethnicity_code_description"),    
+            ("EXTENSION_OMBCATEGORY_RACE_CODE", "extension_ombcategory_race_code"),
+            ("EXTENSION_OMBCATEGORY_RACE_CODE_DESCRIPTION", "extension_ombcategory_race_code_description"),  
+            ("EXTENSION_OMBCATEGORY_ETHNICITY_CODE_DESCRIPTION", "extension_ombcategory_ethnicity_code_description"),    
+            ("OBSERVATION_CATEGORY_SDOH_DISPLAY","observation_category_sdoh_display"),  
+            ("QUESTION_CODE_DISPLAY","question_code_display"),   
             ("DATA_ABSENT_REASON_DISPLAY", "data_absent_reason_display")
         ]
 
