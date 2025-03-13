@@ -34,9 +34,9 @@
             { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User Agent of the user" },
         ];
         function getUserInteractionsDetail(params) {
-            const user_session = encodeURIComponent(params.data.user_session) || params.data.user_session;
+            const user_session_hash = encodeURIComponent(params.data.user_session_hash) || params.data.user_session_hash;
 
-            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewDetailsName}/user_session/${user_session}.json`))
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewDetailsName}/user_session/${user_session_hash}.json`))
                 .then(response => {
                     if (response.url.includes('/?timeout=true')) {
                         window.location.href = '/?timeout=true'; // Redirect to login page
@@ -56,7 +56,7 @@
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                   { headerName: "Session Start Time", field: "created_at", filter: "agDateColumnFilter", headerTooltip: "Time at which the user interaction is recorded", cellRenderer: 'agGroupCellRenderer' },
-                  { headerName: "Session ID", field: "user_session", filter: "agTextColumnFilter", headerTooltip: "SessionID of the session" },
+                  { headerName: "Session ID Hash", field: "user_session_hash", filter: "agTextColumnFilter", headerTooltip: "SessionID of the session" },
                   { headerName: "User ID", field: "user_id", filter: "agTextColumnFilter", headerTooltip: "User ID of the user" },
                   { headerName: "Username", field: "user_name", filter: "agTextColumnFilter", headerTooltip: "User name of the user" },
                   ])

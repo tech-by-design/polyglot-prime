@@ -23,14 +23,22 @@ This project leverages the [Frictionless Data](https://frictionlessdata.io/) lib
 1. **Install Data Curator**: Download it [here](https://github.com/qcif/data-curator) and follow the instructions for your operating system.
 2. **Load the Example Data Package**: 
    - Access the example data package from our repository: [Data Package Examples](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/flat-file).
-   - The data package contains only the Frictionless JSON schema (`datapackage-nyher-fhir-ig-equivalent.json`) and the CSV data folder. Other files (e.g., Python scripts or markdown documentation) have been removed for clarity.
+   - The data package contains only the Frictionless JSON schema (`datapackage-nyher-fhir-ig-equivalent.json`) and the CSV data folder (`nyher-fhir-ig-example`). The CSV folder includes the following files:
+      ```
+      nyher-fhir-ig-example/
+      ├── SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv 
+      ├── SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv 
+      ├── SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv
+      └── SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv 
+      ```
+      Other files (e.g., Python scripts or markdown documentation) have been removed for clarity.
    - Download and zip the `specifications` folder for easy sharing or validation in Data Curator.
 3. **Ensure Correct CSV Order**
    - After loading the CSV package into Data Curator, ensure that the files are listed and processed in the following order (due to the primary key reference in `QE_ADMIN_DATA`):
-     1. `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv` 
-     2. `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv`      
-     3. `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv` 
-     4. `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`
+     1. `SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv` 
+     2. `SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv `      
+     3. `SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv` 
+     4. `SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv `
    - This order is required because `QE_ADMIN_DATA` has the primary key `PATIENT_MR_ID_VALUE`, and the other datasets reference it.
 4. **Validate and Save**
    - Load the zipped data package in Data Curator.
@@ -73,11 +81,11 @@ The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getti
   - `datapackage-nyher-fhir-ig-equivalent.json`: Schema specification for validating CSV files.
   - `validate-nyher-fhir-ig-equivalent.py`: Python script to validate CSV files against the schema.
 - **`flat-file/nyher-fhir-ig-example/`**: Folder containing sample CSV files for validation.
-  - `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`: Demographic information data.
-  - `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv`: QE administration data.
-  - `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv`: Primary screening observation data.
-  - `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv`: Primary screening observation data.
-  - `Consolidated NYHER FHIR IG Examples.xlsx`: Excel file with consolidated sheets of the CSV data above.
+  - `SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv `: Demographic information data.
+  - `SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv`: QE administration data.
+  - `SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv`: Primary screening profile data.
+  - `SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv`: Primary screening observation data.
+  <!-- - `Consolidated NYHER FHIR IG Examples.xlsx`: Excel file with consolidated sheets of the CSV data above. -->
 
 - **`documentation.auto.md`**
   - Auto-generated documentation detailing the schema, validation process, and CSV contents for easier understanding.
@@ -146,7 +154,7 @@ Before you can use this tool, make sure you have the following installed on your
    Use the provided `validate-nyher-fhir-ig-equivalent.py` script to validate all CSV files in the `flat-file/nyher-fhir-ig-example/` directory. Replace filenames as necessary, but **ensure that the file order remains unchanged**. The order of files is mandatory for the validation process.
 
    ```bash
-   python3 validate-nyher-fhir-ig-equivalent.py datapackage-nyher-fhir-ig-equivalent.json nyher-fhir-ig-example/QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv nyher-fhir-ig-example/DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv output.json
+   python3 validate-nyher-fhir-ig-equivalent.py datapackage-nyher-fhir-ig-equivalent.json nyher-fhir-ig-example/SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv nyher-fhir-ig-example/SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv nyher-fhir-ig-example/SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv nyher-fhir-ig-example/SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv
    ```
 
 3. **Review Validation Results**:
@@ -162,40 +170,50 @@ Before you can use this tool, make sure you have the following installed on your
 - The `validate-nyher-fhir-ig-equivalent.py` script integrates with Frictionless for accurate and detailed validation.
 - The `output.json` file provides a machine-readable validation report. To understand its structure, refer to the [Frictionless JSON documentation][(https://framework.frictionlessdata.io/docs/guides/validate](https://framework.frictionlessdata.io/docs/guides/validating-data.html)).
 
-## About the File Format and Naming Convention
+## File Format and Naming Convention  
 
-The CSV file names in this project follow a strict naming convention to ensure consistency and compatibility with the validation process. Each file name is structured as follows:
+The CSV file names in this project follow a strict naming convention to ensure consistency and compatibility with the validation process. Each file name is structured as follows:  
 
-**`<DATA_TYPE>_<GROUP_IDENTIFIER>.csv`**
+**`SDOH_<DATA_CATEGORY>_{OrganizationName}_{groupIdentifier}_YYYYMMDDhhmmss.csv`**  
 
-All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting, and they must be encoded in **UTF-8** to ensure proper validation and data processing.
+All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting, and they must be encoded in **UTF-8** to ensure proper validation and data processing.  
 
-### Components of the File Name
+### Components of the File Name  
 
-1. **`<DATA_TYPE>`**:
-   - This is the predefined and mandatory part of the file name. It indicates the category of data contained in the file and must remain unchanged.
-   - Examples of valid values:
-     - `DEMOGRAPHIC_DATA_`
-     - `QE_ADMIN_DATA_` 
-     - `SCREENING_PROFILE_DATA_` 
-     - `SCREENING_OBSERVATION_DATA_`
+1. **`<DATA_CATEGORY>`**:  
+   - This is the predefined and mandatory part of the file name. It indicates the category of data contained in the file and must remain unchanged.  
+   - Examples of valid values:  
+     - `SDOH_PtInfo` - Represents patient information data.  
+     - `SDOH_QEadmin` - Represents quality entity administration data.  
+     - `SDOH_ScreeningProf` - Represents screening profile data.  
+     - `SDOH_ScreeningObs` - Represents screening observation data.  
 
-2. **`<GROUP_IDENTIFIER>`**:
-   - This part of the file name is flexible and which may include the following components for better identification:
-     - **QE Name or Organization**: Represents the entity providing the data (e.g., `partner1-test`).
-     - **Date**: The date the data was generated or collected, formatted as `YYYYMMDD` (e.g., `20241128`).
-     - **Test Case or Scenario Identifier**: A specific identifier to distinguish different test cases or scenarios (e.g., `testcase1`).
+2. **`{OrganizationName}`**:  
+   - This represents the organization identifier but **does not** contain the actual name of the organization. Instead, it is a predefined identifier assigned to the organization (e.g., `CareRidgeSCN`).  
 
-### Example File Names
+3. **`{groupIdentifier}`**:  
+   - This part of the file name is flexible and may include the following components for better identification:  
+     - **Test Case or Scenario Identifier**: A specific identifier to distinguish different test cases or scenarios (e.g., `testcase1`).  
 
-- `DEMOGRAPHIC_DATA_partner1-test-20241128-testcase1.csv`
-- `QE_ADMIN_DATA_partner1-test-20241128-testcase1.csv` 
-- `SCREENING_PROFILE_DATA_partner1-test-20241128-testcase1.csv` 
-- `SCREENING_OBSERVATION_DATA_partner1-test-20241128-testcase1.csv`
+4. **`YYYYMMDDhhmmss`**:  
+   - This represents the timestamp indicating when the data was generated or collected. It follows the format:  
+     - **YYYY** - Year  
+     - **MM** - Month  
+     - **DD** - Day  
+     - **hhmmss** - Hour, Minute, and Second in 24-hour format  
 
-### Migration Plan
+### Example File Names  
 
-The migration plan from Summer'24 CSV to Winter'24 CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/summer24-winter24-migration-document.md).
+- `SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv`  
+- `SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv`  
+- `SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv`  
+- `SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv`  
+
+By following this structured naming convention, we ensure consistency, clarity, and efficient data processing across all CSV files.
+
+<!-- ### Migration Plan
+
+The migration plan from Summer'24 CSV to Winter'24 CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/summer24-winter24-migration-document.md). -->
 
 ### Notes
 
