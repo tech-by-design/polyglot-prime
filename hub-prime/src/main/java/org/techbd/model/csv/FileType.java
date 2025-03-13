@@ -1,10 +1,10 @@
 package org.techbd.model.csv;
 
 public enum FileType {
-    DEMOGRAPHIC_DATA,
-    QE_ADMIN_DATA,
-    SCREENING_PROFILE_DATA,
-    SCREENING_OBSERVATION_DATA;
+    SDOH_PtInfo,
+    SDOH_QEadmin,
+    SDOH_ScreeningProf,
+    SDOH_ScreeningObs;
 
     public static FileType fromFilename(final String filename) {
         if (filename == null) {

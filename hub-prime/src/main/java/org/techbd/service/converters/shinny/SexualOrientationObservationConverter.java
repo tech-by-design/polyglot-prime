@@ -47,16 +47,16 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
             String interactionId, Map<String, String> idsGenerated,String baseFHIRUrl) {
         LOG.info("SexualOrientationObservationConverter:: convert BEGIN for interaction id :{} ", interactionId);
-        if (StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCodeSystemName()) ||
-                StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCode()) ||
-                StringUtils.isNotEmpty(demographicData.getSexualOrientationValueCodeDescription())) {
+        if (StringUtils.isNotEmpty(demographicData.getSexualOrientationCodeSystem()) ||
+                StringUtils.isNotEmpty(demographicData.getSexualOrientationCode()) ||
+                StringUtils.isNotEmpty(demographicData.getSexualOrientationCodeDescription())) {
             Observation observation = new Observation();
             setMeta(observation,baseFHIRUrl,"observationSexualOrientation");
             observation.setId(CsvConversionUtil.sha256("SexualOrientation-" + screeningProfileData.getPatientMrIdValue()
                     + screeningProfileData.getEncounterId()));
             Meta meta = observation.getMeta();
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
-            meta.setLastUpdated(DateUtil.parseDate(demographicData.getSexualOrientationLastUpdated()));
+            meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
             observation.setStatus(Observation.ObservationStatus.fromCode("final")); // TODO : remove static reference
             Reference subjectReference = new Reference();
             subjectReference.setReference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)); // TODO : remove static reference
@@ -66,9 +66,9 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                     "76690-7", "Sexual orientation")); // TODO : remove static reference
             observation.setCode(code);
             CodeableConcept value = new CodeableConcept();
-            value.addCoding(new Coding(demographicData.getSexualOrientationValueCodeSystemName(),
-                    demographicData.getSexualOrientationValueCode(),
-                    demographicData.getSexualOrientationValueCodeDescription()));
+            value.addCoding(new Coding(demographicData.getSexualOrientationCodeSystem(),
+                    demographicData.getSexualOrientationCode(),
+                    demographicData.getSexualOrientationCodeDescription()));
             observation.setValue(value);
             // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
             // observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated())); //Not Used

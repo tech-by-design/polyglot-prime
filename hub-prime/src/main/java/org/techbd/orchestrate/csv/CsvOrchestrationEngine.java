@@ -68,7 +68,7 @@ public class CsvOrchestrationEngine {
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private static final Logger log = LoggerFactory.getLogger(CsvOrchestrationEngine.class);
     private static final Pattern FILE_PATTERN = Pattern.compile(
-            "(DEMOGRAPHIC_DATA|QE_ADMIN_DATA|SCREENING)_(.+)");
+          "(SDOH_PtInfo|SDOH_QEadmin|SDOH_ScreeningProf|SDOH_ScreeningObs)_(.+)");
 
     public CsvOrchestrationEngine(final AppConfig appConfig, final VfsCoreService vfsCoreService,
             final UdiPrimeJpaConfig udiPrimeJpaConfig, final FHIRService fhirService) {
@@ -297,19 +297,19 @@ public class CsvOrchestrationEngine {
                 initRIHR.setUserAgent(request.getHeader("User-Agent"));
                 for (final FileDetail fileDetail : fileDetailList) {
                     switch (fileDetail.fileType()) {
-                        case FileType.DEMOGRAPHIC_DATA -> {
+                        case FileType.SDOH_PtInfo -> {
                             initRIHR.setCsvDemographicDataFileName(fileDetail.filename());
                             initRIHR.setCsvDemographicDataPayloadText(fileDetail.content());
                         }
-                        case FileType.QE_ADMIN_DATA -> {
+                        case FileType.SDOH_QEadmin -> {
                             initRIHR.setCsvQeAdminDataFileName(fileDetail.filename());
                             initRIHR.setCsvQeAdminDataPayloadText(fileDetail.content());
                         }
-                        case FileType.SCREENING_PROFILE_DATA -> {
+                        case FileType.SDOH_ScreeningProf -> {
                             initRIHR.setCsvScreeningProfileDataFileName(fileDetail.filename());
                             initRIHR.setCsvScreeningProfileDataPayloadText(fileDetail.content());
                         }
-                        case FileType.SCREENING_OBSERVATION_DATA -> {
+                        case FileType.SDOH_ScreeningObs -> {
                             initRIHR.setCsvScreeningObservationDataFileName(fileDetail.filename());
                             initRIHR.setCsvScreeningObservationDataPayloadText(fileDetail.content());
                         }
@@ -645,10 +645,10 @@ public class CsvOrchestrationEngine {
 
             // Define required file types
             Set<FileType> requiredFileTypes = Set.of(
-                    FileType.QE_ADMIN_DATA,
-                    FileType.SCREENING_OBSERVATION_DATA,
-                    FileType.SCREENING_PROFILE_DATA,
-                    FileType.DEMOGRAPHIC_DATA);
+                    FileType.SDOH_QEadmin,
+                    FileType.SDOH_ScreeningObs,
+                    FileType.SDOH_ScreeningProf,
+                    FileType.SDOH_PtInfo);
 
             return presentFileTypes.containsAll(requiredFileTypes);
         }
@@ -664,10 +664,10 @@ public class CsvOrchestrationEngine {
 
             // Determine missing file types
             Set<FileType> requiredFileTypes = Set.of(
-                    FileType.QE_ADMIN_DATA,
-                    FileType.SCREENING_OBSERVATION_DATA,
-                    FileType.SCREENING_PROFILE_DATA,
-                    FileType.DEMOGRAPHIC_DATA);
+                    FileType.SDOH_QEadmin,
+                    FileType.SDOH_ScreeningObs,
+                    FileType.SDOH_ScreeningProf,
+                    FileType.SDOH_PtInfo);
 
             Set<FileType> presentFileTypes = fileDetails.stream()
                     .map(FileDetail::fileType)
@@ -980,10 +980,10 @@ public class CsvOrchestrationEngine {
             command.add("validate-nyher-fhir-ig-equivalent.py");
             command.add("datapackage-nyher-fhir-ig-equivalent.json");
             List<FileType> fileTypeOrder = Arrays.asList(
-                    FileType.QE_ADMIN_DATA,
-                    FileType.SCREENING_PROFILE_DATA,
-                    FileType.SCREENING_OBSERVATION_DATA,
-                    FileType.DEMOGRAPHIC_DATA);
+                    FileType.SDOH_QEadmin,
+                    FileType.SDOH_ScreeningProf,
+                    FileType.SDOH_ScreeningObs,
+                    FileType.SDOH_PtInfo);
             Map<FileType, String> fileTypeToFileNameMap = new HashMap<>();
             for (FileDetail fileDetail : fileDetails) {
                 fileTypeToFileNameMap.put(fileDetail.fileType(), fileDetail.filename());

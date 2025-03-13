@@ -29,6 +29,8 @@ import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
+import ca.uhn.fhir.context.FhirContext;
+
 /**
  * Converts data related to an Organization into a FHIR Organization resource.
  */
@@ -78,6 +80,7 @@ public class OrganizationConverter extends BaseConverter {
         populateIsActive(organization, qeAdminData);
         populateOrganizationType(organization, qeAdminData);
         populateOrganizationAddress(organization, qeAdminData);
+         
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl("http://shinny.org/us/ny/hrsn/Organization/" + organization.getId()));
@@ -96,21 +99,6 @@ public class OrganizationConverter extends BaseConverter {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
 
-            if (StringUtils.isNotEmpty(data.getFacilityIdentifierTypeDisplay())) {
-                coding.setDisplay(data.getFacilityIdentifierTypeDisplay());
-                LOG.info("Coding Display Set: {}", data.getFacilityIdentifierTypeDisplay());
-            }
-
-            if (StringUtils.isNotEmpty(data.getFacilityIdentifierTypeValue())) {
-                identifier.setValue(data.getFacilityIdentifierTypeValue());
-                LOG.info("Identifier Value Set: {}", data.getFacilityIdentifierTypeValue());
-            }
-
-            if (StringUtils.isNotEmpty(data.getFacilityIdentifierTypeSystem())) {
-                identifier.setSystem(data.getFacilityIdentifierTypeSystem());
-                LOG.info("Adding Identifier: Type Display - {}, Value - {}", coding.getDisplay(), identifier.getValue());
-            }
-
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
@@ -124,8 +112,8 @@ public class OrganizationConverter extends BaseConverter {
 
             // Create a new Coding object
             Coding coding = new Coding();
-            String system = "http://terminology.hl7.org/CodeSystem/organization-type";  //TODO : remove static reference
-            coding.setSystem(system);
+            
+            coding.setSystem(data.getOrganizationTypeCodeSystem());
             coding.setCode(data.getOrganizationTypeCode());
             coding.setDisplay(data.getOrganizationTypeDisplay());
 
@@ -142,6 +130,10 @@ public class OrganizationConverter extends BaseConverter {
             Address address = new Address();
 
             String fullAddressText = qrAdminData.getFacilityAddress1();
+            //please do confirm
+            // if (StringUtils.isNotEmpty(qrAdminData.getFacilityAddress2())) {
+            //     fullAddressText += ", " + qrAdminData.getFacilityAddress2();
+            // }
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityCity())) {
                 fullAddressText += ", " + qrAdminData.getFacilityCity();
             }
@@ -156,11 +148,16 @@ public class OrganizationConverter extends BaseConverter {
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityAddress1())){
                 List<StringType> addressLines = new ArrayList<>();
                 addressLines.add(new StringType(qrAdminData.getFacilityAddress1()));
-                address.setLine(addressLines);
+                if (StringUtils.isNotEmpty(qrAdminData.getFacilityAddress2())){
+                    addressLines.add(new StringType(qrAdminData.getFacilityAddress2()));
+                }
+                    address.setLine(addressLines);
+            
             }
+        
 
             address.setCity(qrAdminData.getFacilityCity());
-            address.setDistrict(qrAdminData.getFacilityDistrict());
+            address.setDistrict(qrAdminData.getFacilityCounty());
             address.setState(qrAdminData.getFacilityState());
             address.setPostalCode(qrAdminData.getFacilityZip());
 

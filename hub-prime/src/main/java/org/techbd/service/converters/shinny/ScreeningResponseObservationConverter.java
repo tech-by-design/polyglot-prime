@@ -90,7 +90,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 for (ScreeningObservationData data : screeningObservationDataList) {
                         Observation observation = new Observation();
                         String observationId = CsvConversionUtil
-                                        .sha256(data.getQuestionCodeDisplay().replace(" ", "") +
+                                        .sha256(data.getQuestionCodeDescription().replace(" ", "") +
                                                         data.getQuestionCode() + data.getEncounterId());
                         observation.setId(observationId);
                         data.setObservationId(observationId);
@@ -109,21 +109,16 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 observation.addCategory(createCategory(
                                                 "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                                                 data.getObservationCategorySdohCode(),
-                                                data.getObservationCategorySdohDisplay()));
+                                                data.getObservationCategorySdohText()));
                         } else {
                                 observation.addCategory(createCategory(
                                                 "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                                                 "sdoh-category-unspecified", "SDOH Category Unspecified"));
 
-                                if (!data.getObservationCategorySnomedCode().isEmpty()) {
-                                        observation.addCategory(createCategory("http://snomed.info/sct",
-                                                        data.getObservationCategorySnomedCode(),
-                                                        data.getObservationCategorySnomedDisplay()));
-                                }
                         }
                         if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
                                 CodeableConcept value = new CodeableConcept();
-                                value.addCoding(new Coding("http://loinc.org", data.getAnswerCode(),
+                                value.addCoding(new Coding(data.getAnswerCodeSystem(), data.getAnswerCode(),
                                                 data.getAnswerCodeDescription()));
                                 observation.setValue(value);
                         } else if (!data.getDataAbsentReasonCode().isEmpty()) {
@@ -134,7 +129,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                                 .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
                                                                 .setCode(data.getDataAbsentReasonCode())
                                                                 .setDisplay(data.getDataAbsentReasonDisplay()));
-                                dataAbsentReason.setText(data.getDataAbsentReasonText());
 
                                 observation.setDataAbsentReason(dataAbsentReason);
                         }
@@ -145,16 +139,16 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                                                         "survey", null));
                         CodeableConcept code = new CodeableConcept();
-                        code.addCoding(new Coding("http://loinc.org", data.getQuestionCode(),
-                                        data.getQuestionCodeDisplay()));
-                        code.setText(data.getQuestionCodeText());
+                        code.addCoding(new Coding(data.getQuestionCodeSystem(), data.getQuestionCode(),
+                                        data.getQuestionCodeDescription()));
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
-                                        idsGenerated.get(CsvConstants.PATIENT_ID)));
-                        if (data.getRecordedTime() != null) {
-                                observation.setEffective(new DateTimeType(DateUtil.convertStringToDate(data.getRecordedTime())));
+                                idsGenerated.get(CsvConstants.PATIENT_ID)));
+                        if (data.getScreeningStartDatetime() != null) {
+                            observation.setEffective(
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDatetime())));
                         }
-                        observation.setIssued(DateUtil.convertStringToDate(data.getRecordedTime()));
+                        observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDatetime()));
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         switch (data.getQuestionCode()) {
@@ -207,7 +201,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                 .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
                                                 .map(obs -> {
                                                         String derivedFromId = CsvConversionUtil.sha256(
-                                                                        obs.getQuestionCodeDisplay().replace(" ", "") +
+                                                                        obs.getQuestionCodeDescription().replace(" ", "") +
                                                                                         obs.getQuestionCode()
                                                                                         + obs.getEncounterId());
                                                         return new Reference("Observation/" + derivedFromId);
@@ -302,6 +296,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 Observation groupObservation = new Observation();
                 String observationId = CsvConversionUtil.sha256("group-" + screeningCode + screeningProfileData.getEncounterId());
                 groupObservation.setId(observationId);
+                ScreeningObservationData screeningObservationData = new ScreeningObservationData();
 
                 // Set meta information
                 Meta meta = new Meta();
@@ -342,7 +337,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         groupObservation.addCategory(createCategory(
                                                         SDOH_CATEGORY_URL,
                                                         sdohCode,
-                                                        data.getObservationCategorySdohDisplay()));
+                                                        data.getObservationCategorySdohText()));
                                 });
 
                 // Set code
@@ -359,12 +354,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (encounterId != null){
                         groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
                 }
-                groupObservation.setEffective(new DateTimeType(new Date()));
+                groupObservation.setEffective(new DateTimeType(screeningObservationData.getScreeningStartDatetime()));
                 groupObservation.setIssued(new Date());
                 CodeableConcept interpretation = new CodeableConcept();
                 interpretation.addCoding(
                                 new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                                                "POS", "Positive"));
+                                screeningObservationData.getPotentialNeedIndicated(), "Positive"));
                 groupObservation.addInterpretation(interpretation);
 
                 // Add member references using observationId directly from the model

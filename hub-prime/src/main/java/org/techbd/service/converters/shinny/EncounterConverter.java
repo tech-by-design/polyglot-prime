@@ -75,7 +75,6 @@ public class EncounterConverter extends BaseConverter {
         String fullUrl = "http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId();
 
         Meta meta = encounter.getMeta();
-        meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getEncounterLastUpdated()));
 
         populateEncounterStatus(encounter, screeningProfileData);
 

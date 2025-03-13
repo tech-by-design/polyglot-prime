@@ -28,14 +28,13 @@ class FileProcessorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // Create test files with sample content
-        demographicFile = createFile("DEMOGRAPHIC_DATA_group1.csv", "demographic data");
-        qeAdminFile = createFile("QE_ADMIN_DATA_group1.csv", "qe admin data");
-        screeningProfileFile = createFile("SCREENING_PROFILE_DATA_group1.csv", "screening profile data");
-        screeningObservationFile = createFile("SCREENING_OBSERVATION_DATA_group1.csv", "screening observation data");
-        invalidFile = createFile("INVALID_FILE_group1.csv", "invalid data");
-    }
-
+    // Create test files with sample content using new naming
+    demographicFile = createFile("SDOH_PtInfo_group1.csv", "demographic data");
+    qeAdminFile = createFile("SDOH_QEadmin_group1.csv", "qe admin data");
+    screeningProfileFile = createFile("SDOH_ScreeningProf_group1.csv", "screening profile data");
+    screeningObservationFile = createFile("SDOH_ScreeningObs_group1.csv", "screening observation data");
+    invalidFile = createFile("INVALID_FILE_group1.csv", "invalid data");
+}
     private Path createFile(String fileName, String content) throws IOException {
         Path filePath = tempDir.resolve(fileName);
         Files.writeString(filePath, content);
@@ -62,10 +61,10 @@ class FileProcessorTest {
         assertEquals(4, group1Files.size());
         
         // Verify all file types are present
-        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.DEMOGRAPHIC_DATA));
-        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.QE_ADMIN_DATA));
-        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.SCREENING_PROFILE_DATA));
-        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.SCREENING_OBSERVATION_DATA));
+        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.SDOH_PtInfo));
+        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.SDOH_QEadmin));
+        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.SDOH_ScreeningProf));
+        assertTrue(group1Files.stream().anyMatch(fd -> fd.fileType() == FileType.SDOH_ScreeningObs));
     }
 
     @Test
@@ -123,8 +122,8 @@ class FileProcessorTest {
     @Test
     void testMultipleGroups() throws IOException {
         // Arrange
-        Path demographicFile2 = createFile("DEMOGRAPHIC_DATA_group2.csv", "demographic data 2");
-        Path qeAdminFile2 = createFile("QE_ADMIN_DATA_group2.csv", "qe admin data 2");
+        Path demographicFile2 = createFile("SDOH_PtInfo_group2.csv", "demographic data 2");
+        Path qeAdminFile2 = createFile("SDOH_QEadmin_group2.csv", "qe admin data 2");
 
         List<String> filePaths = Arrays.asList(
             demographicFile.toString(),
