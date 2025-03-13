@@ -86,13 +86,13 @@ public class CsvBundleProcessorService {
                         final String content = fileDetail.content();
                         final FileType fileType = fileDetail.fileType();
                         switch (fileType) {
-                            case DEMOGRAPHIC_DATA ->
+                            case SDOH_PtInfo ->
                                 demographicData = CsvConversionUtil.convertCsvStringToDemographicData(content);
-                            case SCREENING_PROFILE_DATA -> screeningProfileData = CsvConversionUtil
+                            case SDOH_ScreeningProf -> screeningProfileData = CsvConversionUtil
                                     .convertCsvStringToScreeningProfileData(content);
-                            case QE_ADMIN_DATA ->
+                            case SDOH_QEadmin ->
                                 qeAdminData = CsvConversionUtil.convertCsvStringToQeAdminData(content);
-                            case SCREENING_OBSERVATION_DATA -> screeningObservationData = CsvConversionUtil
+                            case SDOH_ScreeningObs -> screeningObservationData = CsvConversionUtil
                                     .convertCsvStringToScreeningObservationData(content);
                             default -> throw new IllegalStateException("Unexpected value: " + fileType);
                         }
@@ -251,41 +251,41 @@ public class CsvBundleProcessorService {
         }
     }
 
-    private void validateAndThrowIfDataMissing(
-            final Map<String, List<DemographicData>> demographicData,
-            final Map<String, List<ScreeningProfileData>> screeningProfileData,
-            final Map<String, List<QeAdminData>> qeAdminData,
-            final Map<String, List<ScreeningObservationData>> screeningObservationData) {
-
-        final StringBuilder missingDataMessage = new StringBuilder("The following required data maps are missing or empty: ");
-
-        boolean isAnyMissing = false;
-
-        if (demographicData == null || demographicData.isEmpty()) {
-            missingDataMessage.append("DEMOGRAPHIC_DATA, ");
-            isAnyMissing = true;
-        }
-        if (screeningProfileData == null || screeningProfileData.isEmpty()) {
-            missingDataMessage.append("SCREENING_PROFILE_DATA, ");
-            isAnyMissing = true;
-        }
-        if (qeAdminData == null || qeAdminData.isEmpty()) {
-            missingDataMessage.append("QE_ADMIN_DATA, ");
-            isAnyMissing = true;
-        }
-        if (screeningObservationData == null || screeningObservationData.isEmpty()) {
-            missingDataMessage.append("SCREENING_OBSERVATION_DATA, ");
-            isAnyMissing = true;
-        }
-
-        if (isAnyMissing) {
-            missingDataMessage.setLength(missingDataMessage.length() - 2);
-            LOG.error(missingDataMessage.toString());
-            throw new IllegalArgumentException(missingDataMessage.toString());
-        }
+private void validateAndThrowIfDataMissing(
+        final Map<String, List<DemographicData>> demographicData,
+        final Map<String, List<ScreeningProfileData>> screeningProfileData,
+        final Map<String, List<QeAdminData>> qeAdminData,
+        final Map<String, List<ScreeningObservationData>> screeningObservationData) {
+    
+    final StringBuilder missingDataMessage = new StringBuilder("The following required data maps are missing: ");
+    boolean isAnyMissing = false;
+    
+    if (demographicData == null || demographicData.isEmpty()) {
+        missingDataMessage.append("SDOH_PtInfo, ");
+        isAnyMissing = true;
     }
-
-    private List<Object> processScreening(final String groupKey,
+    
+    if (screeningProfileData == null || screeningProfileData.isEmpty()) {
+        missingDataMessage.append("SDOH_ScreeningProf, ");
+        isAnyMissing = true;
+    }
+    
+    if (qeAdminData == null || qeAdminData.isEmpty()) {
+        missingDataMessage.append("SDOH_QEadmin, ");
+        isAnyMissing = true;
+    }
+    
+    if (screeningObservationData == null || screeningObservationData.isEmpty()) {
+        missingDataMessage.append("SDOH_ScreeningObs, ");
+        isAnyMissing = true;
+    }
+    
+    if (isAnyMissing) {
+        throw new IllegalArgumentException(missingDataMessage.toString());
+    }
+}
+    
+private List<Object> processScreening(final String groupKey,
             final Map<String, List<DemographicData>> demographicData,
             final Map<String, List<ScreeningProfileData>> screeningProfileData,
             final Map<String, List<QeAdminData>> qeAdminData,
