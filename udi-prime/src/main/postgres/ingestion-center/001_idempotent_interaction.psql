@@ -4134,7 +4134,7 @@ select
 	(error_payload.value ->> 'fieldNumber'::text)::integer as fieldnumber,
 	case
 		when tasks.value ->> 'name'::text = 'qe_admin_data'::text then original_csv.qe_admin_data_file_name
-		when tasks.value ->> 'name'::text = 'demographic_data'::text then original_csv.demographic_data_file_name
+		when tasks.value ->> 'name'::text = 'pt_info_data'::text then original_csv.demographic_data_file_name
 		when tasks.value ->> 'name'::text = 'screening_observation_data'::text then original_csv.screening_observation_data_file_name
 		when tasks.value ->> 'name'::text = 'screening_profile_data'::text then original_csv.screening_profile_data_file_name
 		else null::text
