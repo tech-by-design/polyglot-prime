@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.service.http.hub.prime.ux.validator.Validator;
@@ -76,8 +75,8 @@ public class TabularRowsController {
             @Parameter(description = "Mandatory path variable to mention schema name.", required = true) @PathVariable(required = true) String schemaName,
             @Parameter(description = "Mandatory path variable to mention the table or view name.", required = true) final @PathVariable String masterTableNameOrViewName,
             @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true) final @RequestBody @Nonnull TabularRowsRequest payload,
-            @Parameter(description = "Header to mention whether the generated SQL to be included in the response.", required = false) @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false, defaultValue = "false") boolean includeGeneratedSqlInResp,
-            @Parameter(description = "Header to mention whether the generated SQL to be included in the error response. This will be taken <code>true</code> by default.", required = false) @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
+            @Parameter(description = "Header to mention whether the generated SQL to be included in the response.", required = false) boolean includeGeneratedSqlInResp,
+            @Parameter(description = "Header to mention whether the generated SQL to be included in the error response. This will be taken <code>true</code> by default.", required = false) boolean includeGeneratedSqlInErrorResp) {
 
         if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
                 || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(masterTableNameOrViewName).matches()) {
@@ -119,11 +118,11 @@ public class TabularRowsController {
             @Nonnull
             final TabularRowsRequestForSP payload,
             @Parameter(description = "Header to mention whether the generated SQL to be included in the response.", required = false)
-            @RequestHeader(value = "X-Include-Generated-SQL-In-Response", required = false, defaultValue = "false") boolean includeGeneratedSqlInResp,
+            boolean includeGeneratedSqlInResp,
             @Parameter(description = """
             Header to mention whether the generated SQL to be included in the error response.
             This will be taken <code>true</code> by default.""", required = false)
-            @RequestHeader(value = "X-Include-Generated-SQL-In-Error-Response", required = false, defaultValue = "true") boolean includeGeneratedSqlInErrorResp) {
+            boolean includeGeneratedSqlInErrorResp) {
 
         if (!VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(schemaName).matches()
                 || !VALID_PATTERN_FOR_SCHEMA_AND_TABLE_AND_COLUMN.matcher(storedProcName).matches()) {
