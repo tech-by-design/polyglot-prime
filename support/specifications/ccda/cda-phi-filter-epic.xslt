@@ -37,6 +37,14 @@
             <xsl:copy-of select="hl7:legalAuthenticator"/>
             <xsl:copy-of select="hl7:documentationOf"/>
 
+            <!-- Add a sample consent section if none exists -->
+            <xsl:if test="not(hl7:authorization/hl7:consent)">
+                <consent>
+                    <id root="2.16.840.1.113883.3.933"/>
+                    <statusCode code="deny"/>
+                </consent>
+            </xsl:if>
+
             <component>
                 <structuredBody>
                     <!-- Extract and place the single Sexual Orientation entry -->
