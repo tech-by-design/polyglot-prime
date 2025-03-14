@@ -265,8 +265,8 @@ export class AGGridAideBuilder {
             getRows: async (params) => {
                 //params.request.valueCols = params.request?.pivotCols && params.request?.pivotCols.length > 0 ? params.request.pivotCols : params.request.valueCols;
                 const {
-                    includeGeneratedSqlInResp = true, // TODO: set this to false after initial development is concluded
-                    includeGeneratedSqlInErrorResp = true,
+                    includeGeneratedSqlInResp = false, // TODO: set this to false after initial development is concluded
+                    includeGeneratedSqlInErrorResp = false,
 
                     // hooks to customize how errors are reported
                     secondaryColsError = async (dataSourceUrl, reqPayload, serverRespPayload, error, respMetrics) => console.error("[ServerDatasource] Error in updateSecondaryColumns:", { dataSourceUrl, reqPayload, result: serverRespPayload, error, respMetrics }),
