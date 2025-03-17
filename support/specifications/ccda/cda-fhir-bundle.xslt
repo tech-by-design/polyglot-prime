@@ -542,13 +542,8 @@
           "profile" : ["<xsl:value-of select='$consentMetaProfileUrlFull'/>"]
         },
         "status": "<xsl:choose>
-                      <xsl:when test="ccda:statusCode/@code='active'">active</xsl:when>
-                      <xsl:when test="ccda:statusCode/@code='completed'">active</xsl:when>
-                      <xsl:when test="ccda:statusCode/@code='aborted'">not-done</xsl:when>
-                      <xsl:when test="ccda:statusCode/@code='nullified'">entered-in-error</xsl:when>
-                      <xsl:when test="ccda:statusCode/@code='held'">draft</xsl:when>
-                      <xsl:when test="ccda:statusCode/@code='suspended'">inactive</xsl:when>
-                      <xsl:otherwise>unknown</xsl:otherwise>
+                      <xsl:when test="ccda:statusCode/@code='deny'">deny</xsl:when>  <!--#63-->
+                      <xsl:otherwise>permit</xsl:otherwise>
                   </xsl:choose>"
         <xsl:if test="string(ccda:entry/ccda:act/ccda:code/@code)">
           , "scope" : {
