@@ -142,8 +142,8 @@ public class EncounterConverter extends BaseConverter {
 
     private void populateEncounterPeriod(Encounter encounter, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null) {
-            String startDateTime = "2024-02-23T00:00:00Z"; // TODO : remove static reference
-            String endDateTime = "2024-02-23T01:00:00Z"; // TODO : remove static reference
+            String startDateTime = screeningResourceData.getEncounterStartDatetime();
+            String endDateTime = screeningResourceData.getEncounterEndDatetime();
 
             if (startDateTime != null) {
                 encounter.getPeriod().setStart(DateUtil.convertStringToDate(startDateTime));
