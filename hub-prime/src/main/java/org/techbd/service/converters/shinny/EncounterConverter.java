@@ -1,5 +1,6 @@
 package org.techbd.service.converters.shinny;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -75,6 +76,8 @@ public class EncounterConverter extends BaseConverter {
         String fullUrl = "http://shinny.org/us/ny/hrsn/Encounter/" + encounter.getId();
 
         Meta meta = encounter.getMeta();
+
+        meta.setLastUpdated(new Date()); // TODO: Replace with value from CSV once the column is added and populated
 
         populateEncounterStatus(encounter, screeningProfileData);
 
