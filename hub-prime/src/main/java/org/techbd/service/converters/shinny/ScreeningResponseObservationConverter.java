@@ -145,18 +145,18 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
                                 idsGenerated.get(CsvConstants.PATIENT_ID)));
-                        if (data.getScreeningStartDatetime() != null && data.getScreeningEndDatetime() != null) {
+                        if (data.getScreeningStartDateTime() != null && data.getScreeningEndDateTime() != null) {
                             Period period = new Period();
                             period.setStartElement(
-                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDatetime())));
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
                             period.setEndElement(
-                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningEndDatetime())));
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningEndDateTime())));
                             observation.setEffective(period);
-                        } else if (data.getScreeningStartDatetime() != null) {
+                        } else if (data.getScreeningStartDateTime() != null) {
                             observation.setEffective(
-                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDatetime())));
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
                         }
-                        observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDatetime()));
+                        observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDateTime()));
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         switch (data.getQuestionCode()) {
@@ -362,7 +362,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (encounterId != null){
                         groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
                 }
-                groupObservation.setEffective(new DateTimeType(screeningObservationData.getScreeningStartDatetime()));
+                groupObservation.setEffective(new DateTimeType(screeningObservationData.getScreeningStartDateTime()));
                 groupObservation.setIssued(new Date());
                 CodeableConcept interpretation = new CodeableConcept();
                 interpretation.addCoding(
@@ -409,5 +409,5 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 category.addCoding(coding);
                 return category;
         }
-
+         
 }
