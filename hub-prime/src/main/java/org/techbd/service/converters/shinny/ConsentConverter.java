@@ -1,6 +1,7 @@
 package org.techbd.service.converters.shinny;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -78,7 +79,8 @@ public class ConsentConverter extends BaseConverter {
         consent.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
 
         Meta meta = consent.getMeta();
-        // meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getConsentLastUpdated()));
+        
+        meta.setLastUpdated(new Date()); // TODO: Replace with value from CSV once the column is added and populated
 
         populateConsentStatusAndScope(consent, screeningProfileData);
 
