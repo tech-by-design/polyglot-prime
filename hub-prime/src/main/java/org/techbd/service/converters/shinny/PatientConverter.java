@@ -118,18 +118,25 @@ public class PatientConverter extends BaseConverter {
         }
 
         if (StringUtils.isNotEmpty(demographicData.getEthnicityCode())) {
-            Extension ethnicityExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
+            Extension ethnicityExtension = new Extension(
+                    "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
 
-            Extension ombCategoryExtension = new Extension("ombCategory");
-            ombCategoryExtension.setValue(new Coding()
-                    .setSystem(demographicData.getEthnicityCodeSystem())
-                    .setCode(demographicData.getEthnicityCode())
-                    .setDisplay(demographicData.getEthnicityCodeDescription()));
-            ethnicityExtension.addExtension(ombCategoryExtension);
+            String[] ethnicityCodes = demographicData.getEthnicityCode().split(";");
+            String system = demographicData.getEthnicityCodeSystem(); // Common system
+            String[] ethnicityDescriptions = demographicData.getEthnicityCodeDescription().split(";");
 
-            Extension textExtension = new Extension("text");
-            textExtension.setValue(new org.hl7.fhir.r4.model.StringType(demographicData.getEthnicityCodeDescription()));
-            ethnicityExtension.addExtension(textExtension);
+            for (int i = 0; i < ethnicityCodes.length; i++) {
+                Extension ombCategoryExtension = new Extension("ombCategory");
+                ombCategoryExtension.setValue(new Coding()
+                        .setSystem(system) // Use the common system value
+                        .setCode(ethnicityCodes[i].trim())
+                        .setDisplay(i < ethnicityDescriptions.length ? ethnicityDescriptions[i].trim() : ""));
+                ethnicityExtension.addExtension(ombCategoryExtension);
+
+                Extension textExtension = new Extension("text");
+                textExtension.setValue(new org.hl7.fhir.r4.model.StringType(ethnicityDescriptions[i].trim()));
+                ethnicityExtension.addExtension(textExtension);
+            }
 
             patient.addExtension(ethnicityExtension);
         }
