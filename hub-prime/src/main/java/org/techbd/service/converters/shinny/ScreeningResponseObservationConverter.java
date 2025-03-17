@@ -157,6 +157,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                     new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
                         }
                         observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDateTime()));
+                        CodeableConcept interpretation = new CodeableConcept();
+                        interpretation.addCoding(
+                                new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                        data.getPotentialNeedIndicated(), "Positive"));
+                        observation.addInterpretation(interpretation);
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         switch (data.getQuestionCode()) {
@@ -362,12 +367,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (encounterId != null){
                         groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
                 }
-                groupObservation.setEffective(new DateTimeType(screeningObservationData.getScreeningStartDateTime()));
+                groupObservation.setEffective(new DateTimeType(new Date()));
                 groupObservation.setIssued(new Date());
                 CodeableConcept interpretation = new CodeableConcept();
                 interpretation.addCoding(
                                 new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                                screeningObservationData.getPotentialNeedIndicated(), "Positive"));
+                                "POS", "Positive"));
                 groupObservation.addInterpretation(interpretation);
 
                 // Add member references using observationId directly from the model
