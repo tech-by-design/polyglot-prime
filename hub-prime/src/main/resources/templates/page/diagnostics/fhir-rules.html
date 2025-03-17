@@ -3,9 +3,8 @@
       layout:decorate="~{layout/prime}">
 
     <head>
-        <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css">
-        <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css">
-        <script src="https://unpkg.com/ag-grid-enterprise/dist/ag-grid-enterprise.js"></script>
+     
+        <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
 
         <style th:replace="fragments/aggrid-styles :: aggrid-styles"></style>
 
