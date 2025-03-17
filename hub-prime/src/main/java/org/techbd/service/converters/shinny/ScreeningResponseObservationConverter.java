@@ -18,6 +18,7 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -144,7 +145,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
                                 idsGenerated.get(CsvConstants.PATIENT_ID)));
-                        if (data.getScreeningStartDatetime() != null) {
+                        if (data.getScreeningStartDatetime() != null && data.getScreeningEndDatetime() != null) {
+                            Period period = new Period();
+                            period.setStartElement(
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDatetime())));
+                            period.setEndElement(
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningEndDatetime())));
+                            observation.setEffective(period);
+                        } else if (data.getScreeningStartDatetime() != null) {
                             observation.setEffective(
                                     new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDatetime())));
                         }
