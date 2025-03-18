@@ -199,6 +199,11 @@
   - `constraints`:
     - `required` True
     - `enum` ['draft', 'proposed', 'active', 'rejected', 'inactive', 'entered-in-error']
+### `CONSENT_POLICY_AUTHORITY`
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').policy.authority
+  - `type` string
+  - `constraints`:
+    - `required` True
 ### `CONSENT_DATE_TIME`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
   - `type` string
@@ -243,6 +248,11 @@
     - `enum` ['urn:ietf:bcp:47']
 ### `SCREENING_ENTITY_ID`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.value
+  - `type` string
+  - `constraints`:
+    - `required` True
+### `SCREENING_ENTITY_CODE`
+  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.type.coding.code
   - `type` string
   - `constraints`:
     - `required` True
