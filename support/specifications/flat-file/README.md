@@ -230,8 +230,8 @@ Field descriptions for each field are documented in the `documentation.auto.md` 
 - **Example Fields**:
   - **`PATIENT_MR_ID_VALUE`**:
     - **Description**: `Bundle.entry.resource.where(resourceType = 'Patient').identifier.where(type.coding.code = 'MR').value` 
-  - **`FACILITY_ACTIVE`**:
-    - **Description**: `Bundle.entry.resource.where(resourceType = 'Organization').active` 
+  - **`FACILITY_NAME`**:
+    - **Description**: `Bundle.entry.resource.where(resourceType = 'Organization').name` 
 
 Refer to `documentation.auto.md` for the complete set of field descriptions, including FHIR File Paths.
 
