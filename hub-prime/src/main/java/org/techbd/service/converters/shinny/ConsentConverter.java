@@ -98,6 +98,9 @@ public class ConsentConverter extends BaseConverter {
         // populateSourceReference(consent, screeningProfileData);
 
         populateSourceAttachment(consent);
+
+        populateConsentPolicy(consent, screeningProfileData);
+        
         String fullUrl = "http://shinny.org/us/ny/hrsn/Consent/" + consent.getId();
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
@@ -181,4 +184,11 @@ public class ConsentConverter extends BaseConverter {
         attachment.setLanguage("en");
         consent.setSource(attachment);
     }
+    
+    private void populateConsentPolicy(Consent consent, ScreeningProfileData screeningResourceData) {
+        Consent.ConsentPolicyComponent policyComponent = new Consent.ConsentPolicyComponent();
+        policyComponent.setAuthority(screeningResourceData.getConsentPolicyAuthority());
+        consent.getPolicy().add(policyComponent);
+    }
+    
 }
