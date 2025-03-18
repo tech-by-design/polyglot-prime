@@ -11,5 +11,5 @@ public interface CsvConstants {
     public static final String TOTAL_SCORE_QUESTIONS = "TOTAL_SCORE_QUESTIONS";
     public static final String MENTAL_HEALTH_SCORE_QUESTIONS = "MENTAL_HEALTH_SCORE_QUESTIONS";
     public static final String PHYSICAL_ACTIVITY_SCORE_QUESTIONS = "PHYSICAL_ACTIVITY_SCORE_QUESTIONS";
-
+    public static final String PROCEDURE_ID = "PROCEDURE_ID";
 }
