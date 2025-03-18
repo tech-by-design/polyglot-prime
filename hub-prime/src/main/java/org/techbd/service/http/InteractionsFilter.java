@@ -2,7 +2,6 @@ package org.techbd.service.http;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,7 +32,6 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.util.StandardCharset;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebFilter;
@@ -57,17 +55,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
     private UdiPrimeJpaConfig udiPrimeJpaConfig;
 
     private InteractionPersistRules iprDB;
-
-    @Value("${TECHBD_ALLOWED_HOSTS:#{null}}")
-    private String allowedHostsString;
-
-    private List<String> allowedHosts;
-
-    @PostConstruct
-    private void init() {
-        allowedHosts = Arrays.asList(allowedHostsString.split(","));
-        LOG.info("Initialized allowed hosts: {}", allowedHosts);
-    }
 
     // TODO: figure out why this is not being read from application.yml (NULL is
     // being called, though)
@@ -136,15 +123,6 @@ public class InteractionsFilter extends OncePerRequestFilter {
             throws IOException, ServletException {
         if (isAsyncDispatch(origRequest)) {
             chain.doFilter(origRequest, origResponse);
-            return;
-        }
-
-        HttpServletRequest httpRequest = (HttpServletRequest) origRequest;
-        String hostHeader = httpRequest.getHeader("Host");
-        
-        if (!allowedHosts.contains(hostHeader)) {
-            LOG.error("Invalid Host Header: " + hostHeader);
-            origResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
