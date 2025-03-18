@@ -76,7 +76,7 @@ public class OrganizationConverter extends BaseConverter {
         Meta meta = organization.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(qeAdminData.getFacilityLastUpdated()));
         populateOrganizationName(organization, qeAdminData);
-        populateOrganizationIdentifier(organization, qeAdminData);
+        populateOrganizationIdentifier(organization, screeningProfileData);
         populateIsActive(organization, qeAdminData);
         populateOrganizationType(organization, qeAdminData);
         populateOrganizationAddress(organization, qeAdminData);
@@ -94,14 +94,18 @@ public class OrganizationConverter extends BaseConverter {
         }
     }
 
-    private static void populateOrganizationIdentifier(Organization organization, QeAdminData data) {
+    private static void populateOrganizationIdentifier(Organization organization, ScreeningProfileData data) {
         if (StringUtils.isNotEmpty(data.getFacilityId())) {
+    
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-
+            coding.setSystem(data.getScreeningEntityIdCodeSystem());
+            coding.setCode(data.getScreeningEntityCode());
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
+            identifier.setSystem(data.getScreeningEntityIdCodeSystem());
+            identifier.setValue(data.getScreeningEntityId());
             organization.addIdentifier(identifier);
         }
     }
