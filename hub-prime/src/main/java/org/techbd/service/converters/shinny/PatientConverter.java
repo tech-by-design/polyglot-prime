@@ -104,25 +104,32 @@ public class PatientConverter extends BaseConverter {
     public static void populatePatientWithExtensions(Patient patient,DemographicData demographicData) {
         if (StringUtils.isNotEmpty(demographicData.getRaceCode())) {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
+
             String[] raceCodes = demographicData.getRaceCode().split(";");
             String system = demographicData.getRaceCodeSystem(); // Common system
-            String[] raceDescriptions = demographicData.getRaceCodeDescription().split(";");
+            String[] raceDescriptions = demographicData.getRaceCodeDescription() != null
+                    ? demographicData.getRaceCodeDescription().split(";")
+                    : new String[0]; // Handle null descriptions by creating an empty array
 
             for (int i = 0; i < raceCodes.length; i++) {
                 Extension ombCategoryExtension = new Extension("ombCategory");
                 ombCategoryExtension.setValue(new Coding()
                         .setSystem(system) // Use the common system value
                         .setCode(raceCodes[i].trim())
-                        .setDisplay(i < raceDescriptions.length ? raceDescriptions[i].trim() : ""));
+                        .setDisplay(i < raceDescriptions.length ? raceDescriptions[i].trim() : "")); // Empty string if
+                                                                                                     // no description
                 raceExtension.addExtension(ombCategoryExtension);
 
                 Extension textExtension = new Extension("text");
-                textExtension.setValue(new org.hl7.fhir.r4.model.StringType(raceDescriptions[i].trim()));
+                String description = (i < raceDescriptions.length) ? raceDescriptions[i].trim() : "";
+                textExtension.setValue(new org.hl7.fhir.r4.model.StringType(description)); // Ensures empty text if
+                                                                                           // missing
                 raceExtension.addExtension(textExtension);
             }
 
             patient.addExtension(raceExtension);
-        }        
+        }
+          
 
         if (StringUtils.isNotEmpty(demographicData.getEthnicityCode())) {
             Extension ethnicityExtension = new Extension(
@@ -130,23 +137,30 @@ public class PatientConverter extends BaseConverter {
 
             String[] ethnicityCodes = demographicData.getEthnicityCode().split(";");
             String system = demographicData.getEthnicityCodeSystem(); // Common system
-            String[] ethnicityDescriptions = demographicData.getEthnicityCodeDescription().split(";");
+            String[] ethnicityDescriptions = demographicData.getEthnicityCodeDescription() != null
+                    ? demographicData.getEthnicityCodeDescription().split(";")
+                    : new String[0]; // Handle null descriptions by creating an empty array
 
             for (int i = 0; i < ethnicityCodes.length; i++) {
                 Extension ombCategoryExtension = new Extension("ombCategory");
                 ombCategoryExtension.setValue(new Coding()
                         .setSystem(system) // Use the common system value
                         .setCode(ethnicityCodes[i].trim())
-                        .setDisplay(i < ethnicityDescriptions.length ? ethnicityDescriptions[i].trim() : ""));
+                        .setDisplay(i < ethnicityDescriptions.length ? ethnicityDescriptions[i].trim() : "")); // Empty
+                                                                                                               // string
+                                                                                                               // if no
+                                                                                 // description
                 ethnicityExtension.addExtension(ombCategoryExtension);
 
                 Extension textExtension = new Extension("text");
-                textExtension.setValue(new org.hl7.fhir.r4.model.StringType(ethnicityDescriptions[i].trim()));
+                String description = (i < ethnicityDescriptions.length) ? ethnicityDescriptions[i].trim() : "";
+                textExtension.setValue(new org.hl7.fhir.r4.model.StringType(description)); // Ensures empty text if
+                                                                                           // missing
                 ethnicityExtension.addExtension(textExtension);
             }
 
             patient.addExtension(ethnicityExtension);
-        }
+        }        
 
         if (StringUtils.isNotEmpty(demographicData.getSexAtBirthCode())) {
             Extension birthSexExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex");
