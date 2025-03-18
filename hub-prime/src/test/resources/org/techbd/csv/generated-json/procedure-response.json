@@ -1,0 +1,27 @@
+{
+  "resourceType": "Procedure",
+  "id": "43de5bbc18c1986ae36a0fac0d9a932c345b33cfb3f30d965a168faf85777397",
+  "meta": {
+    "lastUpdated": "2025-03-18T17:34:45.331+05:30",
+    "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-sdoh-procedure" ]
+  },
+  "status": "completed",
+  "code": {
+    "coding": [ {
+      "system": "urn:oid:2.16.840.1.113883.6.285",
+      "code": "G0136",
+      "display": "SDOH Assessment"
+    } ],
+    "text": "SDOH Assessment"
+  },
+  "subject": {
+    "reference": "Patient/patient123"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter123"
+  },
+  "performedPeriod": {
+    "start": "2023-07-12T21:38:00+05:30",
+    "end": "2023-07-13T00:38:00+05:30"
+  }
+}
