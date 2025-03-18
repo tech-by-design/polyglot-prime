@@ -18,6 +18,7 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -144,11 +145,23 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
                                 idsGenerated.get(CsvConstants.PATIENT_ID)));
-                        if (data.getScreeningStartDatetime() != null) {
+                        if (data.getScreeningStartDateTime() != null && data.getScreeningEndDateTime() != null) {
+                            Period period = new Period();
+                            period.setStartElement(
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
+                            period.setEndElement(
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningEndDateTime())));
+                            observation.setEffective(period);
+                        } else if (data.getScreeningStartDateTime() != null) {
                             observation.setEffective(
-                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDatetime())));
+                                    new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
                         }
-                        observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDatetime()));
+                        observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDateTime()));
+                        CodeableConcept interpretation = new CodeableConcept();
+                        interpretation.addCoding(
+                                new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                        data.getPotentialNeedIndicated(), "Positive"));
+                        observation.addInterpretation(interpretation);
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         switch (data.getQuestionCode()) {
@@ -354,12 +367,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (encounterId != null){
                         groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
                 }
-                groupObservation.setEffective(new DateTimeType(screeningObservationData.getScreeningStartDatetime()));
+                groupObservation.setEffective(new DateTimeType(new Date()));
                 groupObservation.setIssued(new Date());
                 CodeableConcept interpretation = new CodeableConcept();
                 interpretation.addCoding(
                                 new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                                screeningObservationData.getPotentialNeedIndicated(), "Positive"));
+                                "POS", "Positive"));
                 groupObservation.addInterpretation(interpretation);
 
                 // Add member references using observationId directly from the model
@@ -401,5 +414,5 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 category.addCoding(coding);
                 return category;
         }
-
+         
 }

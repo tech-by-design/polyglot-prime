@@ -1,5 +1,6 @@
 package org.techbd.service.converters.shinny;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +77,8 @@ public class EncounterConverter extends BaseConverter {
 
         Meta meta = encounter.getMeta();
 
+        meta.setLastUpdated(new Date()); // TODO: Replace with value from CSV once the column is added and populated
+
         populateEncounterStatus(encounter, screeningProfileData);
 
         populateEncounterClass(encounter, screeningProfileData);
@@ -142,8 +145,8 @@ public class EncounterConverter extends BaseConverter {
 
     private void populateEncounterPeriod(Encounter encounter, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null) {
-            String startDateTime = "2024-02-23T00:00:00Z"; // TODO : remove static reference
-            String endDateTime = "2024-02-23T01:00:00Z"; // TODO : remove static reference
+            String startDateTime = screeningResourceData.getEncounterStartDatetime();
+            String endDateTime = screeningResourceData.getEncounterEndDatetime();
 
             if (startDateTime != null) {
                 encounter.getPeriod().setStart(DateUtil.convertStringToDate(startDateTime));

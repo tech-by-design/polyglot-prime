@@ -76,13 +76,13 @@ public class ScreeningObservationData {
     private String potentialNeedIndicated;
 
     @CsvBindByName(column = "SCREENING_START_DATETIME")
-    private String screeningStartDatetime;
+    private String screeningStartDateTime;
 
     // @CsvBindByName(column = "OBSERVATION_ID")
     private String observationId;
 
     @CsvBindByName(column = "SCREENING_END_DATETIME")
-    private String screeningEndDatetime;
+    private String screeningEndDateTime;
 
     // Default constructor
     public ScreeningObservationData() {
