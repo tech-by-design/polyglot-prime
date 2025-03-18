@@ -35,7 +35,7 @@ import ca.uhn.fhir.parser.IParser;
  * @since 2024-03-17
  */
 @Component
-@Order(6)
+@Order(7)
 public class ProcedureConverter extends BaseConverter {
 
     // Constants
