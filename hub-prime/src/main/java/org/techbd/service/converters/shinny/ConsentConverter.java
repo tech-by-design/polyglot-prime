@@ -80,7 +80,7 @@ public class ConsentConverter extends BaseConverter {
 
         Meta meta = consent.getMeta();
         
-        meta.setLastUpdated(new Date()); // TODO: Replace with value from CSV once the column is added and populated
+        meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getConsentDateTime()));
 
         populateConsentStatusAndScope(consent, screeningProfileData);
 
