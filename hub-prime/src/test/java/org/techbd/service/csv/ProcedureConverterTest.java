@@ -54,7 +54,7 @@ class ProcedureConverterTest {
 
         // Initialize FHIRUtil.PROFILE_MAP
         FHIRUtil.PROFILE_MAP = new HashMap<>();
-        FHIRUtil.PROFILE_MAP.put("Procedure", "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-sdoh-procedure");
+        FHIRUtil.PROFILE_MAP.put("procedure", "/StructureDefinition/shinny-sdoh-procedure");
     }
 
     @Test

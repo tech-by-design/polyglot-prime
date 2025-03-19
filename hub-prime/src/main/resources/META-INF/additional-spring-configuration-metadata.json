@@ -573,5 +573,10 @@
     "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.observationSexualOrientation",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.observationSexualOrientation'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.procedure",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.procedure'"
   }
 ]}
