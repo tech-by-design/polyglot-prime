@@ -311,14 +311,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 String observationId = CsvConversionUtil.sha256("group-" + screeningCode + screeningProfileData.getEncounterId());
                 groupObservation.setId(observationId);
                 ScreeningObservationData screeningObservationData = new ScreeningObservationData();
-
-                // Set meta information
-                Meta meta = new Meta();
-                if (StringUtils.isNotEmpty(baseFhirUrl)) {
-                    meta.addProfile(FHIRUtil.getProfileUrl(baseFhirUrl,ResourceType.Observation.name().toLowerCase()));
-                } else{
-                    meta.addProfile(FHIRUtil.getProfileUrl(ResourceType.Observation.name().toLowerCase()));    
-                }
+                setMeta(groupObservation,baseFhirUrl);
+                Meta meta = groupObservation.getMeta();
+                meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
+                
                 meta.setLastUpdated(DateUtil.convertStringToDate(demographicData.getPatientLastUpdated()));
                 groupObservation.setMeta(meta);
 
