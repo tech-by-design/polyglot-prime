@@ -162,7 +162,7 @@ public class ConsentConverter extends BaseConverter {
 
     private void populateConsentState(Consent consent, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null) {
-            consent.setStatus(ConsentState.valueOf("active".toUpperCase())); // TODO : remove static reference
+            consent.setStatus(ConsentState.valueOf(screeningResourceData.getConsentStatus().toUpperCase()));
         }
     }
 
