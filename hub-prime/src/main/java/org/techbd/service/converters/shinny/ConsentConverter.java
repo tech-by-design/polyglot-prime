@@ -187,7 +187,7 @@ public class ConsentConverter extends BaseConverter {
     
     private void populateConsentPolicy(Consent consent, ScreeningProfileData screeningResourceData) {
         Consent.ConsentPolicyComponent policyComponent = new Consent.ConsentPolicyComponent();
-        policyComponent.setAuthority(screeningResourceData.getConsentPolicyAuthority());
+        policyComponent.setAuthority("urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5");
         consent.getPolicy().add(policyComponent);
     }
     

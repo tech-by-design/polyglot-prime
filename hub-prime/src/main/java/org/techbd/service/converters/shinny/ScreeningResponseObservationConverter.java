@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -367,12 +368,37 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (encounterId != null){
                         groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
                 }
-                groupObservation.setEffective(new DateTimeType(new Date()));
-                groupObservation.setIssued(new Date());
+                
+                String screeningStartDateTime = groupData.stream()
+                        .map(ScreeningObservationData::getScreeningStartDateTime)
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                        .orElse(null);
+
+                if (screeningStartDateTime != null) {
+                    Date parsedDate = DateUtil.parseDate(screeningStartDateTime);
+                    if (parsedDate != null) {
+                        groupObservation.setEffective(new DateTimeType(parsedDate));
+                        groupObservation.setIssued(parsedDate);
+                    }
+                }       
+                
                 CodeableConcept interpretation = new CodeableConcept();
-                interpretation.addCoding(
-                                new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                                "POS", "Positive"));
+
+                boolean hasPositiveInterpretation = groupData.stream()
+                        .map(ScreeningObservationData::getPotentialNeedIndicated)
+                        .filter(Objects::nonNull)
+                        .anyMatch(indicated -> indicated.equalsIgnoreCase("POS"));
+
+                if (hasPositiveInterpretation) {
+                    interpretation.addCoding(new Coding(
+                            "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                            "POS", "Positive"));
+                } else {
+                    interpretation.addCoding(new Coding(
+                            "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                            "NEG", "Negative"));
+                }
                 groupObservation.addInterpretation(interpretation);
 
                 // Add member references using observationId directly from the model

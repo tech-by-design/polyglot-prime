@@ -78,9 +78,6 @@ public class ScreeningProfileData {
     @CsvBindByName(column = "CONSENT_STATUS")
     private String consentStatus;
 
-    @CsvBindByName(column = "CONSENT_POLICY_AUTHORITY")
-    private String consentPolicyAuthority;
-
     @CsvBindByName(column = "CONSENT_DATE_TIME")
     private String consentDateTime;
 
@@ -107,9 +104,6 @@ public class ScreeningProfileData {
 
     @CsvBindByName(column = "SCREENING_ENTITY_ID")
     private String screeningEntityId;
-
-    @CsvBindByName(column = "SCREENING_ENTITY_CODE")
-    private String screeningEntityCode;
 
     @CsvBindByName(column = "SCREENING_ENTITY_ID_CODE_SYSTEM")
     private String screeningEntityIdCodeSystem;

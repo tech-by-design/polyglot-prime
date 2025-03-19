@@ -77,7 +77,7 @@ public class EncounterConverter extends BaseConverter {
 
         Meta meta = encounter.getMeta();
 
-        meta.setLastUpdated(new Date()); // TODO: Replace with value from CSV once the column is added and populated
+        meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getEncounterStartDatetime()));
 
         populateEncounterStatus(encounter, screeningProfileData);
 
