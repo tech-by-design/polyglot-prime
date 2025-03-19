@@ -16,6 +16,7 @@ import org.techbd.model.csv.*;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
+import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -43,7 +44,6 @@ public class ProcedureConverter extends BaseConverter {
     private static final FhirContext FHIR_CONTEXT = FhirContext.forR4();
 
     // FHIR-specific constants
-    private static final String PROCEDURE_PROFILE = "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-sdoh-procedure";
     private static final String PROCEDURE_BASE_URL = "http://shinny.org/us/ny/hrsn/Procedure/";
     private static final String SNOMED_SYSTEM = "http://snomed.info/sct";
     private static final String DEFAULT_SYSTEM = "urn:oid:2.16.840.1.113883.6.285";
@@ -96,10 +96,8 @@ public class ProcedureConverter extends BaseConverter {
 
     private Procedure createProcedure(ScreeningProfileData profileData, String baseFHIRUrl) {
         Procedure procedure = new Procedure();
-
-        // Initialize Meta with the correct profile
-        Meta meta = new Meta();
-        meta.addProfile(PROCEDURE_PROFILE);
+        setMeta(procedure, baseFHIRUrl);
+        Meta meta = procedure.getMeta();
         meta.setLastUpdated(new DateTime().toDate());
         procedure.setMeta(meta);
 

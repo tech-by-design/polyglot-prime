@@ -118,6 +118,7 @@ org:
               practitioner: /StructureDefinition/shin-ny-practitioner
               questionnaireResponse: /StructureDefinition/shinny-questionnaire
               observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
+              procedure: /StructureDefinition/shinny-procedure
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
             operationOutcomeHelpUrl: "https://techbd.org/get-help/"
             fhirUmlsApiKey: umls_api_key
