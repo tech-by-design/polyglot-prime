@@ -156,7 +156,6 @@
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.text
   - `type` string
   - `constraints`:
-    - `required` True
     - `enum` ['History taking, self-administered, by computer terminal', 'Direct questioning (procedure)']
 ### `ENCOUNTER_TYPE_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system
@@ -350,7 +349,6 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).valueCodeableConcept.coding.system
   - `type` string
   - `constraints`:
-    - `required` True
     - `enum` ['http://loinc.org']
 ### `OBSERVATION_CATEGORY_SDOH_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').coding.code

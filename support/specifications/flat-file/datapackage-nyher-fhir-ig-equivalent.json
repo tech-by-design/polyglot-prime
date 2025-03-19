@@ -260,7 +260,7 @@
           "not at all (0)", "several days (1)", "more than half the days (2)", "nearly every day (3)", "not at all (0)",
           "several days (1)", "more than half the days (2)", "nearly every day (3)", "not at all", "a little bit",
           "somewhat", "quite a bit", "very much", "i choose not to answer this question", "yes", "no", "yes", "no"]}},
-           {"name": "ANSWER_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).valueCodeableConcept.coding.system", "constraints": { "required": true, "enum": ["http://loinc.org"] }},
+           {"name": "ANSWER_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).valueCodeableConcept.coding.system", "constraints": {   "enum": ["http://loinc.org"] }},
            { "name": "OBSERVATION_CATEGORY_SDOH_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').coding.code", "constraints": { "required": true, "enum":[
             "sdoh-category-unspecified", "food-insecurity", "housing-instability", 
             "homelessness", "inadequate-housing", "transportation-insecurity", 
