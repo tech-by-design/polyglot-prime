@@ -102,7 +102,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         // max date
                         // available in all
                         // screening records
-                        observation.setLanguage("en");
+                        observation.setLanguage(screeningProfileData.getScreeningLanguageCode());
                         observation
                                         .setStatus(Observation.ObservationStatus
                                                         .fromCode(screeningProfileData.getScreeningStatusCode()));
