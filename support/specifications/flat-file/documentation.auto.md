@@ -150,10 +150,14 @@
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['23918007', '32166003', '405672008', '185317003', '453701000124103', '185320006', '261665006']
+    - `required` True
+    - `enum` ['23918007', '405672008']
 ### `ENCOUNTER_TYPE_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.text
   - `type` string
+  - `constraints`:
+    - `required` True
+    - `enum` ['History taking, self-administered, by computer terminal', 'Direct questioning (procedure)']
 ### `ENCOUNTER_TYPE_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system
   - `type` string
@@ -163,6 +167,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').period.start
   - `type` string
   - `constraints`:
+    - `required` True
     - `pattern` `([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?`
 ### `ENCOUNTER_END_DATETIME`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').period.end
@@ -199,11 +204,6 @@
   - `constraints`:
     - `required` True
     - `enum` ['draft', 'proposed', 'active', 'rejected', 'inactive', 'entered-in-error']
-### `CONSENT_POLICY_AUTHORITY`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').policy.authority
-  - `type` string
-  - `constraints`:
-    - `required` True
 ### `CONSENT_DATE_TIME`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
   - `type` string
@@ -248,11 +248,6 @@
     - `enum` ['urn:ietf:bcp:47']
 ### `SCREENING_ENTITY_ID`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.value
-  - `type` string
-  - `constraints`:
-    - `required` True
-### `SCREENING_ENTITY_CODE`
-  - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.type.coding.code
   - `type` string
   - `constraints`:
     - `required` True
