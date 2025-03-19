@@ -108,9 +108,6 @@ public class ScreeningProfileData {
     @CsvBindByName(column = "SCREENING_ENTITY_ID")
     private String screeningEntityId;
 
-    @CsvBindByName(column = "SCREENING_ENTITY_CODE")
-    private String screeningEntityCode;
-
     @CsvBindByName(column = "SCREENING_ENTITY_ID_CODE_SYSTEM")
     private String screeningEntityIdCodeSystem;
 

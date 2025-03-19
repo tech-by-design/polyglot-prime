@@ -96,19 +96,27 @@ public class OrganizationConverter extends BaseConverter {
 
     private static void populateOrganizationIdentifier(Organization organization, ScreeningProfileData data) {
         if (StringUtils.isNotEmpty(data.getFacilityId())) {
-    
+
+            Map<String, String> systemToCodeMap = Map.of(
+                    "http://hl7.org/fhir/sid/us-npi", "NPI",
+                    "http://www.medicaid.gov/", "MA",
+                    "http://www.irs.gov/", "TAX");
+
+            String system = data.getScreeningEntityIdCodeSystem(); // System comes from CSV
+            String code = systemToCodeMap.getOrDefault(system, "UNKNOWN");
+
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem(data.getScreeningEntityIdCodeSystem());
-            coding.setCode(data.getScreeningEntityCode());
+            coding.setSystem(system);
+            coding.setCode(code);
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
             identifier.setType(type);
-            identifier.setSystem(data.getScreeningEntityIdCodeSystem());
+            identifier.setSystem(system);
             identifier.setValue(data.getScreeningEntityId());
             organization.addIdentifier(identifier);
         }
-    }
+    }    
 
     private static void populateOrganizationType(Organization organization, QeAdminData data) {
         if (StringUtils.isNotEmpty(data.getOrganizationTypeCode()) || StringUtils.isNotEmpty(data.getOrganizationTypeDisplay())) {
