@@ -93,7 +93,7 @@
       "23918007",  "405672008"
     ]
     } },
-    {"name": "ENCOUNTER_TYPE_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').type.text", "constraints": { "required": true, "enum": [ 
+    {"name": "ENCOUNTER_TYPE_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').type.text", "constraints": {  "enum": [ 
       "History taking, self-administered, by computer terminal",  "Direct questioning (procedure)"
     ]
     } },
