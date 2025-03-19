@@ -384,9 +384,21 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 }       
                 
                 CodeableConcept interpretation = new CodeableConcept();
-                interpretation.addCoding(
-                                new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                                "POS", "Positive"));
+
+                boolean hasPositiveInterpretation = groupData.stream()
+                        .map(ScreeningObservationData::getPotentialNeedIndicated)
+                        .filter(Objects::nonNull)
+                        .anyMatch(indicated -> indicated.equalsIgnoreCase("POS"));
+
+                if (hasPositiveInterpretation) {
+                    interpretation.addCoding(new Coding(
+                            "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                            "POS", "Positive"));
+                } else {
+                    interpretation.addCoding(new Coding(
+                            "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                            "NEG", "Negative"));
+                }
                 groupObservation.addInterpretation(interpretation);
 
                 // Add member references using observationId directly from the model
