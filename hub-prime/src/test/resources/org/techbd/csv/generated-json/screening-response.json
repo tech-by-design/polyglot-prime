@@ -1,6 +1,6 @@
 {
   "resourceType": "Observation",
-  "id": "72ab86764cbf6581ee377a546e0243f0df69516839ed68d2c0e0a31f35c645fd",
+  "id": "AHCScreeningGroup96777-8",
   "meta": {
     "lastUpdated": "2024-02-23T05:30:00.000+05:30",
     "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ]

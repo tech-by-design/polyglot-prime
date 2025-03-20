@@ -91,9 +91,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 for (ScreeningObservationData data : screeningObservationDataList) {
                         Observation observation = new Observation();
-                        String observationId = CsvConversionUtil
-                                        .sha256(data.getQuestionCodeDescription().replace(" ", "") +
-                                                        data.getQuestionCode() + data.getEncounterId());
+                        String observationId = data.getScreeningIdentifier();
+                        // CsvConversionUtil
+                        //                 .sha256(data.getQuestionCodeDescription().replace(" ", "") +
+                        //                                 data.getQuestionCode() + data.getEncounterId());
                         observation.setId(observationId);
                         data.setObservationId(observationId);
                         String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
