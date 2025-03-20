@@ -313,8 +313,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 setMeta(groupObservation,baseFhirUrl);
                 Meta meta = groupObservation.getMeta();
                 meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
-                
-                meta.setLastUpdated(DateUtil.convertStringToDate(demographicData.getPatientLastUpdated()));
                 groupObservation.setMeta(meta);
 
                 groupObservation.setLanguage(screeningProfileData.getScreeningLanguageCode());
