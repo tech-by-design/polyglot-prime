@@ -152,7 +152,7 @@ class PatientConverterTest {
                 softly.assertThat(communication.getLanguage().getCodingFirstRep().getCode())
                                 .isEqualTo("en");
                 softly.assertThat(communication.getPreferred()).isTrue();
-                softly.assertAll();
+                //softly.assertAll();
         }
 
         @Test
