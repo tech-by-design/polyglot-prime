@@ -53,7 +53,7 @@
         {"name": "FACILITY_ID", "type": "string", "description":"Append to the Bundle.entry.resource.where(resourceType ='Organization').id", "constraints": {"required": true, "pattern": "[A-Za-z0-9\\-\\.]{1,64}"}}, 
         {"name": "FACILITY_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').name", "constraints": {"required": true, "pattern":"[ \\r\\n\\t\\S]+"}},
         {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true}},
-        {"name": "SCREENING_IDENTIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').id", "constraints": {"required": true, "pattern":"[A-Za-z0-9\\-\\.]{1,64}"}},       
+        {"name": "SCREENING_IDENTIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').id", "constraints": {"required": true, "unique": true, "pattern":"[A-Za-z0-9\\-\\.]{1,64}"}},       
         {"name": "ENCOUNTER_CLASS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').class.code", "constraints": {"required": true, "enum": [
           "AMB", "EMER", "FLD", "HH", "IMP", "ACUTE", "NONAC", "OBSENC", "PRENC", "SS", "VR"
         ]
