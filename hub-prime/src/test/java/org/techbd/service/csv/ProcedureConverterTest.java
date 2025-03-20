@@ -9,11 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Procedure;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Extension;
+import org.hl7.fhir.r4.model.StringType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -73,6 +76,7 @@ class ProcedureConverterTest {
         when(screeningProfileData.getProcedureStatusCode()).thenReturn("completed");
         when(screeningProfileData.getProcedureCode()).thenReturn("G0136");
         when(screeningProfileData.getProcedureCodeDescription()).thenReturn("SDOH Assessment");
+        when(screeningProfileData.getProcedureCodeModifier()).thenReturn("32");
 
         List<BundleEntryComponent> result = procedureConverter.convert(bundle, demographicData, qeAdminData,
                 screeningProfileData, screeningObservationData, "interaction123", idsGenerated, baseFHIRUrl);
@@ -85,6 +89,12 @@ class ProcedureConverterTest {
         assertEquals("completed", procedure.getStatus().toCode());
         assertEquals("G0136", procedure.getCode().getCodingFirstRep().getCode());
         assertEquals("SDOH Assessment", procedure.getCode().getText());
+    
+        // New assertion for the modifier extension
+        Extension modifierExtension = procedure.getCode().getExtensionByUrl("http://shinny.org/fhir/StructureDefinition/procedure-code-modifier");
+        assertNotNull(modifierExtension, "Procedure code modifier extension should be present");
+        assertEquals("32", ((StringType)modifierExtension.getValue()).getValue());
+    
     }
 
 
@@ -108,7 +118,7 @@ class ProcedureConverterTest {
         when(screeningResourceData.getProcedureStatusCode()).thenReturn("completed");
         when(screeningResourceData.getProcedureCode()).thenReturn("G0136");
         when(screeningResourceData.getProcedureCodeDescription()).thenReturn("SDOH Assessment");
-
+        when(screeningResourceData.getProcedureCodeModifier()).thenReturn("32");
         // Add screening observations
         ScreeningObservationData obs1 = new ScreeningObservationData();
         obs1.setScreeningStartDateTime("2023-07-12T21:38:00+05:30");
