@@ -16,10 +16,7 @@ import org.techbd.model.csv.*;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
-import org.techbd.util.FHIRUtil;
-
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.parser.IParser;
 
 /**
  * Converts healthcare screening data into FHIR Procedure resources.
@@ -41,16 +38,14 @@ public class ProcedureConverter extends BaseConverter {
 
     // Constants
     private static final Logger LOG = LoggerFactory.getLogger(ProcedureConverter.class);
-    private static final FhirContext FHIR_CONTEXT = FhirContext.forR4();
+    
 
     // FHIR-specific constants
     private static final String PROCEDURE_BASE_URL = "http://shinny.org/us/ny/hrsn/Procedure/";
-    private static final String SNOMED_SYSTEM = "http://snomed.info/sct";
     private static final String DEFAULT_SYSTEM = "urn:oid:2.16.840.1.113883.6.285";
 
-    // Clinical codes and displays
-    private static final String SOCIAL_SERVICE_CODE = "410606002";
-    private static final String SOCIAL_SERVICE_DISPLAY = "Social service procedure";
+    // Clinical displays
+   
     private static final String DEFAULT_PROCEDURE_DISPLAY = "SDOH Assessment";
 
     /**
@@ -167,6 +162,15 @@ public class ProcedureConverter extends BaseConverter {
                 profileData.getProcedureCodeDescription(),
                 DEFAULT_PROCEDURE_DISPLAY));
 
+               // Add modifier extension if available 
+                if (StringUtils.isNotEmpty(profileData.getProcedureCodeModifier())) {
+            Extension modifierExtension = new Extension()
+                    .setUrl("http://shinny.org/fhir/StructureDefinition/procedure-code-modifier")// TO-do: Add the
+                                                                                                 // correct URL since
+                                                                                                 // URL is mandatory
+                    .setValue(new StringType(profileData.getProcedureCodeModifier()));
+            code.addExtension(modifierExtension);
+        }
         procedure.setCode(code);
     }
 

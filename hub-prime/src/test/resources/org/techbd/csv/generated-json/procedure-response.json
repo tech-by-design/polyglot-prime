@@ -2,11 +2,15 @@
   "resourceType": "Procedure",
   "id": "43de5bbc18c1986ae36a0fac0d9a932c345b33cfb3f30d965a168faf85777397",
   "meta": {
-    "lastUpdated": "2025-03-18T17:34:45.331+05:30",
+    "lastUpdated": "2025-03-20T17:17:48.255+05:30",
     "profile": [ "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-sdoh-procedure" ]
   },
   "status": "completed",
   "code": {
+    "extension": [ {
+      "url": "http://shinny.org/fhir/StructureDefinition/procedure-code-modifier",
+      "valueString": "32"
+    } ],
     "coding": [ {
       "system": "urn:oid:2.16.840.1.113883.6.285",
       "code": "G0136",
