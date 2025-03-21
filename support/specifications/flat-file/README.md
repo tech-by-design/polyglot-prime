@@ -85,7 +85,7 @@ The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getti
   - `SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv`: QE administration data.
   - `SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv`: Primary screening profile data.
   - `SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv`: Primary screening observation data.
-  <!-- - `Consolidated NYHER FHIR IG Examples.xlsx`: Excel file with consolidated sheets of the CSV data above. -->
+  - `Consolidated NYHER FHIR IG Examples.xlsx`: Excel file with consolidated sheets of the CSV data and change log. 
 
 - **`documentation.auto.md`**
   - Auto-generated documentation detailing the schema, validation process, and CSV contents for easier understanding.
