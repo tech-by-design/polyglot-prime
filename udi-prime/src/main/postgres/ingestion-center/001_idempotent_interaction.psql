@@ -4727,3 +4727,207 @@ EXCEPTION
 		RETURN NULL;
 END;
 $function$;    
+
+
+/*
+ * Function: sat_diagnostic_dataledger_api_upserted
+ * Schema: techbd_udi_ingress
+ * Purpose: This function upserts records into the `sat_diagnostic_dataledger_api` table 
+ *          based on the provided `hub_interaction_id`. It first checks if the interaction 
+ *          exists in `hub_interaction` and then either inserts a new record or updates an 
+ *          existing one. The function also logs exceptions using `register_issue`.
+ * 
+ * Parameters:
+ *   - hub_interaction_id: Unique identifier for the interaction.
+ *   - dataledger_url: URL of the DataLedger API.
+ *   - source_hub_interaction_id: (Optional) Source interaction ID.
+ *   - group_hub_interaction_id: (Optional) Group interaction ID.
+ *   - received_payload: (Optional) JSON payload received.
+ *   - received_status: (Optional) Status of the received payload.
+ *   - received_reason: (Optional) Reason for received status.
+ *   - dataledger_received_status_code: (Optional) Status code from DataLedger.
+ *   - dataledger_received_response: (Optional) Response from DataLedger.
+ *   - sent_payload: (Optional) JSON payload sent.
+ *   - sent_status: (Optional) Status of the sent payload.
+ *   - sent_reason: (Optional) Reason for sent status.
+ *   - dataledger_sent_response: (Optional) Response received from DataLedger after sending.
+ *   - dataledger_sent_status_code: (Optional) Status code of the sent response.
+ *   - source: (Optional) Source system of the data.
+ *   - additional_details: (Optional) Additional metadata.
+ *   - created_at: (Optional) Timestamp of record creation, defaults to CURRENT_TIMESTAMP.
+ *   - created_by: (Optional) User who created the record, defaults to current_user.
+ *   - provenance: (Optional) Data provenance identifier.
+ * 
+ * Returns:
+ *   - The hub_interaction_id if the upsert is successful, otherwise NULL.
+ */
+ 
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_diagnostic_dataledger_api_upserted(text, text, text, text, jsonb, text, text, text, jsonb, jsonb, text, text, jsonb, text, text, jsonb, timestamptz, text, text);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_diagnostic_dataledger_api_upserted(
+	hub_interaction_id text, 
+	dataledger_url text, 
+	source_hub_interaction_id text DEFAULT NULL::text, 
+	group_hub_interaction_id text DEFAULT NULL::text, 
+	received_payload jsonb DEFAULT NULL::jsonb, 
+	received_status text DEFAULT NULL::text, 
+	received_reason text DEFAULT NULL::text, 
+	dataledger_received_status_code text DEFAULT NULL::text, 
+	dataledger_received_response jsonb DEFAULT NULL::jsonb,
+	sent_payload jsonb DEFAULT NULL::jsonb,
+	sent_status text DEFAULT NULL::text,
+	sent_reason text DEFAULT NULL::text,
+	dataledger_sent_response jsonb DEFAULT NULL::jsonb,
+	dataledger_sent_status_code text DEFAULT NULL::text,
+	source text DEFAULT NULL::text,
+	additional_details jsonb DEFAULT NULL::jsonb, 
+	created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
+	created_by text DEFAULT NULL::text, 
+	provenance text DEFAULT NULL::text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    -- Declare variables to hold error and extracted data
+	v_error_msg 					TEXT;
+    v_error_type 					TEXT;
+    v_sqlstate 						TEXT;
+    v_pg_detail 					TEXT;
+    v_pg_hint 						TEXT;
+    v_pg_context 					TEXT;   
+    v_created_at 					TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
+    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  -- Set default provenance
+    v_exception_id 					TEXT;    
+    v_return 						TEXT 	:= NULL;
+	v_diagnostics_key				TEXT 	:= 'dataledger_api_diagnostics_info';
+	v_diagnostics_id				TEXT 	:= NULL;
+BEGIN	
+	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
+  		WHERE t.hub_interaction_id = sat_diagnostic_dataledger_api_upserted.hub_interaction_id) THEN
+  		RETURN NULL;
+  	END IF;
+ 
+	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_dataledger_api t
+  		WHERE t.hub_interaction_id = sat_diagnostic_dataledger_api_upserted.hub_interaction_id) THEN
+
+		-- Insert into hub_diagnostics table
+	    INSERT INTO techbd_udi_ingress.hub_diagnostic (
+	        hub_diagnostic_id,
+	        "key",
+	        created_by,
+	        provenance
+	    ) VALUES (
+	        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+	        v_diagnostics_key,
+	        v_created_by,
+	        v_provenance
+	    )
+		ON CONFLICT (hub_diagnostic_id) DO NOTHING
+		RETURNING hub_diagnostic_id INTO v_diagnostics_id;
+
+	  	INSERT INTO techbd_udi_ingress.sat_diagnostic_dataledger_api (
+	        sat_diagnostic_dataledger_api_id,
+			hub_diagnostic_id,
+			hub_interaction_id,
+			dataledger_url,	
+			source_hub_interaction_id,
+			group_hub_interaction_id,
+			received_payload,	
+			received_status,
+			received_reason,
+			dataledger_received_status_code,
+			dataledger_received_response,	
+			sent_payload,
+			sent_status,
+			sent_reason,
+			dataledger_sent_response,
+			dataledger_sent_status_code,
+			source,
+			additional_details,
+			created_at,
+			created_by,
+			provenance
+	    )
+	    VALUES (
+	        gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
+			v_diagnostics_id,
+	        sat_diagnostic_dataledger_api_upserted.hub_interaction_id,
+			sat_diagnostic_dataledger_api_upserted.dataledger_url, 
+			sat_diagnostic_dataledger_api_upserted.source_hub_interaction_id,
+			sat_diagnostic_dataledger_api_upserted.group_hub_interaction_id,
+			sat_diagnostic_dataledger_api_upserted.received_payload,
+			sat_diagnostic_dataledger_api_upserted.received_status,
+			sat_diagnostic_dataledger_api_upserted.received_reason,
+			sat_diagnostic_dataledger_api_upserted.dataledger_received_status_code, 
+			sat_diagnostic_dataledger_api_upserted.dataledger_received_response,
+			sat_diagnostic_dataledger_api_upserted.sent_payload,
+			sat_diagnostic_dataledger_api_upserted.sent_status,
+			sat_diagnostic_dataledger_api_upserted.sent_reason,
+			sat_diagnostic_dataledger_api_upserted.dataledger_sent_response,
+			sat_diagnostic_dataledger_api_upserted.dataledger_sent_status_code,
+			sat_diagnostic_dataledger_api_upserted.source,
+			sat_diagnostic_dataledger_api_upserted.additional_details,
+			v_created_at,
+			v_created_by,
+			v_provenance
+	    ) RETURNING sat_diagnostic_dataledger_api_id INTO v_return;
+		  v_return := sat_diagnostic_dataledger_api_upserted.hub_interaction_id;
+
+	ELSE
+		UPDATE techbd_udi_ingress.sat_diagnostic_dataledger_api d
+		SET 
+		    dataledger_url = sat_diagnostic_dataledger_api_upserted.dataledger_url,
+		    source_hub_interaction_id = sat_diagnostic_dataledger_api_upserted.source_hub_interaction_id,
+		    group_hub_interaction_id = sat_diagnostic_dataledger_api_upserted.group_hub_interaction_id,
+		    received_payload = sat_diagnostic_dataledger_api_upserted.received_payload,
+		    received_status = sat_diagnostic_dataledger_api_upserted.received_status,
+		    received_reason = sat_diagnostic_dataledger_api_upserted.received_reason,
+		    dataledger_received_status_code = sat_diagnostic_dataledger_api_upserted.dataledger_received_status_code,
+		    dataledger_received_response = sat_diagnostic_dataledger_api_upserted.dataledger_received_response,
+		    sent_payload = sat_diagnostic_dataledger_api_upserted.sent_payload,
+		    sent_status = sat_diagnostic_dataledger_api_upserted.sent_status,
+		    sent_reason = sat_diagnostic_dataledger_api_upserted.sent_reason,
+		    dataledger_sent_response = sat_diagnostic_dataledger_api_upserted.dataledger_sent_response,
+		    dataledger_sent_status_code = sat_diagnostic_dataledger_api_upserted.dataledger_sent_status_code,
+		    source = sat_diagnostic_dataledger_api_upserted.source,
+		    additional_details = sat_diagnostic_dataledger_api_upserted.additional_details,
+		    created_at = v_created_at,
+		    created_by = v_created_by,
+		    provenance = v_provenance
+		WHERE
+		    d.hub_interaction_id = sat_diagnostic_dataledger_api_upserted.hub_interaction_id; -- Unique identifier to locate the row
+
+		v_return := sat_diagnostic_dataledger_api_upserted.hub_interaction_id;
+	END IF;
+
+    RETURN v_return;
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+	
+	    RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+	       
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id,NULL),
+		sat_diagnostic_dataledger_api_upserted.dataledger_url,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		v_created_by,
+		v_provenance);
+		RETURN NULL;
+END;
+$function$
+;
