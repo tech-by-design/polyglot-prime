@@ -117,6 +117,7 @@ class ProcedureConverterTest {
         when(screeningResourceData.getEncounterId()).thenReturn("encounter123");
         when(screeningResourceData.getProcedureStatusCode()).thenReturn("completed");
         when(screeningResourceData.getProcedureCode()).thenReturn("G0136");
+        when(screeningResourceData.getProcedureCodeSystem()).thenReturn("urn:oid:2.16.840.1.113883.6.285");
         when(screeningResourceData.getProcedureCodeDescription()).thenReturn("SDOH Assessment");
         when(screeningResourceData.getProcedureCodeModifier()).thenReturn("32");
         // Add screening observations
