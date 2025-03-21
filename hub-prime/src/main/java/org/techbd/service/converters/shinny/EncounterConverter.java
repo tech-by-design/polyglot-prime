@@ -162,7 +162,7 @@ public class EncounterConverter extends BaseConverter {
             Map<String, String> idsGenerated) {
         if (screeningResourceData != null) {
             encounter.addLocation(new Encounter.EncounterLocationComponent()
-                    .setLocation(new Reference("Location/" + idsGenerated.get(CsvConstants.PATIENT_ID))));
+                    .setLocation(new Reference("Location/" + screeningResourceData.getEncounterLocation())));
         }
     }
 }

@@ -82,11 +82,17 @@ public class ProcedureConverter extends BaseConverter {
             String interactionId,
             Map<String, String> idsGenerated,
             String baseFHIRUrl) {
-
-        Procedure procedure = createProcedure(screeningProfileData, baseFHIRUrl);
-        populateProcedureDetails(procedure, screeningProfileData, screeningObservationData, idsGenerated);
-        BundleEntryComponent entry = createBundleEntry(procedure);
-        return List.of(entry);
+        if (StringUtils.isNotEmpty(screeningProfileData.getProcedureCode())) {
+            Procedure procedure = createProcedure(screeningProfileData, baseFHIRUrl);
+            populateProcedureDetails(procedure, screeningProfileData, screeningObservationData, idsGenerated);
+            BundleEntryComponent entry = createBundleEntry(procedure);
+            return List.of(entry);
+        } else {
+            LOG.info(
+                    "ProcedureConverter:: No data for procedure, observation will not be created for interaction id :{} ",
+                    interactionId);
+            return List.of();
+        }
     }
 
     private Procedure createProcedure(ScreeningProfileData profileData, String baseFHIRUrl) {
@@ -162,15 +168,14 @@ public class ProcedureConverter extends BaseConverter {
                 profileData.getProcedureCodeDescription(),
                 DEFAULT_PROCEDURE_DISPLAY));
 
-               // Add modifier extension if available 
-                if (StringUtils.isNotEmpty(profileData.getProcedureCodeModifier())) {
-            Extension modifierExtension = new Extension()
-                    .setUrl("http://shinny.org/fhir/StructureDefinition/procedure-code-modifier")// TO-do: Add the
-                                                                                                 // correct URL since
-                                                                                                 // URL is mandatory
-                    .setValue(new StringType(profileData.getProcedureCodeModifier()));
-            code.addExtension(modifierExtension);
-        }
+          // TODO: Add modifier extension if available
+        // if (StringUtils.isNotEmpty(profileData.getProcedureCodeModifier())) {
+        // Extension modifierExtension = new Extension()
+        // .setUrl("http://shinny.org/fhir/StructureDefinition/procedure-code-modifier")
+
+        // .setValue(new StringType(profileData.getProcedureCodeModifier()));
+        // code.addExtension(modifierExtension);
+        // }
         procedure.setCode(code);
     }
 
