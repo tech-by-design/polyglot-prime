@@ -406,7 +406,7 @@
           {"name": "ZIP", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.postalCode", "constraints": { "required": true, "pattern": "^\\d{5}(-?\\d{4})?$"}},
           {"name": "COUNTY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.district", "constraints": {"required": true}},
           {"name": "TELECOM_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').telecom.value"},         
-          {"name": "TELCOM_USE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').telecom.use", "constraints": {  "enum":[
+          {"name": "TELECOM_USE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').telecom.use", "constraints": {  "enum":[
             "home","work","temp","old", "mobile"]}}, 
             {"name": "RACE_CODE", "type": "string", 
             "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.code" },

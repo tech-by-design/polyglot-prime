@@ -109,6 +109,7 @@
   - `type` string
   - `constraints`:
     - `required` True
+    - `unique` True
     - `pattern` `[A-Za-z0-9\-\.]{1,64}`
 ### `ENCOUNTER_CLASS_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.code
@@ -506,7 +507,7 @@
 ### `TELECOM_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.value
   - `type` string
-### `TELCOM_USE`
+### `TELECOM_USE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').telecom.use
   - `type` string
   - `constraints`:
