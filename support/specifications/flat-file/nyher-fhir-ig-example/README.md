@@ -1,6 +1,6 @@
-# FHIR IG v1.2 CSV Example Directory
+# FHIR IG v1.3.0 CSV Example Directory
 
-This directory contains a valid example dataset that aligns with the [FHIR Implementation Guide (IG) v1.2](https://shinny.org/us/ny/hrsn/index.html). It includes four CSV files that collectively generate the following FHIR resource types:
+This directory contains a valid example dataset that aligns with the [FHIR Implementation Guide (IG) 1.3.0](https://shinny.org/us/ny/hrsn/index.html). It includes four CSV files that collectively generate the following FHIR resource types:
 
 - **[Bundle](https://shinny.org/us/ny/hrsn/StructureDefinition-SHINNYBundleProfile.html)**
 - **[Patient](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-patient.html)**
@@ -8,6 +8,7 @@ This directory contains a valid example dataset that aligns with the [FHIR Imple
 - **[Consent](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-Consent.html)**
 - **[Encounter](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-encounter.html)**
 - **[Observation](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-observation-screening-response.html)**
+- **[Procedure](http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-sdoh-procedure)** 
 
 ## Included CSV Files
 
@@ -25,19 +26,14 @@ This directory contains a valid example dataset that aligns with the [FHIR Imple
 
 #### CSV example zip files for SFTP testing
 
-1. **`CorrectDataMultipleSet.zip`**  
-Contains two sets of CSV files with information about two patients.
+1. **`CorrectDataSingleSet.zip`**  
+Contains a single set of CSV files with information about one patient.
 
-2. **`CorrectDataSingleSet.zip`**
-Contains one set of CSV files with information about one  patient.
+2. **`MultiplePatientSingleSet.zip`**
+Contains a single set of CSV files with information about multiple patients.
 
-
-3. **`MissingSet.zip`**
-Contains two sets: One set is complete. The other set has missing data.
-
-
-4. **`MultiplePatientMultipleEncSingleSet.zip`**
-Contains multiple patients' data (three patients) in a single set of files.
+3. **`CorrectDataMultipleSet.zip`**
+Contains two sets of CSV files, each with information about a different patient.
 
 
 ## Mapping CSV Fields to FHIR IG Elements
