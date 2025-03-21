@@ -385,6 +385,32 @@ const exceptionDiagnosticSat = hubDiagnostics.satelliteTable(
 );
 
 
+const diagnosticDataledgerSat = hubDiagnostics.satelliteTable(
+  "dataledger_api",
+  {
+	sat_diagnostic_dataledger_api_id: primaryKey(),
+	hub_diagnostic_id: hubDiagnostics.references.hub_diagnostic_id(),
+	hub_interaction_id: interactionHub.references.hub_interaction_id(),
+	dataledger_url: text(),	
+	source_hub_interaction_id: textNullable(),
+	group_hub_interaction_id: textNullable(),
+	received_payload: jsonbNullable(),
+	received_status: textNullable(),
+	received_reason: textNullable(),	
+	dataledger_received_status_code: textNullable(),
+	dataledger_received_response: jsonbNullable(),
+	sent_payload: jsonbNullable(),
+	sent_status: textNullable(),
+	sent_reason: textNullable(),
+	dataledger_sent_response: jsonbNullable(),
+	dataledger_sent_status_code: textNullable(),
+	source: textNullable(),
+	additional_details: jsonbNullable(),
+  	...dvts.housekeeping.columns,
+},
+);
+
+
 const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
   name: textNullable(),
   jsonb: jsonbNullable(),
@@ -584,6 +610,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${interactionFhirRequestSat}
 
+      ${diagnosticDataledgerSat}
+
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN passed DROP NOT NULL;
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN user_agent DROP NOT NULL;
 
@@ -603,6 +631,8 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_org_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (organization_id);
       CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_org_name_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (organization_name);
       CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_patient_mrn_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (patient_mrn);
+
+      CREATE UNIQUE INDEX IF NOT EXISTS sat_diagnostic_dataledger_api_uq_hub_int ON techbd_udi_ingress.sat_diagnostic_dataledger_api USING btree (hub_interaction_id);
 
       ${interactionUserRequestSat}
 
