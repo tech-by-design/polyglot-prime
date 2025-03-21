@@ -162,15 +162,14 @@ public class ProcedureConverter extends BaseConverter {
                 profileData.getProcedureCodeDescription(),
                 DEFAULT_PROCEDURE_DISPLAY));
 
-               // Add modifier extension if available 
-                if (StringUtils.isNotEmpty(profileData.getProcedureCodeModifier())) {
-            Extension modifierExtension = new Extension()
-                    .setUrl("http://shinny.org/fhir/StructureDefinition/procedure-code-modifier")// TO-do: Add the
-                                                                                                 // correct URL since
-                                                                                                 // URL is mandatory
-                    .setValue(new StringType(profileData.getProcedureCodeModifier()));
-            code.addExtension(modifierExtension);
-        }
+          // TODO: Add modifier extension if available
+        // if (StringUtils.isNotEmpty(profileData.getProcedureCodeModifier())) {
+        // Extension modifierExtension = new Extension()
+        // .setUrl("http://shinny.org/fhir/StructureDefinition/procedure-code-modifier")
+
+        // .setValue(new StringType(profileData.getProcedureCodeModifier()));
+        // code.addExtension(modifierExtension);
+        // }
         procedure.setCode(code);
     }
 
