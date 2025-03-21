@@ -42,12 +42,9 @@ public class ProcedureConverter extends BaseConverter {
 
     // FHIR-specific constants
     private static final String PROCEDURE_BASE_URL = "http://shinny.org/us/ny/hrsn/Procedure/";
-    private static final String DEFAULT_SYSTEM = "urn:oid:2.16.840.1.113883.6.285";
-
+   
     // Clinical displays
    
-    private static final String DEFAULT_PROCEDURE_DISPLAY = "SDOH Assessment";
-
     /**
      * Returns the resource type for this converter.
      *
@@ -154,19 +151,13 @@ public class ProcedureConverter extends BaseConverter {
         // Add coding if available from CSV data
         if (StringUtils.isNotEmpty(profileData.getProcedureCode())) {
             code.addCoding(new Coding()
-                    .setSystem(StringUtils.defaultIfEmpty(
-                            profileData.getProcedureCodeSystem(),
-                            DEFAULT_SYSTEM))
+                    .setSystem(profileData.getProcedureCodeSystem())
                     .setCode(profileData.getProcedureCode())
-                    .setDisplay(StringUtils.defaultIfEmpty(
-                            profileData.getProcedureCodeDescription(),
-                            DEFAULT_PROCEDURE_DISPLAY)));
+                    .setDisplay(profileData.getProcedureCodeDescription()));
         }
 
         // Set text from CSV data
-        code.setText(StringUtils.defaultIfEmpty(
-                profileData.getProcedureCodeDescription(),
-                DEFAULT_PROCEDURE_DISPLAY));
+        code.setText(profileData.getProcedureCodeDescription());
 
           // TODO: Add modifier extension if available
         // if (StringUtils.isNotEmpty(profileData.getProcedureCodeModifier())) {
