@@ -4761,47 +4761,64 @@ $function$;
  * Returns:
  *   - The hub_interaction_id if the upsert is successful, otherwise NULL.
  */
- 
+
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_diagnostic_dataledger_api_upserted(text, text, text, text, jsonb, text, text, text, jsonb, jsonb, text, text, jsonb, text, text, jsonb, timestamptz, text, text);
 
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_diagnostic_dataledger_api_upserted(
-	hub_interaction_id text, 
-	dataledger_url text, 
-	source_hub_interaction_id text DEFAULT NULL::text, 
-	group_hub_interaction_id text DEFAULT NULL::text, 
-	received_payload jsonb DEFAULT NULL::jsonb, 
-	received_status text DEFAULT NULL::text, 
-	received_reason text DEFAULT NULL::text, 
-	dataledger_received_status_code text DEFAULT NULL::text, 
-	dataledger_received_response jsonb DEFAULT NULL::jsonb,
-	sent_payload jsonb DEFAULT NULL::jsonb,
-	sent_status text DEFAULT NULL::text,
-	sent_reason text DEFAULT NULL::text,
-	dataledger_sent_response jsonb DEFAULT NULL::jsonb,
-	dataledger_sent_status_code text DEFAULT NULL::text,
-	source text DEFAULT NULL::text,
-	additional_details jsonb DEFAULT NULL::jsonb, 
-	created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
-	created_by text DEFAULT NULL::text, 
-	provenance text DEFAULT NULL::text)
+	hub_interaction_id 					text, 
+	dataledger_url 						text, 
+	source_hub_interaction_id 			text 	DEFAULT NULL::text, 
+	group_hub_interaction_id 			text 	DEFAULT NULL::text, 
+	received_payload 					jsonb 	DEFAULT NULL::jsonb, 
+	received_status 					text 	DEFAULT NULL::text, 
+	received_reason 					text 	DEFAULT NULL::text, 
+	dataledger_received_status_code 	text 	DEFAULT NULL::text, 
+	dataledger_received_response 		jsonb 	DEFAULT NULL::jsonb,
+	sent_payload 						jsonb 	DEFAULT NULL::jsonb,
+	sent_status 						text 	DEFAULT NULL::text,
+	sent_reason 						text 	DEFAULT NULL::text,
+	dataledger_sent_response 			jsonb 	DEFAULT NULL::jsonb,
+	dataledger_sent_status_code 		text 	DEFAULT NULL::text,
+	source 								text 	DEFAULT NULL::text,
+	additional_details 					jsonb 	DEFAULT NULL::jsonb, 
+	created_at 							timestamp with time zone DEFAULT NULL::timestamp with time zone, 
+	created_by 							text 	DEFAULT NULL::text, 
+	provenance 							text 	DEFAULT NULL::text
+)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
 DECLARE
     -- Declare variables to hold error and extracted data
-	v_error_msg 					TEXT;
-    v_error_type 					TEXT;
-    v_sqlstate 						TEXT;
-    v_pg_detail 					TEXT;
-    v_pg_hint 						TEXT;
-    v_pg_context 					TEXT;   
-    v_created_at 					TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
-    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
-    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  -- Set default provenance
-    v_exception_id 					TEXT;    
-    v_return 						TEXT 	:= NULL;
-	v_diagnostics_key				TEXT 	:= 'dataledger_api_diagnostics_info';
-	v_diagnostics_id				TEXT 	:= NULL;
+	v_error_msg 		TEXT;
+    v_error_type 		TEXT;
+    v_sqlstate 			TEXT;
+    v_pg_detail 		TEXT;
+    v_pg_hint 			TEXT;
+    v_pg_context 		TEXT; 
+    v_created_at 		TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
+    v_created_by 		TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 		TEXT 		:= COALESCE(provenance, 'unknown');  -- Set default provenance
+    v_exception_id 		TEXT;    
+    v_return 			TEXT 		:= NULL;
+	v_diagnostics_key	TEXT 		:= 'dataledger_api_diagnostics_info';
+	v_diagnostics_id	TEXT 		:= NULL;
+
+	v_dataledger_url 					TEXT 		:= NULL;
+	v_source_hub_interaction_id 		TEXT 		:= NULL;
+	v_group_hub_interaction_id 			TEXT 		:= NULL;
+	v_received_payload 					jsonb		:= NULL;
+	v_received_status 					TEXT 		:= NULL;
+	v_received_reason 					TEXT 		:= NULL;
+	v_dataledger_received_status_code 	TEXT 		:= NULL;
+	v_dataledger_received_response 		jsonb		:= NULL;
+	v_sent_payload 						jsonb		:= NULL;
+	v_sent_status 						TEXT 		:= NULL;
+	v_sent_reason 						TEXT 		:= NULL;
+	v_dataledger_sent_response 			jsonb		:= NULL;
+	v_dataledger_sent_status_code 		TEXT 		:= NULL;
+	v_source 							TEXT 		:= NULL;
+	v_additional_details				jsonb		:= NULL;
 BEGIN	
 	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
   		WHERE t.hub_interaction_id = sat_diagnostic_dataledger_api_upserted.hub_interaction_id) THEN
@@ -4875,26 +4892,59 @@ BEGIN
 		  v_return := sat_diagnostic_dataledger_api_upserted.hub_interaction_id;
 
 	ELSE
+		SELECT dl.dataledger_url,	
+			dl.source_hub_interaction_id,
+			dl.group_hub_interaction_id,
+			dl.received_payload,	
+			dl.received_status,
+			dl.received_reason,
+			dl.dataledger_received_status_code,
+			dl.dataledger_received_response,	
+			dl.sent_payload,
+			dl.sent_status,
+			dl.sent_reason,
+			dl.dataledger_sent_response,
+			dl.dataledger_sent_status_code,
+			dl.source,
+			dl.additional_details
+		INTO v_dataledger_url,
+			v_source_hub_interaction_id,
+			v_group_hub_interaction_id,
+			v_received_payload,
+			v_received_status,
+			v_received_reason,
+			v_dataledger_received_status_code,
+			v_dataledger_received_response,
+			v_sent_payload,
+			v_sent_status,
+			v_sent_reason,
+			v_dataledger_sent_response,
+			v_dataledger_sent_status_code,
+			v_source,
+			v_additional_details
+		FROM techbd_udi_ingress.sat_diagnostic_dataledger_api dl
+		WHERE dl.hub_interaction_id = sat_diagnostic_dataledger_api_upserted.hub_interaction_id; 
+
 		UPDATE techbd_udi_ingress.sat_diagnostic_dataledger_api d
 		SET 
-		    dataledger_url = sat_diagnostic_dataledger_api_upserted.dataledger_url,
-		    source_hub_interaction_id = sat_diagnostic_dataledger_api_upserted.source_hub_interaction_id,
-		    group_hub_interaction_id = sat_diagnostic_dataledger_api_upserted.group_hub_interaction_id,
-		    received_payload = sat_diagnostic_dataledger_api_upserted.received_payload,
-		    received_status = sat_diagnostic_dataledger_api_upserted.received_status,
-		    received_reason = sat_diagnostic_dataledger_api_upserted.received_reason,
-		    dataledger_received_status_code = sat_diagnostic_dataledger_api_upserted.dataledger_received_status_code,
-		    dataledger_received_response = sat_diagnostic_dataledger_api_upserted.dataledger_received_response,
-		    sent_payload = sat_diagnostic_dataledger_api_upserted.sent_payload,
-		    sent_status = sat_diagnostic_dataledger_api_upserted.sent_status,
-		    sent_reason = sat_diagnostic_dataledger_api_upserted.sent_reason,
-		    dataledger_sent_response = sat_diagnostic_dataledger_api_upserted.dataledger_sent_response,
-		    dataledger_sent_status_code = sat_diagnostic_dataledger_api_upserted.dataledger_sent_status_code,
-		    source = sat_diagnostic_dataledger_api_upserted.source,
-		    additional_details = sat_diagnostic_dataledger_api_upserted.additional_details,
-		    created_at = v_created_at,
-		    created_by = v_created_by,
-		    provenance = v_provenance
+		    dataledger_url 					= COALESCE(sat_diagnostic_dataledger_api_upserted.dataledger_url, v_dataledger_url),
+		    source_hub_interaction_id 		= COALESCE(sat_diagnostic_dataledger_api_upserted.source_hub_interaction_id, v_source_hub_interaction_id),
+		    group_hub_interaction_id 		= COALESCE(sat_diagnostic_dataledger_api_upserted.group_hub_interaction_id, v_group_hub_interaction_id),
+		    received_payload 				= COALESCE(sat_diagnostic_dataledger_api_upserted.received_payload, v_received_payload),
+		    received_status 				= COALESCE(sat_diagnostic_dataledger_api_upserted.received_status, v_received_status),
+		    received_reason 				= COALESCE(sat_diagnostic_dataledger_api_upserted.received_reason, v_received_reason),
+		    dataledger_received_status_code = COALESCE(sat_diagnostic_dataledger_api_upserted.dataledger_received_status_code, v_dataledger_received_status_code),
+		    dataledger_received_response 	= COALESCE(sat_diagnostic_dataledger_api_upserted.dataledger_received_response, v_dataledger_received_response),
+		    sent_payload 					= COALESCE(sat_diagnostic_dataledger_api_upserted.sent_payload, v_sent_payload),
+		    sent_status 					= COALESCE(sat_diagnostic_dataledger_api_upserted.sent_status, v_sent_status),
+		    sent_reason 					= COALESCE(sat_diagnostic_dataledger_api_upserted.sent_reason, v_sent_reason),
+		    dataledger_sent_response 		= COALESCE(sat_diagnostic_dataledger_api_upserted.dataledger_sent_response, v_dataledger_sent_response),
+		    dataledger_sent_status_code 	= COALESCE(sat_diagnostic_dataledger_api_upserted.dataledger_sent_status_code, v_dataledger_sent_status_code),
+		    source 							= COALESCE(sat_diagnostic_dataledger_api_upserted.source, v_source),
+		    additional_details 				= COALESCE(sat_diagnostic_dataledger_api_upserted.additional_details, v_additional_details),
+		    created_at 						= v_created_at,
+		    created_by 						= v_created_by,
+		    provenance 						= v_provenance
 		WHERE
 		    d.hub_interaction_id = sat_diagnostic_dataledger_api_upserted.hub_interaction_id; -- Unique identifier to locate the row
 
