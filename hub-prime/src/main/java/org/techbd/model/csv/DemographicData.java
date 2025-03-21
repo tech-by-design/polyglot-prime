@@ -79,7 +79,7 @@ public class DemographicData {
     @CsvBindByName(column = "TELECOM_VALUE")
     private String telecomValue;
 
-    @CsvBindByName(column = "TELCOM_USE")
+    @CsvBindByName(column = "TELECOM_USE")
     private String telecomUse;
 
     @CsvBindByName(column = "RACE_CODE")
