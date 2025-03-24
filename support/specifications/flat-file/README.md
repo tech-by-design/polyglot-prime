@@ -211,9 +211,9 @@ All CSV files are **comma-separated (comma-delimited)** to maintain uniformity i
 
 By following this structured naming convention, we ensure consistency, clarity, and efficient data processing across all CSV files.
 
-<!-- ### Migration Plan
+### Migration Plan
 
-The migration plan from Summer'24 CSV to Winter'24 CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/summer24-winter24-migration-document.md). -->
+The migration plan from Summer'24 CSV to 1115-SDOH-Template CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/winter24-to-1115-sdog-template-migration-document.md).
 
 ### Notes
 
