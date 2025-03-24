@@ -19,6 +19,7 @@ import org.techbd.service.DataLedgerApiClient.DataLedgerPayload;
 import org.techbd.service.DataLedgerApiClient.PayloadType;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
+import org.techbd.udi.auto.jooq.ingress.routines.SatDiagnosticDataledgerApiUpserted;
 import org.techbd.udi.auto.jooq.ingress.tables.SatDiagnosticDataledgerApi;
 import org.techbd.udi.auto.jooq.ingress.tables.records.SatDiagnosticDataledgerApiRecord;
 
@@ -134,45 +135,46 @@ public class DataLedgerApiClient {
             HttpResponse<String> response, String errorMessage,
             String groupHubInteractionId, String sourceHubInteractionId, String provenance, String source) {
         try {
-            String diagnosticId = UUID.randomUUID().toString();
-            SatDiagnosticDataledgerApiRecord record = udiPrimeJpaConfig.dsl()
-                    .newRecord(SatDiagnosticDataledgerApi.SAT_DIAGNOSTIC_DATALEDGER_API);
-            record.setHubInteractionId(interactionId);
-            record.setDataledgerUrl(apiUrl);
-            record.setCreatedBy(DataLedgerApiClient.class.getName());
-            record.setProvenance(provenance);
-            record.setSource(source);
-            record.setCreatedAt(OffsetDateTime.now());
-
+            SatDiagnosticDataledgerApiUpserted satDiagnosticDataledgerApiUpserted = new SatDiagnosticDataledgerApiUpserted();
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            final var jooqCfg = dslContext.configuration();
+            satDiagnosticDataledgerApiUpserted.setHubInteractionId(interactionId);
+            satDiagnosticDataledgerApiUpserted.setDataledgerUrl(apiUrl);
+            satDiagnosticDataledgerApiUpserted.setCreatedBy(DataLedgerApiClient.class.getName());
+            satDiagnosticDataledgerApiUpserted.setProvenance(provenance);
+            satDiagnosticDataledgerApiUpserted.setSource(source);
+            satDiagnosticDataledgerApiUpserted.setCreatedAt(OffsetDateTime.now());
+            JsonNode responseJson = Configuration.objectMapper.readTree(requestPayload);
+            satDiagnosticDataledgerApiUpserted.setDataledgerSentResponse(responseJson);
             if (groupHubInteractionId != null) {
-                record.setGroupHubInteractionId(groupHubInteractionId);
+                satDiagnosticDataledgerApiUpserted.setGroupHubInteractionId(groupHubInteractionId);
             }
             if (sourceHubInteractionId != null) {
-                record.setSourceHubInteractionId(sourceHubInteractionId);
+                satDiagnosticDataledgerApiUpserted.setSourceHubInteractionId(sourceHubInteractionId);
             }
 
             if (requestPayload != null) {
                 JsonNode jsonPayload = Configuration.objectMapper.readTree(requestPayload);
-                record.setSentPayload(jsonPayload);
+                satDiagnosticDataledgerApiUpserted.setSentPayload(jsonPayload);
             }
 
             if (response != null) {
-                record.setDataledgerSentStatusCode(String.valueOf(response.statusCode()));
+                satDiagnosticDataledgerApiUpserted.setDataledgerSentStatusCode(String.valueOf(response.statusCode()));
                 if (response.body() != null) {
-                    JsonNode responseJson = Configuration.objectMapper.readTree(response.body());
-                    record.setDataledgerSentResponse(responseJson);
+                    JsonNode dataLedgerSentActionResponse = Configuration.objectMapper.readTree(response.body());
+                    satDiagnosticDataledgerApiUpserted.setDataledgerSentResponse(dataLedgerSentActionResponse);
                 }
-                record.setSentStatus("SUCCESS");
+                satDiagnosticDataledgerApiUpserted.setSentStatus("SUCCESS");
             } else {
-                record.setSentStatus("FAILED");
+                satDiagnosticDataledgerApiUpserted.setSentStatus("FAILED");
             }
 
             if (errorMessage != null) {
-                record.setSentReason(errorMessage);
-                record.setSentStatus("FAILED");
+                satDiagnosticDataledgerApiUpserted.setSentReason(errorMessage);
+                satDiagnosticDataledgerApiUpserted.setSentStatus("FAILED");
             }
 
-            record.store();
+            satDiagnosticDataledgerApiUpserted.execute(jooqCfg);
             LOG.info("Successfully saved sent action diagnostic data for interactionId: {}", interactionId);
         } catch (Exception ex) {
             LOG.error("Failed to save sent action diagnostic data for interactionId: {}", interactionId, ex);
@@ -183,43 +185,43 @@ public class DataLedgerApiClient {
             HttpResponse<String> response, String receivedReason,
             String groupHubInteractionId, String sourceHubInteractionId, String provenance, String source) {
         try {
-            String diagnosticId = UUID.randomUUID().toString();
-            SatDiagnosticDataledgerApiRecord record = udiPrimeJpaConfig.dsl()
-                    .newRecord(SatDiagnosticDataledgerApi.SAT_DIAGNOSTIC_DATALEDGER_API);
-
-            record.setSatDiagnosticDataledgerApiId(diagnosticId);
-            record.setHubDiagnosticId(diagnosticId);
-            record.setHubInteractionId(interactionId);
-            record.setDataledgerUrl(apiUrl);
-            record.setCreatedBy("SYSTEM");
-            record.setProvenance("HUB-PRIME");
-            record.setSource("DATALEDGER-API");
-            record.setCreatedAt(OffsetDateTime.now());
+            SatDiagnosticDataledgerApiUpserted satDiagnosticDataledgerApiUpserted = new SatDiagnosticDataledgerApiUpserted();
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            final var jooqCfg = dslContext.configuration();
+            
+            satDiagnosticDataledgerApiUpserted.setHubInteractionId(interactionId); 
+            satDiagnosticDataledgerApiUpserted.setDataledgerUrl(apiUrl);
+            satDiagnosticDataledgerApiUpserted.setCreatedBy(DataLedgerApiClient.class.getName());
+            satDiagnosticDataledgerApiUpserted.setProvenance(provenance);
+            satDiagnosticDataledgerApiUpserted.setSource(source);
+            satDiagnosticDataledgerApiUpserted.setCreatedAt(OffsetDateTime.now());
+            JsonNode jsonResponse = Configuration.objectMapper.readTree(responsePayload);
+            satDiagnosticDataledgerApiUpserted.setReceivedPayload(jsonResponse);
 
             if (groupHubInteractionId != null) {
-                record.setGroupHubInteractionId(groupHubInteractionId);
+                satDiagnosticDataledgerApiUpserted.setGroupHubInteractionId(groupHubInteractionId);
             }
             if (sourceHubInteractionId != null) {
-                record.setSourceHubInteractionId(sourceHubInteractionId);
+                satDiagnosticDataledgerApiUpserted.setSourceHubInteractionId(sourceHubInteractionId);
             }
 
             if (response != null) {
-                record.setDataledgerReceivedStatusCode(String.valueOf(response.statusCode()));
-                record.setReceivedStatus("SUCCESS");
+                satDiagnosticDataledgerApiUpserted.setDataledgerReceivedStatusCode(String.valueOf(response.statusCode()));
+                satDiagnosticDataledgerApiUpserted.setReceivedStatus("SUCCESS");
                 if (response.body() != null) {
-                    JsonNode jsonResponse = Configuration.objectMapper.readTree(response.body());
-                    record.setReceivedPayload(jsonResponse);
+                    JsonNode dataLedgerResponse = Configuration.objectMapper.readTree(response.body());
+                    satDiagnosticDataledgerApiUpserted.setDataledgerReceivedResponse(dataLedgerResponse);
                 }
             } else {
-                record.setReceivedStatus("FAILED");
+                satDiagnosticDataledgerApiUpserted.setReceivedStatus("FAILED");
             }
 
             if (receivedReason != null) {
-                record.setReceivedReason(receivedReason);
-                record.setReceivedStatus("FAILED");
+                satDiagnosticDataledgerApiUpserted.setReceivedReason(receivedReason);
+                satDiagnosticDataledgerApiUpserted.setReceivedStatus("FAILED");
             }
 
-            record.store();
+            satDiagnosticDataledgerApiUpserted.execute(jooqCfg);
             LOG.info("Successfully saved received action diagnostic data for interactionId: {}", interactionId);
         } catch (Exception ex) {
             LOG.error("Failed to save received action diagnostic data for interactionId: {}", interactionId, ex);

@@ -129,6 +129,9 @@ public class FHIRService {
 			throws IOException {
 		Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
 		try {
+			if (null == interactionId) {
+				interactionId = getBundleInteractionId(request, coRrelationId);
+			}
 			String bundleId =FHIRUtil.extractBundleId(payload, tenantId);
             DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(tenantId, DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), bundleId
 			);
@@ -136,9 +139,7 @@ public class FHIRService {
             dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
 			final var start = Instant.now();
 			LOG.info("Bundle processing start at {} for interaction id {}", start, getBundleInteractionId(request, coRrelationId));
-			if (null == interactionId) {
-				interactionId = getBundleInteractionId(request, coRrelationId);
-			}
+
 			final var dslContext = udiPrimeJpaConfig.dsl();
 			final var jooqCfg = dslContext.configuration();
 			Map<String, Object> payloadWithDisposition = null;
