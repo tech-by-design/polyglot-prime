@@ -47,6 +47,8 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.fhir.OrchestrationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
+import org.techbd.service.DataLedgerApiClient;
+import org.techbd.service.DataLedgerApiClient.DataLedgerPayload;
 import org.techbd.service.constants.ErrorCode;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.exception.JsonValidationException;
@@ -100,36 +102,40 @@ public class FHIRService {
 	@Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
 	private boolean saveUserDataToInteractions;
 
+	private final DataLedgerApiClient dataLedgerApiClient;
+
 	private final Tracer tracer;
 
 	public FHIRService(
 			final AppConfig appConfig, final UdiPrimeJpaConfig udiPrimeJpaConfig,
-			OrchestrationEngine engine, final Tracer tracer) {
+			OrchestrationEngine engine, final Tracer tracer,final DataLedgerApiClient dataLedgerApiClient) {
 		this.appConfig = appConfig;
 		this.udiPrimeJpaConfig = udiPrimeJpaConfig;
 		this.engine = engine;
 		this.tracer = tracer;
+		this.dataLedgerApiClient = dataLedgerApiClient;
 	}
 
 	public Object processBundle(final @RequestBody @Nonnull String payload,
 			String tenantId,
-			
 			String customDataLakeApi,
 			String dataLakeApiContentType,
 			String healthCheck,
 			boolean isSync,
-			
 			HttpServletRequest request, HttpServletResponse response, String provenance,
-			
                         String mtlsStrategy, String interactionId,
 			String groupInteractionId, String masterInteractionId, String sourceType,
 			String requestUriToBeOverriden, String coRrelationId)
 			throws IOException {
 		Span span = tracer.spanBuilder("FHIRService.processBundle").startSpan();
 		try {
+			String bundleId =FHIRUtil.extractBundleId(payload, tenantId);
+            DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(tenantId, DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), bundleId
+			);
+			final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
+            dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
 			final var start = Instant.now();
-			LOG.info("Bundle processing start at {} for interaction id {}.",
-					start, getBundleInteractionId(request, coRrelationId));
+			LOG.info("Bundle processing start at {} for interaction id {}", start, getBundleInteractionId(request, coRrelationId));
 			if (null == interactionId) {
 				interactionId = getBundleInteractionId(request, coRrelationId);
 			}
@@ -172,7 +178,7 @@ public class FHIRService {
 							provenance, null, 
                                                          mtlsStrategy,
 							interactionId, groupInteractionId, masterInteractionId,
-							sourceType, requestUriToBeOverriden, coRrelationId);
+							sourceType, requestUriToBeOverriden, coRrelationId,bundleId);
 					Instant end = Instant.now();
 					Duration timeElapsed = Duration.between(start, end);
 					LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
@@ -187,7 +193,7 @@ public class FHIRService {
                                                         tenantId, payload,
 							provenance, payloadWithDisposition, 
 							mtlsStrategy, interactionId, groupInteractionId,
-							masterInteractionId, sourceType, requestUriToBeOverriden, coRrelationId);
+							masterInteractionId, sourceType, requestUriToBeOverriden, coRrelationId,bundleId);
 					Instant end = Instant.now();
 					Duration timeElapsed = Duration.between(start, end);
 					LOG.info("Bundle processing end for interaction id: {} Time Taken : {}  milliseconds",
@@ -544,7 +550,7 @@ public class FHIRService {
 			String provenance,
 			Map<String, Object> validationPayloadWithDisposition, 
 			String mtlsStrategy, String interactionId, String groupInteractionId,
-			String masterInteractionId, String sourceType, String requestUriToBeOverriden, String coRrelationId) {
+			String masterInteractionId, String sourceType, String requestUriToBeOverriden, String coRrelationId,String bundleId) {
 		Span span = tracer.spanBuilder("FhirService.sentToScoringEngine").startSpan();
 		try {
 			interactionId = null != interactionId ? interactionId : getBundleInteractionId(request, coRrelationId);
@@ -587,7 +593,7 @@ public class FHIRService {
 							bundlePayloadWithDisposition, payload, dataLakeApiContentType,
 							provenance,  
                                                         groupInteractionId,
-							masterInteractionId, sourceType, requestUriToBeOverriden);
+							masterInteractionId, sourceType, requestUriToBeOverriden,bundleId);
 				} else {
 					handleMTlsStrategy(defaultDatalakeApiAuthn, interactionId, tenantId,
 							dataLakeApiBaseURL,
@@ -595,7 +601,7 @@ public class FHIRService {
 							payload,
 							dataLakeApiContentType, provenance, 
 							mtlsStrategy, groupInteractionId, masterInteractionId,
-							sourceType, requestUriToBeOverriden);
+							sourceType, requestUriToBeOverriden,bundleId);
 				}
 
 			} catch (
@@ -617,7 +623,7 @@ public class FHIRService {
 			String provenance,  
                         String mtlsStrategyStr,
 			String groupInteractionId,
-			String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
+			String masterInteractionId, String sourceType, String requestUriToBeOverriden,String bundleId) {
 		MTlsStrategy mTlsStrategy = null;
 
 		LOG.info("FHIRService:: handleMTlsStrategy MTLS strategy from application.yml :{} for interaction id: {}",
@@ -637,7 +643,7 @@ public class FHIRService {
 					bundlePayloadWithDisposition, jooqCfg, provenance,
 					requestURI, 
                                         payload,
-					groupInteractionId, masterInteractionId, sourceType);
+					groupInteractionId, masterInteractionId, sourceType,bundleId);
 			case POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL ->
 				handlePostStdoutPayload(interactionId, tenantId, jooqCfg, dataLakeApiBaseURL,
 						bundlePayloadWithDisposition,
@@ -653,14 +659,14 @@ public class FHIRService {
                                                 payload, provenance, request,
 						dataLakeApiContentType, dataLakeApiBaseURL,
 						defaultDatalakeApiAuthn.mTlsResources(), groupInteractionId,
-						masterInteractionId, sourceType, requestUriToBeOverriden);
+						masterInteractionId, sourceType, requestUriToBeOverriden,bundleId);
 			default ->
 				handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
 						request,
 						bundlePayloadWithDisposition, payload, dataLakeApiContentType,
 						provenance, 
                                                 groupInteractionId,
-						masterInteractionId, sourceType, requestUriToBeOverriden);
+						masterInteractionId, sourceType, requestUriToBeOverriden,bundleId);
 		}
 	}
 
@@ -669,7 +675,7 @@ public class FHIRService {
 			String payload, String provenance, HttpServletRequest request, String dataLakeApiContentType,
 			String dataLakeApiBaseURL,
 			MTlsResources mTlsResources, String groupInteractionId, String masterInteractionId,
-			String sourceType, String requestUriToBeOverriden) {
+			String sourceType, String requestUriToBeOverriden,String bundleId) {
 		LOG.info("FHIRService:: handleMtlsResources BEGIN for interaction id: {} tenantid :{} scoring",
 				interactionId,
 				tenantId);
@@ -771,7 +777,7 @@ public class FHIRService {
 			sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
 					dataLakeApiContentType, interactionId,
 					jooqCfg, provenance, request.getRequestURI(), dataLakeApiBaseURL,
-					groupInteractionId, masterInteractionId, sourceType);
+					groupInteractionId, masterInteractionId, sourceType,bundleId);
 			LOG.debug(
 					"FHIRService:: handleMtlsResources Build WebClient with MTLS Enabled ReactorClientHttpConnector -END for interaction Id :{}",
 					interactionId);
@@ -795,7 +801,7 @@ public class FHIRService {
 			Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
 			String provenance, 
                          String groupInteractionId,
-			String masterInteractionId, String sourceType, String requestUriToBeOverriden) {
+			String masterInteractionId, String sourceType, String requestUriToBeOverriden,String bundleId) {
 		if (!MTlsStrategy.NO_MTLS.value.equals(mTlsStrategy.value)) {
 			LOG.info(
 					"#########Invalid MTLS Strategy defined #############: Allowed values are {} .Hence proceeding with post to scoring engine without mTls for interaction id :{}",
@@ -829,7 +835,7 @@ public class FHIRService {
 				StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
 						: request.getRequestURI(),
 				dataLakeApiBaseURL, groupInteractionId,
-				masterInteractionId, sourceType);
+				masterInteractionId, sourceType,bundleId);
 		LOG.debug("FHIRService:: sendPostRequest END for interaction id: {} tenantid :{} ", interactionId,
 				tenantId);
 	}
@@ -841,7 +847,7 @@ public class FHIRService {
 			 
                         String payload, String groupInteractionId,
 			String masterInteractionId,
-			String sourceType) {
+			String sourceType,String bundleId) {
 		try {
 			LOG.info("FHIRService :: handleAwsSecrets -BEGIN for interactionId : {}",
 					interactionId);
@@ -925,7 +931,7 @@ public class FHIRService {
 			sendPostRequest(webClient, tenantId, bundlePayloadWithDisposition, payload,
 					dataLakeApiContentType, interactionId,
 					jooqCfg, provenance, requestURI, dataLakeApiBaseURL, groupInteractionId,
-					masterInteractionId, sourceType);
+					masterInteractionId, sourceType,bundleId);
 			LOG.debug("FHIRService:: handleAwsSecrets -sendPostRequest END for interaction id: {} tenantid :{} ",
 					interactionId,
 					tenantId);
@@ -1194,45 +1200,54 @@ public class FHIRService {
 	}
 
 	private void sendPostRequest(WebClient webClient,
-			String tenantId,
-			Map<String, Object> bundlePayloadWithDisposition,
-			String payload,
-			String dataLakeApiContentType,
-			String interactionId,
-			org.jooq.Configuration jooqCfg,
-			String provenance,
-			String requestURI, String scoringEngineApiURL, String groupInteractionId,
-			String masterInteractionId, String sourceType) {
-		Span span = tracer.spanBuilder("FhirService.sendPostRequest").startSpan();
-		try {
-			LOG.debug(
-					"FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
-					interactionId, tenantId);
-			webClient.post()
-					.uri("?processingAgent=" + tenantId)
-					.body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
-							? bundlePayloadWithDisposition
-							: payload))
-					.header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
-							.orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
-					.retrieve()
-					.bodyToMono(String.class)
-					.subscribe(response -> {
-						handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
-								provenance, scoringEngineApiURL, groupInteractionId,
-								masterInteractionId, sourceType);
-					}, error -> {
-						registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId, error,
-								requestURI, tenantId, provenance, groupInteractionId,
-								masterInteractionId, sourceType);
-					});
+        String tenantId,
+        Map<String, Object> bundlePayloadWithDisposition,
+        String payload,
+        String dataLakeApiContentType,
+        String interactionId,
+        org.jooq.Configuration jooqCfg,
+        String provenance,
+        String requestURI, String scoringEngineApiURL, String groupInteractionId,
+        String masterInteractionId, String sourceType, String bundleId) {
+    Span span = tracer.spanBuilder("FhirService.sendPostRequest").startSpan();
+    try {
+        LOG.debug(
+                "FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
+                interactionId, tenantId);
 
-			LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}",
-					interactionId, tenantId);
-		} finally {
-			span.end();
-		}
-	}
+        // Post request to scoring engine
+        webClient.post()
+                .uri("?processingAgent=" + tenantId)
+                .body(BodyInserters.fromValue(
+                        bundlePayloadWithDisposition != null ? bundlePayloadWithDisposition : payload))
+                .header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
+                        .orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
+                .retrieve()
+                .bodyToMono(String.class)
+                .doFinally(signalType -> {
+                    DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+						DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+                            DataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
+                    final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
+            		dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+                })
+                .subscribe(response -> {
+                    handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
+                            provenance, scoringEngineApiURL, groupInteractionId,
+                            masterInteractionId, sourceType);
+                }, error -> {
+                    registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId, error,
+                            requestURI, tenantId, provenance, groupInteractionId,
+                            masterInteractionId, sourceType);
+                });
+
+        LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}",
+                interactionId, tenantId);
+    } finally {
+        span.end();
+    }
+}
+
 
 	private void handleResponse(String response,
 			org.jooq.Configuration jooqCfg,
