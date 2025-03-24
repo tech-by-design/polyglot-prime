@@ -109,8 +109,9 @@ public class EncounterConverter extends BaseConverter {
     private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
         if (StringUtils.isNotEmpty(data.getEncounterClassCode())) {
             Coding encounterClass = new Coding();
-            encounterClass.setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode");
+            encounterClass.setSystem(data.getEncounterClassCodeSystem());
             encounterClass.setCode(data.getEncounterClassCode());
+            encounterClass.setDisplay(data.getEncounterClassCodeDescription());
             encounter.setClass_(encounterClass);
         }
     }
