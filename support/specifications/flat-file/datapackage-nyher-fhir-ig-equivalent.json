@@ -390,7 +390,8 @@
           {"name": "SEX_AT_BIRTH_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode", "constraints": { 
           "enum": [
           "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
-          "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
+          "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+          "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex"
           ]}},                       
           {"name": "PATIENT_BIRTH_DATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').birthDate", "constraints": {"required": true, "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?$"}},
           {"name": "ADDRESS1", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.line", "constraints": {"required": true}},          

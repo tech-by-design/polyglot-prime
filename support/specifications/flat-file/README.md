@@ -213,7 +213,7 @@ By following this structured naming convention, we ensure consistency, clarity, 
 
 ### Migration Plan
 
-The migration plan from Winter'24 CSV to 1115-SDOH-Template CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/winter24-to-1115-sdog-template-migration-document.md).
+The migration plan from Winter'24 CSV to 1115-SDOH-Template CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/winter24-to-1115-sdoh-template-migration-document.md).
 
 ### Notes
 
