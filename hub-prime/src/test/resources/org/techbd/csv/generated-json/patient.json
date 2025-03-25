@@ -33,7 +33,7 @@
       "valueString": "Hispanic or Latino"
     } ]
   }, {
-    "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
+    "url": "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
     "valueCode": "M"
   }, {
     "url": "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns",
@@ -114,7 +114,8 @@
     "language": {
       "coding": [ {
         "system": "urn:ietf:bcp:47",
-        "code": "en"
+        "code": "en",
+        "display": "English"
       } ]
     },
     "preferred": true

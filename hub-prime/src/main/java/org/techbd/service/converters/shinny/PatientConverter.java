@@ -177,7 +177,7 @@ public class PatientConverter extends BaseConverter {
         
 
         if (StringUtils.isNotEmpty(demographicData.getSexAtBirthCode())) {
-            Extension birthSexExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex");
+            Extension birthSexExtension = new Extension(demographicData.getSexAtBirthCodeSystem());
             birthSexExtension.setValue(new CodeType(demographicData.getSexAtBirthCode())); // Use CodeType for valueCode
             patient.addExtension(birthSexExtension);
         }
@@ -362,6 +362,7 @@ public class PatientConverter extends BaseConverter {
                     Coding coding = new Coding();
                     coding.setSystem(data.getPreferredLanguageCodeSystem());
                     coding.setCode(languageCode);
+                    coding.setDisplay(data.getPreferredLanguageCodeDescription());
                     CodeableConcept language = new CodeableConcept();
                     language.addCoding(coding);
                     PatientCommunicationComponent communication = new PatientCommunicationComponent();

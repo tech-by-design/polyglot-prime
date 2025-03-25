@@ -140,9 +140,13 @@ public class ProcedureConverter extends BaseConverter {
 
     private void populateProcedureStatus(Procedure procedure, ScreeningProfileData profileData) {
         String statusCode = profileData.getProcedureStatusCode();
-        procedure.setStatus(StringUtils.isNotEmpty(statusCode)
-                ? Procedure.ProcedureStatus.fromCode(statusCode)
-                : Procedure.ProcedureStatus.COMPLETED);
+        // procedure.setStatus(StringUtils.isNotEmpty(statusCode)
+        //         ? Procedure.ProcedureStatus.fromCode(statusCode)
+        //         : //Procedure.ProcedureStatus.COMPLETED);
+        if (StringUtils.isNotEmpty(statusCode)) {
+            procedure.setStatus(Procedure.ProcedureStatus.fromCode(statusCode));
+        }
+    
     }
 
     private void populateProcedureCode(Procedure procedure, ScreeningProfileData profileData) {
