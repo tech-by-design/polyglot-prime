@@ -140,8 +140,7 @@ public class DataLedgerApiClient {
             satDiagnosticDataledgerApiUpserted.setProvenance(provenance);
             satDiagnosticDataledgerApiUpserted.setSource(source);
             satDiagnosticDataledgerApiUpserted.setCreatedAt(OffsetDateTime.now());
-            JsonNode responseJson = Configuration.objectMapper.readTree(requestPayload);
-            satDiagnosticDataledgerApiUpserted.setDataledgerSentResponse(responseJson);
+
             if (groupHubInteractionId != null) {
                 satDiagnosticDataledgerApiUpserted.setGroupHubInteractionId(groupHubInteractionId);
             }

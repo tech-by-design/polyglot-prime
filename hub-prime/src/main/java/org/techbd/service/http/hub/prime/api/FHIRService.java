@@ -133,7 +133,7 @@ public class FHIRService {
 				interactionId = getBundleInteractionId(request, coRrelationId);
 			}
 			String bundleId =FHIRUtil.extractBundleId(payload, tenantId);
-			 if (!SourceType.CSV.equals(sourceType) && !SourceType.CCDA.equals(sourceType)) {
+			 if (!SourceType.CSV.name().equalsIgnoreCase(sourceType) && !SourceType.CCDA.name().equalsIgnoreCase(sourceType)) {
 				//send only for source type FHIR
 				DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(tenantId, DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), bundleId
 				);
