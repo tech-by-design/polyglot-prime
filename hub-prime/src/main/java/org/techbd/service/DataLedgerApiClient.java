@@ -6,7 +6,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.UUID;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -15,13 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
-import org.techbd.service.DataLedgerApiClient.DataLedgerPayload;
-import org.techbd.service.DataLedgerApiClient.PayloadType;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.SatDiagnosticDataledgerApiUpserted;
-import org.techbd.udi.auto.jooq.ingress.tables.SatDiagnosticDataledgerApi;
-import org.techbd.udi.auto.jooq.ingress.tables.records.SatDiagnosticDataledgerApiRecord;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,25 +40,27 @@ public class DataLedgerApiClient {
     }
 
     public void processRequest(DataLedgerPayload dataLedgerPayload, String interactionId, String provenance,
-            String source,String validationErrors) {
-        processRequest(dataLedgerPayload, interactionId, null, null, provenance, source,validationErrors);
+            String source,Map<String,Object> additionalDetails) {
+        processRequest(dataLedgerPayload, interactionId, null, null, provenance, source,additionalDetails);
     }
 
     public void processRequest(DataLedgerPayload dataLedgerPayload, String interactionId, String sourceHubInteractionId,
-            String groupHubInteractionId, String provenance, String source,String validationErrors) {
+            String groupHubInteractionId, String provenance, String source,Map<String,Object> additionalDetails) {
         String apiUrl = appConfig.getDataLedgerApiUrl(); // Read API URL from AppConfig
         String jsonPayload = StringUtils.EMPTY;
         try {
             jsonPayload = Configuration.objectMapper.writeValueAsString(dataLedgerPayload);
         } catch (JsonProcessingException ex) {
             LOG.error("DataLedgerApiClient:: Request failed for interactionId :{}  ", interactionId, ex.getMessage());
-             processActionDiagnosticData(interactionId, apiUrl, jsonPayload, null, ex.getMessage(),
-                    groupHubInteractionId, sourceHubInteractionId, "sent", provenance, source);
+             if (appConfig.isDataLedgerDiagnostics()) {
+                processActionDiagnosticData(interactionId, apiUrl, jsonPayload, null, ex.getMessage(),
+                    groupHubInteractionId, sourceHubInteractionId, dataLedgerPayload.action, provenance, source,additionalDetails);
+             }
         }
         try {
             if (appConfig.isDataLedgerTracking()) {
                 LOG.info("DataLedgerApiClient:: Sending to DataLedger BEGIN for interactionId: {}", interactionId);
-                sendRequestAsync(apiUrl, jsonPayload, interactionId,dataLedgerPayload.action,provenance,source);
+                sendRequestAsync(apiUrl, jsonPayload, interactionId,sourceHubInteractionId,groupHubInteractionId,dataLedgerPayload.action,provenance,source,additionalDetails);
             } else {
                 LOG.info(
                         "DataLedgerApiClient:: Sending to DataLedger is disabled via feature flag for interactionId: {}",
@@ -70,14 +68,18 @@ public class DataLedgerApiClient {
             }
         } catch (Exception ex) {
             LOG.error("DataLedgerApiClient:: Request failed for interactionId :{}  ", interactionId, ex.getMessage());
-
-            processActionDiagnosticData(interactionId, apiUrl, jsonPayload, null, ex.getMessage(),
-                    groupHubInteractionId, sourceHubInteractionId, "sent", provenance, source);
+            if (appConfig.isDataLedgerDiagnostics()) {
+                processActionDiagnosticData(interactionId, apiUrl, jsonPayload, null, 
+                    ex.getMessage() + "\n" + java.util.Arrays.stream(ex.getStackTrace())
+                        .map(StackTraceElement::toString)
+                        .collect(Collectors.joining("\n")),
+                    groupHubInteractionId, sourceHubInteractionId, dataLedgerPayload.action, provenance, source, additionalDetails);
+            }
         }
         LOG.info("DataLedgerApiClient:: Sending to DataLedger END for interactionId: {}", interactionId);
     }
 
-    public void sendRequestAsync(String apiUrl, String jsonPayload, String interactionId, String action, String provenance, String source) {
+    public void sendRequestAsync(String apiUrl, String jsonPayload, String interactionId, String sourceHubInteractionId, String groupHubInteractionId,String action, String provenance, String source,Map<String,Object> additionalDetails) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
                 .header("Content-Type", "application/json")
@@ -96,15 +98,15 @@ public class DataLedgerApiClient {
                             + interactionId);
                     if (appConfig.isDataLedgerDiagnostics()) {
                         processActionDiagnosticData(interactionId, apiUrl, jsonPayload, response, null,
-                                null, null, action, provenance, source);
+                                groupHubInteractionId, sourceHubInteractionId, action, provenance, source,additionalDetails);
                     }
                 })
                 .exceptionally(ex -> {
                     LOG.error("DataLedgerApiClient:: Request failed for interactionId :{}  ", interactionId,
                             ex.getMessage());
-                    if (appConfig.isDataLedgerDiagnostics()) { // Check feature flag
+                    if (appConfig.isDataLedgerDiagnostics()) {
                         processActionDiagnosticData(interactionId, apiUrl, jsonPayload, null, ex.getMessage(),
-                                null, null, action, provenance, source);
+                        groupHubInteractionId, sourceHubInteractionId, action, provenance, source,additionalDetails);
                     }
                     return null;
                 });
@@ -112,18 +114,12 @@ public class DataLedgerApiClient {
 
     private static String buildCurlCommand(HttpRequest request, String body) {
         StringBuilder curl = new StringBuilder("curl -X ").append(request.method());
-
-        // Add headers
         request.headers().map().forEach((key, values) -> {
             String headerString = values.stream().map(value -> "-H \"" + key + ": " + value + "\"")
                     .collect(Collectors.joining(" "));
             curl.append(" ").append(headerString);
         });
-
-        // Add URL
         curl.append(" \"").append(request.uri()).append("\"");
-
-        // Add body if present
         if (body != null && !body.isEmpty()) {
             curl.append(" -d '").append(body.replace("'", "\\'")).append("'");
         }
@@ -133,7 +129,7 @@ public class DataLedgerApiClient {
 
     private void saveSentActionDiagnosticData(String interactionId, String apiUrl, String requestPayload,
             HttpResponse<String> response, String errorMessage,
-            String groupHubInteractionId, String sourceHubInteractionId, String provenance, String source) {
+            String groupHubInteractionId, String sourceHubInteractionId, String provenance, String source,Map<String,Object> additionalDetails) {
         try {
             SatDiagnosticDataledgerApiUpserted satDiagnosticDataledgerApiUpserted = new SatDiagnosticDataledgerApiUpserted();
             final var dslContext = udiPrimeJpaConfig.dsl();
@@ -165,15 +161,13 @@ public class DataLedgerApiClient {
                     satDiagnosticDataledgerApiUpserted.setDataledgerSentResponse(dataLedgerSentActionResponse);
                 }
                 satDiagnosticDataledgerApiUpserted.setSentStatus("SUCCESS");
-            } else {
-                satDiagnosticDataledgerApiUpserted.setSentStatus("FAILED");
             }
 
             if (errorMessage != null) {
                 satDiagnosticDataledgerApiUpserted.setSentReason(errorMessage);
                 satDiagnosticDataledgerApiUpserted.setSentStatus("FAILED");
             }
-
+            satDiagnosticDataledgerApiUpserted.setAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree(additionalDetails));
             satDiagnosticDataledgerApiUpserted.execute(jooqCfg);
             LOG.info("Successfully saved sent action diagnostic data for interactionId: {}", interactionId);
         } catch (Exception ex) {
@@ -183,7 +177,7 @@ public class DataLedgerApiClient {
 
     private void saveReceivedActionDiagnosticData(String interactionId, String apiUrl, String responsePayload,
             HttpResponse<String> response, String receivedReason,
-            String groupHubInteractionId, String sourceHubInteractionId, String provenance, String source) {
+            String groupHubInteractionId, String sourceHubInteractionId, String provenance, String source,Map<String,Object> additionalDetails) {
         try {
             SatDiagnosticDataledgerApiUpserted satDiagnosticDataledgerApiUpserted = new SatDiagnosticDataledgerApiUpserted();
             final var dslContext = udiPrimeJpaConfig.dsl();
@@ -212,15 +206,13 @@ public class DataLedgerApiClient {
                     JsonNode dataLedgerResponse = Configuration.objectMapper.readTree(response.body());
                     satDiagnosticDataledgerApiUpserted.setDataledgerReceivedResponse(dataLedgerResponse);
                 }
-            } else {
-                satDiagnosticDataledgerApiUpserted.setReceivedStatus("FAILED");
-            }
+            } 
 
             if (receivedReason != null) {
                 satDiagnosticDataledgerApiUpserted.setReceivedReason(receivedReason);
                 satDiagnosticDataledgerApiUpserted.setReceivedStatus("FAILED");
             }
-
+            satDiagnosticDataledgerApiUpserted.setAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree(additionalDetails));
             satDiagnosticDataledgerApiUpserted.execute(jooqCfg);
             LOG.info("Successfully saved received action diagnostic data for interactionId: {}", interactionId);
         } catch (Exception ex) {
@@ -231,14 +223,14 @@ public class DataLedgerApiClient {
     public void processActionDiagnosticData(String interactionId, String apiUrl, String payload,
             HttpResponse<String> response, String errorMessage,
             String groupHubInteractionId, String sourceHubInteractionId,
-            String action, String provenance, String source) {
+            String action, String provenance, String source,Map<String,Object> additionalDetails) {
 
         if (Action.SENT.getValue().equalsIgnoreCase(action)) {
             saveSentActionDiagnosticData(interactionId, apiUrl, payload, response, errorMessage,
-                    groupHubInteractionId, sourceHubInteractionId, provenance, source);
+                    groupHubInteractionId, sourceHubInteractionId, provenance, source,additionalDetails);
         } else if (Action.RECEIVED.getValue().equalsIgnoreCase(action)) {
             saveReceivedActionDiagnosticData(interactionId, apiUrl, payload, response, errorMessage,
-                    groupHubInteractionId, sourceHubInteractionId, provenance, source);
+                    groupHubInteractionId, sourceHubInteractionId, provenance, source,additionalDetails);
         }
     }
 
@@ -282,8 +274,9 @@ public class DataLedgerApiClient {
     @Getter
     public enum Actor {
         TECHBD("TechBD"),
-        NYEC("NYeC");
-
+        NYEC("NYeC"),
+        INVALID_CSV("Invalid - Csv Conversion Failed"),
+        INVALID_CCDA("Invalid - CCDA Conversion Failed");
         private final String value;
 
         Actor(String value) {

@@ -133,10 +133,13 @@ public class FHIRService {
 				interactionId = getBundleInteractionId(request, coRrelationId);
 			}
 			String bundleId =FHIRUtil.extractBundleId(payload, tenantId);
-            DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(tenantId, DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), bundleId
-			);
-			final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
-            dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+			 if (!SourceType.CSV.equals(sourceType) && !SourceType.CCDA.equals(sourceType)) {
+				//send only for source type FHIR
+				DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(tenantId, DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), bundleId
+				);
+				final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
+				dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+			 }
 			final var start = Instant.now();
 			LOG.info("Bundle processing start at {} for interaction id {}", start, getBundleInteractionId(request, coRrelationId));
 
@@ -1230,7 +1233,7 @@ public class FHIRService {
 						DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
                             DataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
                     final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
-            		dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+            		dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
                 })
                 .subscribe(response -> {
                     handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,

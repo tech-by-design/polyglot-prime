@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.hl7.fhir.r4.model.OperationOutcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -30,6 +29,7 @@ import org.techbd.model.csv.PayloadAndValidationOutcome;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.service.DataLedgerApiClient.DataLedgerPayload;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.converters.csv.CsvToFhirConverter;
 import org.techbd.service.http.hub.prime.api.FHIRService;
@@ -37,6 +37,7 @@ import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
 import org.techbd.util.CsvConversionUtil;
+import org.techbd.util.FHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -52,12 +53,14 @@ public class CsvBundleProcessorService {
     private final FHIRService fhirService;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private static final String START_TIME_ATTRIBUTE = "startTime";
+    private final DataLedgerApiClient dataLedgerApiClient;
 
     public CsvBundleProcessorService(final CsvToFhirConverter csvToFhirConverter, final FHIRService fhirService,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig) {
+            final UdiPrimeJpaConfig udiPrimeJpaConfig,DataLedgerApiClient dataLedgerApiClient) {
         this.csvToFhirConverter = csvToFhirConverter;
         this.fhirService = fhirService;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+        this.dataLedgerApiClient = dataLedgerApiClient;
     }
 
     public List<Object> processPayload(final String masterInteractionId,
@@ -106,13 +109,23 @@ public class CsvBundleProcessorService {
                                 tenantId, outcome.isValid(), outcome, isAllCsvConvertedToFhir,baseFHIRUrl));
                     }
                 } else {
-                    isAllCsvConvertedToFhir = false;
-                    resultBundles.add(outcome.validationResults());
+                        DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+                        DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+                        DataLedgerApiClient.Actor.INVALID_CSV.getValue(), masterInteractionId);
+                        final var dataLedgerProvenance = "%s.processPayload".formatted(CsvBundleProcessorService.class.getName());
+                        dataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),createAdditionalDetails(outcome));
+                        isAllCsvConvertedToFhir = false;
+                        resultBundles.add(outcome.validationResults());
                 }
             } catch (final Exception e) {
                 LOG.error("Error processing payload: " + e.getMessage(), e);
                 final Map<String, Object> errors = createOperationOutcomeForError(masterInteractionId, groupInteractionId, "",
-                        "", e, provenance);
+                        "", e, provenance,outcome.fileDetails());                                
+                DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+                DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+                DataLedgerApiClient.Actor.INVALID_CSV.getValue(), masterInteractionId);
+                final var dataLedgerProvenance = "%s.processPayload".formatted(CsvBundleProcessorService.class.getName());
+                dataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),errors);
                 resultBundles.add(errors);
                 miscErrors.add(errors);
                 isAllCsvConvertedToFhir = false;
@@ -122,6 +135,11 @@ public class CsvBundleProcessorService {
             final Map<String, Object> fileNotProcessedError = createOperationOutcomeForFileNotProcessed(masterInteractionId,
                     filesNotProcessed,
                     originalFileName);
+            DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+            DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+            DataLedgerApiClient.Actor.INVALID_CSV.getValue(), masterInteractionId);
+            final var dataLedgerProvenance = "%s.sendPostRequest".formatted(CsvBundleProcessorService.class.getName());
+            dataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,masterInteractionId,null,dataLedgerProvenance,SourceType.CSV.name(),fileNotProcessedError);
             resultBundles.add(fileNotProcessedError);
             miscErrors.add(fileNotProcessedError);
             isAllCsvConvertedToFhir = false;
@@ -130,7 +148,13 @@ public class CsvBundleProcessorService {
         addObservabilityHeadersToResponse(request, response);
         return resultBundles;
     }
-
+    public static Map<String, Object> createAdditionalDetails(PayloadAndValidationOutcome outcome) {
+        Map<String, Object> additionalDetails = new HashMap<>();
+        additionalDetails.put("error", "Frictionless validation failed");
+        additionalDetails.put("fileDetails", outcome.fileDetails());
+        additionalDetails.put("isValid", outcome.isValid());
+        return additionalDetails;
+    }
     private void saveMiscErrorAndStatus(final List<Object> miscError, final boolean allCSvConvertedToFHIR,
             final String masterInteractionId, final HttpServletRequest request) {
         LOG.info("SaveMiscErrorAndStatus: BEGIN for inteaction id  : {} ",
@@ -348,7 +372,13 @@ private List<Object> processScreening(final String groupKey,
                         final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), profile.getEncounterId(),
                                 new Exception("Bundle not created"),
-                                payloadAndValidationOutcome.provenance());
+                                payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails());
+                        String bundleId =FHIRUtil.extractBundleId(bundle, tenantId);                                
+                        DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+                        DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+                        DataLedgerApiClient.Actor.INVALID_CSV.getValue(), bundleId != null ? bundleId : masterInteractionId);
+                        final var dataLedgerProvenance = "%s.processScreening".formatted(CsvBundleProcessorService.class.getName());
+                        dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),result);        
                         results.add(result);
                         saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId,
                                 interactionId, request,
@@ -358,7 +388,13 @@ private List<Object> processScreening(final String groupKey,
                     errorCount.incrementAndGet();
                     final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
                             profile.getPatientMrIdValue(), profile.getEncounterId(), e,
-                            payloadAndValidationOutcome.provenance());
+                            payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails());
+                    String bundleId =FHIRUtil.extractBundleId(bundle, tenantId);                                
+                    DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+                    DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+                    DataLedgerApiClient.Actor.INVALID_CSV.getValue(), bundleId != null ? bundleId : masterInteractionId);
+                    final var dataLedgerProvenance = "%s.processScreening".formatted(FHIRService.class.getName());
+                    dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.CSV.name(),result);
                     LOG.error("Error processing patient data for MrId:{}, interactionId: {}, masterInteractionId:{} , groupInteractionId:{}, Error:{}",
                             profile.getPatientMrIdValue(), interactionId,masterInteractionId,groupInteractionId, e.getMessage(), e);
                     results.add(result);
@@ -389,7 +425,7 @@ private List<Object> processScreening(final String groupKey,
             final String patientMrIdValue,
             final String encounterId,
             final Exception e,
-            final Map<String, Object> provenance) {
+            final Map<String, Object> provenance,List<FileDetail> fileDetails) {
         if (e == null) {
             return Collections.emptyMap();
         }
@@ -413,9 +449,11 @@ private List<Object> processScreening(final String groupKey,
                 "patientMrId", patientMrIdValue,
                 "encounterId", encounterId,
                 "provenance", provenance,
+                "fileDetails", fileDetails,
                 "validationResults", Map.of(
                         "errors", List.of(errorDetails),
-                        "resourceType", "OperationOutcome"));
+                        "resourceType", "OperationOutcome")
+                        );
     }
 
     private Map<String, Object> createOperationOutcomeForFileNotProcessed(
