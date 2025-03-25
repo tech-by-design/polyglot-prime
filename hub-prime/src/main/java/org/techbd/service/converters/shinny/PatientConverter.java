@@ -177,7 +177,7 @@ public class PatientConverter extends BaseConverter {
         
 
         if (StringUtils.isNotEmpty(demographicData.getSexAtBirthCode())) {
-            Extension birthSexExtension = new Extension(demographicData.getSexAtBirthCodeSystem());
+            Extension birthSexExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex");
             birthSexExtension.setValue(new CodeType(demographicData.getSexAtBirthCode())); // Use CodeType for valueCode
             patient.addExtension(birthSexExtension);
         }
