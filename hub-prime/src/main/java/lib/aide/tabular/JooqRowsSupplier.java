@@ -426,7 +426,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
             case "blank" ->
                 dslField.isNull();
             case "notBlank" ->
-                 dslField.isNotNull().and(DSL.condition("TRIM({0}) <> ''", dslField));
+                dslField.isNotNull()
+                        .and(DSL.condition("TRIM(CAST({0} AS VARCHAR)) <> ''", dslField));
             case "like" ->
                 dslField.likeIgnoreCase("%" + filter + "%");
             case "equals" ->
