@@ -906,9 +906,9 @@
           "subject": {
             "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
             "display": "<xsl:value-of select="$patientResourceName"/>"
-          },
+          }
           <xsl:if test="$encounterResourceId != 'null'">
-            "encounter": {
+          , "encounter": {
               "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
             }
           </xsl:if>
@@ -947,7 +947,7 @@
               "value" : "<xsl:value-of select='ccda:entry/ccda:observation/ccda:code/@code'/>"
             }],
             </xsl:if>
-            "status": "<xsl:call-template name='mapObservationStatus'>
+            "status": "<xsl:call-template name='mapQuestionnaireStatus'>
                         <xsl:with-param name='statusCode' select='ccda:entry/ccda:observation/ccda:statusCode/@code'/>
                     </xsl:call-template>",
             "title": "<xsl:value-of select='ccda:title'/>"
@@ -992,9 +992,9 @@
             "questionnaire": "<xsl:value-of select='$baseFhirUrl'/>Questionnaire/<xsl:value-of select='$questionnaireResourceId'/>",
             "subject": {
                 "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
-            },
+            }
             <xsl:if test="$encounterResourceId != 'null'">
-              "encounter": {
+            , "encounter": {
                 "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
               }
             </xsl:if>
@@ -1099,6 +1099,21 @@
         <xsl:when test="$statusCode = 'held'">registered</xsl:when>
         <xsl:when test="$statusCode = 'suspended'">registered</xsl:when>
         <xsl:when test="$statusCode = 'nullified'">entered-in-error</xsl:when>
+        <xsl:otherwise>unknown</xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
+
+<xsl:template name="mapQuestionnaireStatus">
+    <xsl:param name="statusCode"/>
+    <xsl:choose>
+        <xsl:when test="$statusCode = 'completed'">active</xsl:when>
+        <xsl:when test="$statusCode = 'final'">active</xsl:when>
+        <xsl:when test="$statusCode = 'active'">active</xsl:when>
+        <xsl:when test="$statusCode = 'aborted'">retired</xsl:when>
+        <xsl:when test="$statusCode = 'cancelled'">retired</xsl:when>
+        <xsl:when test="$statusCode = 'held'">draft</xsl:when>
+        <xsl:when test="$statusCode = 'suspended'">draft</xsl:when>
+        <xsl:when test="$statusCode = 'nullified'">retired</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
 </xsl:template>
