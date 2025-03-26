@@ -12,10 +12,18 @@
   <xsl:variable name="patientResourceId" select="translate(concat(generate-id(//ccda:patientRole), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
   <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family, ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given)"/>
   <xsl:variable name="bundleId" select="translate(concat(generate-id(//ccda:patientRole/ccda:id/@extension), $currentTimestamp), ':-+.', '')"/>
-  <xsl:variable name="encounterResourceId" select="translate(concat(generate-id(//ccda:encompassingEncounter), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
   <xsl:variable name="organizationResourceId" select="translate(concat(generate-id(//ccda:author), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
   <xsl:variable name="bundleTimestamp" select="//ccda:effectiveTime/@value"/>
   <xsl:variable name="questionnaireResourceId" select="translate(concat(generate-id(//ccda:Questionnaire), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
+
+  <xsl:variable name="encounterResourceId">
+    <xsl:choose>
+      <xsl:when test="//ccda:encompassingEncounter">
+        <xsl:value-of select="translate(concat(generate-id(//ccda:encompassingEncounter), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
+      </xsl:when>
+      <xsl:otherwise><xsl:text>null</xsl:text></xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -542,8 +550,13 @@
           "profile" : ["<xsl:value-of select='$consentMetaProfileUrlFull'/>"]
         },
         "status": "<xsl:choose>
-                      <xsl:when test="ccda:statusCode/@code='deny'">deny</xsl:when>  <!--#63-->
-                      <xsl:otherwise>permit</xsl:otherwise>
+                      <xsl:when test="ccda:statusCode/@code='active'">active</xsl:when>
+                      <xsl:when test="ccda:statusCode/@code='completed'">active</xsl:when>
+                      <xsl:when test="ccda:statusCode/@code='aborted'">not-done</xsl:when>
+                      <xsl:when test="ccda:statusCode/@code='nullified'">entered-in-error</xsl:when>
+                      <xsl:when test="ccda:statusCode/@code='held'">draft</xsl:when>
+                      <xsl:when test="ccda:statusCode/@code='suspended'">inactive</xsl:when>
+                      <xsl:otherwise>unknown</xsl:otherwise>
                   </xsl:choose>"
         <xsl:if test="string(ccda:entry/ccda:act/ccda:code/@code)">
           , "scope" : {
@@ -579,20 +592,29 @@
         , "organization" : [{
           "reference" : "Organization/<xsl:value-of select='$organizationResourceId'/>"
         }]
-        <xsl:if test="string(ccda:provision/@type)">
-          , "provision" : {
-            "type" : "<xsl:value-of select="ccda:provision/@type"/>"
-          }
-        </xsl:if>
+        <xsl:choose>
+          <xsl:when test="string(ccda:act/ccda:code/@displayName)">
+            , "provision" : {
+              "type" : "<xsl:value-of select="translate(ccda:act/ccda:code/@displayName, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>"
+            }
+          </xsl:when>
+          <xsl:otherwise>
+            , "provision" : {
+              "type" : "permit"
+            }
+          </xsl:otherwise>
+        </xsl:choose>
         <xsl:if test="string(ccda:policy/@id)">
           , "policy" : [{
             "authority" : "<xsl:value-of select="ccda:policy/@id"/>"
           }]
         </xsl:if>
+        <xsl:if test="string(ccda:code/@displayName)">
         , "sourceAttachment" : {
           "contentType" : "application/pdf",
           "language" : "en"
         }
+        </xsl:if>
       },
       "request" : {
         "method" : "POST",
@@ -885,9 +907,11 @@
             "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
             "display": "<xsl:value-of select="$patientResourceName"/>"
           },
-          "encounter": {
-            "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
-          }
+          <xsl:if test="$encounterResourceId != 'null'">
+            "encounter": {
+              "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+            }
+          </xsl:if>
           <xsl:if test="string(ccda:observation/ccda:effectiveTime/@value)">
           , "effectiveDateTime": "<xsl:call-template name="formatDateTime">
                               <xsl:with-param name="dateTime" select="ccda:observation/ccda:effectiveTime/@value"/>
@@ -969,9 +993,11 @@
             "subject": {
                 "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
             },
-            "encounter" : {
-              "reference" : "Encounter/<xsl:value-of select='$encounterResourceId'/>"
-            }
+            <xsl:if test="$encounterResourceId != 'null'">
+              "encounter": {
+                "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+              }
+            </xsl:if>
             <xsl:if test="string(ccda:code/@code)">
               ,"item": [
                   {

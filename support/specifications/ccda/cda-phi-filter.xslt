@@ -43,7 +43,10 @@
             <xsl:if test="not(hl7:authorization/hl7:consent)">
                 <consent>
                     <id root="2.16.840.1.113883.3.933"/>
-                    <statusCode code="deny"/>
+                    <statusCode code="completed"/>
+                    <act>
+                        <code code="OPT-OUT" displayName="deny"/>
+                    </act>
                 </consent>
             </xsl:if>
 
