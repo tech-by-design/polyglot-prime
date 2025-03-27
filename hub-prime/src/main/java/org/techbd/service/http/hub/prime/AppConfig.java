@@ -117,12 +117,14 @@ public class AppConfig {
         this.baseFHIRURL = baseFHIRURL;
     }
     public record DefaultDataLakeApiAuthn(
-            String mTlsStrategy,
-            MTlsAwsSecrets mTlsAwsSecrets,
-            PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal,
-            MTlsResources mTlsResources) {
+        String mTlsStrategy,
+        MTlsAwsSecrets mTlsAwsSecrets,
+        PostStdinPayloadToNyecDataLakeExternal postStdinPayloadToNyecDataLakeExternal,
+        MTlsResources mTlsResources,
+        WithApiKeyAuth withApiKeyAuth) {
     }
-
+    public record WithApiKeyAuth(String apiKeyHeaderName, String apiKeySecretName) {
+    }
     public record MTlsResources(String mTlsKeyResourceName, String mTlsCertResourceName) {
     }
 

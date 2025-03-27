@@ -578,5 +578,15 @@
     "name": "org.techbd.service.http.hub.prime.structureDefinitionsUrls.procedure",
     "type": "java.lang.String",
     "description": "A description for 'org.techbd.service.http.hub.prime.structureDefinitionsUrls.procedure'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.withApiKeyAuth.api-key-header-name",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.withApiKeyAuth.api-key-header-name'"
+  },
+  {
+    "name": "org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.withApiKeyAuth.apiKeySecretName",
+    "type": "java.lang.String",
+    "description": "A description for 'org.techbd.service.http.hub.prime.defaultDataLakeApiAuthn.withApiKeyAuth.apiKeySecretName'"
   }
 ]}
