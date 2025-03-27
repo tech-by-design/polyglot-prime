@@ -64,8 +64,10 @@ import org.techbd.service.http.hub.prime.AppConfig.DefaultDataLakeApiAuthn;
 import org.techbd.service.http.hub.prime.AppConfig.MTlsAwsSecrets;
 import org.techbd.service.http.hub.prime.AppConfig.MTlsResources;
 import org.techbd.service.http.hub.prime.AppConfig.PostStdinPayloadToNyecDataLakeExternal;
+import org.techbd.service.http.hub.prime.AppConfig.WithApiKeyAuth;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.util.AWSUtil;
 import org.techbd.util.FHIRUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -663,7 +665,12 @@ public class FHIRService {
                                                 payload, provenance, request,
 						dataLakeApiContentType, dataLakeApiBaseURL,
 						defaultDatalakeApiAuthn.mTlsResources(), groupInteractionId,
-						masterInteractionId, sourceType, requestUriToBeOverriden,bundleId);
+						masterInteractionId, sourceType, requestUriToBeOverriden);
+			case WITH_API_KEY ->
+				handleApiKeyAuth(interactionId, tenantId, dataLakeApiBaseURL, 
+				jooqCfg, request, bundlePayloadWithDisposition, payload, dataLakeApiContentType,
+				provenance, groupInteractionId, masterInteractionId, sourceType, 
+				requestUriToBeOverriden, defaultDatalakeApiAuthn.withApiKeyAuth());
 			default ->
 				handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
 						request,
@@ -799,6 +806,59 @@ public class FHIRService {
 		}
 	}
 
+	private void handleApiKeyAuth(String interactionId, String tenantId,
+			String dataLakeApiBaseURL,
+			org.jooq.Configuration jooqCfg, HttpServletRequest request,
+			Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
+			String provenance, 
+                         String groupInteractionId,
+			String masterInteractionId, String sourceType, String requestUriToBeOverriden,WithApiKeyAuth apiKeyAuthDetails) {
+		if (null == apiKeyAuthDetails) {
+			LOG.error("ERROR:: FHIRService:: handleApiKeyAuth apiKeyAuthDetails is not configured in application.yml");
+			throw new IllegalArgumentException("apiKeyAuthDetails configuration is not defined in application.yml");
+		}
+
+		if (StringUtils.isEmpty(apiKeyAuthDetails.apiKeyHeaderName())) {
+			LOG.error("ERROR:: FHIRService:: handleApiKeyAuth apiKeyHeaderName is not configured in application.yml");
+			throw new IllegalArgumentException("apiKeyHeaderName is not defined in application.yml");
+		}
+
+		if (StringUtils.isEmpty(apiKeyAuthDetails.apiKeySecretName())) {
+			LOG.error("ERROR:: FHIRService:: handleApiKeyAuth apiKeySecretName is not configured in application.yml");
+			throw new IllegalArgumentException("apiKeySecretName is not defined in application.yml"); 
+		}
+		LOG.debug("FHIRService:: handleNoMtls Build WebClient with MTLS  Disabled -BEGIN \n"
+				+
+				"with scoring Engine API URL: {} \n" +
+				"dataLakeApiContentType: {} \n" +
+				"bundlePayloadWithDisposition: {} \n" +
+				"for interactionID: {} \n" +
+				"tenant Id: {}",
+				dataLakeApiBaseURL,
+				dataLakeApiContentType,
+				bundlePayloadWithDisposition == null ? "Payload is null"
+						: "Payload is not null",
+				interactionId,
+				tenantId);
+		var webClient = createWebClient(dataLakeApiBaseURL, jooqCfg, request,
+				tenantId, payload,
+				bundlePayloadWithDisposition, provenance, 
+				interactionId, groupInteractionId, masterInteractionId, sourceType,
+				requestUriToBeOverriden);
+		LOG.debug("FHIRService:: createWebClient END for interaction id: {} tenant id :{} ", interactionId,
+				tenantId);
+		LOG.debug("FHIRService:: sendPostRequest BEGIN for interaction id: {} tenantid :{} ", interactionId,
+				tenantId);
+		sendPostRequestWithApiKey(webClient, tenantId, bundlePayloadWithDisposition, payload,
+				dataLakeApiContentType, interactionId,
+				jooqCfg, provenance,
+				StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
+						: request.getRequestURI(),
+				dataLakeApiBaseURL, groupInteractionId,
+				masterInteractionId, sourceType,apiKeyAuthDetails);
+		LOG.debug("FHIRService:: sendPostRequest END for interaction id: {} tenantid :{} ", interactionId,
+				tenantId);
+	}
 	private void handleNoMtls(MTlsStrategy mTlsStrategy, String interactionId, String tenantId,
 			String dataLakeApiBaseURL,
 			org.jooq.Configuration jooqCfg, HttpServletRequest request,
@@ -1245,13 +1305,57 @@ public class FHIRService {
                             masterInteractionId, sourceType);
                 });
 
-        LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}",
-                interactionId, tenantId);
-    } finally {
-        span.end();
-    }
-}
+			LOG.info("FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}",
+					interactionId, tenantId);
+		} finally {
+			span.end();
+		}
+	}
+	private void sendPostRequestWithApiKey(WebClient webClient,
+			String tenantId,
+			Map<String, Object> bundlePayloadWithDisposition,
+			String payload,
+			String dataLakeApiContentType,
+			String interactionId,
+			org.jooq.Configuration jooqCfg,
+			String provenance,
+			String requestURI, String scoringEngineApiURL, String groupInteractionId,
+			String masterInteractionId, String sourceType,WithApiKeyAuth apiKeyAuthDetails) {
+		Span span = tracer.spanBuilder("FhirService.sendPostRequest").startSpan();
+		try {
+			LOG.debug(
+					"FHIRService:: sendPostRequestWithApiKey Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
+					interactionId, tenantId);
+			String apiClientKey =  AWSUtil.getValue(apiKeyAuthDetails.apiKeySecretName());	
+			LOG.info(
+				"FHIRService:: nyec api client key retrieved  : {} from secret  {} - BEGIN interaction id: {} tenantID :{}",
+				apiClientKey == null ? "Api key is null" : "Api key is not null" ,apiKeyAuthDetails.apiKeySecretName(),interactionId, tenantId);	
+			webClient.post()
+					.uri("?processingAgent=" + tenantId)
+					.body(BodyInserters.fromValue(null != bundlePayloadWithDisposition
+							? bundlePayloadWithDisposition
+							: payload))
+					.header("Content-Type", Optional.ofNullable(dataLakeApiContentType)
+							.orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
+					.header(apiKeyAuthDetails.apiKeyHeaderName(),apiClientKey)				
+					.retrieve()
+					.bodyToMono(String.class)
+					.subscribe(response -> {
+						handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
+								provenance, scoringEngineApiURL, groupInteractionId,
+								masterInteractionId, sourceType);
+					}, error -> {
+						registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId, error,
+								requestURI, tenantId, provenance, groupInteractionId,
+								masterInteractionId, sourceType);
+					});
 
+			LOG.info("FHIRService:: sendPostRequestWithApiKey Post to scoring engine - END interaction id: {} tenantid: {}",
+					interactionId, tenantId);
+		} finally {
+			span.end();
+		}
+	}
 
 	private void handleResponse(String response,
 			org.jooq.Configuration jooqCfg,
@@ -1727,7 +1831,9 @@ public class FHIRService {
 		NO_MTLS("no-mTls"),
 		AWS_SECRETS("aws-secrets"),
 		MTLS_RESOURCES("mTlsResources"),
-		POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL("post-stdin-payload-to-nyec-datalake-external");
+		POST_STDOUT_PAYLOAD_TO_NYEC_DATA_LAKE_EXTERNAL("post-stdin-payload-to-nyec-datalake-external"),
+		WITH_API_KEY("with-api-key-auth");
+
 		// AWS_SECRETS_TEMP_FILE("aws-secrets-temp-file"),
 		// AWS_SECRETS_TEMP_WITHOUT_HASH("aws-secrets-without-hash"),
 		// AWS_SECRETS_TEMP_WITHOUT_OPENSSL("aws-secrets-without-openssl"),
