@@ -33,7 +33,7 @@ jobs:
         environments=("Staging")
         environment_paths=(
           "./test-automation/CSV-Bundle-SmokeTest-Stage/CSV_Bundle.jmx"
-##         "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx"
+          "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx"
         )
 
         # Initialize failure report and attachments arrays
