@@ -52,7 +52,7 @@
         {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true, "pattern": "[ \\r\\n\\t\\S]+"}},
         {"name": "FACILITY_ID", "type": "string", "description":"Append to the Bundle.entry.resource.where(resourceType ='Organization').id", "constraints": {"required": true, "pattern": "[A-Za-z0-9\\-\\.]{1,64}"}}, 
         {"name": "FACILITY_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').name", "constraints": {"required": true, "pattern":"[ \\r\\n\\t\\S]+"}},
-        {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true}},
+        {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true, "pattern": "[A-Za-z0-9\\-\\.]{1,64}"}}, 
         {"name": "SCREENING_IDENTIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').id", "constraints": {"required": true, "unique": true, "pattern":"[A-Za-z0-9\\-\\.]{1,64}"}},       
         {"name": "ENCOUNTER_CLASS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').class.code", "constraints": {"required": true, "enum": [
           "AMB", "EMER", "FLD", "HH", "IMP", "ACUTE", "NONAC", "OBSENC", "PRENC", "SS", "VR"
@@ -191,7 +191,7 @@
           {"name": "PATIENT_MR_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value", "constraints": {"required": true, "pattern": "[ \\r\\n\\t\\S]+"}},
           {"name": "FACILITY_ID", "type": "string", "description":"Append to the Bundle.entry.resource.where(resourceType ='Organization').id", "constraints": {"required": true, "pattern": "[A-Za-z0-9\\-\\.]{1,64}"}}, 
           {"name": "FACILITY_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').name", "constraints": {"required": true, "pattern":"[ \\r\\n\\t\\S]+"}},
-          {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true}},
+          {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true, "pattern": "[A-Za-z0-9\\-\\.]{1,64}"}},
           {"name": "SCREENING_IDENTIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').id", "constraints": {"required": true, "pattern":"[A-Za-z0-9\\-\\.]{1,64}"}},
           {"name": "SCREENING_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code", "constraints": {"required": true, "enum": ["96777-8", "97023-6"]}},            
           {"name": "SCREENING_CODE_DESCRIPTION", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display", "type": "string", "constraints": {"required": true, "enum": [ 
@@ -243,7 +243,7 @@
           }},          
           {"name": "ANSWER_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).valueCodeableConcept.coding.display", "constraints": {    "enum":["i have a steady place to live", 
           "i have a place to live today, but i am worried about losing it in the future",
-          "i do not have a steady place to live (i am temporarily staying with others, in a hotel, in a shelter,living outside on the street, on a beach, in a car, abandoned building, bus or train station, or in a park)",
+          "i do not have a steady place to live (i am temporarily staying with others, in a hotel, in a shelter, living outside on the street, on a beach, in a car, abandoned building, bus or train station, or in a park)",
           "pests such as bugs, ants, or mice", "mold", "lead paint or pipes", "lack of heat", "oven or stove not working",
           "smoke detectors missing or not working", "water leaks", "none of the above", "often true", "sometimes true",
           "never true", "often true", "sometimes true", "never true", "yes", "no", "yes", "no", "already shut off",
