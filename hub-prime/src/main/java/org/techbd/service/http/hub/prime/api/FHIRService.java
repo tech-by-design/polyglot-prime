@@ -662,10 +662,10 @@ public class FHIRService {
 				handleMtlsResources(interactionId, tenantId, jooqCfg,
 						bundlePayloadWithDisposition,
 						 
-                                                payload, provenance, request,
+												payload, provenance, request,
 						dataLakeApiContentType, dataLakeApiBaseURL,
 						defaultDatalakeApiAuthn.mTlsResources(), groupInteractionId,
-						masterInteractionId, sourceType, requestUriToBeOverriden);
+						masterInteractionId, sourceType, requestUriToBeOverriden, bundleId);
 			case WITH_API_KEY ->
 				handleApiKeyAuth(interactionId, tenantId, dataLakeApiBaseURL, 
 				jooqCfg, request, bundlePayloadWithDisposition, payload, dataLakeApiContentType,
