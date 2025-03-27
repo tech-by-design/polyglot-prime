@@ -358,6 +358,7 @@
             }],
             "text" : "Medical Record Number"
           },
+          "system" : "http://www.scn.gov/facility/<xsl:value-of select='$patientRoleId'/>",
           "value" : "<xsl:value-of select='$patientRoleId'/>"
           <xsl:if test="string($organizationResourceId)">
           , "assigner" : {
@@ -376,17 +377,6 @@
           },
           "system" : "http://www.medicaid.gov/",
           "value" : "<xsl:value-of select='$patientRoleId'/>"
-        },
-        {
-          "type" : {
-            "coding" : [{
-              "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
-              "code" : "SS",
-              "display" : "Social Security Number"
-            }],
-            "text" : "Social Security Number"
-          },
-          "system" : "http://www.ssa.gov/"
         }
       ]
       <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:languageCode/@code) or string(ccda:patient/ccda:languageCommunication/ccda:languageCode/@nullFlavor)">
@@ -557,34 +547,47 @@
                       <xsl:when test="ccda:statusCode/@code='held'">draft</xsl:when>
                       <xsl:when test="ccda:statusCode/@code='suspended'">inactive</xsl:when>
                       <xsl:otherwise>unknown</xsl:otherwise>
-                  </xsl:choose>"
-        <xsl:if test="string(ccda:entry/ccda:act/ccda:code/@code)">
-          , "scope" : {
-            "coding" : [{
-              "system" : "http://terminology.hl7.org/CodeSystem/consentscope",
-              "code" : "<xsl:value-of select="ccda:entry/ccda:act/ccda:code/@code"/>",
-              "display" : "<xsl:value-of select="ccda:entry/ccda:act/ccda:code/@displayName"/>"
-            }],
-            "text" : "<xsl:value-of select="ccda:entry/ccda:act/ccda:code/@displayName"/>"
-          }
-        </xsl:if>
-        <xsl:if test="string(ccda:code/@code)">
-          , "category": [
-            {
-              "coding": [
-                {
-                  "system": "http://loinc.org", 
-                  "code": "<xsl:value-of select="ccda:code/@code"/>",
-                  "display": "<xsl:value-of select="ccda:code/@displayName"/>"
-                }
-              ]
-            }
-          ]
-        </xsl:if>
-        <xsl:if test="ccda:effectiveTime/@value">
-        , "dateTime": "<xsl:call-template name="formatDateTime">
-                          <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
-                      </xsl:call-template>"
+                  </xsl:choose>",
+        "scope": {
+                    "coding": [
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/consentscope",
+                            "code": "treatment",
+                            "display": "Treatment"
+                        }
+                    ],
+                    "text": "treatment"
+                },
+        "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://loinc.org",
+                                "code": "59284-0",
+                                "display": "Consent Document"
+                            }
+                        ]
+                    },
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                                "code": "IDSCL"
+                            }
+                        ]
+                    }
+                ]
+        <xsl:if test="ccda:effectiveTime/@value or $currentTimestamp">
+            , "dateTime": "<xsl:choose>
+                                <xsl:when test="ccda:effectiveTime/@value">
+                                    <xsl:call-template name="formatDateTime">
+                                        <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
+                                    </xsl:call-template>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <xsl:value-of select="$currentTimestamp"/>
+                                </xsl:otherwise>
+                            </xsl:choose>"
         </xsl:if>
         , "patient" : {
             "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>"
@@ -604,17 +607,13 @@
             }
           </xsl:otherwise>
         </xsl:choose>
-        <xsl:if test="string(ccda:policy/@id)">
-          , "policy" : [{
-            "authority" : "<xsl:value-of select="ccda:policy/@id"/>"
+        , "policy" : [{
+            "authority" : "urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5"
           }]
-        </xsl:if>
-        <xsl:if test="string(ccda:code/@displayName)">
         , "sourceAttachment" : {
           "contentType" : "application/pdf",
           "language" : "en"
         }
-        </xsl:if>
       },
       "request" : {
         "method" : "POST",
@@ -984,12 +983,7 @@
           "resource" : {
             "resourceType": "QuestionnaireResponse",
             "id": "<xsl:value-of select='$QuestionnaireResponseResourceId'/>",
-            "meta" : {
-              "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-              "profile" : ["<xsl:value-of select='$questionnaireResponseMetaProfileUrlFull'/>"]
-            },
             "status": "completed",
-            "questionnaire": "<xsl:value-of select='$baseFhirUrl'/>Questionnaire/<xsl:value-of select='$questionnaireResourceId'/>",
             "subject": {
                 "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
             }
