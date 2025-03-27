@@ -850,7 +850,7 @@
               <xsl:if test="string(ccda:observation/ccda:entryRelationship/ccda:observation)">
                   <xsl:for-each select="ccda:observation/ccda:entryRelationship/ccda:observation">
                     ,{
-                        "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                        "system": "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
                         "code": "<xsl:value-of select='ccda:code/@code'/>",
                         "display": "<xsl:value-of select='ccda:code/@displayName'/>"
                     }
