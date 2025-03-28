@@ -166,7 +166,11 @@ export class AGGridAideBuilder {
                 resizable: true,
                 sortable: true,
                 filter: true,
-                enablePivot: true
+                enablePivot: true,
+                filterParams: {
+                    maxNumConditions: 1, // Only one condition allowed
+                    suppressAndOrCondition: true, // Removes the AND/OR operator
+                  }
             },
             columnDefs: [],
             sideBar: false, // TODO: turn this back on when Pivots work
@@ -180,6 +184,7 @@ export class AGGridAideBuilder {
             detailRowAutoHeight: false
         };
         this.gridDivStyles = { height: "750px" };
+        console.log('AGGridAideBuilder constructor');
     }
     /**
      * Sets the detailRowAutoHeight for the AG Grid.
