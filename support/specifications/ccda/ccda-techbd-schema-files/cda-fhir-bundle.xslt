@@ -310,8 +310,9 @@
                                 </xsl:choose>"
             }],
             "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
-        },
-        {
+        }
+        <xsl:if test="string(ccda:patient/ccda:ethnicGroupCode/@code)">
+        ,{
             "extension": [{
                 "url": "ombCategory",
                 "valueCoding": {
@@ -343,11 +344,14 @@
                                 </xsl:choose>"
             }],
             "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
-        },
-        {
+        }
+        </xsl:if>
+        <xsl:if test="string(ccda:patient/ccda:administrativeGenderCode/@code)">
+        ,{
             "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
             "valueCode": "<xsl:value-of select="ccda:patient/ccda:administrativeGenderCode/@code"/>"
         }
+        </xsl:if>
       ]
       , "identifier" : [{
           "type" : {
@@ -847,15 +851,6 @@
                   "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
                   "display": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
               }
-              <xsl:if test="string(ccda:observation/ccda:entryRelationship/ccda:observation)">
-                  <xsl:for-each select="ccda:observation/ccda:entryRelationship/ccda:observation">
-                    ,{
-                        "system": "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                        "code": "<xsl:value-of select='ccda:code/@code'/>",
-                        "display": "<xsl:value-of select='ccda:code/@displayName'/>"
-                    }
-                  </xsl:for-each>
-              </xsl:if>
               ]
             },
             {
@@ -1000,7 +995,7 @@
                       <xsl:if test="string(ccda:value/@code) or string(ccda:value/@displayName)">
                         ,"answer" : [{
                           "valueCoding" : {
-                            "system" : "<xsl:value-of select='ccda:value/@codeSystem'/>",
+                            "system" : "http://loinc.org",
                             "code" : "<xsl:value-of select='ccda:value/@code'/>",
                             "display" : "<xsl:value-of select='ccda:value/@displayName'/>"
                           }
@@ -1015,7 +1010,7 @@
                               <xsl:if test="string(ccda:value/@code) or string(ccda:value/@displayName)">
                                 ,"answer" : [{
                                   "valueCoding" : {
-                                    "system" : "<xsl:value-of select='ccda:value/@codeSystem'/>",
+                                    "system" : "http://loinc.org",
                                     "code" : "<xsl:value-of select='ccda:value/@code'/>",
                                     "display" : "<xsl:value-of select='ccda:value/@displayName'/>"
                                   }
