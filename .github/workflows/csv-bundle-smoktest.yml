@@ -26,14 +26,39 @@ jobs:
         tar -xzf apache-jmeter-5.6.3.tgz
         sudo mv apache-jmeter-5.6.3 ./test-automation/
 
-    - name: Run FHIR Bundle SmokeTest for Environments
+    - name: Decode the .p12 file
+      env:
+        P12_FILE_BASE64: ${{ secrets.TECHBD_PHI_QA_KEY_BASE64 }}
+      run: |
+        CERT_DIR="./test-automation/Certificates"
+        mkdir -p $CERT_DIR
+        echo "$P12_FILE_BASE64" | base64 -d > "$CERT_DIR/techbd-phi-QA-key.p12"
+
+    - name: Update SSL paths in JMeter configuration files
+      run: |
+        CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
+        CERT_PATH="./test-automation/Certificates/techbd-phi-QA-key.p12"
+        
+        echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
+        echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
+        echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
+
+        echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/system.properties
+        echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/system.properties
+        echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/system.properties
+
+        echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/user.properties
+        echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
+        echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
+        
+    - name: Run CSV Bundle SmokeTest for Environments
       id: run-tests
       run: |
         # Array of environments and their paths
-        environments=("Staging")
+        environments=("Staging" "PHI-QA")
         environment_paths=(
           "./test-automation/CSV-Bundle-SmokeTest-Stage/CSV_Bundle.jmx"
-          "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx"
+          "./test-automation/CSV-Bundle-SmokeTest-PHI-QA/CSV_Bundle.jmx"
         )
 
         # Initialize failure report and attachments arrays
