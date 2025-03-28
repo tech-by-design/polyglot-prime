@@ -8,6 +8,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -225,9 +226,100 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     }
                     if (filter.type().equals("like") || filter.type().equals("contains")) {
                         bindValues.add("%" + filter.filter() + "%");
+                    }
+                       
+                    else if (filter.type().equals("equals") &&
+                            (filter.dateFrom() != null || filter.filter() != null)) {
+                        if (filter.dateFrom() != null) {
+                            try {
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                                LocalDateTime parsedDateTime = LocalDateTime.parse(filter.dateFrom(), formatter);
+
+                                // Get start and end of the day
+                                LocalDateTime startOfDay = parsedDateTime.toLocalDate().atStartOfDay();
+                                LocalDateTime endOfDay = parsedDateTime.toLocalDate().atTime(LocalTime.MAX);
+
+                                // Add both timestamps for the BETWEEN condition
+                                bindValues.add(startOfDay);
+                                bindValues.add(endOfDay);
+
+                            } catch (Exception e) {
+                                LOG.error("Error parsing date for binding: " + filter.dateFrom(), e);
+                                bindValues.add(filter.dateFrom());
+                            }
+                        } else {
+                            // For non-date fields
+                            bindValues.add(filter.filter());
+                        }
                     } else if (filter.filter() != null) {
                         bindValues.add(filter.filter());
                     }
+                    else if (filter.type().equals("greaterThan") && filter.dateFrom() != null) {
+                        // Parse and add date bind value
+                        try {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                            LocalDateTime parsedDateTime = LocalDateTime.parse(filter.dateFrom(), formatter);
+
+                            // Adjust time to 23:59:59 if it's midnight (00:00:00)
+                            if (parsedDateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+                                parsedDateTime = parsedDateTime.with(LocalTime.of(23, 59, 59));
+                            }
+
+                            bindValues.add(parsedDateTime);
+                        } catch (Exception e) {
+                            LOG.error("Error parsing date for binding: " + filter.dateFrom(), e);
+                            bindValues.add(filter.dateFrom());
+                        }
+                    }
+                    
+                    else if (filter.type().equals("notEqual") &&
+                            (filter.dateFrom() != null || filter.filter() != null)) {
+                        if (filter.dateFrom() != null) {
+                            try {
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                                LocalDateTime parsedDateTime = LocalDateTime.parse(filter.dateFrom(), formatter);
+
+                                // Get start and end of the day
+                                LocalDateTime startOfDay = parsedDateTime.toLocalDate().atStartOfDay();
+                                LocalDateTime endOfDay = parsedDateTime.toLocalDate().atTime(LocalTime.MAX);
+
+                                // Add both timestamps for the NOT BETWEEN condition
+                                bindValues.add(startOfDay);
+                                bindValues.add(endOfDay);
+
+                            } catch (Exception e) {
+                                LOG.error("Error parsing date for binding: " + filter.dateFrom(), e);
+                                bindValues.add(filter.dateFrom());
+                            }
+                        } else {
+                            // For non-date fields
+                            bindValues.add(filter.filter());
+                        }
+                    } 
+
+                    else if (filter.type().equals("lessThan") &&
+                            (filter.dateFrom() != null || filter.filter() != null)) {
+                        if (filter.dateFrom() != null) {
+                            try {
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                                LocalDateTime parsedDateTime = LocalDateTime.parse(filter.dateFrom(), formatter);
+
+                                // For less than, use start of day
+                                LocalDateTime startOfDay = parsedDateTime.toLocalDate().atStartOfDay();
+
+                                // Add bind value
+                                bindValues.add(startOfDay);
+
+                            } catch (Exception e) {
+                                LOG.error("Error parsing date for binding: " + filter.dateFrom(), e);
+                                bindValues.add(filter.dateFrom());
+                            }
+                        } else {
+                            // For non-date fields
+                            bindValues.add(filter.filter());
+                        }
+                    }
+
                     if (filter.type().equals("between")) {
                         bindValues.add(filter.secondFilter());
                     }
@@ -430,10 +522,67 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                         .and(DSL.condition("TRIM(CAST({0} AS VARCHAR)) <> ''", dslField));
             case "like" ->
                 dslField.likeIgnoreCase("%" + filter + "%");
-            case "equals" ->
-                dslField.equalIgnoreCase(filter.toString());
-            case "notEqual" ->
-                DSL.condition("{0} NOT ILIKE {1}", dslField, DSL.param(field, filter));
+        
+            case "equals" -> {
+                try {
+                    if (dateFrom != null) {
+                        try {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                            LocalDateTime parsedDateTime = LocalDateTime.parse(dateFrom.toString().trim(), formatter);
+
+                            // Get start and end of the day
+                            LocalDateTime startOfDay = parsedDateTime.toLocalDate().atStartOfDay();
+                            LocalDateTime endOfDay = parsedDateTime.toLocalDate().atTime(LocalTime.MAX);
+
+                            // Use between for matching any time during the day
+                            yield dslField.between(startOfDay, endOfDay);
+
+                        } catch (DateTimeParseException e) {
+                            LOG.error("Unable to parse date: {}", dateFrom, e);
+                            yield DSL.falseCondition();
+                        }
+                    } else if (filter != null) {
+                        // For non-date fields, use exact equality
+                        // yield dslField.eq(filter);
+                        yield dslField.equalIgnoreCase(filter.toString());
+                    }
+
+                    yield DSL.falseCondition();
+                } catch (Exception e) {
+                    LOG.error("Unexpected error in equals filter", e);
+                    yield DSL.falseCondition();
+                }
+            }
+            case "notEqual" -> {
+                try {
+                    if (dateFrom != null) {
+                        try {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                            LocalDateTime parsedDateTime = LocalDateTime.parse(dateFrom.toString().trim(), formatter);
+
+                            // Get start and end of the day
+                            LocalDateTime startOfDay = parsedDateTime.toLocalDate().atStartOfDay();
+                            LocalDateTime endOfDay = parsedDateTime.toLocalDate().atTime(LocalTime.MAX);
+
+                            // Use NOT BETWEEN for dates
+                            yield dslField.notBetween(startOfDay, endOfDay);
+
+                        } catch (DateTimeParseException e) {
+                            LOG.error("Unable to parse date: {}", dateFrom, e);
+                            yield DSL.falseCondition();
+                        }
+                    } else if (filter != null) {
+                        // For non-date fields, use not equal
+                        // yield dslField.ne(filter);
+                        yield DSL.condition("{0} NOT ILIKE {1}", dslField, DSL.param(field, filter));
+                    }
+
+                    yield DSL.falseCondition();
+                } catch (Exception e) {
+                    LOG.error("Unexpected error in notEqual filter", e);
+                    yield DSL.falseCondition();
+                }
+            }
             case "number" ->
                 dslField.eq(DSL.param(field, filter));
             case "date" ->
@@ -450,10 +599,63 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 dslField.lessOrEqual(filter);
             case "greatersOrEqual" ->
                 dslField.greaterOrEqual(filter);
-            case "greaterThan" ->
-                dslField.greaterThan(filter);
-            case "lessThan" ->
-                dslField.lessThan(filter);
+            case "greaterThan" -> {
+                try {
+                    // Check if we have dateFrom value (this is used for date filters)
+                    if (dateFrom != null) {
+                        try {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                            LocalDateTime parsedDateTime = LocalDateTime.parse(dateFrom.toString().trim(), formatter);
+
+                            // Adjust time to 23:59:59 if it's midnight
+                            if (parsedDateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+                                parsedDateTime = parsedDateTime.with(LocalTime.of(23, 59, 59));
+                            }
+
+                            yield dslField.greaterThan(parsedDateTime);
+                        } catch (DateTimeParseException e) {
+                            LOG.error("Unable to parse date: {}", dateFrom, e);
+                            yield DSL.falseCondition();
+                        }
+                    }
+                    // Fall back to regular filter value if dateFrom is null
+                    else if (filter != null) {
+                        yield dslField.greaterThan(filter);
+                    }
+
+                    yield DSL.falseCondition();
+                } catch (Exception e) {
+                    LOG.error("Unexpected error in date greaterThan filter", e);
+                    yield DSL.falseCondition();
+                }
+            }
+            case "lessThan" -> {
+                try {
+                    if (dateFrom != null) {
+                        try {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                            LocalDateTime parsedDateTime = LocalDateTime.parse(dateFrom.toString().trim(), formatter);
+
+                            // For less than, use start of day
+                            LocalDateTime startOfDay = parsedDateTime.toLocalDate().atStartOfDay();
+
+                            yield dslField.lessThan(startOfDay);
+                        } catch (DateTimeParseException e) {
+                            LOG.error("Unable to parse date: {}", dateFrom, e);
+                            yield DSL.falseCondition();
+                        }
+                    } else if (filter != null) {
+                        // For non-date fields, use case-insensitive comparison
+                        yield DSL.condition("{0} < {1}", dslField, DSL.param(field, filter));
+                    }
+
+                    yield DSL.falseCondition();
+                } catch (Exception e) {
+                    LOG.error("Unexpected error in lessThan filter", e);
+                    yield DSL.falseCondition();
+                }
+            }
+            
             case "between" ->
                 dslField.between(filter, secondfilter);
             case "inRange" ->
