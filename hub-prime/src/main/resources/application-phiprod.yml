@@ -53,6 +53,7 @@ org:
               practitioner: /StructureDefinition/shin-ny-practitioner
               questionnaireResponse: /StructureDefinition/shinny-questionnaire
               observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
+              procedure: /StructureDefinition/shinny-sdoh-procedure
             defaultDataLakeApiAuthn:
               # The allowed values for mTlsStrategy are as follows:
               # - no-mTls: No mTLS is used. The WebClient sends a standard HTTP POST request to the scoring engine API without mutual TLS (mTLS).
