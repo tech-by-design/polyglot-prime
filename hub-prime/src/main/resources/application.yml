@@ -97,9 +97,9 @@ org:
                     profile-base-url: http://shinny.org/us/ny/hrsn
                     package-path: ig-packages/shin-ny-ig/shinny/v1.3.0
                     ig-version: 1.3.0
-                  test-shinny-v1-3-0:
+                  test-shinny-v1-4-1:
                     profile-base-url: http://test.shinny.org/us/ny/hrsn
-                    package-path: ig-packages/shin-ny-ig/test-shinny/v.1.4.1
+                    package-path: ig-packages/shin-ny-ig/test-shinny/v1.4.1
                     ig-version: 1.4.1
                 base-packages:
                 # Base packages for external dependencies 
