@@ -370,7 +370,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (encounterId != null){
                         groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
                 }
-                
+                String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
+                if (organizationId != null) {
+                        groupObservation.addPerformer(new Reference("Organization/" + organizationId));
+                }
                 String screeningStartDateTime = groupData.stream()
                         .map(ScreeningObservationData::getScreeningStartDateTime)
                         .filter(Objects::nonNull)
