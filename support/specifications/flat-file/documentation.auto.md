@@ -200,11 +200,11 @@
   - `description` Bundle.entry.resource.where(resourceType ='Procedure').modifierExtension.value
   - `type` string
 ### `CONSENT_STATUS`
-  - `description` Bundle.entry.resource.where(resourceType ='Consent').status
+  - `description` Bundle.entry.resource.where(resourceType ='Consent').provision.type
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['Permit', 'Deny']
+    - `enum` ['permit', 'deny']
 ### `CONSENT_DATE_TIME`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
   - `type` string
@@ -236,17 +236,17 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.code
   - `type` string
   - `constraints`:
-    - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-AT', 'de-CH', 'de-DE', 'el', 'en', 'en-AU', 'en-CA', 'en-GB', 'en-IN', 'en-NZ', 'en-SG', 'en-US', 'es', 'es-AR', 'es-ES', 'es-UY', 'fi', 'fr', 'fr-BE', 'fr-CH', 'fr-FR', 'fy', 'fy-NL', 'hi', 'hr', 'it', 'it-CH', 'it-IT', 'ja', 'ko', 'nl', 'nl-BE', 'nl-NL', 'no', 'no-NO', 'pa', 'pl', 'pt', 'pt-BR', 'ru', 'ru-RU', 'sr', 'sr-RS', 'sv', 'sv-SE', 'te', 'zh', 'zh-CN', 'zh-HK', 'zh-SG', 'zh-TW']
+    - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-AT', 'de-CH', 'de-DE', 'el', 'en', 'en-AU', 'en-CA', 'en-GB', 'en-IN', 'en-NZ', 'en-SG', 'en-US', 'es', 'es-AR', 'es-ES', 'es-UY', 'fi', 'fr', 'fr-BE', 'fr-CH', 'fr-FR', 'fy', 'fy-NL', 'hi', 'hr', 'it', 'it-CH', 'it-IT', 'ja', 'ko', 'nl', 'nl-BE', 'nl-NL', 'no', 'no-NO', 'pa', 'pl', 'pt', 'pt-BR', 'ru', 'ru-RU', 'sr', 'sr-RS', 'sv', 'sv-SE', 'te', 'zh', 'zh-CN', 'zh-HK', 'zh-SG', 'zh-TW', 'ASL']
 ### `SCREENING_LANGUAGE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.display
   - `type` string
   - `constraints`:
-    - `enum` ['arabic', 'bengali', 'czech', 'danish', 'german', 'german (austria)', 'german (switzerland)', 'german (germany)', 'greek', 'english', 'english (australia)', 'english (canada)', 'english (great britain)', 'english (india)', 'english (new zealand)', 'english (singapore)', 'english (united states)', 'spanish', 'spanish (argentina)', 'spanish (spain)', 'spanish (uruguay)', 'finnish', 'french', 'french (belgium)', 'french (switzerland)', 'french (france)', 'frysian', 'frysian (netherlands)', 'hindi', 'croatian', 'italian', 'italian (switzerland)', 'italian (italy)', 'japanese', 'korean', 'dutch', 'dutch (belgium)', 'dutch (netherlands)', 'norwegian', 'norwegian (norway)', 'punjabi', 'polish', 'portuguese', 'portuguese (brazil)', 'russian', 'russian (russia)', 'serbian', 'serbian (serbia)', 'swedish', 'swedish (sweden)', 'telegu', 'chinese', 'chinese (china)', 'chinese (hong kong)', 'chinese (singapore)', 'chinese (taiwan)']
+    - `enum` ['arabic', 'bengali', 'czech', 'danish', 'german', 'german (austria)', 'german (switzerland)', 'german (germany)', 'greek', 'english', 'english (australia)', 'english (canada)', 'english (great britain)', 'english (india)', 'english (new zealand)', 'english (singapore)', 'english (united states)', 'spanish', 'spanish (argentina)', 'spanish (spain)', 'spanish (uruguay)', 'finnish', 'french', 'french (belgium)', 'french (switzerland)', 'french (france)', 'frysian', 'frysian (netherlands)', 'hindi', 'croatian', 'italian', 'italian (switzerland)', 'italian (italy)', 'japanese', 'korean', 'dutch', 'dutch (belgium)', 'dutch (netherlands)', 'norwegian', 'norwegian (norway)', 'punjabi', 'polish', 'portuguese', 'portuguese (brazil)', 'russian', 'russian (russia)', 'serbian', 'serbian (serbia)', 'swedish', 'swedish (sweden)', 'telegu', 'chinese', 'chinese (china)', 'chinese (hong kong)', 'chinese (singapore)', 'chinese (taiwan)', 'American Sign Language']
 ### `SCREENING_LANGUAGE_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').language.system
   - `type` string
   - `constraints`:
-    - `enum` ['urn:ietf:bcp:47']
+    - `enum` ['urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage']
 ### `SCREENING_ENTITY_ID`
   - `description` Bundle.entry.resource.where(resourceType ='Organization').identifier.value
   - `type` string
@@ -570,17 +570,17 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.code & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string
   - `constraints`:
-    - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-AT', 'de-CH', 'de-DE', 'el', 'en', 'en-AU', 'en-CA', 'en-GB', 'en-IN', 'en-NZ', 'en-SG', 'en-US', 'es', 'es-AR', 'es-ES', 'es-UY', 'fi', 'fr', 'fr-BE', 'fr-CH', 'fr-FR', 'fy', 'fy-NL', 'hi', 'hr', 'it', 'it-CH', 'it-IT', 'ja', 'ko', 'nl', 'nl-BE', 'nl-NL', 'no', 'no-NO', 'pa', 'pl', 'pt', 'pt-BR', 'ru', 'ru-RU', 'sr', 'sr-RS', 'sv', 'sv-SE', 'te', 'zh', 'zh-CN', 'zh-HK', 'zh-SG', 'zh-TW']
+    - `enum` ['ar', 'bn', 'cs', 'da', 'de', 'de-AT', 'de-CH', 'de-DE', 'el', 'en', 'en-AU', 'en-CA', 'en-GB', 'en-IN', 'en-NZ', 'en-SG', 'en-US', 'es', 'es-AR', 'es-ES', 'es-UY', 'fi', 'fr', 'fr-BE', 'fr-CH', 'fr-FR', 'fy', 'fy-NL', 'hi', 'hr', 'it', 'it-CH', 'it-IT', 'ja', 'ko', 'nl', 'nl-BE', 'nl-NL', 'no', 'no-NO', 'pa', 'pl', 'pt', 'pt-BR', 'ru', 'ru-RU', 'sr', 'sr-RS', 'sv', 'sv-SE', 'te', 'zh', 'zh-CN', 'zh-HK', 'zh-SG', 'zh-TW', 'ASL']
 ### `PREFERRED_LANGUAGE_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.display & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string
   - `constraints`:
-    - `enum` ['arabic', 'bengali', 'czech', 'danish', 'german', 'german (austria)', 'german (switzerland)', 'german (germany)', 'greek', 'english', 'english (australia)', 'english (canada)', 'english (great britain)', 'english (india)', 'english (new zealand)', 'english (singapore)', 'english (united states)', 'spanish', 'spanish (argentina)', 'spanish (spain)', 'spanish (uruguay)', 'finnish', 'french', 'french (belgium)', 'french (switzerland)', 'french (france)', 'frysian', 'frysian (netherlands)', 'hindi', 'croatian', 'italian', 'italian (switzerland)', 'italian (italy)', 'japanese', 'korean', 'dutch', 'dutch (belgium)', 'dutch (netherlands)', 'norwegian', 'norwegian (norway)', 'punjabi', 'polish', 'portuguese', 'portuguese (brazil)', 'russian', 'russian (russia)', 'serbian', 'serbian (serbia)', 'swedish', 'swedish (sweden)', 'telegu', 'chinese', 'chinese (china)', 'chinese (hong kong)', 'chinese (singapore)', 'chinese (taiwan)']
+    - `enum` ['arabic', 'bengali', 'czech', 'danish', 'german', 'german (austria)', 'german (switzerland)', 'german (germany)', 'greek', 'english', 'english (australia)', 'english (canada)', 'english (great britain)', 'english (india)', 'english (new zealand)', 'english (singapore)', 'english (united states)', 'spanish', 'spanish (argentina)', 'spanish (spain)', 'spanish (uruguay)', 'finnish', 'french', 'french (belgium)', 'french (switzerland)', 'french (france)', 'frysian', 'frysian (netherlands)', 'hindi', 'croatian', 'italian', 'italian (switzerland)', 'italian (italy)', 'japanese', 'korean', 'dutch', 'dutch (belgium)', 'dutch (netherlands)', 'norwegian', 'norwegian (norway)', 'punjabi', 'polish', 'portuguese', 'portuguese (brazil)', 'russian', 'russian (russia)', 'serbian', 'serbian (serbia)', 'swedish', 'swedish (sweden)', 'telegu', 'chinese', 'chinese (china)', 'chinese (hong kong)', 'chinese (singapore)', 'chinese (taiwan)', 'American Sign Language']
 ### `PREFERRED_LANGUAGE_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string
   - `constraints`:
-    - `enum` ['iso', 'iso 639-2', 'http://hl7.org/fhir/us/core/valueset/simple-language', 'urn:ietf:bcp:47']
+    - `enum` ['iso', 'iso 639-2', 'http://hl7.org/fhir/us/core/valueset/simple-language', 'urn:ietf:bcp:47', 'http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage']
 ### `SEXUAL_ORIENTATION_CODE`
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code
   - `type` string

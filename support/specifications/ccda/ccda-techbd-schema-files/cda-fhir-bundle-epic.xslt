@@ -152,14 +152,22 @@
                             <xsl:if test="string(ccda:given) or string(ccda:prefix) or string(ccda:prefix) or string(ccda:given) or string(ccda:family)">, </xsl:if>
                             "suffix": ["<xsl:value-of select='ccda:suffix'/>"]
                         </xsl:if>
-                        <xsl:if test="ccda:validTime/ccda:low[@nullFlavor!='UNK' and @nullFlavor!='NA']">
-                            <xsl:if test="string(ccda:given) or string(ccda:prefix) or string(ccda:prefix) or string(ccda:given) or string(ccda:family) or string(ccda:suffix)">, </xsl:if>
-                            "period": {
-                                "start": "<xsl:value-of select='ccda:validTime/ccda:low/@value'/>"
-                                <xsl:if test="ccda:validTime/ccda:high[@nullFlavor!='UNK' and @nullFlavor!='NA']">
-                                    , "end": "<xsl:value-of select='ccda:validTime/ccda:high/@value'/>"
-                                </xsl:if>
-                            }
+                        <xsl:if test="(ccda:validTime/ccda:low and not(ccda:validTime/ccda:low/@nullFlavor = 'UNK' or ccda:validTime/ccda:low/@nullFlavor = 'NA')) or 
+                                  (ccda:validTime/ccda:high and not(ccda:validTime/ccda:high/@nullFlavor = 'UNK' or ccda:validTime/ccda:high/@nullFlavor = 'NA'))">
+                          <xsl:if test="string(ccda:given) or string(ccda:prefix) or string(ccda:family) or string(ccda:suffix)">, </xsl:if>
+                          "period": {
+                              <xsl:if test="ccda:validTime/ccda:low and not(ccda:validTime/ccda:low/@nullFlavor = 'UNK' or ccda:validTime/ccda:low/@nullFlavor = 'NA')">
+                                  "start": "<xsl:call-template name="formatDateTime">
+                                                <xsl:with-param name="dateTime" select="ccda:validTime/ccda:low/@value"/>
+                                            </xsl:call-template>"
+                                  <xsl:if test="ccda:validTime/ccda:high and not(ccda:validTime/ccda:high/@nullFlavor = 'UNK' or ccda:validTime/ccda:high/@nullFlavor = 'NA')">,</xsl:if>
+                              </xsl:if>
+                              <xsl:if test="ccda:validTime/ccda:high and not(ccda:validTime/ccda:high/@nullFlavor = 'UNK' or ccda:validTime/ccda:high/@nullFlavor = 'NA')">
+                                  "end": "<xsl:call-template name="formatDateTime">
+                                              <xsl:with-param name="dateTime" select="ccda:validTime/ccda:high/@value"/>
+                                          </xsl:call-template>"
+                              </xsl:if>
+                          }
                         </xsl:if>
                     }
                     <xsl:if test="position() != last()">,</xsl:if>
@@ -386,7 +394,9 @@
           "value" : "<xsl:value-of select='$patientRoleId'/>"
         }
       ]      
+      <xsl:if test="ccda:patient/sdtc:deceasedInd/@value">  
       , "deceasedBoolean": <xsl:value-of select="ccda:patient/sdtc:deceasedInd/@value"/>  
+      </xsl:if>
       <xsl:if test="ccda:patient/ccda:maritalStatusCode[not(@nullFlavor='UNK')] and string(ccda:patient/ccda:maritalStatusCode/@code)">
           , "maritalStatus": {
               "coding": [{
@@ -835,11 +845,18 @@
             "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
             "display" : "<xsl:value-of select="$patientResourceName"/>"
           }
-          <xsl:if test="ccda:effectiveTime/@value">
-          , "effectiveDateTime": "<xsl:call-template name="formatDateTime">
-                              <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
-                          </xsl:call-template>"
-          </xsl:if>        
+          <xsl:if test="ccda:effectiveTime/@value or $currentTimestamp">
+            , "effectiveDateTime": "<xsl:choose>
+                                      <xsl:when test="ccda:effectiveTime/@value">
+                                          <xsl:call-template name="formatDateTime">
+                                              <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
+                                          </xsl:call-template>
+                                      </xsl:when>
+                                      <xsl:otherwise>
+                                          <xsl:value-of select="$currentTimestamp"/>
+                                      </xsl:otherwise>
+                                  </xsl:choose>"
+          </xsl:if>       
         },
         "request" : {
           "method" : "POST",
@@ -866,14 +883,6 @@
                         <xsl:with-param name='statusCode' select='ccda:observation/ccda:statusCode/@code'/>
                     </xsl:call-template>",
           "category": [
-            {
-              "coding": [{
-                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                  "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
-                  "display": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
-              }
-              ]
-            },
             {
               "coding": [{
                   "system": "http://terminology.hl7.org/CodeSystem/observation-category",
@@ -927,11 +936,18 @@
               "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
             }
           </xsl:if>
-          <xsl:if test="string(ccda:observation/ccda:effectiveTime/@value)">
-          , "effectiveDateTime": "<xsl:call-template name="formatDateTime">
-                              <xsl:with-param name="dateTime" select="ccda:observation/ccda:effectiveTime/@value"/>
-                          </xsl:call-template>"
-          </xsl:if>  
+          <xsl:if test="ccda:observation/ccda:effectiveTime/@value or $currentTimestamp">
+            , "effectiveDateTime": "<xsl:choose>
+                                      <xsl:when test="ccda:observation/ccda:effectiveTime/@value">
+                                          <xsl:call-template name="formatDateTime">
+                                              <xsl:with-param name="dateTime" select="ccda:observation/ccda:effectiveTime/@value"/>
+                                          </xsl:call-template>
+                                      </xsl:when>
+                                      <xsl:otherwise>
+                                          <xsl:value-of select="$currentTimestamp"/>
+                                      </xsl:otherwise>
+                                  </xsl:choose>"
+          </xsl:if>
         },
         "request": {
           "method": "POST",
@@ -1073,7 +1089,7 @@
               <xsl:value-of select="concat(
                   substring($dateTime, 1, 4), '-', 
                   substring($dateTime, 5, 2), '-', 
-                  substring($dateTime, 7, 2), 'T00:00:00'
+                  substring($dateTime, 7, 2), 'T00:00:00Z'
               )"/>
           </xsl:when>
           <!-- If format is unknown, return as is -->

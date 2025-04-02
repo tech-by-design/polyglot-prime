@@ -432,7 +432,8 @@ public class OrchestrationEngine {
                         LOG.warn("No matching FhirBundleValidator found for profile URL: {} for interactionId :{}", profileUrl,interactionId);
                        throw new JsonValidationException(ErrorCode.INVALID_BUNDLE_PROFILE);
                     } else {
-                        LOG.info("Bundle validated against version :{} using package at path: {} for interactionId :{} ", bundleValidator.getIgVersion(),bundleValidator.getPackagePath(),interactionId);
+                        LOG.info("Bundle validated against version :{} using package at path: {} for interactionId :{} ",
+                         bundleValidator.getIgVersion(),bundleValidator.getPackagePath(),interactionId);
                     }
                     this.igVersion =bundleValidator.getIgVersion();
                     this.fhirProfileUrl = bundleValidator.getFhirProfileUrl();
@@ -461,11 +462,13 @@ public class OrchestrationEngine {
 
                         @Override
                         public String getProfileUrl() {
+                            LOG.info("Profile url in final outcome :{}  for interactionId :{} ", HapiValidationEngine.this.fhirProfileUrl,interactionId);
                             return HapiValidationEngine.this.fhirProfileUrl;
                         }
 
                         @Override
                         public String getIgVersion() {
+                            LOG.info("IG version in final outcome :{}    for interactionId :{} ", igVersion,interactionId);
                             return igVersion;
                         }
 
