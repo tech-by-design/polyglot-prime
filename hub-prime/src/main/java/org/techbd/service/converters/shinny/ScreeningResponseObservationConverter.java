@@ -159,6 +159,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                     new DateTimeType(DateUtil.convertStringToDate(data.getScreeningStartDateTime())));
                         }
                         observation.setIssued(DateUtil.convertStringToDate(data.getScreeningStartDateTime()));
+                        String encounterId = idsGenerated.getOrDefault(CsvConstants.ENCOUNTER_ID, null);
+                        if (encounterId != null) {
+                            observation.setEncounter(new Reference("Encounter/" + encounterId));
+                        }
+                        String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
+                        if (organizationId != null) {
+                            observation.addPerformer(new Reference("Organization/" + organizationId));
+                        }
                         CodeableConcept interpretation = new CodeableConcept();
                         interpretation.addCoding(
                                 new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
