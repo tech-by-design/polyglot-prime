@@ -29,15 +29,13 @@ import lombok.Setter;
 @Setter
 @Component
 public class DataLedgerApiClient {
-    private final HttpClient client;
     private final AppConfig appConfig;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private static final Logger LOG = LoggerFactory.getLogger(DataLedgerApiClient.class.getName());
 
-    public DataLedgerApiClient(AppConfig appConfig, UdiPrimeJpaConfig udiPrimeJpaConfig, HttpClient client) {
+    public DataLedgerApiClient(AppConfig appConfig, UdiPrimeJpaConfig udiPrimeJpaConfig) {
         this.appConfig = appConfig;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        this.client = client;
     }
 
     public void processRequest(DataLedgerPayload dataLedgerPayload, String interactionId, String provenance,
@@ -97,7 +95,7 @@ public class DataLedgerApiClient {
         String curlCommand = buildCurlCommand(request, jsonPayload);
         LOG.info("Equivalent CURL: " + curlCommand); // TODO -remove after testing
 
-        CompletableFuture<Void> future = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        CompletableFuture<Void> future = HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
                     boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
                     LOG.info("Data Ledger API response code : " + response.statusCode() + " for interactionId : "
