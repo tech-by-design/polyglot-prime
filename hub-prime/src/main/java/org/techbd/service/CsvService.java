@@ -21,7 +21,6 @@ import org.techbd.service.constants.Origin;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.Interactions;
 import org.techbd.service.http.InteractionsFilter;
-import org.techbd.service.http.hub.prime.api.FHIRService;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
