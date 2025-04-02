@@ -522,62 +522,65 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                         .and(DSL.condition("TRIM(CAST({0} AS VARCHAR)) <> ''", dslField));
             case "like" ->
                 dslField.likeIgnoreCase("%" + filter + "%");
-        
             case "equals" -> {
                 try {
                     if (dateFrom != null) {
                         try {
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                             LocalDateTime parsedDateTime = LocalDateTime.parse(dateFrom.toString().trim(), formatter);
-
                             // Get start and end of the day
                             LocalDateTime startOfDay = parsedDateTime.toLocalDate().atStartOfDay();
                             LocalDateTime endOfDay = parsedDateTime.toLocalDate().atTime(LocalTime.MAX);
-
                             // Use between for matching any time during the day
                             yield dslField.between(startOfDay, endOfDay);
-
                         } catch (DateTimeParseException e) {
                             LOG.error("Unable to parse date: {}", dateFrom, e);
                             yield DSL.falseCondition();
                         }
-                    } else if (filter != null) {
-                        // For non-date fields, use exact equality
-                        // yield dslField.eq(filter);
+                    } else if (filter instanceof Number) {
+                        // For numeric fields, use exact equality
+                        yield dslField.eq(filter);
+                    } else if (filter instanceof String) {
+                        // For string fields, use case-insensitive comparison
                         yield dslField.equalIgnoreCase(filter.toString());
+                    } else if (filter != null) {
+                        // For other non-null types, use exact equality
+                        yield dslField.eq(filter);
+                    } else {
+                        // Handle null filter value
+                        yield DSL.falseCondition();
                     }
-
-                    yield DSL.falseCondition();
                 } catch (Exception e) {
                     LOG.error("Unexpected error in equals filter", e);
                     yield DSL.falseCondition();
                 }
             }
+
             case "notEqual" -> {
                 try {
                     if (dateFrom != null) {
                         try {
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                             LocalDateTime parsedDateTime = LocalDateTime.parse(dateFrom.toString().trim(), formatter);
-
                             // Get start and end of the day
                             LocalDateTime startOfDay = parsedDateTime.toLocalDate().atStartOfDay();
                             LocalDateTime endOfDay = parsedDateTime.toLocalDate().atTime(LocalTime.MAX);
-
                             // Use NOT BETWEEN for dates
                             yield dslField.notBetween(startOfDay, endOfDay);
-
                         } catch (DateTimeParseException e) {
                             LOG.error("Unable to parse date: {}", dateFrom, e);
                             yield DSL.falseCondition();
                         }
+                    } else if (filter instanceof Number) {
+                        // For numeric fields, use not equal directly
+                        yield dslField.ne(filter);
                     } else if (filter != null) {
-                        // For non-date fields, use not equal
-                        // yield dslField.ne(filter);
-                        yield DSL.condition("{0} NOT ILIKE {1}", dslField, DSL.param(field, filter));
+                        // For non-null string fields, use case-insensitive comparison
+                        yield dslField.cast(String.class).notEqualIgnoreCase(filter.toString());
+                    } else {
+                        // Handle null filter value
+                        yield DSL.falseCondition();
                     }
-
-                    yield DSL.falseCondition();
                 } catch (Exception e) {
                     LOG.error("Unexpected error in notEqual filter", e);
                     yield DSL.falseCondition();
