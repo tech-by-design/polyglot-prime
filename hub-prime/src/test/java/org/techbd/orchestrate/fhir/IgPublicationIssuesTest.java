@@ -31,30 +31,30 @@ public class IgPublicationIssuesTest {
     //         (issue.getMessage().startsWith("ValueSet") && issue.getMessage().endsWith("not found")) ||
 
     //         issue.getMessage().endsWith(" not found");
-    private static final String ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS = "Unknown extension http://shinny.org/StructureDefinition/shinny-personal-pronouns";
+    private static final String ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns";
     private static final String ERROR_MESSAGE_CTS_VALUE_SET = "ValueSet 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.24' not found";
     private static final String ERROR_MESSAGE_CTM_CTS_VALUE_SET = "ValueSet 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1021.32' not found";
     private static final String ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET = "ValueSet 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1240.11' not found";
-    private static final String ERROR_MESSAGE_SHINNY_MIDDLE_NAME = "Unknown extension http://shinny.org/StructureDefinition/middle-name";
-    private static final String ERROR_MESSAGE_SHNNY_COUNTY = "Unknown extension http://shinny.org/StructureDefinition/county";
-    private static final String ERROR_MESSAGE_SHNNY_PATIENT = "Unknown extension http://shinny.org/StructureDefinition/shinny-patient";
-    private static final String ERROR_MESSAGE_SHNNY_ENCOUNTER = "Unknown extension http://shinny.org/StructureDefinition/shin-ny-encounter";
-    private static final String ERROR_MESSAGE_SHNNY_CONSENT = "Unknown extension http://shinny.org/StructureDefinition/shinny-consent";
-    private static final String ERROR_MESSAGE_SHNNY_ORGANIZATION = "Unknown extension http://shinny.org/StructureDefinition/shin-ny-organization";
-    private static final String ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE = "Unknown extension http://shinny.org/StructureDefinition/shinny-questionnaire-response";
-    private static final String ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE = "Unknown extension http://shinny.org/StructureDefinition/SHINNYBundleProfile";
-    private static final String ERROR_MESSAGE_SHINNY_DIAGNOSIS = "Profile reference 'http://shinny.org/StructureDefinition/shinny-diagnosis' has not been checked because it is unknown";
+    private static final String ERROR_MESSAGE_SHINNY_MIDDLE_NAME = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/middle-name";
+    private static final String ERROR_MESSAGE_SHNNY_COUNTY = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/county";
+    private static final String ERROR_MESSAGE_SHNNY_PATIENT = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient";
+    private static final String ERROR_MESSAGE_SHNNY_ENCOUNTER = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-encounter";
+    private static final String ERROR_MESSAGE_SHNNY_CONSENT = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/shinny-consent";
+    private static final String ERROR_MESSAGE_SHNNY_ORGANIZATION = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-organization";
+    private static final String ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/shinny-questionnaire-response";
+    private static final String ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE = "Unknown extension https://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile";
+    private static final String ERROR_MESSAGE_SHINNY_DIAGNOSIS = "Profile reference 'https://shinny.org/us/ny/hrsn/StructureDefinition/shinny-diagnosis' has not been checked because it is unknown";
     private static final String ERROR_MESSAGE_SHINNY_US_CORE_CONDITION_CATEGORY = "ValueSet 'http://hl7.org/fhir/us/core/ValueSet/us-core-condition-category' not found";
-    private static final String ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST = "Profile reference 'http://shinny.org/StructureDefinition/SHINNYSDOHServiceRequest' has not been checked because it is unknown";
-    private static final String ERROR_MESSAGE_SHINNY_SDOH_REFERAL_MANAGEMENT = "Profile reference 'http://shinny.org/StructureDefinition//SHINNYSDOHTaskForReferralManagement' has not been checked because it is unknown";
-    private static final String URL_AHCHRSNQUESTIONAIRE_EXAMPLE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-AHCHRSNQuestionnaireResponseExample.json";
-    private static final String URL_AHCHRSNSCREENINGRESPONSE_EXAMPLE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-AHCHRSNScreeningResponseExample.json";
-    private static final String URL_NYSSCREENING_RESPONSE_EXAMPLE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-NYScreeningResponseExample.json";
-    private static final String URL_OBSERVATION_ASSESSMENT_FOOD_SECURITY_EXAMPLE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-ObservationAssessmentFoodInsecurityExample.json";
-    private static final String URL_SERVICE_REQUEST_EXAMPLE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-ServiceRequestExample.json";
-    private static final String URL_TASK_COMPLETED_EXAMPLE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskCompletedExample.json";
-    private static final String URL_TASK_EXAMPLE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskExample.json";
-    private static final String URL_TASK_OUTPUT_PROCEDURE = "https://shinny.org/ImplementationGuide/HRSN/Bundle-TaskOutputProcedureExample.json";
+    private static final String ERROR_MESSAGE_SHINNY_SDOH_SERVICE_REQUEST = "Profile reference 'https://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYSDOHServiceRequest' has not been checked because it is unknown";
+    private static final String ERROR_MESSAGE_SHINNY_SDOH_REFERAL_MANAGEMENT = "Profile reference 'https://shinny.org/us/ny/hrsn/StructureDefinition//SHINNYSDOHTaskForReferralManagement' has not been checked because it is unknown";
+    private static final String URL_AHCHRSNQUESTIONAIRE_EXAMPLE = "https://shinny.org/us/ny/hrsn/Bundle-AHCHRSNQuestionnaireResponseExample.json";
+    private static final String URL_AHCHRSNSCREENINGRESPONSE_EXAMPLE = "https://shinny.org/us/ny/hrsn/Bundle-AHCHRSNScreeningResponseExample.json";
+    private static final String URL_NYSSCREENING_RESPONSE_EXAMPLE = "https://shinny.org/us/ny/hrsn/Bundle-NYScreeningResponseExample.json";
+    private static final String URL_OBSERVATION_ASSESSMENT_FOOD_SECURITY_EXAMPLE = "https://shinny.org/us/ny/hrsn/Bundle-ObservationAssessmentFoodInsecurityExample.json";
+    private static final String URL_SERVICE_REQUEST_EXAMPLE = "https://shinny.org/us/ny/hrsn/Bundle-ServiceRequestExample.json";
+    private static final String URL_TASK_COMPLETED_EXAMPLE = "https://shinny.org/us/ny/hrsn/Bundle-TaskCompletedExample.json";
+    private static final String URL_TASK_EXAMPLE = "https://shinny.org/us/ny/hrsn/Bundle-TaskExample.json";
+    private static final String URL_TASK_OUTPUT_PROCEDURE = "https://shinny.org/us/ny/hrsn/Bundle-TaskOutputProcedureExample.json";
 
   
     // @Test
