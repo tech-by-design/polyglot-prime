@@ -96,22 +96,26 @@
                 </observations>
             </xsl:when>
 
-            <!-- Replace with <encounter> if it has encounter under component.structuredBody.entry -->
-            <xsl:when test="hl7:entry/hl7:encounter">
-                <encounters>
-                    <xsl:copy-of select="hl7:templateId"/>
-                    <xsl:copy-of select="hl7:code"/>
-                    <xsl:apply-templates select="hl7:entry"/>
-                </encounters>
-            </xsl:when>
+            <!-- Replace with <encounter> if it has encounter under component.structuredBody.entry only if there is no encompasingEncounter -->
+            <xsl:otherwise>
+                <xsl:if test="not(//hl7:componentOf/hl7:encompassingEncounter) and hl7:entry/hl7:encounter">
+                    <encounters>
+                        <xsl:copy-of select="hl7:templateId"/>
+                        <xsl:copy-of select="hl7:code"/>
+                        <xsl:apply-templates select="hl7:entry"/>
+                    </encounters>
+                </xsl:if>
+            </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
 
-    <!-- Process entry elements and copy observation -->
+    <!-- Process entry elements and copy observation and encounter if any -->
     <xsl:template match="hl7:entry">
         <entry>
             <xsl:copy-of select="hl7:observation"/>
-            <xsl:copy-of select="hl7:encounter"/>
+            <xsl:if test="not(hl7:componentOf/hl7:encompassingEncounter)">
+                <xsl:copy-of select="hl7:encounter"/>
+            </xsl:if>
         </entry>
     </xsl:template>
 
