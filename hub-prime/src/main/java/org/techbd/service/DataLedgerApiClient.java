@@ -29,15 +29,14 @@ import lombok.Setter;
 @Setter
 @Component
 public class DataLedgerApiClient {
-    private final HttpClient client;
+    private final HttpClient client = HttpClient.newHttpClient();
     private final AppConfig appConfig;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private static final Logger LOG = LoggerFactory.getLogger(DataLedgerApiClient.class.getName());
 
-    public DataLedgerApiClient(AppConfig appConfig, UdiPrimeJpaConfig udiPrimeJpaConfig, HttpClient client) {
+    public DataLedgerApiClient(AppConfig appConfig, UdiPrimeJpaConfig udiPrimeJpaConfig) {
         this.appConfig = appConfig;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
-        this.client = client;
     }
 
     public void processRequest(DataLedgerPayload dataLedgerPayload, String interactionId, String provenance,
@@ -292,7 +291,7 @@ public class DataLedgerApiClient {
 
     @Getter
     public enum Actor {
-        TECHBD("TechBD"),
+        TECHBD("TechBD-devl"),
         NYEC("NYeC"),
         INVALID_CSV("Invalid - Csv Conversion Failed"),
         INVALID_CCDA("Invalid - CCDA Conversion Failed");
