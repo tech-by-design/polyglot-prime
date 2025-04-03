@@ -670,7 +670,7 @@ public class FHIRService {
 				handleApiKeyAuth(interactionId, tenantId, dataLakeApiBaseURL, 
 				jooqCfg, request, bundlePayloadWithDisposition, payload, dataLakeApiContentType,
 				provenance, groupInteractionId, masterInteractionId, sourceType, 
-				requestUriToBeOverriden, defaultDatalakeApiAuthn.withApiKeyAuth());
+				requestUriToBeOverriden, defaultDatalakeApiAuthn.withApiKeyAuth(), bundleId);
 			default ->
 				handleNoMtls(mTlsStrategy, interactionId, tenantId, dataLakeApiBaseURL, jooqCfg,
 						request,
@@ -812,7 +812,7 @@ public class FHIRService {
 			Map<String, Object> bundlePayloadWithDisposition, String payload, String dataLakeApiContentType,
 			String provenance, 
                          String groupInteractionId,
-			String masterInteractionId, String sourceType, String requestUriToBeOverriden,WithApiKeyAuth apiKeyAuthDetails) {
+			String masterInteractionId, String sourceType, String requestUriToBeOverriden,WithApiKeyAuth apiKeyAuthDetails,String bundleId) {
 		if (null == apiKeyAuthDetails) {
 			LOG.error("ERROR:: FHIRService:: handleApiKeyAuth apiKeyAuthDetails is not configured in application.yml");
 			throw new IllegalArgumentException("apiKeyAuthDetails configuration is not defined in application.yml");
@@ -855,7 +855,7 @@ public class FHIRService {
 				StringUtils.isNotEmpty(requestUriToBeOverriden) ? requestUriToBeOverriden
 						: request.getRequestURI(),
 				dataLakeApiBaseURL, groupInteractionId,
-				masterInteractionId, sourceType,apiKeyAuthDetails);
+				masterInteractionId, sourceType,apiKeyAuthDetails,bundleId);
 		LOG.debug("FHIRService:: sendPostRequest END for interaction id: {} tenantid :{} ", interactionId,
 				tenantId);
 	}
@@ -1320,7 +1320,7 @@ public class FHIRService {
 			org.jooq.Configuration jooqCfg,
 			String provenance,
 			String requestURI, String scoringEngineApiURL, String groupInteractionId,
-			String masterInteractionId, String sourceType,WithApiKeyAuth apiKeyAuthDetails) {
+			String masterInteractionId, String sourceType,WithApiKeyAuth apiKeyAuthDetails,String bundleId) {
 		Span span = tracer.spanBuilder("FhirService.sendPostRequest").startSpan();
 		try {
 			LOG.debug(
@@ -1340,6 +1340,13 @@ public class FHIRService {
 					.header(apiKeyAuthDetails.apiKeyHeaderName(),apiClientKey)				
 					.retrieve()
 					.bodyToMono(String.class)
+					.doFinally(signalType -> {
+						DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+							DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+								DataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
+						final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
+						dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+					})
 					.subscribe(response -> {
 						handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
 								provenance, scoringEngineApiURL, groupInteractionId,

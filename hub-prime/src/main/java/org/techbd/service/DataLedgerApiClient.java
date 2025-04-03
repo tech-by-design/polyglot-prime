@@ -96,7 +96,7 @@ public class DataLedgerApiClient {
         String curlCommand = buildCurlCommand(request, jsonPayload);
         LOG.info("Equivalent CURL: " + curlCommand); // TODO -remove after testing
 
-        CompletableFuture<Void> future = client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        CompletableFuture<Void> future = HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
                     boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
                     LOG.info("Data Ledger API response code : " + response.statusCode() + " for interactionId : "

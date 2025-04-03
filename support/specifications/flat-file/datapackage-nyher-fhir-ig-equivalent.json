@@ -120,9 +120,9 @@
     ]
     }},
     {"name": "PROCEDURE_CODE_MODIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Procedure').modifierExtension.value"},    
-    { "name": "CONSENT_STATUS", "description":"Bundle.entry.resource.where(resourceType ='Consent').status", "type": "string",  "constraints": {"required": true, "enum":[
-      "Permit",
-      "Deny"
+    { "name": "CONSENT_STATUS", "description":"Bundle.entry.resource.where(resourceType ='Consent').provision.type", "type": "string",  "constraints": {"required": true, "enum":[
+      "permit",
+      "deny"
     ]} },    
   { "name": "CONSENT_DATE_TIME", "type": "string" , "description":"Bundle.entry.resource.where(resourceType ='Consent').dateTime", "constraints": { "required":true,
     "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"
@@ -145,7 +145,7 @@
         "es-UY", "fi", "fr", "fr-BE", "fr-CH", "fr-FR", "fy", "fy-NL", "hi", "hr", "it",
         "it-CH", "it-IT", "ja", "ko", "nl", "nl-BE", "nl-NL", "no", "no-NO", "pa", "pl",
         "pt", "pt-BR", "ru", "ru-RU", "sr", "sr-RS", "sv", "sv-SE", "te", "zh", "zh-CN",
-        "zh-HK", "zh-SG", "zh-TW"
+        "zh-HK", "zh-SG", "zh-TW","ASL"
       ]}},      
       {"name": "SCREENING_LANGUAGE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.display", "constraints": { "enum": ["arabic", "bengali", "czech", "danish", "german", "german (austria)", "german (switzerland)", "german (germany)",  
       "greek", "english", "english (australia)", "english (canada)", "english (great britain)", "english (india)",  
@@ -155,9 +155,9 @@
       "italian (italy)", "japanese", "korean", "dutch", "dutch (belgium)", "dutch (netherlands)", "norwegian",  
       "norwegian (norway)", "punjabi", "polish", "portuguese", "portuguese (brazil)", "russian", "russian (russia)",  
       "serbian", "serbian (serbia)", "swedish", "swedish (sweden)", "telegu", "chinese", "chinese (china)",  
-      "chinese (hong kong)", "chinese (singapore)", "chinese (taiwan)"]
+      "chinese (hong kong)", "chinese (singapore)", "chinese (taiwan)", "American Sign Language"]
       }},
-      {"name": "SCREENING_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.system", "constraints": { "enum": ["urn:ietf:bcp:47"]} },
+      {"name": "SCREENING_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.system", "constraints": { "enum": ["urn:ietf:bcp:47","http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage"]} },
       {"name": "SCREENING_ENTITY_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.value", "constraints": {"required": true}},
       {"name": "SCREENING_ENTITY_ID_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.system", "constraints": { "required":true,
         "pattern": "^(https?:\\/\\/)(www\\.)?(hl7\\.org\\/fhir\\/sid\\/us-npi|medicaid\\.gov|scn\\.ny\\.gov|cbo\\.ny\\.gov|hl7\\.org\\/oid|irs\\.gov)(\\/)?$"
@@ -453,7 +453,7 @@
           {"name": "GENDER_IDENTITY_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.system", "constraints": { "enum":["http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
           "http://terminology.hl7.org/CodeSystem/data-absent-reason","http://snomed.info/sct", "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity"]}},                                                           
           {"name": "PREFERRED_LANGUAGE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.code & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":["ar", "bn", "cs", "da", "de", "de-AT", "de-CH", "de-DE", "el", "en", "en-AU", "en-CA", "en-GB", "en-IN", "en-NZ", "en-SG", "en-US", "es", "es-AR", "es-ES", "es-UY", "fi", "fr", "fr-BE", "fr-CH", "fr-FR", "fy", "fy-NL", "hi", "hr", "it", "it-CH", "it-IT", "ja", "ko", "nl", "nl-BE", "nl-NL", "no", "no-NO", "pa", "pl", "pt", "pt-BR",
-           "ru", "ru-RU", "sr", "sr-RS", "sv", "sv-SE", "te", "zh", "zh-CN", "zh-HK", "zh-SG", "zh-TW" ] }},    
+           "ru", "ru-RU", "sr", "sr-RS", "sv", "sv-SE", "te", "zh", "zh-CN", "zh-HK", "zh-SG", "zh-TW", "ASL" ] }},    
            {"name": "PREFERRED_LANGUAGE_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.display & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":[
             "arabic", "bengali", "czech", "danish", "german", "german (austria)",
             "german (switzerland)", "german (germany)", "greek", "english",
@@ -469,9 +469,9 @@
             "portuguese (brazil)", "russian", "russian (russia)", "serbian",
             "serbian (serbia)", "swedish", "swedish (sweden)", "telegu",
             "chinese", "chinese (china)", "chinese (hong kong)",
-            "chinese (singapore)", "chinese (taiwan)"
+            "chinese (singapore)", "chinese (taiwan)","American Sign Language"
           ] }},
-          {"name": "PREFERRED_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":["iso","iso 639-2","http://hl7.org/fhir/us/core/valueset/simple-language", "urn:ietf:bcp:47"]}},
+          {"name": "PREFERRED_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":["iso","iso 639-2","http://hl7.org/fhir/us/core/valueset/simple-language", "urn:ietf:bcp:47", "http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage"]}},
           {"name": "SEXUAL_ORIENTATION_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code", "constraints": { "enum": [
             "20430005",
             "38628009",

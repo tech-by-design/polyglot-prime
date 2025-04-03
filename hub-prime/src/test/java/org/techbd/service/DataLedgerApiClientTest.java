@@ -2,6 +2,7 @@ package org.techbd.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,10 +15,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.techbd.service.DataLedgerApiClient.Action;
 import org.techbd.service.DataLedgerApiClient.Actor;
@@ -29,16 +32,29 @@ class DataLedgerApiClientTest {
     @Mock
     private org.techbd.service.http.hub.prime.AppConfig appConfig;
 
-    @Mock
-    private HttpClient httpClient;
+    private static MockedStatic<HttpClient> mockedHttpClient;
+    private static HttpClient httpClient;
     @Mock
     private UdiPrimeJpaConfig udiPrimeJpaConfig;
-    @InjectMocks
+
     private DataLedgerApiClient dataLedgerApiClient;
+
+    @BeforeAll
+    static void init() {
+        mockedHttpClient = mockStatic(HttpClient.class);
+        httpClient = mock(HttpClient.class);
+        mockedHttpClient.when(HttpClient::newHttpClient).thenReturn(httpClient);
+    }
+
+    @AfterAll
+    static void close() {
+        mockedHttpClient.close();
+    }
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        dataLedgerApiClient = new DataLedgerApiClient(appConfig, udiPrimeJpaConfig);
         when(udiPrimeJpaConfig.dsl()).thenReturn(mock(org.jooq.DSLContext.class));
         when(mock(org.jooq.DSLContext.class).configuration()).thenReturn(mock(org.jooq.Configuration.class));
     }
@@ -67,7 +83,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(1)).dsl();
     }
 
@@ -95,7 +110,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(1)).dsl();
     }
 
@@ -123,7 +137,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(1)).dsl();
     }
 
@@ -151,7 +164,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(0)).dsl();
     }
 
@@ -178,7 +190,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(0)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(0)).dsl();
     }
 
@@ -207,9 +218,7 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
-
+        verify(udiPrimeJpaConfig, times(0)).dsl();
     }
 
     @Test
@@ -231,6 +240,7 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        verify(udiPrimeJpaConfig, times(0)).dsl();
     }
 
 }

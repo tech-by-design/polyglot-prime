@@ -1,6 +1,6 @@
-# FHIR IG v1.3.0 CSV Example Directory
+# FHIR IG v1.4.1 CSV Example Directory
 
-This directory contains a valid example dataset that aligns with the [FHIR Implementation Guide (IG) 1.3.0](https://shinny.org/us/ny/hrsn/index.html). It includes four CSV files that collectively generate the following FHIR resource types:
+This directory contains a valid example dataset that aligns with the [FHIR Implementation Guide (IG) 1.4.1](https://shinny.org/us/ny/hrsn/index.html). It includes four CSV files that collectively generate the following FHIR resource types:
 
 - **[Bundle](https://shinny.org/us/ny/hrsn/StructureDefinition-SHINNYBundleProfile.html)**
 - **[Patient](https://shinny.org/us/ny/hrsn/StructureDefinition-shinny-patient.html)**

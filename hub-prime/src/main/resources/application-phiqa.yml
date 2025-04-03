@@ -41,7 +41,7 @@ org:
           prime:
             defaultDatalakeApiUrl: https://qa.hrsn.nyehealth.org/HRSNBundle
             igVersion: 1.3.0
-            baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
+            baseFHIRURL: http://test.shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
             structureDefinitionsUrls:
               bundle: /StructureDefinition/SHINNYBundleProfile
               patient: /StructureDefinition/shinny-patient
@@ -53,6 +53,7 @@ org:
               practitioner: /StructureDefinition/shin-ny-practitioner
               questionnaireResponse: /StructureDefinition/shinny-questionnaire
               observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
+              procedure: /StructureDefinition/shinny-sdoh-procedure
             defaultDataLakeApiAuthn:
               # The allowed values for mTlsStrategy are as follows:
               # - no-mTls: No mTLS is used. The WebClient sends a standard HTTP POST request to the scoring engine API without mutual TLS (mTLS).
