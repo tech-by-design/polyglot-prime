@@ -120,7 +120,7 @@ org:
               observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
               procedure: /StructureDefinition/shinny-sdoh-procedure
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
-            dataLedgerApiUrl: http://axcdf.com/ 
+            dataLedgerApiUrl: https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger 
             dataLedgerTracking: true
             dataLedgerDiagnostics: true
             operationOutcomeHelpUrl: "https://techbd.org/get-help/"

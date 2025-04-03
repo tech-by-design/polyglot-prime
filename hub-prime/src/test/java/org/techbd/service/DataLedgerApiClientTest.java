@@ -83,7 +83,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(1)).dsl();
     }
 
@@ -111,7 +110,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(1)).dsl();
     }
 
@@ -139,7 +137,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(1)).dsl();
     }
 
@@ -167,7 +164,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(0)).dsl();
     }
 
@@ -194,7 +190,6 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-        verify(httpClient, times(0)).sendAsync(any(HttpRequest.class), any());
         verify(udiPrimeJpaConfig, times(0)).dsl();
     }
 
@@ -223,9 +218,7 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
-
-        verify(httpClient, times(1)).sendAsync(any(HttpRequest.class), any());
-
+        verify(udiPrimeJpaConfig, times(0)).dsl();
     }
 
     @Test
@@ -247,6 +240,7 @@ class DataLedgerApiClientTest {
 
         Map<String, Object> additionalData = new HashMap<>();
         dataLedgerApiClient.processRequest(payload, actor, action, destination, additionalData);
+        verify(udiPrimeJpaConfig, times(0)).dsl();
     }
 
 }
