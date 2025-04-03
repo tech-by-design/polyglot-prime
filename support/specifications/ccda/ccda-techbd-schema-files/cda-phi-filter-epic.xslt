@@ -60,6 +60,16 @@
                         </component>
                     </xsl:if>
 
+                    <!-- Extract and place the Encounter entry -->
+                    <xsl:variable name="encounterEntry" select="//hl7:section[hl7:code[@code='46240-8']]/hl7:entry[hl7:encounter]" />
+                    <xsl:if test="$encounterEntry">
+                        <component>
+                            <encounters>
+                                <xsl:copy-of select="$encounterEntry" />
+                            </encounters>
+                        </component>
+                    </xsl:if>
+
                     <!-- Extract and place all other observations -->
                     <xsl:variable name="observations" select="//hl7:section[hl7:code[@code='29762-2']]/hl7:entry[not(hl7:observation/hl7:code[@code='76690-7']) and hl7:observation/hl7:code[@codeSystemName='LOINC' or @codeSystemName='SNOMED' or @codeSystemName='SNOMED CT']]" />
                     <xsl:if test="$observations">
