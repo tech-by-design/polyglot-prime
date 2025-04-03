@@ -91,7 +91,7 @@ public class ConsentConverter extends BaseConverter {
 
         populateOrganizationReference(consent, idsGenerated);
 
-        // populateConsentProvision(consent, screeningProfileData);
+        populateConsentProvision(consent, screeningProfileData);
 
         // // TODO:
         // populateSourceReference(consent, screeningProfileData);
