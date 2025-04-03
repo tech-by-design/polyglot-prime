@@ -1,7 +1,6 @@
 package org.techbd.service.converters.shinny;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -16,8 +15,6 @@ import org.hl7.fhir.r4.model.Consent;
 import org.hl7.fhir.r4.model.Consent.ConsentProvisionType;
 import org.hl7.fhir.r4.model.Consent.ConsentState;
 import org.hl7.fhir.r4.model.Meta;
-import org.hl7.fhir.r4.model.Narrative;
-import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +27,8 @@ import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
+
+import io.micrometer.common.util.StringUtils;
 
 /**
  * Converts data into a FHIR Consent resource.
@@ -72,7 +71,7 @@ public class ConsentConverter extends BaseConverter {
     public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData, QeAdminData qeAdminData,
             ScreeningProfileData screeningProfileData, List<ScreeningObservationData> screeningObservationData,
             String interactionId, Map<String, String> idsGenerated, String baseFHIRUrl) {
-
+        LOG.info("ConsentConverter :: convert  BEGIN for transaction id :{}", interactionId);
         Consent consent = new Consent();
         setMeta(consent, baseFHIRUrl);
 
@@ -92,7 +91,7 @@ public class ConsentConverter extends BaseConverter {
 
         populateOrganizationReference(consent, idsGenerated);
 
-        populateConsentState(consent, screeningProfileData);
+        populateConsentProvision(consent, screeningProfileData);
 
         // // TODO:
         // populateSourceReference(consent, screeningProfileData);
@@ -107,6 +106,7 @@ public class ConsentConverter extends BaseConverter {
         bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
                 .setUrl("http://shinny.org/us/ny/hrsn/Consent/" + consent.getId()));
         bundleEntryComponent.setResource(consent);
+        LOG.info("ConsentConverter :: convert  END for transaction id :{}", interactionId);
         return List.of(bundleEntryComponent);
     }
 
@@ -160,9 +160,11 @@ public class ConsentConverter extends BaseConverter {
                 .setReference("Organization/" + idsGenerated.get(CsvConstants.ORGANIZATION_ID));
     }
 
-    private void populateConsentState(Consent consent, ScreeningProfileData screeningResourceData) {
-        if (screeningResourceData != null) {
-            consent.setStatus(ConsentState.valueOf(screeningResourceData.getConsentStatus().toUpperCase()));
+    private void populateConsentProvision(Consent consent, ScreeningProfileData screeningResourceData) {
+        if (screeningResourceData != null && StringUtils.isNotEmpty(screeningResourceData.getConsentStatus())) {
+            Consent.ProvisionComponent provision = new Consent.ProvisionComponent();
+            provision.setType(ConsentProvisionType.fromCode(screeningResourceData.getConsentStatus()));
+            consent.setProvision(provision);
         }
     }
 
