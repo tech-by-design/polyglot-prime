@@ -61,13 +61,15 @@
                     </xsl:if>
 
                     <!-- Extract and place the Encounter entry -->
-                    <xsl:variable name="encounterEntry" select="//hl7:section[hl7:code[@code='46240-8']]/hl7:entry[hl7:encounter]" />
-                    <xsl:if test="$encounterEntry">
-                        <component>
-                            <encounters>
-                                <xsl:copy-of select="$encounterEntry" />
-                            </encounters>
-                        </component>
+                    <xsl:if test="not(hl7:componentOf/hl7:encompassingEncounter)">
+                        <xsl:variable name="encounterEntry" select="//hl7:section[hl7:code[@code='46240-8']]/hl7:entry[hl7:encounter]" />
+                        <xsl:if test="$encounterEntry">
+                            <component>
+                                <encounters>
+                                    <xsl:copy-of select="$encounterEntry" />
+                                </encounters>
+                            </component>
+                        </xsl:if>
                     </xsl:if>
 
                     <!-- Extract and place all other observations -->
