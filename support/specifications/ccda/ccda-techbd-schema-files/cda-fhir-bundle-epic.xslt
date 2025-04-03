@@ -1283,4 +1283,21 @@
     </xsl:choose>
 </xsl:template>
 
+<xsl:template name="mapMaritalStatus">
+    <xsl:param name="statusCode"/>
+    <xsl:choose>
+        <xsl:when test="$statusCode = 'M'">married</xsl:when>
+        <xsl:when test="$statusCode = 'S'">Never Married</xsl:when>
+        <xsl:when test="$statusCode = 'A'">Annulled</xsl:when>
+        <xsl:when test="$statusCode = 'D'">Divorced</xsl:when>
+        <xsl:when test="$statusCode = 'I'">Interlocutory</xsl:when>
+        <xsl:when test="$statusCode = 'L'">Legally Separated</xsl:when>
+        <xsl:when test="$statusCode = 'C'">Common Law</xsl:when>
+        <xsl:when test="$statusCode = 'P'">Polygamous</xsl:when>
+        <xsl:when test="$statusCode = 'T'">Domestic partner</xsl:when>
+        <xsl:when test="$statusCode = 'U'">unmarried</xsl:when>
+        <xsl:when test="$statusCode = 'W'">Widowed</xsl:when>
+        <xsl:otherwise>unknown</xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
 </xsl:stylesheet>
