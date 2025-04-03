@@ -1,7 +1,6 @@
 package org.techbd.service.converters.shinny;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -13,11 +12,8 @@ import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Consent;
-import org.hl7.fhir.r4.model.Consent.ConsentProvisionType;
 import org.hl7.fhir.r4.model.Consent.ConsentState;
 import org.hl7.fhir.r4.model.Meta;
-import org.hl7.fhir.r4.model.Narrative;
-import org.hl7.fhir.r4.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
