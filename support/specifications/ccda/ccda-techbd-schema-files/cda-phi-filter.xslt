@@ -95,6 +95,15 @@
                     <xsl:apply-templates select="hl7:entry"/>
                 </observations>
             </xsl:when>
+
+            <!-- Replace with <encounter> if it has encounter under component.structuredBody.entry -->
+            <xsl:when test="hl7:entry/hl7:encounter">
+                <encounters>
+                    <xsl:copy-of select="hl7:templateId"/>
+                    <xsl:copy-of select="hl7:code"/>
+                    <xsl:apply-templates select="hl7:entry"/>
+                </encounters>
+            </xsl:when>
         </xsl:choose>
     </xsl:template>
 
@@ -102,6 +111,7 @@
     <xsl:template match="hl7:entry">
         <entry>
             <xsl:copy-of select="hl7:observation"/>
+            <xsl:copy-of select="hl7:encounter"/>
         </entry>
     </xsl:template>
 
