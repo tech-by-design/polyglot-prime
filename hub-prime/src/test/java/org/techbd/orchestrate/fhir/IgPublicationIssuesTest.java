@@ -12,6 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,8 @@ import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationResult;
 import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
 import org.techbd.util.FHIRUtil;
+
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
@@ -547,7 +550,8 @@ public class IgPublicationIssuesTest {
     @Test
     void testObservationAssessmentFoodInsecurityExampleAgainstTestShinnyIG() throws IOException {
         final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
-                "test-shinny-examples/Bundle-ObservationAssessmentFoodInsecurityExample.json", TEST_SHINNY_FHIR_PROFILE_URL);
+                "test-shinny-examples/Bundle-ObservationAssessmentFoodInsecurityExample.json",
+                TEST_SHINNY_FHIR_PROFILE_URL);
 
         IParser parser = FhirContext.forR4().newJsonParser();
         OperationOutcome operationOutcome = (OperationOutcome) parser
@@ -769,7 +773,7 @@ public class IgPublicationIssuesTest {
                 .withFailMessage("There should be no IG publication issues");
         throwEachAssertionError(softly);
     }
-    
+
     @Disabled
     @Test
     void testPatientNegativeConsentTestShinnyIG() throws IOException {
@@ -807,6 +811,7 @@ public class IgPublicationIssuesTest {
                 .withFailMessage("There should be no IG publication issues");
         throwEachAssertionError(softly);
     }
+
     private void throwEachAssertionError(final SoftAssertions softly) {
         final List<AssertionError> errors = softly.assertionErrorsCollected();
         softly.assertAll();
@@ -834,20 +839,25 @@ public class IgPublicationIssuesTest {
     private List<OrchestrationEngine.ValidationResult> getValidationErrors(final String exampleFileName,
             final String profileUrl)
             throws IOException {
+        List<ValidationResult> results = new ArrayList<>();
         final var payload = Files.readString(Path.of(
                 "src/test/resources/org/techbd/ig-examples/" + exampleFileName));
-        final OrchestrationEngine.OrchestrationSession session = engine.session()
-                .withPayloads(List.of(payload))
-                .withFhirProfileUrl(profileUrl)
-                .withTracer(tracer)
-                .withFhirIGPackages(getIgPackages())
-                .withIgVersion(getIgVersion())
-                .addHapiValidationEngine()
-                .build();
-        sessionSpy = spy(session);
-        engine.orchestrate(session);
-        List<ValidationResult> results = engine.getSessions().get(0).getValidationResults();
-        engine.clear(session);
+        try {
+            final OrchestrationEngine.OrchestrationSession session = engine.session()
+                    .withPayloads(List.of(payload))
+                    .withFhirProfileUrl(profileUrl)
+                    .withTracer(tracer)
+                    .withFhirIGPackages(getIgPackages())
+                    .withIgVersion(getIgVersion())
+                    .addHapiValidationEngine()
+                    .build();
+            sessionSpy = spy(session);
+            engine.orchestrate(session);
+            results = engine.getSessions().get(0).getValidationResults();
+
+        } finally {
+            engine.clear(session);
+        }
         return results;
     }
 
