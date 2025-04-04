@@ -769,7 +769,9 @@ public class IgPublicationIssuesTest {
                 .withFailMessage("There should be no IG publication issues");
         throwEachAssertionError(softly);
     }
-
+    
+    @Disabled
+    @Test
     void testPatientNegativeConsentTestShinnyIG() throws IOException {
         final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
                 "test-shinny-examples/Bundle-PatientNegativeConsent.json", TEST_SHINNY_FHIR_PROFILE_URL);
