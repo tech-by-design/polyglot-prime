@@ -283,6 +283,7 @@ public class FhirController {
                                         .withInteractionId(interactionId)
                                         .withPayloads(List.of(payload))
                                         .withFhirProfileUrl(FHIRUtil.getBundleProfileUrl())
+                                        .withValidationSeverityLevel(appConfig.getValidationSeverityLevel())
                                         .withTracer(tracer)
                                         .withFhirIGPackages(igPackages)
                                         .withIgVersion(igVersion)

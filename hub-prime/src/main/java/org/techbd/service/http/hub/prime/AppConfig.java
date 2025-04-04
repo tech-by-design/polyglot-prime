@@ -50,7 +50,15 @@ public class AppConfig {
     private String igVersion;
     private CsvValidation csv;
     private Map<String, FhirV4Config> igPackages;
+    private String validationSeverityLevel;
 
+    public String getValidationSeverityLevel() {
+        return validationSeverityLevel;
+    }
+
+    public void setValidationSeverityLevel(String validationSeverityLevel) {
+        this.validationSeverityLevel = validationSeverityLevel;
+    }
     @Getter
     @Setter
     public static class FhirV4Config {
