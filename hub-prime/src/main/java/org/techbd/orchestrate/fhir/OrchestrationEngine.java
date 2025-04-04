@@ -391,7 +391,6 @@ public class OrchestrationEngine {
                 postPopulateSupport.update(supportChain);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
-                instanceValidator.setAnyExtensionsAllowed(false);
                 return fhirContext.newValidator().registerValidatorModule(instanceValidator);
             } finally {
                 span.end();
