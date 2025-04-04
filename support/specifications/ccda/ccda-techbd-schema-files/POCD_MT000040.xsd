@@ -897,6 +897,7 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 			<xs:element name="typeId" type="POCD_MT000040.InfrastructureRoot.typeId" minOccurs="0"/>
 			<xs:element name="templateId" type="II" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="functionCode" type="CE" minOccurs="0"/>
+			<xs:element ref="sdtc:functionCode" minOccurs="0"/>
 			<xs:element name="time" type="IVL_TS" minOccurs="0"/>
 			<xs:element name="associatedEntity" type="POCD_MT000040.AssociatedEntity"/>
 		</xs:sequence>
@@ -909,6 +910,7 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 			<xs:element name="realmCode" type="CS" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="typeId" type="POCD_MT000040.InfrastructureRoot.typeId" minOccurs="0"/>
 			<xs:element name="templateId" type="II" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element ref="sdtc:functionCode" minOccurs="0"/>
 			<xs:element name="time" type="IVL_TS" minOccurs="0"/>
 			<xs:element name="awarenessCode" type="CE" minOccurs="0"/>
 			<xs:element name="participantRole" type="POCD_MT000040.ParticipantRole"/>
@@ -950,6 +952,9 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 			<xs:element name="ethnicGroupCode" type="CE" minOccurs="0"/>
 			<!-- <xs:element name="deceasedInd" type="xs:boolean" minOccurs="0" xmlns:sdtc="urn:hl7-org:sdtc"/> -->
 			<xs:element ref="sdtc:deceasedInd" minOccurs="0"/>
+			<xs:element ref="sdtc:raceCode" minOccurs="0"/>
+        	<xs:element ref="sdtc:ethnicGroupCode" minOccurs="0"/>
+
 			<xs:element name="guardian" type="POCD_MT000040.Guardian" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="birthplace" type="POCD_MT000040.Birthplace" minOccurs="0"/>
 			<xs:element name="languageCommunication" type="POCD_MT000040.LanguageCommunication" minOccurs="0" maxOccurs="unbounded"/>
@@ -978,6 +983,7 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 			<xs:element name="typeId" type="POCD_MT000040.InfrastructureRoot.typeId" minOccurs="0"/>
 			<xs:element name="templateId" type="II" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="functionCode" type="CE" minOccurs="0"/>
+			<xs:element ref="sdtc:functionCode" minOccurs="0"/>
 			<xs:element name="time" type="IVL_TS" minOccurs="0"/>
 			<xs:element name="assignedEntity" type="POCD_MT000040.AssignedEntity"/>
 		</xs:sequence>
