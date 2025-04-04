@@ -433,6 +433,44 @@ public class IgPublicationIssuesTest {
 
     @Disabled
     @Test
+    void testPatientNegativeConsentAgainstShinnyIG() throws IOException {
+        final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
+                "test-shinny-examples/Bundle-PatientNegativeConsent.json", TEST_SHINNY_FHIR_PROFILE_URL);
+
+        IParser parser = FhirContext.forR4().newJsonParser();
+        OperationOutcome operationOutcome = (OperationOutcome) parser
+                .parseResource(results.get(0).getOperationOutcome());
+
+        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+        final long unexpectedIgIssues = issues.stream()
+                .filter(IS_UNEXPECTED_IG_ISSUE)
+                .map(issue -> issue.getDiagnostics().trim())
+                .distinct()
+                .count();
+        final var softly = new SoftAssertions();
+        softly.assertThat(results).hasSize(1);
+        assertUnexpectedIgError(softly, results,
+                ERROR_MESSAGE_SHINNY_PERSONAL_PRONOUNS);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTS_VALUE_SET);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHINNY_MIDDLE_NAME);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_COUNTY);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_PATIENT);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ENCOUNTER);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_CONSENT);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_ORGANIZATION);
+        assertUnexpectedIgError(softly, results,
+                ERROR_MESSAGE_SHNNY_QUESTIONAIRE_RESPONSE);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_SHNNY_BUNDLE_PROFILE);
+        assertUnexpectedIgError(softly, results,
+                ERROR_MESSAGE_CTM_CTS_NLM_VALUE_SET);
+        assertUnexpectedIgError(softly, results, ERROR_MESSAGE_CTM_CTS_VALUE_SET);
+        softly.assertThat(unexpectedIgIssues).isZero()
+                .withFailMessage("There should be no IG publication issues");
+        throwEachAssertionError(softly);
+    }
+
+    @Disabled
+    @Test
     void testAHCHRSNScreeningResponseExampleAgainstTestShinnyIG() throws IOException {
         final List<OrchestrationEngine.ValidationResult> results = getValidationErrors(
                 "test-shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json", TEST_SHINNY_FHIR_PROFILE_URL);
