@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.service.constants.ErrorCode;
 import org.techbd.service.exception.JsonValidationException;
 import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
@@ -185,7 +187,7 @@ public class OrchestrationEngine {
 
     public synchronized ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, FhirV4Config> igPackages,
-            final String igVersion, final Tracer tracer, String interactionId) {
+            final String igVersion, final Tracer tracer, String interactionId,String validationSeverityLevel) {
         final ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
         return validationEngineCache.computeIfAbsent(key, k -> {
             switch (type) {
@@ -195,6 +197,7 @@ public class OrchestrationEngine {
                             .withIgVersion(igVersion)
                             .withTracer(tracer)
                             .withInteractionId(interactionId)
+                            .withValidationSeverityLevel(validationSeverityLevel)
                             .build();
                 case HL7_EMBEDDED:
                     return new Hl7ValidationEngineEmbedded.Builder().withFhirProfileUrl(fhirProfileUrl).build();
@@ -284,6 +287,7 @@ public class OrchestrationEngine {
         private final Tracer tracer;
         private final String interactionId;
         private final List<FhirBundleValidator> fhirBundleValidators;
+        private String validationSeverityLevel;
     
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
@@ -298,6 +302,7 @@ public class OrchestrationEngine {
             this.tracer = builder.tracer;
             this.interactionId = builder.interactionId;
             this.fhirBundleValidators = new ArrayList<>();
+            this.validationSeverityLevel = builder.validationSeverityLevel;
             initializeFhirBundleValidators();
         }
         private void initializeFhirBundleValidators() {
@@ -451,8 +456,23 @@ public class OrchestrationEngine {
                         @Override
                         @JsonSerialize(using = JsonTextSerializer.class)
                         public String getOperationOutcome() {
-                            final var jp = FhirContext.forR4Cached().newJsonParser();
-                            return jp.encodeResourceToString(hapiVR.toOperationOutcome());
+                            final var jsonParser = FhirContext.forR4Cached().newJsonParser();
+                            OperationOutcome originalOutcome = (OperationOutcome) hapiVR.toOperationOutcome();
+                            String severityLevel = StringUtils.isNotEmpty(validationSeverityLevel) ? validationSeverityLevel.toLowerCase() : "error";
+                            Set<IssueSeverity> allowedSeverities = switch (severityLevel) {
+                                case "fatal"       -> Set.of(IssueSeverity.FATAL);
+                                case "error"       -> Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR);
+                                case "warning"     -> Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR, IssueSeverity.WARNING);
+                                case "information" -> EnumSet.allOf(IssueSeverity.class);
+                                default            -> Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR);
+                            };
+                            var filteredOutcome = new OperationOutcome();
+                            filteredOutcome.getIssue().addAll(
+                                originalOutcome.getIssue().stream()
+                                    .filter(issue -> allowedSeverities.contains(issue.getSeverity()))
+                                    .toList()
+                            );
+                            return jsonParser.encodeResourceToString(filteredOutcome);
                         }
 
                         @Override
@@ -546,6 +566,12 @@ public class OrchestrationEngine {
             private String igVersion;
             private String interactionId;
             private Tracer tracer;
+            private String validationSeverityLevel;
+
+            public Builder withValidationSeverityLevel(@NotNull final String validationSeverityLevel) {
+                this.validationSeverityLevel = validationSeverityLevel;
+                return this;
+            }
 
             public Builder withInteractionId(@NotNull final String interactionId) {
                 this.interactionId = interactionId;
@@ -824,6 +850,7 @@ public class OrchestrationEngine {
         private final String fhirProfileUrl;
         private String igVersion;
         private String interactionId;
+        private String validationSeverityLevel;
 
         private OrchestrationSession(final Builder builder) {
             this.sessionId = builder.sessionId;
@@ -833,6 +860,7 @@ public class OrchestrationEngine {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.device = builder.device;
             this.interactionId = builder.interactionId;
+            this.validationSeverityLevel = builder.validationSeverityLevel;
         }
 
         public List<String> getPayloads() {
@@ -853,6 +881,10 @@ public class OrchestrationEngine {
 
         public String getFhirProfileUrl() {
             return fhirProfileUrl;
+        }
+
+        public String getValidationSeverityLevel() {
+            return validationSeverityLevel;
         }
 
         public String getIgVersion() {
@@ -888,6 +920,7 @@ public class OrchestrationEngine {
             private String sessionId;
             private String interactionId;
             private Tracer tracer;
+            private @NotNull String validationSeverityLevel;
 
             public Builder(@NotNull final OrchestrationEngine engine) {
                 this.engine = engine;
@@ -909,6 +942,11 @@ public class OrchestrationEngine {
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
+                return this;
+            }
+
+            public Builder withValidationSeverityLevel(@NotNull final String validationSeverityLevel) {
+                this.validationSeverityLevel = validationSeverityLevel;
                 return this;
             }
 
@@ -994,21 +1032,21 @@ public class OrchestrationEngine {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,
                                 this.igPackages,
-                                this.igVersion, this.tracer, this.interactionId));
+                                this.igVersion, this.tracer, this.interactionId,validationSeverityLevel));
                 return this;
             }
 
             public synchronized Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,
-                                null, null, null, null));
+                                null, null, null, null,null));
                 return this;
             }
 
             public synchronized Builder addHl7ValidationApiEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null,
-                                null, null, null));
+                                null, null, null,null));
                 return this;
             }
 
