@@ -458,22 +458,41 @@ public class OrchestrationEngine {
                         public String getOperationOutcome() {
                             final var jsonParser = FhirContext.forR4Cached().newJsonParser();
                             OperationOutcome originalOutcome = (OperationOutcome) hapiVR.toOperationOutcome();
-                            String severityLevel = StringUtils.isNotEmpty(validationSeverityLevel) ? validationSeverityLevel.toLowerCase() : "error";
+
+                            String severityLevel = StringUtils.isNotEmpty(validationSeverityLevel)
+                                    ? validationSeverityLevel.toLowerCase()
+                                    : "error";
+
                             Set<IssueSeverity> allowedSeverities = switch (severityLevel) {
-                                case "fatal"       -> Set.of(IssueSeverity.FATAL);
-                                case "error"       -> Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR);
-                                case "warning"     -> Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR, IssueSeverity.WARNING);
+                                case "fatal" -> Set.of(IssueSeverity.FATAL);
+                                case "error" -> Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR);
+                                case "warning" ->
+                                    Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR, IssueSeverity.WARNING);
                                 case "information" -> EnumSet.allOf(IssueSeverity.class);
-                                default            -> Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR);
+                                default -> Set.of(IssueSeverity.FATAL, IssueSeverity.ERROR);
                             };
-                            var filteredOutcome = new OperationOutcome();
-                            filteredOutcome.getIssue().addAll(
-                                originalOutcome.getIssue().stream()
+
+                            List<OperationOutcome.OperationOutcomeIssueComponent> filteredIssues = originalOutcome
+                                    .getIssue().stream()
                                     .filter(issue -> allowedSeverities.contains(issue.getSeverity()))
-                                    .toList()
-                            );
+                                    .toList();
+
+                            // Skip returning OperationOutcome if there are no issues to report
+                            if (filteredIssues.isEmpty()) {
+                                OperationOutcome emptyOutcome = new OperationOutcome();
+                                emptyOutcome.addIssue(new OperationOutcomeIssueComponent()
+                                        .setSeverity(IssueSeverity.INFORMATION)
+                                        .setDiagnostics(
+                                                "Validation successful. No issues found at or above severity level: "
+                                                        + severityLevel)
+                                        .setCode(OperationOutcome.IssueType.INFORMATIONAL));
+                                return jsonParser.encodeResourceToString(emptyOutcome);
+                            }
+
+                            var filteredOutcome = new OperationOutcome();
+                            filteredOutcome.getIssue().addAll(filteredIssues);
                             return jsonParser.encodeResourceToString(filteredOutcome);
-                        }
+                        }              
 
                         @Override
                         public boolean isValid() {
