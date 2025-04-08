@@ -204,11 +204,11 @@ class OrchestrationEngineTest {
                                         "http://shinny.org/us/ny/hrsn/shinnyConsentProvision");
                         assertThat(engine.getSessions()).hasSize(2);
                         assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                                        "http://shinny.org/us/ny/hrsn", igPackages, igVersion, tracer, "test", null))
+                                        "http://shinny.org/us/ny/hrsn", igPackages, igVersion, tracer, "test"))
                                         .isSameAs(engine.getValidationEngine(
                                                         OrchestrationEngine.ValidationEngineIdentifier.HAPI,
                                                         "http://shinny.org/us/ny/hrsn", igPackages, igVersion, tracer,
-                                                        "test", null));
+                                                        "test"));
                 } finally {
                         engine.clear(session1);
                         engine.clear(session2);
@@ -432,7 +432,6 @@ class OrchestrationEngineTest {
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                 .withIgPackages(getIgPackages())
-                                .withValidationSeverityLevel(IssueSeverity.ERROR.getValue().toLowerCase())
                                 .withInteractionId(INTERACTION_ID)
                                 .withTracer(tracer)
                                 .build());
@@ -444,7 +443,6 @@ class OrchestrationEngineTest {
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
-                                        .withValidationSeverityLevel(IssueSeverity.ERROR.getValue().toLowerCase())
                                         .withFhirIGPackages(getIgPackages())
                                         .withFhirProfileUrl(
                                                         "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
@@ -484,7 +482,6 @@ class OrchestrationEngineTest {
                                 .withFhirProfileUrl(
                                                 "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                 .withIgPackages(getIgPackages())
-                                .withValidationSeverityLevel(IssueSeverity.INFORMATION.getValue().toLowerCase())
                                 .withInteractionId(INTERACTION_ID)
                                 .withTracer(tracer)
                                 .build());
@@ -496,7 +493,6 @@ class OrchestrationEngineTest {
                                         .withPayloads(List.of(payload))
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
-                                        .withValidationSeverityLevel(IssueSeverity.INFORMATION.getValue().toLowerCase())
                                         .withFhirIGPackages(getIgPackages())
                                         .withFhirProfileUrl(
                                                         "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
