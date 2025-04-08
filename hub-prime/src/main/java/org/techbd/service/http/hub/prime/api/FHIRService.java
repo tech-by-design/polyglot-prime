@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -484,7 +485,6 @@ public class FHIRService {
 					.withInteractionId(interactionId)
 					.withPayloads(List.of(payload))
 					.withFhirProfileUrl(FHIRUtil.getBundleProfileUrl())
-					.withValidationSeverityLevel(appConfig.getValidationSeverityLevel())
 					.withTracer(tracer)
 					.withFhirIGPackages(igPackages)
 					.withIgVersion(igVersion)
@@ -1449,58 +1449,88 @@ public class FHIRService {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Map<String, Object> extractIssueAndDisposition(String interactionId,
-			Map<String, Object> operationOutcomePayload) {
-		LOG.debug("FHIRService:: extractResourceTypeAndDisposition BEGIN for interaction id : {}",
-				interactionId);
+    public Map<String, Object> extractIssueAndDisposition(String interactionId,
+            Map<String, Object> operationOutcomePayload) {
+        LOG.debug("FHIRService:: extractResourceTypeAndDisposition BEGIN for interaction id : {}",
+                interactionId);
 
-		if (operationOutcomePayload == null) {
-			LOG.warn("FHIRService:: operationOutcomePayload is null for interaction id : {}",
-					interactionId);
-			return null;
-		}
+        if (operationOutcomePayload == null) {
+            LOG.warn("FHIRService:: operationOutcomePayload is null for interaction id : {}",
+                    interactionId);
+            return null;
+        }
 
-		return Optional.ofNullable(operationOutcomePayload.get("OperationOutcome"))
-				.filter(Map.class::isInstance)
-				.map(Map.class::cast)
-				.flatMap(operationOutcomeMap -> {
-					List<?> validationResults = (List<?>) operationOutcomeMap
+        return Optional.ofNullable(operationOutcomePayload.get("OperationOutcome"))
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .flatMap(operationOutcomeMap -> {
+                    List<?> validationResults = (List<?>) operationOutcomeMap
 							.get("validationResults");
-					if (validationResults == null || validationResults.isEmpty()) {
-						return Optional.empty();
-					}
+                    if (validationResults == null || validationResults.isEmpty()) {
+                        return Optional.empty();
+                    }
 
-					// Extract the first validationResult
-					Map<String, Object> validationResult = (Map<String, Object>) validationResults
+                    // Extract the first validationResult
+                    Map<String, Object> validationResult = (Map<String, Object>) validationResults
 							.get(0);
 
-					// Navigate to operationOutcome.issue
-					Map<String, Object> operationOutcome = (Map<String, Object>) validationResult
-							.get("operationOutcome");
-					List<?> issues = operationOutcome != null
-							? (List<?>) operationOutcome.get("issue")
-							: null;
+                    // Navigate to operationOutcome.issue
+                    Map<String, Object> operationOutcome = (Map<String, Object>) validationResult
+                            .get("operationOutcome");
+                    List<Map<String, Object>> issuesRaw = operationOutcome != null
+                            ? (List<Map<String, Object>>) operationOutcome.get("issue")
+                            : null;
 
-					// Prepare the result
-					Map<String, Object> result = new HashMap<>();
-					result.put("resourceType", operationOutcomeMap.get("resourceType"));
-					result.put("issue", issues);
+                    List<Map<String, Object>> filteredIssues = new ArrayList<>();
+                    if (issuesRaw != null) {
+                        String severityLevel = Optional.ofNullable(appConfig.getValidationSeverityLevel())
+                                .orElse("error").toLowerCase();
+                        Set<String> allowedSeverities = switch (severityLevel) {
+                            case "fatal" -> Set.of("fatal");
+                            case "error" -> Set.of("fatal", "error");
+                            case "warning" -> Set.of("fatal", "error", "warning");
+                            case "information" -> Set.of("fatal", "error", "warning", "information");
+                            default -> Set.of("fatal", "error");
+                        };
 
-					// Add techByDesignDisposition if available
-					List<?> techByDesignDisposition = (List<?>) operationOutcomeMap
-							.get("techByDesignDisposition");
-					if (techByDesignDisposition != null && !techByDesignDisposition.isEmpty()) {
-						result.put("techByDesignDisposition", techByDesignDisposition);
-					}
+                        for (Map<String, Object> issue : issuesRaw) {
+                            String severity = (String) issue.get("severity");
+                            if (severity != null && allowedSeverities.contains(severity.toLowerCase())) {
+                                filteredIssues.add(issue);
+                            }
+                        }
+                    }
 
-					return Optional.of(result);
-				})
-				.orElseGet(() -> {
-					LOG.warn("FHIRService:: Missing required fields in operationOutcome for interaction id : {}",
-							interactionId);
-					return null;
-				});
-	}
+                    // If no issues match, add an informational entry
+                    if (filteredIssues.isEmpty()) {
+                        Map<String, Object> infoIssue = new HashMap<>();
+                        infoIssue.put("severity", "information");
+                        infoIssue.put("diagnostics",
+                                "Validation successful. No issues found at or above severity level: "
+                                        + appConfig.getValidationSeverityLevel());
+                        infoIssue.put("code", "informational");
+                        filteredIssues.add(infoIssue);
+                    }
+
+                    // Prepare the result
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("resourceType", operationOutcomeMap.get("resourceType"));
+                    result.put("issue", filteredIssues);
+
+                    // Add techByDesignDisposition if available
+                    List<?> techByDesignDisposition = (List<?>) operationOutcomeMap.get("techByDesignDisposition");
+                    if (techByDesignDisposition != null && !techByDesignDisposition.isEmpty()) {
+                        result.put("techByDesignDisposition", techByDesignDisposition);
+                    }
+
+                    return Optional.of(result);
+                })
+                .orElseGet(() -> {
+                    LOG.warn("FHIRService:: Missing required fields in operationOutcome for interaction id : {}",
+                            interactionId);
+                    return null;
+                });
+    }
 
 	private Map<String, Object> appendToBundlePayload(String interactionId, Map<String, Object> payload,
 			Map<String, Object> extractedOutcome) {
