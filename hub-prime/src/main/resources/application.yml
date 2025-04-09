@@ -122,7 +122,7 @@ org:
               procedure: /StructureDefinition/shinny-sdoh-procedure
             defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
             dataLedgerApiUrl: https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger 
-            dataLedgerTracking: true
+            dataLedgerTracking: false
             dataLedgerDiagnostics: true
             operationOutcomeHelpUrl: "https://techbd.org/get-help/"
             fhirUmlsApiKey: umls_api_key
