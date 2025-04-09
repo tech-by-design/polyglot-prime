@@ -74,17 +74,17 @@ DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_detail CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_detail
 AS  WITH filtered_resources AS (
          SELECT sihr.hub_interaction_id,
-            sihr.tenant_id AS tenant_id,
+            sihr.tenant_id,
             jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE sihr.uri ~~ '/Bundle%'::text AND sihr.nature = 'Original FHIR Payload'
+          WHERE sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/') AND sihr.nature = 'Original FHIR Payload'::text
         ), filtered_data AS (
          SELECT filtered_resources.hub_interaction_id,
             filtered_resources.tenant_id,
             filtered_resources.entry -> 'resource'::text AS resource,
             (filtered_resources.entry -> 'resource'::text) ->> 'resourceType'::text AS resource_type,
             ( SELECT (entry_inner.value -> 'resource'::text) ->> 'id'::text
-                   FROM techbd_udi_ingress.sat_interaction_fhir_request sihr_inner 
+                   FROM techbd_udi_ingress.sat_interaction_fhir_request sihr_inner
                      CROSS JOIN LATERAL jsonb_array_elements(sihr_inner.payload -> 'entry'::text) entry_inner(value)
                   WHERE ((entry_inner.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text AND sihr_inner.hub_interaction_id = filtered_resources.hub_interaction_id
                  LIMIT 1) AS patient_mrn

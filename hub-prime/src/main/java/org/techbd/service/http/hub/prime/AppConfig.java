@@ -52,7 +52,15 @@ public class AppConfig {
     private Map<String, FhirV4Config> igPackages;
     private String dataLedgerApiUrl;
     private boolean dataLedgerTracking;
-    private boolean dataLedgerDiagnostics;
+    private boolean dataLedgerDiagnostics;    private String validationSeverityLevel;
+
+    public String getValidationSeverityLevel() {
+        return validationSeverityLevel;
+    }
+
+    public void setValidationSeverityLevel(String validationSeverityLevel) {
+        this.validationSeverityLevel = validationSeverityLevel;
+    }
     @Getter
     @Setter
     public static class FhirV4Config {

@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.techbd</groupId>
 	<artifactId>hub-prime</artifactId>
-	<version>0.505.0</version>
+	<version>0.509.0</version>
 	<packaging>war</packaging>
 	<name>Tech by Design Hub (Prime)</name>
 	<description>Tech by Design Hub (Primary)</description>
@@ -341,6 +341,11 @@
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
 			<version>1.46.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-vfs2</artifactId>
+			<version>2.10.0</version>
 		</dependency>
 	</dependencies>
 
