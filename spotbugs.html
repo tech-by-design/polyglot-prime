@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>300</td>
-<td>36</td>
+<td>305</td>
+<td>38</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -120,29 +120,32 @@
 <td>2</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.service.CsvBundleProcessorService">org.techbd.service.CsvBundleProcessorService</a></td>
-<td>2</td></tr>
+<td>3</td></tr>
 <tr class="b">
+<td><a href="#org.techbd.service.DataLedgerApiClient">org.techbd.service.DataLedgerApiClient</a></td>
+<td>1</td></tr>
+<tr class="a">
 <td><a href="#org.techbd.service.converters.shinny.ScreeningResponseObservationConverter">org.techbd.service.converters.shinny.ScreeningResponseObservationConverter</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.Constant">org.techbd.service.http.Constant</a></td>
 <td>2</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.Interactions">org.techbd.service.http.Interactions</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.InteractionsFilter">org.techbd.service.http.InteractionsFilter</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.hub.prime.api.FHIRService">org.techbd.service.http.hub.prime.api.FHIRService</a></td>
 <td>6</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator">org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.util.CsvConversionUtil">org.techbd.util.CsvConversionUtil</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.util.FHIRUtil">org.techbd.util.FHIRUtil</a></td>
 <td>1</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
@@ -353,13 +356,33 @@
 <td>The parameter isAllCsvConvertedToFhir to org.techbd.service.CsvBundleProcessorService.processScreening(String, Map, Map, Map, Map, HttpServletRequest, HttpServletResponse, String, String, String, boolean, PayloadAndValidationOutcome, boolean, String) is dead upon entry but overwritten</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#IP_PARAMETER_IS_DEAD_BUT_OVERWRITTEN">IP_PARAMETER_IS_DEAD_BUT_OVERWRITTEN</a></td>
-<td>372</td>
+<td>408</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Load of known null value in org.techbd.service.CsvBundleProcessorService.lambda$processScreening$0(Map, Map, Map, String, PayloadAndValidationOutcome, boolean, String, String, String, HttpServletRequest, String, List, HttpServletResponse, AtomicInteger, String, List)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_LOAD_OF_KNOWN_NULL_VALUE">NP_LOAD_OF_KNOWN_NULL_VALUE</a></td>
-<td>353</td>
+<td>376</td>
+<td>Medium</td></tr>
+<tr class="b">
+<td>Exception is caught when Exception is not thrown in org.techbd.service.CsvBundleProcessorService.processPayload(String, Map, List, HttpServletRequest, HttpServletResponse, String, String, String)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
+<td>120</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.DataLedgerApiClient"></a><section>
+<h2>org.techbd.service.DataLedgerApiClient</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>Dead store to future in org.techbd.service.DataLedgerApiClient.sendRequestAsync(String, String, String, String, String, String, String, String, Map)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>112</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.ScreeningResponseObservationConverter"></a><section>
 <h2>org.techbd.service.converters.shinny.ScreeningResponseObservationConverter</h2>
 <table class="table table-striped">
@@ -432,40 +455,40 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
-<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, String, String, String, String): String.getBytes()</td>
+<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, String, String, String, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>946</td>
+<td>956</td>
 <td>High</td></tr>
 <tr class="a">
-<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources, String, String, String, String): String.getBytes()</td>
+<td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources, String, String, String, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>741</td>
+<td>751</td>
 <td>High</td></tr>
 <tr class="b">
 <td>Found reliance on default encoding in org.techbd.service.http.hub.prime.api.FHIRService.registerBundleInteraction(Configuration, HttpServletRequest, HttpServletResponse, String, Map, String, String, String, String, String, String): String.getBytes()</td>
 <td>I18N</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING">DM_DEFAULT_ENCODING</a></td>
-<td>341</td>
+<td>351</td>
 <td>High</td></tr>
 <tr class="a">
-<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, String, String, String, String)</td>
+<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleAwsSecrets(AppConfig$MTlsAwsSecrets, String, String, String, String, Map, Configuration, String, String, String, String, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>995</td>
+<td>1005</td>
 <td>Medium</td></tr>
 <tr class="b">
-<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources, String, String, String, String)</td>
+<td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.handleMtlsResources(String, String, Configuration, Map, String, String, HttpServletRequest, String, String, AppConfig$MTlsResources, String, String, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>789</td>
+<td>799</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Exception is caught when Exception is not thrown in org.techbd.service.http.hub.prime.api.FHIRService.registerStateFailure(Configuration, String, String, Throwable, String, String, String, String, String, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#REC_CATCH_EXCEPTION">REC_CATCH_EXCEPTION</a></td>
-<td>1820</td>
+<td>1845</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator"></a><section>
 <h2>org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator</h2>
 <table class="table table-striped">

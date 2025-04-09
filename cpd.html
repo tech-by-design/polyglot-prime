@@ -279,7 +279,7 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>429</td></tr>
+<td>439</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>194</td></tr>
@@ -318,10 +318,10 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/CsvBundleProcessorService.java</td>
-<td>451</td></tr>
+<td>489</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>293</td></tr>
+<td>303</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>private void addObservabilityHeadersToResponse(final HttpServletRequest request, final HttpServletResponse response) {
@@ -388,11 +388,44 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1289</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
+<td>1341</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>.orElse(AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE))
+                .retrieve()
+                .bodyToMono(String.class)
+                .doFinally(signalType -&gt; {
+                    DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+						DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+                            DataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
+                    final var dataLedgerProvenance = &quot;%s.sendPostRequest&quot;.formatted(FHIRService.class.getName());
+            		dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
+                })
+                .subscribe(response -&gt; {
+                    handleResponse(response, jooqCfg, interactionId, requestURI, tenantId,
+                            provenance, scoringEngineApiURL, groupInteractionId,
+                            masterInteractionId, sourceType);
+                }, error -&gt; {
+                    registerStateFailure(jooqCfg, scoringEngineApiURL, interactionId, error,
+                            requestURI, tenantId, provenance, groupInteractionId,
+                            masterInteractionId, sourceType);
+                });
+
+			LOG.info(&quot;FHIRService:: sendToScoringEngine Post to scoring engine - END interaction id: {} tenantid: {}&quot;,</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
 <td style="text-align: left;">org/techbd/service/http/Interactions.java</td>
 <td>211</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FHIRService.java</td>
-<td>431</td></tr>
+<td>441</td></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/Hl7Service.java</td>
 <td>196</td></tr>
