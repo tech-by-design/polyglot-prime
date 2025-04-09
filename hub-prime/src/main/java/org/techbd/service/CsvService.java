@@ -16,7 +16,9 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
 import org.techbd.orchestrate.csv.CsvOrchestrationEngine;
+import org.techbd.service.DataLedgerApiClient.DataLedgerPayload;
 import org.techbd.service.constants.Origin;
+import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.Interactions;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.udi.UdiPrimeJpaConfig;
@@ -36,12 +38,13 @@ public class CsvService {
     private boolean saveUserDataToInteractions;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
     private final CsvBundleProcessorService csvBundleProcessorService;
-
+	private final DataLedgerApiClient dataLedgerApiClient;
     public CsvService(final CsvOrchestrationEngine engine, final UdiPrimeJpaConfig udiPrimeJpaConfig,
-            final CsvBundleProcessorService csvBundleProcessorService) {
+            final CsvBundleProcessorService csvBundleProcessorService,DataLedgerApiClient dataLedgerApiClient) {
         this.engine = engine;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
         this.csvBundleProcessorService = csvBundleProcessorService;
+        this.dataLedgerApiClient = dataLedgerApiClient;
     }
 
     public Object validateCsvFile(final MultipartFile file, final HttpServletRequest request,
@@ -134,10 +137,14 @@ public class CsvService {
     public List<Object> processZipFile(final MultipartFile file,final HttpServletRequest request ,HttpServletResponse response ,final String tenantId,String origin,String sftpSessionId,String baseFHIRUrl) throws Exception {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
+            final String masterInteractionId = getBundleInteractionId(request);
+             DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(tenantId, DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), masterInteractionId
+			);
+			final var dataLedgerProvenance = "%s.processZipFile".formatted(CsvService.class.getName());
+            dataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,dataLedgerProvenance,SourceType.CSV.name(),null);
             final var dslContext = udiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             saveArchiveInteraction(jooqCfg, request, file, tenantId,origin,sftpSessionId);
-            final String masterInteractionId = getBundleInteractionId(request);
             session = engine.session()
                     .withMasterInteractionId(masterInteractionId)
                     .withSessionId(UUID.randomUUID().toString())

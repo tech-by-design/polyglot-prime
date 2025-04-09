@@ -50,7 +50,9 @@ public class AppConfig {
     private String igVersion;
     private CsvValidation csv;
     private Map<String, FhirV4Config> igPackages;
-    private String validationSeverityLevel;
+    private String dataLedgerApiUrl;
+    private boolean dataLedgerTracking;
+    private boolean dataLedgerDiagnostics;    private String validationSeverityLevel;
 
     public String getValidationSeverityLevel() {
         return validationSeverityLevel;
@@ -164,5 +166,29 @@ public class AppConfig {
 
     public String getIgVersion() {
         return igVersion;
+    }
+
+    public String getDataLedgerApiUrl() {
+        return dataLedgerApiUrl;
+    }
+    
+    public void setDataLedgerApiUrl(String dataLedgerApiUrl) {
+        this.dataLedgerApiUrl = dataLedgerApiUrl;
+    }
+    
+    public boolean isDataLedgerDiagnostics() {
+        return dataLedgerDiagnostics;
+    }
+    
+    public void setDataLedgerDiagnostics(boolean dataLedgerDiagnostics) {
+        this.dataLedgerDiagnostics = dataLedgerDiagnostics;
+    }
+    
+    public boolean isDataLedgerTracking() {
+        return dataLedgerTracking;
+    }
+    
+    public void setDataLedgerTracking(boolean dataLedgerTracking) {
+        this.dataLedgerTracking = dataLedgerTracking;
     }
 }
