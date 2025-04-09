@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
-import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
@@ -34,9 +33,6 @@ import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
-import org.techbd.util.FHIRUtil;
-
-import io.micrometer.common.util.StringUtils;
 
 @Component
 @Order(6)
@@ -163,10 +159,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         if (encounterId != null) {
                             observation.setEncounter(new Reference("Encounter/" + encounterId));
                         }
-                        String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
-                        if (organizationId != null) {
-                            observation.addPerformer(new Reference("Organization/" + organizationId));
-                        }
+                        //  This is Temporarily commented out as IG 1.4.1 need not go to production as of today(09/04/2025)
+                        // String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
+                        // if (organizationId != null) {
+                        //     observation.addPerformer(new Reference("Organization/" + organizationId));
+                        // }
                         CodeableConcept interpretation = new CodeableConcept();
                         interpretation.addCoding(
                                 new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
@@ -370,10 +367,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (encounterId != null){
                         groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
                 }
-                String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
-                if (organizationId != null) {
-                        groupObservation.addPerformer(new Reference("Organization/" + organizationId));
-                }
+                //  This is Temporarily commented out as IG 1.4.1 need not go to production as of today(09/04/2025)
+                // String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
+                // if (organizationId != null) {
+                //         groupObservation.addPerformer(new Reference("Organization/" + organizationId));
+                // }
                 String screeningStartDateTime = groupData.stream()
                         .map(ScreeningObservationData::getScreeningStartDateTime)
                         .filter(Objects::nonNull)
