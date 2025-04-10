@@ -4236,6 +4236,41 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_ccda_fhir_request CASCADE
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_request CASCADE;	
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
+AS 
+WITH fhir_summary AS (
+        SELECT sat_interaction_fhir_request.hub_interaction_id,
+            CASE
+                WHEN count(sat_interaction_fhir_request.hub_interaction_id) > 0 THEN 'True'::text
+                ELSE 'False'::text
+            END AS fhir_conversion_status
+        FROM techbd_udi_ingress.sat_interaction_fhir_request
+        WHERE (sat_interaction_fhir_request.nature = 'Original FHIR Payload'::text OR sat_interaction_fhir_request.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text) AND sat_interaction_fhir_request.source_type = 'CCDA'::text
+        GROUP BY sat_interaction_fhir_request.hub_interaction_id
+    )
+SELECT sicr.sat_interaction_fhir_request_id AS sat_interaction_ccda_request_id,
+    sicr.hub_interaction_id,
+    sicr.tenant_id,
+    sicr.tenant_id_lower,
+    sicr.uri,
+    sicr.nature,
+    sicr.payload,
+    fhir_summary.fhir_conversion_status,
+    sicr.payload AS ccda_payload_text,
+    sicr.client_ip_address,
+    sicr.user_agent,
+    sicr.from_state,
+    sicr.to_state,
+    sicr.state_transition_reason,
+    sicr.elaboration,
+    'CCDA' AS origin,
+    sicr.created_at,
+    sicr.created_by,
+    sicr.provenance
+FROM techbd_udi_ingress.sat_interaction_fhir_request sicr
+LEFT JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
+ORDER BY sicr.created_at DESC;
+
+/*CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
 AS
 with fhir_summary as (
 select
@@ -4275,7 +4310,7 @@ left join fhir_summary
     on
 	sicr.hub_interaction_id = fhir_summary.hub_interaction_id
 order by
-	sicr.created_at desc;
+	sicr.created_at desc;*/
     
 
 /*******************************************************************************************
