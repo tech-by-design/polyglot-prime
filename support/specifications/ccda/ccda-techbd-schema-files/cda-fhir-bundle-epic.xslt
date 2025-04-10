@@ -11,25 +11,18 @@
   <!-- Root template -->
   <xsl:param name="currentTimestamp"/>
   <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id/@extension"/>
-  <xsl:variable name="consentResourceId" select="translate(concat(generate-id(//ccda:consent), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
-  <xsl:variable name="patientResourceId" select="translate(concat(generate-id(//ccda:patientRole), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
   <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family, ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given)"/>
-  <xsl:variable name="bundleId" select="translate(concat(generate-id(//ccda:patientRole/ccda:id/@extension), $currentTimestamp), ':-+.', '')"/>
-  <xsl:variable name="organizationResourceId" select="translate(concat(generate-id(//ccda:author), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
   <xsl:variable name="bundleTimestamp" select="//ccda:effectiveTime/@value"/>
-  <xsl:variable name="questionnaireResourceId" select="translate(concat(generate-id(//ccda:Questionnaire), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
 
-  <xsl:variable name="encounterResourceId">
-    <xsl:choose>
-      <xsl:when test="//ccda:encompassingEncounter">
-        <xsl:value-of select="translate(concat(generate-id(//ccda:encompassingEncounter), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
-      </xsl:when>
-      <xsl:when test="//ccda:component/ccda:structuredBody/ccda:component/ccda:encounters/ccda:entry[position()=1]/ccda:encounter">
-        <xsl:value-of select="translate(concat(generate-id(//ccda:component/ccda:structuredBody/ccda:component/ccda:encounters/ccda:entry[position()=1]/ccda:encounter), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
-      </xsl:when>
-      <xsl:otherwise><xsl:text>null</xsl:text></xsl:otherwise>
-    </xsl:choose>
-  </xsl:variable>
+  <xsl:param name="bundleId"/>
+  <xsl:param name="patientResourceId"/>
+  <xsl:param name="encounterResourceId"/>
+  <xsl:param name="consentResourceId"/>
+  <xsl:param name="organizationResourceId"/>
+  <xsl:param name="questionnaireResourceId"/>
+  <xsl:param name="observationResourceSha256Id"/>
+  <xsl:param name="sexualOrientationResourceId"/>
+  <xsl:param name="questionnaireResponseResourceSha256Id"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -923,12 +916,11 @@
   <!-- Sexual orientation Observation Template -->
   <xsl:template name="SexualOrientation" match="ccda:sexualOrientation/ccda:entry/ccda:observation"> <!--/ccda:entry/ccda:observation-->
     <xsl:if test="ccda:code/@code and string(ccda:code/@code) = '76690-7'">
-      <xsl:variable name="observationResourceId" select="translate(concat(generate-id(ccda:code/@code), position(), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
       ,{
-        "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>",
+        "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$sexualOrientationResourceId'/>",
         "resource": {
           "resourceType": "Observation",
-          "id": "<xsl:value-of select='$observationResourceId'/>",
+          "id": "<xsl:value-of select='$sexualOrientationResourceId'/>",
           "meta" : {
             "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
             "profile" : ["<xsl:value-of select='$observationSexualOrientationMetaProfileUrlFull'/>"]
@@ -994,7 +986,7 @@
         },
         "request" : {
           "method" : "POST",
-          "url" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>"
+          "url" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$sexualOrientationResourceId'/>"
         }
       }
     </xsl:if>
@@ -1003,7 +995,12 @@
   <!-- Observation Template -->
   <xsl:template name="Observation" match="ccda:observations/ccda:entry">
     <xsl:if test="string(ccda:observation/ccda:code/@code) != '76690-7'"> 
-      <xsl:variable name="observationResourceId" select="translate(concat(generate-id(ccda:observation/ccda:code/@code), position(), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
+      <xsl:variable name="observationResourceId">
+        <xsl:call-template name="generateFixedLengthResourceId">
+          <xsl:with-param name="prefixString" select="concat(generate-id(ccda:observation/ccda:code/@code), position())"/>
+          <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
+        </xsl:call-template>
+      </xsl:variable>
       ,{
         "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>",
         "resource": {
@@ -1148,7 +1145,12 @@
 
   <!-- Template to generate QuestionnaireResponse resource -->
   <xsl:template name="QuestionnaireResponseResource" match="ccda:observations/ccda:entry/ccda:observation" mode="questionnaireresponse">
-    <xsl:variable name="QuestionnaireResponseResourceId" select="translate(concat(generate-id(ccda:code/@code), position(), $patientRoleId, $currentTimestamp), ':-+.', '')"/>
+      <xsl:variable name="QuestionnaireResponseResourceId">
+        <xsl:call-template name="generateFixedLengthResourceId">
+          <xsl:with-param name="prefixString" select="concat(generate-id(ccda:code/@code), position())"/>
+          <xsl:with-param name="sha256ResourceId" select="$questionnaireResponseResourceSha256Id"/>
+        </xsl:call-template>
+      </xsl:variable>
       ,{
           "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/QuestionnaireResponse/<xsl:value-of select='$QuestionnaireResponseResourceId'/>",
           "resource" : {
@@ -1299,5 +1301,15 @@
         <xsl:when test="$statusCode = 'W'">Widowed</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
+</xsl:template>
+
+<!-- Reusable ID generator template -->
+<xsl:template name="generateFixedLengthResourceId">
+  <xsl:param name="prefixString"/>
+  <xsl:param name="sha256ResourceId"/>
+
+  <xsl:variable name="trimmedHashId" select="substring(concat($prefixString, $sha256ResourceId), 1, 64)"/>
+  <xsl:variable name="resourceUId" select="$trimmedHashId"/>
+  <xsl:copy-of select="$resourceUId"/>
 </xsl:template>
 </xsl:stylesheet>
