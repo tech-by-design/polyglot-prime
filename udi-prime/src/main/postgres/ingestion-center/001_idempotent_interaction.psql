@@ -4267,7 +4267,7 @@ SELECT sicr.sat_interaction_fhir_request_id AS sat_interaction_ccda_request_id,
     sicr.created_by,
     sicr.provenance
 FROM techbd_udi_ingress.sat_interaction_fhir_request sicr
-LEFT JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
+INNER JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
 ORDER BY sicr.created_at DESC;
 
 /*CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
