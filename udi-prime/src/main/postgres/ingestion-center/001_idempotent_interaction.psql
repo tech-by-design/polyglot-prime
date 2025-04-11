@@ -4234,7 +4234,8 @@ interaction details, request attributes, and validation issues.
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_ccda_fhir_request CASCADE;
 
-DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_request CASCADE;	
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_request CASCADE;
+/*Update the view from the commented view after ccda xml file validation completed*/
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
 AS 
 WITH fhir_summary AS (
