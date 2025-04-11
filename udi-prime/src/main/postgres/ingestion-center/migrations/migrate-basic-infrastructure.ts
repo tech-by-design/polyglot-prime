@@ -702,7 +702,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
         -- Check and add 'nature_denorm' column if it does not exist
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='sat_interaction_http_request' 
+                      WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name='sat_interaction_http_request' 
                       AND column_name='nature_denorm') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
             ADD COLUMN nature_denorm TEXT DEFAULT null;
@@ -710,7 +711,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
         -- Check and add 'tenant_id_denorm' column if it does not exist
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='sat_interaction_http_request' 
+                      WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name='sat_interaction_http_request' 
                       AND column_name='tenant_id_denorm') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
             ADD COLUMN tenant_id_denorm TEXT DEFAULT null;
@@ -721,7 +723,8 @@ const migrateSP = pgSQLa.storedProcedure(
         
         -- Check and add 'nature_denorm' column if it does not exist
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='sat_interaction_user' 
+                      WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name='sat_interaction_user' 
                       AND column_name='interaction_start_time') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_user
             ADD COLUMN interaction_start_time TIMESTAMPTZ DEFAULT null;
@@ -729,7 +732,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
         -- Check and add 'nature_denorm' column if it does not exist
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='sat_interaction_user' 
+                      WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name='sat_interaction_user' 
                       AND column_name='interaction_end_time') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_user
             ADD COLUMN interaction_end_time TIMESTAMPTZ DEFAULT null;
@@ -738,7 +742,8 @@ const migrateSP = pgSQLa.storedProcedure(
 
         -- Check and add 'primary_org_id' column if it does not exist
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                      WHERE table_name='sat_interaction_fhir_screening_patient' 
+                      WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name='sat_interaction_fhir_screening_patient' 
                       AND column_name='primary_org_id') THEN
             ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient
             ADD COLUMN primary_org_id TEXT  NULL;
