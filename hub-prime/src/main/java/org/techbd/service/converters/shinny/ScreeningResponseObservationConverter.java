@@ -367,11 +367,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (encounterId != null){
                         groupObservation.setEncounter( new Reference("Encounter/" + encounterId));
                 }
-                //  This is Temporarily commented out as IG 1.4.1 need not go to production as of today(09/04/2025)
-                // String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
-                // if (organizationId != null) {
-                //         groupObservation.addPerformer(new Reference("Organization/" + organizationId));
-                // }
+                String organizationId = idsGenerated.getOrDefault(CsvConstants.ORGANIZATION_ID, null);
+                if (organizationId != null) {
+                    groupObservation.addPerformer(new Reference("Organization/" + organizationId));
+                }
                 String screeningStartDateTime = groupData.stream()
                         .map(ScreeningObservationData::getScreeningStartDateTime)
                         .filter(Objects::nonNull)
