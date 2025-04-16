@@ -1,6 +1,6 @@
 management:
   endpoints:
-    enabled-by-default: false
+    enabled-by-default: true
     web:
       exposure:
         include: actuator,beans,env,openapi,swagger-ui,health,info,metrics
