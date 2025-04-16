@@ -88,10 +88,10 @@
                     { headerName: "Origin", field: "origin",  headerTooltip: "The origin of the interaction", filter: "agTextColumnFilter" },
                     { headerName: "User Agent", field: "user_agent", headerTooltip: "The user agent used in the interaction",  filter: "agTextColumnFilter" },
                     { headerName: "IP Address", field: "client_ip_address",  headerTooltip: "The IP address of the client making the interaction", filter: "agTextColumnFilter" },
-                    {
-                        headerName: "Download Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download Payload", filter: false, suppressFilter: true
-                    }
+                    // {
+                    //     headerName: "Download Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                    //     headerTooltip: "Download Payload", filter: false, suppressFilter: true
+                    // }
                     
                 ])
                 .withServerSideDatasource(
@@ -117,8 +117,8 @@
         <div class="grid-description">             
             This widget offers a clear and concise overview of CCDA-based HTTP interactions, highlighting essential details such as the Hub Interaction ID and Tenant ID to identify and link each interaction. 
             It provides information about the Request URI, the Nature of the interaction, and metadata like Client IP Address and User Agent to trace the origin and context of requests. 
-            Users can track State Transitions, including changes from one state to another and the reasons for those transitions. The widget also includes detailed Payload Information, such as the CCDA payload text, to provide visibility into the data being processed. 
-            Additionally, users have the option to **download the CCDA payload** as an XML file for further analysis. With interactive filtering and sorting options, users can efficiently analyze interactions, identify issues, and ensure seamless data flow for CCDA requests.
+            Users can track State Transitions, including changes from one state to another and the reasons for those transitions.<!--  The widget also includes detailed Payload Information, such as the CCDA payload text, to provide visibility into the data being processed. 
+            Additionally, users have the option to **download the CCDA payload** as an XML file for further analysis. --> With interactive filtering and sorting options, users can efficiently analyze interactions, identify issues, and ensure seamless data flow for CCDA requests. 
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>        
     </div>
