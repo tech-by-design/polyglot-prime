@@ -88,10 +88,20 @@
         const expanColumnDefn = [
             { headerName: "Org Name", field: "qe_name", filter: "agTextColumnFilter" },
             {
-                headerName: "Total Msgs", field: "qe_total_submissions", filter: "agTextColumnFilter", filter: "agTextColumnFilter" 
+                headerName: "Total Msgs", field: "qe_total_submissions",  filter: "agNumberColumnFilter" 
             },
-            { headerName: "Successful Msgs", field: "success_submissions", filter: "agTextColumnFilter" }, 
-            { headerName: "Failed Msgs", field: "faield_submissions", filter: "agTextColumnFilter" },
+            { headerName: "Successful Msgs", field: "success_submissions", filter: "agNumberColumnFilter" }, 
+            { headerName: "Failed Msgs", field: "faield_submissions", filter: "agNumberColumnFilter" },
+            {
+                    headerName: "Discarded Msgs",
+                    valueGetter: (params) => {
+                        const total = Number(params.data.qe_total_submissions) || 0;
+                        const success = Number(params.data.success_submissions) || 0;
+                        const failed = Number(params.data.faield_submissions) || 0;
+                        return total - success - failed;
+                    },
+                    filter: "agNumberColumnFilter"
+            }
         ];
 
         // Format dates as "mm-dd-yyyy"
@@ -227,10 +237,20 @@
 
                 const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
-                    { headerName: "SCN Name", field: "organization_id", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' }, 
-                    { headerName: "Total Msgs", field: "qe_total_submissions", filter: "agNumberColumnFilter" },
-                    { headerName: "Successful Msgs", field: "success_submissions", filter: "agNumberColumnFilter" }, 
-                    { headerName: "Failed Msgs", field: "failed_submissions", filter: "agNumberColumnFilter" } 
+                    { headerName: "SCN Name", field: "organization_id", filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer', tooltipField: 'lists name of the unique SCNs that have submitted screenings, referrals, or assessments.'}, 
+                    { headerName: "Total Msgs", field: "qe_total_submissions", filter: "agNumberColumnFilter", tooltipField: 'Total number of messages submitted by the SCN.' },
+                    { headerName: "Successful Msgs", field: "success_submissions", filter: "agNumberColumnFilter", tooltipField: 'Number of messages that received successful responses from the Data Lake.' }, 
+                    { headerName: "Failed Msgs", field: "failed_submissions", filter: "agNumberColumnFilter", tooltipField: 'Number of messages that failed during processing in the Data Lake.' },
+                    {
+                    headerName: "Discarded Msgs", tooltipField: 'Messages that were discarded before submission to the Data Lake due to errors or invalid data in the records.',
+                    valueGetter: (params) => {
+                        const total = Number(params.data.qe_total_submissions) || 0;
+                        const success = Number(params.data.success_submissions) || 0;
+                        const failed = Number(params.data.failed_submissions) || 0;
+                        return total - success - failed;
+                    },
+                    filter: "agNumberColumnFilter"
+            }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(url),
@@ -273,14 +293,16 @@
             </div>
             
         
-        <ul class="list-disc pl-4"> 
-            <li>Column 1 lists unique SCNs that have submitted screenings, referrals, or assessments.
+        <ul class="list-disc pl-4 pt-3"> 
+            <li>Column 1: SCN Name –  lists name of the unique SCNs that have submitted screenings, referrals, or assessments. 
             </li>
-            <li>Column 2 shows the total number of messages sent by each SCN.
+            <li>Column 2: Total Msgs – Total number of messages submitted by the SCN.
             </li>
-            <li>Column 3 displays the count of successfully processed messages.
+            <li>Column 3: Successful Msgs – Number of messages that received successful responses from the Data Lake.
             </li>
-            <li>Column 4 indicates the count of failed messages.
+            <li>Column 4: Failed Msgs – Number of messages that failed during processing in the Data Lake.
+            </li> 
+            <li>Column 5: Discarded Msgs – Messages that were discarded before submission to the Data Lake due to errors or invalid data in the records.
             </li> 
         </ul> 
         Each row in the grid is expandable, similar to the existing Organization grid, allowing a detailed view of message routing through different Qualified Entities (QEs) for each SCN.
