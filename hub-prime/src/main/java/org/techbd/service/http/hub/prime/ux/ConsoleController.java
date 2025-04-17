@@ -33,7 +33,7 @@ public class ConsoleController {
     @RouteMapping(label = "Console", siblingOrder = 80)
     @GetMapping("/console")
     public String docs() {
-        return "redirect:/console/project";
+        return "redirect:/console/health-info";
     }
 
      @RouteMapping(label = "Health Information", title = "Health Information", siblingOrder = 30)
