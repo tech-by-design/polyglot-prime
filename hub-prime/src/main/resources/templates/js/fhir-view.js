@@ -224,7 +224,205 @@ export class FhirViewer extends HTMLElement {
                         </tbody>
                     </table>
                 </div>
-            `
+            `,
+            location: `
+                  <div class="resource questionnaireresponse">
+                    <div class="header">Questionnaire Response</div>
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th>ID</th>
+                                <td>{{:id || 'N/A'}}</td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td>{{:status || 'N/A'}}</td>
+                            </tr>
+                            <tr>
+                                <th>Authored</th>
+                                <td>{{:authored || 'N/A'}}</td>
+                            </tr>
+                            <tr>
+                                <th>Questionnaire</th>
+                                <td>{{:questionnaire || 'N/A'}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `,
+            practitioner: `
+    <div class="resource practitioner">
+        <div class="header">Practitioner</div>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>Name</th>
+                    <td>
+                        {{if name?.length > 0}}
+                            {{:name[0]?.given || ''}} {{:name[0]?.family || ''}}
+                        {{else}}
+                            No name provided
+                        {{/if}}
+                    </td>
+                </tr>
+                <tr>
+                    <th>ID</th>
+                    <td>{{:id || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Gender</th>
+                    <td>{{:gender || 'N/A'}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+`,
+servicerequest: `
+    <div class="resource servicerequest">
+        <div class="header">Service Request</div>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>ID</th>
+                    <td>{{:id || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>{{:status || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Intent</th>
+                    <td>{{:intent || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Code</th>
+                    <td>
+                        {{if code?.coding?.length > 0}}
+                            {{:code.coding[0].display || 'N/A'}}
+                        {{else}}
+                            No code provided
+                        {{/if}}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+`,
+task: `
+    <div class="resource task">
+        <div class="header">Task</div>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>ID</th>
+                    <td>{{:id || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>{{:status || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Intent</th>
+                    <td>{{:intent || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Focus</th>
+                    <td>
+                        {{if focus}}
+                            {{:focus?.reference || 'N/A'}}
+                        {{else}}
+                            No focus provided
+                        {{/if}}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+`,
+condition: `
+    <div class="resource condition">
+        <div class="header">Condition</div>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>ID</th>
+                    <td>{{:id || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Clinical Status</th>
+                    <td>{{:clinicalStatus?.text || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Verification Status</th>
+                    <td>{{:verificationStatus?.text || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Code</th>
+                    <td>
+                        {{if code?.coding?.length > 0}}
+                            {{:code.coding[0].display || 'N/A'}}
+                        {{else}}
+                            No code provided
+                        {{/if}}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+`,
+questionnaire: `
+    <div class="resource questionnaire">
+        <div class="header">Questionnaire</div>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>ID</th>
+                    <td>{{:id || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Title</th>
+                    <td>{{:title || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>{{:status || 'N/A'}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+`,
+procedure: `
+    <div class="resource procedure">
+        <div class="header">Procedure</div>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>ID</th>
+                    <td>{{:id || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>{{:status || 'N/A'}}</td>
+                </tr>
+                <tr>
+                    <th>Code</th>
+                    <td>
+                        {{if code?.coding?.length > 0}}
+                            {{:code.coding[0].display || 'N/A'}}
+                        {{else}}
+                            No code provided
+                        {{/if}}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Performed DateTime</th>
+                    <td>{{:performedDateTime || 'N/A'}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+`,
+
         };
     }
 
