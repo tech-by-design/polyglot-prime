@@ -1,5 +1,7 @@
 package org.techbd.service.converters.shinny;
 
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -7,9 +9,30 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
+import org.jooq.DSLContext;
 import org.techbd.util.FHIRUtil;
+import org.techbd.util.YamlUtil;
 
 public abstract class BaseConverter implements IConverter {
+
+
+    private final Map<String, Map<String, String>> CODE_LOOKUP ;
+
+    public BaseConverter(DSLContext dsl) {
+        this.CODE_LOOKUP = YamlUtil.getYamlResourceFromDb(dsl);
+    }
+
+    public String fetchCode(String valueFromCsv, String category) {
+        if (valueFromCsv == null || category == null) {
+            return valueFromCsv;
+        }
+        Map<String, String> innerMap = CODE_LOOKUP.get(category);
+        if (innerMap == null) {
+            return valueFromCsv; // category not found
+        }
+
+        return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
+    }
 
     public CanonicalType getProfileUrl() {
         return new CanonicalType(FHIRUtil.getProfileUrl(getResourceType().name().toLowerCase()));

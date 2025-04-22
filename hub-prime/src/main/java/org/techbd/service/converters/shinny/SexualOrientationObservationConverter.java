@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -30,6 +31,10 @@ import org.techbd.util.FHIRUtil;
 @Component
 @Order(3)
 public class SexualOrientationObservationConverter extends BaseConverter {
+
+    public SexualOrientationObservationConverter(DSLContext dslContext) {
+        super(dslContext);
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(SexualOrientationObservationConverter.class.getName());
 

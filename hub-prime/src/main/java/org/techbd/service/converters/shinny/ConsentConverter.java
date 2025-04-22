@@ -13,9 +13,9 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Consent;
 import org.hl7.fhir.r4.model.Consent.ConsentProvisionType;
-import org.hl7.fhir.r4.model.Consent.ConsentState;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -36,6 +36,10 @@ import io.micrometer.common.util.StringUtils;
 @Component
 @Order(4)
 public class ConsentConverter extends BaseConverter {
+
+    public ConsentConverter(DSLContext dslContext) {
+        super(dslContext);
+    }
     private static final Logger LOG = LoggerFactory.getLogger(ConsentConverter.class.getName());
 
     /**

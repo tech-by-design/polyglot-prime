@@ -1,6 +1,5 @@
 package org.techbd.service.converters.shinny;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +13,7 @@ import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -32,6 +32,10 @@ import org.techbd.util.DateUtil;
 @Component
 @Order(5)
 public class EncounterConverter extends BaseConverter {
+
+    public EncounterConverter(DSLContext dslContext) {
+        super(dslContext);
+    }
     private static final Logger LOG = LoggerFactory.getLogger(EncounterConverter.class.getName());
 
     /**
@@ -110,7 +114,8 @@ public class EncounterConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(data.getEncounterClassCode())) {
             Coding encounterClass = new Coding();
             encounterClass.setSystem(data.getEncounterClassCodeSystem());
-            encounterClass.setCode(data.getEncounterClassCode());
+            encounterClass.setCode(fetchCode(data.getEncounterClassCode(), CsvConstants.ENCOUNTER_CLASS));
+
             encounterClass.setDisplay(data.getEncounterClassCodeDescription());
             encounter.setClass_(encounterClass);
         }

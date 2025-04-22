@@ -24,6 +24,7 @@ import org.hl7.fhir.r4.model.Patient.PatientCommunicationComponent;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -39,6 +40,10 @@ import org.techbd.util.DateUtil;
 @Component
 @Order(2)
 public class PatientConverter extends BaseConverter {
+
+    public PatientConverter(DSLContext dslContext) {
+        super(dslContext);
+    }
     private static final Logger LOG = LoggerFactory.getLogger(PatientConverter.class.getName());
 
     /**

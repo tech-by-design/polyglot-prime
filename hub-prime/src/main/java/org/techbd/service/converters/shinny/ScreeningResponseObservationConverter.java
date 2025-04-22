@@ -22,6 +22,7 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -37,6 +38,10 @@ import org.techbd.util.DateUtil;
 @Component
 @Order(6)
 public class ScreeningResponseObservationConverter extends BaseConverter {
+
+    public ScreeningResponseObservationConverter(DSLContext dslContext) {
+        super(dslContext);
+    }
 
         private static final Logger LOG = LoggerFactory.getLogger(ScreeningResponseObservationConverter.class);
 

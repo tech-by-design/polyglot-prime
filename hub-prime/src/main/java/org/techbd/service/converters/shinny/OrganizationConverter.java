@@ -17,6 +17,7 @@ import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -29,14 +30,16 @@ import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
-import ca.uhn.fhir.context.FhirContext;
-
 /**
  * Converts data related to an Organization into a FHIR Organization resource.
  */
 @Component
 @Order(1)
 public class OrganizationConverter extends BaseConverter {
+
+    public OrganizationConverter(DSLContext dslContext) {
+        super(dslContext);
+    }
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationConverter.class.getName());
 
     /**
