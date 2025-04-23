@@ -21,6 +21,9 @@ public class ScreeningProfileData {
     @CsvBindByName(column = "ENCOUNTER_ID")
     private String encounterId;
 
+    @CsvBindByName(column = "ENCOUNTER_ID_SYSTEM")
+    private String encounterIdSystem;
+
     @CsvBindByName(column = "SCREENING_IDENTIFIER")
     private String screeningIdentifier;
 
