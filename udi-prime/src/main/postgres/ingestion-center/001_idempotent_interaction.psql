@@ -4419,6 +4419,99 @@ from
 where severity in ('warning','ERROR','WARING','error','FATAL','fatal')
 	and message != '';
 
+/******************************************************************************************
+The view, 'ref_code_lookup_code_view', simplifies the lookup of all codes related to a specific 'code_type' by aggregating them into a single row.
+It retrieves data from the ref_code_lookup table, grouping by code_type, and generates a comma-separated string of associated codes, ordered alphabetically.
+******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.ref_code_lookup_code_view CASCADE;
+CREATE VIEW techbd_udi_ingress.ref_code_lookup_code_view AS
+SELECT 
+    code_type,
+    STRING_AGG(code, ', ' ORDER BY code) AS codes
+FROM techbd_udi_ingress.ref_code_lookup
+GROUP BY code_type
+ORDER BY code_type;
+
+/******************************************************************************************
+The view 'ref_code_lookup_system_view' provides a simplified lookup of all 'system_value' entries associated with each code_type.
+It aggregates data from the ref_code_lookup table by grouping on code_type, and generates a comma-separated string of system_values, ordered alphabetically.
+******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.ref_code_lookup_system_view CASCADE;
+CREATE VIEW techbd_udi_ingress.ref_code_lookup_system_view AS
+SELECT 
+    code_type,
+    STRING_AGG(system_value, ', ' ORDER BY system_value) AS system_values
+FROM techbd_udi_ingress.ref_code_lookup
+GROUP BY code_type
+ORDER BY code_type;
+
+/******************************************************************************************
+The function 'ref_code_lookup_upserted', Inserts a new entry into the `ref_code_lookup` table with the given parameters such as code type, code,
+display string, system value, description, IG version, and provenance. If a conflict occurs, the insertion is skipped without raising an error.
+******************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.ref_code_lookup_upserted(text, text, text, text, text, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.ref_code_lookup_upserted(code_type text, code text, display_string text, system_value text, description text, ig_version text, provenance text DEFAULT 'TechBD'::text)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    -- Declare variables to hold error and extracted data
+    v_error_msg			TEXT;
+    v_error_type		TEXT;
+    v_sqlstate			TEXT;
+    v_pg_detail			TEXT;
+    v_pg_hint			TEXT;
+    v_pg_context		TEXT;
+    v_exception_id		TEXT;
+    v_return			TEXT;
+BEGIN
+    INSERT INTO techbd_udi_ingress.ref_code_lookup
+		(ref_code_lookup_id, code_type, code, display_string, system_value, description, ig_version, created_at, created_by, provenance)
+	VALUES ( 
+		gen_random_uuid()::TEXT,
+		ref_code_lookup_upserted.code_type, 
+		ref_code_lookup_upserted.code, 
+		ref_code_lookup_upserted.display_string, 
+		ref_code_lookup_upserted.system_value, 
+		ref_code_lookup_upserted.description, 
+		ref_code_lookup_upserted.ig_version, 
+		CURRENT_TIMESTAMP, CURRENT_USER,
+		COALESCE(ref_code_lookup_upserted.provenance, 'TechBd'))
+    ON CONFLICT DO NOTHING
+	RETURNING ref_code_lookup.ref_code_lookup_id INTO v_return;
+   		
+    RETURN v_return;
+EXCEPTION
+   WHEN OTHERS THEN
+        -- Capture exception details
+        GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;
+        	v_error_type = 'SQL';
+
+        RAISE NOTICE 'Error occurred: %', SQLERRM; /*Test purpose*/         
+       
+        -- Log the exception, reusing the previous exception ID if it exists
+        PERFORM techbd_udi_ingress.register_issue(
+            COALESCE(v_exception_id,NULL),
+            'action_rule',
+            v_error_msg,
+            v_error_type,
+            v_sqlstate,
+            v_pg_detail,
+            v_pg_hint,
+            v_pg_context,
+            CURRENT_USER,
+            'TechBd');
+
+        RETURN NULL;
+END;
+$function$
+;
+
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_ccda_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb, text, text, text);
 
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_ccda_request_upserted(hub_interaction_id text, tenant_id text, uri text, nature text, from_state text, to_state text, payload jsonb DEFAULT NULL::jsonb, ccda_payload_text TEXT DEFAULT NULL::text, state_transition_reason text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, client_ip_address text DEFAULT NULL::text, user_agent text DEFAULT NULL::text, origin text DEFAULT 'http'::text)

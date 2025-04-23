@@ -489,6 +489,19 @@ const interactionCcdaRequestSat = interactionHub.satelliteTable(
   },
 );
 
+const refCodeLookUp = SQLa.tableDefinition("ref_code_lookup", {
+  ref_code_lookup_id: primaryKey(),
+  code_type: text(),
+  code: text(),
+  display_string: textNullable(),
+  system_value: textNullable(),
+  description: textNullable(),
+  ig_version: textNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
 
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
@@ -986,6 +999,8 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS json_action_rule_namespace_idx ON techbd_udi_ingress.json_action_rule USING btree (namespace);
       CREATE INDEX IF NOT EXISTS json_action_rule_priority_idx ON techbd_udi_ingress.json_action_rule USING btree (priority);
 
+      ${refCodeLookUp}
+      CREATE INDEX IF NOT EXISTS ref_code_lookup_code_type_idx ON techbd_udi_ingress.ref_code_lookup USING btree (code_type);
 
       IF NOT EXISTS (
           SELECT 1
