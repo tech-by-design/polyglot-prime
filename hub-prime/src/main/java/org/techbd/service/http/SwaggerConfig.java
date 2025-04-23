@@ -204,7 +204,7 @@ public class SwaggerConfig {
                                             .description("Tenant ID header")
                                             .required(true)
                                             .in("header")
-                                            .schema(new StringSchema()))   
+                                            .schema(new StringSchema()))
                                     .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
                                             .description("Multipart form-data containing the CCDA XML file for validation.")
                                             .required(true)
