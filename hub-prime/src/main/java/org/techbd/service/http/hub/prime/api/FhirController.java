@@ -147,7 +147,7 @@ public class FhirController {
         })
         @ResponseBody
         @Async
-        public Object validateBundleAndForward(
+            public Object validateBundleAndForward(
                         @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true) final @RequestBody @Nonnull String payload,
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
                         // "profile" is the same name that HL7 validator uses
@@ -174,7 +174,8 @@ public class FhirController {
                                         """, required = false) @RequestParam(value = "mtls-strategy", required = false) String mtlsStrategy,
                         @Parameter(hidden = true, description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
                         @Parameter(hidden = true, description = "Optional parameter to specify source of the request.", required = false) @RequestParam(value = "source", required = false, defaultValue = "FHIR") String source,
-                        HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
+                        @Parameter(description = "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).", required = false) @RequestHeader(value = "X-TechBD-Validation-Severity-Level", required = false) String validationSeverityLevel,
+                        HttpServletRequest request, HttpServletResponse response ) throws SQLException, IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
                 try {
                         if (tenantId == null || tenantId.trim().isEmpty()) {
