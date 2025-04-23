@@ -10,12 +10,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Period;
@@ -44,7 +46,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         private static final String OBSERVATION_URL_BASE = "http://shinny.org/us/ny/hrsn/Observation/";
         private static final String CATEGORY_URL = "http://terminology.hl7.org/CodeSystem/observation-category";
         private static final String SDOH_CATEGORY_URL = "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes";
-        private static final String LOINC_URL = "http://loinc.org";
 
         private static final Set<String> INTERPERSONAL_SAFETY_REFS = Set.of(
                         "95618-5",
@@ -88,15 +89,17 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 for (ScreeningObservationData data : screeningObservationDataList) {
                         Observation observation = new Observation();
                         String observationId = data.getScreeningIdentifier();
+                        String observationIdHashed = CsvConversionUtil.sha256(observationId);
                         // CsvConversionUtil
                         //                 .sha256(data.getQuestionCodeDescription().replace(" ", "") +
                         //                                 data.getQuestionCode() + data.getEncounterId());
-                        observation.setId(observationId);
+                        observation.setId(observationIdHashed);
                         data.setObservationId(observationId);
-                        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationId;
+                        String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationIdHashed;
                         setMeta(observation,baseFHIRUrl);
                         Meta meta = observation.getMeta();
                         meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
+                        populateScreeningIdentifier(observation, data);
                         // max date
                         // available in all
                         // screening records
@@ -220,10 +223,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 List<Reference> derivedFromRefs = screeningObservationDataList.stream()
                                                 .filter(obs -> questionCodeSet.contains(obs.getQuestionCode()))
                                                 .map(obs -> {
-                                                        String derivedFromId = CsvConversionUtil.sha256(
-                                                                        obs.getQuestionCodeDescription().replace(" ", "") +
-                                                                                        obs.getQuestionCode()
-                                                                                        + obs.getEncounterId());
+                                                        String derivedFromId = CsvConversionUtil.sha256(obs.getObservationId());
                                                         return new Reference("Observation/" + derivedFromId);
                                                 })
                                                 .collect(Collectors.toList());
@@ -243,7 +243,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         BundleEntryComponent entry = new BundleEntryComponent();
                         entry.setFullUrl(fullUrl);
                         entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
-                                        .setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observationId));
+                                        .setUrl("http://shinny.org/us/ny/hrsn/Observation/" + observationIdHashed));
                         entry.setResource(observation);
                         bundleEntryComponents.add(entry);
                 }
@@ -314,7 +314,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         String interactionId,String baseFhirUrl) {
 
                 Observation groupObservation = new Observation();
-                String observationId = CsvConversionUtil.sha256("group-" + screeningCode + screeningProfileData.getEncounterId());
+                String observationId = CsvConversionUtil.sha256("group-" + screeningCode + screeningProfileData.getEncounterId());   
                 groupObservation.setId(observationId);
                 setMeta(groupObservation,baseFhirUrl);
                 Meta meta = groupObservation.getMeta();
@@ -353,10 +353,16 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                         data.getObservationCategorySdohText()));
                                 });
 
-                // Set code
-                CodeableConcept code = new CodeableConcept();
-                code.addCoding(new Coding(LOINC_URL, screeningCode, getScreeningDisplayName(screeningCode)));
-                groupObservation.setCode(code);
+                // Set code from groupData (take from first available)
+                ScreeningObservationData firstData = groupData.stream().findFirst().orElse(null);
+                if (firstData != null) {
+                    CodeableConcept code = new CodeableConcept();
+                    code.addCoding(new Coding(
+                            firstData.getScreeningCodeSystem(),
+                            firstData.getScreeningCode(),
+                            firstData.getScreeningCodeDescription()));
+                    groupObservation.setCode(code);
+                }   
 
                 // Set subject, effective time, and issued date
                 String patientId = idsGenerated.getOrDefault(CsvConstants.PATIENT_ID, null);
@@ -405,7 +411,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Add member references using observationId directly from the model
                 List<Reference> hasMemberReferences = groupData.stream()
-                                .map(data -> new Reference("Observation/" + data.getObservationId()))
+                                .map(data -> new Reference("Observation/" + CsvConversionUtil.sha256(data.getObservationId())))
                                 .collect(Collectors.toList());
                 groupObservation.setHasMember(hasMemberReferences);
 
@@ -422,18 +428,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
         }
 
         /**
-         * Gets the display name for a screening code
-         */
-        private String getScreeningDisplayName(String screeningCode) {
-                Map<String, String> displayNames = new HashMap<>();
-                displayNames.put("96777-8",
-                                "Accountable health communities (AHC) health-related social needs screening (HRSN) tool");
-                displayNames.put("97023-6",
-                                "Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions");
-                return displayNames.getOrDefault(screeningCode, "Screening Observation Group");
-        }
-
-        /**
          * Creates a category CodeableConcept
          */
         private CodeableConcept createCategory(String system, String code, String display) {
@@ -441,6 +435,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 Coding coding = new Coding(system, code, display);
                 category.addCoding(coding);
                 return category;
+        }
+
+        private static void populateScreeningIdentifier(Observation observation, ScreeningObservationData data) {
+            if (StringUtils.isNotEmpty(data.getScreeningIdentifier())) {
+                Identifier identifier = new Identifier();
+                identifier.setValue(data.getScreeningIdentifier());
+                observation.addIdentifier(identifier);
+            }
         }
          
 }
