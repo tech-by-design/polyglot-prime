@@ -1427,7 +1427,7 @@ public class FHIRService {
 
 		try {
 			Map<String, Object> extractedOutcome = Optional
-					.ofNullable(extractIssueAndDisposition(interactionId, payloadWithDisposition))
+					.ofNullable(extractIssueAndDisposition(interactionId, payloadWithDisposition, request))
 					.filter(outcome -> !outcome.isEmpty())
 					.orElseGet(() -> {
 						LOG.warn(
@@ -1475,7 +1475,7 @@ public class FHIRService {
 
 	@SuppressWarnings("unchecked")
     public Map<String, Object> extractIssueAndDisposition(String interactionId,
-            Map<String, Object> operationOutcomePayload) {
+            Map<String, Object> operationOutcomePayload, HttpServletRequest request) {
         LOG.debug("FHIRService:: extractResourceTypeAndDisposition BEGIN for interaction id : {}",
                 interactionId);
 
@@ -1506,9 +1506,14 @@ public class FHIRService {
                             ? (List<Map<String, Object>>) operationOutcome.get("issue")
                             : null;
 
+                    String headerSeverityLevelValue = request.getHeader("X-TechBD-Validation-Severity-Level");
+                    String validationSeverityLevel = appConfig.getValidationSeverityLevel();
+                    if (headerSeverityLevelValue != null && !headerSeverityLevelValue.isEmpty()) {
+                        validationSeverityLevel = headerSeverityLevelValue;
+                    }
                     List<Map<String, Object>> filteredIssues = new ArrayList<>();
                     if (issuesRaw != null) {
-                        String severityLevel = Optional.ofNullable(appConfig.getValidationSeverityLevel())
+                        String severityLevel = Optional.ofNullable(validationSeverityLevel)
                                 .orElse("error").toLowerCase();
                         Set<String> allowedSeverities = switch (severityLevel) {
                             case "fatal" -> Set.of("fatal");
@@ -1532,7 +1537,7 @@ public class FHIRService {
                         infoIssue.put("severity", "information");
                         infoIssue.put("diagnostics",
                                 "Validation successful. No issues found at or above severity level: "
-                                        + appConfig.getValidationSeverityLevel());
+                                        + validationSeverityLevel);
                         infoIssue.put("code", "informational");
                         filteredIssues.add(infoIssue);
                     }

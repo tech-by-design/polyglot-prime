@@ -42,7 +42,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').type.coding.system
   - `type` string
   - `constraints`:
-    - `enum` ['http://terminology.hl7.org/CodeSystem/organization-type']
+    - `enum` ['http://terminology.hl7.org/CodeSystem/organization-type', 'https://hl7.org/fhir/R4/codesystem-organization-type.html']
 ### `ENCOUNTER_LOCATION`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').location.location.reference
   - `type` string
@@ -104,14 +104,20 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `[A-Za-z0-9\-\.\_]{1,64}`
+### `ENCOUNTER_ID_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').identifier.system
+  - `type` string
+  - `constraints`:
+    - `required` True
+    - `pattern` `\S*`
 ### `SCREENING_IDENTIFIER`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').id
   - `type` string
   - `constraints`:
     - `required` True
     - `unique` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `[A-Za-z0-9\-\.\_]{1,64}`
 ### `ENCOUNTER_CLASS_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').class.code
   - `type` string
@@ -158,7 +164,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.text
   - `type` string
   - `constraints`:
-    - `enum` ['History taking, self-administered, by computer terminal', 'Direct questioning (procedure)', 'Direct questioning']
+    - `enum` ['history taking, self-administered, by computer terminal', 'direct questioning (procedure)', 'direct questioning']
 ### `ENCOUNTER_TYPE_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').type.coding.system
   - `type` string
@@ -204,7 +210,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['permit', 'deny']
+    - `enum` ['Permit', 'Deny']
 ### `CONSENT_DATE_TIME`
   - `description` Bundle.entry.resource.where(resourceType ='Consent').dateTime
   - `type` string
@@ -272,6 +278,11 @@
         - `reference`
           - `resource` qe_admin_data
           - `fields` ['PATIENT_MR_ID_VALUE']
+    - `checks`
+      - [1]
+        - `type` custom
+        - `code` validate_answer_code
+        - `function` validate_answer_code
 ### `PATIENT_MR_ID_VALUE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MR').value
   - `type` string
@@ -295,31 +306,37 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `[A-Za-z0-9\-\.\_]{1,64}`
+### `ENCOUNTER_ID_SYSTEM`
+  - `description` Bundle.entry.resource.where(resourceType ='Encounter').identifier.system
+  - `type` string
+  - `constraints`:
+    - `required` True
+    - `pattern` `\S*`
 ### `SCREENING_IDENTIFIER`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').id
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `[A-Za-z0-9\-\.]{1,64}`
+    - `pattern` `[A-Za-z0-9\-\.\_]{1,64}`
 ### `SCREENING_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['96777-8', '97023-6']
+    - `enum` ['96777-8', '97023-6', 'NYSAHCHRSN']
 ### `SCREENING_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['accountable health communities (ahc) health-related social needs screening (hrsn) tool', 'accountable health communities (ahc) health-related social needs (hrsn) supplemental questions']
+    - `enum` ['accountable health communities (ahc) health-related social needs screening (hrsn) tool', 'accountable health communities (ahc) health-related social needs (hrsn) supplemental questions', 'nys accountable health communities (ahc) health-related social needs (hrsn) screening tool']
 ### `SCREENING_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.system
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['http://loinc.org']
+    - `enum` ['http://loinc.org', 'https://shinny.org/us/ny/hrsn/index.html']
 ### `QUESTION_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code
   - `type` string
@@ -358,7 +375,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['sdoh-category-unspecified', 'food-insecurity', 'housing-instability', 'homelessness', 'inadequate-housing', 'transportation-insecurity', 'financial-insecurity', 'material-hardship', 'educational-attainment', 'employment-status', 'veteran-status', 'stress', 'social-connection', 'intimate-partner-violence', 'elder-abuse', 'personal-health-literacy', 'health-insurance-coverage-status', 'medical-cost-burden', 'digital-literacy', 'digital-access', 'utility-insecurity', 'resulting-activity', 'sdoh-condition-category', 'payer-coverage', 'general-information', 'make-contact', 'review-material', 'risk-questionnaire', 'feedback-questionnaire', 'application-questionnaire', 'personal-characteristics-questionnaire', 'contact-entity', 'general-information-response', 'questionnaire-category', 'questionnaire-pdf', 'questionnaire-url', 'questionnaire-pdf-completed', 'contacting-subject-prohibited', 'self-reported', 'reported-by-related-person', 'observed', 'administrative', 'derived-specify', 'other-specify', 'personal-characteristic', 'chosen-contact']
+    - `enum` ['housing-instability or homelessness', 'sdoh-category-unspecified', 'food-insecurity', 'housing-instability', 'homelessness', 'inadequate-housing', 'transportation-insecurity', 'financial-insecurity', 'material-hardship', 'educational-attainment', 'employment-status', 'veteran-status', 'stress', 'social-connection', 'intimate-partner-violence', 'elder-abuse', 'personal-health-literacy', 'health-insurance-coverage-status', 'medical-cost-burden', 'digital-literacy', 'digital-access', 'utility-insecurity', 'resulting-activity', 'sdoh-condition-category', 'payer-coverage', 'general-information', 'make-contact', 'review-material', 'risk-questionnaire', 'feedback-questionnaire', 'application-questionnaire', 'personal-characteristics-questionnaire', 'contact-entity', 'general-information-response', 'questionnaire-category', 'questionnaire-pdf', 'questionnaire-url', 'questionnaire-pdf-completed', 'contacting-subject-prohibited', 'self-reported', 'reported-by-related-person', 'observed', 'administrative', 'derived-specify', 'other-specify', 'personal-characteristic', 'chosen-contact']
 ### `OBSERVATION_CATEGORY_SDOH_TEXT`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').text
   - `type` string
@@ -366,12 +383,12 @@
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['asked-unknown', 'temp-unknown', 'not-asked', 'asked-declined', 'masked', 'not-applicable', 'unsupported', 'as-text', 'error', 'not-a-number', 'negative-infinity', 'positive-infinity', 'not-performed', 'not-permitted']
+    - `enum` ['unknown', 'asked-unknown', 'temp-unknown', 'not-asked', 'asked-declined', 'masked', 'not-applicable', 'unsupported', 'as-text', 'error', 'not-a-number', 'negative-infinity', 'positive-infinity', 'not-performed', 'not-permitted']
 ### `DATA_ABSENT_REASON_DISPLAY`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.coding.display
   - `type` string
   - `constraints`:
-    - `enum` ['asked but unknown', 'temporarily unknown', 'not asked', 'asked but declined', 'masked', 'not applicable', 'unsupported', 'as text', 'error', 'not a number (nan)', 'negative infinity (ninf)', 'positive infinity (pinf)', 'not performed', 'not permitted']
+    - `enum` ['unknown', 'asked but unknown', 'temporarily unknown', 'not asked', 'asked but declined', 'masked', 'not applicable', 'unsupported', 'as text', 'error', 'not a number (nan)', 'negative infinity (ninf)', 'positive infinity (pinf)', 'not performed', 'not permitted']
 ### `POTENTIAL_NEED_INDICATED`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.code
   - `type` string
@@ -454,12 +471,12 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['http://hl7.org/fhir/administrative-gender']
+    - `enum` ['http://hl7.org/fhir/administrative-gender', 'http://terminology.hl7.org/CodeSystem/v3-AdministrativeGenderTechBD']
 ### `SEX_AT_BIRTH_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode
   - `type` string
   - `constraints`:
-    - `enum` ['f', 'm', 'unk']
+    - `enum` ['F', 'M', 'UNK']
 ### `SEX_AT_BIRTH_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode
   - `type` string
@@ -575,7 +592,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.display & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string
   - `constraints`:
-    - `enum` ['arabic', 'bengali', 'czech', 'danish', 'german', 'german (austria)', 'german (switzerland)', 'german (germany)', 'greek', 'english', 'english (australia)', 'english (canada)', 'english (great britain)', 'english (india)', 'english (new zealand)', 'english (singapore)', 'english (united states)', 'spanish', 'spanish (argentina)', 'spanish (spain)', 'spanish (uruguay)', 'finnish', 'french', 'french (belgium)', 'french (switzerland)', 'french (france)', 'frysian', 'frysian (netherlands)', 'hindi', 'croatian', 'italian', 'italian (switzerland)', 'italian (italy)', 'japanese', 'korean', 'dutch', 'dutch (belgium)', 'dutch (netherlands)', 'norwegian', 'norwegian (norway)', 'punjabi', 'polish', 'portuguese', 'portuguese (brazil)', 'russian', 'russian (russia)', 'serbian', 'serbian (serbia)', 'swedish', 'swedish (sweden)', 'telegu', 'chinese', 'chinese (china)', 'chinese (hong kong)', 'chinese (singapore)', 'chinese (taiwan)', 'American Sign Language']
+    - `enum` ['arabic', 'bengali', 'czech', 'danish', 'german', 'german (austria)', 'german (switzerland)', 'german (germany)', 'greek', 'english', 'english (australia)', 'english (canada)', 'english (great britain)', 'english (india)', 'english (new zealand)', 'english (singapore)', 'english (united states)', 'spanish', 'spanish (argentina)', 'spanish (spain)', 'spanish (uruguay)', 'finnish', 'french', 'french (belgium)', 'french (switzerland)', 'french (france)', 'frysian', 'frysian (netherlands)', 'hindi', 'croatian', 'italian', 'italian (switzerland)', 'italian (italy)', 'japanese', 'korean', 'dutch', 'dutch (belgium)', 'dutch (netherlands)', 'norwegian', 'norwegian (norway)', 'punjabi', 'polish', 'portuguese', 'portuguese (brazil)', 'russian', 'russian (russia)', 'serbian', 'serbian (serbia)', 'swedish', 'swedish (sweden)', 'telegu', 'chinese', 'chinese (china)', 'chinese (hong kong)', 'chinese (singapore)', 'chinese (taiwan)', 'american sign language']
 ### `PREFERRED_LANGUAGE_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string
@@ -585,12 +602,12 @@
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['20430005', '38628009', '42035005', '765288000', 'OTH', 'UNK', 'asked-declined']
+    - `enum` ['20430005', '38628009', '42035005', '765288000', 'OTH', 'UNK', 'asked-declined', 'ASKU']
 ### `SEXUAL_ORIENTATION_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.display
   - `type` string
   - `constraints`:
-    - `enum` ['heterosexual (finding)', 'homosexual (finding)', 'bisexual (finding)', 'sexually attracted to neither male nor female sex (finding)', 'other', 'unknown', 'asked but declined']
+    - `enum` ['heterosexual (finding)', 'homosexual (finding)', 'bisexual (finding)', 'sexually attracted to neither male nor female sex (finding)', 'other', 'unknown', 'asked but declined', 'asked but unknown']
 ### `SEXUAL_ORIENTATION_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.system
   - `type` string

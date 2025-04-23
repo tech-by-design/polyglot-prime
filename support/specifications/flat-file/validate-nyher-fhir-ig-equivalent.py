@@ -2,12 +2,64 @@ import csv
 import sys
 import json
 import os
-from frictionless import Package, transform, steps, extract
+from frictionless import Package, transform, steps, extract, Check, errors, Checklist
 from datetime import datetime, date
 import re  # Import required for regular expression handling
 
 
+# Custom Check Class
+class ValidateAnswerCode(Check):
+    code = "validate_answer_code"
+    Errors = [errors.RowError]
+
+    # Mapping of QUESTION_CODE to their valid ANSWER_CODEs
+    QUESTION_ANSWER_MAP = {
+        "44250-9": ["la6568-5", "la6569-3", "la6570-1", "la6571-9"],
+        "44255-8": ["la6568-5", "la6569-3", "la6570-1", "la6571-9"],
+        "68516-4": ["la6111-4", "la13942-0", "la19282-5", "la28855-7", "la28858-1", "la28854-0", "la28853-2", "la28891-2", "la32059-0", "la32060-8"],
+        "68517-2": ["la6270-8", "la26460-8", "la18876-5", "la18891-4", "la18934-2"],
+        "68524-8": ["la6270-8", "la26460-8", "la18876-5", "la18891-4", "la18934-2"],
+        "69858-9": ["la33-6", "la32-8"],
+        "69861-3": ["la33-6", "la32-8"],
+        "71802-3": ["la31993-1", "la31994-9", "la31995-6"],
+        "76513-1": ["la15832-1", "la22683-9", "la31980-8"],
+        "88122-7": ["la28397-0", "la6729-3", "la28398-8"],
+        "88123-5": ["la28397-0", "la6729-3", "la28398-8"],
+        "89555-7": ["la6111-4", "la6112-2", "la6113-0", "la6114-8", "la6115-5", "la10137-0", "la10138-8", "la10139-6"],
+        "93030-5": ["la33-6", "la32-8"],
+        "93038-8": ["la6568-5", "la13863-8", "la13909-9", "la13902-4", "la13914-9", "la30122-8"],
+        "93159-2": ["la6270-8", "la10066-1", "la10082-8", "la10044-8", "la9933-8"],
+        "95530-2": ["la6270-8", "la26460-8", "la18876-5", "la18891-4", "la18934-2"],
+        "95615-1": ["la6270-8", "la10066-1", "la10082-8", "la16644-9", "la6482-9"],
+        "95616-9": ["la6270-8", "la10066-1", "la10082-8", "la16644-9", "la6482-9"],
+        "95617-7": ["la6270-8", "la10066-1", "la10082-8", "la16644-9", "la6482-9"],
+        "95618-5": ["la6270-8", "la10066-1", "la10082-8", "la16644-9", "la6482-9"],
+        "96778-6": ["la31996-4", "la28580-1", "la31997-2", "la31998-0", "la31999-8", "la32000-4", "la32001-2", "la9-3"],
+        "96779-4": ["la33-6", "la32-8", "la32002-0"],
+        "96780-2": ["la31981-6", "la31982-4", "la31983-2"],
+        "96781-0": ["la31976-6", "la31977-4", "la31978-2", "la31979-0"],
+        "96782-8": ["la33-6", "la32-8"],
+        "96842-0": ["la6270-8", "la26460-8", "la18876-5", "la18891-4", "la18934-2"],
+        "97027-7": ["la33-6", "la32-8"],
+    }
+
+    def validate_row(self, row):
+        question_code = row.get("QUESTION_CODE")
+        answer_code = row.get("ANSWER_CODE")
+
+        if question_code and answer_code:
+            # Normalize both codes to lowercase for case-insensitive comparison
+            question_code_cf = question_code.casefold()
+            answer_code_cf = answer_code.casefold()
+
+            valid_answers = self.QUESTION_ANSWER_MAP.get(question_code_cf)
+            if valid_answers and answer_code_cf not in valid_answers:
+                note = f"Invalid ANSWER_CODE '{answer_code}' for QUESTION_CODE '{question_code}'"
+                yield errors.RowError.from_row(row, note=note)
+               
+
 def validate_package(spec_path, file1, file2, file3, file4, output_path):
+    
     results = {
         "errorsSummary": [],
         "report": None,
@@ -26,6 +78,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             "screening_observation_data": file3,
             "pt_info_data": file4,  
         } 
+      
         # Check for missing files
         missing_files = {key: path for key, path in file_mappings.items() if not os.path.isfile(path)}
         if missing_files:
@@ -71,26 +124,59 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
 
         # Transform and validate
         common_transform_steps = [ 
-            ("ORGANIZATION_TYPE_DISPLAY", "organization_type_display"),    
+            #("ORGANIZATION_TYPE_CODE", "organization_type_code"),
+            ("ORGANIZATION_TYPE_DISPLAY", "organization_type_display"), 
+            # ("ORGANIZATION_TYPE_CODE_SYSTEM", "organization_type_code_system"), 
+            #("ENCOUNTER_CLASS_CODE", "encounter_class_code"), 
+            ("ENCOUNTER_CLASS_CODE_DESCRIPTION", "encounter_class_code_description"), 
+            # ("ENCOUNTER_CLASS_CODE_SYSTEM", "encounter_class_code_system"),
+            #("ENCOUNTER_STATUS_CODE", "encounter_status_code"),
             ("ENCOUNTER_STATUS_CODE_DESCRIPTION", "encounter_status_code_description"),
+            # ("ENCOUNTER_STATUS_CODE_SYSTEM", "encounter_status_code_system"),
+            ("ENCOUNTER_TYPE_CODE_DESCRIPTION", "encounter_type_code_description"),
+            # ("ENCOUNTER_TYPE_CODE_SYSTEM", "encounter_type_code_system"),
+            ("PROCEDURE_STATUS_CODE", "procedure_status_code"), 
+            # ("PROCEDURE_CODE_SYSTEM", "procedure_code_system"),
+            #("CONSENT_STATUS", "consent_status"),
+            #("SCREENING_STATUS_CODE", "screening_status_code"),
             ("SCREENING_STATUS_CODE_DESCRIPTION", "screening_status_code_description"),
+            # ("SCREENING_STATUS_CODE_SYSTEM", "screening_status_code_system"),
+            #("SCREENING_LANGUAGE_CODE", "screening_language_code"),
             ("SCREENING_LANGUAGE_DESCRIPTION", "screening_language_description"),
-            ("PREFERRED_LANGUAGE_CODE_DESCRIPTION", "preferred_language_code_description"),
+            # ("SCREENING_LANGUAGE_CODE_SYSTEM", "screening_language_code_system"),
+            #("SCREENING_CODE", "screening_code"),
             ("SCREENING_CODE_DESCRIPTION", "screening_code_description"),
-            ("QUESTION_CODE_DESCRIPTION", "question_code_description"),  
+            # ("SCREENING_CODE_SYSTEM", "screening_code_system"),
+            ("QUESTION_CODE_DESCRIPTION", "question_code_description"), 
+            # ("QUESTION_CODE_SYSTEM", "question_code_system"),
             ("ANSWER_CODE", "answer_code"),
-            ("ANSWER_CODE_DESCRIPTION", "answer_code_description"), 
-            ("OBSERVATION_CATEGORY_SDOH_TEXT", "observation_category_sdoh_text"),
-            ("SEX_AT_BIRTH_CODE", "sex_at_birth_code"), 
-            ("GENDER_IDENTITY_CODE_DESCRIPTION", "gender_identity_code_description"),     
-            ("SEXUAL_ORIENTATION_CODE_DESCRIPTION", "sexual_orientation_code_description"), 
-            ("PREFERRED_LANGUAGE_CODE_SYSTEM_NAME", "preferred_language_code_system_name"), 
+            ("ANSWER_CODE_DESCRIPTION", "answer_code_description"),    
+            # ("ANSWER_CODE_SYSTEM", "answer_code_system"), 
+            #("OBSERVATION_CATEGORY_SDOH_CODE", "observation_category_sdoh_code"),  
+            #("DATA_ABSENT_REASON_CODE", "data_absent_reason_code"),
+            ("DATA_ABSENT_REASON_DISPLAY", "data_absent_reason_display"),
+            #("POTENTIAL_NEED_INDICATED", "potential_need_indicated"),
+            #("ADMINISTRATIVE_SEX_CODE", "administrative_sex_code"), 
             ("ADMINISTRATIVE_SEX_CODE_DESCRIPTION", "administrative_sex_code_description"),
+            # ("ADMINISTRATIVE_SEX_CODE_SYSTEM", "administrative_sex_code_system"),
+            #("SEX_AT_BIRTH_CODE", "sex_at_birth_code"),
             ("SEX_AT_BIRTH_CODE_DESCRIPTION", "sex_at_birth_code_description"),
-            ("RACE_CODE", "race_code"),
-            ("RACE_CODE_DESCRIPTION", "race_code_description"),  
-            ("ETHNICITY_CODE_DESCRIPTION", "ethnicity_code_description"),    
-            ("DATA_ABSENT_REASON_DISPLAY", "data_absent_reason_display")
+            # ("SEX_AT_BIRTH_CODE_SYSTEM", "sex_at_birth_code_system"),
+            # ("STATE", "state"),
+            # ("RACE_CODE_SYSTEM", "race_code_system"),
+            # ("ETHNICITY_CODE_SYSTEM", "ethnicity_code_system"),
+            #("PERSONAL_PRONOUNS_CODE", "personal_pronouns_code"),
+            ("PERSONAL_PRONOUNS_DESCRIPTION", "personal_pronouns_description"),
+            # ("PERSONAL_PRONOUNS_SYSTEM", "personal_pronouns_system"),
+            #("GENDER_IDENTITY_CODE", "gender_identity_code"),
+            ("GENDER_IDENTITY_CODE_DESCRIPTION", "gender_identity_code_description"),
+            # ("GENDER_IDENTITY_CODE_SYSTEM", "gender_identity_code_system"),
+            #("PREFERRED_LANGUAGE_CODE", "preferred_language_code"),
+            ("PREFERRED_LANGUAGE_CODE_DESCRIPTION", "preferred_language_code_description"),
+            # ("PREFERRED_LANGUAGE_CODE_SYSTEM", "preferred_language_code_system"), 
+            #("SEXUAL_ORIENTATION_CODE", "sexual_orientation_code"),
+            ("SEXUAL_ORIENTATION_CODE_DESCRIPTION", "sexual_orientation_code_description"),
+            # ("SEXUAL_ORIENTATION_CODE_SYSTEM", "sexual_orientation_code_system")            
         ]
 
         for resource in package.resources:
@@ -102,11 +188,14 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             ]
             resource = transform(resource, steps=transform_steps)
 
+        checklist = Checklist(checks=[ValidateAnswerCode()])
         # Validate the package
-        report = package.validate()
+        report = package.validate(checklist=checklist)  
+         
 
         # Add the validation report to results
         results["report"] = report.to_dict()
+        
 
     except FileNotFoundError as e:
         results["errorsSummary"].append({                        

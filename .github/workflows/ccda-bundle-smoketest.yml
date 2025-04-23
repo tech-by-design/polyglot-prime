@@ -1,7 +1,7 @@
-name: CSV Bundle SmokeTest
+name: CCDA Bundle SmokeTest
 on:
-  schedule:
-    - cron: '10 */1 * * *'
+  #schedule:
+   # - cron: '20 */1 * * *'
   workflow_dispatch:
 
 jobs:
@@ -51,14 +51,14 @@ jobs:
         echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
         echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
         
-    - name: Run CSV Bundle SmokeTest for Environments
+    - name: Run CCDA Bundle SmokeTest for Environments
       id: run-tests
       run: |
         # Array of environments and their paths
         environments=("Staging" "PHI-QA")
         environment_paths=(
-          "./test-automation/CSV-Bundle-SmokeTest-Stage/CSV_Bundle.jmx"
-          "./test-automation/CSV-Bundle-SmokeTest-PHI-QA/CSV_Bundle.jmx"
+          "./test-automation/CCDA-Bundle-SmokeTest-Stage/CCDA_Bundle.jmx"
+          "./test-automation/CCDA-Bundle-SmokeTest-PHI-QA/CCDA_Bundle.jmx"
         )
 
         # Initialize failure report and attachments arrays
@@ -130,11 +130,11 @@ jobs:
         server_port: 587
         username: ${{ secrets.SES_SMTP_USERNAME }}
         password: ${{ secrets.SES_SMTP_PASSWORD }}
-        subject: "CSV Bundle SmokeTest Failures"
+        subject: "CCDA Bundle SmokeTest Failures"
         body: |
           Hello Team,
 
-          The CSV Bundle SmokeTest encountered failures in the following environments:
+          The CCDA Bundle SmokeTest encountered failures in the following environments:
 
           ${{ env.failure_report }}
 
@@ -143,6 +143,6 @@ jobs:
           Regards,
           Tech by Design Automation Team
         content_type: "text/plain"
-        from: "Tech by Design CSV SmokeTest Result <no-reply@tx.techbd.org>"
+        from: "Tech by Design CCDA SmokeTest Result <no-reply@tx.techbd.org>"
         to: ratheeshkumar-kr@netspective.in, raphael-paily@netspective.in, roshni-kesavan@netspective.in
         attachments: ${{ env.failure_attachments }}
