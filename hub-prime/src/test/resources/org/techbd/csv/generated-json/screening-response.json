@@ -1,11 +1,14 @@
 {
   "resourceType": "Observation",
-  "id": "AHCScreeningGroup96777-8",
+  "id": "9783a8e8cc971d2128b56ace7f4cf6ce92c212fbde9eb05fcb0e67194df9b159",
   "meta": {
     "lastUpdated": "2024-02-23T05:30:00.000+05:30",
     "profile": [ "http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response" ]
   },
   "language": "en",
+  "identifier": [ {
+    "value": "AHCScreeningGroup96777-8"
+  } ],
   "status": "unknown",
   "category": [ {
     "coding": [ {

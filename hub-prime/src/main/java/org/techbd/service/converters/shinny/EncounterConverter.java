@@ -10,6 +10,7 @@ import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Encounter;
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -82,6 +83,8 @@ public class EncounterConverter extends BaseConverter {
         Meta meta = encounter.getMeta();
 
         meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getEncounterStartDatetime()));
+
+        populateEncounterIdentifier(encounter, screeningProfileData);
 
         populateEncounterStatus(encounter, screeningProfileData);
 
@@ -169,6 +172,15 @@ public class EncounterConverter extends BaseConverter {
         if (screeningResourceData != null) {
             encounter.addLocation(new Encounter.EncounterLocationComponent()
                     .setLocation(new Reference("Location/" + screeningResourceData.getEncounterLocation())));
+        }
+    }
+    
+    private static void populateEncounterIdentifier(Encounter encounter, ScreeningProfileData data) {
+        if (StringUtils.isNotEmpty(data.getEncounterId())) {
+            Identifier identifier = new Identifier();
+            identifier.setSystem(data.getEncounterIdSystem());
+            identifier.setValue(data.getEncounterId());
+            encounter.addIdentifier(identifier);
         }
     }
 }
