@@ -1,0 +1,5 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+administrative_sex,male,Male,http://hl7.org/fhir/administrative-gender,,1.4.2,TechBD
+administrative_sex,female,Female,http://hl7.org/fhir/administrative-gender,,1.4.2,TechBD
+administrative_sex,unknown,Unknown,http://hl7.org/fhir/administrative-gender,,1.4.2,TechBD
+administrative_sex,other,Other,http://hl7.org/fhir/administrative-gender,,1.4.2,TechBD

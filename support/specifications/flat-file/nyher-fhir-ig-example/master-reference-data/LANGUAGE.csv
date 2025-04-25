@@ -1,0 +1,58 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+language,ar,Arabic,urn:ietf:bcp:47,,1.4.2,TechBD
+language,bn,Bengali,urn:ietf:bcp:47,,1.4.2,TechBD
+language,cs,Czech,urn:ietf:bcp:47,,1.4.2,TechBD
+language,da,Danish,urn:ietf:bcp:47,,1.4.2,TechBD
+language,de,German,urn:ietf:bcp:47,,1.4.2,TechBD
+language,de-AT,German (Austria),urn:ietf:bcp:47,,1.4.2,TechBD
+language,de-CH,German (Switzerland),urn:ietf:bcp:47,,1.4.2,TechBD
+language,de-DE,German (Germany),urn:ietf:bcp:47,,1.4.2,TechBD
+language,el,Greek,urn:ietf:bcp:47,,1.4.2,TechBD
+language,en,English,urn:ietf:bcp:47,,1.4.2,TechBD
+language,en-AU,English (Australia),urn:ietf:bcp:47,,1.4.2,TechBD
+language,en-CA,English (Canada),urn:ietf:bcp:47,,1.4.2,TechBD
+language,en-GB,English (Great Britain),urn:ietf:bcp:47,,1.4.2,TechBD
+language,en-IN,English (India),urn:ietf:bcp:47,,1.4.2,TechBD
+language,en-NZ,English (New Zeland),urn:ietf:bcp:47,,1.4.2,TechBD
+language,en-SG,English (Singapore),urn:ietf:bcp:47,,1.4.2,TechBD
+language,en-US,English (United States),urn:ietf:bcp:47,,1.4.2,TechBD
+language,es,Spanish,urn:ietf:bcp:47,,1.4.2,TechBD
+language,es-AR,Spanish (Argentina),urn:ietf:bcp:47,,1.4.2,TechBD
+language,es-ES,Spanish (Spain),urn:ietf:bcp:47,,1.4.2,TechBD
+language,es-UY,Spanish (Uruguay),urn:ietf:bcp:47,,1.4.2,TechBD
+language,fi,Finnish,urn:ietf:bcp:47,,1.4.2,TechBD
+language,fr,French,urn:ietf:bcp:47,,1.4.2,TechBD
+language,fr-BE,French (Belgium),urn:ietf:bcp:47,,1.4.2,TechBD
+language,fr-CH,French (Switzerland),urn:ietf:bcp:47,,1.4.2,TechBD
+language,fr-FR,French (France),urn:ietf:bcp:47,,1.4.2,TechBD
+language,fy,Frysian,urn:ietf:bcp:47,,1.4.2,TechBD
+language,fy-NL,Frysian (Netherlands),urn:ietf:bcp:47,,1.4.2,TechBD
+language,hi,Hindi,urn:ietf:bcp:47,,1.4.2,TechBD
+language,hr,Croatian,urn:ietf:bcp:47,,1.4.2,TechBD
+language,it,Italian,urn:ietf:bcp:47,,1.4.2,TechBD
+language,it-CH,Italian (Switzerland),urn:ietf:bcp:47,,1.4.2,TechBD
+language,it-IT,Italian (Italy),urn:ietf:bcp:47,,1.4.2,TechBD
+language,ja,Japanese,urn:ietf:bcp:47,,1.4.2,TechBD
+language,ko,Korean,urn:ietf:bcp:47,,1.4.2,TechBD
+language,nl,Dutch,urn:ietf:bcp:47,,1.4.2,TechBD
+language,nl-BE,Dutch (Belgium),urn:ietf:bcp:47,,1.4.2,TechBD
+language,nl-NL,Dutch (Netherlands),urn:ietf:bcp:47,,1.4.2,TechBD
+language,no,Norwegian,urn:ietf:bcp:47,,1.4.2,TechBD
+language,no-NO,Norwegian (Norway),urn:ietf:bcp:47,,1.4.2,TechBD
+language,pa,Punjabi,urn:ietf:bcp:47,,1.4.2,TechBD
+language,pl,Polish,urn:ietf:bcp:47,,1.4.2,TechBD
+language,pt,Portuguese,urn:ietf:bcp:47,,1.4.2,TechBD
+language,pt-BR,Portuguese (Brazil),urn:ietf:bcp:47,,1.4.2,TechBD
+language,ru,Russian,urn:ietf:bcp:47,,1.4.2,TechBD
+language,ru-RU,Russian (Russia),urn:ietf:bcp:47,,1.4.2,TechBD
+language,sr,Serbian,urn:ietf:bcp:47,,1.4.2,TechBD
+language,sr-RS,Serbian (Serbia),urn:ietf:bcp:47,,1.4.2,TechBD
+language,sv,Swedish,urn:ietf:bcp:47,,1.4.2,TechBD
+language,sv-SE,Swedish (Sweden),urn:ietf:bcp:47,,1.4.2,TechBD
+language,te,Telegu,urn:ietf:bcp:47,,1.4.2,TechBD
+language,zh,Chinese,urn:ietf:bcp:47,,1.4.2,TechBD
+language,zh-CN,Chinese (China),urn:ietf:bcp:47,,1.4.2,TechBD
+language,zh-HK,Chinese (Hong Kong),urn:ietf:bcp:47,,1.4.2,TechBD
+language,zh-SG,Chinese (Singapore),urn:ietf:bcp:47,,1.4.2,TechBD
+language,zh-TW,Chinese (Taiwan),urn:ietf:bcp:47,,1.4.2,TechBD
+language,ASL,american sign language,http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage,,1.4.2,TechBD

@@ -1,0 +1,5 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+screening_status,final,Final,http://hl7.org/fhir/observation-status,,1.4.2,TechBD
+screening_status,corrected,Corrected,http://hl8.org/fhir/observation-status,,1.4.2,TechBD
+screening_status,entered-in-error,Entered in Error,http://hl9.org/fhir/observation-status,,1.4.2,TechBD
+screening_status,unknown,Unknown,http://hl10.org/fhir/observation-status,,1.4.2,TechBD

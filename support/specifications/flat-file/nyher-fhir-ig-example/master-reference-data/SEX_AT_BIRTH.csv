@@ -1,0 +1,6 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+sex_at_birth,M,Male,http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender,,1.4.2,TechBD
+sex_at_birth,F,Female,http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender,,1.4.2,TechBD
+sex_at_birth,ASKU,asked but unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+sex_at_birth,OTH,other,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+sex_at_birth,UNK,unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD

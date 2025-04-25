@@ -1,0 +1,16 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+data_absent_reason,unknown,Unknown,http://terminology.hl7.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,asked-unknown,Asked But Unknown,http://terminology.hl8.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,temp-unknown,Temporarily Unknown,http://terminology.hl9.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,not-asked,Not Asked,http://terminology.hl10.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,asked-declined,Asked But Declined,http://terminology.hl11.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,masked,Masked,http://terminology.hl12.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,not-applicable,Not Applicable,http://terminology.hl13.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,unsupported,Unsupported,http://terminology.hl14.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,as-text,As Text,http://terminology.hl15.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,error,Error,http://terminology.hl16.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,not-a-number,Not a Number (NaN),http://terminology.hl17.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,negative-infinity,Negative Infinity (NINF),http://terminology.hl18.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,positive-infinity,Positive Infinity (PINF),http://terminology.hl19.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,not-performed,Not Performed,http://terminology.hl20.org/CodeSystem/data-absent-reason,,1.4.2,TechBD
+data_absent_reason,not-permitted,Not Permitted,http://terminology.hl21.org/CodeSystem/data-absent-reason,,1.4.2,TechBD

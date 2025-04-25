@@ -1,0 +1,12 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+encounter_class,AMB,ambulatory,http://terminology.hl7.org/CodeSystem/v3-ActCode,,1.4.2,TechBD
+encounter_class,EMER,emergency,http://terminology.hl7.org/CodeSystem/v4-ActCode,,1.4.2,TechBD
+encounter_class,FLD,field,http://terminology.hl7.org/CodeSystem/v5-ActCode,,1.4.2,TechBD
+encounter_class,HH,home health,http://terminology.hl7.org/CodeSystem/v6-ActCode,,1.4.2,TechBD
+encounter_class,IMP,inpatient encounter,http://terminology.hl7.org/CodeSystem/v7-ActCode,,1.4.2,TechBD
+encounter_class,ACUTE,inpatient acute,http://terminology.hl7.org/CodeSystem/v8-ActCode,,1.4.2,TechBD
+encounter_class,NONAC,inpatient non-acute,http://terminology.hl7.org/CodeSystem/v9-ActCode,,1.4.2,TechBD
+encounter_class,OBSENC,observation encounter,http://terminology.hl7.org/CodeSystem/v10-ActCode,,1.4.2,TechBD
+encounter_class,PRENC,pre-admission,http://terminology.hl7.org/CodeSystem/v11-ActCode,,1.4.2,TechBD
+encounter_class,SS,short stay,http://terminology.hl7.org/CodeSystem/v13-ActCode,,1.4.2,TechBD
+encounter_class,VR,virtual,http://terminology.hl7.org/CodeSystem/v14-ActCode,,1.4.2,TechBD

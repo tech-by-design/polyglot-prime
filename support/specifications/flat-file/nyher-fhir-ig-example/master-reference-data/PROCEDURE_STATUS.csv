@@ -1,0 +1,9 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+procedure_status,preparation,Preparation,,,1.4.2,TechBD
+procedure_status,in-progress,In Progress,,,1.4.2,TechBD
+procedure_status,not-done,Not Done,,,1.4.2,TechBD
+procedure_status,on-hold,On Hold,,,1.4.2,TechBD
+procedure_status,stopped,Stopped,,,1.4.2,TechBD
+procedure_status,completed,Completed,,,1.4.2,TechBD
+procedure_status,entered-in-error,Entered in Error,,,1.4.2,TechBD
+procedure_status,unknown,Unknown,,,1.4.2,TechBD
