@@ -1,0 +1,5 @@
+./test-automation/FHIR-Bundle-SmokeTest-Stage/Input_payloads/AHCHRSNQuestionnaireResponseExample.json
+./test-automation/FHIR-Bundle-SmokeTest-Stage/Input_payloads/AHCHRSNScreeningResponseExample.json
+./test-automation/FHIR-Bundle-SmokeTest-Stage/Input_payloads/ObservationAssessmentFoodInsecurityExample.json
+./test-automation/FHIR-Bundle-SmokeTest-Stage/Input_payloads/ServiceRequestExample.json
+./test-automation/FHIR-Bundle-SmokeTest-Stage/Input_payloads/TaskExample.json
