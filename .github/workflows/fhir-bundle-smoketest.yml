@@ -1,7 +1,7 @@
 name: FHIR Bundle SmokeTest
 on:
   schedule:
-    - cron: '0 */1 * * *'
+    - cron: '15 3,15 * * *'  # Runs at 3:15 AM and 3:15 PM UTC
   workflow_dispatch:
 
 jobs:

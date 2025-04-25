@@ -39,7 +39,6 @@ public class BundleConverter {
         bundle.setType(Bundle.BundleType.TRANSACTION);
         Meta meta = new Meta();
         meta.setLastUpdated(new Date());
-        meta.setVersionId(igVersion);
         if (StringUtils.isNotEmpty(baseFHIRUrl)) {
             meta.setProfile(List.of(new CanonicalType(FHIRUtil.getProfileUrl(baseFHIRUrl,ResourceType.Bundle.name().toLowerCase()))));
         } else {

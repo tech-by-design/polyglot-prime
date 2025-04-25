@@ -1,7 +1,7 @@
 name: CCDA Bundle SmokeTest
 on:
-  #schedule:
-   # - cron: '20 */1 * * *'
+  schedule:
+    - cron: '0 3,15 * * *'  # Runs at 3:00 AM and 3:30 PM UTC
   workflow_dispatch:
 
 jobs:
