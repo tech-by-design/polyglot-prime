@@ -346,8 +346,7 @@
                 "meta": {
                     "lastUpdated": "2024-02-23T00:00:00Z",
                     "profile": [
-                        "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent",
-                        "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-consent"
+                        "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-Consent"
                     ]
                 },
                 "text": {
