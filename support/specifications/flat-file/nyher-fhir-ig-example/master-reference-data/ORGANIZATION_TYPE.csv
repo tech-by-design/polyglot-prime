@@ -1,0 +1,13 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+organization_type,other,Other,https://hl7.org/fhir/R4/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,cg,Community Group,https://hl7.org/fhir/R5/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,prov,Healthcare Provider,https://hl7.org/fhir/R6/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,dept,Hospital Department,https://hl7.org/fhir/R7/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,team,Organizational team,https://hl7.org/fhir/R8/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,govt,Government,https://hl7.org/fhir/R9/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,ins,Insurance Company,https://hl7.org/fhir/R10/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,pay,Payer,https://hl7.org/fhir/R11/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,edu,Educational Institute,https://hl7.org/fhir/R12/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,reli,Religious Institution,https://hl7.org/fhir/R13/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,crs,Clinical Research Sponsor,https://hl7.org/fhir/R14/codesystem-organization-type.html,,1.4.2,TechBD
+organization_type,bus,Non-Healthcare Business or Corporation,https://hl7.org/fhir/R15/codesystem-organization-type.html,,1.4.2,TechBD

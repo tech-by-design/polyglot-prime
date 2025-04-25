@@ -1,0 +1,48 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+ethnicity,2135-2,Hispanic or Latino, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2186-5,Not Hispanic or Latino, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2137-8,Spaniard, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2148-5,Mexican, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2155-0,Central American, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2165-9,South American, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2178-2,Latin American, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2180-8,Puerto Rican, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2182-4,Cuban, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2184-0,Dominican, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2138-6,Andalusian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2139-4,Asturian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2140-2,Castillian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2141-0,Catalonian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2142-8,Belearic Islander, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2143-6,Gallego, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2144-4,Valencian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2145-1,Canarian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2146-9,Spanish Basque, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2149-3,Mexican American, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2150-1,Mexicano, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2151-9,Chicano, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2152-7,La Raza, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2153-5,Mexican American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2156-8,Costa Rican, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2157-6,Guatemalan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2158-4,Honduran, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2159-2,Nicaraguan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2160-0,Panamanian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2161-8,Salvadoran, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2162-6,Central American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2163-4,Canal Zone, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2166-7,Argentinean, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2167-5,Bolivian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2168-3,Chilean, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2169-1,Colombian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2170-9,Ecuadorian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2171-7,Paraguayan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2172-5,Peruvian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2173-3,Uruguayan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2174-1,Venezuelan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2175-8,South American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2176-6,Criollo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,2133-7,Ethnicity,urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+ethnicity,ASKU,asked but unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+ethnicity,OTH,other,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+ethnicity,UNK,unknown,http://terminology.hl7.org/CodeSystem/v4-NullFlavor,,1.4.2,TechBD

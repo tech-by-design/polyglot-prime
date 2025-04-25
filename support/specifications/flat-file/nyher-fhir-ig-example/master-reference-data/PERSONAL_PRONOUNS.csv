@@ -1,0 +1,6 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+personal_pronouns,LA29518-0,he/him/his/his/himself,http://loinc.org,,1.4.2,TechBD
+personal_pronouns,LA29519-8,she/her/her/hers/herself,http://loinc.org,,1.4.2,TechBD
+personal_pronouns,LA29520-6,they/them/their/theirs/themselves,http://loinc.org,,1.4.2,TechBD
+personal_pronouns,OTH,other,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+personal_pronouns,UNK,unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
