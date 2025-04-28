@@ -1,0 +1,4 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+screening_code,96777-8,Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) Tool,http://loinc.org,,1.4.2,TechBD
+screening_code,97023-6,Accountable Health Communities (AHC) Health-Related Social Needs (HRSN) Supplemental Questions,http://loinc.org,,1.4.2,TechBD
+screening_code,NYSAHCHRSN,NYS Accountable Health Communities (AHC) Health-Related Social Needs (HRSN) Screening Tool,https://shinny.org/us/ny/hrsn/index.html,,1.4.2,TechBD

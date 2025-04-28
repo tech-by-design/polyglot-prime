@@ -1,0 +1,8 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+sexual_orientation,42035005,Bisexual,http://snomed.info/sct,,1.4.2,TechBD
+sexual_orientation,20430005,Heterosexual,http://snomed.info/sct,,1.4.2,TechBD
+sexual_orientation,38628009,Homosexual,http://snomed.info/sct,,1.4.2,TechBD
+sexual_orientation,765288000,Sexually attracted to neither male nor female sex,http://snomed.info/sct,,1.4.2,TechBD
+sexual_orientation,OTH,Other,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+sexual_orientation,UNK,Unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+sexual_orientation,ASKU,Asked but no answer,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD

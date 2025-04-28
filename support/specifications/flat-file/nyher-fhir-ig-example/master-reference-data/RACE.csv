@@ -1,0 +1,921 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+race,1002-5,American Indian or Alaska Native, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2028-9,Asian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2054-5,Black or African American, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2076-8,Native Hawaiian or Other Pacific Islander, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2106-3,White, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1004-1,American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1735-0,Alaska Native, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1006-6,Abenaki, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1008-2,Algonquian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1010-8,Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1021-5,Arapaho, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1026-4,Arikara, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1028-0,Assiniboine, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1030-6,Assiniboine Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1033-0,Bannock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1035-5,Blackfeet, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1037-1,Brotherton, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1039-7,Burt Lake Band, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1041-3,Caddo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1044-7,Cahuilla, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1053-8,California Tribes, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1068-6,Canadian and Latin American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1076-9,Catawba, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1078-5,Cayuse, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1080-1,Chehalis, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1082-7,Chemakuan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1086-8,Chemehuevi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1088-4,Cherokee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1100-7,Cherokee Shawnee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1102-3,Cheyenne, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1106-4,Cheyenne-Arapaho, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1108-0,Chickahominy, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1112-2,Chickasaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1114-8,Chinook, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1123-9,Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1150-2,Chippewa Cree, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1153-6,Chitimacha, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1155-1,Choctaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1162-7,Chumash, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1165-0,Clear Lake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1167-6,Coeur D'Alene, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1169-2,Coharie, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1171-8,Colorado River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1173-4,Colville, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1175-9,Comanche, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1178-3,"Coos, Lower Umpqua, Siuslaw", urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1180-9,Coos, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1182-5,Coquilles, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1184-1,Costanoan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1186-6,Coushatta, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1189-0,Cowlitz, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1191-6,Cree, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1193-2,Creek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1207-0,Croatan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1209-6,Crow, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1211-2,Cupeno, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1214-6,Delaware, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1222-9,Diegueno, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1233-6,Eastern Tribes, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1250-0,Esselen, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1252-6,Fort Belknap, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1254-2,Fort Berthold, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1256-7,Fort Mcdowell, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1258-3,Fort Hall, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1260-9,Gabrieleno, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1262-5,Grand Ronde, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1264-1,Gros Ventres, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1267-4,Haliwa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1269-0,Hidatsa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1271-6,Hoopa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1275-7,Hoopa Extension, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1277-3,Houma, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1279-9,Inaja-Cosmit, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1281-5,Iowa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1285-6,Iroquois, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1297-1,Juaneno, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1299-7,Kalispel, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1301-1,Karuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1303-7,Kaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1305-2,Kickapoo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1309-4,Kiowa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1312-8,Klallam, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1317-7,Klamath, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1319-3,Konkow, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1321-9,Kootenai, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1323-5,Lassik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1325-0,Long Island, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1331-8,Luiseno, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1340-9,Lumbee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1342-5,Lummi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1344-1,Maidu, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1348-2,Makah, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1350-8,Maliseet, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1352-4,Mandan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1354-0,Mattaponi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1356-5,Menominee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1358-1,Miami, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1363-1,Miccosukee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1365-6,Micmac, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1368-0,Mission Indians, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1370-6,Miwok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1372-2,Modoc, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1374-8,Mohegan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1376-3,Mono, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1378-9,Nanticoke, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1380-5,Narragansett, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1382-1,Navajo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1387-0,Nez Perce, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1389-6,Nomalaki, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1391-2,Northwest Tribes, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1403-5,Omaha, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1405-0,Oregon Athabaskan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1407-6,Osage, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1409-2,Otoe-Missouria, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1411-8,Ottawa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1416-7,Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1439-9,Pamunkey, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1441-5,Passamaquoddy, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1445-6,Pawnee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1448-0,Penobscot, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1450-6,Peoria, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1453-0,Pequot, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1456-3,Pima, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1460-5,Piscataway, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1462-1,Pit River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1464-7,Pomo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1474-6,Ponca, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1478-7,Potawatomi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1487-8,Powhatan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1489-4,Pueblo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1518-0,Puget Sound Salish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1541-2,Quapaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1543-8,Quinault, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1545-3,Rappahannock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1547-9,Reno-Sparks, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1549-5,Round Valley, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1551-1,Sac and Fox, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1556-0,Salinan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1558-6,Salish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1560-2,Salish and Kootenai, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1562-8,Schaghticoke, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1564-4,Scott Valley, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1566-9,Seminole, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1573-5,Serrano, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1576-8,Shasta, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1578-4,Shawnee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1582-6,Shinnecock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1584-2,Shoalwater Bay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1586-7,Shoshone, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1602-2,Shoshone Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1607-1,Siletz, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1609-7,Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1643-6,Siuslaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1645-1,Spokane, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1647-7,Stewart, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1649-3,Stockbridge, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1651-9,Susanville, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1653-5,Tohono O'Odham, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1659-2,Tolowa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1661-8,Tonkawa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1663-4,Tygh, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1665-9,Umatilla, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1667-5,Umpqua, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1670-9,Ute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1675-8,Wailaki, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1677-4,Walla-Walla, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1679-0,Wampanoag, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1683-2,Warm Springs, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1685-7,Wascopum, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1687-3,Washoe, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1692-3,Wichita, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1694-9,Wind River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1696-4,Winnebago, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1700-4,Winnemucca, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1702-0,Wintun, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1704-6,Wiyot, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1707-9,Yakama, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1709-5,Yakama Cowlitz, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1711-1,Yaqui, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1715-2,Yavapai Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1717-8,Yokuts, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1722-8,Yuchi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1724-4,Yuman, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1732-7,Yurok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1011-6,Chiricahua, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1012-4,Fort Sill Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1013-2,Jicarilla Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1014-0,Lipan Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1015-7,Mescalero Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1016-5,Oklahoma Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1017-3,Payson Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1018-1,San Carlos Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1019-9,White Mountain Apache, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1022-3,Northern Arapaho, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1023-1,Southern Arapaho, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1024-9,Wind River Arapaho, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1031-4,Fort Peck Assiniboine Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1042-1,Oklahoma Cado, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1045-4,Agua Caliente Cahuilla, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1046-2,Augustine, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1047-0,Cabazon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1048-8,Los Coyotes, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1049-6,Morongo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1050-4,Santa Rosa Cahuilla, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1051-2,Torres-Martinez, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1054-6,Cahto, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1055-3,Chimariko, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1056-1,Coast Miwok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1057-9,Digger, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1058-7,Kawaiisu, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1059-5,Kern River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1060-3,Mattole, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1061-1,Red Wood, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1062-9,Santa Rosa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1063-7,Takelma, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1064-5,Wappo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1065-2,Yana, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1066-0,Yuki, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1069-4,Canadian Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1070-2,Central American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1071-0,French American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1072-8,Mexican American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1073-6,South American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1074-4,Spanish American Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1083-5,Hoh, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1084-3,Quileute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1089-2,Cherokee Alabama, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1090-0,Cherokees of Northeast Alabama, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1091-8,Cherokees of Southeast Alabama, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1092-6,Eastern Cherokee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1093-4,Echota Cherokee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1094-2,Etowah Cherokee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1095-9,Northern Cherokee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1096-7,Tuscola, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1097-5,United Keetowah Band of Cherokee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1098-3,Western Cherokee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1103-1,Northern Cheyenne, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1104-9,Southern Cheyenne, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1109-8,Eastern Chickahominy, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1110-6,Western Chickahominy, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1115-5,Clatsop, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1116-3,Columbia River Chinook, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1117-1,Kathlamet, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1118-9,Upper Chinook, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1119-7,Wakiakum Chinook, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1120-5,Willapa Chinook, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1121-3,Wishram, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1124-7,Bad River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1125-4,Bay Mills Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1126-2,Bois Forte, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1127-0,Burt Lake Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1128-8,Fond du Lac, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1129-6,Grand Portage, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1130-4,Grand Traverse Band of Ottawa/Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1131-2,Keweenaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1132-0,Lac Courte Oreilles, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1133-8,Lac du Flambeau, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1134-6,Lac Vieux Desert Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1135-3,Lake Superior, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1136-1,Leech Lake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1137-9,Little Shell Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1138-7,Mille Lacs, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1139-5,Minnesota Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1140-3,Ontonagon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1141-1,Red Cliff Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1142-9,Red Lake Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1143-7,Saginaw Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1144-5,St. Croix Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1145-2,Sault Ste. Marie Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1146-0,Sokoagon Chippewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1147-8,Turtle Mountain, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1148-6,White Earth, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1151-0,Rocky Boy's Chippewa Cree, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1156-9,Clifton Choctaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1157-7,Jena Choctaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1158-5,Mississippi Choctaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1159-3,Mowa Band of Choctaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1160-1,Oklahoma Choctaw, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1163-5,Santa Ynez, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1176-7,Oklahoma Comanche, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1187-4,Alabama Coushatta, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1194-0,Alabama Creek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1195-7,Alabama Quassarte, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1196-5,Eastern Creek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1197-3,Eastern Muscogee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1198-1,Kialegee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1199-9,Lower Muscogee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1200-5,Machis Lower Creek Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1201-3,Poarch Band, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1202-1,Principal Creek Indian Nation, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1203-9,Star Clan of Muscogee Creeks, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1204-7,Thlopthlocco, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1205-4,Tuckabachee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1212-0,Agua Caliente, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1215-3,Eastern Delaware, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1216-1,Lenni-Lenape, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1217-9,Munsee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1218-7,Oklahoma Delaware, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1219-5,Rampough Mountain, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1220-3,Sand Hill, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1223-7,Campo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1224-5,Capitan Grande, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1225-2,Cuyapaipe, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1226-0,La Posta, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1227-8,Manzanita, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1228-6,Mesa Grande, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1229-4,San Pasqual, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1230-2,Santa Ysabel, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1231-0,Sycuan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1234-4,Attacapa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1235-1,Biloxi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1236-9,Georgetown (Eastern Tribes), urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1237-7,Moor, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1238-5,Nansemond, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1239-3,Natchez, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1240-1,Nausu Waiwash, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1241-9,Nipmuc, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1242-7,Paugussett, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1243-5,Pocomoke Acohonock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1244-3,Southeastern Indians, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1245-0,Susquehanock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1246-8,Tunica Biloxi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1247-6,Waccamaw-Siousan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1248-4,Wicomico, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1265-8,Atsina, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1272-4,Trinity, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1273-2,Whilkut, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1282-3,Iowa of Kansas-Nebraska, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1283-1,Iowa of Oklahoma, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1286-4,Cayuga, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1287-2,Mohawk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1288-0,Oneida, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1289-8,Onondaga, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1290-6,Seneca, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1291-4,Seneca Nation, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1292-2,Seneca-Cayuga, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1293-0,Tonawanda Seneca, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1294-8,Tuscarora, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1295-5,Wyandotte, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1306-0,Oklahoma Kickapoo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1307-8,Texas Kickapoo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1310-2,Oklahoma Kiowa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1313-6,Jamestown, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1314-4,Lower Elwha, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1315-1,Port Gamble Klallam, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1326-8,Matinecock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1327-6,Montauk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1328-4,Poospatuck, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1329-2,Setauket, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1332-6,La Jolla, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1333-4,Pala, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1334-2,Pauma, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1335-9,Pechanga, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1336-7,Soboba, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1337-5,Twenty-Nine Palms, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1338-3,Temecula, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1345-8,Mountain Maidu, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1346-6,Nishinam, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1359-9,Illinois Miami, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1360-7,Indiana Miami, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1361-5,Oklahoma Miami, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1366-4,Aroostook, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1383-9,Alamo Navajo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1384-7,Canoncito Navajo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1385-4,Ramah Navajo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1392-0,Alsea, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1393-8,Celilo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1394-6,Columbia, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1395-3,Kalapuya, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1396-1,Molala, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1397-9,Talakamish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1398-7,Tenino, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1399-5,Tillamook, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1400-1,Wenatchee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1401-9,Yahooskin, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1412-6,Burt Lake Ottawa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1413-4,Michigan Ottawa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1414-2,Oklahoma Ottawa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1417-5,Bishop, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1418-3,Bridgeport, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1419-1,Burns Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1420-9,Cedarville, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1421-7,Fort Bidwell, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1422-5,Fort Independence, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1423-3,Kaibab, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1424-1,Las Vegas, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1425-8,Lone Pine, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1426-6,Lovelock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1427-4,Malheur Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1428-2,Moapa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1429-0,Northern Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1430-8,Owens Valley, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1431-6,Pyramid Lake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1432-4,San Juan Southern Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1433-2,Southern Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1434-0,Summit Lake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1435-7,Utu Utu Gwaitu Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1436-5,Walker River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1437-3,Yerington Paiute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1442-3,Indian Township, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1443-1,Pleasant Point Passamaquoddy, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1446-4,Oklahoma Pawnee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1451-4,Oklahoma Peoria, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1454-8,Marshantucket Pequot, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1457-1,Gila River Pima-Maricopa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1458-9,Salt River Pima-Maricopa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1465-4,Central Pomo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1466-2,Dry Creek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1467-0,Eastern Pomo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1468-8,Kashia, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1469-6,Northern Pomo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1470-4,Scotts Valley, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1471-2,Stonyford, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1472-0,Sulphur Bank, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1475-3,Nebraska Ponca, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1476-1,Oklahoma Ponca, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1479-5,Citizen Band Potawatomi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1480-3,Forest County, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1481-1,Hannahville, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1482-9,Huron Potawatomi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1483-7,Pokagon Potawatomi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1484-5,Prairie Band, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1485-2,Wisconsin Potawatomi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1490-2,Acoma, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1491-0,Arizona Tewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1492-8,Cochiti, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1493-6,Hopi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1494-4,Isleta, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1495-1,Jemez, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1496-9,Keres, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1497-7,Laguna, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1498-5,Nambe, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1499-3,Picuris, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1500-8,Piro, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1501-6,Pojoaque, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1502-4,San Felipe, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1503-2,San Ildefonso, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1504-0,San Juan Pueblo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1505-7,San Juan De, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1506-5,San Juan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1507-3,Sandia, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1508-1,Santa Ana, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1509-9,Santa Clara, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1510-7,Santo Domingo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1511-5,Taos, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1512-3,Tesuque, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1513-1,Tewa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1514-9,Tigua, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1515-6,Zia, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1516-4,Zuni, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1519-8,Duwamish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1520-6,Kikiallus, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1521-4,Lower Skagit, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1522-2,Muckleshoot, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1523-0,Nisqually, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1524-8,Nooksack, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1525-5,Port Madison, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1526-3,Puyallup, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1527-1,Samish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1528-9,Sauk-Suiattle, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1529-7,Skokomish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1530-5,Skykomish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1531-3,Snohomish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1532-1,Snoqualmie, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1533-9,Squaxin Island, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1534-7,Steilacoom, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1535-4,Stillaguamish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1536-2,Suquamish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1537-0,Swinomish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1538-8,Tulalip, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1539-6,Upper Skagit, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1552-9,Iowa Sac and Fox, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1553-7,Missouri Sac and Fox, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1554-5,Oklahoma Sac and Fox, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1567-7,Big Cypress, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1568-5,Brighton, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1569-3,Florida Seminole, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1570-1,Hollywood Seminole, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1571-9,Oklahoma Seminole, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1574-3,San Manual, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1579-2,Absentee Shawnee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1580-0,Eastern Shawnee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1587-5,Battle Mountain, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1588-3,Duckwater, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1589-1,Elko, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1590-9,Ely, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1591-7,Goshute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1592-5,Panamint, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1593-3,Ruby Valley, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1594-1,Skull Valley, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1595-8,South Fork Shoshone, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1596-6,Te-Moak Western Shoshone, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1597-4,Timbi-Sha Shoshone, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1598-2,Washakie, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1599-0,Wind River Shoshone, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1600-6,Yomba, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1603-0,Duck Valley, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1604-8,Fallon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1605-5,Fort McDermitt, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1610-5,Blackfoot Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1611-3,Brule Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1612-1,Cheyenne River Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1613-9,Crow Creek Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1614-7,Dakota Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1615-4,Flandreau Santee, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1616-2,Fort Peck, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1617-0,Lake Traverse Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1618-8,Lower Brule Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1619-6,Lower Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1620-4,Mdewakanton Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1621-2,Miniconjou, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1622-0,Oglala Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1623-8,Pine Ridge Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1624-6,Pipestone Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1625-3,Prairie Island Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1626-1,Prior Lake Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1627-9,Rosebud Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1628-7,Sans Arc Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1629-5,Santee Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1630-3,Sisseton-Wahpeton, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1631-1,Sisseton Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1632-9,Spirit Lake Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1633-7,Standing Rock Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1634-5,Teton Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1635-2,Two Kettle Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1636-0,Upper Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1637-8,Wahpekute Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1638-6,Wahpeton Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1639-4,Wazhaza Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1640-2,Yankton Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1641-0,Yanktonai Sioux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1654-3,Ak-Chin, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1655-0,Gila Bend, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1656-8,San Xavier, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1657-6,Sells, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1668-3,Cow Creek Umpqua, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1671-7,Allen Canyon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1672-5,Uintah Ute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1673-3,Ute Mountain Ute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1680-8,Gay Head Wampanoag, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1681-6,Mashpee Wampanoag, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1688-1,Alpine, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1689-9,Carson, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1690-7,Dresslerville, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1697-2,Ho-chunk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1698-0,Nebraska Winnebago, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1705-3,Table Bluff, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1712-9,Barrio Libre, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1713-7,Pascua Yaqui, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1718-6,Chukchansi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1719-4,Tachi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1720-2,Tule River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1725-1,Cocopah, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1726-9,Havasupai, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1727-7,Hualapai, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1728-5,Maricopa, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1729-3,Mohave, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1730-1,Quechan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1731-9,Yavapai, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1733-5,Coast Yurok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1737-6,Alaska Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1840-8,Eskimo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1966-1,Aleut, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1739-2,Alaskan Athabascan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1811-9,Southeast Alaska, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1740-0,Ahtna, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1741-8,Alatna, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1742-6,Alexander, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1743-4,Allakaket, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1744-2,Alanvik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1745-9,Anvik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1746-7,Arctic, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1747-5,Beaver, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1748-3,Birch Creek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1749-1,Cantwell, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1750-9,Chalkyitsik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1751-7,Chickaloon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1752-5,Chistochina, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1753-3,Chitina, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1754-1,Circle, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1755-8,Cook Inlet, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1756-6,Copper Center, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1757-4,Copper River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1758-2,Dot Lake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1759-0,Doyon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1760-8,Eagle, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1761-6,Eklutna, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1762-4,Evansville, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1763-2,Fort Yukon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1764-0,Gakona, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1765-7,Galena, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1766-5,Grayling, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1767-3,Gulkana, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1768-1,Healy Lake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1769-9,Holy Cross, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1770-7,Hughes, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1771-5,Huslia, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1772-3,Iliamna, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1773-1,Kaltag, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1774-9,Kluti Kaah, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1775-6,Knik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1776-4,Koyukuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1777-2,Lake Minchumina, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1778-0,Lime, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1779-8,Mcgrath, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1780-6,Manley Hot Springs, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1781-4,Mentasta Lake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1782-2,Minto, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1783-0,Nenana, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1784-8,Nikolai, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1785-5,Ninilchik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1786-3,Nondalton, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1787-1,Northway, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1788-9,Nulato, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1789-7,Pedro Bay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1790-5,Rampart, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1791-3,Ruby, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1792-1,Salamatof, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1793-9,Seldovia, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1794-7,Slana, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1795-4,Shageluk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1796-2,Stevens, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1797-0,Stony River, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1798-8,Takotna, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1799-6,Tanacross, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1800-2,Tanaina, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1801-0,Tanana, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1802-8,Tanana Chiefs, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1803-6,Tazlina, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1804-4,Telida, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1805-1,Tetlin, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1806-9,Tok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1807-7,Tyonek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1808-5,Venetie, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1809-3,Wiseman, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1813-5,Tlingit-Haida, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1837-4,Tsimshian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1814-3,Angoon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1815-0,Central Council of Tlingit and Haida Tribes, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1816-8,Chilkat, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1817-6,Chilkoot, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1818-4,Craig, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1819-2,Douglas, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1820-0,Haida, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1821-8,Hoonah, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1822-6,Hydaburg, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1823-4,Kake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1824-2,Kasaan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1825-9,Kenaitze, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1826-7,Ketchikan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1827-5,Klawock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1828-3,Pelican, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1829-1,Petersburg, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1830-9,Saxman, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1831-7,Sitka, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1832-5,Tenakee Springs, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1833-3,Tlingit, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1834-1,Wrangell, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1835-8,Yakutat, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1838-2,Metlakatla, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1842-4,Greenland Eskimo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1844-0,Inupiat Eskimo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1891-1,Siberian Eskimo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1896-0,Yupik Eskimo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1845-7,Ambler, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1846-5,Anaktuvuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1847-3,Anaktuvuk Pass, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1848-1,Arctic Slope Inupiat, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1849-9,Arctic Slope Corporation, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1850-7,Atqasuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1851-5,Barrow, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1852-3,Bering Straits Inupiat, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1853-1,Brevig Mission, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1854-9,Buckland, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1855-6,Chinik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1856-4,Council, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1857-2,Deering, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1858-0,Elim, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1859-8,Golovin, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1860-6,Inalik Diomede, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1861-4,Inupiaq, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1862-2,Kaktovik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1863-0,Kawerak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1864-8,Kiana, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1865-5,Kivalina, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1866-3,Kobuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1867-1,Kotzebue, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1868-9,Koyuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1869-7,Kwiguk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1870-5,Mauneluk Inupiat, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1871-3,Nana Inupiat, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1872-1,Noatak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1873-9,Nome, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1874-7,Noorvik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1875-4,Nuiqsut, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1876-2,Point Hope, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1877-0,Point Lay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1878-8,Selawik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1879-6,Shaktoolik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1880-4,Shishmaref, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1881-2,Shungnak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1882-0,Solomon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1883-8,Teller, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1884-6,Unalakleet, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1885-3,Wainwright, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1886-1,Wales, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1887-9,White Mountain, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1888-7,White Mountain Inupiat, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1889-5,Mary's Igloo, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1892-9,Gambell, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1893-7,Savoonga, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1894-5,Siberian Yupik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1897-8,Akiachak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1898-6,Akiak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1899-4,Alakanuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1900-0,Aleknagik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1901-8,Andreafsky, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1902-6,Aniak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1903-4,Atmautluak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1904-2,Bethel, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1905-9,Bill Moore's Slough, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1906-7,Bristol Bay Yupik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1907-5,Calista Yupik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1908-3,Chefornak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1909-1,Chevak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1910-9,Chuathbaluk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1911-7,Clark's Point, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1912-5,Crooked Creek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1913-3,Dillingham, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1914-1,Eek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1915-8,Ekuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1916-6,Ekwok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1917-4,Emmonak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1918-2,Goodnews Bay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1919-0,Hooper Bay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1920-8,Iqurmuit (Russian Mission), urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1921-6,Kalskag, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1922-4,Kasigluk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1923-2,Kipnuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1924-0,Koliganek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1925-7,Kongiganak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1926-5,Kotlik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1927-3,Kwethluk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1928-1,Kwigillingok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1929-9,Levelock, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1930-7,Lower Kalskag, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1931-5,Manokotak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1932-3,Marshall, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1933-1,Mekoryuk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1934-9,Mountain Village, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1935-6,Naknek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1936-4,Napaumute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1937-2,Napakiak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1938-0,Napaskiak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1939-8,Newhalen, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1940-6,New Stuyahok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1941-4,Newtok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1942-2,Nightmute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1943-0,Nunapitchukv, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1944-8,Oscarville, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1945-5,Pilot Station, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1946-3,Pitkas Point, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1947-1,Platinum, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1948-9,Portage Creek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1949-7,Quinhagak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1950-5,Red Devil, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1951-3,St. Michael, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1952-1,Scammon Bay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1953-9,Sheldon's Point, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1954-7,Sleetmute, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1955-4,Stebbins, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1956-2,Togiak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1957-0,Toksook, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1958-8,Tulukskak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1959-6,Tuntutuliak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1960-4,Tununak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1961-2,Twin Hills, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1962-0,Georgetown (Yupik-Eskimo), urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1963-8,St. Mary's, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1964-6,Umkumiate, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1968-7,Alutiiq Aleut, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1972-9,Bristol Bay Aleut, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1984-4,Chugach Aleut, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1990-1,Eyak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1992-7,Koniag Aleut, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2002-4,Sugpiaq, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2004-0,Suqpigaq, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2006-5,Unangan Aleut, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1969-5,Tatitlek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1970-3,Ugashik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1973-7,Chignik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1974-5,Chignik Lake, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1975-2,Egegik, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1976-0,Igiugig, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1977-8,Ivanof Bay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1978-6,King Salmon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1979-4,Kokhanok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1980-2,Perryville, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1981-0,Pilot Point, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1982-8,Port Heiden, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1985-1,Chenega, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1986-9,Chugach Corporation, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1987-7,English Bay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1988-5,Port Graham, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1993-5,Akhiok, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1994-3,Agdaagux, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1995-0,Karluk, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1996-8,Kodiak, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1997-6,Larsen Bay, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1998-4,Old Harbor, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,1999-2,Ouzinkie, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2000-8,Port Lions, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2007-3,Akutan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2008-1,Aleut Corporation, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2009-9,Aleutian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2010-7,Aleutian Islander, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2011-5,Atka, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2012-3,Belkofski, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2013-1,Chignik Lagoon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2014-9,King Cove, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2015-6,False Pass, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2016-4,Nelson Lagoon, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2017-2,Nikolski, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2018-0,Pauloff Harbor, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2019-8,Qagan Toyagungin, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2020-6,Qawalangin, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2021-4,St. George, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2022-2,St. Paul, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2023-0,Sand Point, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2024-8,South Naknek, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2025-5,Unalaska, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2026-3,Unga, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2029-7,Asian Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2030-5,Bangladeshi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2031-3,Bhutanese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2032-1,Burmese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2033-9,Cambodian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2034-7,Chinese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2035-4,Taiwanese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2036-2,Filipino, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2037-0,Hmong, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2038-8,Indonesian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2039-6,Japanese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2040-4,Korean, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2041-2,Laotian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2042-0,Malaysian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2043-8,Okinawan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2044-6,Pakistani, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2045-3,Sri Lankan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2046-1,Thai, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2047-9,Vietnamese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2048-7,Iwo Jiman, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2049-5,Maldivian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2050-3,Nepalese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2051-1,Singaporean, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2052-9,Madagascar, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2056-0,Black, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2058-6,African American, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2060-2,African, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2067-7,Bahamian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2068-5,Barbadian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2069-3,Dominican, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2070-1,Dominica Islander, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2071-9,Haitian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2072-7,Jamaican, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2073-5,Tobagoan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2074-3,Trinidadian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2075-0,West Indian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2061-0,Botswanan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2062-8,Ethiopian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2063-6,Liberian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2064-4,Namibian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2065-1,Nigerian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2066-9,Zairean, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2078-4,Polynesian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2085-9,Micronesian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2100-6,Melanesian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2500-7,Other Pacific Islander, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2079-2,Native Hawaiian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2080-0,Samoan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2081-8,Tahitian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2082-6,Tongan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2083-4,Tokelauan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2086-7,Guamanian or Chamorro, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2087-5,Guamanian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2088-3,Chamorro, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2089-1,Mariana Islander, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2090-9,Marshallese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2091-7,Palauan, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2092-5,Carolinian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2093-3,Kosraean, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2094-1,Pohnpeian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2095-8,Saipanese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2096-6,Kiribati, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2097-4,Chuukese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2098-2,Yapese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2101-4,Fijian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2102-2,Papua New Guinean, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2103-0,Solomon Islander, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2104-8,New Hebrides, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2108-9,European, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2118-8,Middle Eastern or North African, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2129-5,Arab, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2109-7,Armenian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2110-5,English, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2111-3,French, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2112-1,German, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2113-9,Irish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2114-7,Italian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2115-4,Polish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2116-2,Scottish, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2119-6,Assyrian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2120-4,Egyptian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2121-2,Iranian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2122-0,Iraqi, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2123-8,Lebanese, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2124-6,Palestinian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2125-3,Syrian, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2126-1,Afghanistani, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD
+race,2127-9,Israeili, urn:oid:2.16.840.1.113883.6.238,,1.4.2,TechBD

@@ -1,0 +1,22 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+observation_category_sdoh,sdoh-category-unspecified,SDOH Category Unspecified,http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,food-insecurity,Food Insecurity,http://hl8.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,housing-instability,Housing Instability,http://hl9.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,homelessness,Homelessness,http://hl10.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,inadequate-housing,Inadequate Housing,http://hl11.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,transportation-insecurity,Transportation Insecurity,http://hl12.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,financial-insecurity,Financial Insecurity,http://hl13.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,material-hardship,Material Hardship,http://hl14.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,educational-attainment,Educational Attainment,http://hl15.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,employment-status,Employment Status,http://hl16.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,veteran-status,Veteran Status,http://hl17.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,stress,Stress,http://hl18.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,social-connection,Social Connection,http://hl19.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,intimate-partner-violence,Intimate Partner Violence,http://hl20.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,elder-abuse,Elder Abuse,http://hl21.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,personal-health-literacy,Personal Health Literacy,http://hl22.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,health-insurance-coverage-status,Health Insurance Coverage Status,http://hl23.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,medical-cost-burden,Medical Cost Burden,http://hl24.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,digital-literacy,Digital Literacy,http://hl25.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,digital-access,Digital Access,http://hl26.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD
+observation_category_sdoh,utility-insecurity,Utility Insecurity,http://hl27.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes,,1.4.2,TechBD

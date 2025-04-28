@@ -1,0 +1,10 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+gender_identity,407377005,"Female-to-Male (FTM), Transgender Male, Trans Man",http://snomed.info/sct,,1.4.2,TechBD
+gender_identity,446141000124107,Female,http://snomed.info/sct,,1.4.2,TechBD
+gender_identity,446151000124109,Male,http://snomed.info/sct,,1.4.2,TechBD
+gender_identity,446131000124102,Genderqueer,http://snomed.info/sct,,1.4.2,TechBD
+gender_identity,407376001,"Male-to-Female (MTF), Transgender Female, Trans Woman",http://snomed.info/sct,,1.4.2,TechBD
+gender_identity,ASKU,Asked but unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+gender_identity,OTH,Other,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
+gender_identity,UNK,Unknown,http://terminology.hl7.org/CodeSystem/v4-NullFlavor,,1.4.2,TechBD
+gender_identity,asked-declined,asked but declined,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD

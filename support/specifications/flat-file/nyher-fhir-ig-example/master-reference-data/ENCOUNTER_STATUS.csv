@@ -1,0 +1,10 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+encounter_status,planned,Planned,http://hl7.org/fhir/encounter-status,,1.4.2,TechBD
+encounter_status,arrived,Arrived,http://hl8.org/fhir/encounter-status,,1.4.2,TechBD
+encounter_status,triaged,Triaged,http://hl9.org/fhir/encounter-status,,1.4.2,TechBD
+encounter_status,in-progress,In Progress,http://hl10.org/fhir/encounter-status,,1.4.2,TechBD
+encounter_status,onleave,On Leave,http://hl11.org/fhir/encounter-status,,1.4.2,TechBD
+encounter_status,finished,Finished,http://hl12.org/fhir/encounter-status,,1.4.2,TechBD
+encounter_status,cancelled,Cancelled,http://hl13.org/fhir/encounter-status,,1.4.2,TechBD
+encounter_status,entered-in-error,Entered in Error,http://hl14.org/fhir/encounter-status,,1.4.2,TechBD
+encounter_status,unknown,Unknown,http://hl15.org/fhir/encounter-status,,1.4.2,TechBD
