@@ -16,19 +16,17 @@
           }},          
           {"name": "ORGANIZATION_TYPE_DISPLAY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').type.coding.display", "constraints": { "enum": ["healthcare provider", "hospital department", "organizational team", "government", "insurance company", "payer", "educational institute", "religious institution", "clinical research sponsor", "community group", "non-healthcare business or corporation", "other"]
           }},
-          {"name": "ORGANIZATION_TYPE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').type.coding.system", "constraints": { "enum":["http://terminology.hl7.org/CodeSystem/organization-type","https://hl7.org/fhir/R4/codesystem-organization-type.html"]}},   
+          {"name": "ORGANIZATION_TYPE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').type.coding.system", "constraints": { "enum":["http://terminology.hl7.org/CodeSystem/organization-type", "https://hl7.org/fhir/r4/codesystem-organization-type.html"]}},   
           {"name": "ENCOUNTER_LOCATION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').location.location.reference", "constraints": { "required": true}},   
           {"name": "FACILITY_ADDRESS1", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.line"},                    
           {"name": "FACILITY_ADDRESS2", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.text"},                    
           {"name": "FACILITY_CITY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.city & Bundle.entry.resource.where(resourceType ='Organization').address.text"},
           {"name": "FACILITY_STATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.state & Bundle.entry.resource.where(resourceType ='Organization').address.text", 
           "constraints": { "enum": [
-            "AK", "AL", "AR", "AS", "AZ", "CA", "CO", "CT", "DC", "DE", 
-            "FL", "FM", "GA", "GU", "HI", "IA", "ID", "IL", "IN", "KS", 
-            "KY", "LA", "MA", "MD", "ME", "MH", "MI", "MN", "MO", "MP", 
-            "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", 
-            "OH", "OK", "OR", "PA", "PR", "PW", "RI", "SC", "SD", "TN", 
-            "TX", "UT", "VA", "VI", "VT", "WA", "WI", "WV", "WY"
+            "ak", "al", "ar", "as", "az", "ca", "co", "ct", "dc", "de", "fl", "fm", "ga", "gu", "hi", "ia", "id", "il", "in",
+            "ks", "ky", "la", "ma", "md", "me", "mh", "mi", "mn", "mo", "mp", "ms", "mt", "nc", "nd", "ne", "nh", "nj", "nm",
+            "nv", "ny", "oh", "ok", "or", "pa", "pr", "pw", "ri", "sc", "sd", "tn", "tx", "ut", "va", "vi", "vt", "wa", "wi",
+            "wv", "wy"
           ] }},
             {"name": "FACILITY_ZIP", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.postalCode & Bundle.entry.resource.where(resourceType ='Organization').address.text", "constraints": { "pattern": "^\\d{5}(-?\\d{4})?$"}}, 
           {"name": "FACILITY_COUNTY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.district  & Bundle.entry.resource.where(resourceType ='Organization').address.text" }, 
@@ -55,12 +53,12 @@
         {"name": "ENCOUNTER_ID_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').identifier.system", "constraints": {"required": true, "pattern": "\\S*"}}, 
         {"name": "SCREENING_IDENTIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').id", "constraints": {"required": true, "unique": true, "pattern": "[A-Za-z0-9\\-\\.\\_]{1,64}"}},       
         {"name": "ENCOUNTER_CLASS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').class.code", "constraints": {"required": true, "enum": [
-          "AMB", "EMER", "FLD", "HH", "IMP", "ACUTE", "NONAC", "OBSENC", "PRENC", "SS", "VR"
+          "amb", "emer", "fld", "hh", "imp", "acute", "nonac", "obsenc", "prenc", "ss", "vr"
         ]
       }},
       {"name": "ENCOUNTER_CLASS_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').class.display", "constraints": {"required": true, "enum": ["ambulatory", "emergency", "field", "home health", "inpatient encounter", "inpatient acute", "inpatient non-acute", "observation encounter", "pre-admission", "short stay", "virtual"]}},
       {"name": "ENCOUNTER_CLASS_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').class.system", "constraints": {"required": true, "enum": [
-        "http://terminology.hl7.org/CodeSystem/v3-ActCode" ] }},            
+        "http://terminology.hl7.org/codesystem/v3-actcode" ] }},            
       {"name": "ENCOUNTER_STATUS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').status(code)", "constraints": {"required": true, "enum": [
         "planned",
         "arrived",
@@ -115,7 +113,7 @@
       "http://www.ama-assn.org/go/cpt",
       "http://snomed.info/sct",
       "urn:oid:2.16.840.1.113883.6.285",
-      "http://www.cms.gov/Medicare/Coding/ICD10",
+      "http://www.cms.gov/medicare/coding/ICD10",
       "urn:oid:2.16.840.1.113883.6.13"
     ]
     }},
@@ -140,12 +138,12 @@
      {"name": "SCREENING_STATUS_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').status.display", "constraints": {"enum": ["final", "corrected", "entered in error", "unknown"] }},         
       {"name": "SCREENING_STATUS_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').status.coding.system" , "constraints": {"enum": [ "http://hl7.org/fhir/observation-status" ] }},
       {"name": "SCREENING_LANGUAGE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.code", "constraints": { "enum": [
-        "ar", "bn", "cs", "da", "de", "de-AT", "de-CH", "de-DE", "el", "en", "en-AU",
-        "en-CA", "en-GB", "en-IN", "en-NZ", "en-SG", "en-US", "es", "es-AR", "es-ES",
-        "es-UY", "fi", "fr", "fr-BE", "fr-CH", "fr-FR", "fy", "fy-NL", "hi", "hr", "it",
-        "it-CH", "it-IT", "ja", "ko", "nl", "nl-BE", "nl-NL", "no", "no-NO", "pa", "pl",
-        "pt", "pt-BR", "ru", "ru-RU", "sr", "sr-RS", "sv", "sv-SE", "te", "zh", "zh-CN",
-        "zh-HK", "zh-SG", "zh-TW","ASL"
+        "ar", "bn", "cs", "da", "de", "de-at", "de-ch", "de-de", "el", "en", "en-au",
+        "en-ca", "en-gb", "en-in", "en-nz", "en-sg", "en-us", "es", "es-ar", "es-es",
+        "es-uy", "fi", "fr", "fr-be", "fr-ch", "fr-fr", "fy", "fy-nl", "hi", "hr", "it",
+        "it-ch", "it-it", "ja", "ko", "nl", "nl-be", "nl-nl", "no", "no-no", "pa", "pl",
+        "pt", "pt-br", "ru", "ru-ru", "sr", "sr-rs", "sv", "sv-se", "te", "zh", "zh-cn",
+        "zh-hk", "zh-sg", "zh-tw", "asl"
       ]}},      
       {"name": "SCREENING_LANGUAGE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.display", "constraints": { "enum": ["arabic", "bengali", "czech", "danish", "german", "german (austria)", "german (switzerland)", "german (germany)",  
       "greek", "english", "english (australia)", "english (canada)", "english (great britain)", "english (india)",  
@@ -155,7 +153,7 @@
       "italian (italy)", "japanese", "korean", "dutch", "dutch (belgium)", "dutch (netherlands)", "norwegian",  
       "norwegian (norway)", "punjabi", "polish", "portuguese", "portuguese (brazil)", "russian", "russian (russia)",  
       "serbian", "serbian (serbia)", "swedish", "swedish (sweden)", "telegu", "chinese", "chinese (china)",  
-      "chinese (hong kong)", "chinese (singapore)", "chinese (taiwan)", "American Sign Language"]
+      "chinese (hong kong)", "chinese (singapore)", "chinese (taiwan)", "american sign language"]
       }},
       {"name": "SCREENING_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.system", "constraints": { "enum": ["urn:ietf:bcp:47","http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage"]} },
       {"name": "SCREENING_ENTITY_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.value", "constraints": {"required": true}},
@@ -190,7 +188,7 @@
           {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true, "pattern": "[A-Za-z0-9\\-\\.\\_]{1,64}"}},
           {"name": "ENCOUNTER_ID_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').identifier.system", "constraints": {"required": true, "pattern": "\\S*"}},
           {"name": "SCREENING_IDENTIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').id", "constraints": {"required": true, "pattern": "[A-Za-z0-9\\-\\.\\_]{1,64}"}},
-          {"name": "SCREENING_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code", "constraints": {"required": true, "enum": ["96777-8", "97023-6", "NYSAHCHRSN"]}},            
+          {"name": "SCREENING_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code", "constraints": {"required": true, "enum": ["96777-8", "97023-6", "nysahchrsn"]}},            
           {"name": "SCREENING_CODE_DESCRIPTION", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display", "type": "string", "constraints": {"required": true, "enum": [ 
           "accountable health communities (ahc) health-related social needs screening (hrsn) tool",
           "accountable health communities (ahc) health-related social needs (hrsn) supplemental questions",
@@ -198,7 +196,7 @@
           ]
           }},                    
           {"name": "SCREENING_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.system", "constraints": {"required": true, "enum": ["http://loinc.org","https://shinny.org/us/ny/hrsn/index.html"]}},           
-          {"name": "QUESTION_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code", "constraints": {"required": true,"enum": ["96777-8", "71802-3", "96778-6", "88122-7", "88123-5", "93030-5", 
+          {"name": "QUESTION_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code", "constraints": {"required": true,"enum": [ "71802-3", "96778-6", "88122-7", "88123-5", "93030-5", 
           "96779-4", "95618-5", "95617-7", "95616-9", "95615-1",
           "95614-4", "76513-1", "96780-2", "96781-0", "93159-2",
           "97027-7", "96782-8", "89555-7", "68516-4", "68517-2", "96842-0", "95530-2", 
@@ -316,10 +314,10 @@
           }},
           {"name": "POTENTIAL_NEED_INDICATED", "type": "string","description":"Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.code", "constraints":{"required":true,
               "enum": [
-                "_GeneticObservationInterpretation", "CAR", "_ObservationInterpretationChange", "B", "D","U", "W", "_ObservationInterpretationExceptions", "<", ">",
-                "IE", "_ObservationInterpretationNormality", "A", "AA", "HH","LL", "H", "HU", "L", "LU", "N", "_ObservationInterpretationSusceptibility", "I", "NCL", "NS",
-                "R", "SYN-R", "S", "SDD", "SYN-S","EX", "HX", "LX", "ObservationInterpretationDetection","IND", "E", "NEG", "ND", "POS", "DET",
-                "ObservationInterpretationExpectation", "EXP", "UNE", "ReactivityObservationInterpretation", "NR", "RR", "WR","NULL"
+                "_geneticobservationinterpretation", "car", "_observationinterpretationchange", "b", "d", "u", "w", "_observationinterpretationexceptions", "<", ">",
+                "ie", "_observationinterpretationnormality", "a", "aa", "hh", "ll", "h", "hu", "l", "lu", "n", "_observationinterpretationsusceptibility", "i", "ncl", "ns",
+                "r", "syn-r", "s", "sdd", "syn-s", "ex", "hx", "lx", "observationinterpretationdetection", "ind", "e", "neg", "nd", "pos", "det",
+                "observationinterpretationexpectation", "exp", "une", "reactivityobservationinterpretation", "nr", "rr", "wr", "null"
               ]
             }},
           {"name": "SCREENING_START_DATETIME", "type": "string","description":"Bundle.entry.resource.where(resourceType = 'Observation').effectiveDateTime OR Bundle.entry.resource.where(resourceType = 'Observation').effectivePeriod.start", "constraints": { "required":true, "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"}},
@@ -381,12 +379,12 @@
             "unknown"
           ] }},
           {"name": "ADMINISTRATIVE_SEX_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').gender(system)", "constraints": {"required": true,  "enum": 
-          [ "http://hl7.org/fhir/administrative-gender", "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGenderTechBD" ] }},                    
+          [ "http://hl7.org/fhir/administrative-gender", "http://terminology.hl7.org/codesystem/v3-administrativegendertechbd" ] }},                    
           {"name": "SEX_AT_BIRTH_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode", "constraints": {  
           "enum": [
-          "F",
-          "M", 
-          "UNK"
+          "f",
+          "m", 
+          "unk"
           ]}},    
           {"name": "SEX_AT_BIRTH_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode", "constraints": { 
           "enum": [
@@ -396,19 +394,19 @@
           ]}},   
           {"name": "SEX_AT_BIRTH_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').valueCode", "constraints": { 
           "enum": [
-          "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
-          "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
-          "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex"
+          "http://terminology.hl7.org/codesystem/v3-administrativegender",
+          "http://terminology.hl7.org/codesystem/v3-nullflavor",
+          "http://hl7.org/fhir/us/core/structuredefinition/us-core-birthsex"
           ]}},                       
           {"name": "PATIENT_BIRTH_DATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').birthDate", "constraints": {"required": true, "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?$"}},
           {"name": "ADDRESS1", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.line", "constraints": {"required": true}},          
           {"name": "ADDRESS2", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.text"},          
           {"name": "CITY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.city", "constraints": {"required": true} },
           {"name": "STATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.state", "constraints": {"required": true, "enum":[
-            "AK", "AL", "AR", "AS", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "FM", "GA", "GU", "HI", "IA", "ID", "IL", "IN",
-            "KS", "KY", "LA", "MA", "MD", "ME", "MH", "MI", "MN", "MO", "MP", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM",
-            "NV", "NY", "OH", "OK", "OR", "PA", "PR", "PW", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VI", "VT", "WA", "WI",
-            "WV", "WY"
+            "ak", "al", "ar", "as", "az", "ca", "co", "ct", "dc", "de", "fl", "fm", "ga", "gu", "hi", "ia", "id", "il", "in",
+            "ks", "ky", "la", "ma", "md", "me", "mh", "mi", "mn", "mo", "mp", "ms", "mt", "nc", "nd", "ne", "nh", "nj", "nm",
+            "nv", "ny", "oh", "ok", "or", "pa", "pr", "pw", "ri", "sc", "sd", "tn", "tx", "ut", "va", "vi", "vt", "wa", "wi",
+            "wv", "wy"
           ]
           }},
           {"name": "ZIP", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.postalCode", "constraints": { "required": true, "pattern": "^\\d{5}(-?\\d{4})?$"}},
@@ -420,15 +418,15 @@
             "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.code" },
             {"name": "RACE_CODE_DESCRIPTION", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.display" },
             {"name": "RACE_CODE_SYSTEM", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.system", "constraints": { "enum":[
-              "urn:oid:2.16.840.1.113883.6.238", 
-              "http://terminology.hl7.org/CodeSystem/v3-NullFlavor" 
+              "urn:oid:2.16.840.1.113883.6.238",
+              "http://terminology.hl7.org/codesystem/v3-nullflavor"
             ]}},  
             {"name": "ETHNICITY_CODE", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code" },
             {"name": "ETHNICITY_CODE_DESCRIPTION", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.display" },
             {"name": "ETHNICITY_CODE_SYSTEM", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.system", "constraints": {  "enum":[
-              "urn:oid:2.16.840.1.113883.6.238" , "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
+              "urn:oid:2.16.840.1.113883.6.238", "http://terminology.hl7.org/codesystem/v3-nullflavor"
             ]}},              
-            {"name": "PERSONAL_PRONOUNS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code", "constraints": {"enum":[ "LA29518-0", "LA29519-8", "LA29520-6", "OTH", "UNK"]}},
+            {"name": "PERSONAL_PRONOUNS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code", "constraints": {"enum":["la29518-0", "la29519-8", "la29520-6", "oth", "unk"]}},
             {"name": "PERSONAL_PRONOUNS_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.display", "constraints": {"enum": [
               "he/him/his/his/himself",
               "she/her/her/hers/herself",
@@ -436,7 +434,7 @@
               "other",
               "unknown"
             ]} },
-            {"name": "PERSONAL_PRONOUNS_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.system", "constraints": {"enum":[ "http://loinc.org/","http://loinc.org", "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"]} },             
+            {"name": "PERSONAL_PRONOUNS_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.system", "constraints": {"enum":[ "http://loinc.org/","http://loinc.org", "http://terminology.hl7.org/codesystem/v3-nullflavor"]} },             
             {"name": "GENDER_IDENTITY_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.code", "constraints": {    "enum": [
               "33791000087105",
               "407376001",
@@ -444,8 +442,8 @@
               "446131000124102",
               "446141000124107",
               "446151000124109",
-              "OTH",
-              "UNK",
+              "oth",
+              "unk",
               "asked-declined"
             ]}},            
           {"name": "GENDER_IDENTITY_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display", "constraints": {  
@@ -461,10 +459,14 @@
               "asked but declined"
             ]
           }},
-          {"name": "GENDER_IDENTITY_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.system", "constraints": { "enum":["http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
-          "http://terminology.hl7.org/CodeSystem/data-absent-reason","http://snomed.info/sct", "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity"]}},                                                           
-          {"name": "PREFERRED_LANGUAGE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.code & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":["ar", "bn", "cs", "da", "de", "de-AT", "de-CH", "de-DE", "el", "en", "en-AU", "en-CA", "en-GB", "en-IN", "en-NZ", "en-SG", "en-US", "es", "es-AR", "es-ES", "es-UY", "fi", "fr", "fr-BE", "fr-CH", "fr-FR", "fy", "fy-NL", "hi", "hr", "it", "it-CH", "it-IT", "ja", "ko", "nl", "nl-BE", "nl-NL", "no", "no-NO", "pa", "pl", "pt", "pt-BR",
-           "ru", "ru-RU", "sr", "sr-RS", "sv", "sv-SE", "te", "zh", "zh-CN", "zh-HK", "zh-SG", "zh-TW", "ASL" ] }},    
+          {"name": "GENDER_IDENTITY_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.system", "constraints": { "enum":["http://terminology.hl7.org/codesystem/v3-nullflavor",
+          "http://terminology.hl7.org/codesystem/data-absent-reason",
+          "http://snomed.info/sct",
+          "http://shinny.org/us/ny/hrsn/structuredefinition/shinny-gender-identity"
+          ]}},                                                           
+          {"name": "PREFERRED_LANGUAGE_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.code & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":["ar", "bn", "cs", "da", "de", "de-at", "de-ch", "de-de", "el", "en", "en-au", "en-ca", "en-gb", "en-in", "en-nz", "en-sg", "en-us", "es", "es-ar", "es-es", "es-uy", "fi", "fr", "fr-be", "fr-ch", "fr-fr", "fy", "fy-nl", "hi", "hr", "it", "it-ch", "it-it", "ja", "ko", "nl", "nl-be", "nl-nl", "no", "no-no", "pa", "pl", "pt", "pt-br",
+          "ru", "ru-ru", "sr", "sr-rs", "sv", "sv-se", "te", "zh", "zh-cn", "zh-hk", "zh-sg", "zh-tw", "asl"
+          ] }},    
            {"name": "PREFERRED_LANGUAGE_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.display & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":[
             "arabic", "bengali", "czech", "danish", "german", "german (austria)",
             "german (switzerland)", "german (germany)", "greek", "english",
@@ -482,16 +484,21 @@
             "chinese", "chinese (china)", "chinese (hong kong)",
             "chinese (singapore)", "chinese (taiwan)","american sign language"
           ] }},
-          {"name": "PREFERRED_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":["iso","iso 639-2","http://hl7.org/fhir/us/core/valueset/simple-language", "urn:ietf:bcp:47", "http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage"]}},
+          {"name": "PREFERRED_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.system & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true", "constraints": { "enum":["iso",
+          "iso 639-2",
+          "http://hl7.org/fhir/us/core/valueset/simple-language",
+          "urn:ietf:bcp:47",
+          "http://shinny.org/us/ny/hrsn/codesystem/shinnylanguage"
+          ]}},
           {"name": "SEXUAL_ORIENTATION_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.code", "constraints": { "enum": [
             "20430005",
             "38628009",
             "42035005",
             "765288000",
-            "OTH",
-            "UNK",
+            "oth",
+            "unk",
             "asked-declined",
-            "ASKU"
+            "asku"
           ]}},
           {"name": "SEXUAL_ORIENTATION_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.display", "constraints": { "enum":[
             "heterosexual (finding)",
@@ -503,7 +510,9 @@
             "asked but declined",
             "asked but unknown"
           ] } },
-          {"name": "SEXUAL_ORIENTATION_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.system", "constraints": { "enum":["http://snomed.info/sct","http://terminology.hl7.org/CodeSystem/v3-NullFlavor"] } },
+          {"name": "SEXUAL_ORIENTATION_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.system", "constraints": { "enum":["http://snomed.info/sct",
+          "http://terminology.hl7.org/codesystem/v3-nullflavor"
+          ] } },
           {"name": "PATIENT_LAST_UPDATED", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').meta.lastUpdated", "constraints": { 
           "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"
         }} 

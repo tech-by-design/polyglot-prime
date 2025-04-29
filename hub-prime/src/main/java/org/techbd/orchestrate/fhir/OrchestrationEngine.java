@@ -291,7 +291,7 @@ public class OrchestrationEngine {
             this.engineConstructedAt = Instant.now();
             this.observability = new Observability(HapiValidationEngine.class.getName(),
                     "HAPI version %s (FHIR version %s)"
-                            .formatted("7.6.1", fhirContext.getVersion().getVersion().getFhirVersionString()),
+                            .formatted("8.0.0", fhirContext.getVersion().getVersion().getFhirVersionString()),
                     engineInitAt, engineConstructedAt);
             this.igPackages = builder.igPackages;
             this.igVersion = builder.igVersion;

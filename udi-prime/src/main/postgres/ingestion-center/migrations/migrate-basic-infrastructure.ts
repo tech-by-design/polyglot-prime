@@ -1002,6 +1002,14 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${refCodeLookUp}
       CREATE INDEX IF NOT EXISTS ref_code_lookup_code_type_idx ON techbd_udi_ingress.ref_code_lookup USING btree (code_type);
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ref_code_lookup_code_type_code_c_key'
+    ) THEN
+        ALTER TABLE techbd_udi_ingress.ref_code_lookup
+        ADD CONSTRAINT ref_code_lookup_code_type_code_c_key UNIQUE (code, code_type);
+    END IF;
 
       IF NOT EXISTS (
           SELECT 1
