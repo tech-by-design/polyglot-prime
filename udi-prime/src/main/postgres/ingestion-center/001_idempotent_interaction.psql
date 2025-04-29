@@ -4440,7 +4440,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.ref_code_lookup_system_view CASCADE;
 CREATE VIEW techbd_udi_ingress.ref_code_lookup_system_view AS
 SELECT 
     code_type,
-    STRING_AGG(system_value, ', ' ORDER BY system_value) AS system_values
+    STRING_AGG(DISTINCT system_value, ', ' ORDER BY system_value) AS system_values
 FROM techbd_udi_ingress.ref_code_lookup
 GROUP BY code_type
 ORDER BY code_type;
