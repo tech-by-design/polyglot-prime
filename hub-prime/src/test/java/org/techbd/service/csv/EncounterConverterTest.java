@@ -13,7 +13,6 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Encounter;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -59,7 +58,7 @@ class EncounterConverterTest {
         final Map<String, String> idsGenerated = new HashMap<>();
 
         // Instantiate the EncounterConverter
-        EncounterConverter encounterConverter = new EncounterConverter();
+        EncounterConverter encounterConverter = new EncounterConverter(null, null);
 
         // Call the convert method of the encounter converter
         final BundleEntryComponent result = encounterConverter

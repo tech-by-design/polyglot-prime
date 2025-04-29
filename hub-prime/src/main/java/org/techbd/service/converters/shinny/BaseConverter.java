@@ -15,13 +15,13 @@ import org.techbd.util.FHIRUtil;
 public abstract class BaseConverter implements IConverter {
 
 
-    private static Map<String, Map<String, String>> CODE_LOOKUP ;
-    private static Map<String, Map<String, String>> SYSTEM_LOOKUP ;
+    public static Map<String, Map<String, String>> CODE_LOOKUP ;
+    public static Map<String, Map<String, String>> SYSTEM_LOOKUP ;
     private final CodeLookupService codeLookupService;
 
     public BaseConverter(DSLContext dsl, CodeLookupService codeLookupService) {
-        BaseConverter.CODE_LOOKUP = CodeLookupService.getCodeResourceFromDb(dsl);
-        BaseConverter.SYSTEM_LOOKUP = CodeLookupService.getSystemResourceFromDb(dsl);
+        BaseConverter.CODE_LOOKUP = CodeLookupService.fetchCode(dsl);
+        BaseConverter.SYSTEM_LOOKUP = CodeLookupService.fetchSystem(dsl);
         this.codeLookupService = codeLookupService;
     }
 
