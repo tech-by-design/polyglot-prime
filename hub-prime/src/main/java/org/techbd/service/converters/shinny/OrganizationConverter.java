@@ -17,7 +17,6 @@ import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
-import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -26,6 +25,7 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
@@ -37,8 +37,8 @@ import org.techbd.util.DateUtil;
 @Order(1)
 public class OrganizationConverter extends BaseConverter {
 
-    public OrganizationConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
-        super(dslContext, codeLookupService);
+    public OrganizationConverter(UdiPrimeJpaConfig udiPrimeJpaConfig, CodeLookupService codeLookupService) {
+        super(udiPrimeJpaConfig, codeLookupService);
     }
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationConverter.class.getName());
 
@@ -121,7 +121,7 @@ public class OrganizationConverter extends BaseConverter {
         }
     }    
 
-    private static void populateOrganizationType(Organization organization, QeAdminData data) {
+    private void populateOrganizationType(Organization organization, QeAdminData data) {
         if (StringUtils.isNotEmpty(data.getOrganizationTypeCode()) || StringUtils.isNotEmpty(data.getOrganizationTypeDisplay())) {
             CodeableConcept type = new CodeableConcept();
 
@@ -138,7 +138,7 @@ public class OrganizationConverter extends BaseConverter {
         }
     }
 
-    private static void populateOrganizationAddress(Organization organization, QeAdminData qrAdminData) {
+    private void populateOrganizationAddress(Organization organization, QeAdminData qrAdminData) {
         if (StringUtils.isNotEmpty(qrAdminData.getFacilityAddress1()) || StringUtils.isNotEmpty(qrAdminData.getFacilityCity()) ||
             StringUtils.isNotEmpty(qrAdminData.getFacilityState()) || StringUtils.isNotEmpty(qrAdminData.getFacilityZip())) {
 

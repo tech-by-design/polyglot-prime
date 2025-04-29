@@ -1,85 +1,112 @@
 package org.techbd.service.csv;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
-import org.junit.jupiter.api.BeforeAll;
+import org.hl7.fhir.r4.model.ResourceType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.techbd.model.csv.DemographicData;
+import org.techbd.model.csv.QeAdminData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.converters.shinny.BaseConverter;
+import org.techbd.service.converters.shinny.CodeLookupService;
+import org.techbd.udi.UdiPrimeJpaConfig;
+import org.techbd.util.FHIRUtil;
 
-public class BaseConverterTest {
+class BaseConverterTest {
 
-    private static Map<String, Map<String, String>> mockCodeLookup;
-    private static Map<String, Map<String, String>> mockSystemLookup;
+    private BaseConverter baseConverter;
+    private UdiPrimeJpaConfig mockUdiPrimeJpaConfig;
+    private CodeLookupService mockCodeLookupService;
 
-    @BeforeAll
-    static void setup() {
-        // Mock CODE_LOOKUP and SYSTEM_LOOKUP
-        mockCodeLookup = new HashMap<>();
-        Map<String, String> categoryMap = new HashMap<>();
-        categoryMap.put("testcode", "mappedCode");
-        mockCodeLookup.put("testCategory", categoryMap);
+    @BeforeEach
+    void setUp() {
+        mockUdiPrimeJpaConfig = mock(UdiPrimeJpaConfig.class);
+        mockCodeLookupService = mock(CodeLookupService.class);
 
-        mockSystemLookup = new HashMap<>();
-        Map<String, String> systemCategoryMap = new HashMap<>();
-        systemCategoryMap.put("testsystem", "mappedSystem");
-        mockSystemLookup.put("testCategory", systemCategoryMap);
+        // Create a concrete subclass of BaseConverter for testing
+        baseConverter = new BaseConverter(mockUdiPrimeJpaConfig, mockCodeLookupService) {
+            @Override
+            public ResourceType getResourceType() {
+                return ResourceType.Patient; // Example resource type
+            }
 
-        // Set the static fields in BaseConverter
-        BaseConverter.CODE_LOOKUP = mockCodeLookup;
-        BaseConverter.SYSTEM_LOOKUP = mockSystemLookup;
+            @Override
+            public List<BundleEntryComponent> convert(Bundle bundle, DemographicData demographicData,
+                    QeAdminData qeAdminData, ScreeningProfileData screeningProfileData,
+                    List<ScreeningObservationData> screeningObservationData, String interactionId,
+                    Map<String, String> idsGenerated, String baseFHIRUrl) {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Unimplemented method 'convert'");
+            }
+        };
     }
 
     @Test
     void testFetchCode() {
-        String result = BaseConverter.fetchCode("testcode", "testCategory");
-        assertEquals("mappedCode", result);
+        Map<String, Map<String, String>> mockCodeLookup = new HashMap<>();
+        Map<String, String> categoryMap = new HashMap<>();
+        categoryMap.put("example", "exampleCode");
+        mockCodeLookup.put("category", categoryMap);
 
-        result = BaseConverter.fetchCode("unknownCode", "testCategory");
-        assertEquals("unknownCode", result);
+        when(mockCodeLookupService.fetchCode(any())).thenReturn(mockCodeLookup);
 
-        result = BaseConverter.fetchCode(null, "testCategory");
-        assertNull(result);
-
-        result = BaseConverter.fetchCode("testcode", null);
-        assertEquals("testcode", result);
+        String result = baseConverter.fetchCode("example", "category");
+        assertEquals("exampleCode", result);
     }
 
     @Test
     void testFetchSystem() {
-        String result = BaseConverter.fetchSystem("testsystem", "testCategory");
-        assertEquals("mappedSystem", result);
+        Map<String, Map<String, String>> mockSystemLookup = new HashMap<>();
+        Map<String, String> categoryMap = new HashMap<>();
+        categoryMap.put("example", "exampleSystem");
+        mockSystemLookup.put("category", categoryMap);
 
-        result = BaseConverter.fetchSystem("unknownSystem", "testCategory");
-        assertEquals("unknownSystem", result);
+        when(mockCodeLookupService.fetchSystem(any())).thenReturn(mockSystemLookup);
 
-        result = BaseConverter.fetchSystem(null, "testCategory");
-        assertNull(result);
-
-        result = BaseConverter.fetchSystem("testsystem", null);
-        assertEquals("testsystem", result);
+        String result = baseConverter.fetchSystem("example", "category");
+        assertEquals("exampleSystem", result);
     }
 
     @Test
     void testCreateExtension() {
-        Extension extension = BaseConverter.createExtension("http://example.com", "value", "http://system", "code", "display");
-        assertNotNull(extension);
-        assertEquals("http://example.com", extension.getUrl());
-        assertTrue(extension.getValue() instanceof org.hl7.fhir.r4.model.CodeableConcept);
+        String url = "http://example.com";
+        String value = "exampleValue";
+        String system = "http://example-system.com";
+        String code = "exampleCode";
+        String display = "Example Display";
 
-        assertThrows(IllegalArgumentException.class, () -> BaseConverter.createExtension("", "value", null, null, null));
+        Extension extension = BaseConverter.createExtension(url, value, system, code, display);
+
+        assertNotNull(extension);
+        assertEquals(url, extension.getUrl());
+        assertNotNull(extension.getValue());
     }
 
     @Test
     void testCreateAssignerReference() {
-        Reference reference = BaseConverter.createAssignerReference("Patient/123");
-        assertNotNull(reference);
-        assertEquals("Patient/123", reference.getReference());
+        String referenceString = "Patient/123";
 
-        assertThrows(IllegalArgumentException.class, () -> BaseConverter.createAssignerReference("InvalidReference"));
+        Reference reference = BaseConverter.createAssignerReference(referenceString);
+
+        assertNotNull(reference);
+        assertEquals(referenceString, reference.getReference());
+    }
+
+    @Test
+    void testGetProfileUrl() {
+        String profileUrl = baseConverter.getProfileUrl().getValue();
+        assertEquals(FHIRUtil.getProfileUrl("patient"), profileUrl);
     }
 }

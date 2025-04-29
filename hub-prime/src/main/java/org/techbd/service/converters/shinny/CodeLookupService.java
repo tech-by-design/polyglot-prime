@@ -20,7 +20,7 @@ public class CodeLookupService {
 
     private static final Logger LOG = LoggerFactory.getLogger(CodeLookupService.class.getName());
 
-    public static Map<String, Map<String, String>> fetchCode(DSLContext dsl) {
+    public Map<String, Map<String, String>> fetchCode(DSLContext dsl) {
         LOG.info("CodeLookupService::fetchCode fetching values from database - BEGIN");
         try {
             List<Record2<String, String>> records = dsl
@@ -47,7 +47,7 @@ public class CodeLookupService {
         return Collections.emptyMap();
     }
 
-    public static Map<String, Map<String, String>> fetchSystem(DSLContext dsl) {
+    public Map<String, Map<String, String>> fetchSystem(DSLContext dsl) {
         LOG.info("CodeLookupService::fetchSystem fetching values from database - BEGIN");
         try {
             List<Record2<String, String>> records = dsl

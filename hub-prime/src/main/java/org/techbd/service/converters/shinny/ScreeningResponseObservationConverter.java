@@ -24,7 +24,6 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
-import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -33,6 +32,7 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
@@ -41,8 +41,8 @@ import org.techbd.util.DateUtil;
 @Order(6)
 public class ScreeningResponseObservationConverter extends BaseConverter {
 
-        public ScreeningResponseObservationConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
-                super(dslContext, codeLookupService);
+        public ScreeningResponseObservationConverter(UdiPrimeJpaConfig udiPrimeJpaConfig, CodeLookupService codeLookupService) {
+                super(udiPrimeJpaConfig, codeLookupService);
         }
 
         private static final Logger LOG = LoggerFactory.getLogger(ScreeningResponseObservationConverter.class);
@@ -111,7 +111,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE));
                         observation
                                         .setStatus(Observation.ObservationStatus
-                                                        .fromCode(screeningProfileData.getScreeningStatusCode()));
+                                                        .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE)));
                         if (!data.getObservationCategorySdohCode().isEmpty()) {
                                 observation.addCategory(createCategory(
                                                 "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
@@ -125,7 +125,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         }
                         if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
                                 CodeableConcept value = new CodeableConcept();
-                                value.addCoding(new Coding(data.getAnswerCodeSystem(), data.getAnswerCode(),
+                                value.addCoding(new Coding(fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE), data.getAnswerCode(),
                                                 data.getAnswerCodeDescription()));
                                 observation.setValue(value);
                         } else if (!data.getDataAbsentReasonCode().isEmpty()) {
@@ -343,13 +343,15 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Add SDOH categories from group members
                 groupData.stream()
-                                .map(ScreeningObservationData::getObservationCategorySdohCode)
-                                .filter(code -> code != null && !code.isEmpty())
+                                .map(data -> fetchCode(data.getObservationCategorySdohCode(),
+                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE))
+                                .filter(code -> code != null && code instanceof String && !((String) code).isEmpty())
                                 .distinct()
                                 .forEach(sdohCode -> {
                                         ScreeningObservationData data = groupData.stream()
-                                                        .filter(d -> sdohCode
-                                                                        .equals(fetchCode(d.getObservationCategorySdohCode(), CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE)))
+                                                        .filter(d -> fetchCode(d.getObservationCategorySdohCode(),
+                                                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE)
+                                                                        .equals(sdohCode))
                                                         .findFirst()
                                                         .get();
                                         groupObservation.addCategory(createCategory(

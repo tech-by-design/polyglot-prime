@@ -24,7 +24,6 @@ import org.hl7.fhir.r4.model.Patient.PatientCommunicationComponent;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
-import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -33,6 +32,7 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
@@ -41,8 +41,8 @@ import org.techbd.util.DateUtil;
 @Order(2)
 public class PatientConverter extends BaseConverter {
 
-    public PatientConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
-        super(dslContext, codeLookupService);
+    public PatientConverter(UdiPrimeJpaConfig udiPrimeJpaConfig, CodeLookupService codeLookupService) {
+        super(udiPrimeJpaConfig, codeLookupService);
     }
     private static final Logger LOG = LoggerFactory.getLogger(PatientConverter.class.getName());
 
@@ -106,7 +106,7 @@ public class PatientConverter extends BaseConverter {
         return List.of(bundleEntryComponent);
     }
 
-    public static void populatePatientWithExtensions(Patient patient,DemographicData demographicData) {
+    public void populatePatientWithExtensions(Patient patient,DemographicData demographicData) {
         if (StringUtils.isNotEmpty(demographicData.getRaceCode())) {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
 
@@ -302,7 +302,7 @@ public class PatientConverter extends BaseConverter {
         }
     }
 
-    private static void populateAdministrativeSex(Patient patient, DemographicData demographicData) {
+    private void populateAdministrativeSex(Patient patient, DemographicData demographicData) {
         Optional.ofNullable(fetchCode(demographicData.getAdministrativeSexCode(), CsvConstants.ADMINISTRATIVE_SEX_CODE))
                 .map(sexCode -> switch (sexCode) {
                     case "male", "M" -> AdministrativeGender.MALE;
@@ -335,7 +335,7 @@ public class PatientConverter extends BaseConverter {
     }
 
 
-    private static void populateAddress(Patient patient, DemographicData data) {
+    private void populateAddress(Patient patient, DemographicData data) {
         if (StringUtils.isNotEmpty(data.getCity()) && StringUtils.isNotEmpty(data.getState())) {
             Address address = new Address();
             Optional.ofNullable(data.getAddress1())

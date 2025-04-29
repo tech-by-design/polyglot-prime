@@ -18,7 +18,7 @@ public interface CsvConstants {
     public static final String ENCOUNTER_TYPE_CODE = "encounter_type";
     public static final String PROCEDURE_STATUS_CODE = "procedure_status";
     public static final String CONSENT_STATUS = "consent_status";
-    public static final String SCREENING_STATUS_CODE = "screening_code";
+    public static final String SCREENING_STATUS_CODE = "screening_status";
     public static final String SCREENING_LANGUAGE_CODE = "language";
     public static final String OBSERVATION_CATEGORY_SDOH_CODE = "observation_category_sdoh";
     public static final String DATA_ABSENT_REASON_CODE = "data_absent_reason";
@@ -34,4 +34,5 @@ public interface CsvConstants {
     public static final String RACE_CODE = "race";
     public static final String SCREENING_CODE = "screening_code";
     public static final String QUESTION_CODE = "question_code";
+    public static final String ANSWER_CODE = "answer_code";
 }

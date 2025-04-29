@@ -14,7 +14,6 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
-import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -23,6 +22,7 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
@@ -34,8 +34,8 @@ import org.techbd.util.DateUtil;
 @Order(5)
 public class EncounterConverter extends BaseConverter {
 
-    public EncounterConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
-        super(dslContext, codeLookupService);
+    public EncounterConverter(UdiPrimeJpaConfig udiPrimeJpaConfig, CodeLookupService codeLookupService) {
+        super(udiPrimeJpaConfig, codeLookupService);
     }
     private static final Logger LOG = LoggerFactory.getLogger(EncounterConverter.class.getName());
 
@@ -113,7 +113,7 @@ public class EncounterConverter extends BaseConverter {
         encounter.setSubject(new Reference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)));
     }
 
-    private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
+    private void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
         if (StringUtils.isNotEmpty(data.getEncounterClassCode())) {
             Coding encounterClass = new Coding();
             encounterClass.setSystem(fetchSystem(data.getEncounterClassCodeSystem(), CsvConstants.ENCOUNTER_CLASS_CODE));
@@ -124,7 +124,7 @@ public class EncounterConverter extends BaseConverter {
         }
     }
 
-    private static void populateEncounterType(Encounter encounter, ScreeningProfileData data) {
+    private void populateEncounterType(Encounter encounter, ScreeningProfileData data) {
         if (StringUtils.isNotEmpty(data.getEncounterTypeCode()) || StringUtils.isNotEmpty(data.getEncounterTypeCodeDescription())) {
             CodeableConcept encounterType = new CodeableConcept();
 
