@@ -76,8 +76,8 @@
 <th>Errors</th>
 <th>Missing Classes</th></tr>
 <tr class="b">
-<td>305</td>
-<td>38</td>
+<td>306</td>
+<td>42</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -125,27 +125,30 @@
 <td><a href="#org.techbd.service.DataLedgerApiClient">org.techbd.service.DataLedgerApiClient</a></td>
 <td>1</td></tr>
 <tr class="a">
+<td><a href="#org.techbd.service.converters.shinny.BaseConverter">org.techbd.service.converters.shinny.BaseConverter</a></td>
+<td>4</td></tr>
+<tr class="b">
 <td><a href="#org.techbd.service.converters.shinny.ScreeningResponseObservationConverter">org.techbd.service.converters.shinny.ScreeningResponseObservationConverter</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.Constant">org.techbd.service.http.Constant</a></td>
 <td>2</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.Interactions">org.techbd.service.http.Interactions</a></td>
 <td>1</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.InteractionsFilter">org.techbd.service.http.InteractionsFilter</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.service.http.hub.prime.api.FHIRService">org.techbd.service.http.hub.prime.api.FHIRService</a></td>
 <td>6</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator">org.techbd.service.http.hub.prime.ux.validator.JsonPathValidator</a></td>
 <td>1</td></tr>
-<tr class="a">
+<tr class="b">
 <td><a href="#org.techbd.util.CsvConversionUtil">org.techbd.util.CsvConversionUtil</a></td>
 <td>2</td></tr>
-<tr class="b">
+<tr class="a">
 <td><a href="#org.techbd.util.FHIRUtil">org.techbd.util.FHIRUtil</a></td>
 <td>1</td></tr></table></section><a name="lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory"></a><section>
 <h2>lib.aide.resource.content.ResourceFactory$SuffixedResourceFactory</h2>
@@ -383,6 +386,38 @@
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
 <td>112</td>
+<td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.BaseConverter"></a><section>
+<h2>org.techbd.service.converters.shinny.BaseConverter</h2>
+<table class="table table-striped">
+<tr class="a">
+<th>Bug</th>
+<th>Category</th>
+<th>Details</th>
+<th>Line</th>
+<th>Priority</th></tr>
+<tr class="b">
+<td>org.techbd.service.converters.shinny.BaseConverter.CODE_LOOKUP should be package protected</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_PKGPROTECT">MS_PKGPROTECT</a></td>
+<td></td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>org.techbd.service.converters.shinny.BaseConverter.SYSTEM_LOOKUP should be package protected</td>
+<td>MALICIOUS_CODE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#MS_PKGPROTECT">MS_PKGPROTECT</a></td>
+<td></td>
+<td>Medium</td></tr>
+<tr class="b">
+<td>Write to static field org.techbd.service.converters.shinny.BaseConverter.CODE_LOOKUP from instance method new org.techbd.service.converters.shinny.BaseConverter(DSLContext, CodeLookupService)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD">ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD</a></td>
+<td>23</td>
+<td>Medium</td></tr>
+<tr class="a">
+<td>Write to static field org.techbd.service.converters.shinny.BaseConverter.SYSTEM_LOOKUP from instance method new org.techbd.service.converters.shinny.BaseConverter(DSLContext, CodeLookupService)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD">ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD</a></td>
+<td>24</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.converters.shinny.ScreeningResponseObservationConverter"></a><section>
 <h2>org.techbd.service.converters.shinny.ScreeningResponseObservationConverter</h2>
 <table class="table table-striped">
@@ -396,7 +431,7 @@
 <td>Useless object stored in variable questionAndAnswerCode of method org.techbd.service.converters.shinny.ScreeningResponseObservationConverter.convert(Bundle, DemographicData, QeAdminData, ScreeningProfileData, List, String, Map, String)</td>
 <td>STYLE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UC_USELESS_OBJECT">UC_USELESS_OBJECT</a></td>
-<td>85</td>
+<td>90</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.service.http.Constant"></a><section>
 <h2>org.techbd.service.http.Constant</h2>
 <table class="table table-striped">
