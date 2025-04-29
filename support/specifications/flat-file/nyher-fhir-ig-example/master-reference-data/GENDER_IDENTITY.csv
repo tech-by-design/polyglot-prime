@@ -6,5 +6,5 @@ gender_identity,446131000124102,Genderqueer,http://snomed.info/sct,,1.4.2,TechBD
 gender_identity,407376001,"Male-to-Female (MTF), Transgender Female, Trans Woman",http://snomed.info/sct,,1.4.2,TechBD
 gender_identity,ASKU,Asked but unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
 gender_identity,OTH,Other,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
-gender_identity,UNK,Unknown,http://terminology.hl7.org/CodeSystem/v4-NullFlavor,,1.4.2,TechBD
+gender_identity,UNK,Unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
 gender_identity,asked-declined,asked but declined,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,,1.4.2,TechBD
