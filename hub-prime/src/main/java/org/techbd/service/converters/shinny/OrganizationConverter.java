@@ -17,6 +17,7 @@ import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Organization;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r4.model.StringType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -29,14 +30,16 @@ import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
 
-import ca.uhn.fhir.context.FhirContext;
-
 /**
  * Converts data related to an Organization into a FHIR Organization resource.
  */
 @Component
 @Order(1)
 public class OrganizationConverter extends BaseConverter {
+
+    public OrganizationConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+        super(dslContext, codeLookupService);
+    }
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationConverter.class.getName());
 
     /**
@@ -125,8 +128,8 @@ public class OrganizationConverter extends BaseConverter {
             // Create a new Coding object
             Coding coding = new Coding();
             
-            coding.setSystem(data.getOrganizationTypeCodeSystem());
-            coding.setCode(data.getOrganizationTypeCode());
+            coding.setSystem(fetchSystem(data.getOrganizationTypeCodeSystem(), CsvConstants.ORGANIZATION_TYPE_CODE) );
+            coding.setCode(fetchCode(data.getOrganizationTypeCode(), CsvConstants.ORGANIZATION_TYPE_CODE));
             coding.setDisplay(data.getOrganizationTypeDisplay());
 
             type.addCoding(coding);
@@ -170,7 +173,7 @@ public class OrganizationConverter extends BaseConverter {
 
             address.setCity(qrAdminData.getFacilityCity());
             address.setDistrict(qrAdminData.getFacilityCounty());
-            address.setState(qrAdminData.getFacilityState());
+            address.setState(fetchCode(qrAdminData.getFacilityState(), CsvConstants.STATE));
             address.setPostalCode(qrAdminData.getFacilityZip());
 
             organization.addAddress(address);

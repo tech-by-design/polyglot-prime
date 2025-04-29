@@ -13,9 +13,9 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Consent;
 import org.hl7.fhir.r4.model.Consent.ConsentProvisionType;
-import org.hl7.fhir.r4.model.Consent.ConsentState;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -36,6 +36,10 @@ import io.micrometer.common.util.StringUtils;
 @Component
 @Order(4)
 public class ConsentConverter extends BaseConverter {
+
+    public ConsentConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+        super(dslContext, codeLookupService);
+    }
     private static final Logger LOG = LoggerFactory.getLogger(ConsentConverter.class.getName());
 
     /**
@@ -163,7 +167,8 @@ public class ConsentConverter extends BaseConverter {
     private void populateConsentProvision(Consent consent, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null && StringUtils.isNotEmpty(screeningResourceData.getConsentStatus())) {
             Consent.ProvisionComponent provision = new Consent.ProvisionComponent();
-            provision.setType(ConsentProvisionType.fromCode(screeningResourceData.getConsentStatus()));
+            String consentStatus = fetchCode(screeningResourceData.getConsentStatus(), CsvConstants.CONSENT_STATUS);
+            provision.setType(ConsentProvisionType.fromCode(consentStatus));
             consent.setProvision(provision);
         }
     }

@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -32,6 +33,10 @@ import org.techbd.util.DateUtil;
 @Component
 @Order(5)
 public class EncounterConverter extends BaseConverter {
+
+    public EncounterConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+        super(dslContext, codeLookupService);
+    }
     private static final Logger LOG = LoggerFactory.getLogger(EncounterConverter.class.getName());
 
     /**
@@ -111,8 +116,9 @@ public class EncounterConverter extends BaseConverter {
     private static void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
         if (StringUtils.isNotEmpty(data.getEncounterClassCode())) {
             Coding encounterClass = new Coding();
-            encounterClass.setSystem(data.getEncounterClassCodeSystem());
-            encounterClass.setCode(data.getEncounterClassCode());
+            encounterClass.setSystem(fetchSystem(data.getEncounterClassCodeSystem(), CsvConstants.ENCOUNTER_CLASS_CODE));
+            encounterClass.setCode(fetchCode(data.getEncounterClassCode(), CsvConstants.ENCOUNTER_CLASS_CODE));
+
             encounterClass.setDisplay(data.getEncounterClassCodeDescription());
             encounter.setClass_(encounterClass);
         }
@@ -125,7 +131,7 @@ public class EncounterConverter extends BaseConverter {
             if (data.getEncounterTypeCode() != null) {
                 Coding coding = new Coding();
                 coding.setCode(data.getEncounterTypeCode());
-                coding.setSystem(data.getEncounterTypeCodeSystem());
+                coding.setSystem(fetchSystem(data.getEncounterTypeCodeSystem(), CsvConstants.ENCOUNTER_TYPE_CODE));
                 coding.setDisplay(data.getEncounterTypeCodeDescription());
                 encounterType.addCoding(coding);
             }
@@ -140,7 +146,7 @@ public class EncounterConverter extends BaseConverter {
 
     private void populateEncounterStatus(Encounter encounter, ScreeningProfileData screeningResourceData) {
         if (screeningResourceData != null && StringUtils.isNotEmpty(screeningResourceData.getEncounterStatusCode())) {
-            encounter.setStatus(Encounter.EncounterStatus.fromCode(screeningResourceData.getEncounterStatusCode()));
+            encounter.setStatus(Encounter.EncounterStatus.fromCode(fetchCode(screeningResourceData.getEncounterStatusCode(), CsvConstants.ENCOUNTER_STATUS_CODE)));
         } else {
             encounter.setStatus(Encounter.EncounterStatus.UNKNOWN);
         }

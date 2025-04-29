@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -30,6 +31,10 @@ import org.techbd.util.FHIRUtil;
 @Component
 @Order(3)
 public class SexualOrientationObservationConverter extends BaseConverter {
+
+    public SexualOrientationObservationConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+        super(dslContext, codeLookupService);
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(SexualOrientationObservationConverter.class.getName());
 
@@ -66,8 +71,8 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                     "76690-7", "Sexual orientation")); // TODO : remove static reference
             observation.setCode(code);
             CodeableConcept value = new CodeableConcept();
-            value.addCoding(new Coding(demographicData.getSexualOrientationCodeSystem(),
-                    demographicData.getSexualOrientationCode(),
+            value.addCoding(new Coding(fetchSystem(demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE),
+                    fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE),
                     demographicData.getSexualOrientationCodeDescription()));
             observation.setValue(value);
             // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));

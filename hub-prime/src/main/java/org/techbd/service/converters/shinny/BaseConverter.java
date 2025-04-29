@@ -1,5 +1,7 @@
 package org.techbd.service.converters.shinny;
 
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
@@ -7,9 +9,45 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
+import org.jooq.DSLContext;
 import org.techbd.util.FHIRUtil;
 
 public abstract class BaseConverter implements IConverter {
+
+
+    public static Map<String, Map<String, String>> CODE_LOOKUP ;
+    public static Map<String, Map<String, String>> SYSTEM_LOOKUP ;
+    private final CodeLookupService codeLookupService;
+
+    public BaseConverter(DSLContext dsl, CodeLookupService codeLookupService) {
+        BaseConverter.CODE_LOOKUP = CodeLookupService.fetchCode(dsl);
+        BaseConverter.SYSTEM_LOOKUP = CodeLookupService.fetchSystem(dsl);
+        this.codeLookupService = codeLookupService;
+    }
+
+    public static String fetchCode(String valueFromCsv, String category) {
+        if (valueFromCsv == null || category == null) {
+            return valueFromCsv;
+        }
+        Map<String, String> innerMap = CODE_LOOKUP.get(category);
+        if (innerMap == null) {
+            return valueFromCsv;
+        }
+
+        return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
+    }
+
+    public static String fetchSystem(String valueFromCsv, String category) {
+        if (valueFromCsv == null || category == null) {
+            return valueFromCsv;
+        }
+        Map<String, String> innerMap = SYSTEM_LOOKUP.get(category);
+        if (innerMap == null) {
+            return valueFromCsv;
+        }
+
+        return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
+    }
 
     public CanonicalType getProfileUrl() {
         return new CanonicalType(FHIRUtil.getProfileUrl(getResourceType().name().toLowerCase()));

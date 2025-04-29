@@ -4,19 +4,30 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.DateTimeType;
+import org.hl7.fhir.r4.model.Meta;
+import org.hl7.fhir.r4.model.Period;
+import org.hl7.fhir.r4.model.Procedure;
+import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.ResourceType;
 import org.joda.time.DateTime;
+import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.techbd.model.csv.*;
+import org.techbd.model.csv.DemographicData;
+import org.techbd.model.csv.QeAdminData;
+import org.techbd.model.csv.ScreeningObservationData;
+import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.CsvConversionUtil;
 import org.techbd.util.DateUtil;
-import ca.uhn.fhir.context.FhirContext;
 
 /**
  * Converts healthcare screening data into FHIR Procedure resources.
@@ -35,6 +46,10 @@ import ca.uhn.fhir.context.FhirContext;
 @Component
 @Order(7)
 public class ProcedureConverter extends BaseConverter {
+
+    public ProcedureConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+        super(dslContext, codeLookupService);
+    }
 
     // Constants
     private static final Logger LOG = LoggerFactory.getLogger(ProcedureConverter.class);
@@ -139,7 +154,7 @@ public class ProcedureConverter extends BaseConverter {
     }
 
     private void populateProcedureStatus(Procedure procedure, ScreeningProfileData profileData) {
-        String statusCode = profileData.getProcedureStatusCode();
+        String statusCode = fetchCode(profileData.getProcedureStatusCode(), CsvConstants.PROCEDURE_STATUS_CODE);
         // procedure.setStatus(StringUtils.isNotEmpty(statusCode)
         //         ? Procedure.ProcedureStatus.fromCode(statusCode)
         //         : //Procedure.ProcedureStatus.COMPLETED);
