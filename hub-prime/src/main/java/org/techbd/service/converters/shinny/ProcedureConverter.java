@@ -47,8 +47,8 @@ import org.techbd.util.DateUtil;
 @Order(7)
 public class ProcedureConverter extends BaseConverter {
 
-    public ProcedureConverter(DSLContext dslContext) {
-        super(dslContext);
+    public ProcedureConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+        super(dslContext, codeLookupService);
     }
 
     // Constants
@@ -154,7 +154,7 @@ public class ProcedureConverter extends BaseConverter {
     }
 
     private void populateProcedureStatus(Procedure procedure, ScreeningProfileData profileData) {
-        String statusCode = profileData.getProcedureStatusCode();
+        String statusCode = fetchCode(profileData.getProcedureStatusCode(), CsvConstants.PROCEDURE_STATUS_CODE);
         // procedure.setStatus(StringUtils.isNotEmpty(statusCode)
         //         ? Procedure.ProcedureStatus.fromCode(statusCode)
         //         : //Procedure.ProcedureStatus.COMPLETED);

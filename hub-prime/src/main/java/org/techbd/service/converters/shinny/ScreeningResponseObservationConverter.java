@@ -41,9 +41,9 @@ import org.techbd.util.DateUtil;
 @Order(6)
 public class ScreeningResponseObservationConverter extends BaseConverter {
 
-    public ScreeningResponseObservationConverter(DSLContext dslContext) {
-        super(dslContext);
-    }
+        public ScreeningResponseObservationConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+                super(dslContext, codeLookupService);
+        }
 
         private static final Logger LOG = LoggerFactory.getLogger(ScreeningResponseObservationConverter.class);
 
@@ -108,14 +108,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         // max date
                         // available in all
                         // screening records
-                        observation.setLanguage(screeningProfileData.getScreeningLanguageCode());
+                        observation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE));
                         observation
                                         .setStatus(Observation.ObservationStatus
                                                         .fromCode(screeningProfileData.getScreeningStatusCode()));
                         if (!data.getObservationCategorySdohCode().isEmpty()) {
                                 observation.addCategory(createCategory(
                                                 "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                                                data.getObservationCategorySdohCode(),
+                                                fetchCode(data.getObservationCategorySdohCode(), CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE),
                                                 data.getObservationCategorySdohText()));
                         } else {
                                 observation.addCategory(createCategory(
@@ -134,7 +134,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 dataAbsentReason.addCoding(
                                                 new Coding()
                                                                 .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                                .setCode(data.getDataAbsentReasonCode())
+                                                                .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE) )
                                                                 .setDisplay(data.getDataAbsentReasonDisplay()));
 
                                 observation.setDataAbsentReason(dataAbsentReason);
@@ -146,7 +146,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                                                         "survey", null));
                         CodeableConcept code = new CodeableConcept();
-                        code.addCoding(new Coding(data.getQuestionCodeSystem(), data.getQuestionCode(),
+                        code.addCoding(new Coding(fetchSystem(data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE), data.getQuestionCode(),
                                         data.getQuestionCodeDescription()));
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
@@ -174,7 +174,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         CodeableConcept interpretation = new CodeableConcept();
                         interpretation.addCoding(
                                 new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                                        data.getPotentialNeedIndicated(), "Positive"));
+                                        fetchCode(data.getPotentialNeedIndicated(), CsvConstants.POTENTIAL_NEED_INDICATED), "Positive"));
                         observation.addInterpretation(interpretation);
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
@@ -325,11 +325,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
                 groupObservation.setMeta(meta);
 
-                groupObservation.setLanguage(screeningProfileData.getScreeningLanguageCode());
+                groupObservation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE));
 
                 // Set status from screening profile
                 String screeningStatusCode = screeningProfileData.getScreeningStatusCode();
                 if (screeningStatusCode != null && !screeningStatusCode.isEmpty()) {
+                        screeningStatusCode = fetchCode(screeningStatusCode, CsvConstants.SCREENING_STATUS_CODE);
                         groupObservation.setStatus(Observation.ObservationStatus.fromCode(screeningStatusCode));
                 } else {
                         LOG.warn("No valid screening status code found for interaction id: {}", interactionId);
@@ -348,7 +349,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 .forEach(sdohCode -> {
                                         ScreeningObservationData data = groupData.stream()
                                                         .filter(d -> sdohCode
-                                                                        .equals(d.getObservationCategorySdohCode()))
+                                                                        .equals(fetchCode(d.getObservationCategorySdohCode(), CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE)))
                                                         .findFirst()
                                                         .get();
                                         groupObservation.addCategory(createCategory(
@@ -362,8 +363,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (firstData != null) {
                     CodeableConcept code = new CodeableConcept();
                     code.addCoding(new Coding(
-                            firstData.getScreeningCodeSystem(),
-                            firstData.getScreeningCode(),
+                            fetchSystem(firstData.getScreeningCodeSystem(), CsvConstants.SCREENING_CODE),
+                            fetchCode(firstData.getScreeningCode(), CsvConstants.SCREENING_CODE),
                             firstData.getScreeningCodeDescription()));
                     groupObservation.setCode(code);
                 }   

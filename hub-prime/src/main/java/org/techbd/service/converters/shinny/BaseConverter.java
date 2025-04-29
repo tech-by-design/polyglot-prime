@@ -11,24 +11,39 @@ import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 import org.jooq.DSLContext;
 import org.techbd.util.FHIRUtil;
-import org.techbd.util.YamlUtil;
 
 public abstract class BaseConverter implements IConverter {
 
 
-    private final Map<String, Map<String, String>> CODE_LOOKUP ;
+    private static Map<String, Map<String, String>> CODE_LOOKUP ;
+    private static Map<String, Map<String, String>> SYSTEM_LOOKUP ;
+    private final CodeLookupService codeLookupService;
 
-    public BaseConverter(DSLContext dsl) {
-        this.CODE_LOOKUP = YamlUtil.getYamlResourceFromDb(dsl);
+    public BaseConverter(DSLContext dsl, CodeLookupService codeLookupService) {
+        BaseConverter.CODE_LOOKUP = CodeLookupService.getCodeResourceFromDb(dsl);
+        BaseConverter.SYSTEM_LOOKUP = CodeLookupService.getSystemResourceFromDb(dsl);
+        this.codeLookupService = codeLookupService;
     }
 
-    public String fetchCode(String valueFromCsv, String category) {
+    public static String fetchCode(String valueFromCsv, String category) {
         if (valueFromCsv == null || category == null) {
             return valueFromCsv;
         }
         Map<String, String> innerMap = CODE_LOOKUP.get(category);
         if (innerMap == null) {
-            return valueFromCsv; // category not found
+            return valueFromCsv;
+        }
+
+        return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
+    }
+
+    public static String fetchSystem(String valueFromCsv, String category) {
+        if (valueFromCsv == null || category == null) {
+            return valueFromCsv;
+        }
+        Map<String, String> innerMap = SYSTEM_LOOKUP.get(category);
+        if (innerMap == null) {
+            return valueFromCsv;
         }
 
         return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);

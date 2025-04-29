@@ -37,8 +37,8 @@ import org.techbd.util.DateUtil;
 @Order(1)
 public class OrganizationConverter extends BaseConverter {
 
-    public OrganizationConverter(DSLContext dslContext) {
-        super(dslContext);
+    public OrganizationConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+        super(dslContext, codeLookupService);
     }
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationConverter.class.getName());
 
@@ -128,8 +128,8 @@ public class OrganizationConverter extends BaseConverter {
             // Create a new Coding object
             Coding coding = new Coding();
             
-            coding.setSystem(data.getOrganizationTypeCodeSystem());
-            coding.setCode(data.getOrganizationTypeCode());
+            coding.setSystem(fetchSystem(data.getOrganizationTypeCodeSystem(), CsvConstants.ORGANIZATION_TYPE_CODE) );
+            coding.setCode(fetchCode(data.getOrganizationTypeCode(), CsvConstants.ORGANIZATION_TYPE_CODE));
             coding.setDisplay(data.getOrganizationTypeDisplay());
 
             type.addCoding(coding);
@@ -173,7 +173,7 @@ public class OrganizationConverter extends BaseConverter {
 
             address.setCity(qrAdminData.getFacilityCity());
             address.setDistrict(qrAdminData.getFacilityCounty());
-            address.setState(qrAdminData.getFacilityState());
+            address.setState(fetchCode(qrAdminData.getFacilityState(), CsvConstants.STATE));
             address.setPostalCode(qrAdminData.getFacilityZip());
 
             organization.addAddress(address);

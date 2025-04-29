@@ -32,8 +32,8 @@ import org.techbd.util.FHIRUtil;
 @Order(3)
 public class SexualOrientationObservationConverter extends BaseConverter {
 
-    public SexualOrientationObservationConverter(DSLContext dslContext) {
-        super(dslContext);
+    public SexualOrientationObservationConverter(DSLContext dslContext, CodeLookupService codeLookupService) {
+        super(dslContext, codeLookupService);
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(SexualOrientationObservationConverter.class.getName());
@@ -71,8 +71,8 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                     "76690-7", "Sexual orientation")); // TODO : remove static reference
             observation.setCode(code);
             CodeableConcept value = new CodeableConcept();
-            value.addCoding(new Coding(demographicData.getSexualOrientationCodeSystem(),
-                    demographicData.getSexualOrientationCode(),
+            value.addCoding(new Coding(fetchSystem(demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE),
+                    fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE),
                     demographicData.getSexualOrientationCodeDescription()));
             observation.setValue(value);
             // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
