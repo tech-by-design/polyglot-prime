@@ -1,10 +1,12 @@
-name: Daily Version Check and Notification
+name: Daily NYeC IG Version Check and Notification
 
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 11 * * *'
   workflow_dispatch:
-
+  
+permissions:
+  contents: write
 jobs:
   check_versions:
     runs-on: ubuntu-latest
@@ -12,9 +14,9 @@ jobs:
     env:
       PROD_URL: "https://shinny.org/us/ny/hrsn/StructureDefinition-SHINNYMeta.json"
       QA_URL: "https://test.shinny.org/StructureDefinition-SHINNYMeta.json"
-      PROD_VERSION_FILE: "versions/prod_version.txt"
-      QA_VERSION_FILE: "versions/qa_version.txt"
-      HELP_EMAIL: "nidhin-unni@netspective.in"
+      PROD_VERSION_FILE: "support/nyec-ig-version/prod_version.txt"
+      QA_VERSION_FILE: "support/nyec-ig-version/qa_version.txt"
+      HELP_EMAIL: "help@techbd.org"
 
     steps:
     - name: Check out the repository
@@ -66,7 +68,7 @@ jobs:
       if: env.PROD_UPDATED == 'true'
       run: |
         ISSUE_TITLE="PROD - NYeC Published IG Updated to ${PROD_VERSION}"
-        ISSUE_BODY=$'A new version ('${PROD_VERSION}$') has been published for PROD.\n\nPlease review and create a release following internal processes.'
+        ISSUE_BODY=$"A new version ('${PROD_VERSION}$') has been published for PROD.\n\nPlease review and create a release following internal processes."
         API_JSON=$(jq -n --arg title "$ISSUE_TITLE" --arg body "$ISSUE_BODY" '{title: $title, body: $body}')
         RESPONSE=$(curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -d "$API_JSON" "https://api.github.com/repos/${{ github.repository }}/issues")
         PROD_ISSUE_URL=$(echo "$RESPONSE" | jq -r '.html_url')
@@ -78,7 +80,7 @@ jobs:
         ISSUE_TITLE="QA - NYeC Published IG Updated to ${QA_VERSION}"
         ISSUE_BODY="A new version (${QA_VERSION}) has been published for QA. \n\n Please review and create a release following internal processes."
         API_JSON=$(jq -n --arg title "$ISSUE_TITLE" --arg body "$ISSUE_BODY" '{title: $title, body: $body}')
-        RESPONSE=$(curl -s -X POST -H "Authorization: token ${{ secrets.PGITHUB_TOKEN }}" -d "$API_JSON" "https://api.github.com/repos/${{ github.repository }}/issues")
+        RESPONSE=$(curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -d "$API_JSON" "https://api.github.com/repos/${{ github.repository }}/issues")
         QA_ISSUE_URL=$(echo "$RESPONSE" | jq -r '.html_url')
         echo "QA_ISSUE_URL=$QA_ISSUE_URL" >> $GITHUB_ENV
 
@@ -118,15 +120,20 @@ jobs:
       run: |
         if [[ "$PROD_UPDATED" == "true" ]]; then
           echo "$PROD_VERSION" > $PROD_VERSION_FILE
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add $PROD_VERSION_FILE
+          git commit -m "ci: update stored IG prod version"
+          git push
         fi
         if [[ "$QA_UPDATED" == "true" ]]; then
           echo "$QA_VERSION" > $QA_VERSION_FILE
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add $QA_VERSION_FILE
+          git commit -m "ci: update stored IG qa version"
+          git push
         fi
-        git config --global user.name "github-actions"
-        git config --global user.email "github-actions@github.com"
-        git add $PROD_VERSION_FILE $QA_VERSION_FILE
-        git commit -m "Update stored versions"
-        git push
 
     - name: Handle errors
       if: failure()
