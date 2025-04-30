@@ -35,4 +35,7 @@ public interface CsvConstants {
     public static final String SCREENING_CODE = "screening_code";
     public static final String QUESTION_CODE = "question_code";
     public static final String ANSWER_CODE = "answer_code";
+    public static final String TELECOM_USE = "telecom_use";
+    public static final String PROCEDURE_CODE = "procedure_code";
+    public static final String SCREENING_ENITITY_ID = "screening_entity_id";
 }

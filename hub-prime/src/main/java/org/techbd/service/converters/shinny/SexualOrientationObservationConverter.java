@@ -71,8 +71,8 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                     "76690-7", "Sexual orientation")); // TODO : remove static reference
             observation.setCode(code);
             CodeableConcept value = new CodeableConcept();
-            value.addCoding(new Coding(fetchSystem(demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE),
-                    fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE),
+            value.addCoding(new Coding(fetchSystem(demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId),
+                    fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId),
                     demographicData.getSexualOrientationCodeDescription()));
             observation.setValue(value);
             // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));

@@ -95,7 +95,7 @@ public class ConsentConverter extends BaseConverter {
 
         populateOrganizationReference(consent, idsGenerated);
 
-        populateConsentProvision(consent, screeningProfileData);
+        populateConsentProvision(consent, screeningProfileData, interactionId);
 
         // // TODO:
         // populateSourceReference(consent, screeningProfileData);
@@ -164,10 +164,10 @@ public class ConsentConverter extends BaseConverter {
                 .setReference("Organization/" + idsGenerated.get(CsvConstants.ORGANIZATION_ID));
     }
 
-    private void populateConsentProvision(Consent consent, ScreeningProfileData screeningResourceData) {
+    private void populateConsentProvision(Consent consent, ScreeningProfileData screeningResourceData, String interactionId) {
         if (screeningResourceData != null && StringUtils.isNotEmpty(screeningResourceData.getConsentStatus())) {
             Consent.ProvisionComponent provision = new Consent.ProvisionComponent();
-            String consentStatus = fetchCode(screeningResourceData.getConsentStatus(), CsvConstants.CONSENT_STATUS);
+            String consentStatus = fetchCode(screeningResourceData.getConsentStatus(), CsvConstants.CONSENT_STATUS, interactionId);
             provision.setType(ConsentProvisionType.fromCode(consentStatus));
             consent.setProvision(provision);
         }

@@ -85,16 +85,16 @@ public class PatientConverter extends BaseConverter {
         meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
                                                                                           // screening records
         patient.setLanguage("en");
-        populatePatientWithExtensions(patient, demographicData);
+        populatePatientWithExtensions(patient, demographicData, interactionId);
         populateMrIdentifier(patient, demographicData,qeAdminData, idsGenerated );
         populateMaIdentifier(patient, demographicData);
         populateSsnIdentifier(patient, demographicData);
         populatePatientName(patient, demographicData);
-        populateAdministrativeSex(patient, demographicData);
+        populateAdministrativeSex(patient, demographicData, interactionId);
         populateBirthDate(patient, demographicData);
-        populatePhone(patient, demographicData);
-        populateAddress(patient, demographicData);
-        populatePreferredLanguage(patient, demographicData);
+        populatePhone(patient, demographicData, interactionId);
+        populateAddress(patient, demographicData, interactionId);
+        populatePreferredLanguage(patient, demographicData, interactionId);
        // populatePatientRelationContact(patient, demographicData);
 
         // populatePatientText(patient, demographicData);
@@ -106,12 +106,12 @@ public class PatientConverter extends BaseConverter {
         return List.of(bundleEntryComponent);
     }
 
-    public void populatePatientWithExtensions(Patient patient,DemographicData demographicData) {
+    public void populatePatientWithExtensions(Patient patient,DemographicData demographicData, String interactionId) {
         if (StringUtils.isNotEmpty(demographicData.getRaceCode())) {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
 
-            String[] raceCodes = fetchCode(demographicData.getRaceCode(), CsvConstants.RACE_CODE).split(";");
-            String system = fetchSystem(demographicData.getRaceCodeSystem(), CsvConstants.RACE_CODE); // Common system
+            String[] raceCodes = fetchCode(demographicData.getRaceCode(), CsvConstants.RACE_CODE, interactionId).split(";");
+            String system = fetchSystem(demographicData.getRaceCodeSystem(), CsvConstants.RACE_CODE, interactionId); // Common system
             String[] raceDescriptions = demographicData.getRaceCodeDescription() != null
                     ? demographicData.getRaceCodeDescription().split(";")
                     : new String[0]; // Handle null descriptions
@@ -147,8 +147,8 @@ public class PatientConverter extends BaseConverter {
             Extension ethnicityExtension = new Extension(
                     "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
 
-            String[] ethnicityCodes = fetchCode(demographicData.getEthnicityCode(), CsvConstants.ETHNICITY_CODE).split(";");
-            String system = fetchSystem(demographicData.getEthnicityCodeSystem(), CsvConstants.ETHNICITY_CODE); // Common system
+            String[] ethnicityCodes = fetchCode(demographicData.getEthnicityCode(), CsvConstants.ETHNICITY_CODE, interactionId).split(";");
+            String system = fetchSystem(demographicData.getEthnicityCodeSystem(), CsvConstants.ETHNICITY_CODE, interactionId); // Common system
             String[] ethnicityDescriptions = demographicData.getEthnicityCodeDescription() != null
                     ? demographicData.getEthnicityCodeDescription().split(";")
                     : new String[0]; // Handle null descriptions
@@ -183,15 +183,15 @@ public class PatientConverter extends BaseConverter {
 
         if (StringUtils.isNotEmpty(demographicData.getSexAtBirthCode())) {
             Extension birthSexExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex");
-            birthSexExtension.setValue(new CodeType(fetchCode(demographicData.getSexAtBirthCode(), CsvConstants.SEX_AT_BIRTH_CODE))); // Use CodeType for valueCode
+            birthSexExtension.setValue(new CodeType(fetchCode(demographicData.getSexAtBirthCode(), CsvConstants.SEX_AT_BIRTH_CODE, interactionId))); // Use CodeType for valueCode
             patient.addExtension(birthSexExtension);
         }
 
         if (StringUtils.isNotEmpty(demographicData.getPersonalPronounsCode())) {
             Extension pronounsExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns");
             pronounsExtension.setValue(new CodeableConcept().addCoding(new Coding()
-                    .setSystem(fetchSystem(demographicData.getPersonalPronounsSystem(), CsvConstants.PERSONAL_PRONOUNS_CODE))
-                    .setCode(fetchCode(demographicData.getPersonalPronounsCode(), CsvConstants.PERSONAL_PRONOUNS_CODE))
+                    .setSystem(fetchSystem(demographicData.getPersonalPronounsSystem(), CsvConstants.PERSONAL_PRONOUNS_CODE, interactionId))
+                    .setCode(fetchCode(demographicData.getPersonalPronounsCode(), CsvConstants.PERSONAL_PRONOUNS_CODE, interactionId))
                     .setDisplay(demographicData.getPersonalPronounsDescription())));
             patient.addExtension(pronounsExtension);
         }
@@ -199,8 +199,8 @@ public class PatientConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(demographicData.getGenderIdentityCode())) {
             Extension genderIdentityExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity");
             genderIdentityExtension.setValue(new CodeableConcept().addCoding(new Coding()
-                    .setSystem(fetchSystem(demographicData.getGenderIdentityCodeSystem(), CsvConstants.GENDER_IDENTITY_CODE))
-                    .setCode(fetchCode(demographicData.getGenderIdentityCode(), CsvConstants.GENDER_IDENTITY_CODE))
+                    .setSystem(fetchSystem(demographicData.getGenderIdentityCodeSystem(), CsvConstants.GENDER_IDENTITY_CODE, interactionId))
+                    .setCode(fetchCode(demographicData.getGenderIdentityCode(), CsvConstants.GENDER_IDENTITY_CODE, interactionId))
                     .setDisplay(demographicData.getGenderIdentityCodeDescription())));
             patient.addExtension(genderIdentityExtension);
         }
@@ -302,8 +302,8 @@ public class PatientConverter extends BaseConverter {
         }
     }
 
-    private void populateAdministrativeSex(Patient patient, DemographicData demographicData) {
-        Optional.ofNullable(fetchCode(demographicData.getAdministrativeSexCode(), CsvConstants.ADMINISTRATIVE_SEX_CODE))
+    private void populateAdministrativeSex(Patient patient, DemographicData demographicData, String interactionId) {
+        Optional.ofNullable(fetchCode(demographicData.getAdministrativeSexCode(), CsvConstants.ADMINISTRATIVE_SEX_CODE, interactionId))
                 .map(sexCode -> switch (sexCode) {
                     case "male", "M" -> AdministrativeGender.MALE;
                     case "female", "F" -> AdministrativeGender.FEMALE;
@@ -319,11 +319,11 @@ public class PatientConverter extends BaseConverter {
                 .ifPresent(patient::setBirthDate);
     }
 
-    private static void populatePhone(Patient patient, DemographicData demographicData) {
+    private void populatePhone(Patient patient, DemographicData demographicData, String interactionId) {
         if (StringUtils.isNotEmpty(demographicData.getTelecomValue())) {
             ContactPoint.ContactPointUse telecomUse = null;
             try {
-                telecomUse = ContactPoint.ContactPointUse.fromCode(demographicData.getTelecomUse());
+                telecomUse = ContactPoint.ContactPointUse.fromCode(fetchCode(demographicData.getTelecomUse(), CsvConstants.TELECOM_USE, interactionId));
             } catch (FHIRException e) {
                 telecomUse = ContactPoint.ContactPointUse.HOME; // Default to HOME
             }
@@ -335,7 +335,7 @@ public class PatientConverter extends BaseConverter {
     }
 
 
-    private void populateAddress(Patient patient, DemographicData data) {
+    private void populateAddress(Patient patient, DemographicData data, String interactionId) {
         if (StringUtils.isNotEmpty(data.getCity()) && StringUtils.isNotEmpty(data.getState())) {
             Address address = new Address();
             Optional.ofNullable(data.getAddress1())
@@ -345,7 +345,7 @@ public class PatientConverter extends BaseConverter {
             .filter(StringUtils::isNotEmpty)
             .ifPresent(address::addLine);
             address.setCity(data.getCity());
-            address.setState(fetchCode(data.getState(), CsvConstants.STATE));
+            address.setState(fetchCode(data.getState(), CsvConstants.STATE, interactionId));
             Optional.ofNullable(data.getCounty())
                     .filter(StringUtils::isNotEmpty)
                     .ifPresent(address::setDistrict);
@@ -353,20 +353,20 @@ public class PatientConverter extends BaseConverter {
                     .filter(StringUtils::isNotEmpty)
                     .ifPresent(address::setPostalCode);
             String addressText = String.format("%s %s, %s %s", address.getLine().get(0), address.getCity(),
-                fetchCode(data.getState(), CsvConstants.STATE), address.getPostalCode());
+                fetchCode(data.getState(), CsvConstants.STATE, interactionId), address.getPostalCode());
             address.setText(addressText);
 
             patient.addAddress(address);
         }
     }
 
-    private void populatePreferredLanguage(Patient patient, DemographicData data) {
+    private void populatePreferredLanguage(Patient patient, DemographicData data, String interactionId) {
         Optional.ofNullable(data.getPreferredLanguageCode())
                 .filter(StringUtils::isNotEmpty)
                 .ifPresent(languageCode -> {
                     Coding coding = new Coding();
-                    coding.setSystem(fetchSystem(data.getPreferredLanguageCodeSystem(), CsvConstants.PREFERRED_LANGUAGE_CODE));
-                    coding.setCode(fetchCode(languageCode, CsvConstants.PREFERRED_LANGUAGE_CODE));
+                    coding.setSystem(fetchSystem(data.getPreferredLanguageCodeSystem(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
+                    coding.setCode(fetchCode(languageCode, CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
                     coding.setDisplay(data.getPreferredLanguageCodeDescription());
                     CodeableConcept language = new CodeableConcept();
                     language.addCoding(coding);

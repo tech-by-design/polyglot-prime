@@ -25,10 +25,10 @@ public abstract class BaseConverter implements IConverter {
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
-    public String fetchCode(String valueFromCsv, String category) {
+    public String fetchCode(String valueFromCsv, String category, String interactionId) {
         if (CODE_LOOKUP == null) {
             final var dslContext = udiPrimeJpaConfig.dsl();
-            BaseConverter.CODE_LOOKUP = codeLookupService.fetchCode(dslContext);
+            BaseConverter.CODE_LOOKUP = codeLookupService.fetchCode(dslContext, interactionId);
         }
 
         if (valueFromCsv == null || category == null) {
@@ -42,10 +42,10 @@ public abstract class BaseConverter implements IConverter {
         return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
     }
 
-    public String fetchSystem(String valueFromCsv, String category) {
+    public String fetchSystem(String valueFromCsv, String category, String interactionId) {
         if (SYSTEM_LOOKUP == null) {
             final var dslContext = udiPrimeJpaConfig.dsl();
-            BaseConverter.SYSTEM_LOOKUP = codeLookupService.fetchSystem(dslContext);
+            BaseConverter.SYSTEM_LOOKUP = codeLookupService.fetchSystem(dslContext, interactionId);
         }
 
         if (valueFromCsv == null || category == null) {
