@@ -1,0 +1,13 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+screening_entity_id,NPI,,http://hl7.org/fhir/sid/us-npi,,1.4.2,TechBD
+screening_entity_id,CMS,,http://www.medicaid.gov,,1.4.2,TechBD
+screening_entity_id,SCN,,http://www.scn.ny.gov,,1.4.2,TechBD
+screening_entity_id,CBO,,http://www.cbo.ny.gov,,1.4.2,TechBD
+screening_entity_id,OID,,http://www.hl7.org/oid,,1.4.2,TechBD
+screening_entity_id,TAX,,http://www.irs.gov,,1.4.2,TechBD
+screening_entity_id,NPI,,http://hl7.org/fhir/sid/us-npi/,,1.4.2,TechBD
+screening_entity_id,CMS,,http://www.medicaid.gov/,,1.4.2,TechBD
+screening_entity_id,SCN,,http://www.scn.ny.gov/,,1.4.2,TechBD
+screening_entity_id,CBO,,http://www.cbo.ny.gov/,,1.4.2,TechBD
+screening_entity_id,OID,,http://www.hl7.org/oid/,,1.4.2,TechBD
+screening_entity_id,TAX,,http://www.irs.gov/,,1.4.2,TechBD
