@@ -9,7 +9,7 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
-import org.jooq.DSLContext;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.FHIRUtil;
 
 public abstract class BaseConverter implements IConverter {
@@ -18,14 +18,19 @@ public abstract class BaseConverter implements IConverter {
     public static Map<String, Map<String, String>> CODE_LOOKUP ;
     public static Map<String, Map<String, String>> SYSTEM_LOOKUP ;
     private final CodeLookupService codeLookupService;
+    private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
-    public BaseConverter(DSLContext dsl, CodeLookupService codeLookupService) {
-        BaseConverter.CODE_LOOKUP = CodeLookupService.fetchCode(dsl);
-        BaseConverter.SYSTEM_LOOKUP = CodeLookupService.fetchSystem(dsl);
+    public BaseConverter(UdiPrimeJpaConfig udiPrimeJpaConfig, CodeLookupService codeLookupService) {
         this.codeLookupService = codeLookupService;
+        this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
-    public static String fetchCode(String valueFromCsv, String category) {
+    public String fetchCode(String valueFromCsv, String category) {
+        if (CODE_LOOKUP == null) {
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            BaseConverter.CODE_LOOKUP = codeLookupService.fetchCode(dslContext);
+        }
+
         if (valueFromCsv == null || category == null) {
             return valueFromCsv;
         }
@@ -37,7 +42,12 @@ public abstract class BaseConverter implements IConverter {
         return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
     }
 
-    public static String fetchSystem(String valueFromCsv, String category) {
+    public String fetchSystem(String valueFromCsv, String category) {
+        if (SYSTEM_LOOKUP == null) {
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            BaseConverter.SYSTEM_LOOKUP = codeLookupService.fetchSystem(dslContext);
+        }
+
         if (valueFromCsv == null || category == null) {
             return valueFromCsv;
         }
