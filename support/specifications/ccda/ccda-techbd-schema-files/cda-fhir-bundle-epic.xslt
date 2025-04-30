@@ -387,12 +387,12 @@
         , "preferred" : <xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:preferenceInd/@value"/>
         </xsl:if>
       }]
-      </xsl:if>
-      , "request" : {
+      </xsl:if>      
+    }
+    , "request" : {
         "method" : "POST",
         "url" : "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>"
-      }
-    }    
+      } 
   }
   </xsl:template>
 
@@ -999,7 +999,7 @@
             "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
             "display": "<xsl:value-of select="$patientResourceName"/>"
           }
-          <xsl:if test="$encounterResourceId != 'null'">
+          <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
           , "encounter": {
               "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
             }
@@ -1097,7 +1097,7 @@
             "subject": {
                 "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
             }
-            <xsl:if test="$encounterResourceId != 'null'">
+            <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
             , "encounter": {
                 "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
               }
