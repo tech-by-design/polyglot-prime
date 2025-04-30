@@ -145,6 +145,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             ("SCREENING_LANGUAGE_CODE", "screening_language_code"),
             ("SCREENING_LANGUAGE_DESCRIPTION", "screening_language_description"),
             ("SCREENING_LANGUAGE_CODE_SYSTEM", "screening_language_code_system"),
+            ("SCREENING_ENTITY_ID_CODE_SYSTEM", "screening_entity_id_code_system"),
             ("SCREENING_CODE", "screening_code"),
             ("SCREENING_CODE_DESCRIPTION", "screening_code_description"),
             ("SCREENING_CODE_SYSTEM", "screening_code_system"),
