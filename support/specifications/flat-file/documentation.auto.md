@@ -201,7 +201,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Procedure').code.coding.system
   - `type` string
   - `constraints`:
-    - `enum` ['http://www.ama-assn.org/go/cpt', 'http://snomed.info/sct', 'urn:oid:2.16.840.1.113883.6.285', 'http://www.cms.gov/medicare/coding/ICD10', 'urn:oid:2.16.840.1.113883.6.13']
+    - `enum` ['http://www.ama-assn.org/go/cpt', 'http://snomed.info/sct', 'urn:oid:2.16.840.1.113883.6.285', 'http://www.cms.gov/medicare/coding/icd10', 'urn:oid:2.16.840.1.113883.6.13']
 ### `PROCEDURE_CODE_MODIFIER`
   - `description` Bundle.entry.resource.where(resourceType ='Procedure').modifierExtension.value
   - `type` string
@@ -263,7 +263,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^(https?:\/\/)(www\.)?(hl7\.org\/fhir\/sid\/us-npi|medicaid\.gov|scn\.ny\.gov|cbo\.ny\.gov|hl7\.org\/oid|irs\.gov)(\/)?$`
+    - `enum` ['http://hl7.org/fhir/sid/us-npi', 'http://www.medicaid.gov', 'http://www.scn.ny.gov', 'http://www.cbo.ny.gov', 'http://www.hl7.org/oid', 'http://www.irs.gov', 'http://hl7.org/fhir/sid/us-npi/', 'http://www.medicaid.gov/', 'http://www.scn.ny.gov/', 'http://www.cbo.ny.gov/', 'http://www.hl7.org/oid/', 'http://www.irs.gov/']
 ## `screening_observation_data`
   - `path` nyher-fhir-ig-example/SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv
   - `schema`

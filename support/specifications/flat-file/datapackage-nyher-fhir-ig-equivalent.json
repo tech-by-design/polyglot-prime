@@ -113,7 +113,7 @@
       "http://www.ama-assn.org/go/cpt",
       "http://snomed.info/sct",
       "urn:oid:2.16.840.1.113883.6.285",
-      "http://www.cms.gov/medicare/coding/ICD10",
+      "http://www.cms.gov/medicare/coding/icd10",
       "urn:oid:2.16.840.1.113883.6.13"
     ]
     }},
@@ -158,7 +158,7 @@
       {"name": "SCREENING_LANGUAGE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').language.system", "constraints": { "enum": ["urn:ietf:bcp:47","http://shinny.org/us/ny/hrsn/CodeSystem/SHINNYLanguage"]} },
       {"name": "SCREENING_ENTITY_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.value", "constraints": {"required": true}},
       {"name": "SCREENING_ENTITY_ID_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').identifier.system", "constraints": { "required":true,
-        "enum": ["http://hl7.org/fhir/sid/us-npi", "http://www.medicaid.gov", "http://www.scn.ny.gov", "http://www.cbo.ny.gov", "http://www.hl7.org/oid", "http://www.irs.gov"]
+        "enum": ["http://hl7.org/fhir/sid/us-npi", "http://www.medicaid.gov", "http://www.scn.ny.gov", "http://www.cbo.ny.gov", "http://www.hl7.org/oid", "http://www.irs.gov","http://hl7.org/fhir/sid/us-npi/", "http://www.medicaid.gov/", "http://www.scn.ny.gov/", "http://www.cbo.ny.gov/", "http://www.hl7.org/oid/", "http://www.irs.gov/"]
       }}
     ],
     "primaryKey": ["ENCOUNTER_ID"],
