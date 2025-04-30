@@ -96,7 +96,7 @@ public class ProcedureConverter extends BaseConverter {
             String baseFHIRUrl) {
         if (StringUtils.isNotEmpty(screeningProfileData.getProcedureCode())) {
             Procedure procedure = createProcedure(screeningProfileData, baseFHIRUrl);
-            populateProcedureDetails(procedure, screeningProfileData, screeningObservationData, idsGenerated);
+            populateProcedureDetails(procedure, screeningProfileData, screeningObservationData, idsGenerated, interactionId);
             BundleEntryComponent entry = createBundleEntry(procedure);
             return List.of(entry);
         } else {
@@ -144,17 +144,18 @@ public class ProcedureConverter extends BaseConverter {
             Procedure procedure,
             ScreeningProfileData profileData,
             List<ScreeningObservationData> observations,
-            Map<String, String> idsGenerated) {
+            Map<String, String> idsGenerated,
+            String interactionId) {
 
-        populateProcedureStatus(procedure, profileData);
-        populateProcedureCode(procedure, profileData);
+        populateProcedureStatus(procedure, profileData, interactionId);
+        populateProcedureCode(procedure, profileData, interactionId);
         populateReferences(procedure, idsGenerated);
         populatePerformedPeriod(procedure, observations);
         populateLastUpdated(procedure);
     }
 
-    private void populateProcedureStatus(Procedure procedure, ScreeningProfileData profileData) {
-        String statusCode = fetchCode(profileData.getProcedureStatusCode(), CsvConstants.PROCEDURE_STATUS_CODE);
+    private void populateProcedureStatus(Procedure procedure, ScreeningProfileData profileData, String interactionId) {
+        String statusCode = fetchCode(profileData.getProcedureStatusCode(), CsvConstants.PROCEDURE_STATUS_CODE, interactionId);
         // procedure.setStatus(StringUtils.isNotEmpty(statusCode)
         //         ? Procedure.ProcedureStatus.fromCode(statusCode)
         //         : //Procedure.ProcedureStatus.COMPLETED);
@@ -164,13 +165,13 @@ public class ProcedureConverter extends BaseConverter {
     
     }
 
-    private void populateProcedureCode(Procedure procedure, ScreeningProfileData profileData) {
+    private void populateProcedureCode(Procedure procedure, ScreeningProfileData profileData, String interactionId) {
         CodeableConcept code = new CodeableConcept();
 
         // Add coding if available from CSV data
         if (StringUtils.isNotEmpty(profileData.getProcedureCode())) {
             code.addCoding(new Coding()
-                    .setSystem(profileData.getProcedureCodeSystem())
+                    .setSystem(fetchSystem(profileData.getProcedureCodeSystem(), CsvConstants.PROCEDURE_CODE, interactionId))
                     .setCode(profileData.getProcedureCode())
                     .setDisplay(profileData.getProcedureCodeDescription()));
         }

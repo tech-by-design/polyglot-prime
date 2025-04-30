@@ -108,14 +108,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         // max date
                         // available in all
                         // screening records
-                        observation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE));
+                        observation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId));
                         observation
                                         .setStatus(Observation.ObservationStatus
-                                                        .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE)));
+                                                        .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE, interactionId)));
                         if (!data.getObservationCategorySdohCode().isEmpty()) {
                                 observation.addCategory(createCategory(
                                                 "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                                                fetchCode(data.getObservationCategorySdohCode(), CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE),
+                                                fetchCode(data.getObservationCategorySdohCode(), CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId),
                                                 data.getObservationCategorySdohText()));
                         } else {
                                 observation.addCategory(createCategory(
@@ -125,7 +125,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         }
                         if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
                                 CodeableConcept value = new CodeableConcept();
-                                value.addCoding(new Coding(fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE), data.getAnswerCode(),
+                                value.addCoding(new Coding(fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId), fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId),
                                                 data.getAnswerCodeDescription()));
                                 observation.setValue(value);
                         } else if (!data.getDataAbsentReasonCode().isEmpty()) {
@@ -134,7 +134,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 dataAbsentReason.addCoding(
                                                 new Coding()
                                                                 .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                                .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE) )
+                                                                .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId) )
                                                                 .setDisplay(data.getDataAbsentReasonDisplay()));
 
                                 observation.setDataAbsentReason(dataAbsentReason);
@@ -146,7 +146,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                                                         "survey", null));
                         CodeableConcept code = new CodeableConcept();
-                        code.addCoding(new Coding(fetchSystem(data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE), data.getQuestionCode(),
+                        code.addCoding(new Coding(fetchSystem(data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId), data.getQuestionCode(),
                                         data.getQuestionCodeDescription()));
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
@@ -174,8 +174,9 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         CodeableConcept interpretation = new CodeableConcept();
                         interpretation.addCoding(
                                 new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                                        fetchCode(data.getPotentialNeedIndicated(), CsvConstants.POTENTIAL_NEED_INDICATED), "Positive"));
+                                        fetchCode(data.getPotentialNeedIndicated(), CsvConstants.POTENTIAL_NEED_INDICATED, interactionId), "Positive"));
                         observation.addInterpretation(interpretation);
+                        //TO-DO
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         switch (data.getQuestionCode()) {
@@ -285,7 +286,9 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                 // Group observations by screening code
                 Map<String, List<ScreeningObservationData>> screeningCodeGroups = screeningObservationDataList.stream()
-                                .collect(Collectors.groupingBy(ScreeningObservationData::getScreeningCode));
+                                .collect(Collectors.groupingBy(
+                                                data -> fetchCode(data.getScreeningCode(), CsvConstants.SCREENING_CODE,
+                                                                interactionId)));
 
                 LOG.debug("Found {} different screening code groups", screeningCodeGroups.size());
                 // logScreeningDetails(screeningObservationDataList);
@@ -325,12 +328,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
                 groupObservation.setMeta(meta);
 
-                groupObservation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE));
+                groupObservation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId));
 
                 // Set status from screening profile
                 String screeningStatusCode = screeningProfileData.getScreeningStatusCode();
                 if (screeningStatusCode != null && !screeningStatusCode.isEmpty()) {
-                        screeningStatusCode = fetchCode(screeningStatusCode, CsvConstants.SCREENING_STATUS_CODE);
+                        screeningStatusCode = fetchCode(screeningStatusCode, CsvConstants.SCREENING_STATUS_CODE, interactionId);
                         groupObservation.setStatus(Observation.ObservationStatus.fromCode(screeningStatusCode));
                 } else {
                         LOG.warn("No valid screening status code found for interaction id: {}", interactionId);
@@ -344,13 +347,13 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 // Add SDOH categories from group members
                 groupData.stream()
                                 .map(data -> fetchCode(data.getObservationCategorySdohCode(),
-                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE))
+                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId))
                                 .filter(code -> code != null && code instanceof String && !((String) code).isEmpty())
                                 .distinct()
                                 .forEach(sdohCode -> {
                                         ScreeningObservationData data = groupData.stream()
                                                         .filter(d -> fetchCode(d.getObservationCategorySdohCode(),
-                                                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE)
+                                                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId)
                                                                         .equals(sdohCode))
                                                         .findFirst()
                                                         .get();
@@ -365,8 +368,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 if (firstData != null) {
                     CodeableConcept code = new CodeableConcept();
                     code.addCoding(new Coding(
-                            fetchSystem(firstData.getScreeningCodeSystem(), CsvConstants.SCREENING_CODE),
-                            fetchCode(firstData.getScreeningCode(), CsvConstants.SCREENING_CODE),
+                            fetchSystem(firstData.getScreeningCodeSystem(), CsvConstants.SCREENING_CODE, interactionId),
+                            fetchCode(firstData.getScreeningCode(), CsvConstants.SCREENING_CODE, interactionId),
                             firstData.getScreeningCodeDescription()));
                     groupObservation.setCode(code);
                 }   

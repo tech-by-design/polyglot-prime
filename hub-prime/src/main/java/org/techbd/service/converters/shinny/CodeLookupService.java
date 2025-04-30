@@ -20,8 +20,8 @@ public class CodeLookupService {
 
     private static final Logger LOG = LoggerFactory.getLogger(CodeLookupService.class.getName());
 
-    public Map<String, Map<String, String>> fetchCode(DSLContext dsl) {
-        LOG.info("CodeLookupService::fetchCode fetching values from database - BEGIN");
+    public Map<String, Map<String, String>> fetchCode(DSLContext dsl, String interactionId) {
+        LOG.info("CodeLookupService::fetchCode fetching values from database - BEGIN - interaction Id: {}", interactionId);
         try {
             List<Record2<String, String>> records = dsl
                     .select(REF_CODE_LOOKUP_CODE_VIEW.CODE_TYPE, REF_CODE_LOOKUP_CODE_VIEW.CODES)
@@ -43,12 +43,12 @@ public class CodeLookupService {
         } catch (Exception ex) {
             LOG.error("Exception during fetching values from database", ex);
         }
-        LOG.info("CodeLookupService::fetchCode fetching values from database - END");
+        LOG.info("CodeLookupService::fetchCode fetching values from database - END - interaction Id: {}", interactionId);
         return Collections.emptyMap();
     }
 
-    public Map<String, Map<String, String>> fetchSystem(DSLContext dsl) {
-        LOG.info("CodeLookupService::fetchSystem fetching values from database - BEGIN");
+    public Map<String, Map<String, String>> fetchSystem(DSLContext dsl, String interactionId) {
+        LOG.info("CodeLookupService::fetchSystem fetching values from database - BEGIN - interaction Id: {}", interactionId);
         try {
             List<Record2<String, String>> records = dsl
                     .select(REF_CODE_LOOKUP_SYSTEM_VIEW.CODE_TYPE, REF_CODE_LOOKUP_SYSTEM_VIEW.SYSTEM_VALUES)
@@ -70,7 +70,7 @@ public class CodeLookupService {
         } catch (Exception ex) {
             LOG.error("Exception during fetching values from database", ex);
         }
-        LOG.info("CodeLookupService::fetchSystem fetching values from database - END");
+        LOG.info("CodeLookupService::fetchSystem fetching values from database - END - interaction Id: {}", interactionId);
         return Collections.emptyMap();
     }
 

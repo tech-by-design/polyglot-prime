@@ -86,11 +86,11 @@ public class EncounterConverter extends BaseConverter {
 
         populateEncounterIdentifier(encounter, screeningProfileData);
 
-        populateEncounterStatus(encounter, screeningProfileData);
+        populateEncounterStatus(encounter, screeningProfileData, interactionId);
 
-        populateEncounterClass(encounter, screeningProfileData);
+        populateEncounterClass(encounter, screeningProfileData, interactionId);
 
-        populateEncounterType(encounter, screeningProfileData);
+        populateEncounterType(encounter, screeningProfileData, interactionId);
 
         populateEncounterPeriod(encounter, screeningProfileData);
 
@@ -113,25 +113,25 @@ public class EncounterConverter extends BaseConverter {
         encounter.setSubject(new Reference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)));
     }
 
-    private void populateEncounterClass(Encounter encounter, ScreeningProfileData data) {
+    private void populateEncounterClass(Encounter encounter, ScreeningProfileData data, String interactionId) {
         if (StringUtils.isNotEmpty(data.getEncounterClassCode())) {
             Coding encounterClass = new Coding();
-            encounterClass.setSystem(fetchSystem(data.getEncounterClassCodeSystem(), CsvConstants.ENCOUNTER_CLASS_CODE));
-            encounterClass.setCode(fetchCode(data.getEncounterClassCode(), CsvConstants.ENCOUNTER_CLASS_CODE));
+            encounterClass.setSystem(fetchSystem(data.getEncounterClassCodeSystem(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId));
+            encounterClass.setCode(fetchCode(data.getEncounterClassCode(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId));
 
             encounterClass.setDisplay(data.getEncounterClassCodeDescription());
             encounter.setClass_(encounterClass);
         }
     }
 
-    private void populateEncounterType(Encounter encounter, ScreeningProfileData data) {
+    private void populateEncounterType(Encounter encounter, ScreeningProfileData data, String interactionId) {
         if (StringUtils.isNotEmpty(data.getEncounterTypeCode()) || StringUtils.isNotEmpty(data.getEncounterTypeCodeDescription())) {
             CodeableConcept encounterType = new CodeableConcept();
 
             if (data.getEncounterTypeCode() != null) {
                 Coding coding = new Coding();
                 coding.setCode(data.getEncounterTypeCode());
-                coding.setSystem(fetchSystem(data.getEncounterTypeCodeSystem(), CsvConstants.ENCOUNTER_TYPE_CODE));
+                coding.setSystem(fetchSystem(data.getEncounterTypeCodeSystem(), CsvConstants.ENCOUNTER_TYPE_CODE, interactionId));
                 coding.setDisplay(data.getEncounterTypeCodeDescription());
                 encounterType.addCoding(coding);
             }
@@ -144,9 +144,9 @@ public class EncounterConverter extends BaseConverter {
         }
     }
 
-    private void populateEncounterStatus(Encounter encounter, ScreeningProfileData screeningResourceData) {
+    private void populateEncounterStatus(Encounter encounter, ScreeningProfileData screeningResourceData, String interactionId) {
         if (screeningResourceData != null && StringUtils.isNotEmpty(screeningResourceData.getEncounterStatusCode())) {
-            encounter.setStatus(Encounter.EncounterStatus.fromCode(fetchCode(screeningResourceData.getEncounterStatusCode(), CsvConstants.ENCOUNTER_STATUS_CODE)));
+            encounter.setStatus(Encounter.EncounterStatus.fromCode(fetchCode(screeningResourceData.getEncounterStatusCode(), CsvConstants.ENCOUNTER_STATUS_CODE, interactionId)));
         } else {
             encounter.setStatus(Encounter.EncounterStatus.UNKNOWN);
         }

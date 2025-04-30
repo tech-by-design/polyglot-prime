@@ -79,10 +79,10 @@ public class OrganizationConverter extends BaseConverter {
         Meta meta = organization.getMeta();
         meta.setLastUpdated(DateUtil.parseDate(qeAdminData.getFacilityLastUpdated()));
         populateOrganizationName(organization, qeAdminData);
-        populateOrganizationIdentifier(organization, screeningProfileData);
+        populateOrganizationIdentifier(organization, screeningProfileData, interactionId);
         populateIsActive(organization, qeAdminData);
-        populateOrganizationType(organization, qeAdminData);
-        populateOrganizationAddress(organization, qeAdminData);
+        populateOrganizationType(organization, qeAdminData, interactionId);
+        populateOrganizationAddress(organization, qeAdminData, interactionId);
          
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
@@ -97,7 +97,7 @@ public class OrganizationConverter extends BaseConverter {
         }
     }
 
-    private static void populateOrganizationIdentifier(Organization organization, ScreeningProfileData data) {
+    private void populateOrganizationIdentifier(Organization organization, ScreeningProfileData data, String interactionId) {
         if (StringUtils.isNotEmpty(data.getFacilityId())) {
 
             Map<String, String> systemToCodeMap = Map.of(
@@ -105,7 +105,7 @@ public class OrganizationConverter extends BaseConverter {
                     "http://www.medicaid.gov/", "MA",
                     "http://www.irs.gov/", "TAX");
 
-            String system = data.getScreeningEntityIdCodeSystem(); // System comes from CSV
+            String system = fetchSystem(data.getScreeningEntityIdCodeSystem(), CsvConstants.SCREENING_ENITITY_ID, interactionId); // System comes from CSV
             String code = systemToCodeMap.getOrDefault(system, "UNKNOWN");
 
             Identifier identifier = new Identifier();
@@ -121,15 +121,15 @@ public class OrganizationConverter extends BaseConverter {
         }
     }    
 
-    private void populateOrganizationType(Organization organization, QeAdminData data) {
+    private void populateOrganizationType(Organization organization, QeAdminData data, String interactionId) {
         if (StringUtils.isNotEmpty(data.getOrganizationTypeCode()) || StringUtils.isNotEmpty(data.getOrganizationTypeDisplay())) {
             CodeableConcept type = new CodeableConcept();
 
             // Create a new Coding object
             Coding coding = new Coding();
             
-            coding.setSystem(fetchSystem(data.getOrganizationTypeCodeSystem(), CsvConstants.ORGANIZATION_TYPE_CODE) );
-            coding.setCode(fetchCode(data.getOrganizationTypeCode(), CsvConstants.ORGANIZATION_TYPE_CODE));
+            coding.setSystem(fetchSystem(data.getOrganizationTypeCodeSystem(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId) );
+            coding.setCode(fetchCode(data.getOrganizationTypeCode(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId));
             coding.setDisplay(data.getOrganizationTypeDisplay());
 
             type.addCoding(coding);
@@ -138,7 +138,7 @@ public class OrganizationConverter extends BaseConverter {
         }
     }
 
-    private void populateOrganizationAddress(Organization organization, QeAdminData qrAdminData) {
+    private void populateOrganizationAddress(Organization organization, QeAdminData qrAdminData, String interactionId) {
         if (StringUtils.isNotEmpty(qrAdminData.getFacilityAddress1()) || StringUtils.isNotEmpty(qrAdminData.getFacilityCity()) ||
             StringUtils.isNotEmpty(qrAdminData.getFacilityState()) || StringUtils.isNotEmpty(qrAdminData.getFacilityZip())) {
 
@@ -173,7 +173,7 @@ public class OrganizationConverter extends BaseConverter {
 
             address.setCity(qrAdminData.getFacilityCity());
             address.setDistrict(qrAdminData.getFacilityCounty());
-            address.setState(fetchCode(qrAdminData.getFacilityState(), CsvConstants.STATE));
+            address.setState(fetchCode(qrAdminData.getFacilityState(), CsvConstants.STATE, interactionId));
             address.setPostalCode(qrAdminData.getFacilityZip());
 
             organization.addAddress(address);

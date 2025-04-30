@@ -1,7 +1,6 @@
 package org.techbd.service.csv;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.HashMap;
@@ -10,6 +9,7 @@ import java.util.Map;
 
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -55,58 +55,67 @@ class BaseConverterTest {
 
     @Test
     void testFetchCode() {
-        Map<String, Map<String, String>> mockCodeLookup = new HashMap<>();
         Map<String, String> categoryMap = new HashMap<>();
-        categoryMap.put("example", "exampleCode");
-        mockCodeLookup.put("category", categoryMap);
+        categoryMap.put("example", "mappedValue");
+        Map<String, Map<String, String>> codeLookup = new HashMap<>();
+        codeLookup.put("category", categoryMap);
 
-        when(mockCodeLookupService.fetchCode(any())).thenReturn(mockCodeLookup);
+        BaseConverter.CODE_LOOKUP = codeLookup;
 
-        String result = baseConverter.fetchCode("example", "category");
-        assertEquals("exampleCode", result);
+        String result = baseConverter.fetchCode("example", "category", "interactionId");
+        assertEquals("mappedValue", result);
+
+        result = baseConverter.fetchCode("unknown", "category", "interactionId");
+        assertEquals("unknown", result);
     }
 
     @Test
     void testFetchSystem() {
-        Map<String, Map<String, String>> mockSystemLookup = new HashMap<>();
         Map<String, String> categoryMap = new HashMap<>();
-        categoryMap.put("example", "exampleSystem");
-        mockSystemLookup.put("category", categoryMap);
+        categoryMap.put("example", "mappedSystem");
+        Map<String, Map<String, String>> systemLookup = new HashMap<>();
+        systemLookup.put("category", categoryMap);
 
-        when(mockCodeLookupService.fetchSystem(any())).thenReturn(mockSystemLookup);
+        BaseConverter.SYSTEM_LOOKUP = systemLookup;
 
-        String result = baseConverter.fetchSystem("example", "category");
-        assertEquals("exampleSystem", result);
+        String result = baseConverter.fetchSystem("example", "category", "interactionId");
+        assertEquals("mappedSystem", result);
+
+        result = baseConverter.fetchSystem("unknown", "category", "interactionId");
+        assertEquals("unknown", result);
+    }
+
+    @Test
+    void testGetProfileUrl() {
+        CanonicalType profileUrl = baseConverter.getProfileUrl();
+        assertEquals(FHIRUtil.getProfileUrl("patient"), profileUrl.getValue());
     }
 
     @Test
     void testCreateExtension() {
-        String url = "http://example.com";
-        String value = "exampleValue";
-        String system = "http://example-system.com";
-        String code = "exampleCode";
-        String display = "Example Display";
+        Extension extension = BaseConverter.createExtension(
+            "http://example.com",
+            "value",
+            "http://system.com",
+            "code",
+            "display"
+        );
 
-        Extension extension = BaseConverter.createExtension(url, value, system, code, display);
-
-        assertNotNull(extension);
-        assertEquals(url, extension.getUrl());
+        assertEquals("http://example.com", extension.getUrl());
         assertNotNull(extension.getValue());
     }
 
     @Test
     void testCreateAssignerReference() {
-        String referenceString = "Patient/123";
-
-        Reference reference = BaseConverter.createAssignerReference(referenceString);
-
-        assertNotNull(reference);
-        assertEquals(referenceString, reference.getReference());
+        Reference reference = BaseConverter.createAssignerReference("Patient/123");
+        assertEquals("Patient/123", reference.getReference());
     }
 
     @Test
-    void testGetProfileUrl() {
-        String profileUrl = baseConverter.getProfileUrl().getValue();
-        assertEquals(FHIRUtil.getProfileUrl("patient"), profileUrl);
+    void testCreateAssignerReferenceInvalidFormat() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            BaseConverter.createAssignerReference("InvalidFormat");
+        });
+        assertEquals("Reference string must be in the format 'ResourceType/ResourceId'", exception.getMessage());
     }
 }
