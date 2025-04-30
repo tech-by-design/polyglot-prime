@@ -1,0 +1,6 @@
+code_type,code,display_string,system_value,description,ig_version,provenance
+procedure_code,99213(NA),,http://www.ama-assn.org/go/cpt,,1.4.2,TechBD
+procedure_code,104001(NA),,http://snomed.info/sct,,1.4.2,TechBD
+procedure_code,G0136(NA),,urn:oid:2.16.840.1.113883.6.285,,1.4.2,TechBD
+procedure_code,J45.909(NA),,http://www.cms.gov/Medicare/Coding/ICD10,,1.4.2,TechBD
+procedure_code,786.5(NA),,urn:oid:2.16.840.1.113883.6.13,,1.4.2,TechBD
