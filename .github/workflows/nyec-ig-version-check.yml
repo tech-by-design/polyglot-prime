@@ -3,7 +3,7 @@ name: Daily NYeC IG Version Check and Notification
 on:
   schedule:
     - cron: '0 11 * * *' # 6.00 AM EST
-    - cron: '10 5 * * *' # Temporary to test
+    - cron: '30 6 * * *' # Temporary to test
   workflow_dispatch:
   
 permissions:
@@ -69,9 +69,9 @@ jobs:
       if: env.PROD_UPDATED == 'true'
       run: |
         ISSUE_TITLE="PROD - NYeC Published IG Updated to ${PROD_VERSION}"
-        ISSUE_BODY=$"A new version ('${PROD_VERSION}$') has been published for PROD.\n\nPlease review and create a release following internal processes."
+        ISSUE_BODY="A new version (${PROD_VERSION}) has been published for PROD. Please review and create a release following internal processes."
         API_JSON=$(jq -n --arg title "$ISSUE_TITLE" --arg body "$ISSUE_BODY" '{title: $title, body: $body}')
-        RESPONSE=$(curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -d "$API_JSON" "https://api.github.com/repos/${{ github.repository }}/issues")
+        RESPONSE=$(curl -s -X POST -H "Authorization: token ${{ secrets.ACTIONS_GITHUB_TOKEN }}" -d "$API_JSON" "https://api.github.com/repos/${{ github.repository }}/issues")
         PROD_ISSUE_URL=$(echo "$RESPONSE" | jq -r '.html_url')
         echo "PROD_ISSUE_URL=$PROD_ISSUE_URL" >> $GITHUB_ENV
 
@@ -79,9 +79,9 @@ jobs:
       if: env.QA_UPDATED == 'true'
       run: |
         ISSUE_TITLE="QA - NYeC Published IG Updated to ${QA_VERSION}"
-        ISSUE_BODY="A new version (${QA_VERSION}) has been published for QA. \n\n Please review and create a release following internal processes."
+        ISSUE_BODY="A new version (${QA_VERSION}) has been published for QA. Please review and create a release following internal processes."
         API_JSON=$(jq -n --arg title "$ISSUE_TITLE" --arg body "$ISSUE_BODY" '{title: $title, body: $body}')
-        RESPONSE=$(curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -d "$API_JSON" "https://api.github.com/repos/${{ github.repository }}/issues")
+        RESPONSE=$(curl -s -X POST -H "Authorization: token ${{ secrets.ACTIONS_GITHUB_TOKEN }}" -d "$API_JSON" "https://api.github.com/repos/${{ github.repository }}/issues")
         QA_ISSUE_URL=$(echo "$RESPONSE" | jq -r '.html_url')
         echo "QA_ISSUE_URL=$QA_ISSUE_URL" >> $GITHUB_ENV
 
