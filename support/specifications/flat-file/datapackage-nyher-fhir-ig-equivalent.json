@@ -16,7 +16,7 @@
           }},          
           {"name": "ORGANIZATION_TYPE_DISPLAY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').type.coding.display", "constraints": { "enum": ["healthcare provider", "hospital department", "organizational team", "government", "insurance company", "payer", "educational institute", "religious institution", "clinical research sponsor", "community group", "non-healthcare business or corporation", "other"]
           }},
-          {"name": "ORGANIZATION_TYPE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').type.coding.system", "constraints": { "enum":["http://terminology.hl7.org/CodeSystem/organization-type", "https://hl7.org/fhir/r4/codesystem-organization-type.html"]}},   
+          {"name": "ORGANIZATION_TYPE_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').type.coding.system", "constraints": { "enum":["http://terminology.hl7.org/codesystem/organization-type", "https://hl7.org/fhir/r4/codesystem-organization-type.html"]}},   
           {"name": "ENCOUNTER_LOCATION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').location.location.reference", "constraints": { "required": true}},   
           {"name": "FACILITY_ADDRESS1", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.line"},                    
           {"name": "FACILITY_ADDRESS2", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.text"},                    
