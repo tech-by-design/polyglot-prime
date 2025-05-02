@@ -2,7 +2,8 @@ name: Daily NYeC IG Version Check and Notification
 
 on:
   schedule:
-    - cron: '0 11 * * *'
+    - cron: '0 11 * * *' # 6.00 AM EST
+    - cron: '10 5 * * *' # Temporary to test
   workflow_dispatch:
   
 permissions:
