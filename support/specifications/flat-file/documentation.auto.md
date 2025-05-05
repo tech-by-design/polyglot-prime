@@ -42,7 +42,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').type.coding.system
   - `type` string
   - `constraints`:
-    - `enum` ['http://terminology.hl7.org/CodeSystem/organization-type', 'https://hl7.org/fhir/r4/codesystem-organization-type.html']
+    - `enum` ['http://terminology.hl7.org/codesystem/organization-type', 'https://hl7.org/fhir/r4/codesystem-organization-type.html']
 ### `ENCOUNTER_LOCATION`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').location.location.reference
   - `type` string
@@ -318,6 +318,7 @@
   - `type` string
   - `constraints`:
     - `required` True
+    - `unique` True
     - `pattern` `[A-Za-z0-9\-\.\_]{1,64}`
 ### `SCREENING_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code
