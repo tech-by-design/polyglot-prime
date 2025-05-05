@@ -194,7 +194,7 @@ public class CsvOrchestrationEngine {
         private final Device device;
         private final MultipartFile file;
         private Map<String, Object> validationResults;
-        private List<String> filesNotProcessed;
+        private List<FileDetail> filesNotProcessed;
         private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private final String tenantId;
         HttpServletRequest request;
@@ -248,7 +248,7 @@ public class CsvOrchestrationEngine {
             return payloadAndValidationOutcomes;
         }
 
-        public List<String> getFilesNotProcessed() {
+        public List<FileDetail> getFilesNotProcessed() {
             return filesNotProcessed;
         }
 
@@ -568,10 +568,9 @@ public class CsvOrchestrationEngine {
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
                     if (groupKey.equals("filesNotProcessed")) {
-                        this.filesNotProcessed = entry.getValue().stream().map(FileDetail::filename).toList();
                         combinedValidationResults.add(
                                 createOperationOutcomeForFileNotProcessed(
-                                        masterInteractionId, this.filesNotProcessed, originalFileName));
+                                        masterInteractionId, entry.getValue(), originalFileName));
                         continue;
                     }
                     List<FileDetail> fileDetails = entry.getValue();
@@ -607,35 +606,50 @@ public class CsvOrchestrationEngine {
         }
 
         private Map<String, Object> createOperationOutcomeForFileNotProcessed(
-                final String masterInteractionId,
-                final List<String> filesNotProcessed, String originalFileName) {
+            final String masterInteractionId,
+            final List<FileDetail> filesNotProcessed,
+            final String originalFileName) {
+    
             if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
                 return Collections.emptyMap();
             }
-
+        
+            // Prepare message like: badfile1.csv(reason1), wrongprefix_file.csv(reason2)
+            String message = filesNotProcessed.stream()
+                .map(fd -> fd.filename() + "(" + 
+                    (fd.reason() != null ? fd.reason() 
+                                        : "Filenames must start with one of the following prefixes: " + 
+                                        Arrays.stream(FileType.values())
+                                                .map(Enum::name)
+                                                .collect(Collectors.joining(", "))
+                    ) + ")")
+                .collect(Collectors.joining(", "));
+        
             StringBuilder diagnosticsMessage = new StringBuilder("Files not processed: in input zip file : ");
-            diagnosticsMessage.append(String.join(", ", filesNotProcessed));
-
-            StringBuilder remediation = new StringBuilder("Filenames must start with one of the following prefixes: ");
+            diagnosticsMessage.append(message);
+        
+            StringBuilder description = new StringBuilder("Filenames must start with one of the following prefixes: ");
             for (FileType type : FileType.values()) {
-                remediation.append(type.name()).append(", ");
+                description.append(type.name()).append(", ");
             }
-            if (remediation.length() > 0) {
-                remediation.setLength(remediation.length() - 2); // Remove trailing comma and space
-            }
-
+            description.setLength(description.length() - 2); // Remove trailing comma and space
+        
             Map<String, Object> errorDetails = Map.of(
-                    "type", "files-not-processed",
-                    "description", remediation.toString(),
-                    "message", diagnosticsMessage.toString());
-
+                "type", "files-not-processed",
+                "description", description.toString(),
+                "message", diagnosticsMessage.toString()
+            );
+        
             return Map.of(
-                    "zipFileInteractionId", masterInteractionId,
-                    "originalFileName", originalFileName,
-                    "validationResults", Map.of(
-                            "errors", List.of(errorDetails),
-                            "resourceType", "OperationOutcome"));
+                "zipFileInteractionId", masterInteractionId,
+                "originalFileName", originalFileName,
+                "validationResults", Map.of(
+                    "errors", List.of(errorDetails),
+                    "resourceType", "OperationOutcome"
+                )
+            );
         }
+    
 
         // Move this method outside of processScreenings
         public boolean isGroupComplete(List<FileDetail> fileDetails) {

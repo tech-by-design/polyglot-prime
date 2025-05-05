@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -65,7 +66,7 @@ public class CsvBundleProcessorService {
 
     public List<Object> processPayload(final String masterInteractionId,
             final Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes,
-            final List<String> filesNotProcessed,
+            final List<FileDetail> filesNotProcessed,
             final HttpServletRequest request,
             final HttpServletResponse response,
             final String tenantId, final String originalFileName,String baseFHIRUrl) {
@@ -455,37 +456,51 @@ private List<Object> processScreening(final String groupKey,
                         "resourceType", "OperationOutcome")
                         );
     }
-
     private Map<String, Object> createOperationOutcomeForFileNotProcessed(
-            final String masterInteractionId,
-            final List<String> filesNotProcessed, final String originalFileName) {
+                final String masterInteractionId,
+                final List<FileDetail> filesNotProcessed,
+                final String originalFileName) {
+
         if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
-            return Collections.emptyMap();
+        return Collections.emptyMap();
         }
 
-        final StringBuilder diagnosticsMessage = new StringBuilder("Files not processed: in input zip file : ");
-        diagnosticsMessage.append(String.join(", ", filesNotProcessed));
+        // Prepare message like: badfile1.csv(reason1), wrongprefix_file.csv(reason2)
+        String message = filesNotProcessed.stream()
+        .map(fd -> fd.filename() + "(" + 
+                (fd.reason() != null ? fd.reason() 
+                                : "Filenames must start with one of the following prefixes: " + 
+                                Arrays.stream(FileType.values())
+                                        .map(Enum::name)
+                                        .collect(Collectors.joining(", "))
+                ) + ")")
+        .collect(Collectors.joining(", "));
 
-        final StringBuilder remediation = new StringBuilder("Filenames must start with one of the following prefixes: ");
-        for (final FileType type : FileType.values()) {
-            remediation.append(type.name()).append(", ");
-        }
-        if (remediation.length() > 0) {
-            remediation.setLength(remediation.length() - 2); // Remove trailing comma and space
-        }
+        StringBuilder diagnosticsMessage = new StringBuilder("Files not processed: in input zip file : ");
+        diagnosticsMessage.append(message);
 
-        final Map<String, Object> errorDetails = Map.of(
-                "type", "files-not-processed",
-                "description", remediation.toString(),
-                "message", diagnosticsMessage.toString());
+        StringBuilder description = new StringBuilder("Filenames must start with one of the following prefixes: ");
+        for (FileType type : FileType.values()) {
+        description.append(type.name()).append(", ");
+        }
+        description.setLength(description.length() - 2); // Remove trailing comma and space
+
+        Map<String, Object> errorDetails = Map.of(
+        "type", "files-not-processed",
+        "description", description.toString(),
+        "message", diagnosticsMessage.toString()
+        );
 
         return Map.of(
-                "masterInteractionId", masterInteractionId,
-                "originalFileName", originalFileName,
-                "validationResults", Map.of(
-                        "errors", List.of(errorDetails),
-                        "resourceType", "OperationOutcome"));
-    }
+        "zipFileInteractionId", masterInteractionId,
+        "originalFileName", originalFileName,
+        "validationResults", Map.of(
+                "errors", List.of(errorDetails),
+                "resourceType", "OperationOutcome"
+        )
+        );
+ }
+
    private void addObservabilityHeadersToResponse(final HttpServletRequest request, final HttpServletResponse response) {
                 final var startTime = (Instant) request.getAttribute(START_TIME_ATTRIBUTE);
                 final var finishTime = Instant.now();
