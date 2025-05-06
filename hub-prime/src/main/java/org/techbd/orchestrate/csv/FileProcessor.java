@@ -1,28 +1,19 @@
 package org.techbd.orchestrate.csv;
 
 import java.io.IOException;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
-import org.apache.tika.parser.txt.UniversalEncodingDetector;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
 
 public class FileProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(FileProcessor.class);
