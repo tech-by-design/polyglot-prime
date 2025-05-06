@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -457,49 +458,77 @@ private List<Object> processScreening(final String groupKey,
                         );
     }
     private Map<String, Object> createOperationOutcomeForFileNotProcessed(
-                final String masterInteractionId,
-                final List<FileDetail> filesNotProcessed,
-                final String originalFileName) {
+        final String masterInteractionId,
+        final List<FileDetail> filesNotProcessed,
+        final String originalFileName) {
 
         if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
-        return Collections.emptyMap();
+            return Collections.emptyMap();
         }
-
-        // Prepare message like: badfile1.csv(reason1), wrongprefix_file.csv(reason2)
-        String message = filesNotProcessed.stream()
-        .map(fd -> fd.filename() + "(" + 
-                (fd.reason() != null ? fd.reason() 
-                                : "Filenames must start with one of the following prefixes: " + 
-                                Arrays.stream(FileType.values())
-                                        .map(Enum::name)
-                                        .collect(Collectors.joining(", "))
-                ) + ")")
-        .collect(Collectors.joining(", "));
-
-        StringBuilder diagnosticsMessage = new StringBuilder("Files not processed: in input zip file : ");
-        diagnosticsMessage.append(message);
-
-        StringBuilder description = new StringBuilder("Filenames must start with one of the following prefixes: ");
-        for (FileType type : FileType.values()) {
-        description.append(type.name()).append(", ");
+    
+        // Group by subType + reason to allow distinct reasons within a single subType
+        Map<String, List<FileDetail>> grouped = filesNotProcessed.stream()
+                .collect(Collectors.groupingBy(fd -> {
+                    String reason = fd.reason();
+                    if (reason == null || reason.contains("Invalid file prefix")) {
+                        return "invalid-prefix|Invalid file prefix";
+                    } else if (reason.contains("Group blocked by")) {
+                        return "incomplete-group-due-to-encoding|" + reason;
+                    } else if (reason.contains("not UTF-8 encoded")) {
+                        return "wrong-encoding|File is not UTF-8 encoded";
+                    } else {
+                        return "unknown|Unknown reason";
+                    }
+                }));
+    
+        List<Map<String, Object>> errors = new ArrayList<>();
+    
+        for (Map.Entry<String, List<FileDetail>> entry : grouped.entrySet()) {
+            String[] keyParts = entry.getKey().split("\\|", 2);
+            String subType = keyParts[0];
+            String reason = keyParts.length > 1 ? keyParts[1] : "Unknown reason";
+    
+            String description;
+            switch (subType) {
+                case "invalid-prefix":
+                    description = "Filenames must start with one of the following prefixes: " +
+                            Arrays.stream(FileType.values())
+                                    .map(Enum::name)
+                                    .collect(Collectors.joining(", "));
+                    break;
+                case "incomplete-group-due-to-encoding":
+                    description = "Not processed as other files in the group were not UTF-8 encoded";
+                    break;
+                case "wrong-encoding":
+                    description = "File is not UTF-8 encoded";
+                    break;
+                default:
+                    description = "Unknown reason";
+            }
+    
+            List<String> filenames = entry.getValue().stream()
+                    .map(FileDetail::filename)
+                    .collect(Collectors.toList());
+    
+            Map<String, Object> errorGroup = new LinkedHashMap<>();
+            errorGroup.put("type", "files-not-processed");
+            errorGroup.put("subType", subType);
+            errorGroup.put("description", description);
+            errorGroup.put("reason", reason);
+            errorGroup.put("files", filenames);
+    
+            errors.add(errorGroup);
         }
-        description.setLength(description.length() - 2); // Remove trailing comma and space
-
-        Map<String, Object> errorDetails = Map.of(
-        "type", "files-not-processed",
-        "description", description.toString(),
-        "message", diagnosticsMessage.toString()
-        );
-
+    
         return Map.of(
-        "zipFileInteractionId", masterInteractionId,
-        "originalFileName", originalFileName,
-        "validationResults", Map.of(
-                "errors", List.of(errorDetails),
-                "resourceType", "OperationOutcome"
-        )
+                "zipFileInteractionId", masterInteractionId,
+                "originalFileName", originalFileName,
+                "validationResults", Map.of(
+                        "resourceType", "OperationOutcome",
+                        "errors", errors
+                )
         );
- }
+    }
 
    private void addObservabilityHeadersToResponse(final HttpServletRequest request, final HttpServletResponse response) {
                 final var startTime = (Instant) request.getAttribute(START_TIME_ATTRIBUTE);

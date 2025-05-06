@@ -46,7 +46,7 @@ public class FileProcessor {
                 groupedFiles.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(fileDetail);
 
             } catch (IllegalArgumentException e) {
-                String reason = "Invalid file type: " + e.getMessage();
+                String reason = "Invalid file prefix: " + e.getMessage();
                 filesNotProcessed.add(new FileDetail(fileName, null, null, filePath, false, reason));
             } catch (IOException e) {
                 String reason = "IOException during processing: " + e.getMessage();
@@ -62,7 +62,7 @@ public class FileProcessor {
                         .map(FileDetail::filename)
                         .toList();
 
-                String reason = "Not processed as other files in the group were not UTF-8 encoded: "
+                String reason = "Not processed as other files in the group were not UTF-8 encoded. Group blocked by:"
                         + String.join(", ", nonUtf8Files);
 
                 for (FileDetail fd : group) {
