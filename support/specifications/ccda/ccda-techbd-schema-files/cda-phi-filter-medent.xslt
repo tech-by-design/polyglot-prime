@@ -55,24 +55,14 @@
             <xsl:copy-of select="hl7:componentOf"/>
 
             <component>
-                <structuredBody>
-                    <!-- Extract and place the single Sexual Orientation entry -->
-                    <xsl:variable name="sexualOrientationEntry" select="//hl7:section[hl7:code[@code='29762-2']]/hl7:entry[hl7:observation/hl7:code[@code='76690-7']]" />
-                    <xsl:if test="$sexualOrientationEntry">
-                        <component>
-                            <section ID="sexualOrientation">
-                                <xsl:copy-of select="hl7:templateId |hl7:code | hl7:title"/>
-                                <xsl:copy-of select="$sexualOrientationEntry" />
-                            </section>
-                        </component>
-                    </xsl:if>
-
+                <structuredBody>                    
                     <!-- Extract and place the Encounter entry -->
                     <xsl:if test="not(hl7:componentOf/hl7:encompassingEncounter)">
-                        <xsl:variable name="encounterEntry" select="//hl7:section[hl7:code[@code='46240-8']]/hl7:entry[hl7:encounter]" />
+                        <xsl:variable name="encounterEntry" select="hl7:component/hl7:structuredBody/hl7:component/hl7:section[hl7:code[@code='46240-8']]/hl7:entry[hl7:encounter]" />
                         <xsl:if test="$encounterEntry">
                             <component>
                                 <section ID="encounters">
+                                    <xsl:copy-of select="@*"/>
                                     <xsl:copy-of select="hl7:templateId |hl7:code | hl7:title"/>
                                     <xsl:copy-of select="$encounterEntry" />
                                 </section>
@@ -81,12 +71,28 @@
                     </xsl:if>
 
                     <!-- Extract and place all other observations -->
-                    <!-- <xsl:variable name="observations" select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry[not(hl7:observation/hl7:code[@code='76690-7']/hl7:observation) and hl7:section/hl7:entry/hl7:observation/hl7:code[@codeSystemName='LOINC' or @codeSystemName='SNOMED' or @codeSystemName='SNOMED CT']]" />
-                    <xsl:variable name="observations" select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:entryRelationship"/> -->
-                    <xsl:variable name="observations" select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:entryRelationship[hl7:observation/hl7:code[@codeSystemName='LOINC' or @codeSystemName='SNOMED' or @codeSystemName='SNOMED CT']]"/>
+                    <!-- <xsl:variable name="observations" select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:entryRelationship[hl7:observation/hl7:code[@codeSystemName='LOINC' or @codeSystemName='SNOMED' or @codeSystemName='SNOMED CT']]"/> -->
+                    <xsl:variable name="observations" select="hl7:component
+                            /hl7:structuredBody
+                            /hl7:component
+                            /hl7:section[hl7:code[@code='47519-4']]
+                            /hl7:entry
+                            /hl7:observation
+                                [hl7:code
+                                    [not(@code='76690-7')]
+                                ]
+                            /hl7:entryRelationship
+                            [hl7:observation
+                                [hl7:code
+                                    [(@codeSystemName = 'LOINC' or @codeSystemName = 'SNOMED' or @codeSystemName = 'SNOMED CT') and (not(@code = 'UNK') and string-length(@code) > 0)] 
+                                and hl7:value
+                                    [not(@code = 'UNK') and string-length(@code) > 0 and string-length(@nullFlavor) = 0]
+                                ]
+                            ]"/>
+                                        
                     <xsl:if test="$observations">
                         <component>
-                            <section ID="observations">                                
+                            <section ID="observations">
                                 <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:templateId"/>
                                 <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:code"/>
                                 <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:title"/>
@@ -104,6 +110,18 @@
                             </section>
                         </component>
                     </xsl:if>
+
+                    <!-- Extract and place the single Sexual Orientation entry -->
+                    <xsl:variable name="sexualOrientationEntry" select="//hl7:section[hl7:code[@code='29762-2']]/hl7:entry[hl7:observation/hl7:code[@code='76690-7']]" />
+                    <xsl:if test="$sexualOrientationEntry">
+                        <component>
+                            <section ID="sexualOrientation">
+                                <xsl:copy-of select="hl7:templateId |hl7:code | hl7:title"/>
+                                <xsl:copy-of select="$sexualOrientationEntry" />
+                            </section>
+                        </component>
+                    </xsl:if>
+
                 </structuredBody>
             </component>
         </xsl:copy>

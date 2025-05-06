@@ -3,16 +3,14 @@
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
                 xmlns:sdtc="urn:hl7-org:sdtc"
-                exclude-result-prefixes="sdtc"
-                >
+                exclude-result-prefixes="sdtc">
 
   <xsl:output method="text"/>
   
-  <!-- Root template -->
   <xsl:param name="currentTimestamp"/>
   <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id/@extension"/>
   <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family, ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given)"/>
-  <xsl:variable name="bundleTimestamp" select="//ccda:effectiveTime/@value"/>
+  <xsl:variable name="bundleTimestamp" select="/ccda:ClinicalDocument/ccda:effectiveTime/@value"/>
 
   <xsl:param name="bundleId"/>
   <xsl:param name="patientResourceId"/>
@@ -65,22 +63,20 @@
                       </xsl:call-template>"
     </xsl:if>
     , "entry": [
-      <xsl:apply-templates select="/ccda:ClinicalDocument/ccda:patientRole 
-                                | /ccda:ClinicalDocument/ccda:encompassingEncounter 
-                                | //ccda:sexualOrientation/ccda:entry/ccda:observation
-                                | //ccda:observations/ccda:entry
-                                | /ccda:ClinicalDocument/ccda:consent 
+      <xsl:apply-templates select="/ccda:ClinicalDocument/ccda:recordTarget/ccda:patientRole 
+                                | /ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter 
+                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='sexualOrientation']/ccda:entry/ccda:observation
+                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship
+                                | /ccda:ClinicalDocument/ccda:authorization/ccda:consent 
                                 | /ccda:ClinicalDocument/ccda:author
-                                | //ccda:Questionnaire
-                                | //ccda:component/ccda:structuredBody/ccda:component/ccda:encounters/ccda:entry[position()=1]/ccda:encounter
+                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter
                                 "/>
-        <xsl:apply-templates select="ccda:observation" mode="questionnaireresponse"/>
     ]
   }
   </xsl:template>
 
   <!-- Patient Template -->
-  <xsl:template name="Patient" match="/ccda:ClinicalDocument/ccda:patientRole">
+  <xsl:template name="Patient" match="/ccda:ClinicalDocument/ccda:recordTarget/ccda:patientRole">
     {
       "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
       "resource": {
@@ -363,31 +359,18 @@
               }]
           }
       </xsl:if>
-      <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:languageCode/@code) or string(ccda:patient/ccda:languageCommunication/ccda:languageCode/@nullFlavor)">
+      <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:languageCode/@code)">
       , "communication" : [{
         "language" : {
-          <xsl:choose>            
-            <xsl:when test="ccda:patient/ccda:languageCommunication/ccda:languageCode/@nullFlavor">
-              "extension": [{
-                "url": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
-                "valueCode": "<xsl:call-template name='getNullFlavorDisplay'>
-                                  <xsl:with-param name='nullFlavor' select="ccda:patient/ccda:languageCommunication/ccda:languageCode/@nullFlavor"/>
-                              </xsl:call-template>"
-                }]
-            </xsl:when>
-            <xsl:otherwise>
-              "coding" : [{
-                "system" : "urn:ietf:bcp:47",
+          "coding" : [{
                 "code" : "<xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:languageCode/@code"/>"
               }]
-            </xsl:otherwise>
-          </xsl:choose>
         }
         <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:preferenceInd/@value)">
         , "preferred" : <xsl:value-of select="ccda:patient/ccda:languageCommunication/ccda:preferenceInd/@value"/>
         </xsl:if>
       }]
-      </xsl:if>      
+      </xsl:if>
     }
     , "request" : {
         "method" : "POST",
@@ -397,7 +380,7 @@
   </xsl:template>
 
   <!-- Encounter Template -->
-  <xsl:template name="Encounter" match="/ccda:ClinicalDocument/ccda:encompassingEncounter">
+  <xsl:template name="Encounter" match="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter">
     ,{
       "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>",
       "resource": {
@@ -421,9 +404,11 @@
                 "code": "<xsl:value-of select="ccda:code/ccda:translation/@code"/>",
                 "display": "<xsl:value-of select="ccda:code/ccda:translation/@displayName"/>"
               }
-            ],
+            ]
             </xsl:if>
-            "text": "<xsl:value-of select="ccda:code/ccda:originalText"/>"
+            <xsl:if test="string(ccda:code/ccda:originalText)">
+              ,"text": "<xsl:value-of select="ccda:code/ccda:originalText"/>"
+            </xsl:if>
           }
         ],
         "class": {
@@ -513,7 +498,7 @@
   </xsl:template>
 
   <!-- Encounter Template -->
-  <xsl:template name="ComponentEncounter" match="//ccda:component/ccda:structuredBody/ccda:component/ccda:encounters/ccda:entry[position()=1]/ccda:encounter">
+  <xsl:template name="ComponentEncounter" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter">
     ,{
       "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Encounter/<xsl:value-of select="$encounterResourceId"/>",
       "resource": {
@@ -628,7 +613,7 @@
   </xsl:template>
 
   <!-- Consent Template -->
-  <xsl:template name="Consent" match="/ccda:ClinicalDocument/ccda:consent">
+  <xsl:template name="Consent" match="/ccda:ClinicalDocument/ccda:authorization/ccda:consent">
     ,{
       "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Consent/<xsl:value-of select='$consentResourceId'/>",
       "resource": {
@@ -695,9 +680,9 @@
           "reference" : "Organization/<xsl:value-of select='$organizationResourceId'/>"
         }]
         <xsl:choose>
-          <xsl:when test="string(ccda:act/ccda:code/@displayName)">
+          <xsl:when test="string(ccda:code/@displayName)">
             , "provision" : {
-              "type" : "<xsl:value-of select="translate(ccda:act/ccda:code/@displayName, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>"
+              "type" : "<xsl:value-of select="translate(ccda:code/@displayName, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>"
             }
           </xsl:when>
           <xsl:otherwise>
@@ -782,7 +767,7 @@
             , "address": [
                 <xsl:for-each select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]">
                     {
-                        <xsl:if test="@use">
+                        <xsl:if test="string(@use)">
                             "use": "<xsl:choose>
                                 <xsl:when test="@use='HP' or @use='H'">home</xsl:when>
                                 <xsl:when test="@use='WP'">work</xsl:when>
@@ -851,8 +836,15 @@
   </xsl:template>
 
   <!-- Sexual orientation Observation Template -->
-  <xsl:template name="SexualOrientation" match="ccda:sexualOrientation/ccda:entry/ccda:observation"> <!--/ccda:entry/ccda:observation-->
-    <xsl:if test="ccda:code/@code and string(ccda:code/@code) = '76690-7'">
+  <xsl:template name="SexualOrientation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='sexualOrientation']/ccda:entry/ccda:observation">
+    <xsl:if test="string(ccda:code/@code) = '76690-7' 
+              and string(ccda:value/@code) != 'UNK' 
+              and string-length(ccda:value/@code) > 0 
+              and string(ccda:code/@code) != 'UNK' 
+              and string-length(ccda:code/@code) > 0
+              and string-length(ccda:value/@nullFlavor) = 0
+              and string-length(ccda:code/@nullFlavor) = 0
+          "> 
       ,{
         "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$sexualOrientationResourceId'/>",
         "resource": {
@@ -881,8 +873,10 @@
                 "code": "<xsl:value-of select='ccda:code/@code'/>",
                 "display": "<xsl:value-of select='ccda:code/@displayName'/>"
               }
-            ],
-            "text" : "<xsl:value-of select='ccda:code/ccda:originalText'/>"
+            ]
+            <xsl:if test="string(ccda:code/@displayName)">
+              ,"text" : "<xsl:value-of select='ccda:code/@displayName'/>"
+            </xsl:if>
           },
           <xsl:choose>
             <xsl:when test="string(ccda:value/@code) = 'UNK' or string(ccda:value/@code) = ''">
@@ -930,8 +924,16 @@
   </xsl:template>
 
   <!-- Observation Template -->
-  <xsl:template name="Observation" match="ccda:observations/ccda:entry">
-    <xsl:if test="string(ccda:observation/ccda:code/@code) != '76690-7'"> 
+  <xsl:template name="Observation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship">
+    <!-- <xsl:if test="string(ccda:observation/ccda:code/@code) != '76690-7' and string(ccda:observation/ccda:value/@code) != 'UNK' and string(ccda:observation/ccda:value/@code) != ''">  -->
+    <xsl:if test="string(ccda:observation/ccda:value/@code) != 'UNK' 
+              and string-length(ccda:observation/ccda:value/@code) > 0 
+              and string(ccda:observation/ccda:code/@code) != 'UNK' 
+              and string-length(ccda:observation/ccda:code/@code) > 0
+              and string-length(ccda:observation/ccda:value/@nullFlavor) = 0
+              and string-length(ccda:observation/ccda:code/@nullFlavor) = 0
+              and (ccda:observation/ccda:code/@codeSystemName = 'LOINC' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED CT')
+          ">          
       <xsl:variable name="observationResourceId">
         <xsl:call-template name="generateFixedLengthResourceId">
           <xsl:with-param name="prefixString" select="concat(generate-id(ccda:observation/ccda:code/@code), position())"/>
@@ -971,30 +973,31 @@
                 "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
                 "display": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
               }
-            ],
-            "text": "<xsl:value-of select='ccda:observation/ccda:code/ccda:originalText'/>"
+            ]
+            <xsl:choose>
+              <xsl:when test="ccda:observation/ccda:code/@originalText">
+                , "text": "<xsl:value-of select='ccda:observation/ccda:code/@originalText'/>"
+              </xsl:when>
+              <xsl:when test="ccda:observation/ccda:code/@displayName">
+                , "text": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+              </xsl:when>
+            </xsl:choose>
           },
-          <xsl:choose>
-            <xsl:when test="string(ccda:observation/ccda:value/@code) = 'UNK' or string(ccda:observation/ccda:value/@code) = ''">
-              "valueCodeableConcept" : {
-                "coding": [{
-                  "system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
-                  "code": "UNK",
-                  "display": "Unknown"
-                }]
-              },
-            </xsl:when>
-            <xsl:otherwise>
-              "valueCodeableConcept" : {
-                "coding": [{
-                  "system": "http://loinc.org",
-                  "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
-                  "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                }],
-                "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-              },
-            </xsl:otherwise>
-          </xsl:choose>
+          "valueCodeableConcept" : {
+            "coding": [{
+              "system": "http://loinc.org",
+              "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
+              "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+            }]
+            <xsl:choose>
+              <xsl:when test="ccda:observation/ccda:value/@originalText">
+                , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
+              </xsl:when>
+              <xsl:when test="ccda:observation/ccda:value/@displayName">
+                , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+              </xsl:when>
+            </xsl:choose>
+          },
           "subject": {
             "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
             "display": "<xsl:value-of select="$patientResourceName"/>"
@@ -1027,124 +1030,7 @@
           "url": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>"
         }
       }
-      <!-- Apply the same observation data in the QuestionnaireResponse mode -->
-        <xsl:apply-templates select="." mode="questionnaireresponse"/>
     </xsl:if>
-  </xsl:template>
-
-  <!-- Template to generate Questionnaire resource -->
-  <xsl:template name="QuestionnaireResource" match="ccda:Questionnaire"> 
-      ,{
-          "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Questionnaire/<xsl:value-of select='$questionnaireResourceId'/>",
-          "resource" : {
-            "resourceType": "Questionnaire",
-            "id": "<xsl:value-of select='$questionnaireResourceId'/>",
-            "meta" : {
-              "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
-              "profile" : ["<xsl:value-of select='$questionnaireMetaProfileUrlFull'/>"]
-            },
-            <xsl:if test="string(ccda:entry/ccda:observation/ccda:code/@codeSystem) or string(ccda:entry/ccda:observation/ccda:code/@code)">
-            "identifier" : [{
-              <xsl:if test="string(ccda:entry/ccda:observation/ccda:code/@codeSystem)">
-              "system" : "urn:<xsl:value-of select='ccda:entry/ccda:observation/ccda:code/@codeSystem'/>",
-              </xsl:if>
-              "value" : "<xsl:value-of select='ccda:entry/ccda:observation/ccda:code/@code'/>"
-            }],
-            </xsl:if>
-            "status": "<xsl:call-template name='mapQuestionnaireStatus'>
-                        <xsl:with-param name='statusCode' select='ccda:entry/ccda:observation/ccda:statusCode/@code'/>
-                    </xsl:call-template>",
-            "title": "<xsl:value-of select='ccda:title'/>"
-            <xsl:if test="string(ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation)">
-              ,"item": [
-                  <xsl:for-each select="ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation">
-                      {
-                          "linkId": "<xsl:value-of select='ccda:code/@code'/>",
-                          "code" : [{
-                            "system" : "<xsl:value-of select='ccda:code/@codeSystem'/>",
-                            "code" : "<xsl:value-of select='ccda:code/@code'/>",
-                            "display" : "<xsl:value-of select='ccda:code/@displayName'/>"
-                          }],
-                          "text": "<xsl:value-of select='ccda:value/@displayName'/>",
-                          "type": "string"
-                      }
-                      <xsl:if test="position() != last()">,</xsl:if>
-                  </xsl:for-each>
-              ]
-            </xsl:if>
-          },
-          "request" : {
-            "method" : "POST",
-            "url" : "<xsl:value-of select='$baseFhirUrl'/>/Questionnaire/<xsl:value-of select='$questionnaireResourceId'/>"
-          }
-      }
-  </xsl:template>
-
-  <!-- Template to generate QuestionnaireResponse resource -->
-  <xsl:template name="QuestionnaireResponseResource" match="ccda:observations/ccda:entry/ccda:observation" mode="questionnaireresponse">
-      <xsl:variable name="QuestionnaireResponseResourceId">
-        <xsl:call-template name="generateFixedLengthResourceId">
-          <xsl:with-param name="prefixString" select="concat(generate-id(ccda:code/@code), position())"/>
-          <xsl:with-param name="sha256ResourceId" select="$questionnaireResponseResourceSha256Id"/>
-        </xsl:call-template>
-      </xsl:variable>
-      ,{
-          "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/QuestionnaireResponse/<xsl:value-of select='$QuestionnaireResponseResourceId'/>",
-          "resource" : {
-            "resourceType": "QuestionnaireResponse",
-            "id": "<xsl:value-of select='$QuestionnaireResponseResourceId'/>",
-            "status": "completed",
-            "subject": {
-                "reference": "Patient/<xsl:value-of select='$patientResourceId'/>"
-            }
-            <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
-            , "encounter": {
-                "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
-              }
-            </xsl:if>
-            <xsl:if test="string(ccda:code/@code)">
-              ,"item": [
-                  {
-                      "linkId": "<xsl:value-of select='ccda:code/@code'/>",
-                      "text": "<xsl:value-of select='ccda:code/ccda:originalText'/>"
-                      <xsl:if test="string(ccda:value/@code) or string(ccda:value/@displayName)">
-                        ,"answer" : [{
-                          "valueCoding" : {
-                            "system" : "http://loinc.org",
-                            "code" : "<xsl:value-of select='ccda:value/@code'/>",
-                            "display" : "<xsl:value-of select='ccda:value/@displayName'/>"
-                          }
-                        }]                          
-                      </xsl:if>
-                      <xsl:if test="string(ccda:entryRelationship/ccda:observation/ccda:code/@code)">
-                      , "item": [
-                      <xsl:for-each select="ccda:entryRelationship/ccda:observation">
-                        {
-                              "linkId": "<xsl:value-of select='ccda:code/@code'/>",
-                              "text": "<xsl:value-of select='ccda:code/ccda:originalText'/>"
-                              <xsl:if test="string(ccda:value/@code) or string(ccda:value/@displayName)">
-                                ,"answer" : [{
-                                  "valueCoding" : {
-                                    "system" : "http://loinc.org",
-                                    "code" : "<xsl:value-of select='ccda:value/@code'/>",
-                                    "display" : "<xsl:value-of select='ccda:value/@displayName'/>"
-                                  }
-                                }]
-                              </xsl:if>                          
-                          }
-                          <xsl:if test="position() != last()">,</xsl:if>
-                      </xsl:for-each>
-                      ]
-                      </xsl:if>
-                  }
-              ]
-            </xsl:if>
-          },
-          "request" : {
-            "method" : "POST",
-            "url" : "<xsl:value-of select='$baseFhirUrl'/>/QuestionnaireResponse/<xsl:value-of select='$QuestionnaireResponseResourceId'/>"
-          }
-      }
   </xsl:template>
 
   <xsl:template name="formatDateTime">
