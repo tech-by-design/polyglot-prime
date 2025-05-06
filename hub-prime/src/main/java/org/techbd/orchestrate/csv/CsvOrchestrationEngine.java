@@ -20,13 +20,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -51,9 +51,7 @@ import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserte
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
-import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import lib.aide.vfs.VfsIngressConsumer;
@@ -64,7 +62,7 @@ import lib.aide.vfs.VfsIngressConsumer;
  */
 @Component
 public class CsvOrchestrationEngine {
-    private final List<OrchestrationSession> sessions;
+    private final ConcurrentHashMap<String, OrchestrationSession> sessions;
     private final AppConfig appConfig;
     private final VfsCoreService vfsCoreService;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
@@ -73,37 +71,28 @@ public class CsvOrchestrationEngine {
           "(SDOH_PtInfo|SDOH_QEadmin|SDOH_ScreeningProf|SDOH_ScreeningObs)_(.+)");
 
     public CsvOrchestrationEngine(final AppConfig appConfig, final VfsCoreService vfsCoreService,
-            final UdiPrimeJpaConfig udiPrimeJpaConfig, final FHIRService fhirService) {
-        this.sessions = new ArrayList<>();
+                                  final UdiPrimeJpaConfig udiPrimeJpaConfig, final FHIRService fhirService) {
+        this.sessions = new ConcurrentHashMap<>();
         this.appConfig = appConfig;
         this.vfsCoreService = vfsCoreService;
         this.udiPrimeJpaConfig = udiPrimeJpaConfig;
     }
 
     public List<OrchestrationSession> getSessions() {
-        return Collections.unmodifiableList(sessions);
+        return Collections.unmodifiableList(new ArrayList<>(sessions.values()));
     }
 
-    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) throws Exception {
-        for (final OrchestrationSession session : sessions) {
-            this.sessions.add(session);
+    public void orchestrate(@NotNull final OrchestrationSession... newSessions) throws Exception {
+        for (final OrchestrationSession session : newSessions) {
+            sessions.put(session.getSessionId(), session);
             session.validate();
         }
     }
 
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
-        if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
-            synchronized (this) {
-                final Set<String> sessionIdsToRemove = Arrays.stream(sessionsToRemove)
-                        .map(OrchestrationSession::getSessionId)
-                        .collect(Collectors.toSet());
-                final Iterator<OrchestrationSession> iterator = this.sessions.iterator();
-                while (iterator.hasNext()) {
-                    final OrchestrationSession session = iterator.next();
-                    if (sessionIdsToRemove.contains(session.getSessionId())) {
-                        iterator.remove();
-                    }
-                }
+        if (sessionsToRemove != null && sessionsToRemove.length > 0) {
+            for (OrchestrationSession session : sessionsToRemove) {
+                sessions.remove(session.getSessionId());
             }
         }
     }

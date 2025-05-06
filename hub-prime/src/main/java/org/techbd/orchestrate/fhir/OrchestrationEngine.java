@@ -11,16 +11,14 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -50,7 +48,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
@@ -134,26 +131,26 @@ import lombok.Getter;
  */
 @Component
 public class OrchestrationEngine {
-    private final List<OrchestrationSession> sessions;
+    private final ConcurrentHashMap<String, OrchestrationSession> sessions;
     private final Map<ValidationEngineKey, ValidationEngine> validationEngineCache;
     private static final Logger LOG = LoggerFactory.getLogger(OrchestrationEngine.class);
     private final Tracer tracer;
 
     public OrchestrationEngine(final Tracer tracer) {
-        this.sessions = new ArrayList<>();
+        this.sessions = new ConcurrentHashMap<>();
         this.validationEngineCache = new HashMap<>();
         this.tracer = tracer;
     }
 
     public List<OrchestrationSession> getSessions() {
-        return Collections.unmodifiableList(sessions);
+        return Collections.unmodifiableList(new ArrayList<>(sessions.values()));
     }
 
-    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
+    public void orchestrate(@NotNull final OrchestrationSession... newSessions) {
         Span span = tracer.spanBuilder("OrchestrationEngine.orchestrate").startSpan();
         try {
-            for (final OrchestrationSession session : sessions) {
-                this.sessions.add(session);
+            for (final OrchestrationSession session : newSessions) {
+                sessions.put(session.getSessionId(), session);
                 session.validate();
             }
         } finally {
@@ -164,26 +161,16 @@ public class OrchestrationEngine {
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
         Span span = tracer.spanBuilder("OrchestrationEngine.clear").startSpan();
         try {
-            if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
-                synchronized (this) {
-                    Set<String> sessionIdsToRemove = Arrays.stream(sessionsToRemove)
-                            .map(OrchestrationSession::getSessionId)
-                            .collect(Collectors.toSet());
-                    Iterator<OrchestrationSession> iterator = this.sessions.iterator();
-                    while (iterator.hasNext()) {
-                        OrchestrationSession session = iterator.next();
-                        if (sessionIdsToRemove.contains(session.getSessionId())) {
-                            iterator.remove();
-                        }
-                    }
+            if (sessionsToRemove != null && sessionsToRemove.length > 0) {
+                for (OrchestrationSession session : sessionsToRemove) {
+                    sessions.remove(session.getSessionId());
                 }
             }
         } finally {
             span.end();
         }
     }
-
-    public synchronized ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
+    public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, FhirV4Config> igPackages,
             final String igVersion, final Tracer tracer, String interactionId) {
         final ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
@@ -867,7 +854,7 @@ public class OrchestrationEngine {
             return interactionId;
         }
 
-        public synchronized void validate() {
+        public void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
                     final ValidationResult result = engine.validate(payload, interactionId);
@@ -902,7 +889,7 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public synchronized Builder withPayloads(@NotNull final List<String> payloads) {
+            public Builder withPayloads(@NotNull final List<String> payloads) {
                 this.payloads.addAll(payloads);
                 return this;
             }
@@ -985,12 +972,12 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public synchronized Builder addValidationEngine(@NotNull final ValidationEngine validationEngine) {
+            public Builder addValidationEngine(@NotNull final ValidationEngine validationEngine) {
                 this.validationEngines.add(validationEngine);
                 return this;
             }
 
-            public synchronized Builder addHapiValidationEngine() {
+            public Builder addHapiValidationEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,
                                 this.igPackages,
@@ -998,14 +985,14 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public synchronized Builder addHl7ValidationEmbeddedEngine() {
+            public Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,
                                 null, null, null, null));
                 return this;
             }
 
-            public synchronized Builder addHl7ValidationApiEngine() {
+            public Builder addHl7ValidationApiEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null,
                                 null, null, null));
