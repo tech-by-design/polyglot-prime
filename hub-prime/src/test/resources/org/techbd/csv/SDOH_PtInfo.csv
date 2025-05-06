@@ -1,0 +1,15 @@
+PATIENT_MR_ID_VALUE,FACILITY_NAME,PATIENT_MEDICAID_ID,PATIENT_SS_ID_VALUE,FAMILY_NAME,GIVEN_NAME,MIDDLE_NAME,ADMINISTRATIVE_SEX_CODE,ADMINISTRATIVE_SEX_CODE_DESCRIPTION,ADMINISTRATIVE_SEX_CODE_SYSTEM,SEX_AT_BIRTH_CODE,SEX_AT_BIRTH_CODE_DESCRIPTION,SEX_AT_BIRTH_CODE_SYSTEM,PATIENT_BIRTH_DATE,ADDRESS1,ADDRESS2,CITY,STATE,ZIP,County,TELECOM_VALUE,Telecom_Use,RACE_CODE,RACE_CODE_DESCRIPTION,RACE_CODE_SYSTEM,ETHNICITY_CODE,ETHNICITY_CODE_DESCRIPTION,ETHNICITY_CODE_SYSTEM,PERSONAL_PRONOUNS_CODE,PERSONAL_PRONOUNS_DESCRIPTION,PERSONAL_PRONOUNS_SYSTEM,GENDER_IDENTITY_CODE,GENDER_IDENTITY_CODE_DESCRIPTION,GENDER_IDENTITY_CODE_SYSTEM,PREFERRED_LANGUAGE_CODE,PREFERRED_LANGUAGE_CODE_DESCRIPTION,PREFERRED_LANGUAGE_CODE_SYSTEM,SEXUAL_ORIENTATION_CODE,SEXUAL_ORIENTATION_CODE_DESCRIPTION,SEXUAL_ORIENTATION_CODE_SYSTEM,PATIENT_LAST_UPDATED
+305058088,Access,BC28592D,901-08-1286,Hubbard ,Karla ,,female,Female,http://hl7.org/fhir/administrative-gender,F,Female,http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender,10/4/2013 ,210 Main Street ,,Farmingdale ,NY,11735 ,NASSAU,7184044824 ,Primary,2028-9,Asian,urn:oid:2.16.840.1.113883.6.238,2186-5,Not Hispanic or Latino, urn:oid:2.16.840.1.113883.6.238, LA29519-8,she/her/her/hers/herself,http://loinc.org,446141000124107,Female,http://snomed.info/sct,es,Spanish,urn:ietf:bcp:47,UNK,Unknown,http://terminology.hl7.org/CodeSystem/v3-NullFlavor,2024-02-23T00:00:00.00Z
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

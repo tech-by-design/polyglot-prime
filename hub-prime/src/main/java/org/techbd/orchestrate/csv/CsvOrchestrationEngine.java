@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +53,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import lib.aide.vfs.VfsIngressConsumer;
@@ -194,7 +196,7 @@ public class CsvOrchestrationEngine {
         private final Device device;
         private final MultipartFile file;
         private Map<String, Object> validationResults;
-        private List<String> filesNotProcessed;
+        private List<FileDetail> filesNotProcessed;
         private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private final String tenantId;
         HttpServletRequest request;
@@ -248,7 +250,7 @@ public class CsvOrchestrationEngine {
             return payloadAndValidationOutcomes;
         }
 
-        public List<String> getFilesNotProcessed() {
+        public List<FileDetail> getFilesNotProcessed() {
             return filesNotProcessed;
         }
 
@@ -568,10 +570,10 @@ public class CsvOrchestrationEngine {
                 for (Map.Entry<String, List<FileDetail>> entry : groupedFiles.entrySet()) {
                     String groupKey = entry.getKey();
                     if (groupKey.equals("filesNotProcessed")) {
-                        this.filesNotProcessed = entry.getValue().stream().map(FileDetail::filename).toList();
+                        this.filesNotProcessed =entry.getValue();
                         combinedValidationResults.add(
                                 createOperationOutcomeForFileNotProcessed(
-                                        masterInteractionId, this.filesNotProcessed, originalFileName));
+                                        masterInteractionId, entry.getValue(), originalFileName));
                         continue;
                     }
                     List<FileDetail> fileDetails = entry.getValue();
@@ -605,39 +607,79 @@ public class CsvOrchestrationEngine {
                 throw new RuntimeException("Error processing ZIP files: " + e.getMessage(), e);
             }
         }
-
+        
         private Map<String, Object> createOperationOutcomeForFileNotProcessed(
-                final String masterInteractionId,
-                final List<String> filesNotProcessed, String originalFileName) {
+            final String masterInteractionId,
+            final List<FileDetail> filesNotProcessed,
+            final String originalFileName) {
+    
             if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
                 return Collections.emptyMap();
             }
-
-            StringBuilder diagnosticsMessage = new StringBuilder("Files not processed: in input zip file : ");
-            diagnosticsMessage.append(String.join(", ", filesNotProcessed));
-
-            StringBuilder remediation = new StringBuilder("Filenames must start with one of the following prefixes: ");
-            for (FileType type : FileType.values()) {
-                remediation.append(type.name()).append(", ");
+        
+            // Group by subType + reason to allow distinct reasons within a single subType
+            Map<String, List<FileDetail>> grouped = filesNotProcessed.stream()
+                    .collect(Collectors.groupingBy(fd -> {
+                        String reason = fd.reason();
+                        if (reason == null || reason.contains("Invalid file prefix")) {
+                            return "invalid-prefix|Invalid file prefix";
+                        } else if (reason.contains("Group blocked by")) {
+                            return "incomplete-group-due-to-encoding|" + reason;
+                        } else if (reason.contains("not UTF-8 encoded")) {
+                            return "wrong-encoding|File is not UTF-8 encoded";
+                        } else {
+                            return "unknown|Unknown reason";
+                        }
+                    }));
+        
+            List<Map<String, Object>> errors = new ArrayList<>();
+        
+            for (Map.Entry<String, List<FileDetail>> entry : grouped.entrySet()) {
+                String[] keyParts = entry.getKey().split("\\|", 2);
+                String subType = keyParts[0];
+                String reason = keyParts.length > 1 ? keyParts[1] : "Unknown reason";
+        
+                String description;
+                switch (subType) {
+                    case "invalid-prefix":
+                        description = "Filenames must start with one of the following prefixes: " +
+                                Arrays.stream(FileType.values())
+                                        .map(Enum::name)
+                                        .collect(Collectors.joining(", "));
+                        break;
+                    case "incomplete-group-due-to-encoding":
+                        description = "Not processed as other files in the group were not UTF-8 encoded";
+                        break;
+                    case "wrong-encoding":
+                        description = "File is not UTF-8 encoded";
+                        break;
+                    default:
+                        description = "Unknown reason";
+                }
+        
+                List<String> filenames = entry.getValue().stream()
+                        .map(FileDetail::filename)
+                        .collect(Collectors.toList());
+        
+                Map<String, Object> errorGroup = new LinkedHashMap<>();
+                errorGroup.put("type", "files-not-processed");
+                errorGroup.put("subType", subType);
+                errorGroup.put("description", description);
+                errorGroup.put("reason", reason);
+                errorGroup.put("files", filenames);
+        
+                errors.add(errorGroup);
             }
-            if (remediation.length() > 0) {
-                remediation.setLength(remediation.length() - 2); // Remove trailing comma and space
-            }
-
-            Map<String, Object> errorDetails = Map.of(
-                    "type", "files-not-processed",
-                    "description", remediation.toString(),
-                    "message", diagnosticsMessage.toString());
-
+        
             return Map.of(
                     "zipFileInteractionId", masterInteractionId,
                     "originalFileName", originalFileName,
                     "validationResults", Map.of(
-                            "errors", List.of(errorDetails),
-                            "resourceType", "OperationOutcome"));
+                            "resourceType", "OperationOutcome",
+                            "errors", errors
+                    )
+            );
         }
-
-        // Move this method outside of processScreenings
         public boolean isGroupComplete(List<FileDetail> fileDetails) {
             Set<FileType> presentFileTypes = fileDetails.stream()
                     .map(FileDetail::fileType)
