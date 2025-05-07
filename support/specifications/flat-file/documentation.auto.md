@@ -380,6 +380,8 @@
 ### `OBSERVATION_CATEGORY_SDOH_TEXT`
   - `description` Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').text
   - `type` string
+  - `constraints`:
+    - `required` True
 ### `DATA_ABSENT_REASON_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.coding.code
   - `type` string

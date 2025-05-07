@@ -275,7 +275,7 @@
             "observed", "administrative", "derived-specify", "other-specify", 
             "personal-characteristic", "chosen-contact"
             ] }},
-           {"name": "OBSERVATION_CATEGORY_SDOH_TEXT", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').text"},
+           {"name": "OBSERVATION_CATEGORY_SDOH_TEXT", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').category.where(coding.system = 'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes').text", "constraints": {"required": true}},
            {"name": "DATA_ABSENT_REASON_CODE", "type": "string","description":"Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).dataAbsentReason.coding.code", "constraints":{  "enum":[
             "unknown",
             "asked-unknown",
