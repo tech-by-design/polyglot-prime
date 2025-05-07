@@ -287,7 +287,7 @@ public class OrchestrationEngine {
             this.fhirBundleValidators = new ArrayList<>();
             initializeFhirBundleValidators();
         }
-        private void initializeFhirBundleValidators() {
+        private synchronized void initializeFhirBundleValidators() {
             Span span = tracer.spanBuilder("OrchestrationEngine.initializeFhirBundleValidators").startSpan();
             try {
                 LOG.info("Processing SHIN-NY IG Packages... interaction Id: {}",interactionId);
@@ -321,7 +321,7 @@ public class OrchestrationEngine {
                 span.end();
             }
         }
-        public FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages) {
+        public synchronized FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages) {
             Span span = tracer.spanBuilder("OrchestrationEngine.initializeFhirValidator").startSpan();
             try {
                 LOG.info("Initializing FHIR Validator for package: {} inteactionId :{} ", shinNyPackagePath,interactionId);
