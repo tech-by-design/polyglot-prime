@@ -1,0 +1,35 @@
+ig-packages:
+  fhir-v4:
+    shinny-packages:
+    # Any new version of shinny should follow the naming convention: shinny-v<version> in kebab-case
+    # Example: shinny-v1-2-3 for version 1.2.3
+    # Any new version for test-shinny should follow the naming convention: test-shinny-v<version> in kebab-case
+    # Example: test-shinny-v1-3-0 for version 1.3.0
+      shinny-v1-3-0:
+        profile-base-url: http://shinny.org/us/ny/hrsn
+        package-path: ig-packages/shin-ny-ig/shinny/v1.3.0
+        ig-version: 1.3.0
+      test-shinny-v1-3-0:
+        profile-base-url: http://test.shinny.org/us/ny/hrsn
+        package-path: ig-packages/shin-ny-ig/test-shinny/v1.3.0
+        ig-version: 1.3.0
+    base-packages:
+    # Base packages for external dependencies 
+      us-core: ig-packages/fhir-v4/us-core/stu-7.0.0
+      sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
+      uv-sdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
+baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
+structureDefinitionsUrls:
+  bundle: /StructureDefinition/SHINNYBundleProfile
+  patient: /StructureDefinition/shinny-patient
+  consent: /StructureDefinition/shinny-Consent
+  encounter: /StructureDefinition/shinny-encounter
+  organization: /StructureDefinition/shin-ny-organization
+  observation: /StructureDefinition/shinny-observation-screening-response
+  questionnaire: /StructureDefinition/shinny-questionnaire
+  practitioner: /StructureDefinition/shin-ny-practitioner
+  questionnaireResponse: /StructureDefinition/shinny-questionnaire
+  observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
+defaultDatalakeApiUrl: https://test123.com/dev/HRSNBundle
+operationOutcomeHelpUrl: "https://techbd.org/get-help/"
+

@@ -1,0 +1,65 @@
+ig-packages:
+  fhir-v4:
+    shinny-packages:
+    # Any new version of shinny should follow the naming convention: shinny-v<version> in kebab-case
+    # Example: shinny-v1-2-3 for version 1.2.3
+    # Any new version for test-shinny should follow the naming convention: test-shinny-v<version> in kebab-case
+    # Example: test-shinny-v1-3-0 for version 1.3.0
+      shinny-v1-3-0:
+        profile-base-url: http://shinny.org/us/ny/hrsn
+        package-path: ig-packages/shin-ny-ig/shinny/v1.3.0
+        ig-version: 1.3.0
+      # test-shinny-v1-3-0:
+      #   profile-base-url: http://test.shinny.org/us/ny/hrsn
+      #   package-path: ig-packages/shin-ny-ig/test-shinny/v1.3.0
+      #   ig-version: 1.3.0
+    base-packages:
+    # Base packages for external dependencies 
+      us-core: ig-packages/fhir-v4/us-core/stu-7.0.0
+      sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
+      uv-sdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
+baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
+structureDefinitionsUrls:
+  bundle: /StructureDefinition/SHINNYBundleProfile
+  patient: /StructureDefinition/shinny-patient
+  consent: /StructureDefinition/shinny-Consent
+  encounter: /StructureDefinition/shinny-encounter
+  organization: /StructureDefinition/shin-ny-organization
+  observation: /StructureDefinition/shinny-observation-screening-response
+  questionnaire: /StructureDefinition/shinny-questionnaire
+  practitioner: /StructureDefinition/shin-ny-practitioner
+  questionnaireResponse: /StructureDefinition/shinny-questionnaire
+  observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
+defaultDatalakeApiUrl: https://uzrlhp39e0.execute-api.us-east-1.amazonaws.com/dev/HRSNBundle
+operationOutcomeHelpUrl: "https://techbd.org/get-help/"
+
+defaultDataLakeApiAuthn:
+  mTlsStrategy: with-api-key-auth
+  withApiKeyAuth:
+    apiKeyHeaderName: x-api-key  # The name of the HTTP header to send the API key
+    apiKeySecretName: techbd-nyec-api-key  # Store securely in an environment variable (avoid hardcoding)
+
+csv:
+    validation:
+    pythonScriptPath: ../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py
+    pythonExecutable: python3
+    packagePath: datapackage-nyher-fhir-ig-equivalent.json
+    inboundPath: /app/techbyDesign/flatFile/inbound
+    outputPath: /app/techbyDesign/flatFile/outbound
+    ingessHomePath: /app/techbyDesign/flatFile/ingress
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb
+    username: myuser
+    password: mypassword
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      driverClassName: org.postgresql.Driver
+      maximumPoolSize: 500 # Set to 500 as per your request
+      minimumIdle: 100  # Minimum idle connections in the pool
+      idleTimeout: 300000 # 30 seconds to wait for a connection from the pool
+      connectionTimeout: 30000  # 5 minutes - idle connections are removed after this time
+      maxLifetime: 1800000  # 30 minutes - connections are refreshed after this time    
+logging:
+  level:
+    com.zaxxer.hikari: DEBUG
