@@ -123,21 +123,25 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                 "sdoh-category-unspecified", "SDOH Category Unspecified"));
 
                         }
-                        if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
-                                CodeableConcept value = new CodeableConcept();
-                                value.addCoding(new Coding(fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId), fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId),
-                                                data.getAnswerCodeDescription()));
-                                observation.setValue(value);
-                        } else if (!data.getDataAbsentReasonCode().isEmpty()) {
-                                CodeableConcept dataAbsentReason = new CodeableConcept();
 
-                                dataAbsentReason.addCoding(
-                                                new Coding()
-                                                                .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                                .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId) )
-                                                                .setDisplay(data.getDataAbsentReasonDisplay()));
-
-                                observation.setDataAbsentReason(dataAbsentReason);
+                        Set<String> excludedQuestionCodes = Set.of("95614-4", "77594-0", "71969-0");
+                        if(!excludedQuestionCodes.contains(data.getQuestionCode())){
+                                if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
+                                        CodeableConcept value = new CodeableConcept();
+                                        value.addCoding(new Coding(fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId), fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId),
+                                                        data.getAnswerCodeDescription()));
+                                        observation.setValue(value);
+                                } else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                        CodeableConcept dataAbsentReason = new CodeableConcept();
+        
+                                        dataAbsentReason.addCoding(
+                                                        new Coding()
+                                                                        .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                                        .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId) )
+                                                                        .setDisplay(data.getDataAbsentReasonDisplay()));
+        
+                                        observation.setDataAbsentReason(dataAbsentReason);
+                                }
                         }
                         observation.addCategory(
                                         createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
@@ -180,13 +184,24 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
                         switch (data.getQuestionCode()) {
-                                case "95614-4" ->  { // Interpersonal safety
-                                        CodeableConcept coding = new CodeableConcept();
-                                        coding.addCoding(new Coding("http://unitsofmeasure.org", null,
-                                                        "{Number}"));
-                                        coding.setText(data.getAnswerCodeDescription());
-                                        observation.setValue(coding);
-
+                                case "95614-4", "71969-0" ->  { // Interpersonal safety or Mental state
+                                        if (!data.getAnswerCodeDescription().isEmpty()) {
+                                                CodeableConcept coding = new CodeableConcept();
+                                                coding.addCoding(new Coding("http://unitsofmeasure.org", null,
+                                                                "{Number}"));
+                                                coding.setText(data.getAnswerCodeDescription());
+                                                observation.setValue(coding);
+                                        } else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                                CodeableConcept dataAbsentReason = new CodeableConcept();
+                
+                                                dataAbsentReason.addCoding(
+                                                        new Coding()
+                                                        .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                        .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId) )
+                                                        .setDisplay(data.getDataAbsentReasonDisplay()));
+                
+                                                observation.setDataAbsentReason(dataAbsentReason);
+                                        }
                                 }
                                 case "77594-0" ->  { // Physical Activity
                                         Quantity quantity = new Quantity();
@@ -201,22 +216,22 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                 LOG.warn("Unexpected value: "+codeDescription+" could not be converted to a double.", nfe);
                                                 quantity.setValue(0.0);
                                                }
-                                        }  else {
+                                        }  else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                                CodeableConcept dataAbsentReason = new CodeableConcept();
+                
+                                                dataAbsentReason.addCoding(
+                                                        new Coding()
+                                                        .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                        .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId) )
+                                                        .setDisplay(data.getDataAbsentReasonDisplay()));
+                
+                                                observation.setDataAbsentReason(dataAbsentReason);
+                                        } else {
                                             quantity.setValue(0.0);
-
+                                            quantity.setUnit("minutes per week");
+                                            quantity.setSystem("http://unitsofmeasure.org");
+                                            observation.setValue(quantity);
                                         }
-                                        quantity.setUnit("minutes per week");
-                                        quantity.setSystem("http://unitsofmeasure.org");
-                                        observation.setValue(quantity);
-                                }
-
-                                case "71969-0" ->  { // Mental state
-                                        CodeableConcept coding = new CodeableConcept();
-                                        coding.addCoding(new Coding("http://unitsofmeasure.org", null,
-                                                        "{Number}"));
-                                        coding.setText(data.getAnswerCodeDescription());
-                                        observation.setValue(coding);
-
                                 }
                                 default -> {
                         }
