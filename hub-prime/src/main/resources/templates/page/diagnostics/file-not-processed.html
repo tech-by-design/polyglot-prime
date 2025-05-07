@@ -18,7 +18,7 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'csv_file_not_processed_errors';
+        const viewName = 'csv_file_not_processed_error';
         document.addEventListener('DOMContentLoaded', function () {
             const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
@@ -72,7 +72,13 @@
                                 field: "file_name", 
                                 filter: "agTextColumnFilter", 
                                 headerTooltip: "The name of the CSV file where the error occurred."
-                            },                            
+                            },   
+                            { 
+                                headerName: "Zip File Name", 
+                                field: "zip_file_name", 
+                                filter: "agTextColumnFilter", 
+                                headerTooltip: "The name of the ZIP file where the error occurred."
+                            },                                                       
                             { 
                                 headerName: "Origin", 
                                 field: "origin", 

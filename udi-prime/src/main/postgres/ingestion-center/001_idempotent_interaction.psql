@@ -4034,32 +4034,33 @@ for easier debugging and resolution of submission issues.
 
 
 
-DROP VIEW IF EXISTS techbd_udi_ingress.https_csv_validation_errors CASCADE;
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_errors CASCADE;
  
-DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_errors cascade;
-CREATE OR REPLACE view techbd_udi_ingress.csv_file_not_processed_errors
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_error cascade;
+CREATE OR REPLACE view techbd_udi_ingress.csv_file_not_processed_error
 AS 
-select
-		sizfcr.created_at,
-		sizfcr.tenant_id,
-        sizfcr.hub_interaction_id,
-        sizfcr.group_id,
-		sizfcr.uri,  
-		issue->>'type' as error_type,
-		issue->>'message' as error,
-		issue->>'description' as description, 
-		sizfcr.csv_zip_file_name as file_name,
-        sizfcr.origin  as origin,
-		sizfcr.user_agent  as user_agent
-from
-		techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
-		lateral jsonb_array_elements(sizfcr.general_errors) as validation_result(value),
-		lateral jsonb_array_elements(
-        validation_result.value -> 'validationResults'->'errors'
-    ) issue(value)
-where
-		sizfcr.general_errors is not null
-        ORDER BY sizfcr.created_at DESC;
+SELECT
+    sizfcr.created_at,
+    sizfcr.tenant_id,
+    sizfcr.hub_interaction_id,
+    sizfcr.group_id,
+    sizfcr.uri,
+    issue.value ->> 'type' AS error_type,
+    issue.value ->> 'subType' AS error_subtype,
+    issue.value ->> 'description' AS description,
+    issue.value ->> 'reason' AS error,
+    jsonb_array_elements_text(issue.value -> 'files') AS file_name,
+    sizfcr.csv_zip_file_name AS zip_file_name,
+    sizfcr.origin AS origin,
+    sizfcr.user_agent AS user_agent
+FROM
+    techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
+    LATERAL jsonb_array_elements(sizfcr.general_errors) AS general_error,
+    LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue
+WHERE
+    sizfcr.general_errors IS NOT NULL
+ORDER BY
+    sizfcr.created_at DESC;  
 
 /*****************************************
 The `csv_incomplete_groups` view identifies incomplete groups in CSV validation results from the `sat_interaction_flat_file_csv_request` table. 
