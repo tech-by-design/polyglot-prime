@@ -4016,6 +4016,39 @@ AS SELECT sat_interaction_fhir_request_id,
 WHERE to_state = 'FAIL'::text AND source_type = 'CSV';
 
 
+
+/*******************************************************************************************
+This view summarizes validation errors from ZIP file uploads in the 
+sat_interaction_zip_file_request table, grouping by hub_interaction_id. 
+It extracts metadata and error types from nested JSON structures to provide 
+a consolidated error summary for each ZIP file interaction.
+*******************************************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.csv_file_not_processed_error_summary cascade;
+CREATE OR REPLACE view techbd_udi_ingress.csv_file_not_processed_error_summary
+AS 
+SELECT
+    sizfcr.hub_interaction_id,
+    MIN(sizfcr.created_at) AS created_at,
+    MIN(sizfcr.tenant_id) AS tenant_id,
+    MIN(sizfcr.group_id) AS group_id,
+    MIN(sizfcr.uri) AS uri,
+    array_agg(issue.value ->> 'type') AS error_types,
+    MIN(sizfcr.csv_zip_file_name) AS zip_file_name,
+    MIN(sizfcr.origin) AS origin,
+    MIN(sizfcr.user_agent) AS user_agent
+FROM
+    techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
+    LATERAL jsonb_array_elements(sizfcr.general_errors) AS general_error,
+    LATERAL jsonb_array_elements(general_error.value -> 'validationResults' -> 'errors') AS issue
+WHERE
+    sizfcr.general_errors IS NOT NULL
+GROUP BY
+    sizfcr.hub_interaction_id
+ORDER BY
+    created_at DESC;
+
+
 /*****************************************
 This view, `csv_file_not_processed`, extracts details about files that could not be processed from the `sat_interaction_zip_file_request` table. 
 It identifies errors present in the `general_errors` field of the JSON payload. The extracted details include:
