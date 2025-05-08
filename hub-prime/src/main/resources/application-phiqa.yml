@@ -84,4 +84,6 @@ org:
                 inboundPath: ${TECHBD_CSV_INBOUND_PATH:/app/techbyDesign/flatFile/inbound}
                 outputPath: ${TECHBD_CSV_INBOUND_PATH:/app/techbyDesign/flatFile/outbound}
                 ingessHomePath: ${TECHBD_CSV_INGRESS_PATH:/app/techbyDesign/flatFile/ingress}   
-     
+            dataLedgerApiUrl: https://k77kvhgmkh.execute-api.us-east-1.amazonaws.com/qa 
+            dataLedgerTracking: false
+            dataLedgerDiagnostics: true
