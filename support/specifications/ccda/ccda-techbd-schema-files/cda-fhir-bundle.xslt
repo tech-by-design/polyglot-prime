@@ -656,18 +656,12 @@
         , "organization" : [{
           "reference" : "Organization/<xsl:value-of select='$organizationResourceId'/>"
         }]
-        <xsl:choose>
-          <xsl:when test="string(ccda:act/ccda:code/@displayName)">
-            , "provision" : {
-              "type" : "<xsl:value-of select="translate(ccda:act/ccda:code/@displayName, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>"
-            }
-          </xsl:when>
-          <xsl:otherwise>
-            , "provision" : {
-              "type" : "permit"
-            }
-          </xsl:otherwise>
-        </xsl:choose>
+        , "provision" : {
+              "type" : "<xsl:choose>
+                            <xsl:when test="contains(string(ccda:code/@displayName), 'deny')">deny</xsl:when>
+                            <xsl:otherwise>permit</xsl:otherwise>
+                        </xsl:choose>"
+        }
         , "policy" : [{
             "authority" : "urn:uuid:d1eaac1a-22b7-4bb6-9c62-cc95d6fdf1a5"
           }]
