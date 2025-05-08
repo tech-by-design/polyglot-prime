@@ -11,14 +11,16 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -48,6 +50,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
@@ -131,26 +134,26 @@ import lombok.Getter;
  */
 @Component
 public class OrchestrationEngine {
-    private final ConcurrentHashMap<String, OrchestrationSession> sessions;
+    private final List<OrchestrationSession> sessions;
     private final Map<ValidationEngineKey, ValidationEngine> validationEngineCache;
     private static final Logger LOG = LoggerFactory.getLogger(OrchestrationEngine.class);
     private final Tracer tracer;
 
     public OrchestrationEngine(final Tracer tracer) {
-        this.sessions = new ConcurrentHashMap<>();
+        this.sessions = new ArrayList<>();
         this.validationEngineCache = new HashMap<>();
         this.tracer = tracer;
     }
 
     public List<OrchestrationSession> getSessions() {
-        return Collections.unmodifiableList(new ArrayList<>(sessions.values()));
+        return Collections.unmodifiableList(sessions);
     }
 
-    public void orchestrate(@NotNull final OrchestrationSession... newSessions) {
+    public synchronized void orchestrate(@NotNull final OrchestrationSession... sessions) {
         Span span = tracer.spanBuilder("OrchestrationEngine.orchestrate").startSpan();
         try {
-            for (final OrchestrationSession session : newSessions) {
-                sessions.put(session.getSessionId(), session);
+            for (final OrchestrationSession session : sessions) {
+                this.sessions.add(session);
                 session.validate();
             }
         } finally {
@@ -161,16 +164,26 @@ public class OrchestrationEngine {
     public void clear(@NotNull final OrchestrationSession... sessionsToRemove) {
         Span span = tracer.spanBuilder("OrchestrationEngine.clear").startSpan();
         try {
-            if (sessionsToRemove != null && sessionsToRemove.length > 0) {
-                for (OrchestrationSession session : sessionsToRemove) {
-                    sessions.remove(session.getSessionId());
+            if (sessionsToRemove != null && CollectionUtils.isNotEmpty(sessions)) {
+                synchronized (this) {
+                    Set<String> sessionIdsToRemove = Arrays.stream(sessionsToRemove)
+                            .map(OrchestrationSession::getSessionId)
+                            .collect(Collectors.toSet());
+                    Iterator<OrchestrationSession> iterator = this.sessions.iterator();
+                    while (iterator.hasNext()) {
+                        OrchestrationSession session = iterator.next();
+                        if (sessionIdsToRemove.contains(session.getSessionId())) {
+                            iterator.remove();
+                        }
+                    }
                 }
             }
         } finally {
             span.end();
         }
     }
-    public ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
+
+    public synchronized ValidationEngine getValidationEngine(@NotNull final ValidationEngineIdentifier type,
             @NotNull final String fhirProfileUrl, final Map<String, FhirV4Config> igPackages,
             final String igVersion, final Tracer tracer, String interactionId) {
         final ValidationEngineKey key = new ValidationEngineKey(type, fhirProfileUrl);
@@ -287,7 +300,7 @@ public class OrchestrationEngine {
             this.fhirBundleValidators = new ArrayList<>();
             initializeFhirBundleValidators();
         }
-        private synchronized void initializeFhirBundleValidators() {
+        private void initializeFhirBundleValidators() {
             Span span = tracer.spanBuilder("OrchestrationEngine.initializeFhirBundleValidators").startSpan();
             try {
                 LOG.info("Processing SHIN-NY IG Packages... interaction Id: {}",interactionId);
@@ -321,7 +334,7 @@ public class OrchestrationEngine {
                 span.end();
             }
         }
-        public synchronized FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages) {
+        public FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages) {
             Span span = tracer.spanBuilder("OrchestrationEngine.initializeFhirValidator").startSpan();
             try {
                 LOG.info("Initializing FHIR Validator for package: {} inteactionId :{} ", shinNyPackagePath,interactionId);
@@ -854,7 +867,7 @@ public class OrchestrationEngine {
             return interactionId;
         }
 
-        public void validate() {
+        public synchronized void validate() {
             for (final String payload : payloads) {
                 for (final ValidationEngine engine : validationEngines) {
                     final ValidationResult result = engine.validate(payload, interactionId);
@@ -889,7 +902,7 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Builder withPayloads(@NotNull final List<String> payloads) {
+            public synchronized Builder withPayloads(@NotNull final List<String> payloads) {
                 this.payloads.addAll(payloads);
                 return this;
             }
@@ -972,12 +985,12 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Builder addValidationEngine(@NotNull final ValidationEngine validationEngine) {
+            public synchronized Builder addValidationEngine(@NotNull final ValidationEngine validationEngine) {
                 this.validationEngines.add(validationEngine);
                 return this;
             }
 
-            public Builder addHapiValidationEngine() {
+            public synchronized Builder addHapiValidationEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HAPI, this.fhirProfileUrl,
                                 this.igPackages,
@@ -985,14 +998,14 @@ public class OrchestrationEngine {
                 return this;
             }
 
-            public Builder addHl7ValidationEmbeddedEngine() {
+            public synchronized Builder addHl7ValidationEmbeddedEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_EMBEDDED, this.fhirProfileUrl,
                                 null, null, null, null));
                 return this;
             }
 
-            public Builder addHl7ValidationApiEngine() {
+            public synchronized Builder addHl7ValidationApiEngine() {
                 this.validationEngines
                         .add(engine.getValidationEngine(ValidationEngineIdentifier.HL7_API, this.fhirProfileUrl, null,
                                 null, null, null));
