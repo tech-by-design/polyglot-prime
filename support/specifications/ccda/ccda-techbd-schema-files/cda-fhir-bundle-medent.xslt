@@ -344,9 +344,12 @@
                 <xsl:otherwise>
                   "coding": [{
                       "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
-                      "code": "<xsl:value-of select='ccda:patient/ccda:maritalStatusCode/@code'/>",
+                      "code": "<xsl:call-template name='mapMaritalStatusCode'>
+                                  <xsl:with-param name='statusCode' select='ccda:patient/ccda:maritalStatusCode/@code'/>
+                              </xsl:call-template>",
                       "display": "<xsl:call-template name='mapMaritalStatus'>
                                       <xsl:with-param name='statusCode' select='ccda:patient/ccda:maritalStatusCode/@code'/>
+                                      <xsl:with-param name="statusDisplay" select="ccda:patient/ccda:maritalStatusCode/@displayName"/>
                                   </xsl:call-template>"
                   }]
                 </xsl:otherwise>
@@ -1104,6 +1107,7 @@
 
 <xsl:template name="mapMaritalStatus">
     <xsl:param name="statusCode"/>
+    <xsl:param name="statusDisplay"/>
     <xsl:choose>
         <xsl:when test="$statusCode = 'M'">married</xsl:when>
         <xsl:when test="$statusCode = 'S'">Never Married</xsl:when>
@@ -1116,8 +1120,28 @@
         <xsl:when test="$statusCode = 'T'">Domestic partner</xsl:when>
         <xsl:when test="$statusCode = 'U'">unmarried</xsl:when>
         <xsl:when test="$statusCode = 'W'">Widowed</xsl:when>
-        <xsl:otherwise>unknown</xsl:otherwise>
+        <xsl:otherwise><xsl:value-of select='$statusDisplay'/></xsl:otherwise>
     </xsl:choose>
+</xsl:template>
+
+<xsl:template name="mapMaritalStatusCode">
+    <xsl:param name="statusCode"/>
+    <xsl:choose>
+  <xsl:when test='$statusCode = "M" or
+                  $statusCode = "S" or
+                  $statusCode = "A" or
+                  $statusCode = "D" or
+                  $statusCode = "I" or
+                  $statusCode = "L" or
+                  $statusCode = "C" or
+                  $statusCode = "P" or
+                  $statusCode = "T" or
+                  $statusCode = "U" or
+                  $statusCode = "W"'>
+    <xsl:value-of select='$statusCode'/>
+  </xsl:when>
+  <xsl:otherwise>unknown</xsl:otherwise>
+</xsl:choose>
 </xsl:template>
 
 <!-- Reusable ID generator template -->
