@@ -4033,7 +4033,7 @@ SELECT
     MIN(sizfcr.tenant_id) AS tenant_id,
     MIN(sizfcr.group_id) AS group_id,
     MIN(sizfcr.uri) AS uri,
-    array_agg(issue.value ->> 'type') AS error_types,
+    MIN(issue.value ->> 'type') AS error_types,
     MIN(sizfcr.csv_zip_file_name) AS zip_file_name,
     MIN(sizfcr.origin) AS origin,
     MIN(sizfcr.user_agent) AS user_agent
