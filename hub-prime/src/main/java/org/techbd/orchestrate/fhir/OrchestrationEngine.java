@@ -19,6 +19,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -39,11 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.HapiValidationEngine;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.Hl7ValidationEngineApi;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.Hl7ValidationEngineEmbedded;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationEngine.Observability;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationEngineIdentifier;
+import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
 import org.techbd.service.constants.ErrorCode;
 import org.techbd.service.exception.JsonValidationException;
 import org.techbd.service.http.hub.prime.AppConfig;
@@ -401,7 +399,12 @@ public class OrchestrationEngine {
                 postPopulateSupport.update(supportChain);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
-                return fhirContext.newValidator().registerValidatorModule(instanceValidator);
+                
+                FhirValidator fhirValidator = fhirContext.newValidator().registerValidatorModule(instanceValidator);
+                fhirValidator.setConcurrentBundleValidation(true);
+                ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+                fhirValidator.setExecutorService(executorService);
+                return fhirValidator;                
             } finally {
                 span.end();
             }
