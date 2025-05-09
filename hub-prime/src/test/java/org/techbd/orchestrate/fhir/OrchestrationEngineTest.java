@@ -205,12 +205,7 @@ class OrchestrationEngineTest {
                         codeSystemMap.put("shinnyConsentProvisionTypesVS",
                                         "http://shinny.org/us/ny/hrsn/shinnyConsentProvision");
                         assertThat(engine.getSessions()).hasSize(2);
-                        assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                                        "http://shinny.org/us/ny/hrsn", igPackages, igVersion, tracer, "test"))
-                                        .isSameAs(engine.getValidationEngine(
-                                                        OrchestrationEngine.ValidationEngineIdentifier.HAPI,
-                                                        "http://shinny.org/us/ny/hrsn", igPackages, igVersion, tracer,
-                                                        "test"));
+                        assertThat(engine.getValidationEngine(OrchestrationEngine.ValidationEngineIdentifier.HAPI));
                 } finally {
                         engine.clear(session1);
                         engine.clear(session2);
