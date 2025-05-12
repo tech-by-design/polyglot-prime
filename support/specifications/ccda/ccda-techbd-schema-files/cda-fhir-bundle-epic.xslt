@@ -1000,6 +1000,16 @@
               "category": [
                 {
                   "coding": [{
+                    "system": "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                    "code": "<xsl:value-of select='$categoryCode'/>",
+                    "display": "<xsl:call-template name="mapSDOHCategoryCodeDisplay">
+                                  <xsl:with-param name="questionCode" select="$questionCode"/>
+                                  <xsl:with-param name="categoryCode" select="$categoryCode"/>
+                                </xsl:call-template>"
+                  }]
+                },
+                {
+                  "coding": [{
                       "system": "http://terminology.hl7.org/CodeSystem/observation-category",
                       "code": "social-history"
                   }]
