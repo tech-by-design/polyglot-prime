@@ -459,6 +459,8 @@ public class OrchestrationEngine {
                     }
                     this.igVersion = bundleValidator.getIgVersion();
                     this.fhirProfileUrl = bundleValidator.getFhirProfileUrl();
+                    var lenientErrorHandler = new CustomParserErrorHandler();
+                    fhirContext.setParserErrorHandler(lenientErrorHandler);
 
                     LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
                     final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
@@ -473,7 +475,13 @@ public class OrchestrationEngine {
                         @JsonSerialize(using = JsonTextSerializer.class)
                         public String getOperationOutcome() {
                             final var jp = FhirContext.forR4Cached().newJsonParser();
-                            return jp.encodeResourceToString(hapiVR.toOperationOutcome());
+                            OperationOutcome outcome = (OperationOutcome) hapiVR.toOperationOutcome();
+                            if (lenientErrorHandler != null) {
+                                for (OperationOutcomeIssueComponent issue : lenientErrorHandler.getParserIssues()) {
+                                    outcome.addIssue(issue);
+                                }
+                            }
+                            return jp.encodeResourceToString(outcome);
                         }
 
                         @Override
