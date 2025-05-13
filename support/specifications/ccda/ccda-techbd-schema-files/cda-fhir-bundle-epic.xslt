@@ -8,7 +8,7 @@
   <xsl:output method="text"/>
   
   <xsl:param name="currentTimestamp"/>
-  <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id/@extension"/>
+  <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id[not(@assigningAuthorityName)]/@extension"/>
   <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family, ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given)"/>
   <xsl:variable name="bundleTimestamp" select="/ccda:ClinicalDocument/ccda:effectiveTime/@value"/>
 
@@ -297,63 +297,104 @@
         }
         </xsl:if>
       ]
-      , "identifier" : [{
-          "type" : {
-            "coding" : [{
-              "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
-              "code" : "MR",
-              "display" : "Medical Record Number"
-            }],
-            "text" : "Medical Record Number"
-          },
-          "system" : "http://www.scn.gov/facility/<xsl:value-of select='$patientRoleId'/>",
-          "value" : "<xsl:value-of select='$patientRoleId'/>"
-          <xsl:if test="string($organizationResourceId)">
-          , "assigner" : {
-            "reference" : "Organization/<xsl:value-of select="$organizationResourceId"/>"
-          }
-          </xsl:if>
-        },
-        {
-          "type" : {
-            "coding" : [{
-              "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
-              "code" : "MA",
-              "display" : "Patient Medicaid Number"
-            }],
-            "text" : "Patient Medicaid Number"
-          },
-          "system" : "http://www.medicaid.gov/",
-          "value" : "<xsl:value-of select='$patientRoleId'/>"
-        }
-      ]      
+      ,"identifier": [
+        <xsl:variable name="validIds" select="
+          ccda:id[
+            (@assigningAuthorityName='EPI' and string-length(@extension) = 8 and
+              translate(substring(@extension,1,2), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '' and
+              translate(substring(@extension,3,5), '0123456789', '') = '' and
+              translate(substring(@extension,8,1), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = ''
+            )
+            or
+            (@assigningAuthorityName='JMR123' and string-length(@extension) = 11 and
+              substring(@extension,4,1) = '-' and substring(@extension,7,1) = '-' and
+              translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = ''
+            )
+            or
+            (not(@assigningAuthorityName))
+          ]
+        "/>
+
+        <xsl:for-each select="$validIds">
+          <xsl:if test="position() > 1">,</xsl:if>
+          <xsl:choose>
+
+            <!-- MA (CIN) -->
+            <xsl:when test="@assigningAuthorityName='EPI'">
+              {
+                "type": {
+                  "coding": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                    "code": "MA",
+                    "display": "Patient Medicaid Number"
+                  }],
+                  "text": "Patient Medicaid Number"
+                },
+                "system": "http://www.medicaid.gov/",
+                "value": "<xsl:value-of select='@extension'/>"
+              }
+            </xsl:when>
+
+            <!-- SS -->
+            <xsl:when test="@assigningAuthorityName='JMR123'">
+              {
+                "type": {
+                  "coding": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                    "code": "SS",
+                    "display": "Social Security Number"
+                  }],
+                  "text": "Social Security Number"
+                },
+                "system": "http://www.ssa.gov/",
+                "value": "<xsl:value-of select='@extension'/>"
+              }
+            </xsl:when>
+
+            <!-- MR -->
+            <xsl:otherwise>
+              {
+                "type": {
+                  "coding": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                    "code": "MR",
+                    "display": "Medical Record Number"
+                  }],
+                  "text": "Medical Record Number"
+                },
+                "system": "http://www.scn.gov/facility/<xsl:value-of select='@extension'/>",
+                "value": "<xsl:value-of select='@extension'/>"
+                <xsl:if test="string($organizationResourceId)">
+                  , "assigner": {
+                    "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+                  }
+                </xsl:if>
+              }
+            </xsl:otherwise>
+
+          </xsl:choose>
+        </xsl:for-each>
+      ]  
       <xsl:if test="ccda:patient/sdtc:deceasedInd/@value">  
       , "deceasedBoolean": <xsl:value-of select="ccda:patient/sdtc:deceasedInd/@value"/>  
       </xsl:if>
-      <xsl:if test="string(ccda:patient/ccda:maritalStatusCode/@code) or string(ccda:patient/ccda:maritalStatusCode/@nullFlavor)">
-          , "maritalStatus": {
-              <xsl:choose>            
-                <xsl:when test="ccda:patient/ccda:maritalStatusCode/@nullFlavor">
-                  "extension": [{
-                    "url": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
-                    "valueCode": "<xsl:call-template name='getNullFlavorDisplay'>
-                                      <xsl:with-param name='nullFlavor' select="ccda:patient/ccda:maritalStatusCode/@nullFlavor"/>
-                                  </xsl:call-template>"
-                    }]
-                </xsl:when>
-                <xsl:otherwise>
-                  "coding": [{
-                      "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
-                      "code": "<xsl:call-template name='mapMaritalStatusCode'>
-                                  <xsl:with-param name='statusCode' select='ccda:patient/ccda:maritalStatusCode/@code'/>
-                              </xsl:call-template>",
-                      "display": "<xsl:call-template name='mapMaritalStatus'>
-                                      <xsl:with-param name='statusCode' select='ccda:patient/ccda:maritalStatusCode/@code'/>
-                                  </xsl:call-template>"
-                  }]
-                </xsl:otherwise>
-              </xsl:choose>              
-          }
+      <xsl:variable name="mappedCode">
+        <xsl:call-template name="mapMaritalStatusCode">
+          <xsl:with-param name="statusCode" select="ccda:patient/ccda:maritalStatusCode/@code"/>
+        </xsl:call-template>
+      </xsl:variable>
+
+      <!-- Output maritalStatus only if mappedCode is non-empty -->
+      <xsl:if test="string($mappedCode)">
+        , "maritalStatus": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
+            "code": "<xsl:value-of select='$mappedCode'/>",
+            "display": "<xsl:call-template name='mapMaritalStatus'>
+                          <xsl:with-param name='statusCode' select='ccda:patient/ccda:maritalStatusCode/@code'/>
+                        </xsl:call-template>"
+          }]
+        }
       </xsl:if>
       <xsl:if test="ccda:patient/ccda:religiousAffiliationCode[not(@nullFlavor='UNK')] and string(ccda:patient/ccda:religiousAffiliationCode/@code)">
           , "religion": {
@@ -405,7 +446,7 @@
             <xsl:if test="string(ccda:code/ccda:translation/@code) or string(ccda:code/ccda:translation/@displayName)">
             "coding": [
               {
-                "system": "<xsl:value-of select="ccda:code/ccda:translation/@codeSystem"/>",
+                "system": "urn:oid:<xsl:value-of select="ccda:code/ccda:translation/@codeSystem"/>",
                 "code": "<xsl:value-of select="ccda:code/ccda:translation/@code"/>",
                 "display": "<xsl:value-of select="ccda:code/ccda:translation/@displayName"/>"
               }
@@ -523,7 +564,7 @@
           {
             "coding": [
               {
-                "system": "<xsl:value-of select="ccda:code/ccda:translation/@codeSystem"/>",
+                "system": "urn:oid:<xsl:value-of select="ccda:code/ccda:translation/@codeSystem"/>",
                 "code": "<xsl:value-of select="ccda:code/ccda:translation/@code"/>",
                 "display": "<xsl:value-of select="ccda:code/ccda:translation/@displayName"/>"
               }
@@ -1198,7 +1239,7 @@
                   $statusCode = "W"'>
     <xsl:value-of select='$statusCode'/>
   </xsl:when>
-  <xsl:otherwise>UNK</xsl:otherwise>
+  <xsl:otherwise/>
 </xsl:choose>
 </xsl:template>
 
