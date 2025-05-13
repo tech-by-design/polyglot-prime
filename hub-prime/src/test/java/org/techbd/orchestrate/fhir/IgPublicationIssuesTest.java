@@ -874,14 +874,14 @@ public class IgPublicationIssuesTest {
         // Shinny Packages
         Map<String, Map<String, String>> shinnyPackages = new HashMap<>();
 
-        // Shinny version 1.2.3
+        // Shinny version 1.4.5
         Map<String, String> shinnyV123 = new HashMap<>();
         shinnyV123.put("profile-base-url", "http://shinny.org/us/ny/hrsn");
-        shinnyV123.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.3.0");
-        shinnyV123.put("ig-version", "1.3.0");
-        shinnyPackages.put("shinny-v1-3-0", shinnyV123);
+        shinnyV123.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.4.5");
+        shinnyV123.put("ig-version", "1.4.5");
+        shinnyPackages.put("shinny-v1-4-5", shinnyV123);
 
-        // Test Shinny version 1.3.0
+        // Test Shinny version 1.4.5
         Map<String, String> testShinnyV130 = new HashMap<>();
         testShinnyV130.put("profile-base-url", "http://test.shinny.org/us/ny/hrsn");
         testShinnyV130.put("package-path", "ig-packages/shin-ny-ig/test-shinny/v1.4.5");
@@ -896,7 +896,7 @@ public class IgPublicationIssuesTest {
     }
 
     private String getIgVersion() {
-        final String igVersion = "1.3.0";
+        final String igVersion = "1.4.5";
         return igVersion;
     }
 
