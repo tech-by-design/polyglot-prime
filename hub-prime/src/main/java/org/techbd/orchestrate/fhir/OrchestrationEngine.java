@@ -19,8 +19,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -401,9 +399,9 @@ public class OrchestrationEngine {
                 final var instanceValidator = new FhirInstanceValidator(cache);
                 
                 FhirValidator fhirValidator = fhirContext.newValidator().registerValidatorModule(instanceValidator);
-                fhirValidator.setConcurrentBundleValidation(true);
-                ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-                fhirValidator.setExecutorService(executorService);
+                // fhirValidator.setConcurrentBundleValidation(true);
+                // ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+                //fhirValidator.setExecutorService(executorService);
                 return fhirValidator;                
             } finally {
                 span.end();
