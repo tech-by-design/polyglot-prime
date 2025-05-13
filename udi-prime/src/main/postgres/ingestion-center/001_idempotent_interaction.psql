@@ -162,15 +162,23 @@ This materialized view is to extract observability metrics from interaction_http
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_observe CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_observe
 AS 
-SELECT 	intr_observe.interaction_id,
-		intr_observe.uri,
-		intr_observe.start_time,
-		intr_observe.finish_time,   
-		EXTRACT(epoch FROM intr_observe.finish_time::timestamp without time zone - intr_observe.start_time::timestamp without time zone) * 1000::numeric AS duration_millisecs,
-		intr_observe.sat_interaction_http_request_id AS interaction_http_request_id
-FROM techbd_udi_ingress.interaction_http_request intr_observe
-WHERE intr_observe.start_time IS NOT NULL AND intr_observe.finish_time IS NOT null
- ORDER BY duration_millisecs DESC;
+SELECT *
+FROM (
+    SELECT DISTINCT ON (intr_observe.interaction_id)
+        intr_observe.interaction_id,
+        intr_observe.uri,
+        intr_observe.start_time,
+        intr_observe.finish_time,
+        EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000::numeric AS duration_millisecs,
+        intr_observe.sat_interaction_http_request_id AS interaction_http_request_id
+    FROM techbd_udi_ingress.interaction_http_request intr_observe
+    WHERE intr_observe.start_time IS NOT NULL
+      AND intr_observe.finish_time IS NOT NULL
+    ORDER BY intr_observe.interaction_id, 
+             EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000 DESC
+) AS sub
+ORDER BY duration_millisecs DESC;
+
 
 
 /*******************************************************************************************************************************
