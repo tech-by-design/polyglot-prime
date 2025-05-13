@@ -1,11 +1,8 @@
 package org.techbd.orchestrate.fhir;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -15,74 +12,39 @@ import java.util.UUID;
 
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.HapiValidationEngine;
 import org.techbd.orchestrate.fhir.OrchestrationEngine.OrchestrationSession;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.ValidationEngine;
+import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
-import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 
 @ExtendWith(MockitoExtension.class)
-class OrchestrationEngineTest {
+class OrchestrationEngineTest  extends BaseOrchestrationEngineTest{
         private static final String INTERACTION_ID = UUID.randomUUID().toString();
         @Mock
         private Tracer tracer;
 
-        @Mock
-        private FhirBundleValidator mockValidator;
-
-        @InjectMocks
         private OrchestrationEngine engine;
 
         @Mock
         private OrchestrationSession session;
-
-        private HapiValidationEngine spyHapiEngine;
-
-        @Mock
-        private Map<ValidationEngine, ValidationEngine> validationEngineCache;
-        @Mock
-        private SpanBuilder spanBuilder; // Mock the SpanBuilder
-
-        @Mock
-        private Span span;
-        @Mock
-        private List<FhirBundleValidator> fhirBundleValidators;
-
+        
         private OrchestrationEngine.OrchestrationSession sessionSpy;
 
         private OrchestrationEngine.OrchestrationSession sessionSpy2;
 
-        @BeforeEach
-        void setUp() throws Exception {
-                when(tracer.spanBuilder(anyString())).thenReturn(spanBuilder);
-                when(spanBuilder.startSpan()).thenReturn(span);
-                spyHapiEngine = spy(new HapiValidationEngine.Builder()
-                                .withFhirProfileUrl(
-                                                "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
-                                .withIgPackages(getIgPackages())
-                                .withInteractionId(INTERACTION_ID)
-                                .withTracer(tracer)
-                                .build());
-                Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
-                profileMapField.setAccessible(true);
-                profileMapField.set(null, getProfileMap());
-        }
+        private HapiValidationEngine spyHapiEngine;
 
         @Test
-        @Disabled
+        // @Disabled
         void testOrchestrateSingleSession() {
 
                 String payload = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
@@ -97,6 +59,7 @@ class OrchestrationEngineTest {
                                                         "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHapiValidationEngine()
                                         .build();
+                                        appConfig.getFhirVersion();
                         sessionSpy = spy(realSession);
                         engine.orchestrate(sessionSpy);
                         assertThat(engine.getSessions()).hasSize(1);
