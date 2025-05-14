@@ -755,58 +755,51 @@
           "profile" : ["<xsl:value-of select='$organizationMetaProfileUrlFull'/>"]
         },
         "active": true,
-        "identifier": [
-          <!-- NPI from assignedAuthor/id -->
-          <xsl:for-each select="ccda:assignedAuthor/ccda:id[@root='2.16.840.1.113883.4.6']">
-            {
-              "use": "official",
-              "type": {
-                "coding": [
-                  {
-                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-                    "code": "NPI",
-                    "display": "National Provider Identifier"
-                  }
-                ]
-              },
-              "system": "http://hl7.org/fhir/sid/us-npi",
-              "value": "<xsl:value-of select="@extension"/>"
-            }
-            <xsl:if test="position() != last() or ../ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX' or @assigningAuthorityName='CMS']">,</xsl:if>
-          </xsl:for-each>
-
-          <!-- TAX and MA from representedOrganization/id -->
-          <xsl:for-each select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id">
+        <xsl:if test="
+          ccda:assignedAuthor/ccda:id[@root='2.16.840.1.113883.4.6'] or
+          ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX']
+        ">
+          "identifier": [
             <xsl:choose>
-              <xsl:when test="@assigningAuthorityName='TAX' or @assigningAuthorityName='CMS'">
+
+              <!-- NPI -->
+              <xsl:when test="ccda:assignedAuthor/ccda:id[@root='2.16.840.1.113883.4.6']">
                 {
                   "use": "official",
                   "type": {
                     "coding": [
                       {
                         "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-                        "code": "<xsl:value-of select="@assigningAuthorityName"/>",
-                        "display": "<xsl:choose>
-                                      <xsl:when test="@assigningAuthorityName='TAX'">Tax ID Number</xsl:when>
-                                      <!-- <xsl:when test="@assigningAuthorityName='CMS'">Medicare Advantage Contract ID</xsl:when> -->
-                                    </xsl:choose>"
+                        "code": "NPI",
+                        "display": "National Provider Identifier"
                       }
                     ]
                   },
-                  <xsl:choose>
-                    <xsl:when test="@assigningAuthorityName='TAX'">
-                      "system": "http://www.irs.gov/",
-                    </xsl:when>
-                    <xsl:when test="@assigningAuthorityName='CMS'">
-                      "system": "http://www.medicaid.gov/",
-                    </xsl:when>
-                  </xsl:choose>
-                  "value": "<xsl:value-of select="@extension"/>"
-                }<xsl:if test="position() != last()">,</xsl:if>
+                  "system": "http://hl7.org/fhir/sid/us-npi",
+                  "value": "<xsl:value-of select='ccda:assignedAuthor/ccda:id[@root=&quot;2.16.840.1.113883.4.6&quot;]/@extension'/>"
+                }
+              </xsl:when>
+
+              <!-- TAX -->
+              <xsl:when test="ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX']">
+                {
+                  "use": "official",
+                  "type": {
+                    "coding": [
+                      {
+                        "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                        "code": "TAX",
+                        "display": "Tax ID Number"
+                      }
+                    ]
+                  },
+                  "system": "http://www.irs.gov/",
+                  "value": "<xsl:value-of select='ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName=&quot;TAX&quot;]/@extension'/>"
+                }
               </xsl:when>
             </xsl:choose>
-          </xsl:for-each>
-        ],
+          ],
+        </xsl:if>
         "name" : "<xsl:value-of select="ccda:assignedAuthor/ccda:representedOrganization/ccda:name"/>"
         <xsl:if test="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom[not(@nullFlavor)]">
             , "telecom": [
