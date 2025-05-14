@@ -40,7 +40,7 @@ org:
         hub:
           prime:
             defaultDatalakeApiUrl: https://qa.hrsn.nyehealth.org/HRSNBundle
-            igVersion: 1.3.0
+            igVersion: 1.4.5
             baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
             structureDefinitionsUrls:
               bundle: /StructureDefinition/SHINNYBundleProfile
