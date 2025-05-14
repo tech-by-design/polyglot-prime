@@ -402,9 +402,9 @@ public class OrchestrationEngine {
                 final var instanceValidator = new FhirInstanceValidator(cache);
                 
                 FhirValidator fhirValidator = fhirContext.newValidator().registerValidatorModule(instanceValidator);
-                fhirValidator.setConcurrentBundleValidation(true);
-                ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-                fhirValidator.setExecutorService(executorService);
+                // fhirValidator.setConcurrentBundleValidation(true);
+                // ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+                // fhirValidator.setExecutorService(executorService);
                 return fhirValidator;                
             } finally {
                 span.end();
@@ -467,7 +467,8 @@ public class OrchestrationEngine {
                     final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
                     LOG.debug("BUNDLE PAYLOAD parse -END for interactionid:{} ", interactionId);
                     final var validatorOptions = new ValidationOptions().addProfile(profileUrl);
-                    final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle,validatorOptions);
+                    // final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle,validatorOptions);
+                     final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle);
                     final var completedAt = Instant.now();
                     LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} with ig version :{}",
                             Duration.between(initiatedAt, completedAt).toMillis(), interactionId, igVersion);
