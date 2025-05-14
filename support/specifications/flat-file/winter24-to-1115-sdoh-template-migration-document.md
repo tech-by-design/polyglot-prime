@@ -3,7 +3,7 @@
 ## Follow the below instructions for a successful Winter'24 to 1115-SDOH-Template CSV schema migration: 
 
   1. **Renamed CSV Files**
-  - To maintain the ordinality and cardinality of the data in alignment with **IG 1.4.1**, the CSV file naming conventions have been updated. The following files used in **Winter'24** have been **renamed** in **1115-SDOH-Template** while maintaining their structure and format:
+  - To maintain the ordinality and cardinality of the data in alignment with [SHIN-NY IG](https://shinny.org/us/ny/hrsn/index.html), the CSV file naming conventions have been updated. The following files used in **Winter'24** have been **renamed** in **1115-SDOH-Template** while maintaining their structure and format:
 
     - **demographic_data.csv** → **SDOH_PtInfo_{OrganizationName}_{groupIdentifier}_YYYYMMDDhhmmss.csv**
     - **qe_admin_data.csv** → **SDOH_QEadmin_{OrganizationName}_{groupIdentifier}_YYYYMMDDhhmmss.csv**
@@ -253,7 +253,7 @@
 
 ---
 
-## TechBD updates existing Winter'24 CSV transformer to include new IG v1.4.1 content.  
+## TechBD updates existing Winter'24 CSV transformer to include new SHIN-NY IG content.  
 
 ### Updates in FHIR JSON:  
 Update the following values:  
@@ -269,7 +269,7 @@ There will likely be at least **6-10 more** updates.
 
 ---
 
-## Data from submitter in existing Winter'24 CSV column must be using IG v1.4.1 constraints (using NYHER value sets). For example:
+## Data from submitter in existing Winter'24 CSV column must be using SHIN-NY IG constraints (using NYHER value sets). For example:
 1. **Observation Status:**
  - `Bundle.Observation.status` must use values from:  
    [SDOHCC-ValueSetObservationStatus](https://hl7.org/fhir/us/sdoh-clinicalcare/STU2.2/ValueSet-SDOHCC-ValueSetObservationStatus.html)  
@@ -283,7 +283,7 @@ There will likely be at least **6-10 more** updates.
 
 ---
 
-## Data from submitter in new CSV column that is not in Winter'24 using IG v1.4.1 constraints (using NYHER value sets). For Example:
+## Data from submitter in new CSV column that is not in Winter'24 using SHIN-NY IG constraints (using NYHER value sets). For Example:
 
 1. **Consent Resource Fields Required in CSV:**
  - `CONSENT_POLICY_AUTHORITY`
@@ -303,9 +303,9 @@ There will likely be at least **6-10 more** updates.
 ## 5. The reasons for the 1115-SDOH-Template CSV schema updates include :
 
 1. **Field Name Alignment:**
- - IG v1.4.1 terms and field names differed from CSV field names, so they were aligned.
+ - [SHIN-NY IG](https://shinny.org/us/ny/hrsn/index.html) terms and field names differed from CSV field names, so they were aligned.
 
 2. **New CSV for Columns for all CSV Files:**
- - IG v1.4.1 requires description and system along with code, so a new CSV file was added.
+ - [SHIN-NY IG](https://shinny.org/us/ny/hrsn/index.html) requires description and system along with code, so a new CSV file was added.
  
  

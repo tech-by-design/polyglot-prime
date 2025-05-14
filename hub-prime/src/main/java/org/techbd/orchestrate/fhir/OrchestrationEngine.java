@@ -56,6 +56,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
 import ca.uhn.fhir.validation.FhirValidator;
+import ca.uhn.fhir.validation.ValidationOptions;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import jakarta.validation.constraints.NotNull;
@@ -401,9 +402,9 @@ public class OrchestrationEngine {
                 final var instanceValidator = new FhirInstanceValidator(cache);
                 
                 FhirValidator fhirValidator = fhirContext.newValidator().registerValidatorModule(instanceValidator);
-                fhirValidator.setConcurrentBundleValidation(true);
-                ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-                fhirValidator.setExecutorService(executorService);
+                // fhirValidator.setConcurrentBundleValidation(true);
+                // ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+                // fhirValidator.setExecutorService(executorService);
                 return fhirValidator;                
             } finally {
                 span.end();
@@ -459,12 +460,15 @@ public class OrchestrationEngine {
                     }
                     this.igVersion = bundleValidator.getIgVersion();
                     this.fhirProfileUrl = bundleValidator.getFhirProfileUrl();
+                    var lenientErrorHandler = new CustomParserErrorHandler();
+                    fhirContext.setParserErrorHandler(lenientErrorHandler);
 
                     LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
                     final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
                     LOG.debug("BUNDLE PAYLOAD parse -END for interactionid:{} ", interactionId);
-
-                    final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle);
+                    final var validatorOptions = new ValidationOptions().addProfile(profileUrl);
+                    // final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle,validatorOptions);
+                     final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle);
                     final var completedAt = Instant.now();
                     LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} with ig version :{}",
                             Duration.between(initiatedAt, completedAt).toMillis(), interactionId, igVersion);
@@ -473,7 +477,13 @@ public class OrchestrationEngine {
                         @JsonSerialize(using = JsonTextSerializer.class)
                         public String getOperationOutcome() {
                             final var jp = FhirContext.forR4Cached().newJsonParser();
-                            return jp.encodeResourceToString(hapiVR.toOperationOutcome());
+                            OperationOutcome outcome = (OperationOutcome) hapiVR.toOperationOutcome();
+                            if (lenientErrorHandler != null) {
+                                for (OperationOutcomeIssueComponent issue : lenientErrorHandler.getParserIssues()) {
+                                    outcome.addIssue(issue);
+                                }
+                            }
+                            return jp.encodeResourceToString(outcome);
                         }
 
                         @Override

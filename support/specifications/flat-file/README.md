@@ -5,82 +5,62 @@
 
 This project leverages the [Frictionless Data](https://frictionlessdata.io/) library to validate CSV files against predefined schemas, ensuring data quality and consistency. The validation process checks data integrity, format adherence, and schema compliance to streamline data workflows.
 
-## Tools for Data Validation and Exploration
+It supports CSV validation for social determinants of health (SDOH) data files that follow a strict structure and naming convention.
 
-### Data Curator
 
-[Data Curator](https://github.com/qcif/data-curator) is a simple desktop data editor designed to help describe, validate, and share usable open data. It is a lightweight and user-friendly tool that provides a graphical interface for editing tabular data while ensuring adherence to data standards.
+## File Format and Naming Convention  
 
-#### Key Features:
-- **Schema Editing**: Easily modify Frictionless JSON schemas to suit your project's requirements.
-- **Load and Preview Data**: Visualize CSV files and inspect their contents in a user-friendly interface.
-- **Validate Against Schema**: Perform schema validation using the Frictionless JSON specification provided in this repository.
-- **Edit and Save**: Correct errors directly in the application and save validated data.
-- **Metadata Management**: Add metadata for enhanced data usability.
-- **Export Options**: Share validated datasets as clean CSVs or complete data packages.
+The CSV file names in this project follow a strict naming convention to ensure consistency and compatibility with the validation process. Each file name is structured as follows:  
 
-#### How to Use:
-1. **Install Data Curator**: Download it [here](https://github.com/qcif/data-curator) and follow the instructions for your operating system.
-2. **Load the Example Data Package**: 
-   - Access the example data package from our repository: [Data Package Examples](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/flat-file).
-   - The data package contains only the Frictionless JSON schema (`datapackage-nyher-fhir-ig-equivalent.json`) and the CSV data folder (`nyher-fhir-ig-example`). The CSV folder includes the following files:
-      ```
-      nyher-fhir-ig-example/
-      ├── SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv 
-      ├── SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv 
-      ├── SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv
-      └── SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv 
-      ```
-      Other files (e.g., Python scripts or markdown documentation) have been removed for clarity.
-   - Download and zip the `specifications` folder for easy sharing or validation in Data Curator.
-3. **Ensure Correct CSV Order**
-   - After loading the CSV package into Data Curator, ensure that the files are listed and processed in the following order (due to the primary key reference in `QE_ADMIN_DATA`):
-     1. `SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv` 
-     2. `SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv `      
-     3. `SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv` 
-     4. `SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv `
-   - This order is required because `QE_ADMIN_DATA` has the primary key `PATIENT_MR_ID_VALUE`, and the other datasets reference it.
-4. **Validate and Save**
-   - Load the zipped data package in Data Curator.
-   - Fix any errors identified during validation and save the updated files.
+**`SDOH_<DATA_CATEGORY>_{OrganizationName}_{groupIdentifier}_YYYYMMDDhhmmss.csv`**  
 
-### Open Data Editor (ODE)
+All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting, and they must be encoded in **UTF-8** to ensure proper validation and data processing.  
 
-The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getting-started/) is a desktop tool designed for non-technical data practitioners to explore, create schemas, and work with tabular datasets. It provides an interface for creating data packages and basic data editing.
+### Components of the File Name  
 
-#### Key Features:
-- **Desktop Application**: Requires installation on your local machine.
-- **Basic Error Detection**: Identify basic formatting issues in data.
-- **Schema Creation**: Create schemas for your datasets and define field types and properties.
-- **Interactive Editing**: Edit data and metadata within the interface.
-- **Export Options**: Save files as data packages for further use.
+1. **`<DATA_CATEGORY>`**:  
+   - This is the predefined and mandatory part of the file name. It indicates the category of data contained in the file and must remain unchanged.  
+   - Examples of valid values:  
+     - `SDOH_PtInfo` - Represents patient information data.  
+     - `SDOH_QEadmin` - Represents quality entity administration data.  
+     - `SDOH_ScreeningProf` - Represents screening profile data.  
+     - `SDOH_ScreeningObs` - Represents screening observation data.  
 
-#### How to Use:
-1. Visit the [Open Data Editor website](https://opendataeditor.okfn.org/documentation/getting-started/) and install it.
-2. Upload your dataset (CSV files) from the example folder: [Example Data](https://github.com/tech-by-design/polyglot-prime/tree/main/support/specifications/flat-file/nyher-fhir-ig-example).
-3. Define schema and field properties for your data.
-4. Review and edit data as needed.
-5. Export as a data package.
+2. **`{OrganizationName}`**:  
+   - This represents the organization identifier but **does not** contain the actual name of the organization. Instead, it is a predefined identifier assigned to the organization (e.g., `CareRidgeSCN`).  
 
-### Choosing Between Data Curator and ODE
+3. **`{groupIdentifier}`**:  
+   - This part of the file name is flexible and may include the following components for better identification:  
+     - **Test Case or Scenario Identifier**: A specific identifier to distinguish different test cases or scenarios (e.g., `testcase1`).  
 
-| Feature                  | Data Curator                      | Open Data Editor (ODE)           |
-|--------------------------|------------------------------------|-----------------------------------|
-| **Platform**             | Desktop application               | Desktop application                        |
-| **Installation**         | Required                          | Required                             |
-| **Schema Validation**    | Yes                               | No (only schema creation)               |
-| **Error Correction**     | Yes                               | Yes, Basic editing                              |
-| **Metadata Management**  | Supported                         | Limited                          |
-| **Ideal for**            | Data package validation, comprehensive data quality checks | Basic CSV editing, schema creation, simple data package creation |
+4. **`YYYYMMDDhhmmss`**:  
+   - This represents the timestamp indicating when the data was generated or collected. It follows the format:  
+     - **YYYY** - Year  
+     - **MM** - Month  
+     - **DD** - Day  
+     - **hhmmss** - Hour, Minute, and Second in 24-hour format  
 
----
+### Example File Names  
+
+- `SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv`  
+- `SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv`  
+- `SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv`  
+- `SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv`  
+
+By following this structured naming convention, we ensure consistency, clarity, and efficient data processing across all CSV files.
+
+
+
 
 ## Folder Structure
 
-- **`support/specifications`**
+This section outlines the location of key files and their purpose within the project directory.
+
+- **`support/specifications/flat-file`**
   - `datapackage-nyher-fhir-ig-equivalent.json`: Schema specification for validating CSV files.
   - `validate-nyher-fhir-ig-equivalent.py`: Python script to validate CSV files against the schema.
-- **`flat-file/nyher-fhir-ig-example/`**: Folder containing sample CSV files for validation.
+  - **`1115_SDOH.Template_v3-4_20250418.xlsx`**: **Excel file that defines the structure, required fields, rules, and field-level data references for creating all related CSV files.**  
+- **`nyher-fhir-ig-example/`**: Folder containing sample CSV files for validation.
   - `SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv `: Demographic information data.
   - `SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv`: QE administration data.
   - `SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv`: Primary screening profile data.
@@ -90,10 +70,11 @@ The [Open Data Editor (ODE)](https://opendataeditor.okfn.org/documentation/getti
 - **`documentation.auto.md`**
   - Auto-generated documentation detailing the schema, validation process, and CSV contents for easier understanding.
 
+
 ## Prerequisites
 
+Before running the validation scripts locally with Frictionless, ensure the following are installed:
 
-Before you can use this tool, make sure you have the following installed on your system:
 
 - **Python 3.x**:
   Ensure that Python 3 is installed on your system. You can check if Python 3 is already installed by running the following command:
@@ -170,57 +151,6 @@ Before you can use this tool, make sure you have the following installed on your
 - The `validate-nyher-fhir-ig-equivalent.py` script integrates with Frictionless for accurate and detailed validation.
 - The `output.json` file provides a machine-readable validation report. To understand its structure, refer to the [Frictionless JSON documentation][(https://framework.frictionlessdata.io/docs/guides/validate](https://framework.frictionlessdata.io/docs/guides/validating-data.html)).
 
-## File Format and Naming Convention  
-
-The CSV file names in this project follow a strict naming convention to ensure consistency and compatibility with the validation process. Each file name is structured as follows:  
-
-**`SDOH_<DATA_CATEGORY>_{OrganizationName}_{groupIdentifier}_YYYYMMDDhhmmss.csv`**  
-
-All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting, and they must be encoded in **UTF-8** to ensure proper validation and data processing.  
-
-### Components of the File Name  
-
-1. **`<DATA_CATEGORY>`**:  
-   - This is the predefined and mandatory part of the file name. It indicates the category of data contained in the file and must remain unchanged.  
-   - Examples of valid values:  
-     - `SDOH_PtInfo` - Represents patient information data.  
-     - `SDOH_QEadmin` - Represents quality entity administration data.  
-     - `SDOH_ScreeningProf` - Represents screening profile data.  
-     - `SDOH_ScreeningObs` - Represents screening observation data.  
-
-2. **`{OrganizationName}`**:  
-   - This represents the organization identifier but **does not** contain the actual name of the organization. Instead, it is a predefined identifier assigned to the organization (e.g., `CareRidgeSCN`).  
-
-3. **`{groupIdentifier}`**:  
-   - This part of the file name is flexible and may include the following components for better identification:  
-     - **Test Case or Scenario Identifier**: A specific identifier to distinguish different test cases or scenarios (e.g., `testcase1`).  
-
-4. **`YYYYMMDDhhmmss`**:  
-   - This represents the timestamp indicating when the data was generated or collected. It follows the format:  
-     - **YYYY** - Year  
-     - **MM** - Month  
-     - **DD** - Day  
-     - **hhmmss** - Hour, Minute, and Second in 24-hour format  
-
-### Example File Names  
-
-- `SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv`  
-- `SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv`  
-- `SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv`  
-- `SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv`  
-
-By following this structured naming convention, we ensure consistency, clarity, and efficient data processing across all CSV files.
-
-### Migration Plan
-
-The migration plan from Winter'24 CSV to 1115-SDOH-Template CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/winter24-to-1115-sdoh-template-migration-document.md).
-
-### Notes
-
-- **Mandatory Prefix**: The `<DATA_TYPE>` section of the file name is predefined and must not be altered.
-- **Customizable Group Identifier**: The `<GROUP_IDENTIFIER>` section can be customized as per the data submission or testing requirements but must adhere to the format `QE-Name-Date-TestCase`.
-
-This naming convention helps ensure files are easily identifiable and properly linked to their corresponding data specifications in validation and analysis.
 
 ## Field Descriptions
 
@@ -235,7 +165,7 @@ Field descriptions for each field are documented in the `documentation.auto.md` 
 
 Refer to `documentation.auto.md` for the complete set of field descriptions, including FHIR File Paths.
 
-## Generating Documentation Automatically
+### Generating Documentation Automatically
 
 The `documentation.auto.md` file is automatically generated using the `describe` method from the Frictionless library. This method extracts metadata from the data package and converts it into Markdown format.
 
@@ -248,5 +178,22 @@ The `documentation.auto.md` file is automatically generated using the `describe`
 This ensures that the field descriptions, including FHIR File Paths, remain up-to-date and consistent with the data package.
 
 This naming convention helps organize files systematically and allows easy identification of the data source, purpose, and context.
+
+
+### Migration Plan
+
+The migration plan from Winter'24 CSV to 1115-SDOH-Template CSV is detailed [here](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/winter24-to-1115-sdoh-template-migration-document.md).
+
+### Notes
+
+- **Mandatory Prefix**: The `<DATA_TYPE>` section of the file name is predefined and must not be altered.
+- **Customizable Group Identifier**: The `<GROUP_IDENTIFIER>` section can be customized as per the data submission or testing requirements but must adhere to the format `QE-Name-Date-TestCase`.
+
+This naming convention helps ensure files are easily identifiable and properly linked to their corresponding data specifications in validation and analysis.
+
+## Tools for Data Validation and Exploration
+
+ Additionally, tools  for non-technical users to assist with schema creation and editing.
+👉 [View Tools for Data Validation and Exploration](https://github.com/tech-by-design/polyglot-prime/blob/main/support/specifications/flat-file/csv-validation-tools.md)
 
 For further assistance, raise a query in the project's [GitHub Issues](https://github.com/tech-by-design/polyglot-prime/issues).
