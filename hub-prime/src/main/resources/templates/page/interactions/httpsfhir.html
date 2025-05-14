@@ -29,7 +29,8 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'interaction_http_fhir_request';
+        const viewName = 'interaction_http_fhir_request_summary';
+        const DetailViewName = 'interaction_http_fhir_request';
 
 
         // Define downloadPayload globally
@@ -72,8 +73,27 @@
             }
         };
 
+        function getInteractionHttpFhirData(params) { 
+            const interactionId = params.data.interaction_id;
+            console.log('Interaction ID:', interactionId);
+            fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${DetailViewName}/interaction_id/${interactionId}.json`))
+                .then(response => {
+                    if (response.url.includes('/?timeout=true')) {
+                        window.location.href = '/?timeout=true'; // Redirect to login page
+                        return null; // Prevent further processing of the response
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    params.successCallback(response);
+                })
+                .catch(error => {
+                    console.error('Error fetching details data' + error);
+                });
+        }
         document.addEventListener('DOMContentLoaded', function () {
 
+            const modalAide = new ModalAide();
 
             function downloadCellRenderer(params) {
                 const contentType = params.data.content_type;
@@ -83,7 +103,7 @@
                 const sat_interaction_http_request_id = params.data.sat_interaction_http_request_id; // Assuming you need interaction_id
 
                 // Create the URL for the API call
-                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`;
+                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${DetailViewName}/sat_interaction_http_request_id/${sat_interaction_http_request_id}.json`;
 
                 // Create a download link placeholder
                 const downloadLink = `<a href="#" onclick="window.downloadPayload('${apiUrl}','${patient_mrn}','${nature}'); return false;" style="text-decoration: none; color: #007bff;">
@@ -93,53 +113,54 @@
                 return downloadLink;
             }
 
+            const interactionHttpFhir = [
+            { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", headerTooltip: "Description of the interaction’s type or purpose", flex: 2,
+                cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${DetailViewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
+            }, modalAide)
+            },                                 
+            { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
+            { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
+            { headerName: "Validation Issues", field: "issues_count", filter: "agNumberColumnFilter", headerTooltip: "Count of issues encountered during validation" },
+            {
+                headerName: "Download Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true
+            } 
+            ]; 
 
-
-
-            const modalAide = new ModalAide();
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     {
                         headerName: "Request Time",
                         field: "interaction_created_at",
                         sort: "desc",
-                        filter: "agDateColumnFilter",
+                        filter: "agDateColumnFilter",                        
                         headerTooltip: "Timestamp of when the interaction was created"
                     },
                     {
                         headerName: "TechBD Interaction ID",
                         field: "interaction_id",
-                        filter: "agTextColumnFilter", headerTooltip: "Unique identifier for each interaction",
-                        cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
-                        }, modalAide)
+                        cellRenderer: 'agGroupCellRenderer',
+                        filter: "agTextColumnFilter", headerTooltip: "Unique identifier for each interaction"
                     },       
                     { headerName: "TechBD Tenant ID", field: "tenant_id", filter: "agTextColumnFilter", headerTooltip: "ID of the tenant involved in the interaction" },                                   
                     { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter", headerTooltip: "The ID of the Bundle sent through the interaction" },
                     { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter", headerTooltip: "The type of the Bundle sent through the interaction" },
-                    { headerName: "Bundle Source", field: "source_type", filter: "agTextColumnFilter", headerTooltip: "The Bundle data source where the data came from e.g. CSV, CCDA, FHIR etc." },
-                    { headerName: "TechBD Bundle Source Interaction Id", field: "source_hub_interaction_id", filter: "agTextColumnFilter", headerTooltip: "The orginal Bundle source interaction ID(CSV Zip file Interaction Id,CCDA file Interaction Id etc.)" },
+                    { headerName: "Bundle Source", field: "source_type", filter: "agTextColumnFilter", headerTooltip: "The Bundle data source where the data came from e.g. CSV, CCDA, FHIR etc." },                  
                     { 
                         headerName: "Operation Outcome Status", 
                         field: "is_bundle_valid", 
                         filter: "agTextColumnFilter", 
                         headerTooltip: "Indicates whether the OperationOutcome is valid ('Valid' or 'Invalid')" 
-                    },
-                    { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },
-                    { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },
-                    { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },                                      
-                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },                                        
-                    { headerName: "Nature", field: "nature", filter: "agTextColumnFilter", headerTooltip: "Description of the interaction’s type or purpose" },
-                    { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
-                    { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
-                    { headerName: "Validation Issues", field: "issues_count", filter: "agNumberColumnFilter", headerTooltip: "Count of issues encountered during validation" },
+                    },   
+                    { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter", headerTooltip: "Combination of tenant, organization and patient MRN" },          
+                    { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },                                       
+                    { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter", headerTooltip: "Medical Record Number of the patient involved in the interaction" },                    
+                    { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
                     { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", headerTooltip: "Types of FHIR resources involved in the interaction" },
+                    { headerName: "TechBD Bundle Source Interaction Id", field: "source_hub_interaction_id", filter: "agTextColumnFilter", headerTooltip: "The orginal Bundle source interaction ID(CSV Zip file Interaction Id,CCDA file Interaction Id etc.)" },
                     { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", headerTooltip: "IP address of the client making the request" },
-                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" },
-                    {
-                        headerName: "Download Payload", field: "user_agent", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download FHIR Payload", filter: false, suppressFilter: true
-                    }
+                    { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" }
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
@@ -150,9 +171,22 @@
                         }));
                     },
                 )
+                .withMasterDetail(true)
+                .withDetailCellRendererParams({
+                    detailGridOptions: {
+                        columnDefs: interactionHttpFhir,
+                        defaultColDef: {
+                            flex: 1
+                        }
+                    },
+                    getDetailRowData: params => {
+                        getInteractionHttpFhirData(params);
+                    }
+                })
+                .withDetailRowAutoHeight(false)
                 .withModalAide(modalAide)
                 .withGridDivStyles({ height: "750px", width: "100%" })
-                .build();
+                .build(); 
 
             agGridInstance.init('serverDataGrid');
         });
@@ -166,6 +200,7 @@
             columns such as Request Time, Patient MRN, TechBD Interaction ID, and more. Users can click on the TechBD Interaction ID
             to view detailed information in a popup. Additionally, the widget supports filtering and sorting by various
             criteria to enable thorough analysis of the interactions.
+            A drill-down feature has been implemented based on the TechBD Interaction ID, allowing users to explore the various states of a given interaction. This grouped view helps in understanding the end-to-end flow of a single interaction across different stages, offering deeper insights into the processing lifecycle and potential issues encountered during the interaction.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
