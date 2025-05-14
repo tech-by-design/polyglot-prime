@@ -1,6 +1,7 @@
 package org.techbd.orchestrate.fhir;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -8,9 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
 import org.techbd.util.FHIRUtil;
@@ -18,39 +16,41 @@ import org.techbd.util.FHIRUtil;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
-
-
 public abstract class BaseOrchestrationEngineTest {
 
-    @InjectMocks
     protected static OrchestrationEngine engine;
 
-    @Mock
     protected static Tracer tracer;
 
-    @Mock
     protected static AppConfig appConfig;
 
-    @Mock
     protected static SpanBuilder spanBuilder;
 
-    @Mock
     protected static Span span;
+
+    protected static OrchestrationEngine.OrchestrationSession sessionSpy;
+
+    protected static OrchestrationEngine.OrchestrationSession sessionSpy2;
+
+    protected static OrchestrationEngine.HapiValidationEngine spyHapiEngine;
 
     @BeforeAll
     static void initSharedEngine() throws Exception {
-        MockitoAnnotations.openMocks(BaseOrchestrationEngineTest.class);
-        when(appConfig.getIgPackages()).thenReturn(getIgPackages());
-        when(appConfig.getIgVersion()).thenReturn("1.3.0");
+        tracer = mock(Tracer.class);
+        appConfig = mock(AppConfig.class);
+        spanBuilder = mock(SpanBuilder.class);
+        span = mock(Span.class);
+
         when(tracer.spanBuilder(anyString())).thenReturn(spanBuilder);
         when(spanBuilder.startSpan()).thenReturn(span);
-        engine = new OrchestrationEngine(tracer, appConfig);
+        when(appConfig.getIgPackages()).thenReturn(getIgPackages());
+        when(appConfig.getIgVersion()).thenReturn("1.3.0");
 
+        engine = new OrchestrationEngine(tracer, appConfig);
         Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
         profileMapField.setAccessible(true);
         profileMapField.set(null, getProfileMap());
     }
-
     private static Map<String, FhirV4Config> getIgPackages() {
         final Map<String, FhirV4Config> igPackages = new HashMap<>();
         FhirV4Config fhirV4Config = new FhirV4Config();
