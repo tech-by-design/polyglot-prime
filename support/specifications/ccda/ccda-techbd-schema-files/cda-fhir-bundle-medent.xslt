@@ -773,13 +773,13 @@
               "system": "http://hl7.org/fhir/sid/us-npi",
               "value": "<xsl:value-of select="@extension"/>"
             }
-            <xsl:if test="position() != last() or ../ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX' or @assigningAuthorityName='MA']">,</xsl:if>
+            <xsl:if test="position() != last() or ../ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX' or @assigningAuthorityName='CMS']">,</xsl:if>
           </xsl:for-each>
 
           <!-- TAX and MA from representedOrganization/id -->
           <xsl:for-each select="ccda:assignedAuthor/ccda:representedOrganization/ccda:id">
             <xsl:choose>
-              <xsl:when test="@assigningAuthorityName='TAX' or @assigningAuthorityName='MA'">
+              <xsl:when test="@assigningAuthorityName='TAX' or @assigningAuthorityName='CMS'">
                 {
                   "use": "official",
                   "type": {
@@ -789,17 +789,17 @@
                         "code": "<xsl:value-of select="@assigningAuthorityName"/>",
                         "display": "<xsl:choose>
                                       <xsl:when test="@assigningAuthorityName='TAX'">Tax ID Number</xsl:when>
-                                      <xsl:when test="@assigningAuthorityName='MA'">Medicare Advantage Contract ID</xsl:when>
+                                      <!-- <xsl:when test="@assigningAuthorityName='CMS'">Medicare Advantage Contract ID</xsl:when> -->
                                     </xsl:choose>"
                       }
                     ]
                   },
                   <xsl:choose>
                     <xsl:when test="@assigningAuthorityName='TAX'">
-                      "system": "http://hl7.org/fhir/sid/us-tax-id",
+                      "system": "http://www.irs.gov/",
                     </xsl:when>
-                    <xsl:when test="@assigningAuthorityName='MA'">
-                      "system": "http://example.org/fhir/sid/us-ma",
+                    <xsl:when test="@assigningAuthorityName='CMS'">
+                      "system": "http://www.medicaid.gov/",
                     </xsl:when>
                   </xsl:choose>
                   "value": "<xsl:value-of select="@extension"/>"
