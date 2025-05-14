@@ -77,7 +77,7 @@
 <th>Missing Classes</th></tr>
 <tr class="b">
 <td>307</td>
-<td>40</td>
+<td>41</td>
 <td>0</td>
 <td>0</td></tr></table></section><section>
 <h1>Files</h1>
@@ -102,7 +102,7 @@
 <td>1</td></tr>
 <tr class="a">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine">org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine</a></td>
-<td>1</td></tr>
+<td>2</td></tr>
 <tr class="b">
 <td><a href="#org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession">org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession</a></td>
 <td>1</td></tr>
@@ -242,6 +242,12 @@
 <th>Line</th>
 <th>Priority</th></tr>
 <tr class="b">
+<td>Dead store to validatorOptions in org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine.validate(String, String)</td>
+<td>STYLE</td>
+<td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DLS_DEAD_LOCAL_STORE">DLS_DEAD_LOCAL_STORE</a></td>
+<td>469</td>
+<td>Medium</td></tr>
+<tr class="a">
 <td>Possible null pointer dereference of shinNyPackages in org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine.initializeFhirBundleValidators()</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH">NP_NULL_ON_SOME_PATH</a></td>
@@ -259,7 +265,7 @@
 <td>Unwritten field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession.igVersion</td>
 <td>CORRECTNESS</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#UWF_UNWRITTEN_FIELD">UWF_UNWRITTEN_FIELD</a></td>
-<td>891</td>
+<td>892</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder"></a><section>
 <h2>org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder</h2>
 <table class="table table-striped">
@@ -273,19 +279,19 @@
 <td>Unread field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.igPackages</td>
 <td>PERFORMANCE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#URF_UNREAD_FIELD">URF_UNREAD_FIELD</a></td>
-<td>958</td>
+<td>959</td>
 <td>Medium</td></tr>
 <tr class="a">
 <td>Unread field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.igVersion</td>
 <td>PERFORMANCE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#URF_UNREAD_FIELD">URF_UNREAD_FIELD</a></td>
-<td>963</td>
+<td>964</td>
 <td>Medium</td></tr>
 <tr class="b">
 <td>Unread field: org.techbd.orchestrate.fhir.OrchestrationEngine$OrchestrationSession$Builder.tracer</td>
 <td>PERFORMANCE</td>
 <td><a class="externalLink" href="https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#URF_UNREAD_FIELD">URF_UNREAD_FIELD</a></td>
-<td>968</td>
+<td>969</td>
 <td>Medium</td></tr></table></section><a name="org.techbd.orchestrate.fhir.PostPopulateSupport"></a><section>
 <h2>org.techbd.orchestrate.fhir.PostPopulateSupport</h2>
 <table class="table table-striped">
