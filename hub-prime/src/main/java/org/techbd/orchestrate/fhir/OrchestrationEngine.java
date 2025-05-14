@@ -19,6 +19,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -54,6 +56,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
 import ca.uhn.fhir.validation.FhirValidator;
+import ca.uhn.fhir.validation.ValidationOptions;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import jakarta.validation.constraints.NotNull;
@@ -399,9 +402,9 @@ public class OrchestrationEngine {
                 final var instanceValidator = new FhirInstanceValidator(cache);
                 
                 FhirValidator fhirValidator = fhirContext.newValidator().registerValidatorModule(instanceValidator);
-                // fhirValidator.setConcurrentBundleValidation(true);
-                // ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-                //fhirValidator.setExecutorService(executorService);
+                fhirValidator.setConcurrentBundleValidation(true);
+                ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+                fhirValidator.setExecutorService(executorService);
                 return fhirValidator;                
             } finally {
                 span.end();
@@ -463,8 +466,8 @@ public class OrchestrationEngine {
                     LOG.debug("BUNDLE PAYLOAD parse -BEGIN for interactionId:{}", interactionId);
                     final var bundle = fhirContext.newJsonParser().parseResource(Bundle.class, payload);
                     LOG.debug("BUNDLE PAYLOAD parse -END for interactionid:{} ", interactionId);
-
-                    final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle);
+                    final var validatorOptions = new ValidationOptions().addProfile(profileUrl);
+                    final var hapiVR = bundleValidator.getFhirValidator().validateWithResult(bundle,validatorOptions);
                     final var completedAt = Instant.now();
                     LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} with ig version :{}",
                             Duration.between(initiatedAt, completedAt).toMillis(), interactionId, igVersion);
