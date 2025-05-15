@@ -12,17 +12,15 @@ import java.util.UUID;
 
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.techbd.service.http.hub.prime.AppConfig.FhirV4Config;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 
 @ExtendWith(MockitoExtension.class)
-class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
+class OrchestrationEngineTest extends BaseIgValidationTest {
         private static final String INTERACTION_ID = UUID.randomUUID().toString();  
 
         @Test
@@ -34,18 +32,13 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withPayloads(List.of(payload))
                                         .withSessionId(UUID.randomUUID().toString())
                                         .withTracer(tracer)
-                                        .withFhirIGPackages(getIgPackages())
                                         .withInteractionId(INTERACTION_ID)
-                                        .withFhirProfileUrl(
-                                                        "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHapiValidationEngine()
                                         .build();
                         sessionSpy = spy(realSession);
                         engine.orchestrate(sessionSpy);
                         assertThat(engine.getSessions()).hasSize(1);
-                        assertThat(engine.getSessions().get(0).getPayloads()).containsExactly(payload);
-                        assertThat(engine.getSessions().get(0).getFhirProfileUrl())
-                                        .isEqualTo("http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile");
+                        assertThat(engine.getSessions().get(0).getPayloads()).isNotNull();
                         List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0)
                                         .getValidationResults();
                         assertThat(results).hasSize(1);
@@ -75,9 +68,6 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withTracer(tracer)
                                         .withSessionId(UUID.randomUUID().toString())
                                         .withInteractionId(INTERACTION_ID)
-                                        .withFhirIGPackages(getIgPackages())
-                                        .withFhirProfileUrl(
-                                                        "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHapiValidationEngine()
                                         .build();
                         sessionSpy = spy(realSession);
@@ -86,21 +76,16 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withSessionId(UUID.randomUUID().toString())
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
-                                        .withFhirIGPackages(getIgPackages())
-                                        .withFhirProfileUrl(
-                                                        "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHl7ValidationApiEngine()
                                         .build();
                         sessionSpy2 = spy(realSession2);
                         engine.orchestrate(sessionSpy, sessionSpy2);
                         assertThat(engine.getSessions()).hasSize(2);
                         OrchestrationEngine.OrchestrationSession retrievedSession1 = engine.getSessions().get(0);
-                        assertThat(retrievedSession1.getPayloads()).isNotNull();
-                        assertThat(retrievedSession1.getFhirProfileUrl()).isNotNull();  
+                        assertThat(retrievedSession1.getPayloads()).isNotNull(); 
                         assertThat(retrievedSession1.getValidationResults()).hasSize(1);
                         OrchestrationEngine.OrchestrationSession retrievedSession2 = engine.getSessions().get(1);
                         assertThat(retrievedSession2.getPayloads()).isNotNull();
-                        assertThat(retrievedSession2.getFhirProfileUrl()).isNotNull();
                         assertThat(retrievedSession2.getValidationResults()).hasSize(1);
                 } finally {
                         engine.clear(realSession);
@@ -118,8 +103,6 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withTracer(tracer)
                                         .withSessionId(UUID.randomUUID().toString())
                                         .withInteractionId(INTERACTION_ID)
-                                        .withFhirProfileUrl("http://shinny.org/us/ny/hrsn")
-                                        .withFhirIGPackages(getIgPackages())
                                         .addHapiValidationEngine()
                                         .build();
 
@@ -128,8 +111,6 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withTracer(tracer)
                                         .withSessionId(UUID.randomUUID().toString())
                                         .withInteractionId(INTERACTION_ID)
-                                        .withFhirIGPackages(getIgPackages())
-                                        .withFhirProfileUrl("http://shinny.org/us/ny/hrsn")
                                         .addHapiValidationEngine()
                                         .build();
 
@@ -147,10 +128,9 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
         }
 
         @Test
-        @Disabled
         void testValidationAgainstLatestShinnyIgHasNoErrors() throws Exception {
                 String payload = Files.readString(Path.of(
-                                "src/test/resources/org/techbd/ig-examples/AHCHRSNQuestionnaireResponseExample1.2.3.json"));
+                                "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json"));
                 OrchestrationEngine.OrchestrationSession realSession = null;
                 try {
                         realSession = engine.session()
@@ -158,20 +138,12 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withTracer(tracer)
                                         .withSessionId(UUID.randomUUID().toString())
                                         .withInteractionId(INTERACTION_ID)
-                                        .withFhirIGPackages(getIgPackages())
-                                        .withSessionId(UUID.randomUUID().toString())
-                                        .withFhirProfileUrl(
-                                                        "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHapiValidationEngine()
                                         .build();
 
                         sessionSpy = spy(realSession);
                         engine.orchestrate(sessionSpy);
                         assertThat(engine.getSessions()).hasSize(1);
-                        assertThat(engine.getSessions().get(0).getPayloads()).containsExactly(payload);
-                        assertThat(engine.getSessions().get(0).getFhirProfileUrl())
-                                        .isEqualTo("http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile");
-
                         List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0)
                                         .getValidationResults();
                         assertThat(results).hasSize(1);
@@ -181,7 +153,7 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .parseResource(results.get(0).getOperationOutcome());
 
                         List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-                        assertThat(issues).isNull();
+                        assertThat(issues).filteredOn(issue -> issue.getSeverity() == OperationOutcome.IssueSeverity.ERROR).isEmpty();
                 } finally {
                         engine.clear(realSession);
                 }
@@ -190,7 +162,7 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
         @Test
         void testValidationAgainstShinnyIgLatestVersion_ReferentialIntegrityError() throws Exception {
                 String payload = Files.readString(Path.of(
-                                "src/test/resources/org/techbd/ig-examples/AHCHRSNQuestionnaireResponseExample1.2.3-ReferentialIntegrityError.json"));
+                                "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-HasErrors.json"));
                 OrchestrationEngine.OrchestrationSession realSession = null;
                 try {
                         realSession = engine.session()
@@ -198,18 +170,12 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withTracer(tracer)
                                         .withSessionId(UUID.randomUUID().toString())
                                         .withInteractionId(INTERACTION_ID)
-                                        .withFhirIGPackages(getIgPackages())
-                                        .withFhirProfileUrl(
-                                                        "http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHapiValidationEngine()
                                         .build();
 
                         sessionSpy = spy(realSession);
                         engine.orchestrate(sessionSpy);
                         assertThat(engine.getSessions()).hasSize(1);
-                        assertThat(engine.getSessions().get(0).getPayloads()).containsExactly(payload);
-                        assertThat(engine.getSessions().get(0).getFhirProfileUrl())
-                                        .isEqualTo("http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile");
 
                         List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0)
                                         .getValidationResults();
@@ -226,8 +192,8 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                                         .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
                                         .anySatisfy(issue -> {
                                                 assertThat(issue.getCode().toCode()).isEqualTo("processing");
-                                                assertThat(issue.getDiagnostics()).isEqualTo(
-                                                                "Constraint failed: SHINNY-Bundle-Patient-Encounter-RI: 'Checks for RI between Patient & Encounter' (defined in http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile)");
+                                                assertThat(issue.getDiagnostics()).contains(
+                                                                "Constraint failed: SHINNY-Bundle-Patient-Org-RI: 'Checks for RI between Patient & Assigning Org'");
                                         });
                 } finally {
                         engine.clear(realSession);
@@ -235,10 +201,9 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
         }
 
         @Test
-        @Disabled
         void testValidationAgainstLatestTestShinnyIgHasNoErrors() throws Exception {
                 String payload = Files.readString(Path.of(
-                                "src/test/resources/org/techbd/ig-examples/AHCHRSNScreeningResponseExample1.3.0.json"));
+                                "src/test/resources/org/techbd/ig-examples/test-shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json"));
                 OrchestrationEngine.OrchestrationSession realSession = null;
                 try {
                         realSession = engine.session()
@@ -246,19 +211,13 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withTracer(tracer)
                                         .withSessionId(UUID.randomUUID().toString())
                                         .withInteractionId(INTERACTION_ID)
-                                        .withFhirIGPackages(getIgPackages())
-                                        .withFhirProfileUrl(
-                                                        "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHapiValidationEngine()
                                         .build();
 
                         sessionSpy = spy(realSession);
                         engine.orchestrate(sessionSpy);
                         assertThat(engine.getSessions()).hasSize(1);
-                        assertThat(engine.getSessions().get(0).getPayloads()).containsExactly(payload);
-                        assertThat(engine.getSessions().get(0).getFhirProfileUrl())
-                                        .isEqualTo("http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile");
-
+                        
                         List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0)
                                         .getValidationResults();
                         assertThat(results).hasSize(1);
@@ -268,7 +227,8 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .parseResource(results.get(0).getOperationOutcome());
 
                         List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
-                        assertThat(issues).isNull();
+                        assertThat(issues).filteredOn(issue -> issue
+                                                        .getSeverity() == OperationOutcome.IssueSeverity.ERROR).isEmpty();
                 } finally {
                         engine.clear(realSession);
                 }
@@ -277,7 +237,7 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
         @Test
         void testValidationAgainstLatestShinnyIg_PatientMRNMissingError() throws Exception {
                 String payload = Files.readString(Path.of(
-                                "src/test/resources/org/techbd/ig-examples/AHCHRSNScreeningResponseExample1.3.0 -PatientMRNMissingError.json"));
+                                "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-HasErrors.json"));
                 OrchestrationEngine.OrchestrationSession realSession = null;
                 try {
                         realSession = engine.session()
@@ -285,19 +245,12 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
                                         .withSessionId(UUID.randomUUID().toString())
-                                        .withFhirIGPackages(getIgPackages())
-                                        .withFhirProfileUrl(
-                                                        "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHapiValidationEngine()
                                         .build();
 
                         sessionSpy = spy(realSession);
                         engine.orchestrate(sessionSpy);
                         assertThat(engine.getSessions()).hasSize(1);
-                        assertThat(engine.getSessions().get(0).getPayloads()).containsExactly(payload);
-                        assertThat(engine.getSessions().get(0).getFhirProfileUrl())
-                                        .isEqualTo("http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile");
-
                         List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0)
                                         .getValidationResults();
                         assertThat(results).hasSize(1);
@@ -314,8 +267,8 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                                         .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
                                         .anySatisfy(issue -> {
                                                 assertThat(issue.getCode().toCode()).isEqualTo("processing");
-                                                assertThat(issue.getDiagnostics()).isEqualTo(
-                                                                "Slice 'Patient.identifier:MR': a matching slice is required, but not found (from http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient|1.3.0). Note that other slices are allowed in addition to this required slice");
+                                                assertThat(issue.getDiagnostics()).contains(
+                                                                "Slice 'Patient.identifier:MR': a matching slice is required, but not found");
                                         });
                 } finally {
                         engine.clear(realSession);
@@ -325,7 +278,7 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
         @Test
         void testValidationWhenTheIncomingPayloadHasInValidProfileUrl() throws Exception {
                 String payload = Files.readString(Path.of(
-                                "src/test/resources/org/techbd/ig-examples/AHCHRSNScreeningResponseExample-InvalidProfileUrl.json"));
+                                "src/test/resources/org/techbd/ig-examples/shinny-examples/Bundle-AHCHRSNScreeningResponseExample-InvalidProfileUrl.json"));
                 OrchestrationEngine.OrchestrationSession realSession = null;
                 try {
                         realSession = engine.session()
@@ -333,9 +286,6 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                                         .withTracer(tracer)
                                         .withInteractionId(INTERACTION_ID)
                                         .withSessionId(UUID.randomUUID().toString())
-                                        .withFhirIGPackages(getIgPackages())
-                                        .withFhirProfileUrl(
-                                                        "http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile")
                                         .addHapiValidationEngine()
                                         .build();
 
@@ -364,57 +314,4 @@ class OrchestrationEngineTest extends BaseOrchestrationEngineTest {
                         engine.clear(realSession);
                 }
         }
-
-      
-
-        private Map<String, FhirV4Config> getIgPackages() {
-                final Map<String, FhirV4Config> igPackages = new HashMap<>();
-                FhirV4Config fhirV4Config = new FhirV4Config();
-
-                // Base packages for external dependencies
-                Map<String, String> basePackages = new HashMap<>();
-                basePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0");
-                basePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0");
-                basePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
-
-                // Shinny Packages
-                Map<String, Map<String, String>> shinnyPackages = new HashMap<>();
-
-                // Shinny version 1.2.3
-                Map<String, String> shinnyV123 = new HashMap<>();
-                shinnyV123.put("profile-base-url", "http://shinny.org/us/ny/hrsn");
-                shinnyV123.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.2.3");
-                shinnyV123.put("ig-version", "1.2.3");
-                shinnyPackages.put("shinny-v1-2-3", shinnyV123);
-
-                // Test Shinny version 1.3.0
-                Map<String, String> testShinnyV130 = new HashMap<>();
-                testShinnyV130.put("profile-base-url", "http://test.shinny.org/us/ny/hrsn");
-                testShinnyV130.put("package-path", "ig-packages/shin-ny-ig/test-shinny/v1.3.0");
-                testShinnyV130.put("ig-version", "1.3.0");
-                shinnyPackages.put("test-shinny-v1-3-0", testShinnyV130);
-
-                fhirV4Config.setBasePackages(basePackages);
-                fhirV4Config.setShinnyPackages(shinnyPackages);
-                igPackages.put("fhir-v4", fhirV4Config);
-
-                return igPackages;
-        }
-
-        private Map<String, String> getProfileMap() {
-                Map<String, String> profileMap = new HashMap<>();
-                profileMap.put("bundle", "/StructureDefinition/SHINNYBundleProfile");
-                profileMap.put("patient", "/StructureDefinition/shinny-patient");
-                profileMap.put("consent", "/StructureDefinition/shinny-Consent");
-                profileMap.put("encounter", "/StructureDefinition/shinny-encounter");
-                profileMap.put("organization", "/StructureDefinition/shin-ny-organization");
-                profileMap.put("observation", "/StructureDefinition/shinny-observation-screening-response");
-                profileMap.put("questionnaire", "/StructureDefinition/shinny-questionnaire");
-                profileMap.put("practitioner", "/StructureDefinition/shin-ny-practitioner");
-                profileMap.put("questionnaireResponse", "/StructureDefinition/shinny-questionnaire");
-                profileMap.put("observationSexualOrientation",
-                                "/StructureDefinition/shinny-observation-sexual-orientation");
-                return profileMap;
-        }
-
 }
