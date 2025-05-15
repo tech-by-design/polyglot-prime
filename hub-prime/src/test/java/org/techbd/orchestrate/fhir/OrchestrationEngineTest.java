@@ -275,7 +275,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                 }
         }
 
-            @Test
+        @Test
         void testValidationAgainstLatestTestShinnyIg_PatientMRNMissingError() throws Exception {
                 String payload = Files.readString(Path.of(
                                 "src/test/resources/org/techbd/ig-examples/test-shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample-Errors.json"));
