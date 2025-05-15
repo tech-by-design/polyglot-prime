@@ -268,7 +268,48 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                                         .anySatisfy(issue -> {
                                                 assertThat(issue.getCode().toCode()).isEqualTo("processing");
                                                 assertThat(issue.getDiagnostics()).contains(
-                                                                "Slice 'Patient.identifier:MR': a matching slice is required, but not found");
+                                                                "Constraint failed: SHINNY-Patient-MRN:");
+                                        });
+                } finally {
+                        engine.clear(realSession);
+                }
+        }
+
+            @Test
+        void testValidationAgainstLatestTestShinnyIg_PatientMRNMissingError() throws Exception {
+                String payload = Files.readString(Path.of(
+                                "src/test/resources/org/techbd/ig-examples/test-shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample-Errors.json"));
+                OrchestrationEngine.OrchestrationSession realSession = null;
+                try {
+                        realSession = engine.session()
+                                        .withPayloads(List.of(payload))
+                                        .withTracer(tracer)
+                                        .withInteractionId(INTERACTION_ID)
+                                        .withSessionId(UUID.randomUUID().toString())
+                                        .addHapiValidationEngine()
+                                        .build();
+
+                        sessionSpy = spy(realSession);
+                        engine.orchestrate(sessionSpy);
+                        assertThat(engine.getSessions()).hasSize(1);
+                        List<OrchestrationEngine.ValidationResult> results = engine.getSessions().get(0)
+                                        .getValidationResults();
+                        assertThat(results).hasSize(1);
+                        assertThat(results.get(0).isValid()).isFalse();
+                        IParser parser = FhirContext.forR4().newJsonParser();
+                        OperationOutcome operationOutcome = (OperationOutcome) parser
+                                        .parseResource(results.get(0).getOperationOutcome());
+
+                        List<OperationOutcomeIssueComponent> issues = operationOutcome.getIssue();
+                        assertThat(issues).isNotNull().hasSizeGreaterThan(1);
+
+                        assertThat(issues)
+                                        .filteredOn(issue -> issue
+                                                        .getSeverity() == OperationOutcome.IssueSeverity.ERROR)
+                                        .anySatisfy(issue -> {
+                                                assertThat(issue.getCode().toCode()).isEqualTo("processing");
+                                                assertThat(issue.getDiagnostics()).contains(
+                                                                "Constraint failed: SHINNY-Patient-MRN:");
                                         });
                 } finally {
                         engine.clear(realSession);
