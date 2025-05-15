@@ -23,8 +23,8 @@ logging:
       uhn: WARN
     root: INFO
     io:
-      opentelemetry: ERROR
-      micrometer: ERROR
+      opentelemetry: TRACE
+      micrometer: TRACE
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE}
