@@ -96,11 +96,19 @@ org:
                 # Example: test-shinny-v1-3-0 for version 1.3.0
                   test-shinny-v1-4-5:
                     profile-base-url: http://test.shinny.org/us/ny/hrsn
-                    package-path: ig-packages/shin-ny-ig/test-shinny/v1.4.5
+                    package-path: ig-packages/shin-ny-ig/test-shinny/v1.4.5 
+                    # NOTE: When updating this IG version:
+                    # 1. Update BaseIgValidationTest.getIgPackages()
+                    # 2. Download latest examples to hub-prime/src/test/resources/org/techbd/ig-examples/test-shinny-examples
+                    # 3. Verify OrchestrationEngineTest and IgPublicationIssuesTest pass
                     ig-version: 1.4.5
                   shinny-v1-4-5:
                     profile-base-url: http://shinny.org/us/ny/hrsn
                     package-path: ig-packages/shin-ny-ig/shinny/v1.4.5
+                    # NOTE: When updating this IG version:
+                    # 1. Update BaseIgValidationTest.getIgPackages()
+                    # 2. Download latest examples to hub-prime/src/test/resources/org/techbd/ig-examples/shinny-examples
+                    # 3. Verify OrchestrationEngineTest and IgPublicationIssuesTest pass
                     ig-version: 1.4.5
                 base-packages:
                 # Base packages for external dependencies 

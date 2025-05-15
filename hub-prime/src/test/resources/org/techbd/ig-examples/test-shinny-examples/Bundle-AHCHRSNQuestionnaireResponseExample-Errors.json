@@ -75,19 +75,7 @@
           }]
         }
       }],
-      "identifier" : [{
-        "type" : {
-          "coding" : [{
-            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
-            "code" : "MR"
-          }]
-        },
-        "system" : "http://www.scn.gov/facility/CUMC",
-        "value" : "11223344",
-        "assigner" : {
-          "reference" : "Organization/OrganizationExampleOther-SCN1"
-        }
-      },
+      "identifier" : [
       {
         "type" : {
           "coding" : [{
@@ -110,7 +98,7 @@
         "system" : "http://www.ssa.gov/",
         "value" : "999-34-2964"
       }],
-      "name" : [{
+      "name" : {
         "extension" : [{
           "url" : "http://test.shinny.org/us/ny/hrsn/StructureDefinition/middle-name",
           "valueString" : "Bob"
@@ -123,7 +111,7 @@
         "CCNA"],
         "suffix" : ["Jr.",
         "III"]
-      }],
+      },
       "telecom" : [{
         "system" : "phone",
         "value" : "555-120-6047",
