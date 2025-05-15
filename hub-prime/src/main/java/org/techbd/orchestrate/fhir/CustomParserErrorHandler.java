@@ -1,7 +1,5 @@
 package org.techbd.orchestrate.fhir;
 
-//import static org.techbd.orchestrate.fhir.LenientErrorHandler.ourLog;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,9 +31,51 @@ public class CustomParserErrorHandler extends LenientErrorHandler {
     }
 
     @Override
+    public void unknownAttribute(IParseLocation theLocation, String theAttributeName) {
+        addIssue(OperationOutcome.IssueSeverity.INFORMATION, OperationOutcome.IssueType.INVALID,
+                "Unknown attribute: " + theAttributeName);
+    }
+
+    @Override
     public void unknownElement(IParseLocation theLocation, String theElementName) {
         addIssue(OperationOutcome.IssueSeverity.ERROR, OperationOutcome.IssueType.INVALID,
                 "Unknown element '" + theElementName + "' found while parsing");
+    }
+
+    @Override
+    public void unexpectedRepeatingElement(IParseLocation theLocation, String theElementName) {
+        addIssue(OperationOutcome.IssueSeverity.WARNING, OperationOutcome.IssueType.STRUCTURE,
+                "Unexpected repeating element: " + theElementName);
+    }
+
+    @Override
+    public void unknownReference(IParseLocation theLocation, String theReference) {
+        addIssue(OperationOutcome.IssueSeverity.INFORMATION, OperationOutcome.IssueType.NOTFOUND,
+                "Unknown reference: " + theReference);
+    }
+
+    @Override
+    public void extensionContainsValueAndNestedExtensions(IParseLocation theLocation) {
+        addIssue(OperationOutcome.IssueSeverity.WARNING, OperationOutcome.IssueType.STRUCTURE,
+                "Extension has both value and nested extensions");
+    }
+
+    @Override
+    public void invalidValue(IParseLocation theLocation, String theValue, String theError) {
+        addIssue(OperationOutcome.IssueSeverity.ERROR, OperationOutcome.IssueType.INVALID,
+                "Invalid value: " + theValue + " - Error: " + theError);
+    }
+
+    @Override
+    public void containedResourceWithNoId(IParseLocation theLocation) {
+        addIssue(OperationOutcome.IssueSeverity.ERROR, OperationOutcome.IssueType.REQUIRED,
+                "Contained resource missing ID");
+    }
+
+    @Override
+    public void missingRequiredElement(IParseLocation theLocation, String theElementName) {
+        addIssue(OperationOutcome.IssueSeverity.ERROR, OperationOutcome.IssueType.REQUIRED,
+                "Missing required element: " + theElementName);
     }
 
     @Override
