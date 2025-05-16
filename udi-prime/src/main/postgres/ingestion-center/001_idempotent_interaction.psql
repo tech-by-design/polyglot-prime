@@ -4320,16 +4320,28 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_request CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
 AS 
 WITH fhir_summary AS (
-        SELECT sat_interaction_fhir_request.hub_interaction_id,
-            CASE
-                WHEN count(sat_interaction_fhir_request.hub_interaction_id) > 0 THEN 'True'::text
-                ELSE 'False'::text
-            END AS fhir_conversion_status
-        FROM techbd_udi_ingress.sat_interaction_fhir_request
-        WHERE (sat_interaction_fhir_request.nature = 'Original FHIR Payload'::text OR sat_interaction_fhir_request.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text) AND sat_interaction_fhir_request.source_type = 'CCDA'::text
-        GROUP BY sat_interaction_fhir_request.hub_interaction_id
+    SELECT
+        hub_interaction_id,
+        CASE
+            WHEN COUNT(hub_interaction_id) > 0 THEN 'True'::text
+            ELSE 'False'::text
+        END AS fhir_conversion_status
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE (
+        nature = 'Original FHIR Payload'::text
+        OR nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text
     )
-SELECT sicr.sat_interaction_fhir_request_id AS sat_interaction_ccda_request_id,
+    AND source_type = 'CCDA'::text
+    GROUP BY hub_interaction_id
+),
+ranked_sicr AS (
+    SELECT
+        sicr.*,
+        ROW_NUMBER() OVER (PARTITION BY hub_interaction_id ORDER BY created_at DESC) AS rn
+    FROM techbd_udi_ingress.sat_interaction_fhir_request sicr
+)
+SELECT
+    sicr.sat_interaction_fhir_request_id AS sat_interaction_ccda_request_id,
     sicr.hub_interaction_id,
     sicr.tenant_id,
     sicr.tenant_id_lower,
@@ -4348,8 +4360,9 @@ SELECT sicr.sat_interaction_fhir_request_id AS sat_interaction_ccda_request_id,
     sicr.created_at,
     sicr.created_by,
     sicr.provenance
-FROM techbd_udi_ingress.sat_interaction_fhir_request sicr
-INNER JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
+FROM ranked_sicr sicr
+JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
+WHERE sicr.rn = 1
 ORDER BY sicr.created_at DESC;
 
 /*CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
