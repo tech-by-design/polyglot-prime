@@ -1115,14 +1115,7 @@
               "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
               "profile" : ["<xsl:value-of select='$questionnaireMetaProfileUrlFull'/>"]
             },
-            <xsl:if test="string(ccda:code/@codeSystem) or string(ccda:code/@code)">
-            "identifier" : [{
-              <xsl:if test="string(ccda:code/@codeSystem)">
-              "system" : "urn:<xsl:value-of select='ccda:code/@codeSystem'/>",
-              </xsl:if>
-              "value" : "<xsl:value-of select='ccda:code/@code'/>"
-            }],
-            </xsl:if>
+            "url" : "<xsl:value-of select='$baseFhirUrl'/>/Questionnaire/<xsl:value-of select='$questionnaireResourceId'/>",            
             "status": "<xsl:call-template name='mapQuestionnaireStatus'>
                         <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
                     </xsl:call-template>",
@@ -1133,7 +1126,7 @@
                       {
                           "linkId": "<xsl:value-of select='ccda:code/@code'/>",
                           "code" : [{
-                            "system" : "<xsl:value-of select='ccda:code/@codeSystem'/>",
+                            "system" : "urn:oid:<xsl:value-of select='ccda:code/@codeSystem'/>",
                             "code" : "<xsl:value-of select='ccda:code/@code'/>",
                             "display" : "<xsl:value-of select='ccda:code/@displayName'/>"
                           }],
