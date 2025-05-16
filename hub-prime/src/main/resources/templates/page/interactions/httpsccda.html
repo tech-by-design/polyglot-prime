@@ -19,6 +19,7 @@
 
         const schemaName = 'techbd_udi_ingress';
         const viewName = 'interaction_ccda_request';   
+        const viewdetail = 'interaction_http_request_payload';
         const modalAide = new ModalAide();
                
 
@@ -79,7 +80,10 @@
                         headerName: "TechBD Interaction ID",
                         field: "hub_interaction_id",
                         filter: "agTextColumnFilter",
-                        headerTooltip: "The unique identifier for each interaction." 
+                        headerTooltip: "The unique identifier for each interaction.",
+                        cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
+                        }, modalAide)
                     },
                     { headerName: "TechBD Tenant ID", field: "tenant_id", headerTooltip: "ID of the tenant involved in the interaction", filter: "agTextColumnFilter" },
                     { headerName: "FHIR Conversion Status", field: "fhir_conversion_status", headerTooltip: "The status of the FHIR conversion", filter: "agTextColumnFilter" },
@@ -117,8 +121,10 @@
         <div class="grid-description">             
             This widget offers a clear and concise overview of CCDA-based HTTP interactions, highlighting essential details such as the Hub Interaction ID and Tenant ID to identify and link each interaction. 
             It provides information about the Request URI, the Nature of the interaction, and metadata like Client IP Address and User Agent to trace the origin and context of requests. 
-            Users can track State Transitions, including changes from one state to another and the reasons for those transitions.<!--  The widget also includes detailed Payload Information, such as the CCDA payload text, to provide visibility into the data being processed. 
+            Users can track State Transitions, including changes from one state to another and the reasons for those transitions.
+            <!--  The widget also includes detailed Payload Information, such as the CCDA payload text, to provide visibility into the data being processed. 
             Additionally, users have the option to **download the CCDA payload** as an XML file for further analysis. --> With interactive filtering and sorting options, users can efficiently analyze interactions, identify issues, and ensure seamless data flow for CCDA requests. 
+            Users can click on the TechBD Interaction ID to view detailed information in a popup.
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>        
     </div>
