@@ -393,15 +393,6 @@
           }]
         }
       </xsl:if>
-      <xsl:if test="ccda:patient/ccda:religiousAffiliationCode[not(@nullFlavor='UNK')] and string(ccda:patient/ccda:religiousAffiliationCode/@code)">
-          , "religion": {
-              "coding": [{
-                  "system": "urn:oid:<xsl:value-of select='ccda:patient/ccda:religiousAffiliationCode/@codeSystem'/>",
-                  "code": "<xsl:value-of select='ccda:patient/ccda:religiousAffiliationCode/@code'/>",
-                  "display": "<xsl:value-of select='ccda:patient/ccda:religiousAffiliationCode/@codeSystemName'/>"
-              }]
-          }
-      </xsl:if>
       <xsl:if test="string(ccda:patient/ccda:languageCommunication/ccda:languageCode/@code)">
       , "communication" : [{
         "language" : {
