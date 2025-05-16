@@ -2,7 +2,7 @@
 <ClinicalDocument
 	xmlns="urn:hl7-org:v3"
 	xmlns:voc="urn:hl7-org:v3/voc"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 ../ccda-gravity-schema-files/CDA.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 CDA.xsd">
   <realmCode code="US" />
   <typeId extension="POCD_HD000040" root="2.16.840.1.113883.1.3" />
   <templateId root="1.2.840.114350.1.72.1.51693" />
@@ -11,15 +11,15 @@
   <templateId root="2.16.840.1.113883.10.20.22.1.1" extension="2023-05-01" />
   <templateId root="2.16.840.1.113883.10.20.22.1.2" />
   <templateId root="2.16.840.1.113883.10.20.22.1.2" extension="2015-08-01" />
-  <id assigningAuthorityName="EPC" extension="ba1b6d58-e8c4-11ef-9a95-0050568b0c08" root="1.2.840.114350.1.13.861.1.7.1.1" />
+  <id assigningAuthorityName="EPC" extension="c0d6ad57-ed72-11ef-990e-0050568b0c08" root="1.2.840.114350.1.13.861.1.7.1.1" />
   <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Summarization of Episode Note" />
-  <title>Clinical Summary</title>
-  <effectiveTime value="20250211160830-0600" />
+  <title>Summary of Care</title>
+  <effectiveTime value="20250217150418-0600" />
   <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" displayName="Normal" />
   <languageCode code="en-US" />
   <recordTarget>
     <patientRole>
-      <id assigningAuthorityName="EPI" extension="14387819" root="1.2.840.114350.1.1" />
+      <id assigningAuthorityName="EPI" extension="AB12345C" root="1.2.840.114350.1.1" />
       <id extension="1942912" root="1.2.840.114350.1.13.861.1.7.5.737384.1104" />
       <id extension="1942572" root="1.2.840.114350.1.13.861.1.7.5.737384.1118" />
       <id assigningAuthorityName="JMR123" extension="330-28-3883" root="1.2.840.114350.1.13.861.1.7.5.737384.1193" />
@@ -58,9 +58,9 @@
     </patientRole>
   </recordTarget>
   <author>
-    <time value="20250211160830-0600" />
+    <time value="20250217150418-0600" />
     <assignedAuthor>
-      <id extension="11.4" root="1.2.840.114350.1.1" />
+      <id extension="1234567890" root="2.16.840.1.113883.4.6" />
       <addr nullFlavor="NA" />
       <telecom nullFlavor="NA" />
       <assignedAuthoringDevice>
@@ -68,7 +68,8 @@
         <softwareName>Epic - Version 11.4</softwareName>
       </assignedAuthoringDevice>
       <representedOrganization>
-        <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+        <id extension="12-3456789" assigningAuthorityName="TAX" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+        <id extension="MA123456" assigningAuthorityName="CMS" root="1.2.840.114350.1.13.861.1.7.2.696570" />
         <name>Facility</name>
         <telecom use="WP" value="tel:271-9000" />
         <addr use="WP">
@@ -96,7 +97,7 @@
     </assignedCustodian>
   </custodian>
   <legalAuthenticator>
-    <time value="20250211160830-0600" />
+    <time value="20250217150418-0600" />
     <signatureCode code="S" />
     <assignedEntity>
       <id extension=" HBBCKGRND" root="1.2.840.114350.1.13.861.1.7.2.697780" />
@@ -112,94 +113,170 @@
   <documentationOf typeCode="DOC">
     <serviceEvent classCode="PCPR">
       <effectiveTime>
-        <low value="19910829" />
-        <high value="20250211" />
+        <low value="20250217" />
+        <high value="20250217" />
       </effectiveTime>
       <performer typeCode="PRF">
-        <functionCode code="PCP" codeSystem="2.16.840.1.113883.5.88" codeSystemName="ParticipationFunction" displayName="Primary Care Provider">
-          <originalText>Primary Care Provider</originalText>
+        <functionCode nullFlavor="OTH">
+          <originalText>Attending</originalText>
+          <translation code="41" codeSystem="1.2.840.114350.1.13.861.1.7.4.698084.80114" codeSystemName="EPIC" displayName="Attending" />
         </functionCode>
         <time>
-          <low nullFlavor="NI" />
+          <low value="20250217" />
           <high nullFlavor="NI" />
         </time>
-        <assignedEntity nullFlavor="NI">
-          <id nullFlavor="UNK" />
-          <addr nullFlavor="UNK" />
-          <telecom nullFlavor="NA" />
-          <assignedPerson nullFlavor="NA">
-            <name nullFlavor="UNK" />
+        <assignedEntity>
+          <id extension="1000003560" root="2.16.840.1.113883.4.6" />
+          <code nullFlavor="OTH">
+            <originalText>Dermatology</originalText>
+            <translation code="15" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Dermatology" />
+            <translation code="6" codeSystem="1.2.840.114350.1.13.861.1.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Dermatology" />
+          </code>
+          <addr use="WP">
+            <streetAddressLine>123 East Main St</streetAddressLine>
+            <city>Madison</city>
+            <state>WI</state>
+            <postalCode>53711</postalCode>
+            <country>USA</country>
+          </addr>
+          <telecom value="fax:+1-456-789-4545" />
+          <telecom value="mailto:devnull@epic.com" />
+          <assignedPerson>
+            <name use="L">
+              <given>Starter</given>
+              <family>Provider</family>
+              <suffix qualifier="AC"> MD</suffix>
+            </name>
           </assignedPerson>
           <representedOrganization classCode="ORG">
-            <name>Facility</name>
-            <telecom use="WP" value="tel:271-9000" />
-            <telecom value="fax:+1-608-271-9000" />
+            <name>Current Stage 1 Primary</name>
+            <telecom use="WP" value="tel:+1-555-777-1234" />
             <addr use="WP">
-              <streetAddressLine>MODEL DRIVE</streetAddressLine>
-              <city>Madison</city>
+              <streetAddressLine>1979 Milky Way Street</streetAddressLine>
+              <county>DANE</county>
+              <city>Mt Horeb</city>
               <state>WI</state>
-              <postalCode>53711</postalCode>
+              <postalCode>53572</postalCode>
+              <country>USA</country>
             </addr>
           </representedOrganization>
         </assignedEntity>
       </performer>
     </serviceEvent>
   </documentationOf>
-  <authorization>
-    <consent>
-      <code code="59284-0" codeSystem="2.16.840.1.113883.6.1" displayName="Consent Document" />
-      <statusCode code="completed" />
-    </consent>
-  </authorization>
+  <componentOf>
+    <encompassingEncounter>
+      <id extension="10011595330" root="1.2.840.114350.1.13.861.1.7.3.698084.8" />
+      <code code="AMB" codeSystem="2.16.840.1.113883.5.4" displayName="Ambulatory">
+        <originalText>Office Visit</originalText>
+        <translation code="101" codeSystem="1.2.840.114350.1.72.1.30" displayName="Office Visit" />
+        <translation code="0" codeSystem="1.2.840.114350.1.72.1.30.1" />
+      </code>
+      <effectiveTime>
+        <low value="20250217" />
+      </effectiveTime>
+      <responsibleParty>
+        <assignedEntity>
+          <id extension="1000003560" root="2.16.840.1.113883.4.6" />
+          <addr use="WP">
+            <streetAddressLine>123 East Main St</streetAddressLine>
+            <city>Madison</city>
+            <state>WI</state>
+            <postalCode>53711</postalCode>
+            <country>USA</country>
+          </addr>
+          <telecom value="fax:+1-456-789-4545" />
+          <telecom value="mailto:devnull@epic.com" />
+          <assignedPerson>
+            <name>
+              <given>Starter</given>
+              <family>Provider</family>
+            </name>
+          </assignedPerson>
+          <representedOrganization>
+            <name>Facility</name>
+          </representedOrganization>
+        </assignedEntity>
+      </responsibleParty>
+      <encounterParticipant typeCode="ATND">
+        <time value="20250217" />
+        <assignedEntity>
+          <id extension="1000003560" root="2.16.840.1.113883.4.6" />
+          <code code="208D00000X" codeSystem="2.16.840.1.113883.6.101" displayName="General Practice Physician">
+            <originalText>Dermatology</originalText>
+            <translation code="15" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Dermatology" />
+            <translation code="6" codeSystem="1.2.840.114350.1.13.861.1.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Dermatology" />
+          </code>
+          <addr use="WP">
+            <streetAddressLine>123 East Main St</streetAddressLine>
+            <city>Madison</city>
+            <state>WI</state>
+            <postalCode>53711</postalCode>
+            <country>USA</country>
+          </addr>
+          <telecom value="fax:+1-456-789-4545" />
+          <telecom value="mailto:devnull@epic.com" />
+          <assignedPerson>
+            <name use="L">
+              <given>Starter</given>
+              <family>Provider</family>
+              <suffix qualifier="AC"> MD</suffix>
+            </name>
+          </assignedPerson>
+        </assignedEntity>
+      </encounterParticipant>
+      <location>
+        <healthCareFacility>
+          <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.686980" />
+          <code code="1210-4" codeSystem="2.16.840.1.113883.6.259" displayName="Adult Mixed Acuity Unit">
+            <originalText>Allergy</originalText>
+            <translation code="3" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4150" codeSystemName="Epic.DepartmentSpecialty" displayName="Allergy" />
+          </code>
+          <location>
+            <name>Initial Department</name>
+            <addr use="WP">
+              <streetAddressLine>1979 Milky Way</streetAddressLine>
+              <county>DANE</county>
+              <city>Verona</city>
+              <state>WI</state>
+              <postalCode>53593-9179</postalCode>
+              <country>USA</country>
+            </addr>
+          </location>
+          <serviceProviderOrganization>
+            <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+            <name>Facility</name>
+            <addr use="WP">
+              <streetAddressLine>1979 Milky Way</streetAddressLine>
+              <county>DANE</county>
+              <city>Verona</city>
+              <state>WI</state>
+              <postalCode>53593-9179</postalCode>
+              <country>USA</country>
+            </addr>
+            <asOrganizationPartOf>
+              <wholeOrganization>
+                <name>Facility</name>
+                <addr use="WP">
+                  <streetAddressLine>MODEL DRIVE</streetAddressLine>
+                  <city>Madison</city>
+                  <state>WI</state>
+                  <postalCode>53711</postalCode>
+                </addr>
+              </wholeOrganization>
+            </asOrganizationPartOf>
+          </serviceProviderOrganization>
+        </healthCareFacility>
+      </location>
+    </encompassingEncounter>
+  </componentOf>
   <component>
     <structuredBody>
       <component>
         <section>
           <code code="X-DOCCMT" codeSystem="1.2.840.114350.1.72.2" displayName="Document Comments" />
           <title>Source Comments</title>
-          <text>Adding patient-level source comments to I DXC 540.<footnote>Current Development Environment</footnote></text>
-        </section>
-      </component>
-      <component>
-        <section nullFlavor="NI">
-          <templateId root="2.16.840.1.113883.10.20.22.2.6" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.6" extension="2015-08-01" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.6.1" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.6.1" extension="2015-08-01" />
-          <id root="BA2185DD-E8C4-11EF-9A95-0050568B0C08" />
-          <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Allergies and adverse reactions Document" />
-          <title>Allergies</title>
-          <text>
-            <content ID="nof3">Not on File</content>
-          </text>
-        </section>
-      </component>
-      <component>
-        <section nullFlavor="NI">
-          <templateId root="2.16.840.1.113883.10.20.22.2.1" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.1" extension="2014-06-09" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.1.1" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.1.1" extension="2014-06-09" />
-          <id root="BA23811B-E8C4-11EF-9A95-0050568B0C08" />
-          <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Medication use Narrative" />
-          <title>Medications</title>
-          <text>
-            <content ID="nof5">Not on file</content>
-          </text>
-        </section>
-      </component>
-      <component>
-        <section nullFlavor="NI">
-          <templateId root="2.16.840.1.113883.10.20.22.2.5" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.5" extension="2015-08-01" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.5.1" />
-          <templateId root="2.16.840.1.113883.10.20.22.2.5.1" extension="2015-08-01" />
-          <id root="BA24130F-E8C4-11EF-9A95-0050568B0C08" />
-          <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem list - Reported" />
-          <title>Active Problems</title>
-          <text>
-            <paragraph ID="nof7">Not on file</paragraph>
-          </text>
+          <text>Adding encounter-level source comments to I DXC 541.<footnote>Current Development Environment</footnote></text>
         </section>
       </component>
       <component>
@@ -209,7 +286,7 @@
           <templateId root="2.16.840.1.113883.10.20.22.2.22.1" />
           <templateId root="2.16.840.1.113883.10.20.22.2.22.1" extension="2015-08-01" />
           <code code="46240-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Hospitalizations+Outpatient visits Narrative" />
-          <title>Encounters</title>
+          <title>Encounter Details</title>
           <text>
             <table>
               <colgroup>
@@ -222,69 +299,52 @@
                   <th>Date</th>
                   <th>Type</th>
                   <th>Department</th>
-                  <th>Care Team</th>
+                  <th>Care Team (Latest Contact Info)</th>
                   <th>Description</th>
                 </tr>
               </thead>
               <tbody>
-                <tr ID="encounter10" styleCode="xRowNormal">
-                  <td>02/11/2025</td>
-                  <td ID="encounter10type">Office Visit</td>
+                <tr ID="encounter2" styleCode="xRowNormal">
+                  <td>02/17/2025</td>
+                  <td ID="encounter2type">Office Visit</td>
                   <td>
-                    <paragraph>Candy Kingdom</paragraph>
-                    <paragraph>555 Epic Way</paragraph>
-                    <paragraph>Building 101</paragraph>
-                    <paragraph>West Wing</paragraph>
-                    <paragraph>Unit AAB</paragraph>
-                    <paragraph>MADISON, MA 53717</paragraph>
+                    <paragraph>Initial Department</paragraph>
+                    <paragraph>1979 Milky Way</paragraph>
+                    <paragraph>Verona, WI 53593-9179</paragraph>
                     <paragraph>608-555-5555</paragraph>
                   </td>
                   <td>
-                    <paragraph>Wisby, Matt, Rap God</paragraph>
-                  </td>
-                  <td />
-                </tr>
-                <tr ID="encounter11" styleCode="xRowAlt">
-                  <td>02/03/2025</td>
-                  <td ID="encounter11type">Office Visit</td>
-                  <td>
-                    <paragraph>Candy Kingdom</paragraph>
-                    <paragraph>555 Epic Way</paragraph>
-                    <paragraph>Building 101</paragraph>
-                    <paragraph>West Wing</paragraph>
-                    <paragraph>Unit AAB</paragraph>
-                    <paragraph>MADISON, MA 53717</paragraph>
-                    <paragraph>608-555-5555</paragraph>
-                  </td>
-                  <td>
-                    <paragraph>Wisby, Matt, Rap God</paragraph>
+                    <paragraph styleCode="Bold">Provider, Starter, MD</paragraph>
+                    <paragraph>123 East Main St</paragraph>
+                    <paragraph>Madison, WI 53711</paragraph>
+                    <paragraph>456-789-4545 (Fax)</paragraph>
+                    <paragraph>devnull@epic.com</paragraph>
                   </td>
                   <td />
                 </tr>
               </tbody>
             </table>
-            <footnote ID="subTitle9" styleCode="xSectionSubTitle">from Last 3 Months</footnote>
           </text>
           <entry>
             <encounter classCode="ENC" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.49" />
               <templateId root="2.16.840.1.113883.10.20.22.4.49" extension="2015-08-01" />
-              <id assigningAuthorityName="EPIC" extension="10011574525" root="1.2.840.114350.1.13.861.1.7.3.698084.8" />
-              <id assigningAuthorityName="EPIC" extension="10011574525" root="1.2.840.114350.1.72.75210" />
+              <id assigningAuthorityName="EPIC" extension="10011595330" root="1.2.840.114350.1.13.861.1.7.3.698084.8" />
+              <id assigningAuthorityName="EPIC" extension="10011595330" root="1.2.840.114350.1.72.75210" />
               <code code="AMB" codeSystem="2.16.840.1.113883.5.4">
                 <originalText>
-                  <reference value="#encounter10type" />
+                  <reference value="#encounter2type" />
                 </originalText>
                 <translation code="101" codeSystem="1.2.840.114350.1.13.861.1.7.4.698084.30" codeSystemName="Epic.EncounterType" />
                 <translation code="101" codeSystem="1.2.840.114350.1.72.1.30" />
                 <translation code="0" codeSystem="1.2.840.114350.1.72.1.30.1" />
               </code>
               <text>
-                <reference value="#encounter10" />
+                <reference value="#encounter2" />
               </text>
               <statusCode code="normal" />
               <effectiveTime>
-                <low value="20250211" />
+                <low value="20250217" />
               </effectiveTime>
               <performer typeCode="PRF">
                 <time>
@@ -292,21 +352,26 @@
                   <high nullFlavor="UNK" />
                 </time>
                 <assignedEntity classCode="ASSIGNED">
-                  <id extension="1000071823" root="2.16.840.1.113883.4.6" />
-                  <code code="208D00000X" codeSystem="2.16.840.1.113883.6.101" displayName="General Practice Physician" />
+                  <id extension="1000003560" root="2.16.840.1.113883.4.6" />
+                  <code code="208D00000X" codeSystem="2.16.840.1.113883.6.101" displayName="General Practice Physician">
+                    <originalText>Dermatology</originalText>
+                    <translation code="15" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Dermatology" />
+                    <translation code="6" codeSystem="1.2.840.114350.1.13.861.1.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Dermatology" />
+                  </code>
                   <addr use="WP">
-                    <streetAddressLine>abc;</streetAddressLine>
-                    <streetAddressLine>def;</streetAddressLine>
-                    <city nullFlavor="UNK" />
-                    <state nullFlavor="UNK" />
-                    <postalCode nullFlavor="UNK" />
+                    <streetAddressLine>123 East Main St</streetAddressLine>
+                    <city>Madison</city>
+                    <state>WI</state>
+                    <postalCode>53711</postalCode>
+                    <country>USA</country>
                   </addr>
-                  <telecom value="mailto:mwisby@epic.com" />
+                  <telecom value="fax:+1-456-789-4545" />
+                  <telecom value="mailto:devnull@epic.com" />
                   <assignedPerson>
                     <name>
-                      <given>Matt</given>
-                      <family>Wisby</family>
-                      <suffix qualifier="AC">Rap God</suffix>
+                      <given>Starter</given>
+                      <family>Provider</family>
+                      <suffix qualifier="AC">MD</suffix>
                     </name>
                   </assignedPerson>
                   <representedOrganization classCode="ORG">
@@ -323,7 +388,7 @@
               <author>
                 <templateId root="2.16.840.1.113883.10.20.22.4.119" />
                 <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
-                <time value="20250211160600-0600" />
+                <time value="20250217085051-0600" />
                 <assignedAuthor>
                   <id root="2.16.840.1.113883.4.6" nullFlavor="UNK" />
                   <addr nullFlavor="UNK" />
@@ -347,132 +412,72 @@
               <participant typeCode="LOC">
                 <participantRole classCode="SDLOC">
                   <templateId root="2.16.840.1.113883.10.20.22.4.32" />
-                  <id extension="16602" root="1.2.840.114350.1.13.861.1.7.2.686980" />
-                  <code nullFlavor="UNK">
-                    <originalText>Family Practice</originalText>
-                    <translation code="19" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4150" codeSystemName="Epic.DepartmentSpecialty" displayName="Family Medicine" />
+                  <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.686980" />
+                  <code code="1210-4" codeSystem="2.16.840.1.113883.6.259" displayName="Adult Mixed Acuity Unit">
+                    <originalText>Allergy</originalText>
+                    <translation code="3" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4150" codeSystemName="Epic.DepartmentSpecialty" displayName="Allergy" />
                   </code>
                   <addr use="WP">
-                    <streetAddressLine>555 Epic Way</streetAddressLine>
-                    <streetAddressLine>Building 101</streetAddressLine>
-                    <streetAddressLine>West Wing</streetAddressLine>
-                    <streetAddressLine>Unit AAB</streetAddressLine>
-                    <city>MADISON</city>
-                    <state>MA</state>
-                    <postalCode>53717</postalCode>
+                    <streetAddressLine>1979 Milky Way</streetAddressLine>
+                    <county>DANE</county>
+                    <city>Verona</city>
+                    <state>WI</state>
+                    <postalCode>53593-9179</postalCode>
+                    <country>USA</country>
                   </addr>
                   <playingEntity classCode="PLC">
-                    <name>Candy Kingdom</name>
-                    <desc>Family Practice</desc>
+                    <name>Initial Department</name>
+                    <desc>Allergy</desc>
                   </playingEntity>
                 </participantRole>
               </participant>
             </encounter>
           </entry>
-          <entry>
-            <encounter classCode="ENC" moodCode="EVN">
-              <templateId root="2.16.840.1.113883.10.20.22.4.49" />
-              <templateId root="2.16.840.1.113883.10.20.22.4.49" extension="2015-08-01" />
-              <id assigningAuthorityName="EPIC" extension="10011549402" root="1.2.840.114350.1.13.861.1.7.3.698084.8" />
-              <id assigningAuthorityName="EPIC" extension="10011549402" root="1.2.840.114350.1.72.75210" />
-              <code code="AMB" codeSystem="2.16.840.1.113883.5.4">
-                <originalText>
-                  <reference value="#encounter11type" />
-                </originalText>
-                <translation code="101" codeSystem="1.2.840.114350.1.13.861.1.7.4.698084.30" codeSystemName="Epic.EncounterType" />
-                <translation code="101" codeSystem="1.2.840.114350.1.72.1.30" />
-                <translation code="0" codeSystem="1.2.840.114350.1.72.1.30.1" />
-              </code>
-              <text>
-                <reference value="#encounter11" />
-              </text>
-              <statusCode code="normal" />
-              <effectiveTime>
-                <low value="20250203" />
-              </effectiveTime>
-              <performer typeCode="PRF">
-                <time>
-                  <low nullFlavor="UNK" />
-                  <high nullFlavor="UNK" />
-                </time>
-                <assignedEntity classCode="ASSIGNED">
-                  <id extension="1000071823" root="2.16.840.1.113883.4.6" />
-                  <code code="208D00000X" codeSystem="2.16.840.1.113883.6.101" displayName="General Practice Physician" />
-                  <addr use="WP">
-                    <streetAddressLine>abc;</streetAddressLine>
-                    <streetAddressLine>def;</streetAddressLine>
-                    <city nullFlavor="UNK" />
-                    <state nullFlavor="UNK" />
-                    <postalCode nullFlavor="UNK" />
-                  </addr>
-                  <telecom value="mailto:mwisby@epic.com" />
-                  <assignedPerson>
-                    <name>
-                      <given>Matt</given>
-                      <family>Wisby</family>
-                      <suffix qualifier="AC">Rap God</suffix>
-                    </name>
-                  </assignedPerson>
-                  <representedOrganization classCode="ORG">
-                    <name>Facility</name>
-                    <addr use="WP">
-                      <streetAddressLine>MODEL DRIVE</streetAddressLine>
-                      <city>Madison</city>
-                      <state>WI</state>
-                      <postalCode>53711</postalCode>
-                    </addr>
-                  </representedOrganization>
-                </assignedEntity>
-              </performer>
-              <author>
-                <templateId root="2.16.840.1.113883.10.20.22.4.119" />
-                <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
-                <time value="20250203121928-0600" />
-                <assignedAuthor>
-                  <id root="2.16.840.1.113883.4.6" nullFlavor="UNK" />
-                  <addr nullFlavor="UNK" />
-                  <telecom nullFlavor="UNK" />
-                  <representedOrganization>
-                    <id extension="1" root="1.2.840.114350.1.13.861.1.7.2.696570" />
-                    <id root="2.16.840.1.113883.4.2" nullFlavor="UNK" />
-                    <id root="2.16.840.1.113883.4.6" nullFlavor="UNK" />
-                    <name>Facility</name>
-                    <telecom use="WP" value="tel:271-9000" />
-                    <telecom value="fax:+1-608-271-9000" />
-                    <addr use="WP">
-                      <streetAddressLine>MODEL DRIVE</streetAddressLine>
-                      <city>Madison</city>
-                      <state>WI</state>
-                      <postalCode>53711</postalCode>
-                    </addr>
-                  </representedOrganization>
-                </assignedAuthor>
-              </author>
-              <participant typeCode="LOC">
-                <participantRole classCode="SDLOC">
-                  <templateId root="2.16.840.1.113883.10.20.22.4.32" />
-                  <id extension="16602" root="1.2.840.114350.1.13.861.1.7.2.686980" />
-                  <code nullFlavor="UNK">
-                    <originalText>Family Practice</originalText>
-                    <translation code="19" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4150" codeSystemName="Epic.DepartmentSpecialty" displayName="Family Medicine" />
-                  </code>
-                  <addr use="WP">
-                    <streetAddressLine>555 Epic Way</streetAddressLine>
-                    <streetAddressLine>Building 101</streetAddressLine>
-                    <streetAddressLine>West Wing</streetAddressLine>
-                    <streetAddressLine>Unit AAB</streetAddressLine>
-                    <city>MADISON</city>
-                    <state>MA</state>
-                    <postalCode>53717</postalCode>
-                  </addr>
-                  <playingEntity classCode="PLC">
-                    <name>Candy Kingdom</name>
-                    <desc>Family Practice</desc>
-                  </playingEntity>
-                </participantRole>
-              </participant>
-            </encounter>
-          </entry>
+        </section>
+      </component>
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.6" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.6" extension="2015-08-01" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.6.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.6.1" extension="2015-08-01" />
+          <id root="C0E0A441-ED72-11EF-990E-0050568B0C08" />
+          <code code="48765-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Allergies and adverse reactions Document" />
+          <title>Allergies</title>
+          <text>
+            <content ID="nof4">Not on File</content>
+            <footnote ID="subTitle3" styleCode="xSectionSubTitle">documented as of this encounter (statuses as of 02/17/2025)</footnote>
+          </text>
+        </section>
+      </component>
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.1" extension="2014-06-09" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.1.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.1.1" extension="2014-06-09" />
+          <id root="C0E229DF-ED72-11EF-990E-0050568B0C08" />
+          <code code="10160-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Medication use Narrative" />
+          <title>Medications</title>
+          <text>
+            <content ID="nof6">Not on file</content>
+            <footnote ID="subTitle5" styleCode="xSectionSubTitle">documented as of this encounter (statuses as of 02/17/2025)</footnote>
+          </text>
+        </section>
+      </component>
+      <component>
+        <section nullFlavor="NI">
+          <templateId root="2.16.840.1.113883.10.20.22.2.5" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.5" extension="2015-08-01" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.5.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.5.1" extension="2015-08-01" />
+          <id root="C0E33A59-ED72-11EF-990E-0050568B0C08" />
+          <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem list - Reported" />
+          <title>Active Problems</title>
+          <text>
+            <paragraph ID="nof8">Not on file</paragraph>
+            <footnote ID="subTitle7" styleCode="xSectionSubTitle">documented as of this encounter (statuses as of 02/17/2025)</footnote>
+          </text>
         </section>
       </component>
       <component>
@@ -482,7 +487,8 @@
           <code code="29762-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Social history Narrative" />
           <title>Social History</title>
           <text>
-            <table ID="sochist17">
+            <table ID="sochist14">
+              <caption>Smoking Status as of 02/17/2025</caption>
               <colgroup>
                 <col width="25%" span="2" />
                 <col width="13%" />
@@ -502,7 +508,7 @@
                 <tr>
                   <td>Smoking Tobacco: Never Assessed</td>
                   <td />
-                  <td ID="sochist17packsperday" />
+                  <td ID="sochist14packsperday" />
                   <td />
                   <td />
                 </tr>
@@ -714,57 +720,57 @@
                 <tr ID="sdohassess6pair1">
                   <td ID="sdohassess6pair1ques" />
                   <td ID="sdohassess6pair1ans">Not on file</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair2">
                   <td ID="sdohassess6pair2ques">Frequency of Illegal Drug Use in the Past Year</td>
                   <td ID="sdohassess6pair2ans">Not on file</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair3">
                   <td ID="sdohassess6pair3ques">Think about the place you live. Do you have problems with any of the following?</td>
-                  <td ID="sdohassess6pair3ans">Lack of heat;Oven or stove not working</td>
-                  <td>02/03/2025</td>
+                  <td ID="sdohassess6pair3ans">None of the above</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair4">
                   <td ID="sdohassess6pair4ques">Frequency of Binge Drinking</td>
                   <td ID="sdohassess6pair4ans">Not on file</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair5">
                   <td ID="sdohassess6pair5ques">Frequency of Alcohol Consumption</td>
                   <td ID="sdohassess6pair5ans">Not on file</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair6">
                   <td ID="sdohassess6pair6ques">Average Number of Drinks</td>
                   <td ID="sdohassess6pair6ans">Not on file</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair7">
                   <td ID="sdohassess6pair7ques">Smokeless Tobacco Use</td>
                   <td ID="sdohassess6pair7ans">Unknown</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair8">
                   <td ID="sdohassess6pair8ques">Smoking Tobacco Use</td>
                   <td ID="sdohassess6pair8ans">Never Assessed</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair9">
                   <td ID="sdohassess6pair9ques">Passive Exposure</td>
                   <td ID="sdohassess6pair9ans">Not on file</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair10">
                   <td ID="sdohassess6pair10ques">Speaks Language Other Than English at Home</td>
                   <td ID="sdohassess6pair10ans">Not on file</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
                 <tr ID="sdohassess6pair11">
                   <td ID="sdohassess6pair11ques">Frequency of Prescription Drug Use for Non-medical Reasons in the Past Year</td>
                   <td ID="sdohassess6pair11ans">Not on file</td>
-                  <td>02/03/2025</td>
+                  <td>02/11/2025</td>
                 </tr>
               </tbody>
             </table>
@@ -781,28 +787,29 @@
                 </tr>
               </thead>
               <tbody>
-                <tr ID="BirthSex20">
+                <tr ID="BirthSex17">
                   <td>Sex Assigned at Birth</td>
-                  <td ID="BirthSex20Value">Not on file</td>
+                  <td ID="BirthSex17Value">Not on file</td>
                   <td />
                 </tr>
-                <tr ID="LegalSex21">
+                <tr ID="LegalSex18">
                   <td>Legal Sex</td>
-                  <td ID="LegalSex21Value">Male</td>
+                  <td ID="LegalSex18Value">Male</td>
                   <td>02/03/2025 12:19 PM CST</td>
                 </tr>
-                <tr ID="GenderIdentity18">
+                <tr ID="GenderIdentity15">
                   <td>Gender Identity</td>
-                  <td ID="GenderIdentity18Value">Not on file</td>
+                  <td ID="GenderIdentity15Value">Not on file</td>
                   <td />
                 </tr>
-                <tr ID="SexualOrientation19">
+                <tr ID="SexualOrientation16">
                   <td>Sexual Orientation</td>
-                  <td ID="SexualOrientation19Value">Not on file</td>
+                  <td ID="SexualOrientation16Value">Not on file</td>
                   <td />
                 </tr>
               </tbody>
             </table>
+            <footnote ID="subTitle13" styleCode="xSectionSubTitle">documented as of this encounter</footnote>
           </text>
           <entry>
             <observation classCode="OBS" moodCode="EVN">
@@ -811,7 +818,7 @@
               <id extension="Z549669^^72166-2" root="1.2.840.114350.1.13.861.1.7.1.1040.1" />
               <code code="72166-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Tobacco smoking status NHIS" />
               <text>
-                <reference value="#sochist17" />
+                <reference value="#sochist14" />
               </text>
               <statusCode code="completed" />
               <effectiveTime nullFlavor="UNK" />
@@ -852,7 +859,7 @@
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
                       <id extension="flo1572879820-5810220439-97051-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
-                      <code code="88122-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="(I/We) worried whether (my/our) food would run out before (I/we) got money to buy more.  ">
+                      <code code="88122-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]">
                         <originalText>
                           <reference value="#sdohassess1pair1ques" />
                         </originalText>
@@ -912,7 +919,7 @@
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
                       <id extension="flo1572879821-5810220439-97051-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
-                      <code code="88123-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="The food that (I/we) bought just didn't last, and (I/we) didn't have money to get more.">
+                      <code code="88123-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]">
                         <originalText>
                           <reference value="#sdohassess1pair2ques" />
                         </originalText>
@@ -982,7 +989,7 @@
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
                       <id extension="flo1570000075-5810220439-97055-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
-                      <code code="96779-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12Mo">
+                      <code code="96779-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months">
                         <originalText>
                           <reference value="#sdohassess8pair1ques" />
                         </originalText>
@@ -1589,17 +1596,17 @@
               <templateId root="2.16.840.1.113883.10.20.22.4.38" />
               <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2015-08-01" />
               <templateId root="2.16.840.1.113883.10.20.22.4.38" extension="2022-06-01" />
-              <id extension="5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
+              <id extension="5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.21" />
               <code code="8689-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Social function">
                 <translation code="X-SDOH-ASSESSMENT-OBS" codeSystem="1.2.840.114350.1.72.1.8.1" codeSystemName="Epic.Sdoh" displayName="SDOH Assessment Observation" />
               </code>
               <statusCode code="completed" />
-              <effectiveTime value="20250203" />
+              <effectiveTime value="20250211" />
               <entryRelationship typeCode="SPRT">
                 <observation classCode="OBS" moodCode="EVN">
                   <templateId root="2.16.840.1.113883.10.20.22.4.69" />
                   <templateId root="2.16.840.1.113883.10.20.22.4.69" extension="2022-06-01" />
-                  <id extension="5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                  <id extension="5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                   <code nullFlavor="UNK">
                     <originalText>JRD Many Questions Source</originalText>
                   </code>
@@ -1607,7 +1614,7 @@
                     <reference value="#sdohassess6" />
                   </text>
                   <statusCode code="completed" />
-                  <effectiveTime value="20250203" />
+                  <effectiveTime value="20250211" />
                   <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" />
                   <interpretationCode nullFlavor="OTH">
                     <originalText>Not on file</originalText>
@@ -1617,7 +1624,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="flo1572879823-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="flo1572879823-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="76542-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Do you feel stress - tense, restless, nervous, or anxious, or unable to sleep at night because your mind is troubled all the time - these days [OSQ]">
                         <originalText>
                           <reference value="#sdohassess6pair1ques" />
@@ -1638,7 +1645,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="flo1570000095-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="flo1570000095-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="68524-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="How many times in the past Y have you used an illegal drug or used a prescription medication for non-medical reasons">
                         <originalText>
                           <reference value="#sdohassess6pair2ques" />
@@ -1659,7 +1666,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="flo1570000066-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="flo1570000066-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="96778-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problems with place where you live">
                         <originalText>
                           <reference value="#sdohassess6pair3ques" />
@@ -1669,12 +1676,7 @@
                         <reference value="#sdohassess6pair3" />
                       </text>
                       <statusCode code="completed" />
-                      <value code="LA31998-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Lack of heat" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                        <originalText>
-                          <reference value="#sdohassess6pair3ans" />
-                        </originalText>
-                      </value>
-                      <value code="LA31999-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Oven or stove not working" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                      <value code="LA9-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="None of the above" xsi:type="CD" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                         <originalText>
                           <reference value="#sdohassess6pair3ans" />
                         </originalText>
@@ -1682,7 +1684,7 @@
                       <author>
                         <templateId root="2.16.840.1.113883.10.20.22.4.119" />
                         <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
-                        <time value="20250203122125-0600" />
+                        <time value="20250211160719-0600" />
                         <assignedAuthor>
                           <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
                           <id extension="1000071823" root="2.16.840.1.113883.4.6" />
@@ -1694,7 +1696,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="flo1572879838-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="flo1572879838-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="68520-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="How often do you have 6 or more drinks on 1 occasion?">
                         <originalText>
                           <reference value="#sdohassess6pair4ques" />
@@ -1715,7 +1717,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="flo1572879836-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="flo1572879836-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="68518-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="How often to you have a drink containing alcohol?">
                         <originalText>
                           <reference value="#sdohassess6pair5ques" />
@@ -1736,7 +1738,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="flo1572879837-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="flo1572879837-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="68519-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="How many standard drinks containing alcohol do you have on a typical day?">
                         <originalText>
                           <reference value="#sdohassess6pair6ques" />
@@ -1757,7 +1759,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="cer97078-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="cer97078-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="88031-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Smokeless tobacco status">
                         <originalText>
                           <reference value="#sdohassess6pair7ques" />
@@ -1784,7 +1786,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="cer97028-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="cer97028-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="72166-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Tobacco smoking status">
                         <originalText>
                           <reference value="#sdohassess6pair8ques" />
@@ -1805,7 +1807,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="cer97148-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="cer97148-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code nullFlavor="UNK">
                         <originalText>
                           <reference value="#sdohassess6pair9ques" />
@@ -1826,7 +1828,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="flo1570000086-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="flo1570000086-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="97027-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Speaks a language other than English at home">
                         <originalText>
                           <reference value="#sdohassess6pair10ques" />
@@ -1847,7 +1849,7 @@
                     <observation classCode="OBS" moodCode="EVN">
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" />
                       <templateId root="2.16.840.1.113883.10.20.22.4.86" extension="2022-06-01" />
-                      <id extension="flo1570000094-5809515699-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
+                      <id extension="flo1570000094-5810220628-100132-Z549669" root="1.2.840.114350.1.13.861.1.7.1.83687972" />
                       <code code="95530-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Prescription drug use for non-medical reasons in the past 1Y">
                         <originalText>
                           <reference value="#sdohassess6pair11ques" />
@@ -1880,13 +1882,13 @@
               <id extension="Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.20" />
               <code code="76689-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sex assigned at birth" />
               <text>
-                <reference value="#BirthSex20" />
+                <reference value="#BirthSex17" />
               </text>
               <statusCode code="completed" />
               <effectiveTime value="19910829" />
               <value codeSystem="2.16.840.1.113883.5.1" codeSystemName="HL7 Gender" xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <originalText>
-                  <reference value="#BirthSex20Value" />
+                  <reference value="#BirthSex17Value" />
                 </originalText>
               </value>
             </observation>
@@ -1900,13 +1902,13 @@
               <id extension="Z549669^67239^46098-0" root="1.2.840.114350.1.13.861.1.7.1.1040.23" />
               <code code="46098-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sex" />
               <text>
-                <reference value="#LegalSex21" />
+                <reference value="#LegalSex18" />
               </text>
               <statusCode code="completed" />
               <effectiveTime value="20250203121922-0600" />
               <value xsi:type="CD" nullFlavor="OTH" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <originalText>
-                  <reference value="#LegalSex21Value" />
+                  <reference value="#LegalSex18Value" />
                 </originalText>
               </value>
               <author>
@@ -1928,7 +1930,7 @@
               <id extension="Z549669" root="1.2.840.114350.1.13.861.1.7.1.1040.46" />
               <code code="76691-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Gender identity" />
               <text>
-                <reference value="#GenderIdentity18" />
+                <reference value="#GenderIdentity15" />
               </text>
               <statusCode code="completed" />
               <effectiveTime>
@@ -1936,7 +1938,7 @@
               </effectiveTime>
               <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <originalText>
-                  <reference value="#GenderIdentity18Value" />
+                  <reference value="#GenderIdentity15Value" />
                 </originalText>
               </value>
             </observation>
@@ -1949,7 +1951,7 @@
               <id extension="Z549669.1" root="1.2.840.114350.1.13.861.1.7.1.1040.45" />
               <code code="76690-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Sexual orientation" />
               <text>
-                <reference value="#SexualOrientation19" />
+                <reference value="#SexualOrientation16" />
               </text>
               <statusCode code="completed" />
               <effectiveTime>
@@ -1957,7 +1959,7 @@
               </effectiveTime>
               <value xsi:type="CD" nullFlavor="UNK" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <originalText>
-                  <reference value="#SexualOrientation19Value" />
+                  <reference value="#SexualOrientation16Value" />
                 </originalText>
               </value>
             </observation>
@@ -1973,7 +1975,8 @@
           <code code="8716-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Vital signs" />
           <title>Last Filed Vital Signs</title>
           <text>
-            <content ID="nof26">Not on file</content>
+            <content ID="nof20">Not on file</content>
+            <footnote ID="subTitle19" styleCode="xSectionSubTitle">documented in this encounter</footnote>
           </text>
         </section>
       </component>
@@ -1985,6 +1988,7 @@
           <title>Plan of Treatment</title>
           <text>
             <paragraph>Not on file</paragraph>
+            <footnote ID="subTitle34" styleCode="xSectionSubTitle">documented as of this encounter</footnote>
           </text>
         </section>
       </component>
@@ -1994,7 +1998,7 @@
           <templateId root="2.16.840.1.113883.10.20.22.2.7" extension="2014-06-09" />
           <templateId root="2.16.840.1.113883.10.20.22.2.7.1" />
           <templateId root="2.16.840.1.113883.10.20.22.2.7.1" extension="2014-06-09" />
-          <id root="BA3F06A7-E8C4-11EF-9A95-0050568B0C08" />
+          <id root="C0FD76B0-ED72-11EF-990E-0050568B0C08" />
           <code code="47519-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Procedures Document" />
           <title>Procedures</title>
           <text>
@@ -2004,8 +2008,8 @@
               </item>
             </list>
             <br />
-            <content ID="nof33">Not on file</content>
-            <footnote ID="subTitle32" styleCode="xSectionSubTitle">from Last 3 Months</footnote>
+            <content ID="nof40">Not on file</content>
+            <footnote ID="subTitle39" styleCode="xSectionSubTitle">documented in this encounter</footnote>
           </text>
         </section>
       </component>
@@ -2017,7 +2021,7 @@
           <templateId root="2.16.840.1.113883.10.20.22.2.3.1" extension="2015-08-01" />
           <templateId root="1.2.840.114350.1.72.3.2" />
           <templateId root="1.2.840.114350.1.72.3.2" extension="2017-04-01" />
-          <id root="BA3FA0F5-E8C4-11EF-9A95-0050568B0C08" />
+          <id root="C0FE2AE2-ED72-11EF-990E-0050568B0C08" />
           <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Relevant diagnostic tests/laboratory data Narrative" />
           <title>Results</title>
           <text>
@@ -2027,9 +2031,131 @@
               </item>
             </list>
             <br />
-            <content ID="nof35">Not on file</content>
-            <footnote ID="subTitle34" styleCode="xSectionSubTitle">from Last 3 Months</footnote>
+            <content ID="nof42">Not on file</content>
+            <footnote ID="subTitle41" styleCode="xSectionSubTitle">documented in this encounter</footnote>
           </text>
+        </section>
+      </component>
+      <component>
+        <section>
+          <templateId root="2.16.840.1.113883.10.20.22.2.500" extension="2022-06-01" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.500" extension="2019-07-01" />
+          <code code="85847-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Patient Care team information" />
+          <title>Care Teams</title>
+          <text>
+            <table ID="ct48">
+              <colgroup>
+                <col width="25%" span="3" />
+                <col width="13%" />
+                <col width="12%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Team Member</th>
+                  <th>Relationship</th>
+                  <th>Specialty</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr styleCode="xRowNormal">
+                  <td>
+                    <paragraph styleCode="Bold">Provider, Starter, MD</paragraph>
+                    <paragraph>NPI: 1000003560</paragraph>
+                    <paragraph>123 East Main St</paragraph>
+                    <paragraph>Madison, WI 53711</paragraph>
+                    <paragraph>456-789-4545 (Fax)</paragraph>
+                    <paragraph>devnull@epic.com</paragraph>
+                  </td>
+                  <td>Attending</td>
+                  <td>Dermatology</td>
+                  <td>2/17/25</td>
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+            <footnote ID="subTitle47" styleCode="xSectionSubTitle">documented as of this encounter</footnote>
+          </text>
+          <entry>
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.500" extension="2022-06-01" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.500" extension="2019-07-01" />
+              <id nullFlavor="NI" />
+              <code code="86744-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Care Team">
+                <originalText>
+                  <reference value="#ct48" />
+                </originalText>
+              </code>
+              <statusCode code="active" />
+              <effectiveTime>
+                <low value="20250217" />
+              </effectiveTime>
+              <author>
+                <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                <templateId root="2.16.840.1.113883.10.20.22.5.6" extension="2019-10-01" />
+                <time value="20250217085051-0600" />
+                <assignedAuthor>
+                  <id extension="221131332" root="1.2.840.114350.1.13.861.1.7.1.1133" />
+                  <id extension="1000071823" root="2.16.840.1.113883.4.6" />
+                </assignedAuthor>
+              </author>
+              <component>
+                <act classCode="PCPR" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.500.1" extension="2022-06-01" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.500.1" extension="2019-07-01" />
+                  <id extension="1000003560" root="2.16.840.1.113883.4.6" />
+                  <code code="85847-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Care Team Information" />
+                  <statusCode code="active" />
+                  <effectiveTime>
+                    <low value="20250217" />
+                  </effectiveTime>
+                  <performer typeCode="PRF">
+                    <sdtc:functionCode nullFlavor="UNK" xmlns:sdtc="urn:hl7-org:sdtc">
+                      <originalText>Attending</originalText>
+                      <translation code="41" codeSystem="1.2.840.114350.1.13.861.1.7.4.698084.80114" codeSystemName="EPIC" displayName="Attending" />
+                    </sdtc:functionCode>
+                    <assignedEntity>
+                      <id extension="1000003560" root="2.16.840.1.113883.4.6" />
+                      <code nullFlavor="OTH">
+                        <originalText>Dermatology</originalText>
+                        <translation code="15" codeSystem="1.2.840.114350.1.72.1.7.7.10.688867.4160" codeSystemName="Epic.DXC.StandardProviderSpecialtyType" displayName="Dermatology" />
+                        <translation code="6" codeSystem="1.2.840.114350.1.13.861.1.7.10.836982.1050" codeSystemName="Epic.SER.ProviderSpecialty" displayName="Dermatology" />
+                      </code>
+                      <addr use="WP">
+                        <streetAddressLine>123 East Main St</streetAddressLine>
+                        <city>Madison</city>
+                        <state>WI</state>
+                        <postalCode>53711</postalCode>
+                        <country>USA</country>
+                      </addr>
+                      <telecom value="fax:+1-456-789-4545" />
+                      <telecom value="mailto:devnull@epic.com" />
+                      <assignedPerson>
+                        <name use="L">
+                          <given>Starter</given>
+                          <family>Provider</family>
+                          <suffix qualifier="AC"> MD</suffix>
+                        </name>
+                      </assignedPerson>
+                      <representedOrganization>
+                        <name>Current Stage 1 Primary</name>
+                        <telecom use="WP" value="tel:+1-555-777-1234" />
+                        <addr use="WP">
+                          <streetAddressLine>1979 Milky Way Street</streetAddressLine>
+                          <county>DANE</county>
+                          <city>Mt Horeb</city>
+                          <state>WI</state>
+                          <postalCode>53572</postalCode>
+                          <country>USA</country>
+                        </addr>
+                      </representedOrganization>
+                    </assignedEntity>
+                  </performer>
+                </act>
+              </component>
+            </organizer>
+          </entry>
         </section>
       </component>
       <component>
