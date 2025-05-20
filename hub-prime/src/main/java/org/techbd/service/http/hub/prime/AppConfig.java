@@ -47,7 +47,6 @@ public class AppConfig {
     private String baseFHIRURL;
     private DefaultDataLakeApiAuthn defaultDataLakeApiAuthn;
     private String fhirVersion;
-    private String igVersion;
     private CsvValidation csv;
     private Map<String, FhirV4Config> igPackages;
     private String dataLedgerApiUrl;
@@ -158,14 +157,6 @@ public class AppConfig {
 
     public void setFhirVersion(String fhirVersion) {
         this.fhirVersion = fhirVersion;
-    }
-
-    public void setIgVersion(String igVersion) {
-        this.igVersion = igVersion;
-    }
-
-    public String getIgVersion() {
-        return igVersion;
     }
 
     public String getDataLedgerApiUrl() {
