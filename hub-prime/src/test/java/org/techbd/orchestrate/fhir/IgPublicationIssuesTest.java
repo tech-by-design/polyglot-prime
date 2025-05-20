@@ -132,6 +132,18 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
                 validateFile("test-shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
         }
 
+        @Test
+        @DisplayName("Validate Test SHIN-NY IG AHCHRSN ScreeningResponse Unknown1to8 ExampleFile")
+        void testValidateTestShinnyIG_AHCHRSNQuestionnaireResponseUnknownExampleFile() throws IOException {
+                validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleUnknown1to8.json");
+        }
+
+        @Test
+        @DisplayName("Validate Test SHIN-NY IG AHCHRSN ScreeningResponse Declined9to12 ExampleFile")
+        void testValidateTestShinnyIG_AHCHRSNQuestionnaireResponseDeclineExampleFile() throws IOException {
+                validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleDeclined9to12.json");
+        }
+
         private void validateFile(String filePath) throws IOException {
                 List<OrchestrationEngine.ValidationResult> results = getValidationErrors(filePath);
                 assertValidationResults(results);
