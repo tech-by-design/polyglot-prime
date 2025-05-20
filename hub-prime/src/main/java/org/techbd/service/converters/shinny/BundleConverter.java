@@ -33,14 +33,15 @@ public class BundleConverter {
      * @return a Bundle with type set to COLLECTION, one empty entry, and Meta
      *         information.
      */
-    public Bundle generateEmptyBundle(String interactionId,String igVersion,DemographicData demographicData,String baseFHIRUrl) {
+    public Bundle generateEmptyBundle(String interactionId, DemographicData demographicData, String baseFHIRUrl) {
         Bundle bundle = new Bundle();
         bundle.setId(CsvConversionUtil.sha256(UUID.randomUUID().toString()));
         bundle.setType(Bundle.BundleType.TRANSACTION);
         Meta meta = new Meta();
         meta.setLastUpdated(new Date());
         if (StringUtils.isNotEmpty(baseFHIRUrl)) {
-            meta.setProfile(List.of(new CanonicalType(FHIRUtil.getProfileUrl(baseFHIRUrl,ResourceType.Bundle.name().toLowerCase()))));
+            meta.setProfile(List.of(
+                    new CanonicalType(FHIRUtil.getProfileUrl(baseFHIRUrl, ResourceType.Bundle.name().toLowerCase()))));
         } else {
             meta.setProfile(List.of(new CanonicalType(FHIRUtil.getBundleProfileUrl())));
         }
