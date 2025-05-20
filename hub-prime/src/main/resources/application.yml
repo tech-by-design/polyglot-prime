@@ -85,7 +85,6 @@ org:
           prime:
             version: @project.version@
             fhirVersion: r4
-            igVersion: 1.4.5
             validation-severity-level: error  # Possible values: fatal, error, warning, information
             ig-packages:
               fhir-v4:
