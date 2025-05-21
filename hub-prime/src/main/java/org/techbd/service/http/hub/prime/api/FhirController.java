@@ -275,7 +275,6 @@ public class FhirController {
 
                         LOG.info("FHIRController:Bundle Validate :: Getting shinny Urls from config - Before: ");
                         final var igPackages = appConfig.getIgPackages();
-                        final var igVersion = appConfig.getIgVersion();
                         final var interactionId = InteractionsFilter.getActiveRequestEnc(request).requestId()
                                         .toString();
                         final var sessionBuilder = engine.session()
@@ -286,7 +285,6 @@ public class FhirController {
                                         .withFhirProfileUrl(FHIRUtil.getBundleProfileUrl())
                                         .withTracer(tracer)
                                         .withFhirIGPackages(igPackages)
-                                        .withIgVersion(igVersion)
                                         .addHapiValidationEngine(); // by default
 
                         final var session = sessionBuilder.build();

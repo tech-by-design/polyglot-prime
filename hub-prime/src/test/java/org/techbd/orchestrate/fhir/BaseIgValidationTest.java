@@ -44,7 +44,7 @@ public abstract class BaseIgValidationTest {
         when(tracer.spanBuilder(anyString())).thenReturn(spanBuilder);
         when(spanBuilder.startSpan()).thenReturn(span);
         when(appConfig.getIgPackages()).thenReturn(getIgPackages());
-        when(appConfig.getIgVersion()).thenReturn("1.3.0");
+       // when(appConfig.getIgVersion()).thenReturn("1.3.0");
 
         engine = new OrchestrationEngine(tracer, appConfig);
         Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
@@ -71,11 +71,11 @@ public abstract class BaseIgValidationTest {
         shinny.put("ig-version", "1.4.5");
         shinnyPackages.put("shinny", shinny);
 
-        // Test Shinny version 1.3.0
+        // Test Shinny version 1.5.0
         Map<String, String> testshinny = new HashMap<>();
         testshinny.put("profile-base-url", "http://test.shinny.org/us/ny/hrsn");
-        testshinny.put("package-path", "ig-packages/shin-ny-ig/test-shinny/v1.4.5");
-        testshinny.put("ig-version", "1.4.5");
+        testshinny.put("package-path", "ig-packages/shin-ny-ig/test-shinny/v1.5.0");
+        testshinny.put("ig-version", "1.5.0");
         shinnyPackages.put("test-shinny", testshinny);
 
         fhirV4Config.setBasePackages(basePackages);

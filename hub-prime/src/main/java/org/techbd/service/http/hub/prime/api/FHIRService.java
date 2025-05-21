@@ -480,15 +480,13 @@ public class FHIRService {
 		request.setAttribute("activeHttpInteraction", rre);
 	}
 
-	private Map<String, Object> validate(HttpServletRequest request, String payload, 
-			 
-                        String interactionId, String provenance, String sourceType) {
-		Span span = tracer.spanBuilder("FhirService.validate").startSpan();
+	private Map<String, Object> validate(HttpServletRequest request, String payload,
+            String interactionId, String provenance, String sourceType) {
+        Span span = tracer.spanBuilder("FhirService.validate").startSpan();
 		try {
 			final var start = Instant.now();
 			LOG.info("FHIRService  - Validate -BEGIN for interactionId: {} ", interactionId);
 			final var igPackages = appConfig.getIgPackages();
-			final var igVersion = appConfig.getIgVersion();
 			final var sessionBuilder = engine.session()
 					.withSessionId(UUID.randomUUID().toString())
 					.onDevice(Device.createDefault())
@@ -497,7 +495,6 @@ public class FHIRService {
 					.withFhirProfileUrl(FHIRUtil.getBundleProfileUrl())
 					.withTracer(tracer)
 					.withFhirIGPackages(igPackages)
-					.withIgVersion(igVersion)
 					.addHapiValidationEngine(); // by default
 					// clearExisting is set to true so engines can be fully supplied through header
 					
