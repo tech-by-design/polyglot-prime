@@ -21,6 +21,7 @@
   <xsl:param name="observationResourceSha256Id"/>
   <xsl:param name="sexualOrientationResourceId"/>
   <xsl:param name="questionnaireResponseResourceSha256Id"/>
+  <xsl:param name="procedureResourceSha256Id"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -34,6 +35,7 @@
   <xsl:param name="questionnaireMetaProfileUrl"/>
   <xsl:param name="questionnaireResponseMetaProfileUrl"/>
   <xsl:param name="practitionerMetaProfileUrl"/>
+  <xsl:param name="procedureMetaProfileUrl"/>
 
   <xsl:variable name="bundleMetaProfileUrlFull" select="concat($baseFhirUrl, $bundleMetaProfileUrl)"/>
   <xsl:variable name="patientMetaProfileUrlFull" select="concat($baseFhirUrl, $patientMetaProfileUrl)"/>
@@ -45,6 +47,7 @@
   <xsl:variable name="questionnaireMetaProfileUrlFull" select="concat($baseFhirUrl, $questionnaireMetaProfileUrl)"/>
   <xsl:variable name="questionnaireResponseMetaProfileUrlFull" select="concat($baseFhirUrl, $questionnaireResponseMetaProfileUrl)"/>
   <xsl:variable name="practitionerMetaProfileUrlFull" select="concat($baseFhirUrl, $practitionerMetaProfileUrl)"/>
+  <xsl:variable name="procedureMetaProfileUrlFull" select="concat($baseFhirUrl, $procedureMetaProfileUrl)"/>
 
   <xsl:template match="/">
   {
@@ -71,6 +74,7 @@
                                 | /ccda:ClinicalDocument/ccda:authorization/ccda:consent 
                                 | /ccda:ClinicalDocument/ccda:author
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter
+                                | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='procedures']/ccda:entry/ccda:procedure
                                 "/>
     ]
   }
@@ -1108,6 +1112,87 @@
     </xsl:if>
   </xsl:template>
 
+  <!-- Procedure Template -->
+  <xsl:template name="Procedure" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='procedures']/ccda:entry/ccda:procedure">
+  <xsl:if test="string(ccda:code/@code) != 'UNK' and string-length(ccda:code/@code) > 0">
+    <xsl:variable name="procedureResourceId">
+      <xsl:call-template name="generateFixedLengthResourceId">
+        <xsl:with-param name="prefixString" select="concat(generate-id(ccda:code/@code), position())"/>
+        <xsl:with-param name="sha256ResourceId" select="$procedureResourceSha256Id"/>
+      </xsl:call-template>
+    </xsl:variable>
+    ,{
+      "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Procedure/<xsl:value-of select="$procedureResourceId"/>",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "<xsl:value-of select="$procedureResourceId"/>",
+        "meta" : {
+          "lastUpdated" : "<xsl:value-of select='$currentTimestamp'/>",
+          "profile" : ["<xsl:value-of select='$procedureMetaProfileUrlFull'/>"]
+        },
+        "status": "<xsl:call-template name='mapProcedureStatus'>
+                            <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
+                        </xsl:call-template>",
+        "code": [
+          {
+            "coding": [
+              {
+                "system": "<xsl:call-template name="mapCodeSystem">
+                              <xsl:with-param name="oid" select="ccda:code/@codeSystem"/>
+                            </xsl:call-template>",
+                "code": "<xsl:value-of select="ccda:code/@code"/>",
+                "display": "<xsl:value-of select="ccda:code/@displayName"/>"
+              }
+            ]
+            <xsl:choose>
+              <xsl:when test="ccda:code/@originalText">
+                , "text": "<xsl:value-of select='ccda:code/@originalText'/>"
+              </xsl:when>
+              <xsl:when test="ccda:code/@displayName">
+                , "text": "<xsl:value-of select='ccda:code/@displayName'/>"
+              </xsl:when>
+            </xsl:choose>
+          }
+        ],
+        "subject" : {
+          "reference" : "Patient/<xsl:value-of select='$patientResourceId'/>",
+          "display" : "<xsl:value-of select="$patientResourceName"/>"
+        }
+        <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
+        , "encounter": {
+            "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+          }
+        </xsl:if>
+        <xsl:choose>
+          <!-- Check if low or high exists -->
+          <xsl:when test="string(ccda:effectiveTime/ccda:low/@value) or string(ccda:effectiveTime/ccda:high/@value)">
+            , "performedPeriod": {
+              "start": "<xsl:call-template name='formatDateTime'>
+                          <xsl:with-param name='dateTime' select='ccda:effectiveTime/ccda:low/@value'/>
+                      </xsl:call-template>",
+              "end": "<xsl:call-template name='formatDateTime'>
+                        <xsl:with-param name='dateTime' select='ccda:effectiveTime/ccda:high/@value'/>
+                    </xsl:call-template>"
+            }
+          </xsl:when>
+          <!-- Check if only value exists -->
+          <xsl:when test="string(ccda:effectiveTime/@value)">
+            , "performedPeriod": {
+              "start": "<xsl:call-template name='formatDateTime'>
+                          <xsl:with-param name='dateTime' select='ccda:effectiveTime/@value'/>
+                      </xsl:call-template>"
+            }
+          </xsl:when>
+        </xsl:choose>
+      }
+      , "request" : {
+        "method" : "POST",
+        "url" : "<xsl:value-of select='$baseFhirUrl'/>/Procedure/<xsl:value-of select="$procedureResourceId"/>"
+      }
+    }
+  </xsl:if>  
+  </xsl:template>
+
   <xsl:template name="formatDateTime">
       <xsl:param name="dateTime"/>
       <xsl:choose>
@@ -1163,6 +1248,18 @@
         <xsl:when test="$statusCode = 'cancelled'">cancelled</xsl:when>
         <xsl:when test="$statusCode = 'held'">registered</xsl:when>
         <xsl:when test="$statusCode = 'suspended'">registered</xsl:when>
+        <xsl:when test="$statusCode = 'nullified'">entered-in-error</xsl:when>
+        <xsl:otherwise>unknown</xsl:otherwise>
+    </xsl:choose>
+</xsl:template>
+
+<xsl:template name="mapProcedureStatus">
+    <xsl:param name="statusCode"/>
+    <xsl:choose>
+        <xsl:when test="$statusCode = 'completed'">completed</xsl:when>
+        <xsl:when test="$statusCode = 'active'">in-progress</xsl:when>
+        <xsl:when test="$statusCode = 'aborted'">stopped</xsl:when>
+        <xsl:when test="$statusCode = 'suspended'">on-hold</xsl:when>
         <xsl:when test="$statusCode = 'nullified'">entered-in-error</xsl:when>
         <xsl:otherwise>unknown</xsl:otherwise>
     </xsl:choose>
@@ -1253,6 +1350,37 @@
         <xsl:when test="$typeCode = 'LA'">legal authenticator</xsl:when>
         <xsl:otherwise>Unknown</xsl:otherwise>
     </xsl:choose>
+</xsl:template>
+
+<xsl:template name="mapCodeSystem">
+  <xsl:param name="oid"/>
+  <xsl:choose>
+    <!-- SNOMED CT -->
+    <xsl:when test="$oid = '2.16.840.1.113883.6.96'">
+      <xsl:text>http://snomed.info/sct</xsl:text>
+    </xsl:when>
+    <!-- LOINC -->
+    <xsl:when test="$oid = '2.16.840.1.113883.6.1'">
+      <xsl:text>http://loinc.org</xsl:text>
+    </xsl:when>
+    <!-- CPT -->
+    <xsl:when test="$oid = '2.16.840.1.113883.6.12'">
+      <xsl:text>http://www.ama-assn.org/go/cpt</xsl:text>
+    </xsl:when>
+    <!-- HCPCS -->
+    <!-- <xsl:when test="$oid = '2.16.840.1.113883.6.285'">
+      <xsl:text>http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets</xsl:text> 
+    </xsl:when> -->
+    <!-- ICD-10-CM -->
+    <xsl:when test="$oid = '2.16.840.1.113883.6.90'">
+      <xsl:text>http://hl7.org/fhir/sid/icd-10-cm</xsl:text>
+    </xsl:when>
+    <!-- Default: urn:oid fallback -->
+    <xsl:otherwise>
+      <xsl:text>urn:oid:</xsl:text>
+      <xsl:value-of select="$oid"/>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 <xsl:template name="mapQuestionnaireStatus">

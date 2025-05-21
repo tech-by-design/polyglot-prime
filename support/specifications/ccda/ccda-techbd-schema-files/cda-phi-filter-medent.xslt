@@ -111,6 +111,29 @@
                         </component>
                     </xsl:if>
 
+                    <!-- Extract and place all Procedures -->
+                    <xsl:variable name="procedures" select="hl7:component
+                            /hl7:structuredBody
+                            /hl7:component
+                            /hl7:section[hl7:code[@code='47519-4']]
+                            /hl7:entry
+                            [hl7:procedure
+                                [hl7:code
+                                    [(not(@code = 'UNK') and string-length(@code) > 0)]
+                                ]
+                            ]"/>
+                                        
+                    <xsl:if test="$procedures">
+                        <component>
+                            <section ID="procedures">
+                                <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:templateId"/>
+                                <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:code"/>
+                                <xsl:copy-of select="//hl7:section[hl7:code[@code='47519-4']]/hl7:title"/>
+                                <xsl:copy-of select="$procedures" />
+                            </section>
+                        </component>
+                    </xsl:if>
+
                     <!-- Extract and place the single Sexual Orientation entry -->
                     <xsl:variable name="sexualOrientationEntry" select="//hl7:section[hl7:code[@code='29762-2']]/hl7:entry[hl7:observation/hl7:code[@code='76690-7']]" />
                     <xsl:if test="$sexualOrientationEntry">
