@@ -13,9 +13,9 @@ import com.zaxxer.hikari.HikariDataSource; // ✅ Use HikariCP instead of Spring
 
 public class MirthJooqConfig {
 
-    private static final String DB_URL = System.getProperty("MC_JDBC_URL");
-    private static final String DB_USER = System.getProperty("MC_JDBC_USERNAME");
-    private static final String DB_PASSWORD = System.getProperty("MC_JDBC_PASSWORD");
+    private static final String DB_URL = System.getenv("MC_JDBC_URL");
+    private static final String DB_USER = System.getenv("MC_JDBC_USERNAME");
+    private static final String DB_PASSWORD = System.getenv("MC_JDBC_PASSWORD");
 
     private static HikariDataSource dataSource; // ✅ Use HikariCP
 
