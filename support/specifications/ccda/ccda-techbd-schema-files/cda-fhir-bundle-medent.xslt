@@ -1061,21 +1061,65 @@
                   </xsl:when>
                 </xsl:choose>
               },
-              "valueCodeableConcept" : {
-                "coding": [{
-                  "system": "http://loinc.org",
-                  "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
-                  "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                }]
-                <xsl:choose>
-                  <xsl:when test="ccda:observation/ccda:value/@originalText">
-                    , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
-                  </xsl:when>
-                  <xsl:when test="ccda:observation/ccda:value/@displayName">
-                    , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                  </xsl:when>
-                </xsl:choose>
-              },
+              <!-- https://test.shinny.org/change_log.html#v150 
+                 According to v1.5.0 change log, add component element for the question code '96778-6' -->
+              <xsl:choose>
+                <xsl:when test="string(ccda:observation/ccda:code/@code) = '96778-6'">
+                  "component": [
+                        {
+                            "code": {
+                              "coding": [
+                                {
+                                  "system": "http://loinc.org",
+                                  "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
+                                  "display": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+                                }
+                              ]
+                              <xsl:choose>
+                                <xsl:when test="ccda:observation/ccda:code/@originalText">
+                                  , "text": "<xsl:value-of select='ccda:observation/ccda:code/@originalText'/>"
+                                </xsl:when>
+                                <xsl:when test="ccda:observation/ccda:code/@displayName">
+                                  , "text": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+                                </xsl:when>
+                              </xsl:choose>
+                            },
+                            "valueCodeableConcept" : {
+                              "coding": [{
+                                "system": "http://loinc.org",
+                                "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
+                                "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                              }]
+                              <xsl:choose>
+                                <xsl:when test="ccda:observation/ccda:value/@originalText">
+                                  , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
+                                </xsl:when>
+                                <xsl:when test="ccda:observation/ccda:value/@displayName">
+                                  , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                                </xsl:when>
+                              </xsl:choose>
+                            }
+                        }
+                  ],
+                </xsl:when>
+                <xsl:otherwise>
+                  "valueCodeableConcept" : {
+                    "coding": [{
+                      "system": "http://loinc.org",
+                      "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
+                      "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                    }]
+                    <xsl:choose>
+                      <xsl:when test="ccda:observation/ccda:value/@originalText">
+                        , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
+                      </xsl:when>
+                      <xsl:when test="ccda:observation/ccda:value/@displayName">
+                        , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                      </xsl:when>
+                    </xsl:choose>
+                  },
+                </xsl:otherwise>
+              </xsl:choose>
               "subject": {
                 "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
                 "display": "<xsl:value-of select="$patientResourceName"/>"
