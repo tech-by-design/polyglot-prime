@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,9 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.service.converters.shinny.CodeLookupService;
 import org.techbd.service.converters.shinny.EncounterConverter;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -33,11 +36,19 @@ import ca.uhn.fhir.parser.IParser;
 class EncounterConverterTest {
     private static final Logger LOG = LoggerFactory.getLogger(EncounterConverterTest.class.getName());
 
+    @Mock
+    UdiPrimeJpaConfig udiPrimeJpaConfig;
+
+    @Mock
+    CodeLookupService codeLookupService;
+
     @InjectMocks
     private EncounterConverter encounterConverter;
     
     @BeforeEach
     void setUp() throws Exception {
+           encounterConverter = new EncounterConverter(udiPrimeJpaConfig, codeLookupService);
+
             Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
             profileMapField.setAccessible(true);
             profileMapField.set(null, CsvTestHelper.getProfileMap());
@@ -57,9 +68,7 @@ class EncounterConverterTest {
         final ScreeningProfileData screeningResourceData = CsvTestHelper.createScreeningProfileData();
         final Map<String, String> idsGenerated = new HashMap<>();
 
-        // Instantiate the EncounterConverter
-        EncounterConverter encounterConverter = new EncounterConverter(null, null);
-
+      
         // Call the convert method of the encounter converter
         final BundleEntryComponent result = encounterConverter
                 .convert(bundle, demographicData, qrAdminData, screeningResourceData,

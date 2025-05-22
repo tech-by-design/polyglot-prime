@@ -16,6 +16,7 @@
 	<description>Tech by Design Hub (Primary)</description>
 	<properties>
 		<java.version>21</java.version>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
 	</properties>
 	<distributionManagement>
 		<site>

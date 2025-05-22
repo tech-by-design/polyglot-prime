@@ -125,24 +125,51 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         }
 
                         Set<String> excludedQuestionCodes = Set.of("95614-4", "77594-0", "71969-0");
-                        if(!excludedQuestionCodes.contains(data.getQuestionCode())){
+                        if (!excludedQuestionCodes.contains(data.getQuestionCode())) {
+                            if ("96778-6".equals(data.getQuestionCode())) {
                                 if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
-                                        CodeableConcept value = new CodeableConcept();
-                                        value.addCoding(new Coding(fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId), fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId),
-                                                        data.getAnswerCodeDescription()));
-                                        observation.setValue(value);
-                                } else if (!data.getDataAbsentReasonCode().isEmpty()) {
-                                        CodeableConcept dataAbsentReason = new CodeableConcept();
-        
-                                        dataAbsentReason.addCoding(
-                                                        new Coding()
-                                                                        .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                                        .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId) )
-                                                                        .setDisplay(data.getDataAbsentReasonDisplay()));
-        
-                                        observation.setDataAbsentReason(dataAbsentReason);
+                                    Observation.ObservationComponentComponent component = new Observation.ObservationComponentComponent();
+
+                                    CodeableConcept componentCode = new CodeableConcept();
+                                    componentCode.addCoding(new Coding(
+                                            fetchSystem(data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE,
+                                                    interactionId),
+                                            data.getQuestionCode(),
+                                            data.getQuestionCodeDescription()));
+                                    component.setCode(componentCode);
+
+                                    CodeableConcept value = new CodeableConcept();
+                                    value.addCoding(new Coding(
+                                            fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE,
+                                                    interactionId),
+                                            fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId),
+                                            data.getAnswerCodeDescription()));
+                                    component.setValue(value);
+
+                                    observation.addComponent(component);
                                 }
-                        }
+                            } else {
+                                if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
+                                    CodeableConcept value = new CodeableConcept();
+                                    value.addCoding(new Coding(
+                                            fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE,
+                                                    interactionId),
+                                            fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId),
+                                            data.getAnswerCodeDescription()));
+                                    observation.setValue(value);
+                                } else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                    CodeableConcept dataAbsentReason = new CodeableConcept();
+                                    dataAbsentReason.addCoding(
+                                            new Coding()
+                                                    .setSystem(
+                                                            "http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                    .setCode(fetchCode(data.getDataAbsentReasonCode(),
+                                                            CsvConstants.DATA_ABSENT_REASON_CODE, interactionId))
+                                                    .setDisplay(data.getDataAbsentReasonDisplay()));
+                                    observation.setDataAbsentReason(dataAbsentReason);
+                                }
+                            }
+                        }        
                         observation.addCategory(
                                         createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                                                         "social-history", null));

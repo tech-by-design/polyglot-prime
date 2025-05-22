@@ -297,81 +297,82 @@
         }
         </xsl:if>
       ]
-      <xsl:if test="
-                    ccda:id[@assigningAuthorityName='EPI' and string-length(@extension) = 8 and
-                            translate(substring(@extension,1,2), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '' and
-                            translate(substring(@extension,3,5), '0123456789', '') = '' and
-                            translate(substring(@extension,8,1), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '']
-                    or
-                    ccda:id[@assigningAuthorityName='JMR123' and string-length(@extension) = 11 and
-                            substring(@extension,4,1) = '-' and substring(@extension,7,1) = '-' and
-                            translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = '']
-                    or
-                    ccda:id[not(@assigningAuthorityName)]
-                  ">
       , "identifier": [
-        <!-- CIN (EPI) -->
-        <xsl:if test="ccda:id[@assigningAuthorityName='EPI' and
-                              string-length(@extension) = 8 and
-                              translate(substring(@extension,1,2), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '' and
-                              translate(substring(@extension,3,5), '0123456789', '') = '' and
-                              translate(substring(@extension,8,1), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = ''][1]">
-          {
-            "type": {
-              "coding": [{
-                "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-                "code": "MA",
-                "display": "Patient Medicaid Number"
-              }],
-              "text": "Patient Medicaid Number"
-            },
-            "system": "http://www.medicaid.gov/",
-            "value": "<xsl:value-of select="ccda:id[@assigningAuthorityName='EPI'][1]/@extension"/>"
-          }<xsl:if test="ccda:id[@assigningAuthorityName='JMR123'][1] or ccda:id[not(@assigningAuthorityName)][1]">,</xsl:if>
-        </xsl:if>
-
-        <!-- SSN (JMR123) -->
-        <xsl:if test="ccda:id[@assigningAuthorityName='JMR123' and
-                              string-length(@extension) = 11 and
-                              substring(@extension,4,1) = '-' and
-                              substring(@extension,7,1) = '-' and
-                              translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = ''][1]">
-          {
-            "type": {
-              "coding": [{
-                "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-                "code": "SS",
-                "display": "Social Security Number"
-              }],
-              "text": "Social Security Number"
-            },
-            "system": "http://www.ssa.gov/",
-            "value": "<xsl:value-of select="ccda:id[@assigningAuthorityName='JMR123'][1]/@extension"/>"
-          }<xsl:if test="ccda:id[not(@assigningAuthorityName)][1]">,</xsl:if>
-        </xsl:if>
-
-        <!-- MR (no assigningAuthorityName) -->
-        <xsl:if test="ccda:id[not(@assigningAuthorityName)][1]">
-          {
-            "type": {
-              "coding": [{
-                "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-                "code": "MR",
-                "display": "Medical Record Number"
-              }],
-              "text": "Medical Record Number"
-            },
-            "system": "http://www.scn.gov/facility/<xsl:value-of select="ccda:id[not(@assigningAuthorityName)][1]/@extension"/>",
-            "value": "<xsl:value-of select="ccda:id[not(@assigningAuthorityName)][1]/@extension"/>"
-            <xsl:if test="string($organizationResourceId)">
-              , "assigner": {
-                "reference": "Organization/<xsl:value-of select="$organizationResourceId"/>"
+        <xsl:for-each select="
+          ccda:id[
+            (@assigningAuthorityName='EPI' and @root='1.2.840.114350.1.1' and 
+            string-length(@extension)=8 and 
+            translate(substring(@extension,1,2), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '' and 
+            translate(substring(@extension,3,5), '0123456789', '') = '' and 
+            translate(substring(@extension,8,1), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '')
+            or
+            (@assigningAuthorityName='JMR123' and string-length(@extension)=11 and 
+            substring(@extension,4,1)='-' and substring(@extension,7,1)='-' and 
+            translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = '')
+            or
+            (@assigningAuthorityName='EPI' and 
+            (@root='1.2.840.114350.1.13.570.2.7.5.737384.14' or @root != '1.2.840.114350.1.1'))
+          ]">
+        
+          <xsl:choose>
+            <!-- Medicaid Number (EPI, specific root) -->
+            <xsl:when test="@assigningAuthorityName='EPI' and @root='1.2.840.114350.1.1'">
+              {
+                "type": {
+                  "coding": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                    "code": "MA",
+                    "display": "Patient Medicaid Number"
+                  }],
+                  "text": "Patient Medicaid Number"
+                },
+                "system": "http://www.medicaid.gov/",
+                "value": "<xsl:value-of select="@extension"/>"
               }
-            </xsl:if>
-          }
-        </xsl:if>
+            </xsl:when>
+
+            <!-- SSN -->
+            <xsl:when test="@assigningAuthorityName='JMR123'">
+              {
+                "type": {
+                  "coding": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                    "code": "SS",
+                    "display": "Social Security Number"
+                  }],
+                  "text": "Social Security Number"
+                },
+                "system": "http://www.ssa.gov/",
+                "value": "<xsl:value-of select="@extension"/>"
+              }
+            </xsl:when>
+
+            <!-- MR Number -->
+            <xsl:when test="@assigningAuthorityName='EPI' and (@root='1.2.840.114350.1.13.570.2.7.5.737384.14' or @root != '1.2.840.114350.1.1')">
+              {
+                "type": {
+                  "coding": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                    "code": "MR",
+                    "display": "Medical Record Number"
+                  }],
+                  "text": "Medical Record Number"
+                },
+                "system": "http://www.scn.gov/facility/<xsl:value-of select="@extension"/>",
+                "value": "<xsl:value-of select="@extension"/>"
+                <xsl:if test="string($organizationResourceId)">
+                  , "assigner": {
+                    "reference": "Organization/<xsl:value-of select="$organizationResourceId"/>"
+                  }
+                </xsl:if>
+              }
+            </xsl:when>
+          </xsl:choose>
+
+          <!-- Comma for all but the last -->
+          <xsl:if test="position() != last()">,</xsl:if>
+        </xsl:for-each>
       ]
-      </xsl:if>
       <xsl:if test="ccda:patient/sdtc:deceasedInd/@value">  
       , "deceasedBoolean": <xsl:value-of select="ccda:patient/sdtc:deceasedInd/@value"/>  
       </xsl:if>
@@ -1066,21 +1067,65 @@
                   </xsl:when>
                 </xsl:choose>
               },
-              "valueCodeableConcept" : {
-                "coding": [{
-                  "system": "http://loinc.org",
-                  "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
-                  "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                }]
-                <xsl:choose>
-                  <xsl:when test="ccda:observation/ccda:value/@originalText">
-                    , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
-                  </xsl:when>
-                  <xsl:when test="ccda:observation/ccda:value/@displayName">
-                    , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                  </xsl:when>
-                </xsl:choose>
-              },
+              <!-- https://test.shinny.org/change_log.html#v150 
+                 According to v1.5.0 change log, add component element for the question code '96778-6' -->
+              <xsl:choose>
+                <xsl:when test="string(ccda:observation/ccda:code/@code) = '96778-6'">
+                  "component": [
+                        {
+                            "code": {
+                              "coding": [
+                                {
+                                  "system": "http://loinc.org",
+                                  "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
+                                  "display": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+                                }
+                              ]
+                              <xsl:choose>
+                                <xsl:when test="ccda:observation/ccda:code/@originalText">
+                                  , "text": "<xsl:value-of select='ccda:observation/ccda:code/@originalText'/>"
+                                </xsl:when>
+                                <xsl:when test="ccda:observation/ccda:code/@displayName">
+                                  , "text": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
+                                </xsl:when>
+                              </xsl:choose>
+                            },
+                            "valueCodeableConcept" : {
+                              "coding": [{
+                                "system": "http://loinc.org",
+                                "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
+                                "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                              }]
+                              <xsl:choose>
+                                <xsl:when test="ccda:observation/ccda:value/@originalText">
+                                  , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
+                                </xsl:when>
+                                <xsl:when test="ccda:observation/ccda:value/@displayName">
+                                  , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                                </xsl:when>
+                              </xsl:choose>
+                            }
+                        }
+                  ],
+                </xsl:when>
+                <xsl:otherwise>
+                  "valueCodeableConcept" : {
+                    "coding": [{
+                      "system": "http://loinc.org",
+                      "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
+                      "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                    }]
+                    <xsl:choose>
+                      <xsl:when test="ccda:observation/ccda:value/@originalText">
+                        , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
+                      </xsl:when>
+                      <xsl:when test="ccda:observation/ccda:value/@displayName">
+                        , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                      </xsl:when>
+                    </xsl:choose>
+                  },
+                </xsl:otherwise>
+              </xsl:choose> 
               "subject": {
                 "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
                 "display": "<xsl:value-of select="$patientResourceName"/>"
