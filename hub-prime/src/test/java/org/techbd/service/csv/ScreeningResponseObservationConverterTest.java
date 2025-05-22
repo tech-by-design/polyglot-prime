@@ -14,7 +14,6 @@ import java.util.Map;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Observation;
-import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -39,9 +38,6 @@ class ScreeningResponseObservationConverterTest {
 
     @Mock
     CodeLookupService codeLookupService;
-
-    @Mock
-    DSLContext dslContext;
 
     @InjectMocks
     private ScreeningResponseObservationConverter converter;
