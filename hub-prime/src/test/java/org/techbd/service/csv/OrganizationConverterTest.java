@@ -15,7 +15,6 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Organization;
-import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,9 +44,6 @@ class OrganizationConverterTest {
 
     @Mock
     CodeLookupService codeLookupService;
-
-    @Mock
-    DSLContext dslContext;
 
     @InjectMocks
     private OrganizationConverter organizationConverter;

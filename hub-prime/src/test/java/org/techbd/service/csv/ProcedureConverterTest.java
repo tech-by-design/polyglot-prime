@@ -17,7 +17,6 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Procedure;
-import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -43,9 +42,6 @@ class ProcedureConverterTest {
 
     @Mock
     CodeLookupService codeLookupService;
-
-    @Mock
-    DSLContext dslContext;
 
     @InjectMocks
     private ProcedureConverter procedureConverter;

@@ -12,7 +12,6 @@ import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Observation;
-import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -40,10 +39,7 @@ class SexualOrientationObservationConverterTest {
 
         @Mock
         CodeLookupService codeLookupService;
-
-        @Mock
-        DSLContext dslContext;
-        
+     
         @InjectMocks
         private SexualOrientationObservationConverter sexualOrientationObservationConverter;
 

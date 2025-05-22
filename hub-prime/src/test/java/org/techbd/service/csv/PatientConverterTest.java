@@ -16,7 +16,6 @@ import org.hl7.fhir.r4.model.ContactPoint;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.StringType;
-import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,9 +45,6 @@ class PatientConverterTest {
 
         @Mock
         CodeLookupService codeLookupService;
-
-        @Mock
-        DSLContext dslContext;
 
         @InjectMocks
         private PatientConverter patientConverter;

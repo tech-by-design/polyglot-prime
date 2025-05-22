@@ -12,7 +12,6 @@ import org.assertj.core.api.SoftAssertions;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Encounter;
-import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,15 +42,12 @@ class EncounterConverterTest {
     @Mock
     CodeLookupService codeLookupService;
 
-    @Mock
-    DSLContext dslContext;
-
     @InjectMocks
     private EncounterConverter encounterConverter;
     
     @BeforeEach
     void setUp() throws Exception {
-            encounterConverter = new EncounterConverter(udiPrimeJpaConfig, codeLookupService);
+           encounterConverter = new EncounterConverter(udiPrimeJpaConfig, codeLookupService);
 
             Field profileMapField = FHIRUtil.class.getDeclaredField("PROFILE_MAP");
             profileMapField.setAccessible(true);
