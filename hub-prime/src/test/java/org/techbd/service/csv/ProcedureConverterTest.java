@@ -1,22 +1,23 @@
 package org.techbd.service.csv;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.lang.reflect.Modifier;
-import java.nio.file.Files;
 
-import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.Procedure;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Extension;
-import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.Procedure;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -26,13 +27,25 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.service.converters.shinny.CodeLookupService;
 import org.techbd.service.converters.shinny.ProcedureConverter;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.CsvConstants;
 import org.techbd.util.FHIRUtil;
+
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 
 class ProcedureConverterTest {
+
+    @Mock
+    UdiPrimeJpaConfig udiPrimeJpaConfig;
+
+    @Mock
+    CodeLookupService codeLookupService;
+
+    @Mock
+    DSLContext dslContext;
 
     @InjectMocks
     private ProcedureConverter procedureConverter;

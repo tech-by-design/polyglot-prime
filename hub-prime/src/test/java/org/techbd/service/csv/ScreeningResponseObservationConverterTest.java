@@ -14,6 +14,7 @@ import java.util.Map;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Observation;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -23,8 +24,9 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
-import org.techbd.service.converters.shinny.BaseConverter;
+import org.techbd.service.converters.shinny.CodeLookupService;
 import org.techbd.service.converters.shinny.ScreeningResponseObservationConverter;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -32,11 +34,17 @@ import ca.uhn.fhir.parser.IParser;
 
 class ScreeningResponseObservationConverterTest {
 
-    @InjectMocks
-    private ScreeningResponseObservationConverter converter;
+    @Mock
+    UdiPrimeJpaConfig udiPrimeJpaConfig;
 
     @Mock
-    private BaseConverter baseConverter;
+    CodeLookupService codeLookupService;
+
+    @Mock
+    DSLContext dslContext;
+
+    @InjectMocks
+    private ScreeningResponseObservationConverter converter;
 
     @BeforeEach
     void setUp() throws Exception {

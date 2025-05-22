@@ -15,10 +15,12 @@ import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Organization;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +28,9 @@ import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.service.converters.shinny.CodeLookupService;
 import org.techbd.service.converters.shinny.OrganizationConverter;
+import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.util.FHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -35,6 +39,16 @@ import ca.uhn.fhir.parser.IParser;
 @ExtendWith(MockitoExtension.class)
 class OrganizationConverterTest {
     private static final Logger LOG = LoggerFactory.getLogger(PatientConverterTest.class.getName());
+   
+    @Mock
+    UdiPrimeJpaConfig udiPrimeJpaConfig;
+
+    @Mock
+    CodeLookupService codeLookupService;
+
+    @Mock
+    DSLContext dslContext;
+
     @InjectMocks
     private OrganizationConverter organizationConverter;
 
