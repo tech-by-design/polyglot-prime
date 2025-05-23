@@ -94,23 +94,29 @@ public class DataLedgerApiClient {
                 .header("Accept", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                 .build();
-        String dataLedgerApiKey =AWSUtil.getValue(appConfig.getDataLedgerApiKeySecretName());
-        request = HttpRequest.newBuilder(request.uri())
-            .headers(request.headers().map().entrySet().stream()
-                .flatMap(e -> e.getValue().stream().map(v -> new String[]{e.getKey(), v}))
-                .flatMap(arr -> java.util.stream.Stream.of(arr))
-                .toArray(String[]::new))
-            .header("x-api-key", dataLedgerApiKey)
-            .method(request.method(), request.bodyPublisher().get())
-            .build();
+        String dataLedgerApiKey = AWSUtil.getValue(appConfig.getDataLedgerApiKeySecretName());
+        LOG.info("DataLedger Api Key fetched from Secret Manager:" +dataLedgerApiKey == null ? "null" : "not null");        
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(request.uri())
+                .headers(request.headers().map().entrySet().stream()
+                        .flatMap(e -> e.getValue().stream().map(v -> new String[] { e.getKey(), v }))
+                        .flatMap(arr -> java.util.stream.Stream.of(arr))
+                        .toArray(String[]::new))
+                .method(request.method(), request.bodyPublisher().orElse(HttpRequest.BodyPublishers.noBody())); // safer
+                                                                                                                // get()
+
+        if (dataLedgerApiKey != null) {
+            requestBuilder.header("x-api-key", dataLedgerApiKey);
+        }
+
+        request = requestBuilder.build();
 
         CompletableFuture<Void> future = HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
             .thenAccept(response -> {
                     boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
                     LOG.info("Data Ledger API response code : " + response.statusCode() + " for interactionId : "
                             + interactionId);
-                    LOG.info("Data Ledger API response body : " + response.body() + " for interactionId : "
-                            + interactionId);
+                    // LOG.info("Data Ledger API response body : " + response.body() + " for interactionId : "
+                    //         + interactionId);
                     if (appConfig.isDataLedgerDiagnostics()) {
                         processActionDiagnosticData(interactionId, apiUrl, jsonPayload, response, null,
                                 groupHubInteractionId, sourceHubInteractionId, action, provenance, source,
