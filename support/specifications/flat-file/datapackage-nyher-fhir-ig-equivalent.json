@@ -192,7 +192,8 @@
           {"name": "SCREENING_CODE_DESCRIPTION", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display", "type": "string", "constraints": {"required": true, "enum": [ 
           "accountable health communities (ahc) health-related social needs screening (hrsn) tool",
           "accountable health communities (ahc) health-related social needs (hrsn) supplemental questions",
-          "nys accountable health communities (ahc) health-related social needs (hrsn) screening tool"            
+          "nys accountable health communities (ahc) health-related social needs (hrsn) screening tool",
+          "nys accountable health communities (ahc) health-related social needs screening (hrsn) tool"            
           ]
           }},                    
           {"name": "SCREENING_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.system", "constraints": {"required": true, "enum": ["http://loinc.org","https://shinny.org/us/ny/hrsn/index.html"]}},           
