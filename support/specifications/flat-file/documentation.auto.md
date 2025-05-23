@@ -337,7 +337,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['http://loinc.org', 'https://shinny.org/us/ny/hrsn/index.html']
+    - `enum` ['http://loinc.org', 'https://shinny.org/us/ny/hrsn/index.html', 'http://test.shinny.org/us/ny/hrsn/codesystem/nys-hrsn-questionnaire', 'http://shinny.org/us/ny/hrsn/codesystem/nys-hrsn-questionnaire']
 ### `QUESTION_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code
   - `type` string
