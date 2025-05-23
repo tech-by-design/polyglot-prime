@@ -51,7 +51,17 @@ public class AppConfig {
     private Map<String, FhirV4Config> igPackages;
     private String dataLedgerApiUrl;
     private boolean dataLedgerTracking;
-    private boolean dataLedgerDiagnostics;    private String validationSeverityLevel;
+    private boolean dataLedgerDiagnostics;    
+    private String validationSeverityLevel;
+    private String dataLedgerApiKeySecretName;
+
+    public String getDataLedgerApiKeySecretName() {
+        return dataLedgerApiKeySecretName;
+    }
+
+    public void setDataLedgerApiKeySecretName(String dataLedgerApiKeySecretName) {
+        this.dataLedgerApiKeySecretName = dataLedgerApiKeySecretName;
+    }
 
     public String getValidationSeverityLevel() {
         return validationSeverityLevel;

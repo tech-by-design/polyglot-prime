@@ -18,6 +18,7 @@ import org.techbd.conf.Configuration;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.SatDiagnosticDataledgerApiUpserted;
+import org.techbd.util.AWSUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -93,9 +94,18 @@ public class DataLedgerApiClient {
                 .header("Accept", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                 .build();
-  
+        String dataLedgerApiKey =AWSUtil.getValue(appConfig.getDataLedgerApiKeySecretName());
+        request = HttpRequest.newBuilder(request.uri())
+            .headers(request.headers().map().entrySet().stream()
+                .flatMap(e -> e.getValue().stream().map(v -> new String[]{e.getKey(), v}))
+                .flatMap(arr -> java.util.stream.Stream.of(arr))
+                .toArray(String[]::new))
+            .header("x-api-key", dataLedgerApiKey)
+            .method(request.method(), request.bodyPublisher().get())
+            .build();
+
         CompletableFuture<Void> future = HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenAccept(response -> {
+            .thenAccept(response -> {
                     boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
                     LOG.info("Data Ledger API response code : " + response.statusCode() + " for interactionId : "
                             + interactionId);
@@ -274,7 +284,7 @@ public class DataLedgerApiClient {
 
     @Getter
     public enum Actor {
-        TECHBD("TechBD-devl"),
+        TECHBD("TechBD"),
         NYEC("NYeC"),
         INVALID_CSV("Invalid - Csv Conversion Failed"),
         INVALID_CCDA("Invalid - CCDA Conversion Failed");
