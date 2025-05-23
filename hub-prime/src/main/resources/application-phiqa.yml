@@ -86,3 +86,4 @@ org:
             dataLedgerApiUrl: https://k77kvhgmkh.execute-api.us-east-1.amazonaws.com/qa 
             dataLedgerTracking: false
             dataLedgerDiagnostics: true
+            dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key

@@ -1,12 +1,13 @@
 package org.techbd.util;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
 import org.techbd.service.http.hub.prime.AppConfig;
@@ -24,7 +25,7 @@ public class FHIRUtil {
     public static Map<String, String> PROFILE_MAP;
     private static String BASE_FHIR_URL;
     public static final String BUNDLE = "bundle";
-
+    private static final Logger LOG = LoggerFactory.getLogger(FHIRUtil.class);
     public FHIRUtil(AppConfig appConfig) {
         this.appConfig = appConfig;
     }
@@ -85,7 +86,8 @@ public class FHIRUtil {
             }
             return rootNode.path("id").asText("Bundle id not provided");
         } catch (Exception e) {
-            return "Bundle id not provided";
+            LOG.error("Exception fetching bundle Id for interactionId :  ",interactionId , e.getMessage());
+            return StringUtils.EMPTY;
         }
     }
 }
