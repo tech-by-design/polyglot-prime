@@ -93,9 +93,7 @@ public class DataLedgerApiClient {
                 .header("Accept", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                 .build();
-        String curlCommand = buildCurlCommand(request, jsonPayload);
-        LOG.info("Equivalent CURL: " + curlCommand); // TODO -remove after testing
-
+  
         CompletableFuture<Void> future = HttpClient.newHttpClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(response -> {
                     boolean isSuccess = response.statusCode() >= 200 && response.statusCode() < 300;
@@ -119,21 +117,6 @@ public class DataLedgerApiClient {
                     }
                     return null;
                 });
-    }
-
-    private static String buildCurlCommand(HttpRequest request, String body) {
-        StringBuilder curl = new StringBuilder("curl -X ").append(request.method());
-        request.headers().map().forEach((key, values) -> {
-            String headerString = values.stream().map(value -> "-H \"" + key + ": " + value + "\"")
-                    .collect(Collectors.joining(" "));
-            curl.append(" ").append(headerString);
-        });
-        curl.append(" \"").append(request.uri()).append("\"");
-        if (body != null && !body.isEmpty()) {
-            curl.append(" -d '").append(body.replace("'", "\\'")).append("'");
-        }
-
-        return curl.toString();
     }
 
     private void saveSentActionDiagnosticData(String interactionId, String apiUrl, String requestPayload,
