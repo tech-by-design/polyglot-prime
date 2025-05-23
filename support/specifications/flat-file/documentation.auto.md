@@ -325,7 +325,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['96777-8', '97023-6', 'nysahchrsn']
+    - `enum` ['96777-8', '97023-6', 'nysahchrsn', 'nys-ahc-hrsn']
 ### `SCREENING_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display
   - `type` string
