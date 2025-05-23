@@ -135,14 +135,23 @@ public class FHIRService {
 			if (null == interactionId) {
 				interactionId = getBundleInteractionId(request, coRrelationId);
 			}
-			String bundleId =FHIRUtil.extractBundleId(payload, tenantId);
-			 if (!SourceType.CSV.name().equalsIgnoreCase(sourceType) && !SourceType.CCDA.name().equalsIgnoreCase(sourceType)) {
-				//send only for source type FHIR
-				DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(tenantId, DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), bundleId
-				);
+			String bundleId = FHIRUtil.extractBundleId(payload, tenantId);
+			if (!SourceType.CSV.name().equalsIgnoreCase(sourceType)
+					&& !SourceType.CCDA.name().equalsIgnoreCase(sourceType)) {
+				DataLedgerPayload dataLedgerPayload = null;
+				if (StringUtils.isNotEmpty(bundleId)) {
+					dataLedgerPayload = DataLedgerPayload.create(tenantId,
+							DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(),
+							bundleId);
+				} else {
+					dataLedgerPayload = DataLedgerPayload.create(tenantId,
+							DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(),
+							interactionId);
+				}
 				final var dataLedgerProvenance = "%s.processBundle".formatted(FHIRService.class.getName());
-				dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
-			 }
+				dataLedgerApiClient.processRequest(dataLedgerPayload, interactionId, dataLedgerProvenance,
+						SourceType.FHIR.name(), null);
+			}
 			final var start = Instant.now();
 			LOG.info("Bundle processing start at {} for interaction id {}", start, getBundleInteractionId(request, coRrelationId));
 
