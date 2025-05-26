@@ -103,7 +103,11 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observationIdHashed;
                         setMeta(observation,baseFHIRUrl);
                         Meta meta = observation.getMeta();
-                        meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
+                        if (StringUtils.isNotEmpty(screeningProfileData.getScreeningLastUpdated())) {
+                                meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
+                        } else {
+                                meta.setLastUpdated(new Date());
+                        }
                         populateScreeningIdentifier(observation, data);
                         // max date
                         // available in all
@@ -367,9 +371,13 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.setId(observationId);
                 setMeta(groupObservation,baseFhirUrl);
                 Meta meta = groupObservation.getMeta();
-                meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
+                if (StringUtils.isNotEmpty(screeningProfileData.getScreeningLastUpdated())) {
+                        meta.setLastUpdated(
+                                        DateUtil.convertStringToDate(screeningProfileData.getScreeningLastUpdated()));
+                } else {
+                        meta.setLastUpdated(new Date());
+                }
                 groupObservation.setMeta(meta);
-
                 groupObservation.setLanguage(fetchCode(screeningProfileData.getScreeningLanguageCode(), CsvConstants.SCREENING_LANGUAGE_CODE, interactionId));
 
                 // Set status from screening profile

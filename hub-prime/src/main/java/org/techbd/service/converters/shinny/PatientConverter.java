@@ -82,8 +82,11 @@ public class PatientConverter extends BaseConverter {
         idsGenerated.put(CsvConstants.PATIENT_ID, patient.getId());
         String fullUrl = "http://shinny.org/us/ny/hrsn/Patient/" + patient.getId();
         Meta meta = patient.getMeta();
-        meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
-                                                                                          // screening records
+        if (StringUtils.isNotEmpty(demographicData.getPatientLastUpdated())) {
+            meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated())); // max date available in all
+        } else {                                                                               // screening records
+            meta.setLastUpdated(new java.util.Date());
+        }                                                                                         
         patient.setLanguage("en");
         populatePatientWithExtensions(patient, demographicData, interactionId);
         populateMrIdentifier(patient, demographicData,qeAdminData, idsGenerated );
