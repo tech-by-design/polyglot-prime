@@ -1,31 +1,31 @@
 code_type,code,display_string,system_value,description,ig_version,provenance
-question_code,71802-3,,http://loinc.org,,1.4.2,TechBD
-question_code,96778-6,,http://loinc.org,,1.4.2,TechBD
-question_code,88122-7,,http://loinc.org,,1.4.2,TechBD
-question_code,88123-5,,http://loinc.org,,1.4.2,TechBD
-question_code,93030-5,,http://loinc.org,,1.4.2,TechBD
-question_code,96779-4,,http://loinc.org,,1.4.2,TechBD
-question_code,95618-5,,http://loinc.org,,1.4.2,TechBD
-question_code,95617-7,,http://loinc.org,,1.4.2,TechBD
-question_code,95616-9,,http://loinc.org,,1.4.2,TechBD
-question_code,95615-1,,http://loinc.org,,1.4.2,TechBD
-question_code,95614-4,,http://loinc.org,,1.4.2,TechBD
-question_code,76513-1,,http://loinc.org,,1.4.2,TechBD
-question_code,96780-2,,http://loinc.org,,1.4.2,TechBD
-question_code,96781-0,,http://loinc.org,,1.4.2,TechBD
-question_code,93159-2,,http://loinc.org,,1.4.2,TechBD
-question_code,97027-7,,http://loinc.org,,1.4.2,TechBD
-question_code,96782-8,,http://loinc.org,,1.4.2,TechBD
-question_code,89555-7,,http://loinc.org,,1.4.2,TechBD
-question_code,68516-4,,http://loinc.org,,1.4.2,TechBD
-question_code,68517-2,,http://loinc.org,,1.4.2,TechBD
-question_code,96842-0,,http://loinc.org,,1.4.2,TechBD
-question_code,95530-2,,http://loinc.org,,1.4.2,TechBD
-question_code,68524-8,,http://loinc.org,,1.4.2,TechBD
-question_code,44250-9,,http://loinc.org,,1.4.2,TechBD
-question_code,44255-8,,http://loinc.org,,1.4.2,TechBD
-question_code,93038-8,,http://loinc.org,,1.4.2,TechBD
-question_code,69858-9,,http://loinc.org,,1.4.2,TechBD
-question_code,69861-3,,http://loinc.org,,1.4.2,TechBD
-question_code,77594-0,,http://loinc.org,,1.4.2,TechBD
-question_code,71969-0,,http://loinc.org,,1.4.2,TechBD
+question_code,71802-3,What is your living situation today?,http://loinc.org,,1.4.2,TechBD
+question_code,96778-6,Think about the place you live. Do you have problems with any of the following?,http://loinc.org,,1.4.2,TechBD
+question_code,88122-7,"Within the past 12 months, you worried that your food would run out before you got money to buy more.",http://loinc.org,,1.4.2,TechBD
+question_code,88123-5,"Within the past 12 months, the food you bought just didn't last and you didn't have money to get more.",http://loinc.org,,1.4.2,TechBD
+question_code,93030-5,"In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?",http://loinc.org,,1.4.2,TechBD
+question_code,96779-4,"In the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?",http://loinc.org,,1.4.2,TechBD
+question_code,95618-5,"How often does anyone, including family and friends, physically hurt you?",http://loinc.org,,1.4.2,TechBD
+question_code,95617-7,"How often does anyone, including family and friends, insult or talk down to you?",http://loinc.org,,1.4.2,TechBD
+question_code,95616-9,"How often does anyone, including family and friends, threaten you with harm?",http://loinc.org,,1.4.2,TechBD
+question_code,95615-1,"How often does anyone, including family and friends, scream or curse at you?",http://loinc.org,,1.4.2,TechBD
+question_code,95614-4,Total safety score,http://loinc.org,,1.4.2,TechBD
+question_code,76513-1,"How hard is it for you to pay for the very basics like food, housing, medical care, and heating? Would you say it is",http://loinc.org,,1.4.2,TechBD
+question_code,96780-2,Do you want help finding or keeping work or a job?,http://loinc.org,,1.4.2,TechBD
+question_code,96781-0,"If for any reason you need help with day-to-day activities such as bathing, preparing meals, shopping, managing finances, etc., do you get the help you need?",http://loinc.org,,1.4.2,TechBD
+question_code,93159-2,How often do you feel lonely or isolated from those around you?,http://loinc.org,,1.4.2,TechBD
+question_code,97027-7,Do you speak a language other than English at home?,http://loinc.org,,1.4.2,TechBD
+question_code,96782-8,"Do you want help with school or training? For example, starting or completing job training or getting a high school diploma, GED or equivalent.",http://loinc.org,,1.4.2,TechBD
+question_code,89555-7,"In the last 30 days, other than the activities you did for work, on average, how many days per week did you engage in moderate exercise (like walking fast, running, jogging, dancing, swimming, biking, or other similar activities)",http://loinc.org,,1.4.2,TechBD
+question_code,68516-4,"On average, how many minutes did you usually spend exercising at this level on one of those days?",http://loinc.org,,1.4.2,TechBD
+question_code,68517-2,How many times in the past 12 months have you had 5 or more drinks in a day (males) or 4 or more drinks in a day (females)?,http://loinc.org,,1.4.2,TechBD
+question_code,96842-0,How often have you used any tobacco product in past 12 months?,http://loinc.org,,1.4.2,TechBD
+question_code,95530-2,How many times in the past year have you used prescription drugs for non-medical reasons?,http://loinc.org,,1.4.2,TechBD
+question_code,68524-8,How many times in the past year have you used illegal drugs?,http://loinc.org,,1.4.2,TechBD
+question_code,44250-9,Little interest or pleasure in doing things?,http://loinc.org,,1.4.2,TechBD
+question_code,44255-8,"Feeling down, depressed, or hopeless?",http://loinc.org,,1.4.2,TechBD
+question_code,93038-8,"Stress means a situation in which a person feels tense, restless, nervous, or anxious, or is unable to sleep at night because his or her mind is troubled all the time. Do you feel this kind of stress these days?",http://loinc.org,,1.4.2,TechBD
+question_code,69858-9,"Because of a physical, mental, or emotional condition, do you have serious difficulty concentrating, remembering, or making decisions?",http://loinc.org,,1.4.2,TechBD
+question_code,69861-3,"Because of a physical, mental, or emotional condition, do you have difficulty doing errands alone such as visiting a physician's office or shopping",http://loinc.org,,1.4.2,TechBD
+question_code,77594-0,Calculated weekly physical activity,http://loinc.org,,1.4.2,TechBD
+question_code,71969-0,PROMIS-10 Global Mental Health (GMH) score T-score,http://loinc.org,,1.4.2,TechBD
