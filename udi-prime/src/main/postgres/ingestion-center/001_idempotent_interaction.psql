@@ -149,13 +149,12 @@ AS SELECT hub_interaction_id AS interaction_id,
 
 
 /*******************************************************************************************
-This view summarizes FHIR HTTP interactions by selecting the most recent request per 
-interaction ID from the `sat_interaction_fhir_request` table. It includes details such as 
-creation time, request URI, tenant and organization IDs, patient MRN, source system, 
-resource types, and validation status. It also classifies the source type as 'FHIR', 'CSV', 
-or 'CCDA' based on the original source. The view excludes requests made to 
-'/api/expect/fhir/bundle' and ensures only the latest record per interaction ID is retained.
+This view provides a summary of HTTP FHIR requests, selecting the most recent record per 
+interaction ID. It includes metadata such as URI, tenant, organization, patient MRN, 
+resource types, and source classification ('FHIR', 'CSV', or 'CCDA'). It also flags whether 
+the bundle is valid and excludes records targeting the '/api/expect/fhir/bundle' endpoint.
 *******************************************************************************************/
+
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_summary CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request_summary
@@ -196,8 +195,12 @@ AS SELECT sat_interaction_http_request_id,
    FROM techbd_udi_ingress.sat_interaction_http_request sihr;   
 
 /*******************************************************************************************
-This materialized view is to extract observability metrics from interaction_http_request
-******************************************************************************************/
+This view captures the most recent observation for each HTTP interaction based on the 
+longest duration. It calculates the duration (in milliseconds) between `start_time` and 
+`finish_time` for each interaction and retains only entries with non-null timestamps. 
+The result is sorted in descending order of interaction duration.
+*******************************************************************************************/
+
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_observe CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_observe
 AS 
@@ -861,8 +864,12 @@ GROUP BY
 
 
 /*******************************************************************************************
- * Comprehensive view of Latest FHIR Interactions per Tenant IDs* 
- ******************************************************************************************/
+This view selects the most recent FHIR interaction per tenant from the 
+`sat_interaction_fhir_request` table where the request URI matches specific '/Bundle'-related 
+paths. It returns the latest interaction details along with the total count of such 
+interactions per tenant. Only the most recent interaction per tenant is retained.
+*******************************************************************************************/
+
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_fhir CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_fhir AS
 with ranked_records as (
@@ -1547,6 +1554,15 @@ AS SELECT created_at,
     user_agent
    FROM techbd_udi_ingress.sat_interaction_user sai
   ORDER BY created_at DESC;
+
+
+
+/*******************************************************************************************
+This view lists distinct user sessions by grouping on `user_session` and `user_session_hash`.
+It extracts the earliest `created_at` timestamp along with the first available user metadata 
+(user ID, name, and role) for each session. The output is ordered by session creation time 
+in descending order to prioritize recent sessions.
+*******************************************************************************************/
 
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_user_list CASCADE;
@@ -3649,6 +3665,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+/*******************************************************************************************
+This function returns a summary of FHIR submissions per tenant (`qe_name`) between the 
+given start and end dates. It calculates the total submissions, successful Shinny Datalake 
+forwards, failed forwards, and the most recent submission timestamp. Only interactions 
+with specific '/Bundle'-related URIs are considered.
+*******************************************************************************************/
+
+
 DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_needs_attention(date, date);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_needs_attention(start_date DATE, end_date DATE)
 RETURNS TABLE (
@@ -3932,6 +3957,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http_stat CASCADE;
+
+/*******************************************************************************************
+This view summarizes CSV HTTP interactions by combining ZIP file requests with related flat 
+file records and FHIR processing results. It includes metadata such as tenant, session ID, 
+file counts, and FHIR response statistics (total, success, failure). Only records with 
+'Original Flat File CSV' or 'CSV Validation Result' nature are included.
+*******************************************************************************************/
+
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http AS
 WITH fhir_summary AS (
@@ -4315,8 +4348,16 @@ interaction details, request attributes, and validation issues.
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_ccda_fhir_request CASCADE;
 
+/*******************************************************************************************
+This view retrieves the most recent CCDA interaction per `hub_interaction_id` from the 
+`sat_interaction_fhir_request` table. It includes metadata and payload details, along with 
+a derived FHIR conversion status indicating whether a corresponding FHIR payload exists. 
+Only the latest record per interaction is retained, and interactions are filtered by 
+`source_type = 'CCDA'`.
+*******************************************************************************************/
+
+
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_ccda_request CASCADE;
-/*Update the view from the commented view after ccda xml file validation completed*/
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
 AS 
 WITH fhir_summary AS (
@@ -4365,52 +4406,15 @@ JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
 WHERE sicr.rn = 1
 ORDER BY sicr.created_at DESC;
 
-/*CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_ccda_request
-AS
-with fhir_summary as (
-select
-	hub_interaction_id,
-	CASE WHEN COUNT(hub_interaction_id) > 0 THEN 'True' ELSE 'False' END AS fhir_conversion_status  
-from
-	techbd_udi_ingress.sat_interaction_fhir_request
-where
-	(nature = 'Original FHIR Payload' or nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered')
-	and source_type = 'CCDA'
-group by
-	hub_interaction_id     
-)
-select
-	sicr.sat_interaction_ccda_request_id,
-	sicr.hub_interaction_id,
-	sicr.tenant_id,
-	sicr.tenant_id_lower,
-	sicr.uri,
-	sicr.nature,
-	sicr.payload,
-	fhir_summary.fhir_conversion_status as fhir_conversion_status,
-	sicr.ccda_payload_text,
-	sicr.client_ip_address,
-	sicr.user_agent,
-	sicr.from_state,
-	sicr.to_state,
-	sicr.state_transition_reason,
-	sicr.elaboration,
-	sicr.origin,
-	sicr.created_at,
-	sicr.created_by,
-	sicr.provenance
-from
-	techbd_udi_ingress.sat_interaction_ccda_request sicr
-left join fhir_summary
-    on
-	sicr.hub_interaction_id = fhir_summary.hub_interaction_id
-order by
-	sicr.created_at desc;*/
     
 
 /*******************************************************************************************
- * Comprehensive view of Latest CSV via HTTPs Interactions per Tenant IDs* 
- ******************************************************************************************/
+This view selects the most recent CSV-based FHIR interaction per tenant from the 
+`sat_interaction_fhir_request` table. It filters records where the source type is 'CSV' 
+and returns the latest interaction details along with the total count of such interactions 
+per tenant. Only the most recent interaction per tenant is retained.
+*******************************************************************************************/
+
  DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_csv_https CASCADE;
  CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_csv_https AS
  WITH ranked_records AS (
@@ -4712,10 +4716,13 @@ $function$
 ;
 
 
-
 /*******************************************************************************************
- * Comprehensive view of Latest CCDA via HTTPs Interactions per Tenant IDs* 
- ******************************************************************************************/
+This view selects the most recent CCDA-based FHIR interaction per tenant from the 
+`sat_interaction_fhir_request` table. It filters records where the source type is 'CCDA' 
+and returns the latest interaction details along with the total count of such interactions 
+per tenant. Only the most recent interaction per tenant is retained.
+*******************************************************************************************/
+
  DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_ccda_https CASCADE;
  CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_ccda_https AS
  WITH ranked_records AS (
