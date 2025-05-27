@@ -12,7 +12,7 @@ import {
   EnumType,
 } from "https://deno.land/x/cliffy@v1.0.0-rc.4/command/mod.ts";
 import * as dax from "https://deno.land/x/dax@0.39.2/mod.ts";
-import * as pgpass from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.27/lib/postgres/pgpass/pgpass-parse.ts";
+import * as pgpass from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.14.9/lib/postgres/pgpass/pgpass-parse.ts";
 import * as migrateIc from "./src/main/postgres/ingestion-center/migrations/migrations.ts";
 import * as ddlTable from "./src/main/postgres/ingestion-center/migrations/models-dv.ts";
 
