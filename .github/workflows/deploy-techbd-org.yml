@@ -16,6 +16,7 @@ concurrency:
 jobs:
     synthetic-techbd-devl-deployment:
       runs-on: ubuntu-latest
+      if: "!endsWith(github.event.release.tag_name, '-nexus')"
       steps:
         - uses: actions/checkout@v4
 
@@ -42,6 +43,7 @@ jobs:
 
     synthetic-techbd-stage-deployment:
       runs-on: ubuntu-latest
+      if: "!endsWith(github.event.release.tag_name, '-nexus')"
       steps:
         - uses: actions/checkout@v4
 
@@ -81,6 +83,7 @@ jobs:
 
     phi-prod-techbd-deployment:
       runs-on: ubuntu-latest
+      if: "!endsWith(github.event.release.tag_name, '-nexus')"
       steps:
         - uses: actions/checkout@v4
 
@@ -119,6 +122,7 @@ jobs:
 
     phi-qa-techbd-deployment:
       runs-on: ubuntu-latest
+      if: "!endsWith(github.event.release.tag_name, '-nexus')"
       steps:
         - uses: actions/checkout@v4
 
