@@ -20,7 +20,7 @@
   <recordTarget>
     <patientRole>
       <id assigningAuthorityName="EPI" extension="AB12345C" root="1.2.840.114350.1.1" />
-      <id extension="1942912" root="1.2.840.114350.1.13.861.1.7.5.737384.1104" />
+      <id assigningAuthorityName="EPI" extension="1942912" root="1.2.840.114350.1.13.570.2.7.5.737384.14" />
       <id extension="1942572" root="1.2.840.114350.1.13.861.1.7.5.737384.1118" />
       <id assigningAuthorityName="JMR123" extension="330-28-3883" root="1.2.840.114350.1.13.861.1.7.5.737384.1193" />
       <addr nullFlavor="UNK" />
@@ -69,7 +69,7 @@
       </assignedAuthoringDevice>
       <representedOrganization>
         <id extension="12-3456789" assigningAuthorityName="TAX" root="1.2.840.114350.1.13.861.1.7.2.696570" />
-        <id extension="MA123456" assigningAuthorityName="CMS" root="1.2.840.114350.1.13.861.1.7.2.696570" />
+        <!-- <id extension="MA123456" assigningAuthorityName="CMS" root="1.2.840.114350.1.13.861.1.7.2.696570" /> -->
         <name>Facility</name>
         <telecom use="WP" value="tel:271-9000" />
         <addr use="WP">
@@ -169,7 +169,7 @@
       <id extension="10011595330" root="1.2.840.114350.1.13.861.1.7.3.698084.8" />
       <code code="AMB" codeSystem="2.16.840.1.113883.5.4" displayName="Ambulatory">
         <originalText>Office Visit</originalText>
-        <translation code="101" codeSystem="1.2.840.114350.1.72.1.30" displayName="Office Visit" />
+        <translation code="405672008" codeSystem="1.2.840.114350.1.72.1.30" displayName="Office Visit" />
         <translation code="0" codeSystem="1.2.840.114350.1.72.1.30.1" />
       </code>
       <effectiveTime>
