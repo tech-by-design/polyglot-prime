@@ -1,65 +1,65 @@
 code_type,code,display_string,system_value,description,ig_version,provenance
-answer_code,LA9-3,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA32-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA33-6,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6111-4,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6112-2,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6113-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6114-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6115-5,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6270-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6482-9,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6568-5,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6569-3,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6570-1,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6571-9,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA6729-3,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA9933-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA10044-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA10066-1,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA10082-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA10137-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA10138-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA10139-6,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA13863-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA13902-4,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA13909-9,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA13914-9,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA13942-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA15832-1,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA16644-9,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA18876-5,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA18891-4,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA18934-2,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA19282-5,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA22683-9,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA26460-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA28397-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA28398-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA28580-1,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA28853-2,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA28854-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA28855-7,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA28858-1,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA28891-2,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA30122-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31976-6,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31977-4,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31978-2,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31979-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31980-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31981-6,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31982-4,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31983-2,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31993-1,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31994-9,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31995-6,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31996-4,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31997-2,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31998-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA31999-8,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA32000-4,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA32001-2,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA32002-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA32059-0,,http://loinc.org,,1.4.2,TechBD
-answer_code,LA32060-8,,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31993-1,I have a steady place to live,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31994-9,"I have a place to live today, but I am worried about losing it in the future",http://loinc.org,,1.4.2,TechBD
+answer_code,LA31995-6,"I do not have a steady place to live (i am temporarily staying with others, in a hotel, in a shelter, living outside on the street, on a beach, in a car, abandoned building, bus or train station, or in a park)",http://loinc.org,,1.4.2,TechBD
+answer_code,LA31996-4,"Pests such as bugs, ants, or mice",http://loinc.org,,1.4.2,TechBD
+answer_code,LA28580-1,Mold,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31997-2,Lead paint or pipes,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31998-0,Lack of heat,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31999-8,Oven or stove not working,http://loinc.org,,1.4.2,TechBD
+answer_code,LA32000-4,Smoke detectors missing or not working,http://loinc.org,,1.4.2,TechBD
+answer_code,LA32001-2,Water leaks,http://loinc.org,,1.4.2,TechBD
+answer_code,LA9-3,None of the above,http://loinc.org,,1.4.2,TechBD
+answer_code,LA28397-0,Often true,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6729-3,Sometimes true,http://loinc.org,,1.4.2,TechBD
+answer_code,LA28398-8,Never true,http://loinc.org,,1.4.2,TechBD
+answer_code,LA33-6,Yes,http://loinc.org,,1.4.2,TechBD
+answer_code,LA32-8,No,http://loinc.org,,1.4.2,TechBD
+answer_code,LA32002-0,Already shut off,http://loinc.org,,1.4.2,TechBD
+answer_code,LA10066-1,Rarely,http://loinc.org,,1.4.2,TechBD
+answer_code,LA10082-8,Sometimes,http://loinc.org,,1.4.2,TechBD
+answer_code, LA10044-8,Often,http://loinc.org,,1.4.2,TechBD
+answer_code, LA9933-8,Always,http://loinc.org,,1.4.2,TechBD
+answer_code,LA16644-9,Fairly often,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6482-9,Frequently,http://loinc.org,,1.4.2,TechBD
+answer_code,LA15832-1,Very hard,http://loinc.org,,1.4.2,TechBD
+answer_code,LA22683-9,Somewhat hard,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31980-8,Not hard at all,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31981-6,"Yes, help finding work",http://loinc.org,,1.4.2,TechBD
+answer_code,LA31982-4,"Yes, help keeping work",http://loinc.org,,1.4.2,TechBD
+answer_code,LA31983-2,I do not need or want help,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31976-6,I don't need any help,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31977-4,I get all the help I need,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31978-2,I could use a little more help,http://loinc.org,,1.4.2,TechBD
+answer_code,LA31979-0,I need a lot more help,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6270-8,Never,http://loinc.org,,1.4.2,TechBD
+answer_code,LA26460-8,Once or Twice,http://loinc.org,,1.4.2,TechBD
+answer_code,LA18876-5,Monthly,http://loinc.org,,1.4.2,TechBD
+answer_code,LA18891-4,Weekly,http://loinc.org,,1.4.2,TechBD
+answer_code,LA18934-2,Daily or almost daily,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6111-4,0,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6112-2,1,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6113-0,2,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6114-8,3,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6115-5,4,http://loinc.org,,1.4.2,TechBD
+answer_code,LA10137-0,5,http://loinc.org,,1.4.2,TechBD
+answer_code,LA10138-8,6,http://loinc.org,,1.4.2,TechBD
+answer_code,LA10139-6,7,http://loinc.org,,1.4.2,TechBD
+answer_code,LA13942-0,10,http://loinc.org,,1.4.2,TechBD
+answer_code,LA19282-5,20,http://loinc.org,,1.4.2,TechBD
+answer_code,LA28855-7,30,http://loinc.org,,1.4.2,TechBD
+answer_code,LA28858-1,40,http://loinc.org,,1.4.2,TechBD
+answer_code,LA28854-0,50,http://loinc.org,,1.4.2,TechBD
+answer_code,LA28853-2,60,http://loinc.org,,1.4.2,TechBD
+answer_code,LA28891-2,90,http://loinc.org,,1.4.2,TechBD
+answer_code,LA32059-0,120,http://loinc.org,,1.4.2,TechBD
+answer_code,LA32060-8,150 or greater,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6569-3,Several days,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6570-1,More than half the days,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6571-9,Nearly every day,http://loinc.org,,1.4.2,TechBD
+answer_code,LA6568-5,Not at all,http://loinc.org,,1.4.2,TechBD
+answer_code,LA13863-8,A little bit,http://loinc.org,,1.4.2,TechBD
+answer_code,LA13909-9,Somewhat,http://loinc.org,,1.4.2,TechBD
+answer_code,LA13902-4,Quite a bit,http://loinc.org,,1.4.2,TechBD
+answer_code,LA13914-9,Very much,http://loinc.org,,1.4.2,TechBD
+answer_code,LA30122-8,I choose not to answer this question,http://loinc.org,,1.4.2,TechBD

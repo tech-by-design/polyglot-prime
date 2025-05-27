@@ -1493,6 +1493,387 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('98424e87-bc57-4d79-acc5-36dad8c18a84','screening_entity_id','OID',NULL,'http://www.hl7.org/oid',NULL,'1.4.2',CURRENT_USER,'TechBD'),
 	 ('07326cf0-d4ea-406c-b363-b6c5873f85ca','screening_entity_id','TAX',NULL,'http://www.irs.gov',NULL,'1.4.2',CURRENT_USER,'TechBD') ON CONFLICT DO NOTHING;
 
+ 
+--- Update queries for question codes display strings
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'What is your living situation today?'
+WHERE code_type = 'question_code' AND code = '71802-3' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Think about the place you live. Do you have problems with any of the following?'
+WHERE code_type = 'question_code' AND code = '96778-6' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Within the past 12 months, you worried that your food would run out before you got money to buy more.'
+WHERE code_type = 'question_code' AND code = '88122-7' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Within the past 12 months, the food you bought just didn''t last and you didn''t have money to get more.'
+WHERE code_type = 'question_code' AND code = '88123-5' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?'
+WHERE code_type = 'question_code' AND code = '93030-5' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'In the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?'
+WHERE code_type = 'question_code' AND code = '96779-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How often does anyone, including family and friends, physically hurt you?'
+WHERE code_type = 'question_code' AND code = '95618-5' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How often does anyone, including family and friends, insult or talk down to you?'
+WHERE code_type = 'question_code' AND code = '95617-7' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How often does anyone, including family and friends, threaten you with harm?'
+WHERE code_type = 'question_code' AND code = '95616-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How often does anyone, including family and friends, scream or curse at you?'
+WHERE code_type = 'question_code' AND code = '95615-1' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Total safety score'
+WHERE code_type = 'question_code' AND code = '95614-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How hard is it for you to pay for the very basics like food, housing, medical care, and heating? Would you say it is'
+WHERE code_type = 'question_code' AND code = '76513-1' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Do you want help finding or keeping work or a job?'
+WHERE code_type = 'question_code' AND code = '96780-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'If for any reason you need help with day-to-day activities such as bathing, preparing meals, shopping, managing finances, etc., do you get the help you need?'
+WHERE code_type = 'question_code' AND code = '96781-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How often do you feel lonely or isolated from those around you?'
+WHERE code_type = 'question_code' AND code = '93159-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Do you speak a language other than English at home?'
+WHERE code_type = 'question_code' AND code = '97027-7' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Do you want help with school or training? For example, starting or completing job training or getting a high school diploma, GED or equivalent.'
+WHERE code_type = 'question_code' AND code = '96782-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'In the last 30 days, other than the activities you did for work, on average, how many days per week did you engage in moderate exercise (like walking fast, running, jogging, dancing, swimming, biking, or other similar activities)'
+WHERE code_type = 'question_code' AND code = '89555-7' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'On average, how many minutes did you usually spend exercising at this level on one of those days?'
+WHERE code_type = 'question_code' AND code = '68516-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How many times in the past 12 months have you had 5 or more drinks in a day (males) or 4 or more drinks in a day (females)?'
+WHERE code_type = 'question_code' AND code = '68517-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How often have you used any tobacco product in past 12 months?'
+WHERE code_type = 'question_code' AND code = '96842-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How many times in the past year have you used prescription drugs for non-medical reasons?'
+WHERE code_type = 'question_code' AND code = '95530-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'How many times in the past year have you used illegal drugs?'
+WHERE code_type = 'question_code' AND code = '68524-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Little interest or pleasure in doing things?'
+WHERE code_type = 'question_code' AND code = '44250-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Feeling down, depressed, or hopeless?'
+WHERE code_type = 'question_code' AND code = '44255-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Stress means a situation in which a person feels tense, restless, nervous, or anxious, or is unable to sleep at night because his or her mind is troubled all the time. Do you feel this kind of stress these days?'
+WHERE code_type = 'question_code' AND code = '93038-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Because of a physical, mental, or emotional condition, do you have serious difficulty concentrating, remembering, or making decisions?'
+WHERE code_type = 'question_code' AND code = '69858-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Because of a physical, mental, or emotional condition, do you have difficulty doing errands alone such as visiting a physician''s office or shopping'
+WHERE code_type = 'question_code' AND code = '69861-3' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Calculated weekly physical activity'
+WHERE code_type = 'question_code' AND code = '77594-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'PROMIS-10 Global Mental Health (GMH) score T-score'
+WHERE code_type = 'question_code' AND code = '71969-0' AND (display_string IS NULL OR display_string = '') ;
+
+--- Update queries for answer codes display strings
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I have a steady place to live'
+WHERE code_type = 'answer_code' AND code = 'LA31993-1' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I have a place to live today, but I am worried about losing it in the future'
+WHERE code_type = 'answer_code' AND code = 'LA31994-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I do not have a steady place to live (i am temporarily staying with others, in a hotel, in a shelter, living outside on the street, on a beach, in a car, abandoned building, bus or train station, or in a park)'
+WHERE code_type = 'answer_code' AND code = 'LA31995-6' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Pests such as bugs, ants, or mice'
+WHERE code_type = 'answer_code' AND code = 'LA31996-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Mold'
+WHERE code_type = 'answer_code' AND code = 'LA28580-1' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Lead paint or pipes'
+WHERE code_type = 'answer_code' AND code = 'LA31997-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Lack of heat'
+WHERE code_type = 'answer_code' AND code = 'LA31998-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Oven or stove not working'
+WHERE code_type = 'answer_code' AND code = 'LA31999-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Smoke detectors missing or not working'
+WHERE code_type = 'answer_code' AND code = 'LA32000-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Water leaks'
+WHERE code_type = 'answer_code' AND code = 'LA32001-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'None of the above'
+WHERE code_type = 'answer_code' AND code = 'LA9-3' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Often true'
+WHERE code_type = 'answer_code' AND code = 'LA28397-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Sometimes true'
+WHERE code_type = 'answer_code' AND code = 'LA6729-3' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Never true'
+WHERE code_type = 'answer_code' AND code = 'LA28398-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Yes'
+WHERE code_type = 'answer_code' AND code = 'LA33-6' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'No'
+WHERE code_type = 'answer_code' AND code = 'LA32-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Already shut off'
+WHERE code_type = 'answer_code' AND code = 'LA32002-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Rarely'
+WHERE code_type = 'answer_code' AND code = 'LA10066-1' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Sometimes'
+WHERE code_type = 'answer_code' AND code = 'LA10082-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Often'
+WHERE code_type = 'answer_code' AND code = 'LA10044-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Always'
+WHERE code_type = 'answer_code' AND code = 'LA9933-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Fairly often'
+WHERE code_type = 'answer_code' AND code = 'LA16644-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Frequently'
+WHERE code_type = 'answer_code' AND code = 'LA6482-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Very hard'
+WHERE code_type = 'answer_code' AND code = 'LA15832-1' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Somewhat hard'
+WHERE code_type = 'answer_code' AND code = 'LA22683-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Not hard at all'
+WHERE code_type = 'answer_code' AND code = 'LA31980-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Yes, help finding work'
+WHERE code_type = 'answer_code' AND code = 'LA31981-6' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Yes, help keeping work'
+WHERE code_type = 'answer_code' AND code = 'LA31982-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I do not need or want help'
+WHERE code_type = 'answer_code' AND code = 'LA31983-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I don''t need any help'
+WHERE code_type = 'answer_code' AND code = 'LA31976-6' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I get all the help I need'
+WHERE code_type = 'answer_code' AND code = 'LA31977-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I could use a little more help'
+WHERE code_type = 'answer_code' AND code = 'LA31978-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I need a lot more help'
+WHERE code_type = 'answer_code' AND code = 'LA31979-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Never'
+WHERE code_type = 'answer_code' AND code = 'LA6270-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Once or Twice'
+WHERE code_type = 'answer_code' AND code = 'LA26460-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Monthly'
+WHERE code_type = 'answer_code' AND code = 'LA18876-5' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Weekly'
+WHERE code_type = 'answer_code' AND code = 'LA18891-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Daily or almost daily'
+WHERE code_type = 'answer_code' AND code = 'LA18934-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '0'
+WHERE code_type = 'answer_code' AND code = 'LA6111-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '1'
+WHERE code_type = 'answer_code' AND code = 'LA6112-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '2'
+WHERE code_type = 'answer_code' AND code = 'LA6113-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '3'
+WHERE code_type = 'answer_code' AND code = 'LA6114-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '4'
+WHERE code_type = 'answer_code' AND code = 'LA6115-5' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '5'
+WHERE code_type = 'answer_code' AND code = 'LA10137-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '6'
+WHERE code_type = 'answer_code' AND code = 'LA10138-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '7'
+WHERE code_type = 'answer_code' AND code = 'LA10139-6' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '10'
+WHERE code_type = 'answer_code' AND code = 'LA13942-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '20'
+WHERE code_type = 'answer_code' AND code = 'LA19282-5' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '30'
+WHERE code_type = 'answer_code' AND code = 'LA28855-7' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '40'
+WHERE code_type = 'answer_code' AND code = 'LA28858-1' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '50'
+WHERE code_type = 'answer_code' AND code = 'LA28854-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '60'
+WHERE code_type = 'answer_code' AND code = 'LA28853-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '90'
+WHERE code_type = 'answer_code' AND code = 'LA28891-2' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '120'
+WHERE code_type = 'answer_code' AND code = 'LA32059-0' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = '150 or greater'
+WHERE code_type = 'answer_code' AND code = 'LA32060-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Several days'
+WHERE code_type = 'answer_code' AND code = 'LA6569-3' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'More than half the days'
+WHERE code_type = 'answer_code' AND code = 'LA6570-1' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Nearly every day'
+WHERE code_type = 'answer_code' AND code = 'LA6571-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Not at all'
+WHERE code_type = 'answer_code' AND code = 'LA6568-5' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'A little bit'
+WHERE code_type = 'answer_code' AND code = 'LA13863-8' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Somewhat'
+WHERE code_type = 'answer_code' AND code = 'LA13909-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Quite a bit'
+WHERE code_type = 'answer_code' AND code = 'LA13902-4' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Very much'
+WHERE code_type = 'answer_code' AND code = 'LA13914-9' AND (display_string IS NULL OR display_string = '') ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'I choose not to answer this question'
+WHERE code_type = 'answer_code' AND code = 'LA30122-8' AND (display_string IS NULL OR display_string = '') ;	 
+
 /*
 -- Step 1: Create TEMP staging table
 CREATE TEMP TABLE ref_code_lookup_staging (
