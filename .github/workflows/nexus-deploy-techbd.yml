@@ -42,6 +42,7 @@ jobs:
             git push
 
     nexus-api-devl-deployment:
+      needs: nexus-hub-devl-deployment
       if: endsWith(github.ref, '-nexus')  # Only run if tag ends with '-nexus'
       runs-on: ubuntu-latest
       steps:
