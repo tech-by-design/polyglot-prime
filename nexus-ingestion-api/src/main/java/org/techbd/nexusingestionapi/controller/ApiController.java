@@ -255,7 +255,7 @@ public class ApiController {
      * size limit. The detailed metadata will be saved in a separate file with
      * the suffix "_metadata.json".
      */
-    private Map<String, String> buildS3Metadata(RequestContext context) {
+    public Map<String, String> buildS3Metadata(RequestContext context) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("interactionId", context.interactionId());
         metadata.put("tenantId", context.tenantId());
@@ -270,7 +270,7 @@ public class ApiController {
     /**
      * This function generates the _metadata.json content for the S3 object.
      */
-    private Map<String, Object> buildMetadataJson(RequestContext context) {
+    public Map<String, Object> buildMetadataJson(RequestContext context) {
         Map<String, Object> jsonMetadata = new HashMap<>();
 
         jsonMetadata.put("tenantId", context.tenantId());
@@ -297,12 +297,14 @@ public class ApiController {
 
         jsonMetadata.put("headers", headerList);
 
-        // Wrap in parent object
-        Map<String, Object> wrapper = new HashMap<>();
-        wrapper.put("key", context.objectKey());
-        wrapper.put("json_metadata", jsonMetadata);
+        //// TODO: Uncomment this section when needed this JSON format.
+        //// Wrap in parent object
+        // Map<String, Object> wrapper = new HashMap<>();
+        // wrapper.put("key", context.objectKey());
+        // wrapper.put("json_metadata", jsonMetadata);
 
-        return wrapper;
+        // return wrapper;
+        return jsonMetadata;
     }
 
     /**
