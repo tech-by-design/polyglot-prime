@@ -1,5 +1,6 @@
 package org.techbd.service.converters.shinny;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -61,7 +62,13 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                     + screeningProfileData.getEncounterId()));
             Meta meta = observation.getMeta();
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
-            meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
+            
+            if (StringUtils.isNotEmpty(demographicData.getPatientLastUpdated())) {
+                meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
+            } else {
+                meta.setLastUpdated(new Date());
+            }
+            
             observation.setStatus(Observation.ObservationStatus.fromCode("final")); // TODO : remove static reference
             Reference subjectReference = new Reference();
             subjectReference.setReference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)); // TODO : remove static reference
