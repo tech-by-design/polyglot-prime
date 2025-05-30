@@ -44,7 +44,7 @@ public class UxReportableObservability implements HandlerInterceptor, WebMvcConf
         response.addHeader("X-Observability-Metric-Interaction-Finish-Time", finishTimeText);
         response.addHeader("X-Observability-Metric-Interaction-Duration-Nanosecs", durationMsText);
         response.addHeader("X-Observability-Metric-Interaction-Duration-Millisecs", durationNsText);
-
+        response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains;");       
         // set a cookie which is accessible to a JavaScript user agent that cannot
         // access HTTP headers (usually HTML pages in web browser cannot access HTTP
         // response headers)
