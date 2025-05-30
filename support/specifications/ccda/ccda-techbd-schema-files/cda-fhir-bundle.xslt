@@ -6,6 +6,9 @@
   <xsl:output method="text"/>
   
   <xsl:param name="currentTimestamp"/>
+  <xsl:param name="patientCIN"/>
+  <xsl:param name="organizationNPI"/>
+  <xsl:param name="organizationTIN"/>
   <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id[not(@assigningAuthorityName)]/@extension"/>
   <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family, ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given)"/>
   <xsl:variable name="bundleTimestamp" select="/ccda:ClinicalDocument/ccda:effectiveTime/@value"/>
@@ -367,25 +370,20 @@
       ]
       </xsl:if>
 
-      <xsl:if test="
-                    ccda:id[@assigningAuthorityName='EPI' and string-length(@extension) = 8 and
-                            translate(substring(@extension,1,2), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '' and
-                            translate(substring(@extension,3,5), '0123456789', '') = '' and
-                            translate(substring(@extension,8,1), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '']
-                    or
-                    ccda:id[@assigningAuthorityName='JMR123' and string-length(@extension) = 11 and
-                            substring(@extension,4,1) = '-' and substring(@extension,7,1) = '-' and
-                            translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = '']
-                    or
-                    ccda:id[not(@assigningAuthorityName)]
-                  ">
+      <xsl:variable name="cinId" select="$patientCIN"/>
+
+      <xsl:variable name="ssnId" select="ccda:id[@assigningAuthorityName='JMR123' and 
+                                                string-length(@extension) = 11 and 
+                                                substring(@extension,4,1) = '-' and 
+                                                substring(@extension,7,1) = '-' and 
+                                                translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = ''][1]/@extension"/>
+
+      <xsl:variable name="mrnId" select="ccda:id[not(@assigningAuthorityName)]"/>
+
+      <xsl:if test="$cinId or $ssnId or $mrnId">
       , "identifier": [
         <!-- CIN (EPI) -->
-        <xsl:if test="ccda:id[@assigningAuthorityName='EPI' and
-                              string-length(@extension) = 8 and
-                              translate(substring(@extension,1,2), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '' and
-                              translate(substring(@extension,3,5), '0123456789', '') = '' and
-                              translate(substring(@extension,8,1), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = ''][1]">
+        <xsl:if test="$cinId">
           {
             "type": {
               "coding": [{
@@ -396,16 +394,12 @@
               "text": "Patient Medicaid Number"
             },
             "system": "http://www.medicaid.gov/",
-            "value": "<xsl:value-of select="ccda:id[@assigningAuthorityName='EPI'][1]/@extension"/>"
-          }<xsl:if test="ccda:id[@assigningAuthorityName='JMR123'][1] or ccda:id[not(@assigningAuthorityName)][1]">,</xsl:if>
+            "value": "<xsl:value-of select="$cinId"/>"
+          }<xsl:if test="$ssnId or $mrnId">,</xsl:if>
         </xsl:if>
 
         <!-- SSN (JMR123) -->
-        <xsl:if test="ccda:id[@assigningAuthorityName='JMR123' and
-                              string-length(@extension) = 11 and
-                              substring(@extension,4,1) = '-' and
-                              substring(@extension,7,1) = '-' and
-                              translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = ''][1]">
+        <xsl:if test="$ssnId">
           {
             "type": {
               "coding": [{
@@ -416,12 +410,12 @@
               "text": "Social Security Number"
             },
             "system": "http://www.ssa.gov/",
-            "value": "<xsl:value-of select="ccda:id[@assigningAuthorityName='JMR123'][1]/@extension"/>"
-          }<xsl:if test="ccda:id[not(@assigningAuthorityName)][1]">,</xsl:if>
+            "value": "<xsl:value-of select="$ssnId"/>"
+          }<xsl:if test="$mrnId">,</xsl:if>
         </xsl:if>
 
         <!-- MR (no assigningAuthorityName) -->
-        <xsl:if test="ccda:id[not(@assigningAuthorityName)][1]">
+        <xsl:if test="$mrnId">
           {
             "type": {
               "coding": [{
@@ -431,8 +425,8 @@
               }],
               "text": "Medical Record Number"
             },
-            "system": "http://www.scn.gov/facility/<xsl:value-of select="ccda:id[not(@assigningAuthorityName)][1]/@extension"/>",
-            "value": "<xsl:value-of select="ccda:id[not(@assigningAuthorityName)][1]/@extension"/>"
+            "system": "http://www.scn.gov/facility/<xsl:value-of select="$mrnId"/>",
+            "value": "<xsl:value-of select="$mrnId"/>"
             <xsl:if test="string($organizationResourceId)">
               , "assigner": {
                 "reference": "Organization/<xsl:value-of select="$organizationResourceId"/>"
@@ -442,6 +436,7 @@
         </xsl:if>
       ]
       </xsl:if>
+      
       <xsl:variable name="mappedCode">
         <xsl:call-template name="mapMaritalStatusCode">
           <xsl:with-param name="statusCode" select="ccda:patient/ccda:maritalStatusCode/@code"/>
@@ -819,15 +814,12 @@
           "profile" : ["<xsl:value-of select='$organizationMetaProfileUrlFull'/>"]
         },
         "active": true,
-        <xsl:if test="
-          ccda:assignedAuthor/ccda:id[@root='2.16.840.1.113883.4.6'] or
-          ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX']
-        ">
+        <xsl:if test="$organizationNPI or $organizationTIN">
           "identifier": [
             <xsl:choose>
 
               <!-- NPI -->
-              <xsl:when test="ccda:assignedAuthor/ccda:id[@root='2.16.840.1.113883.4.6']">
+              <xsl:when test="$organizationNPI">
                 {
                   "use": "official",
                   "type": {
@@ -840,12 +832,12 @@
                     ]
                   },
                   "system": "http://hl7.org/fhir/sid/us-npi",
-                  "value": "<xsl:value-of select='ccda:assignedAuthor/ccda:id[@root=&quot;2.16.840.1.113883.4.6&quot;]/@extension'/>"
+                  "value": "<xsl:value-of select='$organizationNPI'/>"
                 }
               </xsl:when>
 
               <!-- TAX -->
-              <xsl:when test="ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX']">
+              <xsl:when test="$organizationTIN">
                 {
                   "use": "official",
                   "type": {
@@ -858,7 +850,7 @@
                     ]
                   },
                   "system": "http://www.irs.gov/",
-                  "value": "<xsl:value-of select='ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName=&quot;TAX&quot;]/@extension'/>"
+                  "value": "<xsl:value-of select='$organizationTIN'/>"
                 }
               </xsl:when>
             </xsl:choose>
