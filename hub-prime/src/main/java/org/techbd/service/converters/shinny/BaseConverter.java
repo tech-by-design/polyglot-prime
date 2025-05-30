@@ -14,9 +14,9 @@ import org.techbd.util.FHIRUtil;
 
 public abstract class BaseConverter implements IConverter {
 
-
-    public static Map<String, Map<String, String>> CODE_LOOKUP ;
-    public static Map<String, Map<String, String>> SYSTEM_LOOKUP ;
+    public static Map<String, Map<String, String>> CODE_LOOKUP;
+    public static Map<String, Map<String, String>> SYSTEM_LOOKUP;
+    public static Map<String, Map<String, String>> DISPLAY_LOOKUP;
     private final CodeLookupService codeLookupService;
     private final UdiPrimeJpaConfig udiPrimeJpaConfig;
 
@@ -57,6 +57,23 @@ public abstract class BaseConverter implements IConverter {
         }
 
         return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
+    }
+
+    public String fetchDisplay(String code, String valueFromCsv, String category, String interactionId) {
+        if (DISPLAY_LOOKUP == null) {
+            final var dslContext = udiPrimeJpaConfig.dsl();
+            BaseConverter.DISPLAY_LOOKUP = codeLookupService.fetchDisplay(dslContext, interactionId);
+        }
+
+        if (code == null || category == null) {
+            return valueFromCsv;
+        }
+        Map<String, String> innerMap = DISPLAY_LOOKUP.get(category);
+        if (innerMap == null) {
+            return valueFromCsv;
+        }
+
+        return innerMap.getOrDefault(code, valueFromCsv);
     }
 
     public CanonicalType getProfileUrl() {
