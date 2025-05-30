@@ -5211,3 +5211,28 @@ EXCEPTION
 END;
 $function$
 ;
+
+/*******************************************************************************************
+This view groups reference codes by `code_type` and aggregates them into JSON arrays.
+
+Each JSON object contains:
+- `code`: the actual code value.
+- `display`: the human-readable display string for the code.
+
+The output provides a convenient way to access all codes for a given type in a single row,
+sorted by `code`, and ordered by `code_type` in the final result.
+*******************************************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.ref_code_lookup_code_view CASCADE;
+CREATE VIEW techbd_udi_ingress.ref_code_lookup_code_view AS
+SELECT 
+    code_type,
+    json_agg(
+        json_build_object(
+            'code', code,
+            'display', display_string
+        ) ORDER BY code
+    ) AS codes
+FROM techbd_udi_ingress.ref_code_lookup
+GROUP BY code_type
+ORDER BY code_type;
