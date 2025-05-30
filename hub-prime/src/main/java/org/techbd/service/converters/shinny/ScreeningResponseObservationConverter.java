@@ -139,15 +139,15 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                             fetchSystem(data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE,
                                                     interactionId),
                                             data.getQuestionCode(),
-                                            data.getQuestionCodeDescription()));
+                                            fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
                                     component.setCode(componentCode);
 
                                     CodeableConcept value = new CodeableConcept();
+                                    String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
                                     value.addCoding(new Coding(
-                                            fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE,
-                                                    interactionId),
-                                            fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId),
-                                            data.getAnswerCodeDescription()));
+                                            fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId),
+                                            answerCode,
+                                            fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId)));
                                     component.setValue(value);
 
                                     observation.addComponent(component);
@@ -155,11 +155,12 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                             } else {
                                 if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
                                     CodeableConcept value = new CodeableConcept();
+                                    String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
                                     value.addCoding(new Coding(
                                             fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE,
                                                     interactionId),
-                                            fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId),
-                                            data.getAnswerCodeDescription()));
+                                            answerCode,
+                                            fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId)));
                                     observation.setValue(value);
                                 } else if (!data.getDataAbsentReasonCode().isEmpty()) {
                                     CodeableConcept dataAbsentReason = new CodeableConcept();
@@ -182,7 +183,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                         "survey", null));
                         CodeableConcept code = new CodeableConcept();
                         code.addCoding(new Coding(fetchSystem(data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId), data.getQuestionCode(),
-                                        data.getQuestionCodeDescription()));
+                                        fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
                                 idsGenerated.get(CsvConstants.PATIENT_ID)));
@@ -218,9 +219,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 case "95614-4", "71969-0" ->  { // Interpersonal safety or Mental state
                                         if (!data.getAnswerCodeDescription().isEmpty()) {
                                                 CodeableConcept coding = new CodeableConcept();
+                                                String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
                                                 coding.addCoding(new Coding("http://unitsofmeasure.org", null,
                                                                 "{Number}"));
-                                                coding.setText(data.getAnswerCodeDescription());
+                                                coding.setText(fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId));
                                                 observation.setValue(coding);
                                         } else if (!data.getDataAbsentReasonCode().isEmpty()) {
                                                 CodeableConcept dataAbsentReason = new CodeableConcept();
@@ -236,7 +238,8 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                 }
                                 case "77594-0" ->  { // Physical Activity
                                         Quantity quantity = new Quantity();
-                                         String codeDescription = data.getAnswerCodeDescription();
+                                        String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
+                                         String codeDescription = fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId);
                                           if (codeDescription != null && !codeDescription.isEmpty()) {
                                                 try{
                                                       Optional<Double> doubleValue = Optional.of(Double.valueOf(codeDescription));
