@@ -1,6 +1,7 @@
 package org.techbd.model.csv;
 
 import com.opencsv.bean.CsvBindByName;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -138,6 +139,9 @@ public class DemographicData {
 
     @CsvBindByName(column = "PATIENT_LAST_UPDATED")
     private String patientLastUpdated;
+
+    @CsvBindByName(column = "SEXUAL_ORIENTATION_LAST_UPDATED")
+    private String sexualOrientationLastUpdated;
 
     public DemographicData() {
     }

@@ -63,8 +63,8 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             Meta meta = observation.getMeta();
             String fullUrl = "http://shinny.org/us/ny/hrsn/Observation/" + observation.getId();
             
-            if (StringUtils.isNotEmpty(demographicData.getPatientLastUpdated())) {
-                meta.setLastUpdated(DateUtil.parseDate(demographicData.getPatientLastUpdated()));
+            if (StringUtils.isNotEmpty(demographicData.getSexualOrientationLastUpdated())) {
+                meta.setLastUpdated(DateUtil.parseDate(demographicData.getSexualOrientationLastUpdated()));
             } else {
                 meta.setLastUpdated(new Date());
             }
