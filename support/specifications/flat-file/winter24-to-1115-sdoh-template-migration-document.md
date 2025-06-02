@@ -22,7 +22,6 @@
     - **RELATIONSHIP_PERSON_GIVEN_NAME**
     - **RELATIONSHIP_PERSON_FAMILY_NAME**
     - **RELATIONSHIP_PERSON_TELECOM_VALUE**
-    - **SEXUAL_ORIENTATION_LAST_UPDATED**
 
   - ##### **Added Columns:**
     The following columns have been **added** to the dataset:
@@ -119,11 +118,9 @@
 
 4.  **Column updates for SDOH_ScreeningProf.csv:** 
   - ##### **Removed Columns:**
-    The following columns have been **removed** from the dataset:
-    - **CONSENT_LAST_UPDATED**
+    The following columns have been **removed** from the dataset: 
     - **CONSENT_POLICY_AUTHORITY**
-    - **CONSENT_PROVISION_TYPE**
-    - **ENCOUNTER_LAST_UPDATED**
+    - **CONSENT_PROVISION_TYPE** 
 
 - ##### **Added Columns:**
   The following columns have been **added** to the dataset:
