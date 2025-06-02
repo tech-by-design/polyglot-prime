@@ -8,6 +8,9 @@
   <xsl:output method="text"/>
   
   <xsl:param name="currentTimestamp"/>
+  <xsl:param name="patientCIN"/>
+  <xsl:param name="organizationNPI"/>
+  <xsl:param name="organizationTIN"/>
   <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id[not(@assigningAuthorityName)]/@extension"/>
   <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family, ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given)"/>
   <xsl:variable name="bundleTimestamp" select="/ccda:ClinicalDocument/ccda:effectiveTime/@value"/>
@@ -370,12 +373,7 @@
       </xsl:if>
 
       <!-- Declare variables for CIN, SSN, and MRN -->
-      <xsl:variable name="cinId" select="ccda:id[@assigningAuthorityName='EPI' and 
-                                                @root='1.2.840.114350.1.1' and 
-                                                string-length(@extension) = 8 and
-                                                translate(substring(@extension,1,2), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = '' and
-                                                translate(substring(@extension,3,5), '0123456789', '') = '' and
-                                                translate(substring(@extension,8,1), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', '') = ''][1]/@extension"/>
+      <xsl:variable name="cinId" select="$patientCIN"/>
 
       <xsl:variable name="ssnId" select="ccda:id[@assigningAuthorityName='JMR123' and 
                                                 string-length(@extension) = 11 and 
@@ -823,15 +821,12 @@
           "profile" : ["<xsl:value-of select='$organizationMetaProfileUrlFull'/>"]
         },
         "active": true,
-        <xsl:if test="
-          ccda:assignedAuthor/ccda:id[@root='2.16.840.1.113883.4.6'] or
-          ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX']
-        ">
+        <xsl:if test="$organizationNPI or $organizationTIN">
           "identifier": [
             <xsl:choose>
 
               <!-- NPI -->
-              <xsl:when test="ccda:assignedAuthor/ccda:id[@root='2.16.840.1.113883.4.6']">
+              <xsl:when test="$organizationNPI">
                 {
                   "use": "official",
                   "type": {
@@ -844,12 +839,12 @@
                     ]
                   },
                   "system": "http://hl7.org/fhir/sid/us-npi",
-                  "value": "<xsl:value-of select='ccda:assignedAuthor/ccda:id[@root=&quot;2.16.840.1.113883.4.6&quot;]/@extension'/>"
+                  "value": "<xsl:value-of select='$organizationNPI'/>"
                 }
               </xsl:when>
 
               <!-- TAX -->
-              <xsl:when test="ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX']">
+              <xsl:when test="$organizationTIN">
                 {
                   "use": "official",
                   "type": {
@@ -862,7 +857,7 @@
                     ]
                   },
                   "system": "http://www.irs.gov/",
-                  "value": "<xsl:value-of select='ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName=&quot;TAX&quot;]/@extension'/>"
+                  "value": "<xsl:value-of select='$organizationTIN'/>"
                 }
               </xsl:when>
             </xsl:choose>
