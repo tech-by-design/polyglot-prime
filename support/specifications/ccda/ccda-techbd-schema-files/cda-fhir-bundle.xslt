@@ -372,13 +372,18 @@
 
       <xsl:variable name="cinId" select="$patientCIN"/>
 
-      <xsl:variable name="ssnId" select="ccda:id[@assigningAuthorityName='JMR123' and 
-                                                string-length(@extension) = 11 and 
-                                                substring(@extension,4,1) = '-' and 
-                                                substring(@extension,7,1) = '-' and 
-                                                translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = ''][1]/@extension"/>
+      <xsl:variable name="ssnId" select="ccda:id[string-length(@extension) = 11 and 
+                                                 substring(@extension,4,1) = '-' and 
+                                                 substring(@extension,7,1) = '-' and 
+                                                 translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = ''][1]/@extension"/>
 
-      <xsl:variable name="mrnId" select="ccda:id[not(@assigningAuthorityName)]"/>
+      <xsl:variable name="mrnId" select="(ccda:id[
+                                          not(@assigningAuthorityName) and
+                                          not(string-length(@extension) = 11 and 
+                                              substring(@extension,4,1) = '-' and 
+                                              substring(@extension,7,1) = '-' and 
+                                              translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = '')
+                                          ])[1]/@extension"/>
 
       <xsl:if test="$cinId or $ssnId or $mrnId">
       , "identifier": [

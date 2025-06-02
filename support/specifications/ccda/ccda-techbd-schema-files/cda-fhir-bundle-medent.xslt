@@ -379,13 +379,23 @@
       </xsl:if>
       <xsl:variable name="cinId" select="$patientCIN"/>
 
-      <xsl:variable name="ssnId" select="ccda:id[@assigningAuthorityName='JMR123' and 
-                                                string-length(@extension) = 11 and 
-                                                substring(@extension,4,1) = '-' and 
-                                                substring(@extension,7,1) = '-' and 
-                                                translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = ''][1]/@extension"/>
+      <!-- SSN: Prefer root '2.16.840.1.113883.4.1', fallback to pattern -->
+      <xsl:variable name="ssnId" select="(ccda:id[@root='2.16.840.1.113883.4.1'] | 
+                                          ccda:id[
+                                            string-length(@extension) = 11 and 
+                                            substring(@extension,4,1) = '-' and 
+                                            substring(@extension,7,1) = '-' and 
+                                            translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = ''
+                                          ])[1]/@extension"/>
 
-      <xsl:variable name="mrnId" select="ccda:id[not(@assigningAuthorityName)]"/>
+      <!-- MRN: Take first id element that is NOT SSN -->
+      <xsl:variable name="mrnId" select="(ccda:id[
+                                          not(@root='2.16.840.1.113883.4.1') and
+                                          not(string-length(@extension) = 11 and 
+                                              substring(@extension,4,1) = '-' and 
+                                              substring(@extension,7,1) = '-' and 
+                                              translate(concat(substring(@extension,1,3), substring(@extension,5,2), substring(@extension,8,4)), '0123456789', '') = '')
+                                        ])[1]/@extension"/>
 
       <xsl:if test="$cinId or $ssnId or $mrnId">
       , "identifier": [
