@@ -83,7 +83,13 @@ public class ConsentConverter extends BaseConverter {
 
         Meta meta = consent.getMeta();
         
-        meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getConsentDateTime()));
+        if (StringUtils.isNotEmpty(screeningProfileData.getConsentLastUpdated())) {
+            meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getConsentLastUpdated()));
+        } else if (StringUtils.isNotEmpty(screeningProfileData.getConsentDateTime())) {
+            meta.setLastUpdated(DateUtil.convertStringToDate(screeningProfileData.getConsentDateTime()));
+        } else {
+            meta.setLastUpdated(new java.util.Date());
+        }
 
         populateConsentStatusAndScope(consent, screeningProfileData);
 

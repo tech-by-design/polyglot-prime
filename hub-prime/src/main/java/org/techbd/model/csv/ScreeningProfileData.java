@@ -111,6 +111,12 @@ public class ScreeningProfileData {
     @CsvBindByName(column = "SCREENING_ENTITY_ID_CODE_SYSTEM")
     private String screeningEntityIdCodeSystem;
 
+    @CsvBindByName(column = "CONSENT_LAST_UPDATED")
+    private String consentLastUpdated;
+
+    @CsvBindByName(column = "ENCOUNTER_LAST_UPDATED")
+    private String encounterLastUpdated;
+
     // Default constructor
     public ScreeningProfileData() {
     }

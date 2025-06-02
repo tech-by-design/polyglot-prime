@@ -82,7 +82,13 @@ public class EncounterConverter extends BaseConverter {
 
         Meta meta = encounter.getMeta();
 
-        meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getEncounterStartDatetime()));
+        if (StringUtils.isNoneEmpty(screeningProfileData.getEncounterLastUpdated())) {
+            meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getEncounterLastUpdated()));
+        } else if (StringUtils.isNotEmpty(screeningProfileData.getEncounterStartDatetime())) {
+            meta.setLastUpdated(DateUtil.parseDate(screeningProfileData.getEncounterStartDatetime()));
+        } else {
+            meta.setLastUpdated(new java.util.Date());
+        }
 
         populateEncounterIdentifier(encounter, screeningProfileData);
 
