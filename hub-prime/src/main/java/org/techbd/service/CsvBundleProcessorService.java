@@ -34,7 +34,7 @@ import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.DataLedgerApiClient.DataLedgerPayload;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.converters.csv.CsvToFhirConverter;
-import org.techbd.service.http.hub.prime.api.FHIRService;
+import org.techbd.service.fhir.FHIRService;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
@@ -361,12 +361,14 @@ private List<Object> processScreening(final String groupKey,
                         saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId,
                                 interactionId, request,
                                 bundle, null, tenantId);
+                        Map<String,String> headers = org.techbd.util.fhir.CoreFHIRUtil.buildHeaderParametersMap(
+                            tenantId, null, null, null, null, null,
+                            null, updatedProvenance, request.getRequestURI());    
+                        Map<String,String> requestParameters = org.techbd.util.fhir.CoreFHIRUtil.buildRequestParametersMap(
+                            false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId);
+                        Map<String,Object> responseParameters = new HashMap<>();      
                         results.add(fhirService.processBundle(
-                                bundle, tenantId, null, null, null, false,
-                                request, response,
-                                updatedProvenance,
-                                null, interactionId, groupInteractionId,
-                                masterInteractionId, SourceType.CSV.name(), null,null));
+                                bundle, requestParameters,headers, responseParameters));
                     } else {
                         LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);

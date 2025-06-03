@@ -44,7 +44,6 @@ import org.techbd.service.CsvService;
 import org.techbd.service.VfsCoreService;
 import org.techbd.service.http.InteractionsFilter;
 import org.techbd.service.http.hub.prime.AppConfig;
-import org.techbd.service.http.hub.prime.api.FHIRService;
 import org.techbd.udi.UdiPrimeJpaConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
@@ -71,7 +70,7 @@ public class CsvOrchestrationEngine {
           "(SDOH_PtInfo|SDOH_QEadmin|SDOH_ScreeningProf|SDOH_ScreeningObs)_(.+)");
 
     public CsvOrchestrationEngine(final AppConfig appConfig, final VfsCoreService vfsCoreService,
-                                  final UdiPrimeJpaConfig udiPrimeJpaConfig, final FHIRService fhirService) {
+                                  final UdiPrimeJpaConfig udiPrimeJpaConfig) {
         this.sessions = new ConcurrentHashMap<>();
         this.appConfig = appConfig;
         this.vfsCoreService = vfsCoreService;

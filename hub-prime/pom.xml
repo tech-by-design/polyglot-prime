@@ -352,6 +352,11 @@
 			<artifactId>commons-vfs2</artifactId>
 			<version>2.10.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.techbd</groupId>
+			<artifactId>nexus-core-lib</artifactId>
+			<version>${revision}</version>
+		</dependency>
 	</dependencies>
 
 	<build>
