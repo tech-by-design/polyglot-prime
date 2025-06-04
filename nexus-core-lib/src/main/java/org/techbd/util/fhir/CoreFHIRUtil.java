@@ -150,8 +150,7 @@ public class CoreFHIRUtil {
    
     public static Map<String, String> buildHeaderParametersMap(String tenantId, String customDataLakeApi,
             String dataLakeApiContentType, String requestUriToBeOverridden,
-            String validationSeverityLevel, String healthCheck, String correlationId, String provenance,
-            String requestUri) {
+            String validationSeverityLevel, String healthCheck, String correlationId, String provenance) {
         Map<String, String> headers = new HashMap<>();
         headers.put(Constants.TENANT_ID, tenantId);
         addIfNotEmpty(headers, Constants.CUSTOM_DATA_LAKE_API, customDataLakeApi);
@@ -161,17 +160,19 @@ public class CoreFHIRUtil {
         addIfNotEmpty(headers, Constants.HEALTH_CHECK, healthCheck);
         addIfNotEmpty(headers, Constants.CORRELATION_ID, correlationId);
         addIfNotEmpty(headers, Constants.PROVENANCE, provenance);
-        addIfNotEmpty(headers, Constants.REQUEST_URI, requestUri);
+        
         return headers;
     }
 
     public static Map<String, String> buildRequestParametersMap(Boolean deleteSessionCookie,
-            String mtlsStrategy, String source, String groupInteractionId, String masterInteractionId) {
+            String mtlsStrategy, String source, String groupInteractionId, String masterInteractionId,
+            String requestUri) {
         Map<String, String> requestParameters = new HashMap<>();
         addIfNotEmpty(requestParameters, Constants.MTLS_STRATEGY, mtlsStrategy);
         addIfNotEmpty(requestParameters, Constants.SOURCE_TYPE, source);
         addIfNotEmpty(requestParameters, Constants.GROUP_INTERACTION_ID, groupInteractionId);
         addIfNotEmpty(requestParameters, Constants.MASTER_INTERACTION_ID, masterInteractionId);
+        addIfNotEmpty(requestParameters, Constants.REQUEST_URI, requestUri);
         if (null != deleteSessionCookie) {
             requestParameters.put(Constants.DELETE_SESSION, Boolean.toString(deleteSessionCookie));
         }
