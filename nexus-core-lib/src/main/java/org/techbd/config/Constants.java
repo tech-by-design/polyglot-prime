@@ -34,6 +34,10 @@ public interface Constants {
     public static final String USER_ID = "USER_ID";
     public static final String USER_SESSION = "USER_SESSION";
     public static final String USER_ROLE = "USER_ROLE";
+    public static final String DEFAULT_USER_NAME = "API_USER";
+    public static final String DEFAULT_USER_ID = "N/A";
+    public static final String DEFAULT_USER_SESSION = "N/A";
+    public static final String DEFAULT_USER_ROLE = "API_ROLE";
     public static final String DELETE_USER_SESSION_COOKIE = "delete-session-cookie";
     public static final String PROVENANCE = "X-Provenance";
     public static final String DATA_LAKE_API_CONTENT_TYPE = "X-TechBD-DataLake-API-Content-Type";
