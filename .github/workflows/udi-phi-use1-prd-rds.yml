@@ -55,6 +55,7 @@ jobs:
 
       - name: Navigate to UDI Prime and Generate SQL
         run: |
+          deno add npm:json5
           cd polyglot-prime/udi-prime
           ./udictl.ts ic generate sql
 
