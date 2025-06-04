@@ -34,6 +34,7 @@ jobs:
 
       - name: Navigate to SQL Aide and Generate ISLM SQL
         run: |
+          deno add npm:json5
           cd sql-aide/lib/postgres/islm
           chmod +x islmctl.ts
           ./islmctl.ts evolve up --conn-id QA_TECHBD_UDI_DS
