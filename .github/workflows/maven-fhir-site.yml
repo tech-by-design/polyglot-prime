@@ -25,7 +25,6 @@ jobs:
 
     - name: Build the project artifacts with Maven (will test automatically)
       run: |
-        cd hub-prime
         mvn site
 
   deploy:
