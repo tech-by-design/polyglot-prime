@@ -211,6 +211,10 @@ public class FHIRService {
                         sourceType);
                 final var result = Map.of("OperationOutcome", immediateResult);
 
+				payloadWithDisposition = registerBundleInteraction(jooqCfg, headerParameters, requestParameters,
+						responseParameters,
+						payload, result, interactionId, groupInteractionId, masterInteractionId,
+						sourceType, requestUriToBeOverriden, coRrelationId);
                 if (StringUtils.isNotEmpty(requestUri)
                         && (requestUri.equals("/Bundle/$validate") || requestUri.equals("/Bundle/$validate/"))) {
                     return result;
@@ -220,9 +224,6 @@ public class FHIRService {
                     return result;
                 }
 
-                payloadWithDisposition = registerBundleInteraction(jooqCfg, headerParameters, requestParameters,responseParameters,
-                         payload, result, interactionId, groupInteractionId, masterInteractionId,
-                        sourceType, requestUriToBeOverriden, coRrelationId);
                 LOG.info("Payload with disposition registered: {}", payloadWithDisposition); // TODO-to be removed
 
                 if (isActionDiscard(payloadWithDisposition)) {
