@@ -363,9 +363,9 @@ private List<Object> processScreening(final String groupKey,
                                 bundle, null, tenantId);
                         Map<String,String> headers = org.techbd.util.fhir.CoreFHIRUtil.buildHeaderParametersMap(
                             tenantId, null, null, null, null, null,
-                            null, updatedProvenance, request.getRequestURI());    
+                            null, updatedProvenance);    
                         Map<String,String> requestParameters = org.techbd.util.fhir.CoreFHIRUtil.buildRequestParametersMap(
-                            false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId);
+                            false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId, request.getRequestURI());
                         Map<String,Object> responseParameters = new HashMap<>();      
                         results.add(fhirService.processBundle(
                                 bundle, requestParameters,headers, responseParameters));

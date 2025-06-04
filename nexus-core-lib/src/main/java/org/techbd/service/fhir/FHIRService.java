@@ -220,7 +220,7 @@ public class FHIRService {
                     return result;
                 }
 
-                payloadWithDisposition = registerBundleInteraction(jooqCfg, requestParameters,headerParameters, responseParameters,
+                payloadWithDisposition = registerBundleInteraction(jooqCfg, headerParameters, requestParameters,responseParameters,
                          payload, result, interactionId, groupInteractionId, masterInteractionId,
                         sourceType, requestUriToBeOverriden, coRrelationId);
                 LOG.info("Payload with disposition registered: {}", payloadWithDisposition); // TODO-to be removed
@@ -453,7 +453,6 @@ public class FHIRService {
                         + rihr.getName() + " error",
                         rre.interactionId().toString(),
                         rre.tenant(), e);
-                e.printStackTrace();
             }
             return null;
         } finally {

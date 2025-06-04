@@ -201,9 +201,9 @@ public class FhirController {
                         Map<String, String> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
                                         dataLakeApiContentType,
                                         requestUriToBeOverridden, validationSeverityLevel, healthCheck, coRrelationId,
-                                        provenance, request.getRequestURI());
+                                        provenance);
                         Map<String, String> requestParameters = CoreFHIRUtil.buildRequestParametersMap(deleteSessionCookie,
-                                        mtlsStrategy, source, null, null);
+                                        mtlsStrategy, source, null, null, request.getRequestURI());
                         requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString()); 
                         requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());              
                         request = new CustomRequestWrapper(request, payload);
@@ -276,10 +276,10 @@ public class FhirController {
 
                         request = new CustomRequestWrapper(request, payload);
                         Map<String, String> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
-                                        null, null, null, null, null, request.getRequestURI());
+                                        null, null, null, null, null);
                         Map<String, String> requestParameters = CoreFHIRUtil.buildRequestParametersMap(deleteSessionCookie,
                                         null, null,
-                                        null, null);
+                                        null, null, request.getRequestURI());
                         requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString());
                         requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
                         request = new CustomRequestWrapper(request, payload);
