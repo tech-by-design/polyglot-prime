@@ -2,14 +2,21 @@ name: PHI PROD UDI schema generator
 
 on:
   workflow_dispatch:
-
+    inputs:
+      tag:
+        description: 'Polyglot Prime Tag Version'
+        required: true
 jobs:
-  build:
+  schema-generation:
     runs-on: techbd-hub-prd
-
+    env:
+      SQL_AIDE_TAG: v0.14.9
     steps:
+      - name: Running schema generation
+        run: echo "Running schema generation"
+
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Create .pgpass file
         run: |
@@ -24,7 +31,7 @@ jobs:
 
       - name: Clone SQL Aide repository
         run: |
-          git clone https://github.com/netspective-labs/sql-aide.git
+          git clone --branch ${{ env.SQL_AIDE_TAG }} https://github.com/netspective-labs/sql-aide.git
 
       - name: Navigate to SQL Aide and Generate ISLM SQL
         run: |
@@ -44,10 +51,11 @@ jobs:
           cat "$log_file"
 
       - name: Clone Polyglot Prime repository
-        run: git clone https://github.com/tech-by-design/polyglot-prime.git
+        run: git clone -b ${{ inputs.tag }} https://github.com/tech-by-design/polyglot-prime.git
 
       - name: Navigate to UDI Prime and Generate SQL
         run: |
+          deno add npm:json5
           cd polyglot-prime/udi-prime
           ./udictl.ts ic generate sql
 
