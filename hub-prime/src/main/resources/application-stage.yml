@@ -39,10 +39,6 @@ org:
       http:
         hub:
           prime:
-            dataLedgerApiUrl: https://gbp2obo8d0.execute-api.us-east-1.amazonaws.com/development/DataLedger 
-            dataLedgerTracking: true
-            dataLedgerDiagnostics: true
-            dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
             csv:
               validation:
                 pythonScriptPath: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py}

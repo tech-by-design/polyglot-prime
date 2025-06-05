@@ -1,16 +1,17 @@
 package org.techbd.service.http.hub.prime.api;
 
+import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,18 +29,15 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.conf.Configuration;
-import org.techbd.orchestrate.fhir.OrchestrationEngine;
-import org.techbd.orchestrate.fhir.OrchestrationEngine.Device;
-import org.techbd.orchestrate.sftp.SftpManager;
+import org.techbd.config.CoreAppConfig;
+import org.techbd.config.Constants;
+import org.techbd.config.MirthJooqConfig;
+import org.techbd.service.dataledger.CoreDataLedgerApiClient;
+import org.techbd.service.fhir.FHIRService;
+import org.techbd.service.fhir.engine.OrchestrationEngine;
 import org.techbd.service.http.Helpers;
-import org.techbd.service.http.InteractionsFilter;
-import org.techbd.service.http.SandboxHelpers;
 import org.techbd.service.http.hub.CustomRequestWrapper;
-import org.techbd.service.http.hub.prime.AppConfig;
-import org.techbd.udi.UdiPrimeJpaConfig;
-import org.techbd.util.FHIRUtil;
-
-import static org.techbd.udi.auto.jooq.ingress.Tables.INTERACTION_HTTP_REQUEST;
+import org.techbd.util.fhir.CoreFHIRUtil;
 
 import io.micrometer.common.util.StringUtils;
 import io.opentelemetry.api.trace.Span;
@@ -62,23 +60,26 @@ public class FhirController {
 
         private static final Logger LOG = LoggerFactory.getLogger(FhirController.class.getName());
         private final OrchestrationEngine engine;
-        private final AppConfig appConfig;
-        private final UdiPrimeJpaConfig udiPrimeJpaConfig;
+        private final CoreAppConfig appConfig;
+        private final CoreDataLedgerApiClient dataLedgerApiClient;
         private final FHIRService fhirService;
         private final Tracer tracer;
 
-        public FhirController(@SuppressWarnings("PMD.UnusedFormalParameter") final Environment environment,
-                        final AppConfig appConfig,
-                        final UdiPrimeJpaConfig udiPrimeJpaConfig,
-                        final FHIRService fhirService,
-                        final OrchestrationEngine orchestrationEngine,
-                        final Tracer tracer,
-                        @SuppressWarnings("PMD.UnusedFormalParameter") final SftpManager sftpManager,
-                        @SuppressWarnings("PMD.UnusedFormalParameter") final SandboxHelpers sboxHelpers) {
+        public FhirController(final Tracer tracer,final OrchestrationEngine engine,
+        final CoreAppConfig appConfig ,final CoreDataLedgerApiClient dataLedgerApiClient,final FHIRService fhirService) throws IOException {
+                // String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+                // appConfig = ConfigLoader.loadConfig(activeProfile);
+                // this.fhirService = new FHIRService();
+                // fhirService.setAppConfig(appConfig);
+                // org.techbd.util.fhir.FHIRUtil.initialize(appConfig);
+                // dataLedgerApiClient = new DataLedgerApiClient(appConfig);
+                // OrchestrationEngine engine = new OrchestrationEngine(appConfig);
+                // fhirService.setDataLedgerApiClient(dataLedgerApiClient);
+                // fhirService.setEngine(engine);
                 this.appConfig = appConfig;
-                this.udiPrimeJpaConfig = udiPrimeJpaConfig;
+                this.engine = engine;
                 this.fhirService = fhirService;
-                this.engine = orchestrationEngine;
+                this.dataLedgerApiClient = dataLedgerApiClient;
                 this.tracer = tracer;
         }
 
@@ -95,7 +96,7 @@ public class FhirController {
         }
 
         @PostMapping(value = { "/Bundle", "/Bundle/" }, consumes = { MediaType.APPLICATION_JSON_VALUE,
-                        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
+                        Constants.FHIR_CONTENT_TYPE_HEADER_VALUE })
         @Operation(summary = "Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.", description = "Endpoint to to validate, store, and then forward a payload to SHIN-NY.")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Request processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
@@ -147,19 +148,19 @@ public class FhirController {
         })
         @ResponseBody
         @Async
-            public Object validateBundleAndForward(
+        public Object validateBundleAndForward(
                         @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true) final @RequestBody @Nonnull String payload,
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
                         // "profile" is the same name that HL7 validator uses
-                        @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_URL, required = false) String customDataLakeApi,
+                        @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = Constants.DATALAKE_API_URL, required = false) String customDataLakeApi,
                         @Parameter(description = "Optional header to specify the request URI to override. This parameter is used for requests forwarded from Mirth Connect, where we override it with the initial request URI from Mirth Connect.", required = false) @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,
                         @Parameter(description = "An optional header to provide a UUID that if provided will be used as interaction id.", required = false) @RequestHeader(value = "X-Correlation-ID", required = false) String coRrelationId,
                         @Parameter(description = """
                                         Optional header to specify the Datalake API content type.
                                         Value provided with this header will be used to set the <code>Content-Type</code> header while invoking the Datalake API.
                                         If the header is not provided, <code>application/json</code> will be used.
-                                        """, required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
-                        @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER, required = false) String healthCheck,
+                                        """, required = false) @RequestHeader(value = Constants.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
+                        @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = Constants.HEALTH_CHECK_HEADER, required = false) String healthCheck,
                         @Parameter(hidden = true, description = "Optional parameter to decide whether the Datalake submission to be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false) boolean isSync,
 
                         @Parameter(hidden = true, description = """
@@ -175,7 +176,7 @@ public class FhirController {
                         @Parameter(hidden = true, description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
                         @Parameter(hidden = true, description = "Optional parameter to specify source of the request.", required = false) @RequestParam(value = "source", required = false, defaultValue = "FHIR") String source,
                         @Parameter(description = "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).", required = false) @RequestHeader(value = "X-TechBD-Validation-Severity-Level", required = false) String validationSeverityLevel,
-                        HttpServletRequest request, HttpServletResponse response ) throws SQLException, IOException {
+                        HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundleAndForward").startSpan();
                 try {
                         if (tenantId == null || tenantId.trim().isEmpty()) {
@@ -197,13 +198,17 @@ public class FhirController {
                                         FhirController.class.getName(),
                                         isSync ? "sync" : "async");
                         request = new CustomRequestWrapper(request, payload);
-                        return fhirService.processBundle(payload, tenantId,
-
-                                        customDataLakeApi, dataLakeApiContentType, healthCheck, isSync,
-
-                                        request, response, provenance,
-                                        mtlsStrategy, null,
-                                        null, null, source, requestUriToBeOverridden, coRrelationId);
+                        Map<String, String> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
+                                        dataLakeApiContentType,
+                                        requestUriToBeOverridden, validationSeverityLevel, healthCheck, coRrelationId,
+                                        provenance);
+                        Map<String, String> requestParameters = CoreFHIRUtil.buildRequestParametersMap(deleteSessionCookie,
+                                        mtlsStrategy, source, null, null, request.getRequestURI());
+                        requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString()); 
+                        requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());              
+                        request = new CustomRequestWrapper(request, payload);
+                        Map<String, Object> responseParametersMap = new HashMap<>();
+                        return fhirService.processBundle(payload, requestParameters, headers, responseParametersMap);
                 } finally {
                         span.end();
                 }
@@ -211,7 +216,7 @@ public class FhirController {
 
         @PostMapping(value = { "/Bundle/$validate", "/Bundle/$validate/" }, consumes = {
                         MediaType.APPLICATION_JSON_VALUE,
-                        AppConfig.Servlet.FHIR_CONTENT_TYPE_HEADER_VALUE })
+                        Constants.FHIR_CONTENT_TYPE_HEADER_VALUE })
         @Operation(summary = "Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.", description = "Endpoint to validate but not store or forward a payload to SHIN-NY.")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Request processed successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n"
@@ -256,7 +261,7 @@ public class FhirController {
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
                         // "profile" is the same name that HL7 validator uses
                         @Parameter(hidden = true, description = "Optional parameter to decide whether the session cookie (JSESSIONID) should be deleted.", required = false) @RequestParam(value = "delete-session-cookie", required = false) Boolean deleteSessionCookie,
-                        HttpServletRequest request, HttpServletResponse response) {
+                        HttpServletRequest request, HttpServletResponse response) throws IOException {
                 Span span = tracer.spanBuilder("FhirController.validateBundle").startSpan();
                 try {
 
@@ -270,51 +275,16 @@ public class FhirController {
                         }
 
                         request = new CustomRequestWrapper(request, payload);
-
-                        LOG.info("FHIRController:Bundle Validate::  -BEGIN");
-
-                        LOG.info("FHIRController:Bundle Validate :: Getting shinny Urls from config - Before: ");
-                        final var igPackages = appConfig.getIgPackages();
-                        final var interactionId = InteractionsFilter.getActiveRequestEnc(request).requestId()
-                                        .toString();
-                        final var sessionBuilder = engine.session()
-                                        .withSessionId(UUID.randomUUID().toString())
-                                        .onDevice(Device.createDefault())
-                                        .withInteractionId(interactionId)
-                                        .withPayloads(List.of(payload))
-                                        .withFhirProfileUrl(FHIRUtil.getBundleProfileUrl())
-                                        .withTracer(tracer)
-                                        .withFhirIGPackages(igPackages)
-                                        .addHapiValidationEngine(); // by default
-
-                        final var session = sessionBuilder.build();
-                        try {
-                                engine.orchestrate(session);
-                                final var opOutcome = new HashMap<>(Map.of("resourceType", "OperationOutcome",
-                                                "help",
-                                                "If you need help understanding how to decipher OperationOutcome please see "
-                                                                + appConfig.getOperationOutcomeHelpUrl(),
-                                                "validationResults",
-                                                session.getValidationResults(), "device",
-                                                session.getDevice(),
-                                                "bundleSessionId", interactionId));
-                                final var result = Map.of("OperationOutcome", opOutcome);
-
-                                LOG.info("FHIRController: Bundle Validate:: Validation completed successfully");
-                                return result;
-                        } catch (Exception e) {
-                                LOG.error("FHIRController: Bundle Validate:: Validation failed", e);
-                                return Map.of(
-                                                "resourceType", "OperationOutcome",
-                                                "bundleSessionId", interactionId,
-                                                "error", "Validation failed: " + e.getMessage());
-                        } finally {
-                                // Ensure the session is cleared to avoid memory leaks
-                                if (session != null) {
-                                        engine.clear(session);
-                                        LOG.info("FHIRController:Bundle Validate::  -END");
-                                }
-                        }
+                        Map<String, String> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
+                                        null, null, null, null, null);
+                        Map<String, String> requestParameters = CoreFHIRUtil.buildRequestParametersMap(deleteSessionCookie,
+                                        null, null,
+                                        null, null, request.getRequestURI());
+                        requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString());
+                        requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+                        request = new CustomRequestWrapper(request, payload);
+                        Map<String, Object> responseParametersMap = new HashMap<>();
+                        return fhirService.processBundle(payload, requestParameters, headers, responseParametersMap);
                 } finally {
                         span.end();
                 }
@@ -326,7 +296,7 @@ public class FhirController {
         public Object bundleStatus(
                         @Parameter(description = "<b>mandatory</b> path variable to specify the bundle session ID.", required = true) @PathVariable String bundleSessionId,
                         final Model model, HttpServletRequest request) {
-                final var jooqDSL = udiPrimeJpaConfig.dsl();
+                final var jooqDSL = MirthJooqConfig.dsl();
                 try {
                         final var result = jooqDSL.select()
                                         .from(INTERACTION_HTTP_REQUEST)
@@ -386,4 +356,5 @@ public class FhirController {
                 cookie.setPath("/"); // Set the same path as the original cookie
                 response.addCookie(cookie); // Add it to the response to delete
         }
+
 }

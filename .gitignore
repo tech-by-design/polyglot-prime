@@ -1,5 +1,42 @@
 .env
 .envrc
 
+
+
 ArtifactStore-LocalFsPersistence
-ORG_TECHBD_HUB_PRIME_LOG_FILE_IS_UNDEFINED*.log
+TECHBD_INTERACTIONS*
+TECHBD_TEMP*
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+.env
+.envrc
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/

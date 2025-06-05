@@ -140,11 +140,11 @@ public class Interactions {
             UUID requestId, int status, Instant encounteredAt, List<Header> headers,
             @JsonSerialize(using = ByteArrayToStringOrJsonSerializer.class) byte[] responseBody) {
 
-        public ResponseEncountered(Map<String, String> responseParameters, RequestEncountered requestEncountered,
+        public ResponseEncountered(Map<String, Object> responseParameters, RequestEncountered requestEncountered,
                 byte[] responseBody, List<Header> headers) {
             this(
                     requestEncountered.requestId(),
-                    Integer.parseInt(responseParameters.getOrDefault("status", "200")),
+                    Integer.parseInt(String.valueOf(responseParameters.getOrDefault("status", "200"))),
                     Instant.now(),
                     headers,
                     responseBody);

@@ -2,7 +2,7 @@ package org.techbd.service.fhir.validation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.techbd.util.fhir.FHIRUtil;
+import org.techbd.util.fhir.CoreFHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.validation.FhirValidator;
@@ -27,6 +27,6 @@ public class FhirBundleValidator {
     private String packagePath;
 
     public String getFhirProfileUrl() {
-        return org.techbd.util.fhir.FHIRUtil.getProfileUrl(baseFHIRUrl, FHIRUtil.BUNDLE);
+        return org.techbd.util.fhir.CoreFHIRUtil.getProfileUrl(baseFHIRUrl, CoreFHIRUtil.BUNDLE);
     }
 }

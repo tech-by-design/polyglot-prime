@@ -45,4 +45,11 @@ public interface Constants {
     public static final String LOCAL_ADDRESS = "localAddress";
     public static final String REMOTE_ADDRESS = "remoteAddress";
     public static final String IMMEDIATE = "immediate";
+    public static final String VALIDATION_SEVERITY_LEVEL = "X-TechBD-Validation-Severity-Level";
+    public static final String FHIR_STRUCT_DEFN_PROFILE_URI = "X-TechBD-FHIR-Profile-URI";
+    public static final String FHIR_VALIDATION_STRATEGY = "X-TechBD-FHIR-Validation-Strategy";
+    public static final String DATALAKE_API_URL = "X-TechBD-DataLake-API-URL";
+    public static final String DATALAKE_API_CONTENT_TYPE = "DataLake-API-Content-Type";
+    public static final String HEALTH_CHECK_HEADER = "X-TechBD-HealthCheck";
+    public static final String START_TIME_ATTRIBUTE = "startTime";
 }
