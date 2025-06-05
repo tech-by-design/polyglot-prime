@@ -25,6 +25,7 @@ jobs:
 
     - name: Build the project artifacts with Maven (will test automatically)
       run: |
+        mvn clean install  -DskipTests
         mvn site
 
   deploy:
