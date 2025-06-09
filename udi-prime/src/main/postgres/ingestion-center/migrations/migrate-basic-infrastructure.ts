@@ -503,6 +503,46 @@ const refCodeLookUp = SQLa.tableDefinition("ref_code_lookup", {
   sqlNS: ingressSchema
 });
 
+const nexusInteractionHub = dvts.hubTable("nexus_interaction", {
+  hub_nexus_interaction_id: primaryKey(),
+  key: textNullable(),
+  ...dvts.housekeeping.columns,
+});
+
+const nexusInteractionIngestionSat = nexusInteractionHub.satelliteTable(
+  "ingestion",
+  {
+    sat_nexus_interaction_ingestion_id: primaryKey(),
+    hub_nexus_interaction_id: nexusInteractionHub.references.hub_nexus_interaction_id(),
+    tenant_id: text(),
+    request_uri: text(),
+    request_url: text(),
+    // payload bytea NOT NULL,
+    nature: text(),
+    content_type: textNullable(),
+    payload_hash: textNullable(),
+    payload_size: textNullable(),
+    original_file_name: textNullable(),   
+    from_state: textNullable(),
+    to_state: textNullable(),
+    user_agent: textNullable(),
+    client_ip_address: textNullable(),
+    additional_details: jsonbNullable(),
+    general_errors: jsonbNullable(),
+    elaboration: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const linkNexusInteraction = SQLa.tableDefinition("link_nexus_interaction", {
+    hub_nexus_interaction_id: nexusInteractionHub.references.hub_nexus_interaction_id(),
+    hub_interaction_id:interactionHub.references.hub_interaction_id(),
+    ...dvts.housekeeping.columns
+  }, {
+    isIdempotent: true,
+    sqlNS: ingressSchema
+});
+
 // Function to read SQL from a list of .psql files
 async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   const sqlContents = [];
@@ -1010,6 +1050,26 @@ const migrateSP = pgSQLa.storedProcedure(
         ALTER TABLE techbd_udi_ingress.ref_code_lookup
         ADD CONSTRAINT ref_code_lookup_code_type_code_c_key UNIQUE (code, code_type);
     END IF;
+
+      ${nexusInteractionHub}
+      ${nexusInteractionIngestionSat}
+      ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN IF NOT EXISTS payload Bytea NOT NULL;  
+      CREATE UNIQUE INDEX IF NOT EXISTS sat_int_nexus_req_uq_hub_nexus_int_tnt_nat 
+                          ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id, tenant_id, nature);
+      CREATE INDEX IF NOT EXISTS sat_inter_nexus_req_hub_nexus_inter_id_idx 
+                          ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id);
+      ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS request_source TEXT DEFAULT NULL; 
+
+      ${linkNexusInteraction}
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'link_nexus_interaction_pkey'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.link_nexus_interaction
+          ADD CONSTRAINT link_nexus_interaction_pkey
+          PRIMARY KEY (hub_nexus_interaction_id, hub_interaction_id);
+      END IF;
 
       IF NOT EXISTS (
           SELECT 1
