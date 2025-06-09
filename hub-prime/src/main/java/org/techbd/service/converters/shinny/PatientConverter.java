@@ -114,70 +114,71 @@ public class PatientConverter extends BaseConverter {
             Extension raceExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
 
             String[] raceCodes = fetchCode(demographicData.getRaceCode(), CsvConstants.RACE_CODE, interactionId).split(";");
-            String system = fetchSystem(demographicData.getRaceCodeSystem(), CsvConstants.RACE_CODE, interactionId); // Common system
-            String[] raceDescriptions = demographicData.getRaceCodeDescription() != null
-                    ? demographicData.getRaceCodeDescription().split(";")
-                    : new String[0]; // Handle null descriptions
+            String system = fetchSystem(demographicData.getRaceCodeSystem(), CsvConstants.RACE_CODE, interactionId);
 
+            String[] raceDescriptions = new String[raceCodes.length];
+            String raceCodeDesc = demographicData.getRaceCodeDescription();
             StringBuilder raceTextBuilder = new StringBuilder();
 
             for (int i = 0; i < raceCodes.length; i++) {
-                Extension ombCategoryExtension = new Extension("ombCategory");
+                String trimmedCode = raceCodes[i].trim();
+                String display = fetchDisplay(trimmedCode, raceCodeDesc, CsvConstants.RACE_CODE, interactionId);
+
+                raceDescriptions[i] = display;
+
+                Extension ombCategoryExtension = new Extension(getOmbRaceCategory(trimmedCode, interactionId));
                 ombCategoryExtension.setValue(new Coding()
                         .setSystem(system)
-                        .setCode(raceCodes[i].trim())
-                        .setDisplay(i < raceDescriptions.length ? raceDescriptions[i].trim() : ""));
+                        .setCode(trimmedCode)
+                        .setDisplay(display));
+
                 raceExtension.addExtension(ombCategoryExtension);
 
-                if (i < raceDescriptions.length) {
-                    if (raceTextBuilder.length() > 0) {
-                        raceTextBuilder.append(", ");
-                    }
-                    raceTextBuilder.append(raceDescriptions[i].trim());
+                if (StringUtils.isNotBlank(display)) {
+                    if (raceTextBuilder.length() > 0) raceTextBuilder.append(", ");
+                    raceTextBuilder.append(display.trim());
                 }
             }
 
             if (raceTextBuilder.length() > 0) {
-                Extension textExtension = new Extension("text");
-                textExtension.setValue(new StringType(raceTextBuilder.toString()));
-                raceExtension.addExtension(textExtension);
+                raceExtension.addExtension(new Extension("text", new StringType(raceTextBuilder.toString())));
             }
 
             patient.addExtension(raceExtension);
         }
 
         if (StringUtils.isNotEmpty(demographicData.getEthnicityCode())) {
-            Extension ethnicityExtension = new Extension(
-                    "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
+            Extension ethnicityExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity");
 
             String[] ethnicityCodes = fetchCode(demographicData.getEthnicityCode(), CsvConstants.ETHNICITY_CODE, interactionId).split(";");
-            String system = fetchSystem(demographicData.getEthnicityCodeSystem(), CsvConstants.ETHNICITY_CODE, interactionId); // Common system
-            String[] ethnicityDescriptions = demographicData.getEthnicityCodeDescription() != null
-                    ? demographicData.getEthnicityCodeDescription().split(";")
-                    : new String[0]; // Handle null descriptions
+            String system = fetchSystem(demographicData.getEthnicityCodeSystem(), CsvConstants.ETHNICITY_CODE, interactionId);
 
+            String ethnicityCodeDesc = demographicData.getEthnicityCodeDescription();
+            String[] ethnicityDescriptions = new String[ethnicityCodes.length];
             StringBuilder ethnicityTextBuilder = new StringBuilder();
 
             for (int i = 0; i < ethnicityCodes.length; i++) {
-                Extension ombCategoryExtension = new Extension("ombCategory");
+                String trimmedCode = ethnicityCodes[i].trim();
+                String display = fetchDisplay(trimmedCode, ethnicityCodeDesc, CsvConstants.ETHNICITY_CODE, interactionId);
+
+                ethnicityDescriptions[i] = display;
+
+                Extension ombCategoryExtension = new Extension(getOmbEthnicityCategory(trimmedCode, interactionId));
                 ombCategoryExtension.setValue(new Coding()
                         .setSystem(system)
-                        .setCode(ethnicityCodes[i].trim())
-                        .setDisplay(i < ethnicityDescriptions.length ? ethnicityDescriptions[i].trim() : ""));
+                        .setCode(trimmedCode)
+                        .setDisplay(display));
+
                 ethnicityExtension.addExtension(ombCategoryExtension);
 
-                if (i < ethnicityDescriptions.length) {
-                    if (ethnicityTextBuilder.length() > 0) {
-                        ethnicityTextBuilder.append(", ");
-                    }
-                    ethnicityTextBuilder.append(ethnicityDescriptions[i].trim());
+                if (StringUtils.isNotBlank(display)) {
+                    if (ethnicityTextBuilder.length() > 0) ethnicityTextBuilder.append(", ");
+                    ethnicityTextBuilder.append(display.trim());
                 }
             }
 
             if (ethnicityTextBuilder.length() > 0) {
-                Extension textExtension = new Extension("text");
-                textExtension.setValue(new StringType(ethnicityTextBuilder.toString()));
-                ethnicityExtension.addExtension(textExtension);
+                ethnicityExtension.addExtension(new Extension("text", new StringType(ethnicityTextBuilder.toString())));
             }
 
             patient.addExtension(ethnicityExtension);
