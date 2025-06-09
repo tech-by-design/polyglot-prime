@@ -4517,18 +4517,6 @@ from
 where severity in ('warning','ERROR','WARING','error','FATAL','fatal')
 	and message != '';
 
-/******************************************************************************************
-The view, 'ref_code_lookup_code_view', simplifies the lookup of all codes related to a specific 'code_type' by aggregating them into a single row.
-It retrieves data from the ref_code_lookup table, grouping by code_type, and generates a comma-separated string of associated codes, ordered alphabetically.
-******************************************************************************************/
-DROP VIEW IF EXISTS techbd_udi_ingress.ref_code_lookup_code_view CASCADE;
-CREATE VIEW techbd_udi_ingress.ref_code_lookup_code_view AS
-SELECT 
-    code_type,
-    STRING_AGG(code, ', ' ORDER BY code) AS codes
-FROM techbd_udi_ingress.ref_code_lookup
-GROUP BY code_type
-ORDER BY code_type;
 
 /******************************************************************************************
 The view 'ref_code_lookup_system_view' provides a simplified lookup of all 'system_value' entries associated with each code_type.
@@ -5213,26 +5201,39 @@ $function$
 ;
 
 /*******************************************************************************************
-This view groups reference codes by `code_type` and aggregates them into JSON arrays.
+This view, `ref_code_lookup_code_view`, provides grouped and structured reference code data 
+from the `ref_code_lookup` table for use in UIs or APIs.
 
-Each JSON object contains:
-- `code`: the actual code value.
-- `display`: the human-readable display string for the code.
+It performs the following:
+- Aggregates all reference codes (`code`, `display_string`) grouped by `code_type` 
+  into JSON arrays using `json_agg`.
+- Adds special groups:
+  - `ombRaceCategory`: includes only race codes where `description` is 'ombCategory'.
+  - `ombEthnicityCategory`: includes only ethnicity codes with the same description.
 
-The output provides a convenient way to access all codes for a given type in a single row,
-sorted by `code`, and ordered by `code_type` in the final result.
+Each row in the view corresponds to a `code_type` (or one of the special categories), and the 
+`codes` column holds an array of JSON objects with `code` and `display` keys, sorted by code.
 *******************************************************************************************/
 
+
 DROP VIEW IF EXISTS techbd_udi_ingress.ref_code_lookup_code_view CASCADE;
-CREATE VIEW techbd_udi_ingress.ref_code_lookup_code_view AS
-SELECT 
-    code_type,
-    json_agg(
-        json_build_object(
-            'code', code,
-            'display', display_string
-        ) ORDER BY code
-    ) AS codes
+CREATE OR REPLACE VIEW techbd_udi_ingress.ref_code_lookup_code_view
+AS
+SELECT code_type,
+       json_agg(json_build_object('code', code, 'display', display_string) ORDER BY code) AS codes
 FROM techbd_udi_ingress.ref_code_lookup
 GROUP BY code_type
-ORDER BY code_type;
+
+UNION ALL
+ 
+SELECT 'ombRaceCategory' AS code_type,
+       json_agg(json_build_object('code', code, 'display', display_string) ORDER BY code) AS codes
+FROM techbd_udi_ingress.ref_code_lookup
+WHERE description = 'ombCategory' AND code_type = 'race'
+ 
+UNION ALL
+ 
+SELECT 'ombEthnicityCategory' AS code_type,
+       json_agg(json_build_object('code', code, 'display', display_string) ORDER BY code) AS codes
+FROM techbd_udi_ingress.ref_code_lookup
+WHERE description = 'ombCategory' AND code_type = 'ethnicity';
