@@ -40,7 +40,7 @@ org:
         hub:
           prime:
             defaultDatalakeApiUrl: https://hrsn.nyehealth.org/HRSNBundle
-            dataLedgerApiUrl: https://6z5cce0m4h.execute-api.us-east-1.amazonaws.com/production 
+            dataLedgerApiUrl: https://6z5cce0m4h.execute-api.us-east-1.amazonaws.com/production/DataLedger
             dataLedgerTracking: true
             dataLedgerDiagnostics: true
             dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
