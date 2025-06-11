@@ -24,7 +24,28 @@
 			<url>scm:git:git@github.com:tech-by-design/polyglot-prime.git</url>
 		</site>
 	</distributionManagement>
+	<repositories>
+		<!-- Used in higher environments where the .m2 repository is copied to the project base directory -->
+		<repository>
+			<id>project-base-repository</id>
+			<name>Project Base Directory Repository</name>
+			<url>file://${basedir}/.m2</url>
+		</repository>
 
+		<!-- Default local Maven repository for developer machines -->
+		<repository>
+			<id>local-maven-repository</id>
+			<name>Local Maven Repository</name>
+			<url>file://${user.home}/.m2/repository</url>
+		</repository>
+
+		<!-- Fallback to Maven Central for downloading dependencies not found locally -->
+		<repository>
+			<id>central</id>
+			<name>Maven Central Repository</name>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
+	</repositories>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
