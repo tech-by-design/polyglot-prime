@@ -5,7 +5,6 @@ lib.aide.resource
 lib.aide.tabular
 lib.aide.vfs
 org.techbd
-org.techbd.orchestrate.fhir
 org.techbd.service
 org.techbd.service.csv
 org.techbd.service.http

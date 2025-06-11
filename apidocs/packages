@@ -17,7 +17,6 @@ org.techbd.service.constants
 org.techbd.util
 org.techbd.orchestrate.csv
 org.techbd.orchestrate.sftp
-org.techbd.orchestrate.fhir
 org.techbd.orchestrate.fhir.util
 org.techbd.conf
 lib.aide.tabular

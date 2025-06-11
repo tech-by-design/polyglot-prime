@@ -10,7 +10,6 @@ org.techbd.conf
 org.techbd.controller.http.hub.prime.api
 org.techbd.model.csv
 org.techbd.orchestrate.csv
-org.techbd.orchestrate.fhir
 org.techbd.orchestrate.fhir.util
 org.techbd.orchestrate.sftp
 org.techbd.service
