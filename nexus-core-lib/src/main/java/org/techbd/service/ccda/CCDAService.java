@@ -10,7 +10,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -34,13 +35,16 @@ import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
  * The service uses JOOQ routines to persist data and logs the interaction using
  * log4j.
  */
-public class CCDABundleDbSaverService {
+public class CCDAService {
+    private static final Logger logger = LoggerFactory.getLogger(CCDAService.class);
 
     public static boolean saveOriginalCcdaPayload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
-
+            logger.info("Saving original CCDA payload with interactionId: " + interactionId);
+            logger.info("Request URI: " + requestUri);
+            logger.info("Tenant ID: " + tenantId);
             Map<String, Object> natureMap = Map.of(
                     "nature", "Original CCDA Payload",
                     "tenant_id", tenantId);
@@ -54,21 +58,19 @@ public class CCDABundleDbSaverService {
             rihr.setInteractionKey(requestUri);
             rihr.setNature(natureNode);
             rihr.setContentType("application/json");
-            rihr.setPayload(payloadNode);
             rihr.setPayloadText(payloadJson);
-
             rihr.setFromState("NONE");
             rihr.setToState("CCDA_ACCEPT");
-
             rihr.setSourceType("CCDA");
             rihr.setCreatedAt(OffsetDateTime.now());
-            rihr.setCreatedBy(CCDABundleDbSaverService.class.getName());
-            rihr.setProvenance("unknown");
-
+            rihr.setCreatedBy(CCDAService.class.getName());
+            String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
+            rihr.setProvenance(provenance);
             int result = rihr.execute(jooqCfg);
-
+            logger.info("Function execution result: " + result);
             return result >= 0;
         } catch (Exception e) {
+            logger.error("Error saving original CCDA payload", e);
             return false;
         }
     }
@@ -87,9 +89,11 @@ public class CCDABundleDbSaverService {
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
-
+            logger.info("Saving CCDA validation with interactionId: " + interactionId);
+            logger.info("Request URI: " + requestUri);
+            logger.info("Tenant ID: " + tenantId);
             Map<String, Object> natureMap = Map.of(
-                    "nature", "Original CCDA Payload",
+                    "nature", "CCDA Validation Result",
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
@@ -102,20 +106,18 @@ public class CCDABundleDbSaverService {
             rihr.setNature(natureNode);
             rihr.setContentType("application/json");
             rihr.setPayload(payloadNode);
-            rihr.setPayloadText(payloadJson);
-
             rihr.setFromState("CCDA_ACCEPT");
             rihr.setToState(isValid ? "VALIDATION_SUCCESS" : "VALIDATION_FAILED");
-
             rihr.setSourceType("CCDA");
             rihr.setCreatedAt(OffsetDateTime.now());
-            rihr.setCreatedBy(CCDABundleDbSaverService.class.getName());
-            rihr.setProvenance("unknown");
-
+            rihr.setCreatedBy(CCDAService.class.getName());
+            String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
+            rihr.setProvenance(provenance);
             int result = rihr.execute(jooqCfg);
-
+            logger.info("Function execution result: " + result);
             return result >= 0;
         } catch (Exception e) {
+            logger.error("Error saving CCDA validation", e);
             return false;
         }
     }
@@ -134,8 +136,11 @@ public class CCDABundleDbSaverService {
             String tenantId, String requestUri,
             Map<String, Object> bundle) {
         try {
+            logger.info("Saving FHIR conversion result with interactionId: " + interactionId);
+            logger.info("Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
+
             Map<String, Object> natureMap = Map.of(
-                    "nature", "CCDA to FHIR Conversion",
+                    "nature", "Converted to FHIR",
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode bundleNode = Configuration.objectMapper.valueToTree(bundle);
@@ -147,18 +152,19 @@ public class CCDABundleDbSaverService {
             rihr.setNature(natureNode);
             rihr.setContentType("application/json");
             rihr.setPayload(bundleNode);
-            rihr.setPayloadText(bundleNode.toString());
-
             rihr.setFromState("VALIDATION_SUCCESS");
-            rihr.setToState(conversionSuccess ? "FHIR_CONVERSION_SUCCESS" : "FHIR_CONVERSION_FAILED");
+            rihr.setToState(conversionSuccess ? "CONVERTED_TO_FHIR" : "FHIR_CONVERSION_FAILED");
             rihr.setSourceType("CCDA");
             rihr.setCreatedAt(OffsetDateTime.now());
-            rihr.setCreatedBy(CCDABundleDbSaverService.class.getName());
-            rihr.setProvenance("unknown");
+            rihr.setCreatedBy(CCDAService.class.getName());
 
+            String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
+            rihr.setProvenance(provenance);
             int result = rihr.execute(jooqCfg);
+            logger.info("Function execution result: " + result);
             return result >= 0;
         } catch (Exception e) {
+            logger.error("Error saving FHIR conversion result", e);
             return false;
         }
     }
@@ -179,9 +185,12 @@ public class CCDABundleDbSaverService {
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
+            logger.info("Saving CCDA validation with interactionId: " + interactionId);
+            logger.info("Request URI: " + requestUri);
+            logger.info("Tenant ID: " + tenantId);
 
             Map<String, Object> natureMap = Map.of(
-                    "nature", "Original CCDA Payload",
+                    "nature", "CCDA Validation Result",
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
@@ -193,18 +202,19 @@ public class CCDABundleDbSaverService {
             rihr.setNature(natureNode);
             rihr.setContentType("application/json");
             rihr.setPayload(payloadNode);
-            rihr.setPayloadText(payloadJson);
-
             rihr.setFromState("CCDA_ACCEPT");
             rihr.setToState(isValid ? "VALIDATION_SUCCESS" : "VALIDATION_FAILED");
             rihr.setSourceType("CCDA");
             rihr.setCreatedAt(OffsetDateTime.now());
-            rihr.setCreatedBy(CCDABundleDbSaverService.class.getName());
-            rihr.setProvenance("unknown");
+            rihr.setCreatedBy(CCDAService.class.getName());
+            String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
+            rihr.setProvenance(provenance);
 
             int result = rihr.execute(jooqCfg);
+            logger.info("Function execution result: " + result);
             return result >= 0;
         } catch (Exception e) {
+            logger.error("Error saving CCDA validation", e);
             return false;
         }
     }
