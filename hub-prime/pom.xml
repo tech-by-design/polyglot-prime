@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.techbd</groupId>
 		<artifactId>polyglot-prime</artifactId>
-		<version>0.580.0</version>
+		<version>0.581.0</version>
 		<relativePath>../pom.xml</relativePath> 
 	</parent>
 
@@ -27,11 +27,10 @@
 	<repositories>
 		<!-- Used in higher environments where the .m2 repository is copied to the project base directory -->
 		<repository>
-			<id>project-base-repository</id>
-			<name>Project Base Directory Repository</name>
-			<url>file://${basedir}/.m2</url>
+			<id>root-m2-repository</id>
+			<name>Root .m2 Repository</name>
+			<url>file:/${env.MAVEN_ROOT_DIR}/.m2/repository</url>
 		</repository>
-
 		<!-- Default local Maven repository for developer machines -->
 		<repository>
 			<id>local-maven-repository</id>
@@ -376,7 +375,7 @@
 		<dependency>
 			<groupId>org.techbd</groupId>
 			<artifactId>nexus-core-lib</artifactId>
-			<version>0.580.0</version>
+			<version>0.581.0</version>
 		</dependency>
 	</dependencies>
 
