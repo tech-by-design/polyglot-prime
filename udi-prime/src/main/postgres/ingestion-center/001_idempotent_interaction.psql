@@ -912,7 +912,7 @@ where
  * 2. `accepted_submissions`: Counts submissions where the nature is 'Forwarded HTTP Response'.
  * 3. `rejected_submissions`: Counts submissions where the nature is 'Forwarded HTTP Response Error'.
  * 4. `pending_submissions`: Counts submissions where the nature is neither 'Forwarded HTTP Response',
- *    'Forwarded HTTP Response Error', nor 'Original FHIR payload'.
+ *    'Forwarded HTTP Response Error', nor 'org.techbd.service.http.Interactions$RequestResponseEncountered'.
  *
  * This view aggregates data for all interactions related to FHIR submissions based on the following:
  * - Interaction metadata including the nature of HTTP requests.
@@ -982,7 +982,7 @@ WITH submission_counts AS (
          SELECT sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
-                    WHEN sihr.nature = 'Original FHIR payload'::text THEN 1
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
                     ELSE NULL::integer
                 END) AS qe_total_submissions,
  
@@ -1173,7 +1173,7 @@ WITH combined_counts AS (
          SELECT sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
-                    WHEN sihr.nature = 'Original FHIR payload'::text THEN 1
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
                     ELSE NULL::integer
                 END) AS qe_total_submissions,
             count(
@@ -1271,7 +1271,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_needs_atten
  * 
  * Filtering:
  * - URI: The view includes only interactions with the URIs '/Bundle' or '/Bundle/'.
- * - Nature: It specifically targets interactions categorized as 'Original FHIR payload'.
+ * - Nature: It specifically targets interactions categorized as 'org.techbd.service.http.Interactions$RequestResponseEncountered'.
  * - User Agent: Requests with a user agent of 'httpyac' are excluded to focus on interactions from other sources.
  * - Time Frame: The view is restricted to interactions that occurred within the last 7 days, ensuring the summary is recent and relevant.
  * 
@@ -1298,7 +1298,7 @@ WITH cte AS (
            client_ip_address,
            user_agent
     FROM techbd_udi_ingress.sat_interaction_fhir_request
-    WHERE nature = 'Original FHIR payload'
+    WHERE nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
       AND uri != '/api/expect/fhir/bundle'
       AND user_agent <> 'httpyac'
       AND created_at >= CURRENT_DATE - INTERVAL '7 days' 
@@ -1342,7 +1342,7 @@ ORDER BY tenant_id_lower, client_ip_address, user_agent;
  * Filtering:
  * - URI: The view includes only interactions with the URIs '/Bundle' or '/Bundle/'.
  * - Nature: It specifically targets interactions categorized as 
- *   'Original FHIR payload'.
+ *   'org.techbd.service.http.Interactions$RequestResponseEncountered'.
  * - User Agent: Requests with a user agent of 'httpyac' are excluded to focus on interactions 
  *   from other sources.
  * - Time Frame: The view is restricted to interactions that occurred within the last 7 days, 
@@ -1372,7 +1372,7 @@ WITH cte AS (
           hub_interaction_id,  
           created_at         
     FROM techbd_udi_ingress.sat_interaction_fhir_request
-    WHERE nature = 'Original FHIR payload'
+    WHERE nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
       AND uri != '/api/expect/fhir/bundle'
       AND user_agent <> 'httpyac'
       AND created_at >= CURRENT_DATE - INTERVAL '7 days'  
@@ -1686,7 +1686,7 @@ BEGIN
 															'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
   	/*------------------------------*/
   
-  	IF(LOWER(sat_interaction_fhir_request_upserted.nature) <> LOWER('Original FHIR payload')) THEN
+  	IF(LOWER(sat_interaction_fhir_request_upserted.nature) <> LOWER('org.techbd.service.http.Interactions$RequestResponseEncountered')) THEN
 		SELECT 
 		fhir_req.client_ip_address,			fhir_req.user_agent, 				fhir_req.bundle_id, 
 		fhir_req.bundle_last_updated,		fhir_req.organization_id,			fhir_req.organization_name, 
@@ -1707,10 +1707,10 @@ BEGIN
 		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
 		WHERE 1 = 1
 		AND fhir_req.hub_interaction_id = sat_interaction_fhir_request_upserted.hub_interaction_id
-		AND fhir_req.nature = 'Original FHIR payload';	
+		AND fhir_req.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered';	
   	END IF;  	
 
-	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('Original FHIR payload')) THEN				   
+	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('org.techbd.service.http.Interactions$RequestResponseEncountered')) THEN				   
     	
 		v_user_agent 				:= sat_interaction_fhir_request_upserted.payload->'request'->>'userAgent';    
     	v_client_ip_address 		:= sat_interaction_fhir_request_upserted.payload->'request'->>'clientIpAddress';    
@@ -1839,7 +1839,7 @@ BEGIN
 
 	
 	
-	END IF; /*End of : Original FHIR payload*/
+	END IF; /*End of : org.techbd.service.http.Interactions$RequestResponseEncountered*/
 	
 	-- Save the action from the OperationOutcome->techByDesignDisposition
 	IF LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('techByDesignDisposition') THEN 
@@ -3169,7 +3169,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_tenant_stats_view  AS
         sihr.tenant_id_lower::text AS qe_name,  
         sihr.created_at::date,
         COUNT(CASE 
-                  WHEN sihr.nature = 'Original FHIR payload' THEN 1 
+                  WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' THEN 1 
                   ELSE NULL 
               END) AS qe_fhir_submission_count,        
         COUNT(CASE 
@@ -3227,7 +3227,7 @@ create or replace view techbd_udi_ingress.fhir_scn_submission as
          SELECT sihr.organization_id AS organization_id,
             count(
                 CASE
-                    WHEN sihr.nature = 'Original FHIR payload'::text THEN 1
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text THEN 1
                     ELSE NULL::integer
                 END) AS qe_total_submissions,
             count(
@@ -3286,7 +3286,7 @@ select
 	sihr.tenant_id_lower as qe_name,
 	count(
                 case
-                    when sihr.nature = 'Original FHIR payload'::text then 1
+                    when sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text then 1
                     else null::integer
                 end) as qe_total_submissions,
 	count(
@@ -3371,7 +3371,7 @@ create or replace view techbd_udi_ingress.missing_datalake_submission_details as
 from
 	techbd_udi_ingress.sat_interaction_fhir_request sihr
 where
-	sihr.nature = 'Original FHIR payload'::text
+	sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text
 	and (sihr.uri = any (array['/Bundle/',
 	'/Bundle']))
 	and sihr.created_at >= (CURRENT_DATE - '7 days'::interval)
@@ -3628,7 +3628,7 @@ BEGIN
             sihr.organization_id,
             count(
                 CASE 
-                    WHEN sihr.nature = 'Original FHIR payload' THEN 1 
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' THEN 1 
                     ELSE NULL 
                 END
             )::INTEGER AS qe_total_submissions,
@@ -3690,7 +3690,7 @@ BEGIN
             sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
-                    WHEN sihr.nature = 'Original FHIR payload' THEN 1
+                    WHEN sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered' THEN 1
                 END) AS qe_total_submissions,
             count(
                 CASE
@@ -3892,7 +3892,7 @@ BEGIN
     FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
     WHERE 
         sihr.tenant_id_lower = tenant_id_param
-        AND sihr.nature = 'Original FHIR payload'
+        AND sihr.nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'
         AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/'])
         AND sihr.created_at >= TO_TIMESTAMP(start_date_param::text, 'YYYY-MM-DD') 
         AND sihr.created_at < TO_TIMESTAMP(end_date_param::text, 'YYYY-MM-DD') + INTERVAL '1 day'
@@ -3926,7 +3926,7 @@ BEGIN
              SELECT 
                 sihr.organization_id,
                 sihr.tenant_id_lower AS qe_name,
-                count(CASE WHEN sihr.nature = ''Original FHIR payload'' THEN 1 ELSE NULL END) AS qe_total_submissions,
+                count(CASE WHEN sihr.nature = ''org.techbd.service.http.Interactions$RequestResponseEncountered'' THEN 1 ELSE NULL END) AS qe_total_submissions,
                 count(CASE WHEN sihr.nature = ''Forwarded HTTP Response'' THEN 1 ELSE NULL END) AS success_submissions,
                 count(CASE WHEN sihr.nature = ''Forwarded HTTP Response Error'' THEN 1 ELSE NULL END) AS faield_submissions,
                 max(sihr.created_at) AS recently_created_at
@@ -4368,8 +4368,10 @@ WITH fhir_summary AS (
             ELSE 'False'::text
         END AS fhir_conversion_status
     FROM techbd_udi_ingress.sat_interaction_fhir_request
-    WHERE 
-    nature = 'Original FHIR Payload'::text 
+    WHERE (
+        nature = 'Original FHIR Payload'::text
+        OR nature = 'org.techbd.service.http.Interactions$RequestResponseEncountered'::text
+    )
     AND source_type = 'CCDA'::text
     GROUP BY hub_interaction_id
 ),
