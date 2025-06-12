@@ -140,11 +140,11 @@ public class FHIRService {
 					&& !SourceType.CCDA.name().equalsIgnoreCase(sourceType)) {
 				DataLedgerPayload dataLedgerPayload = null;
 				if (StringUtils.isNotEmpty(bundleId)) {
-					dataLedgerPayload = DataLedgerPayload.create(tenantId,
+					dataLedgerPayload = DataLedgerPayload.create(DataLedgerApiClient.Actor.TECHBD.getValue(),
 							DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(),
 							bundleId);
 				} else {
-					dataLedgerPayload = DataLedgerPayload.create(tenantId,
+					dataLedgerPayload = DataLedgerPayload.create(DataLedgerApiClient.Actor.TECHBD.getValue(),
 							DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(),
 							interactionId);
 				}
