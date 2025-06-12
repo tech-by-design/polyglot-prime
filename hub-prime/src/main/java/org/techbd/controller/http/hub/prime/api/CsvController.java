@@ -1,6 +1,10 @@
 package org.techbd.controller.http.hub.prime.api;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +19,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.conf.Configuration;
-import org.techbd.service.CsvService;
-import org.techbd.service.http.hub.prime.AppConfig;
-import org.techbd.util.FHIRUtil;
+import org.techbd.config.Constants;
+import org.techbd.config.CoreAppConfig;
+import org.techbd.service.csv.CsvService;
+import org.techbd.util.fhir.CoreFHIRUtil;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,11 +35,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class CsvController {
   private static final Logger log = LoggerFactory.getLogger(CsvController.class);
   private final CsvService csvService;
-  private final AppConfig appConfig;
+  private final CoreAppConfig coreAppConfig;
 
-  public CsvController(CsvService csvService,AppConfig appConfig) {
+  public CsvController(CsvService csvService, CoreAppConfig coreAppConfig) {
     this.csvService = csvService;
-    this.appConfig = appConfig;
+    this.coreAppConfig = coreAppConfig;
   }
 
   private void validateFile(MultipartFile file) {
@@ -69,7 +74,19 @@ public class CsvController {
 
     validateFile(file);
     validateTenantId(tenantId);
-    return csvService.validateCsvFile(file, request, response, tenantId, origin, sftpSessionId);
+    Map<String, String> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
+        null,
+        null, null, null, null,
+        null);
+    Map<String, String> requestParameters = new HashMap<>();    
+    CoreFHIRUtil.buildRequestParametersMap(requestParameters,null,
+        null, null, null, null, request.getRequestURI());
+    requestParameters.put(Constants.INTERACTION_ID, UUID.randomUUID().toString());
+    requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+    Map<String, Object> responseParameters = new HashMap<>();
+    final var result  = csvService.validateCsvFile(file, requestParameters, headerParameters,responseParameters);
+    CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
+    return result;
   }
 
   @PostMapping(value = { "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/" }, consumes = {
@@ -88,9 +105,23 @@ public class CsvController {
         
     validateFile(file);
     validateTenantId(tenantId);
-    FHIRUtil.validateBaseFHIRProfileUrl(appConfig, baseFHIRURL);
-    List<Object> processedFiles = csvService.processZipFile(file, request, response, tenantId, origin, sftpSessionId,baseFHIRURL);
+    CoreFHIRUtil.validateBaseFHIRProfileUrl(coreAppConfig, baseFHIRURL);
+    Map<String, String> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
+        null,
+        null, null, null, null,
+        null);
+    Map<String, String> requestParameters = new HashMap<>();    
+    CoreFHIRUtil.buildRequestParametersMap(requestParameters,null,
+        null, null, null, null, request.getRequestURI());
+    requestParameters.put(Constants.INTERACTION_ID, UUID.randomUUID().toString());
+    requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+    if (validationSeverityLevel != null) {
+      requestParameters.put(Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
+    }
+    headerParameters.put(Constants.BASE_FHIR_URL, baseFHIRURL);
+    Map<String, Object> responseParameters = new HashMap<>();
+    List<Object> processedFiles = csvService.processZipFile(file, requestParameters, headerParameters, responseParameters);
+    CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
     return ResponseEntity.ok(processedFiles);
-  
   }
 }

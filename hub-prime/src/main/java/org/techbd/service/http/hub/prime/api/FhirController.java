@@ -37,6 +37,7 @@ import org.techbd.service.fhir.FHIRService;
 import org.techbd.service.fhir.engine.OrchestrationEngine;
 import org.techbd.service.http.Helpers;
 import org.techbd.service.http.hub.CustomRequestWrapper;
+import org.techbd.util.FHIRUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import io.micrometer.common.util.StringUtils;
@@ -202,13 +203,16 @@ public class FhirController {
                                         dataLakeApiContentType,
                                         requestUriToBeOverridden, validationSeverityLevel, healthCheck, coRrelationId,
                                         provenance);
-                        Map<String, String> requestParameters = CoreFHIRUtil.buildRequestParametersMap(deleteSessionCookie,
-                                        mtlsStrategy, source, null, null, request.getRequestURI());
+                        Map<String, String> requestParameters = new HashMap<>();
+                       CoreFHIRUtil.buildRequestParametersMap(requestParameters,deleteSessionCookie,
+                                        mtlsStrategy, source, null, null,request.getRequestURI());
                         requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString()); 
-                        requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());              
+                        requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());   
                         request = new CustomRequestWrapper(request, payload);
-                        Map<String, Object> responseParametersMap = new HashMap<>();
-                        return fhirService.processBundle(payload, requestParameters, headers, responseParametersMap);
+                        Map<String, Object> responseParameters = new HashMap<>();
+                        final var result = fhirService.processBundle(payload, requestParameters, headers, responseParameters);
+                        CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
+                        return result;
                 } finally {
                         span.end();
                 }
@@ -277,14 +281,16 @@ public class FhirController {
                         request = new CustomRequestWrapper(request, payload);
                         Map<String, String> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
                                         null, null, null, null, null);
-                        Map<String, String> requestParameters = CoreFHIRUtil.buildRequestParametersMap(deleteSessionCookie,
+                        Map<String, String> requestParameters = new HashMap<>();                
+                        CoreFHIRUtil.buildRequestParametersMap(requestParameters,deleteSessionCookie,
                                         null, null,
                                         null, null, request.getRequestURI());
                         requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString());
                         requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
-                        request = new CustomRequestWrapper(request, payload);
-                        Map<String, Object> responseParametersMap = new HashMap<>();
-                        return fhirService.processBundle(payload, requestParameters, headers, responseParametersMap);
+                        Map<String, Object> responseParameters = new HashMap<>();
+                        final var result = fhirService.processBundle(payload, requestParameters, headers, responseParameters);
+                        CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
+                        return result;
                 } finally {
                         span.end();
                 }

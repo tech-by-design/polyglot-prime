@@ -19,11 +19,14 @@ import org.techbd.config.Interactions.Header;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+
 @Component
 public class CoreFHIRUtil {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CoreFHIRUtil.class);
     private final CoreAppConfig coreAppConfig;
-    private static Map<String, String> PROFILE_MAP;
+    public static Map<String, String> PROFILE_MAP;
     private static String BASE_FHIR_URL;
     public static final String BUNDLE = "bundle";
 
@@ -164,10 +167,9 @@ public class CoreFHIRUtil {
         return headers;
     }
 
-    public static Map<String, String> buildRequestParametersMap(Boolean deleteSessionCookie,
+    public static Map<String, String> buildRequestParametersMap(Map<String,String> requestParameters ,Boolean deleteSessionCookie,
             String mtlsStrategy, String source, String groupInteractionId, String masterInteractionId,
             String requestUri) {
-        Map<String, String> requestParameters = new HashMap<>();
         addIfNotEmpty(requestParameters, Constants.MTLS_STRATEGY, mtlsStrategy);
         addIfNotEmpty(requestParameters, Constants.SOURCE_TYPE, source);
         addIfNotEmpty(requestParameters, Constants.GROUP_INTERACTION_ID, groupInteractionId);
@@ -182,6 +184,33 @@ public class CoreFHIRUtil {
     public static void addIfNotEmpty(Map<String, String> headers, String key, String value) {
         if (StringUtils.isNotEmpty(value)) {
             headers.put(key, value);
+        }
+    }
+
+    
+    public static void addCookieAndHeadersToResponse(HttpServletResponse response, Map<String, Object> responseParameters,
+            Map<String, String> requestParameters) {
+        if (responseParameters.get(Constants.METRIC_COOKIE) != null) {
+            response.addCookie((Cookie) responseParameters.get(Constants.METRIC_COOKIE));
+        }
+        if (responseParameters.get(Constants.HEADER) != null) {
+            response.addHeader(Constants.HEADER, responseParameters.get(Constants.HEADER).toString());
+        }
+        if (requestParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME) != null) {
+            response.addHeader(Constants.START_TIME_ATTRIBUTE,
+                    requestParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME));
+        }
+        if (responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME) != null) {
+            response.addHeader(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME,
+                    responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME).toString());
+        }
+        if (responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME) != null) {
+            response.addHeader(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME,
+                    responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME).toString());
+        }
+        if (responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_DURATION_NANOSECS) != null) {
+            response.addHeader(Constants.OBSERVABILITY_METRIC_INTERACTION_DURATION_NANOSECS,
+                    responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_DURATION_NANOSECS).toString());
         }
     }
 }

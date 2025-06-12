@@ -11,3 +11,11 @@ org:
       mTlsAwsSecrets: 
         mTlsKeySecretName: techbd-prd-client-key # The name of the AWS Secrets Manager secret that holds the mTLS private key
         mTlsCertSecretName: techbd-prd-client-certificate  # The name of the AWS Secrets Manager secret that holds the mTLS client certificate
+    csv:
+      validation:
+        pythonScriptPath: ../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py
+        pythonExecutable: python3
+        packagePath: ../support/specifications/flat-file/datapackage-nyher-fhir-ig-equivalent.json
+        inboundPath: /app/techbyDesign/flatFile/inbound
+        outputPath: /app/techbyDesign/flatFile/outbound
+        ingessHomePath: /app/techbyDesign/flatFile/ingress    
