@@ -10,3 +10,11 @@ org:
         dataLedgerTracking: true
         dataLedgerDiagnostics: true
         dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
+    csv:
+      validation:
+        pythonScriptPath: ../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py
+        pythonExecutable: python3
+        packagePath: ../support/specifications/flat-file/datapackage-nyher-fhir-ig-equivalent.json
+        inboundPath: /app/techbyDesign/flatFile/inbound
+        outputPath: /app/techbyDesign/flatFile/outbound
+        ingessHomePath: /app/techbyDesign/flatFile/ingress         

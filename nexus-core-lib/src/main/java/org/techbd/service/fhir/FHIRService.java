@@ -165,11 +165,11 @@ public class FHIRService {
 					&& !SourceType.CCDA.name().equalsIgnoreCase(source)) {
 				DataLedgerPayload dataLedgerPayload = null;
 				if (StringUtils.isNotEmpty(bundleId)) {
-					dataLedgerPayload = DataLedgerPayload.create(tenantId,
+					dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
 							CoreDataLedgerApiClient.Action.RECEIVED.getValue(), CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
 							bundleId);
 				} else {
-					dataLedgerPayload = DataLedgerPayload.create(tenantId,
+					dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
 							CoreDataLedgerApiClient.Action.RECEIVED.getValue(), CoreDataLedgerApiClient.Actor.TECHBD.getValue(),
 							interactionId);
 				}
@@ -1304,7 +1304,9 @@ public class FHIRService {
         LOG.debug(
                 "FHIRService:: sendToScoringEngine Post to scoring engine - BEGIN interaction id: {} tenantID :{}",
                 interactionId, tenantId);
-
+		DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+				CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(),
+				CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
         // Post request to scoring engine
         webClient.post()
                 .uri("?processingAgent=" + tenantId)
@@ -1315,9 +1317,6 @@ public class FHIRService {
                 .retrieve()
                 .bodyToMono(String.class)
                 .doFinally(signalType -> {
-                    DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
-						CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(), 
-                            CoreDataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
                     final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
             		coreDataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
                 })

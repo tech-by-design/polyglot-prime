@@ -57,8 +57,8 @@ public class CoreAppConfig {
     }
 
     public record CsvValidation(Validation validation) {
-    }
-
     public record Validation(String pythonScriptPath,String pythonExecutable,String packagePath,String outputPath,String inboundPath,String ingressHomePath) {
     }
+    }
+    
 }

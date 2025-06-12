@@ -215,6 +215,22 @@
             <version>5.10.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>2.12.5</version> <!-- Latest as of mid-2024 -->
+        </dependency>
+        <dependency>
+			<groupId>com.github.bxforce</groupId>
+			<artifactId>commons-vfs2-spring-boot-starter</artifactId>
+			<version>1.0.1-RELEASE</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
     </dependencies>
 
     <build>
