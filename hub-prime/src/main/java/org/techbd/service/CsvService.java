@@ -138,7 +138,7 @@ public class CsvService {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final String masterInteractionId = getBundleInteractionId(request);
-             DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(tenantId, DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), masterInteractionId
+             DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.RECEIVED.getValue(), DataLedgerApiClient.Actor.TECHBD.getValue(), masterInteractionId
 			);
 			final var dataLedgerProvenance = "%s.processZipFile".formatted(CsvService.class.getName());
             dataLedgerApiClient.processRequest(dataLedgerPayload,masterInteractionId,dataLedgerProvenance,SourceType.CSV.name(),null);
