@@ -4,9 +4,6 @@ lib.aide.paths
 lib.aide.resource
 lib.aide.tabular
 lib.aide.vfs
-org.techbd
-org.techbd.service
-org.techbd.service.csv
 org.techbd.service.http
 org.techbd.service.http.hub.prime
 org.techbd.service.http.hub.prime.ux

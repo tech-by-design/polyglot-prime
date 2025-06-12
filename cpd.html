@@ -73,92 +73,6 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
-<td style="text-align: left;">org/techbd/orchestrate/csv/CsvOrchestrationEngine.java</td>
-<td>597</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/service/CsvBundleProcessorService.java</td>
-<td>461</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>}
-        
-        private Map&lt;String, Object&gt; createOperationOutcomeForFileNotProcessed(
-            final String masterInteractionId,
-            final List&lt;FileDetail&gt; filesNotProcessed,
-            final String originalFileName) {
-    
-            if (filesNotProcessed == null || filesNotProcessed.isEmpty()) {
-                return Collections.emptyMap();
-            }
-        
-            // Group by subType + reason to allow distinct reasons within a single subType
-            Map&lt;String, List&lt;FileDetail&gt;&gt; grouped = filesNotProcessed.stream()
-                    .collect(Collectors.groupingBy(fd -&gt; {
-                        String reason = fd.reason();
-                        if (reason == null || reason.contains(&quot;Invalid file prefix&quot;)) {
-                            return &quot;invalid-prefix|Invalid file prefix&quot;;
-                        } else if (reason.contains(&quot;Group blocked by&quot;)) {
-                            return &quot;incomplete-group-due-to-encoding|&quot; + reason;
-                        } else if (reason.contains(&quot;not UTF-8 encoded&quot;)) {
-                            return &quot;wrong-encoding|File is not UTF-8 encoded&quot;;
-                        } else {
-                            return &quot;unknown|Unknown reason&quot;;
-                        }
-                    }));
-        
-            List&lt;Map&lt;String, Object&gt;&gt; errors = new ArrayList&lt;&gt;();
-        
-            for (Map.Entry&lt;String, List&lt;FileDetail&gt;&gt; entry : grouped.entrySet()) {
-                String[] keyParts = entry.getKey().split(&quot;\\|&quot;, 2);
-                String subType = keyParts[0];
-                String reason = keyParts.length &gt; 1 ? keyParts[1] : &quot;Unknown reason&quot;;
-        
-                String description;
-                switch (subType) {
-                    case &quot;invalid-prefix&quot;:
-                        description = &quot;Filenames must start with one of the following prefixes: &quot; +
-                                Arrays.stream(FileType.values())
-                                        .map(Enum::name)
-                                        .collect(Collectors.joining(&quot;, &quot;));
-                        break;
-                    case &quot;incomplete-group-due-to-encoding&quot;:
-                        description = &quot;Not processed as other files in the group were not UTF-8 encoded&quot;;
-                        break;
-                    case &quot;wrong-encoding&quot;:
-                        description = &quot;File is not UTF-8 encoded&quot;;
-                        break;
-                    default:
-                        description = &quot;Unknown reason&quot;;
-                }
-        
-                List&lt;String&gt; filenames = entry.getValue().stream()
-                        .map(FileDetail::filename)
-                        .collect(Collectors.toList());
-        
-                Map&lt;String, Object&gt; errorGroup = new LinkedHashMap&lt;&gt;();
-                errorGroup.put(&quot;type&quot;, &quot;files-not-processed&quot;);
-                errorGroup.put(&quot;subType&quot;, subType);
-                errorGroup.put(&quot;description&quot;, description);
-                errorGroup.put(&quot;reason&quot;, reason);
-                errorGroup.put(&quot;files&quot;, filenames);
-        
-                errors.add(errorGroup);
-            }
-        
-            return Map.of(
-                    &quot;zipFileInteractionId&quot;, masterInteractionId,
-                    &quot;originalFileName&quot;, originalFileName,
-                    &quot;validationResults&quot;, Map.of(
-                            &quot;resourceType&quot;, &quot;OperationOutcome&quot;,
-                            &quot;errors&quot;, errors
-                    )
-            );
-        }</pre></td></tr></table>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/ux/PrimeController.java</td>
 <td>362</td></tr>
 <tr class="a">
@@ -362,32 +276,6 @@
 <th>File</th>
 <th>Line</th></tr>
 <tr class="b">
-<td style="text-align: left;">org/techbd/service/converters/shinny/CodeLookupService.java</td>
-<td>32</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/service/converters/shinny/CodeLookupService.java</td>
-<td>91</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>LOG.info(&quot;CodeLookupService::fetchCode fetching values from database - BEGIN - interaction Id: {}&quot;, interactionId);
-        try {
-            List&lt;Record2&lt;String, String&gt;&gt; records = dsl
-                    .select(REF_CODE_LOOKUP_CODE_VIEW.CODE_TYPE, REF_CODE_LOOKUP_CODE_VIEW.CODES.cast(String.class))
-                    .from(REF_CODE_LOOKUP_CODE_VIEW)
-                    .fetch();
-    
-            Map&lt;String, Map&lt;String, String&gt;&gt; result = records.stream()
-                    .collect(Collectors.toMap(
-                            Record2::component1,
-                            record -&gt; {
-                                List&lt;Map&lt;String, String&gt;&gt; codesList = parseJsonCodes(record.component2());
-                                return codesList.stream()
-                                    .filter(map -&gt; map != null &amp;&amp; map.get(&quot;code&quot;) != null)</pre></td></tr></table>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
 <td style="text-align: left;">lib/aide/resource/collection/GitHubRepoResources.java</td>
 <td>73</td></tr>
 <tr class="a">
@@ -428,10 +316,10 @@
 <th>Line</th></tr>
 <tr class="b">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
-<td>131</td></tr>
+<td>132</td></tr>
 <tr class="a">
 <td style="text-align: left;">org/techbd/service/http/hub/prime/api/FhirController.java</td>
-<td>241</td></tr>
+<td>245</td></tr>
 <tr class="b">
 <td colspan="2" style="text-align: left;">
 <pre>+ &quot;  }\n&quot;
@@ -452,7 +340,29 @@
                                         + &quot;  \&quot;message\&quot;: \&quot;An unexpected system error occurred.\&quot;\n&quot;
                                         + &quot;}&quot;)))
         })
-        @ResponseBody</pre></td></tr></table></section></section>
+        @ResponseBody</pre></td></tr></table>
+<table class="table table-striped">
+<tr class="a">
+<th>File</th>
+<th>Line</th></tr>
+<tr class="b">
+<td style="text-align: left;">org/techbd/controller/http/hub/prime/api/CsvController.java</td>
+<td>76</td></tr>
+<tr class="a">
+<td style="text-align: left;">org/techbd/controller/http/hub/prime/api/CsvController.java</td>
+<td>108</td></tr>
+<tr class="b">
+<td colspan="2" style="text-align: left;">
+<pre>validateTenantId(tenantId);
+    Map&lt;String, String&gt; headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
+        null,
+        null, null, null, null,
+        null);
+    Map&lt;String, String&gt; requestParameters = new HashMap&lt;&gt;();    
+    CoreFHIRUtil.buildRequestParametersMap(requestParameters,null,
+        null, null, null, null, request.getRequestURI());
+    requestParameters.put(Constants.INTERACTION_ID, UUID.randomUUID().toString());
+    requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());</pre></td></tr></table></section></section>
         </main>
       </div>
     </div>

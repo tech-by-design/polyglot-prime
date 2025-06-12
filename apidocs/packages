@@ -1,9 +1,5 @@
-org.techbd.model.csv
 org.techbd.controller.http.hub.prime.api
-org.techbd.service
 org.techbd.service.exception
-org.techbd.service.converters.csv
-org.techbd.service.converters.shinny
 org.techbd.service.http
 org.techbd.service.http.hub.prime
 org.techbd.service.http.hub.prime.health
@@ -12,10 +8,10 @@ org.techbd.service.http.hub.prime.route
 org.techbd.service.http.hub.prime.ux
 org.techbd.service.http.hub.prime.ux.validator
 org.techbd.service.http.hub
+org.techbd.service
 org.techbd.service.constants
 org.techbd.orchestrate.sftp
 org.techbd.orchestrate.fhir.util
-org.techbd.orchestrate.csv
 org.techbd.conf
 org.techbd.udi
 org.techbd.util

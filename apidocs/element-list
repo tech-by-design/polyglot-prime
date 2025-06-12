@@ -8,14 +8,10 @@ lib.aide.tabular
 lib.aide.vfs
 org.techbd.conf
 org.techbd.controller.http.hub.prime.api
-org.techbd.model.csv
-org.techbd.orchestrate.csv
 org.techbd.orchestrate.fhir.util
 org.techbd.orchestrate.sftp
 org.techbd.service
 org.techbd.service.constants
-org.techbd.service.converters.csv
-org.techbd.service.converters.shinny
 org.techbd.service.exception
 org.techbd.service.http
 org.techbd.service.http.hub
