@@ -70,7 +70,7 @@ public class CCDAService {
             logger.info("Function execution result: " + result);
             return result >= 0;
         } catch (Exception e) {
-            logger.error("Error saving original CCDA payload", e);
+            logger.error("Error saving original CCDA payload for interactionId: {}", interactionId, e);
             return false;
         }
     }
@@ -117,7 +117,7 @@ public class CCDAService {
             logger.info("Function execution result: " + result);
             return result >= 0;
         } catch (Exception e) {
-            logger.error("Error saving CCDA validation", e);
+            logger.error("Error saving CCDA validation for interactionId: {}", interactionId, e);
             return false;
         }
     }
@@ -164,7 +164,7 @@ public class CCDAService {
             logger.info("Function execution result: " + result);
             return result >= 0;
         } catch (Exception e) {
-            logger.error("Error saving FHIR conversion result", e);
+            logger.error("Error saving FHIR conversion result for interactionId: {}", interactionId, e);
             return false;
         }
     }
@@ -214,7 +214,7 @@ public class CCDAService {
             logger.info("Function execution result: " + result);
             return result >= 0;
         } catch (Exception e) {
-            logger.error("Error saving CCDA validation", e);
+            logger.error("Error saving CCDA validation for interactionId: {}", interactionId, e);
             return false;
         }
     }
