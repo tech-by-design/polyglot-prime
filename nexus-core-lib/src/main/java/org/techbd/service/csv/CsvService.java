@@ -137,7 +137,7 @@ public class CsvService {
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final var zipFileInteractionId = requestParameters.get(Constants.INTERACTION_ID);
-            final var tenantId = requestParameters.get(Constants.TENANT_ID);
+            final var tenantId = headerParameters.get(Constants.TENANT_ID);
 
              DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.RECEIVED.getValue(), CoreDataLedgerApiClient.Actor.TECHBD.getValue(), zipFileInteractionId
 			);

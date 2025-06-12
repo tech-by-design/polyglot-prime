@@ -208,7 +208,6 @@ public class FhirController {
                                         mtlsStrategy, source, null, null,request.getRequestURI());
                         requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString()); 
                         requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());   
-                        requestParameters.put(Constants.TENANT_ID, tenantId);           
                         request = new CustomRequestWrapper(request, payload);
                         Map<String, Object> responseParameters = new HashMap<>();
                         final var result = fhirService.processBundle(payload, requestParameters, headers, responseParameters);
@@ -288,7 +287,6 @@ public class FhirController {
                                         null, null, request.getRequestURI());
                         requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString());
                         requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
-                        requestParameters.put(Constants.TENANT_ID, tenantId);
                         Map<String, Object> responseParameters = new HashMap<>();
                         final var result = fhirService.processBundle(payload, requestParameters, headers, responseParameters);
                         CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
