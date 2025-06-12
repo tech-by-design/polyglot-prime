@@ -1287,6 +1287,9 @@ public class FHIRService {
                 interactionId, tenantId);
 
         // Post request to scoring engine
+        DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
+						DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
+                            DataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
         webClient.post()
                 .uri("?processingAgent=" + tenantId)
                 .body(BodyInserters.fromValue(
@@ -1296,9 +1299,6 @@ public class FHIRService {
                 .retrieve()
                 .bodyToMono(String.class)
                 .doFinally(signalType -> {
-                    DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
-						DataLedgerApiClient.Actor.TECHBD.getValue(), DataLedgerApiClient.Action.SENT.getValue(), 
-                            DataLedgerApiClient.Actor.NYEC.getValue(), bundleId);
                     final var dataLedgerProvenance = "%s.sendPostRequest".formatted(FHIRService.class.getName());
             		dataLedgerApiClient.processRequest(dataLedgerPayload,interactionId,masterInteractionId,groupInteractionId,dataLedgerProvenance,SourceType.FHIR.name(),null);
                 })
