@@ -26,10 +26,9 @@ import org.springframework.util.MimeTypeUtils;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.MirthJooqConfig;
-import org.techbd.service.csv.engine.CsvOrchestrationEngine;
-import org.techbd.service.dataledger.CoreDataLedgerApiClient;
-import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
+import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
+import org.techbd.config.State;
 import org.techbd.converters.csv.CsvToFhirConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.FileDetail;
@@ -38,8 +37,10 @@ import org.techbd.model.csv.PayloadAndValidationOutcome;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.service.dataledger.CoreDataLedgerApiClient;
+import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
 import org.techbd.service.fhir.FHIRService;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
 import org.techbd.util.csv.CsvConversionUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
@@ -48,8 +49,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 @Service
 public class CsvBundleProcessorService {
@@ -237,37 +236,44 @@ public class CsvBundleProcessorService {
                 "REGISTER State CONVERTED_TO_FHIR : BEGIN for master InteractionId :{} group interaction id  : {} tenant id : {}",
                 masterInteractionId, groupInteractionId, tenantId);
         final var forwardedAt = OffsetDateTime.now();
-        final var initRIHR = new RegisterInteractionHttpRequest();
+        final var initRIHR = new RegisterInteractionCsvRequest();
         try {
             final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-            initRIHR.setOrigin("http");
-            initRIHR.setInteractionId(groupInteractionId);
-            initRIHR.setGroupHubInteractionId(groupInteractionId);
-            initRIHR.setSourceHubInteractionId(masterInteractionId);
-            initRIHR.setInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
-            initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                    Map.of("nature", "Converted to FHIR", "tenant_id",
+            initRIHR.setPOrigin("http");
+            initRIHR.setPInteractionId(groupInteractionId);
+            initRIHR.setPGroupHubInteractionId(groupInteractionId);
+            initRIHR.setPSourceHubInteractionId(masterInteractionId);
+            initRIHR.setPInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+            initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+                    Map.of("nature", Nature.CONVERTED_TO_FHIR.getDescription(), "tenant_id",
                             tenantId)));
-            initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-            initRIHR.setPayload(null != operationOutcome && operationOutcome.size() > 0
+            initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+            initRIHR.setPPayload(null != operationOutcome && operationOutcome.size() > 0
                     ? Configuration.objectMapper.valueToTree(operationOutcome)
                     : Configuration.objectMapper.readTree(payload));
-            initRIHR.setCreatedAt(forwardedAt);
-            initRIHR.setCreatedBy(CsvService.class.getName());
-            initRIHR.setFromState(isValid ? "VALIDATION SUCCESS" : "VALIDATION FAILED");
-            initRIHR.setToState(StringUtils.isNotEmpty(payload) ? "CONVERTED_TO_FHIR" : "FHIR_CONVERSION_FAILED");
+            // initRIHR.setPCreatedAt(forwardedAt);
+            initRIHR.setPCreatedBy(CsvService.class.getName());
+            initRIHR.setPFromState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
+            initRIHR.setPToState(StringUtils.isNotEmpty(payload) ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());
             final var provenance = "%s.saveConvertedFHIR".formatted(CsvBundleProcessorService.class.getName());
-            initRIHR.setProvenance(provenance);
-            initRIHR.setCsvGroupId(groupInteractionId);
+            initRIHR.setPProvenance(provenance);
+            initRIHR.setPCsvGroupId(groupInteractionId);
             final var start = Instant.now();
             final var execResult = initRIHR.execute(jooqCfg);
             final var end = Instant.now();
+            final JsonNode responseFromDB = initRIHR.getReturnValue();
+            final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+
             LOG.info(
-                    "REGISTER State CONVERTED_TO_FHIR : END for master interaction id : {}  group interaction id :{} tenant id : {} .Time taken : {} milliseconds"
-                            + execResult,
-                    masterInteractionId, groupInteractionId, tenantId,
-                    Duration.between(start, end).toMillis());
+                    "CsvBundleProcessorService - REGISTER State CONVERTED_TO_FHIR : END | masterInteractionId: {}, groupInteractionId: {}, tenantId: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}{}",
+                    masterInteractionId,
+                    groupInteractionId,
+                    tenantId,
+                    Duration.between(start, end).toMillis(),
+                    responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                    responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
+                    execResult);
         } catch (final Exception e) {
             LOG.error(
                     "ERROR:: REGISTER State CONVERTED_TO_FHIR CALL for master interaction id : {}  group InteractionId :{} tenant id : {}"

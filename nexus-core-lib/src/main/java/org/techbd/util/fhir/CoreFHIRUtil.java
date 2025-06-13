@@ -213,4 +213,25 @@ public class CoreFHIRUtil {
                     responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_DURATION_NANOSECS).toString());
         }
     }
+    
+    public static Map<String, Object> extractFields(JsonNode payload) {
+        var result = new HashMap<String, Object>();
+        for (var key : new String[]{"error", "interaction_id", "hub_nexus_interaction_id"}) {
+            if (payload.has(key)) {
+                result.put(key, payload.get(key).asText());
+            }
+        }
+        if (payload.has("payload") && payload.get("payload").isObject()) {
+            var nestedPayload = payload.get("payload");
+            var nestedMap = new HashMap<String, Object>();
+
+            nestedPayload.fields().forEachRemaining(field ->
+                nestedMap.put(field.getKey(), field.getValue().isValueNode()
+                    ? field.getValue().asText()
+                    : field.getValue())
+            );
+            result.put("payload", nestedMap);
+        }
+        return result;
+    }
 }

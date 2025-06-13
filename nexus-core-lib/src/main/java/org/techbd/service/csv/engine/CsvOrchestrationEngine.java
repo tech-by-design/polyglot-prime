@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import org.techbd.config.State;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystemException;
@@ -37,16 +38,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.config.Configuration;
+import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.MirthJooqConfig;
+import org.techbd.config.Nature;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 import org.techbd.model.csv.PayloadAndValidationOutcome;
 import org.techbd.service.csv.CsvService;
 import org.techbd.service.vfs.VfsCoreService;
 import org.techbd.service.vfs.VfsIngressConsumer;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
+import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -267,65 +271,72 @@ public class CsvOrchestrationEngine {
 
         private void saveScreeningGroup(final String groupInteractionId, final Map<String,String> requestParameters,
                 final MultipartFile file, final List<FileDetail> fileDetailList, final String tenantId) {
-            log.info("REGISTER State NONE : BEGIN for inteaction id  : {} tenant id : {}",
+            log.info("CsvOrchestrationEngine REGISTER State NONE to CSV_ACCEPT: BEGIN for inteaction id  : {} tenant id : {}",
                     masterInteractionId, tenantId);
             final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             final var forwardedAt = OffsetDateTime.now();
-            final var initRIHR = new RegisterInteractionHttpRequest();
+            final var initRIHR = new RegisterInteractionCsvRequest();
             try {
-                initRIHR.setInteractionId(groupInteractionId);
-                initRIHR.setGroupHubInteractionId(groupInteractionId);
-                initRIHR.setSourceHubInteractionId(masterInteractionId);
-                initRIHR.setInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
-                initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                        Map.of("nature", "Original Flat File CSV", "tenant_id",
+                initRIHR.setPInteractionId(groupInteractionId);
+                initRIHR.setPGroupHubInteractionId(groupInteractionId);
+                initRIHR.setPSourceHubInteractionId(masterInteractionId);
+                initRIHR.setPInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+                        Map.of("nature", Nature.ORIGINAL_FLAT_FILE_CSV.getDescription(), "tenant_id",
                                 tenantId)));
-                initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                initRIHR.setCsvZipFileName(file.getOriginalFilename());
-                initRIHR.setSourceHubInteractionId(masterInteractionId);
+                initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                initRIHR.setPCsvZipFileName(file.getOriginalFilename());
+                initRIHR.setPSourceHubInteractionId(masterInteractionId);
                 final InetAddress localHost = InetAddress.getLocalHost();
                 final String ipAddress = localHost.getHostAddress();
-                initRIHR.setClientIpAddress(ipAddress);
-                initRIHR.setUserAgent(headerParameters.get(org.techbd.config.Constants.USER_AGENT));
+                initRIHR.setPClientIpAddress(ipAddress);
+                initRIHR.setPUserAgent(headerParameters.get(org.techbd.config.Constants.USER_AGENT));
                 for (final FileDetail fileDetail : fileDetailList) {
                     switch (fileDetail.fileType()) {
                         case FileType.SDOH_PtInfo -> {
-                            initRIHR.setCsvDemographicDataFileName(fileDetail.filename());
-                            initRIHR.setCsvDemographicDataPayloadText(fileDetail.content());
+                            initRIHR.setPCsvDemographicDataFileName(fileDetail.filename());
+                            initRIHR.setPCsvDemographicDataPayloadText(fileDetail.content());
                         }
                         case FileType.SDOH_QEadmin -> {
-                            initRIHR.setCsvQeAdminDataFileName(fileDetail.filename());
-                            initRIHR.setCsvQeAdminDataPayloadText(fileDetail.content());
+                            initRIHR.setPCsvQeAdminDataFileName(fileDetail.filename());
+                            initRIHR.setPCsvQeAdminDataPayloadText(fileDetail.content());
                         }
                         case FileType.SDOH_ScreeningProf -> {
-                            initRIHR.setCsvScreeningProfileDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningProfileDataPayloadText(fileDetail.content());
+                            initRIHR.setPCsvScreeningProfileDataFileName(fileDetail.filename());
+                            initRIHR.setPCsvScreeningProfileDataPayloadText(fileDetail.content());
                         }
                         case FileType.SDOH_ScreeningObs -> {
-                            initRIHR.setCsvScreeningObservationDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningObservationDataPayloadText(fileDetail.content());
+                            initRIHR.setPCsvScreeningObservationDataFileName(fileDetail.filename());
+                            initRIHR.setPCsvScreeningObservationDataPayloadText(fileDetail.content());
                         }
                     }
                 }
 
-                initRIHR.setCreatedAt(forwardedAt);
-                initRIHR.setCreatedBy(CsvService.class.getName());
-                initRIHR.setToState("CSV_ACCEPT");
+                //initRIHR.setPCreatedAt(forwardedAt);
+                initRIHR.setPCreatedBy(CsvService.class.getName());
+                initRIHR.setPFromState(State.NONE.name());
+                initRIHR.setPToState(State.CSV_ACCEPT.name());
                 final var provenance = "%s.saveScreeningGroup"
                         .formatted(CsvService.class.getName());
-                initRIHR.setProvenance(provenance);
-                initRIHR.setCsvGroupId(masterInteractionId);
+                initRIHR.setPProvenance(provenance);
+                initRIHR.setPCsvGroupId(masterInteractionId);
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
+                final JsonNode responseFromDB = initRIHR.getReturnValue();
+                final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+
                 log.info(
-                        "REGISTER State NONE : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
-                                + execResult,
-                        masterInteractionId, tenantId,
-                        Duration.between(start, end).toMillis());
+                        "CsvOrchestrationEngine - REGISTER State NONE TO CSV_ACCEPT: END | interactionId: {}, tenantId: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}{}",
+                        masterInteractionId,
+                        tenantId,
+                        Duration.between(start, end).toMillis(),
+                        responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                        responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
+                        execResult);
             } catch (final Exception e) {
-                log.error("ERROR:: REGISTER State NONE CALL for interaction id : {} tenant id : {}"
+                log.error("ERROR:: CsvOrchestrationEngine REGISTER State NONE TL CSV_ACCEPT CALL for interaction id : {} tenant id : {}"
                         + initRIHR.getName() + " initRIHR error", masterInteractionId,
                         tenantId,
                         e);
@@ -365,45 +376,49 @@ public class CsvOrchestrationEngine {
                 final String masterInteractionId,
                 final String groupInteractionId,
                 final String tenantId) {
-            log.info("REGISTER State VALIDATION : BEGIN for inteaction id  : {} tenant id : {}",
+            log.info("CsvOrchestrationEngine REGISTER State VALIDATION CSV_ACCEPT TO VALIDATION : BEGIN for inteaction id  : {} tenant id : {}",
                     masterInteractionId, tenantId);
             final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             final var createdAt = OffsetDateTime.now();
-            final var initRIHR = new RegisterInteractionHttpRequest();
+            final var initRIHR = new RegisterInteractionCsvRequest();
             try {
-                initRIHR.setInteractionId(groupInteractionId);
-                initRIHR.setGroupHubInteractionId(groupInteractionId);
-                initRIHR.setSourceHubInteractionId(masterInteractionId);
-                initRIHR.setInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
-                initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                        Map.of("nature", "CSV Validation Result", "tenant_id",
+                initRIHR.setPInteractionId(groupInteractionId);
+                initRIHR.setPGroupHubInteractionId(groupInteractionId);
+                initRIHR.setPSourceHubInteractionId(masterInteractionId);
+                initRIHR.setPInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+                        Map.of("nature", Nature.CSV_VALIDATION_RESULT, "tenant_id",
                                 tenantId)));
-                initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                initRIHR.setCreatedAt(createdAt);
-                initRIHR.setCreatedBy(CsvService.class.getName());
-                initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
-                initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
-                initRIHR.setFromState("CSV_ACCEPT");
+                initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                //initRIHR.setCreatedAt(createdAt);
+                initRIHR.setPCreatedBy(CsvService.class.getName());
+                initRIHR.setPPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
+                initRIHR.setPFromState(State.CSV_ACCEPT.name());
                 if (extractValidValue(validationResults)) {
-                    initRIHR.setToState("VALIDATION_SUCCESS");
+                    initRIHR.setPToState(State.VALIDATION_SUCCESS.name());
                 } else {
-                    initRIHR.setToState("VALIDATION_FAILED");
+                    initRIHR.setPToState(State.VALIDATION_FAILED.name());
                 }
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
-                initRIHR.setProvenance(provenance);
-                initRIHR.setCsvGroupId(masterInteractionId);
+                initRIHR.setPProvenance(provenance);
+                initRIHR.setPCsvGroupId(masterInteractionId);
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
+                final JsonNode responseFromDB = initRIHR.getReturnValue();
+                final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
                 log.info(
-                        "REGISTER State VALIDATION : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
-                                + execResult,
-                        masterInteractionId, tenantId,
-                        Duration.between(start, end).toMillis());
+                        "CsvOrchestrationEngine - REGISTER State CSV_ACCEPT TO VALIDATION  : END | interactionId: {}, tenantId: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}{}",
+                        masterInteractionId,
+                        tenantId,
+                        Duration.between(start, end).toMillis(),
+                        responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                        responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
+                        execResult);
             } catch (final Exception e) {
-                log.error("ERROR:: REGISTER State VALIDATION CALL for interaction id : {} tenant id : {}"
+                log.error("ERROR:: CsvOrchestrationEngine REGISTER State CSV_ACCEPT TO VALIDATION  CALL for interaction id : {} tenant id : {}"
                         + initRIHR.getName() + " initRIHR error", masterInteractionId,
                         tenantId,
                         e);
