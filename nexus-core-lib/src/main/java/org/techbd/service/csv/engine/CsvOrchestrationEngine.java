@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import org.techbd.config.State;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystemException;
@@ -37,16 +38,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.config.Configuration;
+import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.config.MirthJooqConfig;
+import org.techbd.config.Nature;
 import org.techbd.model.csv.FileDetail;
 import org.techbd.model.csv.FileType;
 import org.techbd.model.csv.PayloadAndValidationOutcome;
 import org.techbd.service.csv.CsvService;
 import org.techbd.service.vfs.VfsCoreService;
 import org.techbd.service.vfs.VfsIngressConsumer;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCsvRequest;
 import org.techbd.udi.auto.jooq.ingress.routines.SatInteractionCsvRequestUpserted;
+import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -247,7 +251,7 @@ public class CsvOrchestrationEngine {
         }
 
         public void validate() throws IOException {
-            log.info("CsvOrchestrationEngine : validate - file : {} BEGIN for interaction id : {}",
+            log.info("CsvOrchestrationEngine : validate - file : {} BEGIN for zipFileInteractionid : {}",
                     file.getOriginalFilename(), masterInteractionId);
             final Instant intiatedAt = Instant.now();
             final String originalFilename = file.getOriginalFilename();
@@ -258,74 +262,82 @@ public class CsvOrchestrationEngine {
 
             // Save the uploaded file to the inbound folder
             Files.copy(file.getInputStream(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
-            log.info("File saved to: {}", destinationPath);
 
             // Trigger CSV processing and validation
             this.validationResults = processScreenings(masterInteractionId, intiatedAt, originalFilename, tenantId);
             saveCombinedValidationResults(validationResults, masterInteractionId);
+            log.info("CsvOrchestrationEngine : validate - file : {} END for zipFileInteractionid : {}",
+                    file.getOriginalFilename(), masterInteractionId);
         }
 
         private void saveScreeningGroup(final String groupInteractionId, final Map<String,String> requestParameters,
                 final MultipartFile file, final List<FileDetail> fileDetailList, final String tenantId) {
-            log.info("REGISTER State NONE : BEGIN for inteaction id  : {} tenant id : {}",
+            log.info("CsvOrchestrationEngine saveScreeningGroup REGISTER State NONE to CSV_ACCEPT: BEGIN for zipFileInteractionId  : {} tenant id : {}",
                     masterInteractionId, tenantId);
             final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             final var forwardedAt = OffsetDateTime.now();
-            final var initRIHR = new RegisterInteractionHttpRequest();
+            final var initRIHR = new RegisterInteractionCsvRequest();
             try {
-                initRIHR.setInteractionId(groupInteractionId);
-                initRIHR.setGroupHubInteractionId(groupInteractionId);
-                initRIHR.setSourceHubInteractionId(masterInteractionId);
-                initRIHR.setInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
-                initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                        Map.of("nature", "Original Flat File CSV", "tenant_id",
+                initRIHR.setPInteractionId(groupInteractionId);
+                initRIHR.setPGroupHubInteractionId(groupInteractionId);
+                initRIHR.setPSourceHubInteractionId(masterInteractionId);
+                initRIHR.setPInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+                        Map.of("nature", Nature.ORIGINAL_FLAT_FILE_CSV.getDescription(), "tenant_id",
                                 tenantId)));
-                initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                initRIHR.setCsvZipFileName(file.getOriginalFilename());
-                initRIHR.setSourceHubInteractionId(masterInteractionId);
+                initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                initRIHR.setPCsvZipFileName(file.getOriginalFilename());
+                initRIHR.setPSourceHubInteractionId(masterInteractionId);
                 final InetAddress localHost = InetAddress.getLocalHost();
                 final String ipAddress = localHost.getHostAddress();
-                initRIHR.setClientIpAddress(ipAddress);
-                initRIHR.setUserAgent(headerParameters.get(org.techbd.config.Constants.USER_AGENT));
+                initRIHR.setPClientIpAddress(ipAddress);
+                initRIHR.setPUserAgent(headerParameters.get(org.techbd.config.Constants.USER_AGENT));
                 for (final FileDetail fileDetail : fileDetailList) {
                     switch (fileDetail.fileType()) {
                         case FileType.SDOH_PtInfo -> {
-                            initRIHR.setCsvDemographicDataFileName(fileDetail.filename());
-                            initRIHR.setCsvDemographicDataPayloadText(fileDetail.content());
+                            initRIHR.setPCsvDemographicDataFileName(fileDetail.filename());
+                            initRIHR.setPCsvDemographicDataPayloadText(fileDetail.content());
                         }
                         case FileType.SDOH_QEadmin -> {
-                            initRIHR.setCsvQeAdminDataFileName(fileDetail.filename());
-                            initRIHR.setCsvQeAdminDataPayloadText(fileDetail.content());
+                            initRIHR.setPCsvQeAdminDataFileName(fileDetail.filename());
+                            initRIHR.setPCsvQeAdminDataPayloadText(fileDetail.content());
                         }
                         case FileType.SDOH_ScreeningProf -> {
-                            initRIHR.setCsvScreeningProfileDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningProfileDataPayloadText(fileDetail.content());
+                            initRIHR.setPCsvScreeningProfileDataFileName(fileDetail.filename());
+                            initRIHR.setPCsvScreeningProfileDataPayloadText(fileDetail.content());
                         }
                         case FileType.SDOH_ScreeningObs -> {
-                            initRIHR.setCsvScreeningObservationDataFileName(fileDetail.filename());
-                            initRIHR.setCsvScreeningObservationDataPayloadText(fileDetail.content());
+                            initRIHR.setPCsvScreeningObservationDataFileName(fileDetail.filename());
+                            initRIHR.setPCsvScreeningObservationDataPayloadText(fileDetail.content());
                         }
                     }
                 }
 
-                initRIHR.setCreatedAt(forwardedAt);
-                initRIHR.setCreatedBy(CsvService.class.getName());
-                initRIHR.setToState("CSV_ACCEPT");
+                //initRIHR.setPCreatedAt(forwardedAt);
+                initRIHR.setPCreatedBy(CsvService.class.getName());
+                initRIHR.setPFromState(State.NONE.name());
+                initRIHR.setPToState(State.CSV_ACCEPT.name());
                 final var provenance = "%s.saveScreeningGroup"
                         .formatted(CsvService.class.getName());
-                initRIHR.setProvenance(provenance);
-                initRIHR.setCsvGroupId(masterInteractionId);
+                initRIHR.setPProvenance(provenance);
+                initRIHR.setPCsvGroupId(masterInteractionId);
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
+                final JsonNode responseFromDB = initRIHR.getReturnValue();
+                final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+
                 log.info(
-                        "REGISTER State NONE : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
-                                + execResult,
-                        masterInteractionId, tenantId,
-                        Duration.between(start, end).toMillis());
+                        "CsvOrchestrationEngine - REGISTER State NONE TO CSV_ACCEPT: END | zipFileinteractionId: {}, tenantId: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}{}",
+                        masterInteractionId,
+                        tenantId,
+                        Duration.between(start, end).toMillis(),
+                        responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                        responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
+                        execResult);
             } catch (final Exception e) {
-                log.error("ERROR:: REGISTER State NONE CALL for interaction id : {} tenant id : {}"
+                log.error("ERROR:: CsvOrchestrationEngine REGISTER State NONE TL CSV_ACCEPT CALL for zipFileInteractionId : {} tenant id : {}"
                         + initRIHR.getName() + " initRIHR error", masterInteractionId,
                         tenantId,
                         e);
@@ -365,45 +377,49 @@ public class CsvOrchestrationEngine {
                 final String masterInteractionId,
                 final String groupInteractionId,
                 final String tenantId) {
-            log.info("REGISTER State VALIDATION : BEGIN for inteaction id  : {} tenant id : {}",
+            log.info("CsvOrchestrationEngine REGISTER State VALIDATION CSV_ACCEPT TO VALIDATION : BEGIN for zipFileInteractionId : {} tenant id : {}",
                     masterInteractionId, tenantId);
             final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             final var createdAt = OffsetDateTime.now();
-            final var initRIHR = new RegisterInteractionHttpRequest();
+            final var initRIHR = new RegisterInteractionCsvRequest();
             try {
-                initRIHR.setInteractionId(groupInteractionId);
-                initRIHR.setGroupHubInteractionId(groupInteractionId);
-                initRIHR.setSourceHubInteractionId(masterInteractionId);
-                initRIHR.setInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
-                initRIHR.setNature((JsonNode) Configuration.objectMapper.valueToTree(
-                        Map.of("nature", "CSV Validation Result", "tenant_id",
+                initRIHR.setPInteractionId(groupInteractionId);
+                initRIHR.setPGroupHubInteractionId(groupInteractionId);
+                initRIHR.setPSourceHubInteractionId(masterInteractionId);
+                initRIHR.setPInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
+                        Map.of("nature", Nature.CSV_VALIDATION_RESULT.getDescription(), "tenant_id",
                                 tenantId)));
-                initRIHR.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                initRIHR.setCreatedAt(createdAt);
-                initRIHR.setCreatedBy(CsvService.class.getName());
-                initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
-                initRIHR.setPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
-                initRIHR.setFromState("CSV_ACCEPT");
+                initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                //initRIHR.setCreatedAt(createdAt);
+                initRIHR.setPCreatedBy(CsvService.class.getName());
+                initRIHR.setPPayload((JsonNode) Configuration.objectMapper.valueToTree(validationResults));
+                initRIHR.setPFromState(State.CSV_ACCEPT.name());
                 if (extractValidValue(validationResults)) {
-                    initRIHR.setToState("VALIDATION_SUCCESS");
+                    initRIHR.setPToState(State.VALIDATION_SUCCESS.name());
                 } else {
-                    initRIHR.setToState("VALIDATION_FAILED");
+                    initRIHR.setPToState(State.VALIDATION_FAILED.name());
                 }
                 final var provenance = "%s.saveValidationResults"
                         .formatted(CsvService.class.getName());
-                initRIHR.setProvenance(provenance);
-                initRIHR.setCsvGroupId(masterInteractionId);
+                initRIHR.setPProvenance(provenance);
+                initRIHR.setPCsvGroupId(masterInteractionId);
                 final var start = Instant.now();
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
+                final JsonNode responseFromDB = initRIHR.getReturnValue();
+                final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
                 log.info(
-                        "REGISTER State VALIDATION : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
-                                + execResult,
-                        masterInteractionId, tenantId,
-                        Duration.between(start, end).toMillis());
+                        "CsvOrchestrationEngine - REGISTER State CSV_ACCEPT TO VALIDATION  : END | zipFileInteractionId: {}, tenantId: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}{}",
+                        masterInteractionId,
+                        tenantId,
+                        Duration.between(start, end).toMillis(),
+                        responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                        responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"),
+                        execResult);
             } catch (final Exception e) {
-                log.error("ERROR:: REGISTER State VALIDATION CALL for interaction id : {} tenant id : {}"
+                log.error("ERROR:: CsvOrchestrationEngine REGISTER State CSV_ACCEPT TO VALIDATION  CALL for zipFileInteractionId : {} tenant id : {}"
                         + initRIHR.getName() + " initRIHR error", masterInteractionId,
                         tenantId,
                         e);
@@ -412,7 +428,7 @@ public class CsvOrchestrationEngine {
 
         private void saveCombinedValidationResults(final Map<String, Object> combinedValidationResults,
                 final String masterInteractionId) {
-            log.info("SaveCombinedValidationResults: BEGIN for inteaction id  : {} tenant id : {}",
+            log.info("SaveCombinedValidationResults: BEGIN for zipFileInteractionId  : {} tenant id : {}",
                     masterInteractionId, tenantId);
             final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
@@ -430,12 +446,12 @@ public class CsvOrchestrationEngine {
                 final var execResult = initRIHR.execute(jooqCfg);
                 final var end = Instant.now();
                 log.info(
-                        "SaveCombinedValidationResults : END for interaction id : {} tenant id : {} .Time taken : {} milliseconds"
+                        "SaveCombinedValidationResults : END for zipFileInteractionId : {} tenant id : {} .Time taken : {} milliseconds"
                                 + execResult,
                         masterInteractionId, tenantId,
                         Duration.between(start, end).toMillis());
             } catch (final Exception e) {
-                log.error("ERROR:: saveCombinedValidationResults CALL for interaction id : {} tenant id : {}"
+                log.error("ERROR:: saveCombinedValidationResults CALL for zipFileInteractionId : {} tenant id : {}"
                         + initRIHR.getName() + " initRIHR error", masterInteractionId,
                         tenantId,
                         e);
@@ -523,13 +539,13 @@ public class CsvOrchestrationEngine {
         public Map<String, Object> processScreenings(final String masterInteractionId, final Instant initiatedAt,
                 final String originalFileName, final String tenantId) {
             try {
-                log.info("Inbound Folder Path: {} for interactionid :{} ",
+                log.info("Inbound Folder Path: {} for zipFileInteractionId :{} ",
                         coreAppConfig.getCsv().validation().inboundPath(), masterInteractionId);
-                log.info("Ingress Home Path: {} for interactionId : {}",
+                log.info("Ingress Home Path: {} for zipFileInteractionId : {}",
                         coreAppConfig.getCsv().validation().ingressHomePath(), masterInteractionId);
                 // Process ZIP files and get the session ID
                 final UUID processId = processZipFilesFromInbound(masterInteractionId);
-                log.info("ZIP files processed with session ID: {} for interaction id :{} ", processId,
+                log.info("ZIP files processed with session ID: {} for zipFileInteractionId :{} ", processId,
                         masterInteractionId);
 
                 // Construct processed directory path
@@ -538,7 +554,7 @@ public class CsvOrchestrationEngine {
 
                 copyFilesToProcessedDir(processedDirPath);
                 createOutputFileInProcessedDir(processedDirPath);
-                log.info("Attempting to resolve processed directory: {} for interactionId : {}", processedDirPath,
+                log.info("Attempting to resolve processed directory: {} for zipFileInteractionId : {}", processedDirPath,
                         masterInteractionId);
 
                 // Get processed files for validation
@@ -546,7 +562,7 @@ public class CsvOrchestrationEngine {
                         .resolveFile(Paths.get(processedDirPath).toAbsolutePath().toString());
 
                 if (!vfsCoreService.fileExists(processedDir)) {
-                    log.error("Processed directory does not exist: {} for interactionId : {}", processedDirPath,
+                    log.error("Processed directory does not exist: {} for zipFileInteractionId : {}", processedDirPath,
                             masterInteractionId);
                     throw new FileSystemException("Processed directory not found: " + processedDirPath);
                 }
@@ -576,7 +592,7 @@ public class CsvOrchestrationEngine {
                         // Incomplete group - generate error operation outcome
                         operationOutcomeForThisGroup = createIncompleteGroupOperationOutcome(
                                 groupKey, fileDetails, originalFileName, masterInteractionId);
-                        log.warn("Incomplete Group - Missing files for group {}", groupKey);
+                        log.warn("Incomplete Group - Missing files for group {} for zipFileInteractionId : {}", groupKey, masterInteractionId);
                     }
 
                     combinedValidationResults.add(operationOutcomeForThisGroup);
@@ -593,8 +609,8 @@ public class CsvOrchestrationEngine {
                 return generateValidationResults(masterInteractionId, requestParameters,
                         file.getSize(), initiatedAt, completedAt, originalFileName, combinedValidationResults);
             } catch (final Exception e) {
-                log.error("Error in ZIP processing tasklet for interactionId: {}", masterInteractionId, e);
-                throw new RuntimeException("Error processing ZIP files: " + e.getMessage(), e);
+                log.error("Error in ZIP processing tasklet for zipFileInteractionId: {}", masterInteractionId, e);
+                throw new RuntimeException("Error processing ZIP files for zipFileInteractionId: " + masterInteractionId + " - " + e.getMessage(), e);
             }
         }
         
@@ -813,19 +829,19 @@ public class CsvOrchestrationEngine {
                     StandardCopyOption.REPLACE_EXISTING);
         }
 
-        private UUID processZipFilesFromInbound(final String interactionId)
+        private UUID processZipFilesFromInbound(final String masterInteractionId)
                 throws FileSystemException, org.apache.commons.vfs2.FileSystemException {
-            log.info("CsvService : processZipFilesFromInbound - BEGIN for interactionId :{}" + interactionId);
+            log.info("CsvService : processZipFilesFromInbound - BEGIN for zipFileInteractionId :{}" + masterInteractionId);
             final FileObject inboundFO = vfsCoreService
                     .resolveFile(Paths.get(coreAppConfig.getCsv().validation().inboundPath()).toAbsolutePath().toString());
             final FileObject ingresshomeFO = vfsCoreService
                     .resolveFile(
                             Paths.get(coreAppConfig.getCsv().validation().ingressHomePath()).toAbsolutePath().toString());
             if (!vfsCoreService.fileExists(inboundFO)) {
-                log.error("Inbound folder does not exist: {} for interactionId :{} ", inboundFO.getName().getPath(),
-                        interactionId);
-                log.error("Inbound folder does not exist: {} for interactionId :{} ", inboundFO.getName().getPath(),
-                        interactionId);
+                log.error("Inbound folder does not exist: {} for zipFileInteractionId :{} ", inboundFO.getName().getPath(),
+                        masterInteractionId);
+                log.error("Inbound folder does not exist: {} for zipFileInteractionId :{} ", inboundFO.getName().getPath(),
+                        masterInteractionId);
                 throw new FileSystemException("Inbound folder does not exist: " + inboundFO.getName().getPath());
             }
             vfsCoreService.validateAndCreateDirectories(ingresshomeFO);
@@ -836,11 +852,11 @@ public class CsvOrchestrationEngine {
 
             // Important: Capture the returned session UUID and processed file paths
             final UUID processId = vfsCoreService.processFiles(consumer, ingresshomeFO);
-            log.info("CsvService : processZipFilesFromInbound - BEGIN for interactionId :{}" + interactionId);
+            log.info("CsvService : processZipFilesFromInbound - END for zipFileInteractionId :{}" + masterInteractionId);
             return processId;
         }
 
-        private List<String> scanForCsvFiles(final FileObject processedDir, String interactionId)
+        private List<String> scanForCsvFiles(final FileObject processedDir, String zipFileInteractionId)
                 throws FileSystemException {
             final List<String> csvFiles = new ArrayList<>();
 
@@ -848,10 +864,10 @@ public class CsvOrchestrationEngine {
                 final FileObject[] children = processedDir.getChildren();
 
                 if (children == null) {
-                    log.warn("No children found in processed directory: {} for interactionId :{}",
-                            processedDir.getName().getPath(), interactionId);
-                    log.warn("No children found in processed directory: {} for interactionId :{}",
-                            processedDir.getName().getPath(), interactionId);
+                    log.warn("No children found in processed directory: {} for zipFileInteractionId :{}",
+                            processedDir.getName().getPath(), zipFileInteractionId);
+                    log.warn("No children found in processed directory: {} for zipFileInteractionId :{}",
+                            processedDir.getName().getPath(), zipFileInteractionId);
                     return csvFiles;
                 }
 
@@ -860,17 +876,16 @@ public class CsvOrchestrationEngine {
                     if (child != null
                             && child.getName() != null
                             && "csv".equalsIgnoreCase(child.getName().getExtension())) {
-                        log.info("Found CSV file: {}", child.getName().getPath());
                         csvFiles.add(child.getName().getPath());
                     }
                 }
 
                 if (csvFiles.isEmpty()) {
-                    log.warn("No CSV files found in directory: {}", processedDir.getName().getPath());
+                    log.warn("No CSV files found in directory: {} for zipFileInteractionId :{}", processedDir.getName().getPath(), zipFileInteractionId);
                 }
             } catch (final org.apache.commons.vfs2.FileSystemException e) {
-                log.error("Error collecting CSV files from directory {}: {}",
-                        processedDir.getName().getPath(), e.getMessage(), e);
+                log.error("Error collecting CSV files from directory {}: {} for zipFileInteractionId :{}",
+                        processedDir.getName().getPath(), e.getMessage(), zipFileInteractionId,e);
             }
 
             return csvFiles;
@@ -926,9 +941,9 @@ public class CsvOrchestrationEngine {
         // return validationResults;
         // }
 
-        public String validateCsvUsingPython(final List<FileDetail> fileDetails, final String interactionId)
+        public String validateCsvUsingPython(final List<FileDetail> fileDetails, final String zipFileInteractionId)
                 throws Exception {
-            log.info("CsvService : validateCsvUsingPython BEGIN for interactionId :{} " + interactionId);
+            log.info("CsvService : validateCsvUsingPython BEGIN for zipFileInteractionId :{} " + zipFileInteractionId);
             try {
                 final var config = coreAppConfig.getCsv().validation();
                 if (config == null) {
@@ -944,11 +959,11 @@ public class CsvOrchestrationEngine {
                 // Ensure the files exist and are valid using VFS before running the validation
                 final List<FileObject> fileObjects = new ArrayList<>();
                 for (final FileDetail fileDetail : fileDetails) {
-                    log.info("Validating file: {}", fileDetail);
+                    log.info("Validating file: {} for zipFileInteractionId :{} ", fileDetail.filename(), zipFileInteractionId);
                     final FileObject file = vfsCoreService.resolveFile(fileDetail.filePath());
                     if (!vfsCoreService.fileExists(file)) {
-                        log.error("File not found: {}", fileDetail.filePath());
-                        throw new FileNotFoundException("File not found: " + fileDetail.filePath());
+                        log.error("File not found: {} for zipFileInteractionId :{}", fileDetail.filePath(),zipFileInteractionId);
+                        throw new FileNotFoundException("File not found for zipFileInteractionId :" + zipFileInteractionId + " " + fileDetail.filePath());
                     }
                     fileObjects.add(file);
                 }
@@ -959,7 +974,7 @@ public class CsvOrchestrationEngine {
                 // Build command to run Python script
                 final List<String> command = buildValidationCommand(config, fileDetails);
 
-                log.info("Executing validation command: {}", String.join(" ", command));
+                log.info("Executing validation command: {} for zipFileIInteractionId : {} ", String.join(" ", command), zipFileInteractionId);
 
                 final ProcessBuilder processBuilder = new ProcessBuilder();
                 processBuilder.directory(new File(fileDetails.get(0).filePath()).getParentFile());
@@ -990,17 +1005,17 @@ public class CsvOrchestrationEngine {
 
                 final int exitCode = process.waitFor();
                 if (exitCode != 0) {
-                    log.error("Python script execution failed. Exit code: {}, Error: {}",
-                            exitCode, errorOutput.toString());
+                    log.error("Python script execution failed. Exit code: {}, Error: {} for zipFileInteractionId : {}",
+                            exitCode, errorOutput.toString(), zipFileInteractionId);
                     throw new IOException("Python script execution failed with exit code " +
                             exitCode + ": " + errorOutput.toString());
                 }
-                log.info("CsvService : validateCsvUsingPython END for interactionId :{} " + interactionId);
+                log.info("CsvService : validateCsvUsingPython END for zipFileInteractionId :{} " + zipFileInteractionId);
                 // Return parsed validation results
                 return output.toString();
 
             } catch (IOException | InterruptedException e) {
-                log.error("Error during CSV validation: {}", e.getMessage(), e);
+                log.error("Error during CSV validation: {} for zipFileInteractionId : {}", e.getMessage(), zipFileInteractionId, e);
                 throw new RuntimeException("Error during CSV validation : "+e.getMessage(), e);
             }
         }

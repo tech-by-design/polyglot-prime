@@ -59,4 +59,8 @@ public interface Constants {
     public static final String DEFAULT_USER_ID = "N/A";
     public static final String DEFAULT_USER_SESSION = "N/A";
     public static final String DEFAULT_USER_ROLE = "API_ROLE";
+    public static final String KEY_ERROR = "error";
+    public static final String KEY_INTERACTION_ID = "interaction_id";
+    public static final String KEY_HUB_NEXUS_INTERACTION_ID = "hub_nexus_interaction_id";
+    public static final String KEY_PAYLOAD = "payload";
 }

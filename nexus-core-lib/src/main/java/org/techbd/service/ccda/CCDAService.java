@@ -1,30 +1,21 @@
 package org.techbd.service.ccda;
 
-import org.techbd.config.MirthJooqConfig;
-import org.techbd.config.Configuration;
-import org.techbd.config.Constants;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import java.time.OffsetDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.commons.lang3.StringUtils;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Result;
-import org.jooq.impl.DSL;
-
-import java.time.OffsetDateTime;
-import java.util.Map;
+import org.techbd.config.Configuration;
+import org.techbd.config.Constants;
+import org.techbd.config.MirthJooqConfig;
+import org.techbd.config.Nature;
+import org.techbd.config.SourceType;
+import org.techbd.config.State;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionCcdaRequest;
+import org.techbd.util.fhir.CoreFHIRUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.techbd.config.MirthJooqConfig;
-import org.techbd.config.Configuration;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
 
 /**
  * Service class for saving various stages of CCDA bundle processing to the
@@ -42,32 +33,38 @@ public class CCDAService {
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
-            logger.info("Saving original CCDA payload with interactionId: " + interactionId);
-            logger.info("Request URI: " + requestUri);
-            logger.info("Tenant ID: " + tenantId);
+            logger.info("CCDAService saveOriginalCcdaPayload  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
-                    "nature", "Original CCDA Payload",
+                    "nature", Nature.ORIGINAL_CCDA_PAYLOAD.getDescription(),
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-
             var jooqCfg = MirthJooqConfig.dsl().configuration();
-            var rihr = new RegisterInteractionHttpRequest();
-
-            rihr.setInteractionId(interactionId);
-            rihr.setInteractionKey(requestUri);
-            rihr.setNature(natureNode);
-            rihr.setContentType("application/json");
-            rihr.setPayloadText(payloadJson);
-            rihr.setFromState("NONE");
-            rihr.setToState("CCDA_ACCEPT");
-            rihr.setSourceType("CCDA");
-            rihr.setCreatedAt(OffsetDateTime.now());
-            rihr.setCreatedBy(CCDAService.class.getName());
+            var rihr = new RegisterInteractionCcdaRequest();
+            rihr.setPInteractionId(interactionId);
+            rihr.setPInteractionKey(requestUri);
+            rihr.setPNature(natureNode);
+            rihr.setPContentType("application/json");
+            rihr.setPPayloadText(payloadJson);
+            rihr.setPFromState(State.NONE.name());
+            rihr.setPToState(State.CCDA_ACCEPT.name());
+            rihr.setPSourceType(SourceType.CCDA.name());
+            // rihr.setPCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
-            rihr.setProvenance(provenance);
-            int result = rihr.execute(jooqCfg);
-            logger.info("Function execution result: " + result);
+            rihr.setPProvenance(provenance);
+            final Instant start = Instant.now();
+            final int result = rihr.execute(jooqCfg);
+            final Instant end = Instant.now();
+            final JsonNode responseFromDB = rihr.getReturnValue();
+            final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+            logger.info(
+                    "CCDAService -saveOriginalCcdaPayload : END  result: {}, timeTaken: {} ms, error: {}, interaction_id : {} hub_nexus_interaction_id: {}",
+                    result,
+                    Duration.between(start, end).toMillis(),
+                    responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                    interactionId,
+                    responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
             return result >= 0;
         } catch (Exception e) {
             logger.error("Error saving original CCDA payload for interactionId: {}", interactionId, e);
@@ -89,32 +86,39 @@ public class CCDAService {
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
-            logger.info("Saving CCDA validation with interactionId: " + interactionId);
-            logger.info("Request URI: " + requestUri);
-            logger.info("Tenant ID: " + tenantId);
+            logger.info("CCDAService saveValidation  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
-                    "nature", "CCDA Validation Result",
+                    "nature", Nature.CCDA_VALIDATION_RESULT.getDescription(),
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-
             var jooqCfg = MirthJooqConfig.dsl().configuration();
-            var rihr = new RegisterInteractionHttpRequest();
-
-            rihr.setInteractionId(interactionId);
-            rihr.setInteractionKey(requestUri);
-            rihr.setNature(natureNode);
-            rihr.setContentType("application/json");
-            rihr.setPayload(payloadNode);
-            rihr.setFromState("CCDA_ACCEPT");
-            rihr.setToState(isValid ? "VALIDATION_SUCCESS" : "VALIDATION_FAILED");
-            rihr.setSourceType("CCDA");
-            rihr.setCreatedAt(OffsetDateTime.now());
-            rihr.setCreatedBy(CCDAService.class.getName());
+            var rihr = new RegisterInteractionCcdaRequest();
+            rihr.setPInteractionId(interactionId);
+            rihr.setPInteractionKey(requestUri);
+            rihr.setPNature(natureNode);
+            rihr.setPContentType("application/json");
+            rihr.setPPayload(payloadNode);
+            rihr.setPFromState(State.CCDA_ACCEPT.name());
+            rihr.setPToState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
+            rihr.setPSourceType(SourceType.CCDA.name());
+            // rihr.setPCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
-            rihr.setProvenance(provenance);
-            int result = rihr.execute(jooqCfg);
-            logger.info("Function execution result: " + result);
+            rihr.setPProvenance(provenance);
+            final Instant start = Instant.now();
+            final int result = rihr.execute(jooqCfg);
+            final Instant end = Instant.now();
+            final JsonNode responseFromDB = rihr.getReturnValue();
+            final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+
+            logger.info(
+                    "CCDAService -saveValidation END | result: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}",
+                    result,
+                    Duration.between(start, end).toMillis(),
+                    responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                    responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
+
             return result >= 0;
         } catch (Exception e) {
             logger.error("Error saving CCDA validation for interactionId: {}", interactionId, e);
@@ -136,32 +140,39 @@ public class CCDAService {
             String tenantId, String requestUri,
             Map<String, Object> bundle) {
         try {
-            logger.info("Saving FHIR conversion result with interactionId: " + interactionId);
-            logger.info("Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
-
+            logger.info("CCDAService saveFhirConversionResult  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
+            logger.info("CCDAService Conversion result: " + (conversionSuccess ? "SUCCESS" : "FAILED"));
             Map<String, Object> natureMap = Map.of(
-                    "nature", "Converted to FHIR",
+                    "nature", Nature.CONVERTED_TO_FHIR.getDescription(),
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode bundleNode = Configuration.objectMapper.valueToTree(bundle);
-
             var jooqCfg = MirthJooqConfig.dsl().configuration();
-            var rihr = new RegisterInteractionHttpRequest();
-            rihr.setInteractionId(interactionId);
-            rihr.setInteractionKey(requestUri);
-            rihr.setNature(natureNode);
-            rihr.setContentType("application/json");
-            rihr.setPayload(bundleNode);
-            rihr.setFromState("VALIDATION_SUCCESS");
-            rihr.setToState(conversionSuccess ? "CONVERTED_TO_FHIR" : "FHIR_CONVERSION_FAILED");
-            rihr.setSourceType("CCDA");
-            rihr.setCreatedAt(OffsetDateTime.now());
-            rihr.setCreatedBy(CCDAService.class.getName());
+            var rihr = new RegisterInteractionCcdaRequest();
+            rihr.setPInteractionId(interactionId);
+            rihr.setPInteractionKey(requestUri);
+            rihr.setPNature(natureNode);
+            rihr.setPContentType("application/json");
+            rihr.setPPayload(bundleNode);
+            rihr.setPFromState(State.VALIDATION_SUCCESS.name());
+            rihr.setPToState(conversionSuccess ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());
+            rihr.setPSourceType(SourceType.CCDA.name());
+            // rihr.setCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedBy(CCDAService.class.getName());
 
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
-            rihr.setProvenance(provenance);
-            int result = rihr.execute(jooqCfg);
-            logger.info("Function execution result: " + result);
+            rihr.setPProvenance(provenance);
+            final Instant start = Instant.now();
+            final int result = rihr.execute(jooqCfg);
+            final Instant end = Instant.now();
+            final JsonNode responseFromDB = rihr.getReturnValue();
+            final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+            logger.info(
+                    "CCDAService - saveFhirConversionResult : END | result: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}",
+                    result,
+                    Duration.between(start, end).toMillis(),
+                    responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                    responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
             return result >= 0;
         } catch (Exception e) {
             logger.error("Error saving FHIR conversion result for interactionId: {}", interactionId, e);
@@ -185,33 +196,39 @@ public class CCDAService {
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
-            logger.info("Saving CCDA validation with interactionId: " + interactionId);
-            logger.info("Request URI: " + requestUri);
-            logger.info("Tenant ID: " + tenantId);
-
+            logger.info("CCDAService saveCcdaValidation  BEGIN with  requestURI :{} tenantid :{} interactionId: {}", requestUri, tenantId, interactionId);
             Map<String, Object> natureMap = Map.of(
-                    "nature", "CCDA Validation Result",
+                    "nature", Nature.CCDA_VALIDATION_RESULT.getDescription(),
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-
             var jooqCfg = MirthJooqConfig.dsl().configuration();
-            var rihr = new RegisterInteractionHttpRequest();
-            rihr.setInteractionId(interactionId);
-            rihr.setInteractionKey(requestUri);
-            rihr.setNature(natureNode);
-            rihr.setContentType("application/json");
-            rihr.setPayload(payloadNode);
-            rihr.setFromState("CCDA_ACCEPT");
-            rihr.setToState(isValid ? "VALIDATION_SUCCESS" : "VALIDATION_FAILED");
-            rihr.setSourceType("CCDA");
-            rihr.setCreatedAt(OffsetDateTime.now());
-            rihr.setCreatedBy(CCDAService.class.getName());
+            var rihr = new RegisterInteractionCcdaRequest();
+            rihr.setPInteractionId(interactionId);
+            rihr.setPInteractionKey(requestUri);
+            rihr.setPNature(natureNode);
+            rihr.setPContentType("application/json");
+            rihr.setPPayload(payloadNode);
+            rihr.setPFromState(State.CCDA_ACCEPT.name());
+            rihr.setPToState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
+            rihr.setPSourceType(SourceType.CCDA.name());
+            // rihr.setCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
-            rihr.setProvenance(provenance);
+            rihr.setPProvenance(provenance);
+            final Instant start = Instant.now();
+            final int result = rihr.execute(jooqCfg);
+            final Instant end = Instant.now();
 
-            int result = rihr.execute(jooqCfg);
-            logger.info("Function execution result: " + result);
+            final JsonNode responseFromDB = rihr.getReturnValue();
+            final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
+
+            logger.info(
+                    "CCDAService -saveCcdaValidation : END | result: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}",
+                    result,
+                    Duration.between(start, end).toMillis(),
+                    responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
+                    responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
             return result >= 0;
         } catch (Exception e) {
             logger.error("Error saving CCDA validation for interactionId: {}", interactionId, e);
