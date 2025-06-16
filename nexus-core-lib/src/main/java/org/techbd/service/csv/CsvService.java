@@ -10,7 +10,6 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -49,21 +48,26 @@ public class CsvService {
             //         public Object validateCsvFile(final MultipartFile file, final HttpServletRequest request,
             // final HttpServletResponse response,
             // final String tenantId,String origin,String sftpSessionId) throws Exception {
+        final var zipFileInteractionId = requestParameters.get(Constants.MASTER_INTERACTION_ID);
+        LOG.info("CsvService validateCsvFile BEGIN zip File interaction id  : {} tenant id : {}",
+                zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
             final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-            final var zipFileInteractionId = requestParameters.get(Constants.INTERACTION_ID);
+            
             saveArchiveInteraction(zipFileInteractionId,jooqCfg, requestParameters, headerParameters, file);
             session = engine.session()
                     .withMasterInteractionId(zipFileInteractionId)
                     .withSessionId(UUID.randomUUID().toString())
-                    .withTenantId(requestParameters.get(Constants.TENANT_ID))
+                    .withTenantId(headerParameters.get(Constants.TENANT_ID))
                     .withFile(file)
                     .withRequestParameters(requestParameters)
                     .withHeaderParameters(headerParameters)
                     .build();
             engine.orchestrate(session);
+            LOG.info("CsvService validateCsvFile END zip File interaction id  : {} tenant id : {}",
+                zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
             return session.getValidationResults();
         } finally {
             if (null == session) {
@@ -75,9 +79,9 @@ public class CsvService {
     private void saveArchiveInteraction(String zipFileInteractionId, final org.jooq.Configuration jooqCfg,
             final Map<String, String> requestParameters, Map<String, String> headerParameters,
             final MultipartFile file) {
-        final var tenantId = requestParameters.get(Constants.TENANT_ID);
-        LOG.info("REGISTER State NONE : BEGIN for interaction id  : {} tenant id : {}",
-                zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
+        final var tenantId = headerParameters.get(Constants.TENANT_ID);
+        LOG.info("CsvService saveArchiveInteraction  -BEGIN zipFileInteractionId  : {} tenant id : {}",
+                zipFileInteractionId, tenantId);
         final var forwardedAt = OffsetDateTime.now();
         final var initRIHR = new RegisterInteractionCsvRequest();
         try {
@@ -109,7 +113,7 @@ public class CsvService {
             final JsonNode responseFromDB = initRIHR.getReturnValue();
             final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
             LOG.info(
-                    "FHIRService - REGISTER State NONE : END | interactionId: {}, tenantId: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}{}",
+                    "CsvServoce - saveArchiveInteraction END | zipFileInteractionId: {}, tenantId: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}{}",
                     zipFileInteractionId,
                     tenantId,
                     Duration.between(start, end).toMillis(),
@@ -144,12 +148,12 @@ public class CsvService {
      */
     public List<Object> processZipFile(final MultipartFile file,final Map<String,String> requestParameters , Map<String,String> headerParameters, Map<String,Object> responseParameters ) throws Exception {
         // public List<Object> processZipFile(final MultipartFile file,final HttpServletRequest request ,HttpServletResponse response ,final String tenantId,String origin,String sftpSessionId,String baseFHIRUrl) throws Exception {
-    
+        final var zipFileInteractionId = requestParameters.get(Constants.MASTER_INTERACTION_ID);
+        final var tenantId = headerParameters.get(Constants.TENANT_ID);
+        LOG.info("CsvService processZipFile  -BEGIN zipFileInteractionId  : {} tenant id : {}",
+                zipFileInteractionId, tenantId);
         CsvOrchestrationEngine.OrchestrationSession session = null;
-        try {
-            final var zipFileInteractionId = requestParameters.get(Constants.INTERACTION_ID);
-            final var tenantId = headerParameters.get(Constants.TENANT_ID);
-
+        try {     
              DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.RECEIVED.getValue(), CoreDataLedgerApiClient.Actor.TECHBD.getValue(), zipFileInteractionId
 			);
 			final var dataLedgerProvenance = "%s.processZipFile".formatted(CsvService.class.getName());
@@ -171,6 +175,8 @@ public class CsvService {
             session.getPayloadAndValidationOutcomes(), session.getFilesNotProcessed(),requestParameters, headerParameters,
              responseParameters,tenantId,file.getOriginalFilename(),headerParameters.get(Constants.BASE_FHIR_URL));
         } finally {
+            LOG.info("CsvService processZipFile  -END zipFileInteractionId  : {} tenant id : {}",
+                zipFileInteractionId, tenantId);
             if (null == session) {
                 engine.clear(session);
             }

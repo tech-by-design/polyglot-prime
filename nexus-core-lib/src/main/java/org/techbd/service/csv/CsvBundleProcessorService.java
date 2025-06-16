@@ -71,6 +71,7 @@ public class CsvBundleProcessorService {
             final Map<String,String> headerParameters,
             final Map<String,Object> responseParameters,
             final String tenantId, final String originalFileName,String baseFHIRUrl) {
+        LOG.info("ProcessPayload: BEGIN for zipFileInteractionId: {}, tenantId: {}, baseFHIRURL: {}", masterInteractionId, tenantId, baseFHIRUrl);
         final List<Object> resultBundles = new ArrayList<>();
         final List<Object> miscErrors = new ArrayList<>();
         boolean isAllCsvConvertedToFhir = true;
@@ -148,6 +149,7 @@ public class CsvBundleProcessorService {
         }
         saveMiscErrorAndStatus(miscErrors, isAllCsvConvertedToFhir, masterInteractionId, requestParameters);
         addObservabilityHeadersToResponse(requestParameters, responseParameters);
+        LOG.info("ProcessPayload: END for zipFileInteractionId: {}, tenantId: {}, baseFHIRURL: {}", masterInteractionId, tenantId, baseFHIRUrl);
         return resultBundles;
     }
     public static Map<String, Object> createAdditionalDetails(PayloadAndValidationOutcome outcome) {
@@ -264,7 +266,6 @@ public class CsvBundleProcessorService {
             final var end = Instant.now();
             final JsonNode responseFromDB = initRIHR.getReturnValue();
             final Map<String, Object> responseAttributes = CoreFHIRUtil.extractFields(responseFromDB);
-
             LOG.info(
                     "CsvBundleProcessorService - REGISTER State CONVERTED_TO_FHIR : END | masterInteractionId: {}, groupInteractionId: {}, tenantId: {}, timeTaken: {} ms, error: {}, hub_nexus_interaction_id: {}{}",
                     masterInteractionId,
@@ -331,7 +332,7 @@ private List<Object> processScreening(final String groupKey,
             final String tenantId, final boolean isValid, final PayloadAndValidationOutcome payloadAndValidationOutcome,
             boolean isAllCsvConvertedToFhir,String baseFHIRUrl)
             throws IOException {
-
+        LOG.info("CsvBundleProcessorService processScreening: BEGIN for zipFileInteractionId: {}, groupInteractionId :{}, tenantId: {}, baseFHIRURL: {}", masterInteractionId, groupInteractionId, tenantId, baseFHIRUrl);
         final List<Object> results = new ArrayList<>();
         final AtomicInteger errorCount = new AtomicInteger();
         screeningProfileData.forEach((encounterId, profileList) -> {
@@ -374,8 +375,14 @@ private List<Object> processScreening(final String groupKey,
                             null, updatedProvenance);       
                         org.techbd.util.fhir.CoreFHIRUtil.buildRequestParametersMap(requestParameters,
                             false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId,requestParameters.get(Constants.REQUEST_URI));
+                        requestParameters.put(Constants.INTERACTION_ID, interactionId);
+                        requestParameters.put(Constants.REQUEST_URI, "/Bundle");
+                        requestParameters.put(Constants.GROUP_INTERACTION_ID, groupInteractionId);
+                        requestParameters.put(Constants.MASTER_INTERACTION_ID, masterInteractionId);
                         results.add(fhirService.processBundle(
                                 bundle, requestParameters,headers, responseParameters));
+                        LOG.error("Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
+                                profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);        
                     } else {
                         LOG.error("Bundle not generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);
@@ -418,6 +425,7 @@ private List<Object> processScreening(final String groupKey,
         if (errorCount.get() > 0) {
             isAllCsvConvertedToFhir = false;
         }
+        LOG.info("CsvBundleProcessorService processScreening: END for zipFileInteractionId: {}, groupInteractionId :{}, tenantId: {}, baseFHIRURL: {}", masterInteractionId, groupInteractionId, tenantId, baseFHIRUrl);
         return results;
     }
 

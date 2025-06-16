@@ -10,7 +10,7 @@ public enum Nature {
 
     // FHIR
     ORIGINAL_FHIR_PAYLOAD("Original FHIR payload"),
-    TECH_BY_DISPOSITION("TechByDisposistion"),
+    TECH_BY_DISPOSITION("techByDesignDisposition"),
     FORWARD_HTTP_REQUEST("Forward HTTP Request"),
     FORWARDED_HTTP_RESPONSE("Forwarded HTTP Response"),
     FORWARDED_HTTP_RESPONSE_ERROR("Forwarded HTTP Response Error"),
@@ -24,11 +24,7 @@ public enum Nature {
     CONVERTED_TO_FHIR("Converted to FHIR"),
     // CCD
     ORIGINAL_CCDA_PAYLOAD("Original CCDA Payload"),
-    CCDA_VALIDATION_RESULT("CCDA Validation Result"),
-    CCD_ORIGINAL_FHIR_PAYLOAD("Original FHIR payload"),
-    CCD_TECH_BY_DISPOSITION("Validate FHIR and TechByDisposistion"),
-    CCD_FORWARD_HTTP_REQUEST("Forward HTTP Request"),
-    CCD_FORWARDED_HTTP_RESPONSE_ERROR("Forwarded HTTP Response Error");
+    CCDA_VALIDATION_RESULT("CCDA Validation Result");
 
     private final String description;
 

@@ -211,9 +211,9 @@ public class FHIRService {
 
                 final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
                         sourceType);
-                final var result = Map.of("OperationOutcome", immediateResult);
+                final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
 				payloadWithDisposition = registerValidationResults(jooqCfg, headerParameters, requestParameters,
-						immediateResult, interactionId, groupInteractionId, masterInteractionId,
+						result, interactionId, groupInteractionId, masterInteractionId,
 						sourceType, requestUriToBeOverriden);	
                 if (StringUtils.isNotEmpty(requestUri)
                         && (requestUri.equals("/Bundle/$validate") || requestUri.equals("/Bundle/$validate/"))) {
@@ -223,8 +223,6 @@ public class FHIRService {
                 if ("true".equals(healthCheck)) {
                     return result;
                 }
-
-                LOG.info("Payload with disposition registered: {}", payloadWithDisposition); // TODO-to be removed
 
                 if (isActionDiscard(payloadWithDisposition)) {
                     LOG.info("Action discard detected, returning payloadWithDisposition"); // TODO-to be removed
@@ -413,6 +411,7 @@ public class FHIRService {
 					sourceType,
 					requestUriToBeOverriden,
 					requestParameters,
+					headerParameters,
 					provenance,
 					Nature.ORIGINAL_FHIR_PAYLOAD.getDescription(),
 					Configuration.objectMapper.readTree(payload),State.NONE.name(),State.ACCEPT_FHIR_BUNDLE.name());
@@ -461,6 +460,7 @@ public class FHIRService {
 					sourceType,
 					requestUriToBeOverriden,
 					requestParameters,
+					headerParameters,
 					provenance,
 					Nature.TECH_BY_DISPOSITION.getDescription(),
 					Configuration.objectMapper.valueToTree(immediateResult),State.ACCEPT_FHIR_BUNDLE.name(),State.DISPOSITION.name());
@@ -475,7 +475,8 @@ public class FHIRService {
 					interactionId,
 					responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
 					responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
-			return (Map<String, Object>) responseAttributes.get(Constants.KEY_PAYLOAD);
+			JsonNode jsonNode = (JsonNode) responseAttributes.get(Constants.KEY_PAYLOAD);
+			return Configuration.objectMapper.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
 		} catch (final Exception e) {
 			LOG.error("ERROR:: REGISTER Validation Results for interaction id: {}: {}",
 					interactionId, e.getMessage(), e);
@@ -492,18 +493,19 @@ public class FHIRService {
 			final String sourceType,
 			final String requestUriToBeOverriden,
 			final Map<String, String> requestParameters,
+			final Map<String, String> headerParameters,
 			final String provenance,
 			final String nature,
 			final JsonNode payloadNode,String fromState,String toState) {
 		LOG.info("REGISTER {}: BEGIN for interaction id: {} tenant id: {}",
-				nature, interactionId, requestParameters.get(Constants.TENANT_ID));
+				nature, interactionId, headerParameters.get(Constants.TENANT_ID));
 
 		rihr.setPInteractionId(interactionId);
 		rihr.setPGroupHubInteractionId(groupInteractionId);
 		rihr.setPSourceHubInteractionId(masterInteractionId);
 		rihr.setPNature((JsonNode)Configuration.objectMapper.valueToTree(Map.of(
 				"nature", nature,
-				"tenant_id", requestParameters.getOrDefault(Constants.TENANT_ID, "N/A"))));
+				"tenant_id", headerParameters.getOrDefault(Constants.TENANT_ID, "N/A"))));
 		rihr.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
 		rihr.setPInteractionKey(StringUtils.isNotEmpty(requestUriToBeOverriden)
 				? requestUriToBeOverriden
@@ -1680,7 +1682,7 @@ public class FHIRService {
 				initRIHR.setPSourceHubInteractionId(masterInteractionId);
 				initRIHR.setPInteractionKey(requestURI);
 				initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-						Map.of("nature", Nature.FORWARD_HTTP_REQUEST, "tenant_id",
+						Map.of("nature", Nature.FORWARD_HTTP_REQUEST.getDescription(), "tenant_id",
 								tenantId)));
 				initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
 				initRIHR.setPPayload((JsonNode) Configuration.objectMapper
@@ -1732,7 +1734,7 @@ public class FHIRService {
 				forwardRIHR.setPGroupHubInteractionId(groupInteractionId);
 				forwardRIHR.setPInteractionKey(requestURI);
 				forwardRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
-						Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE,
+						Map.of("nature", Nature.FORWARDED_HTTP_RESPONSE.getDescription(),
 								"tenant_id", tenantId)));
 				forwardRIHR.setPContentType(
 						MimeTypeUtils.APPLICATION_JSON_VALUE);
