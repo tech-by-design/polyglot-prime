@@ -39,6 +39,11 @@ public class PostPopulateSupport {
                         .setConcept(
                                 ConceptReaderUtils.getValueSetConcepts_wCode(referenceCodesPath.concat("loinc.psv")))
                         .setSystem("http://loinc.org"));
+
+                loinc_valueSet.getCompose().addInclude(new ValueSet.ConceptSetComponent()
+                        .setConcept(ConceptReaderUtils
+                                .getValueSetConcepts_wCode(referenceCodesPath.concat("custom-system-code.psv")))
+                        .setSystem("http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire"));
             } finally {
                 loinc_valueSet = null;
             }
