@@ -1271,7 +1271,867 @@ $function$
 ;
 
 
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_register_interaction_requests(text);
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_register_interaction_requests(schema_name text DEFAULT 'techbd_udi_ingress'::text)
+ RETURNS SETOF text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE    
+    v_interaction_id TEXT; 
+	v_interaction_id_2 TEXT; 
+	v_hub_nexus_interaction_id TEXT; 
+    v_payload jsonb; 
+    function_exists boolean;
+	v_hub_diagnostic_id TEXT;
+	v_payload_text TEXT; 
+	v_hl7_json jsonb;
+	v_csv_screening_observation_data_payload_text TEXT;
+	v_csv_screening_profile_data_payload_text TEXT;
+	v_csv_demographic_data_payload_text TEXT;
+	v_csv_qe_admin_data_payload_text TEXT;
+	v_source_hub_interaction_id TEXT;
+	v_group_hub_interaction_id TEXT;
 
+BEGIN  
+    -- Check if the table 'pgtap_fixtures_json' exists
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'techbd_udi_assurance' 
+               AND table_name = 'pgtap_fixtures_json') THEN 
+        SELECT "jsonb" INTO v_payload
+        FROM techbd_udi_assurance.pgtap_fixtures_json 
+        WHERE "name" = 'interaction_payload';
+    ELSE 
+        RETURN NEXT 'Table techbd_udi_assurance.pgtap_fixtures_json does not exist';
+    END IF;
+    
+    -- Check existence of required functions     
+    -- Check function: register_interaction_nexus_ingestion
+	RETURN NEXT has_function(schema_name, 'register_interaction_nexus_ingestion',
+	    ARRAY['text', 'text', 'text', 'bytea', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'jsonb', 'jsonb', 'text', 'text'],
+	    'Function register_interaction_nexus_ingestion exists'
+	);
+	
+	-- Check function: register_interaction_fhir_request
+	RETURN NEXT has_function(schema_name, 'register_interaction_fhir_request',
+	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'bool', 'text', 'text', 'text', 'text', 'text'],
+	    'Function register_interaction_fhir_request exists'
+	);
+	
+	-- Check function: register_interaction_ccda_request
+	RETURN NEXT has_function(schema_name, 'register_interaction_ccda_request',
+	    ARRAY['text', 'text', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'bool', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+	    'Function register_interaction_ccda_request exists'
+	);
+	
+	-- Check function: register_interaction_csv_request
+	RETURN NEXT has_function(schema_name, 'register_interaction_csv_request',
+	    ARRAY['text', 'text', 'text', 'jsonb', 'text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'bool', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'],
+	    'Function register_interaction_csv_request exists'
+	);
+
+	-- Check function: register_user_interaction
+	RETURN NEXT has_function(schema_name, 'register_user_interaction',
+	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'], 
+		'Function register_user_interaction exists'
+	);   
+    
+    RETURN NEXT has_function(schema_name, 'register_issue', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 'Function register_issue exists');  
+    RETURN NEXT has_function(schema_name, 'sat_interaction_fhir_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text'], 'Function sat_interaction_fhir_request_upserted exists');
+   	RETURN NEXT has_function(schema_name, 'sat_interaction_csv_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'bytea', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'jsonb'], 
+   		'Function sat_interaction_csv_request_upserted exists');
+	RETURN NEXT has_function(schema_name, 'sat_interaction_ccda_request_upserted', ARRAY['text', 'text', 'text', 'text', 'text', 'text', 'jsonb',  'text', 'text','timestamptz', 'text', 'text', 'jsonb', 'text', 'text', 'text'],
+        'Function sat_interaction_ccda_request_upserted exists'
+    );
+
+	-- Check existence of required tables   
+	RETURN NEXT has_table(schema_name, 'hub_nexus_interaction', 'The table techbd_udi_ingress.hub_nexus_interaction should exist.');
+	RETURN NEXT has_table(schema_name, 'sat_nexus_interaction_ingestion', 'The table techbd_udi_ingress.sat_nexus_interaction_ingestion should exist.');
+	RETURN NEXT has_pk(schema_name, 'sat_nexus_interaction_ingestion', 'The table techbd_udi_ingress.sat_nexus_interaction_ingestion should have a primary key.');
+    RETURN NEXT col_is_fk(schema_name::name, 'sat_nexus_interaction_ingestion'::name, 'hub_nexus_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_nexus_interaction_id should exist.');
+    RETURN NEXT columns_are(schema_name, 'sat_nexus_interaction_ingestion',
+	    ARRAY['sat_nexus_interaction_ingestion_id', 'hub_nexus_interaction_id', 'tenant_id', 'request_uri', 'request_url', 'nature', 'content_type', 'payload_hash', 'payload_size', 'original_file_name', 'from_state', 'to_state', 'user_agent', 'client_ip_address', 'additional_details', 'general_errors', 'elaboration', 'created_at', 'created_by', 'provenance', 'payload'],
+	    'The columns of techbd_udi_ingress.sat_nexus_interaction_ingestion should match the expected structure.'
+	);
+	RETURN NEXT has_table(schema_name, 'link_nexus_interaction', 'The table techbd_udi_ingress.link_nexus_interaction should exist.');
+
+	RETURN NEXT has_table(schema_name, 'hub_interaction', 'The table techbd_udi_ingress.hub_interaction should exist.');
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_fhir_request', 'The table techbd_udi_ingress.sat_interaction_fhir_request should exist.');
+    RETURN NEXT has_pk(schema_name, 'sat_interaction_fhir_request', 'The table techbd_udi_ingress.sat_interaction_fhir_request should have a primary key.');
+    RETURN NEXT col_is_fk(schema_name,
+        'sat_interaction_fhir_request', 
+        'hub_interaction_id', 
+        'The foreign key from sat_interaction_fhir_request.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+    RETURN NEXT columns_are(schema_name, 'sat_interaction_fhir_request',
+        ARRAY['sat_interaction_fhir_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 'client_ip_address', 'user_agent', 'from_state', 'to_state', 
+			'state_transition_reason', 'outbound_http_message', 'error_message', 'issues_count', 'bundle_id', 'bundle_session_id', 'bundle_last_updated', 'organization_id', 
+			'organization_name', 'patient_id', 'patient_mrn', 'resource_type_set', 'validation_initiated_at', 'validation_completed_at', 'interaction_start_time', 'interaction_end_time', 
+			'validation_engine', 'ig_version', 'profile_url', 'passed', 'medicaid_cin', 'elaboration', 'created_at', 'created_by', 'provenance', 'techbd_disposition_action', 'patient_mrn_source_system', 
+			'source_type', 'source_hub_interaction_id', 'group_hub_interaction_id', 'is_bundle_valid', 'bundle_type'],
+        'The columns of techbd_udi_ingress.sat_interaction_fhir_request should match the expected structure.');
+    RETURN NEXT col_not_null(schema_name, 'sat_interaction_fhir_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_http_request', 'The table techbd_udi_ingress.sat_interaction_http_request should exist.');
+	RETURN NEXT has_pk(schema_name, 'sat_interaction_http_request', 'The table techbd_udi_ingress.sat_interaction_http_request should have a primary key.');
+    RETURN NEXT col_is_fk(schema_name,
+        'sat_interaction_http_request', 
+        'hub_interaction_id', 
+        'The foreign key from sat_interaction_http_request.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+    RETURN NEXT columns_are(schema_name, 'sat_interaction_http_request',
+        ARRAY['sat_interaction_http_request_id', 'hub_interaction_id', 'nature', 'content_type', 'payload', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 
+			'created_at', 'created_by', 'provenance', 'nature_denorm', 'tenant_id_denorm', 'payload_text', 'request_source'],
+        'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
+    RETURN NEXT col_not_null(schema_name, 'sat_interaction_http_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_user', 'The table techbd_udi_ingress.sat_interaction_user should exist.');
+	RETURN NEXT has_pk(schema_name, 'sat_interaction_user', 'The table techbd_udi_ingress.sat_interaction_user should have a primary key.');
+    RETURN NEXT col_is_fk(schema_name,
+        'sat_interaction_user', 
+        'hub_interaction_id', 
+        'The foreign key from sat_interaction_user.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+    RETURN NEXT columns_are(schema_name, 'sat_interaction_user',
+        ARRAY['sat_interaction_user_id', 'hub_interaction_id', 'uri', 'nature', 'tenant_id', 'user_id', 'user_name', 'user_session', 'user_role', 'client_ip_address', 
+			'user_agent', 'interaction_start_time', 'interaction_end_time', 'elaboration', 'created_at', 'created_by', 'provenance', 'user_session_hash'],
+        'The columns of techbd_udi_ingress.sat_interaction_http_request should match the expected structure.');
+    RETURN NEXT col_not_null(schema_name, 'sat_interaction_user', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
+	
+    RETURN NEXT has_table(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should exist.');
+    RETURN NEXT has_pk(schema_name, 'sat_interaction_flat_file_csv_request', 'The table techbd_udi_ingress.sat_interaction_flat_file_csv_request should have a primary key.');
+    RETURN NEXT columns_are(schema_name, 'sat_interaction_flat_file_csv_request',
+        ARRAY['sat_interaction_flat_file_csv_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
+            'validation_result_payload', 
+            'client_ip_address', 'user_agent',
+            'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'created_at', 'created_by', 'provenance',
+            'screening_observation_data_payload_text', 'screening_profile_data_payload_text',
+            'demographic_data_payload_text', 'qe_admin_data_payload_text',
+            'screening_observation_data_file_name', 'screening_profile_data_file_name',
+            'demographic_data_file_name', 'qe_admin_data_file_name', 'zip_file_hub_interaction_id'],
+        'The columns of techbd_udi_ingress.sat_interaction_flat_file_csv_request should match the expected structure.'
+    );
+  
+    RETURN NEXT has_table(schema_name, 'sat_interaction_zip_file_request', 'The table techbd_udi_ingress.sat_interaction_zip_file_request should exist.');
+    RETURN NEXT has_pk(schema_name, 'sat_interaction_zip_file_request', 'The table techbd_udi_ingress.sat_interaction_zip_file_request should have a primary key.');
+    RETURN NEXT col_is_fk(schema_name,
+        'sat_interaction_zip_file_request', 
+        'hub_interaction_id', 
+        'The foreign key from sat_interaction_zip_file_request.hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+    RETURN NEXT columns_are(schema_name, 'sat_interaction_zip_file_request',
+        ARRAY['sat_interaction_zip_file_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'group_id', 'status',
+            'csv_zip_file_name', 'csv_zip_file_content', 
+            'client_ip_address', 'user_agent', 
+            'elaboration', 'created_at', 'created_by', 'provenance', 'origin', 'validation_result_payload','sftp_session_id', 'general_errors'],
+        'The columns of techbd_udi_ingress.sat_interaction_zip_file_request should match the expected structure.');
+    RETURN NEXT col_type_is(schema_name, 'sat_interaction_zip_file_request', 'csv_zip_file_content', 'bytea', 'The column csv_zip_file_content should be of type bytea.');   
+    RETURN NEXT col_not_null(schema_name, 'sat_interaction_zip_file_request', 'hub_interaction_id', 'The column hub_interaction_id should be NOT NULL.');
+
+	RETURN NEXT has_table(schema_name, 'sat_interaction_ccda_request', 'The table techbd_udi_ingress.sat_interaction_ccda_request should exist.');
+    RETURN NEXT has_pk(schema_name, 'sat_interaction_ccda_request', 'The table techbd_udi_ingress.sat_interaction_ccda_request should have a primary key.');
+    RETURN NEXT col_is_fk(schema_name::name, 'sat_interaction_ccda_request'::name, 'hub_interaction_id'::name, 'The foreign key from hub_interaction_id to techbd_udi_ingress.hub_interaction should exist.');
+    RETURN NEXT columns_are(schema_name, 'sat_interaction_ccda_request',
+        ARRAY['sat_interaction_ccda_request_id', 'hub_interaction_id', 'tenant_id', 'tenant_id_lower', 'uri', 'nature', 'payload', 'ccda_payload_text',
+			'client_ip_address', 'user_agent', 'from_state', 'to_state', 'state_transition_reason', 'elaboration', 'origin', 'created_at', 'created_by', 'provenance'],
+        'The columns of techbd_udi_ingress.sat_interaction_ccda_request should match the expected structure.'
+    );
+
+
+	/*=================== Testing with Nexus Interaction ========================*/
+	v_hub_nexus_interaction_id	:= 'nexus-4f-5cc8-9c5d-b65245d90fb6';
+
+	PERFORM techbd_udi_ingress.register_interaction_nexus_ingestion(
+	    p_hub_nexus_interaction_id => v_hub_nexus_interaction_id,
+	    p_request_uri              => '/Bundle/',
+	    p_request_url              => 'http://url',
+	    p_payload                  => '<abc>def</abc>'::bytea,
+	    p_nature                   => '{"nature":"Original Request Received", "tenant_id":"QE-123456"}'::jsonb,
+	    p_content_type             => 'application/json',
+	    p_payload_size             => '1234',
+	    p_original_file_name       => 'file.txt',
+	    p_from_state               => 'NONE',
+	    p_to_state                 => 'INGESTION_SUCCESS',
+	    p_user_agent               => 'agent',
+	    p_user_id                  => 'user_123',
+	    p_client_ip_address        => '127.0.0.1',
+	    p_additional_details       => NULL,
+	    p_general_errors           => NULL,
+	    p_elaboration              => '{"key" : "elaboration"}',
+	    p_created_by               => CURRENT_USER,
+	    p_provenance               => 'S3'
+	);
+
+	RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_nexus_interaction hub_intr
+                   WHERE hub_intr.hub_nexus_interaction_id = v_hub_nexus_interaction_id),
+            'Nexus - Successfully inserted into the table hub_nexus_interaction'
+	);
+        
+	RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_nexus_interaction_ingestion hub_intr
+                   WHERE hub_intr.hub_nexus_interaction_id = v_hub_nexus_interaction_id),
+            'Nexus - Successfully inserted into the table sat_nexus_interaction_ingestion'
+	);
+
+
+    /*=================== Testing with FHIR bundle ========================*/
+   	/* First call to insert FHIR Bundle into sat_interaction_http_request and sat_interaction_fhir_request */
+    v_interaction_id            := 'fhir1-27-9a4f-5cc8-9c5d-b55242d90fb0';
+
+	PERFORM techbd_udi_ingress.register_interaction_fhir_request(
+	    p_interaction_id           => v_interaction_id,
+	    p_interaction_key          => '/Bundle/'::text,
+	    p_nature                   => '{"nature": "Original FHIR payload", "tenant_id": "qe-123"}'::jsonb,
+	    p_payload                  => '{"tenant": {"name": null, "tenantId": "Testing123"}, "request": {"method": "POST", "tenant": {"name": null, "tenantId": "Testing123"}, "cookies": [], "headers": [{"name": "x-forwarded-for", "value": "23.123.106.25"}, {"name": "x-forwarded-proto", "value": "https"}, {"name": "x-forwarded-port", "value": "443"}, {"name": "host", "value": "synthetic.fhir.api.devl.techbd.org"}, {"name": "x-amzn-trace-id", "value": "Root=1-66d72885-5e4eabcf4d216f9362180cfd"}, {"name": "content-length", "value": "2"}, {"name": "user-agent", "value": "python-requests/2.32.3"}, {"name": "accept-encoding", "value": "gzip, deflate"}, {"name": "accept", "value": "*/*"}, {"name": "content-type", "value": "application/json"}, {"name": "x-techbd-tenant-id", "value": "Testing123"}], "protocol": "HTTP/1.1", "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "userAgent": "python-requests/2.32.3", "parameters": {}, "requestUri": "/Bundle/$validate", "requestUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "absoluteUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "contentType": "application/json", "queryString": null, "requestBody": null, "encounteredAt": 1725376645.0128977, "clientIpAddress": "10.0.90.97"}, "response": {"status": 200, "headers": [{"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}, {"name": "X-Content-Type-Options", "value": "nosniff"}, {"name": "X-XSS-Protection", "value": "0"}, {"name": "Cache-Control", "value": "no-cache, no-store, max-age=0, must-revalidate"}, {"name": "Pragma", "value": "no-cache"}, {"name": "Expires", "value": "0"}, {"name": "X-Frame-Options", "value": "SAMEORIGIN"}, {"name": "X-Observability-Metric-Interaction-Start-Time", "value": "2024-09-03T15:17:25.013579377Z"}, {"name": "X-Observability-Metric-Interaction-Finish-Time", "value": "2024-09-03T15:17:26.742474501Z"}, {"name": "X-Observability-Metric-Interaction-Duration-Nanosecs", "value": "1728"}, {"name": "X-Observability-Metric-Interaction-Duration-Millisecs", "value": "1728895124"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}], "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "responseId": "77d93838-f778-4fe3-bdfb-d9bc708e5fcc", "responseBody": {"OperationOutcome": {"device": {"deviceId": "10.0.158.130", "deviceName": "ip-10-0-158-130.ec2.internal"}, "resourceType": "OperationOutcome", "validationResults": [{"valid": false, "issues": [{"message": "HAPI-1838: Invalid JSON content detected, missing required element: resourceType", "location": {"line": null, "column": null, "diagnostics": "ca.uhn.fhir.parser.DataFormatException"}, "severity": "FATAL"}], "igVersion": "0.10.2", "profileUrl": "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json", "completedAt": 1725376646.7420661, "initiatedAt": 1725376645.0148897, "observability": {"name": "HAPI version 7.4.0 (FHIR version 4.0.1)", "initAt": 1725273675.3162005, "identity": "org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine", "constructedAt": 1725273675.3311777}, "operationOutcome": null}]}}, "encounteredAt": 1725376646.742693}, "interactionId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974"}'::jsonb, 
+	    p_hub_nexus_interaction_id => v_hub_nexus_interaction_id::text,
+	    p_payload_text 			   => NULL::text,
+	    p_rule_namespace		   => NULL::text,	    
+	    p_elaboration              => '{"key" : "elaboration"}'::jsonb,
+	    p_content_type             => 'application/json'::text,
+	    p_from_state               => 'NONE'::text,
+	    p_to_state                 => 'ACCEPT_FHIR_BUNDLE'::text,
+	    p_state_transition_reason  => 'state_transition_reason_1'::text,	    
+	    p_user_id				   => NULL::text,
+	    p_user_name				   => NULL::text,
+	    p_user_session			   => NULL::text,	
+	    p_user_role				   => NULL::text,	    
+	    p_created_by               => CURRENT_USER,
+	    p_provenance               => 'FHIR'::text,
+	    p_hub_upsert_behavior      => FALSE,	    
+	    p_source_hub_interaction_id => NULL::text,	    
+	    p_origin                   => 'http'::text,
+	    p_source_type              => 'fhir'::text,
+	    p_group_hub_interaction_id => NULL::text,
+	    p_request_source   		   => NULL::text	    
+	);
+    
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = '/Bundle/'
+							AND hub_intr.provenance              = 'FHIR'
+                   ),
+            'FHIR Bundle - Successfully inserted into the table hub_interaction'
+	);
+        
+	RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+							AND hub_intr.provenance              = 'FHIR'
+                   ),
+            'FHIR Bundle - Successfully inserted into the table sat_interaction_http_request'
+	);
+
+	RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_fhir_request hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr.uri                     = '/Bundle/'
+							AND hub_intr.provenance              = 'FHIR'
+                   ),
+            'FHIR Bundle - Successfully inserted into the table sat_interaction_fhir_request'
+	);
+
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = '/Bundle/'
+							AND sat_intr.provenance             = 'FHIR'
+                   ),
+            'FHIR Bundle - Successfully inserted into the table sat_interaction_user'
+	);
+       
+	/*----------------------------------------------------------------------------*/
+	/* Second call to insert FHIR Bundle into sat_interaction_http_request and sat_interaction_fhir_request with nature, techByDesignDisposition*/
+    v_interaction_id            := 'fhir2-27-9a4f-5cc8-9c5d-b55242d90fba';
+
+	PERFORM techbd_udi_ingress.register_interaction_fhir_request(
+	    p_interaction_id           => v_interaction_id,
+	    p_interaction_key          => '/Bundle/'::text,
+	    p_nature                   => '{"nature": "techByDesignDisposition", "tenant_id": "qe-123"}',
+	    p_payload                  => '{"tenant": {"name": null, "tenantId": "Testing123"}, "request": {"method": "POST", "tenant": {"name": null, "tenantId": "Testing123"}, "cookies": [], "headers": [{"name": "x-forwarded-for", "value": "23.123.106.25"}, {"name": "x-forwarded-proto", "value": "https"}, {"name": "x-forwarded-port", "value": "443"}, {"name": "host", "value": "synthetic.fhir.api.devl.techbd.org"}, {"name": "x-amzn-trace-id", "value": "Root=1-66d72885-5e4eabcf4d216f9362180cfd"}, {"name": "content-length", "value": "2"}, {"name": "user-agent", "value": "python-requests/2.32.3"}, {"name": "accept-encoding", "value": "gzip, deflate"}, {"name": "accept", "value": "*/*"}, {"name": "content-type", "value": "application/json"}, {"name": "x-techbd-tenant-id", "value": "Testing123"}], "protocol": "HTTP/1.1", "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "userAgent": "python-requests/2.32.3", "parameters": {}, "requestUri": "/Bundle/$validate", "requestUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "absoluteUrl": "http://synthetic.fhir.api.devl.techbd.org/Bundle/$validate", "contentType": "application/json", "queryString": null, "requestBody": null, "encounteredAt": 1725376645.0128977, "clientIpAddress": "10.0.90.97"}, "response": {"status": 200, "headers": [{"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Vary", "value": "Origin"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}, {"name": "X-Content-Type-Options", "value": "nosniff"}, {"name": "X-XSS-Protection", "value": "0"}, {"name": "Cache-Control", "value": "no-cache, no-store, max-age=0, must-revalidate"}, {"name": "Pragma", "value": "no-cache"}, {"name": "Expires", "value": "0"}, {"name": "X-Frame-Options", "value": "SAMEORIGIN"}, {"name": "X-Observability-Metric-Interaction-Start-Time", "value": "2024-09-03T15:17:25.013579377Z"}, {"name": "X-Observability-Metric-Interaction-Finish-Time", "value": "2024-09-03T15:17:26.742474501Z"}, {"name": "X-Observability-Metric-Interaction-Duration-Nanosecs", "value": "1728"}, {"name": "X-Observability-Metric-Interaction-Duration-Millisecs", "value": "1728895124"}, {"name": "Set-Cookie", "value": "JSESSIONID=9617421676266BE909673CBD18B5AB10; Path=/; HttpOnly"}], "requestId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974", "responseId": "77d93838-f778-4fe3-bdfb-d9bc708e5fcc", "responseBody": {"OperationOutcome": {"device": {"deviceId": "10.0.158.130", "deviceName": "ip-10-0-158-130.ec2.internal"}, "resourceType": "OperationOutcome", "validationResults": [{"valid": false, "issues": [{"message": "HAPI-1838: Invalid JSON content detected, missing required element: resourceType", "location": {"line": null, "column": null, "diagnostics": "ca.uhn.fhir.parser.DataFormatException"}, "severity": "FATAL"}], "igVersion": "0.10.2", "profileUrl": "https://shinny.org/ImplementationGuide/HRSN/StructureDefinition-SHINNYBundleProfile.json", "completedAt": 1725376646.7420661, "initiatedAt": 1725376645.0148897, "observability": {"name": "HAPI version 7.4.0 (FHIR version 4.0.1)", "initAt": 1725273675.3162005, "identity": "org.techbd.orchestrate.fhir.OrchestrationEngine$HapiValidationEngine", "constructedAt": 1725273675.3311777}, "operationOutcome": null}]}}, "encounteredAt": 1725376646.742693}, "interactionId": "fa437636-8fb9-4c6d-aca0-f8ea6f10d974"}', 
+	    p_hub_nexus_interaction_id => v_hub_nexus_interaction_id::text,
+	    p_payload_text 			   => NULL::text,
+	    p_rule_namespace		   => NULL::text,	    
+	    p_elaboration              => '{"key" : "elaboration"}'::jsonb,
+	    p_content_type             => 'application/json'::text,
+	    p_from_state               => 'ACCEPT_FHIR_BUNDLE',
+	    p_to_state                 => 'DISPOSITION',
+	    p_state_transition_reason  => 'state_transition_reason_1'::text,	    
+	    p_user_id				   => NULL::text,
+	    p_user_name				   => NULL::text,
+	    p_user_session			   => NULL::text,	
+	    p_user_role				   => NULL::text,	    
+	    p_created_by               => CURRENT_USER,
+	    p_provenance               => 'FHIR'::text,
+	    p_hub_upsert_behavior      => TRUE,	    
+	    p_source_hub_interaction_id => NULL::text,	    
+	    p_origin                   => 'http'::text,
+	    p_source_type              => 'fhir'::text,
+	    p_group_hub_interaction_id => NULL::text,
+	    p_request_source   => NULL::text	    
+	);
+
+    RETURN NEXT ok(
+	        EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+	               WHERE hub_intr.hub_interaction_id = v_interaction_id
+	               AND hub_intr."key"                = '/Bundle/'
+				   AND hub_intr.provenance           = 'FHIR'),
+	        'FHIR Bundle - Successfully inserted into the table hub_interaction'
+    );
+    
+   	RETURN NEXT ok(
+            NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id
+	               AND sat_intr.uri                  = '/Bundle/'
+				   AND sat_intr.provenance           = 'FHIR'),
+            'FHIR Bundle - Success, Not inserted into the table sat_interaction_user while second FHIR call.'
+	);
+       
+    /*====================Testing with CSV File=========================*/       
+    /* First call to insert CSV files into sat_interaction_http_request and sat_interaction_zip_file_request */
+    v_interaction_id            				  := 'csv-1-45-9a4f-5cc8-9c5d-b45245d90fb0';  
+	v_source_hub_interaction_id					  := v_interaction_id;
+	v_csv_screening_observation_data_payload_text := 'PAT_MRN_ID|FACILITY_ID|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|SCREENING_STATUS_CODE|SCREENING_STATUS_CODE_DESCRIPTION|SCREENING_STATUS_CODE_SYSTEM|SCREENING_CODE|SCREENING_CODE_DESCRIPTION|SCREENING_CODE_SYSTEM_NAME|RECORDED_TIME|QUESTION_CODE|QUESTION_CODE_DESCRIPTION|QUESTION_CODE_SYSTEM_NAME|UCUM_UNITS|SDOH_DOMAIN|PARENT_QUESTION_CODE|ANSWER_CODE|ANSWER_CODE_DESCRIPTION|ANSWER_CODE_SYSTEM_NAME|POTENTIAL_NEED_INDICATED
+	test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|71802-3|What is your living situation today?|http://loinc.org||Homelessness, Housing Instability||LA31993-1|I have a steady place to live|http://loinc.org|No
+	test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|96778-6|Think about the place you live. Do you have problems with any of the following?|http://loinc.org||Inadequate Housng||LA32001-2|Water leaks|http://loinc.org|Yes';
+	v_csv_screening_profile_data_payload_text     := 'PAT_MRN_ID|FACILITY_ID|ENCOUNTER_ID|ENCOUNTER_CLASS_CODE|ENCOUNTER_CLASS_CODE_DESCRIPTION|ENCOUNTER_CLASS_CODE_SYSTEM|ENCOUNTER_STATUS_CODE|ENCOUNTER_STATUS_CODE_DESCRIPTION|ENCOUNTER_STATUS_CODE_SYSTEM|ENCOUNTER_TYPE_CODE|ENCOUNTER_TYPE_CODE_DESCRIPTION|ENCOUNTER_TYPE_CODE_SYSTEM|SCREENING_STATUS_CODE|SCREENING_STATUS_CODE_DESCRIPTION|SCREENING_STATUS_CODE_SYSTEM|SCREENING_CODE|SCREENING_CODE_DESCRIPTION|SCREENING_CODE_SYSTEM_NAME|RECORDED_TIME|QUESTION_CODE|QUESTION_CODE_DESCRIPTION|QUESTION_CODE_SYSTEM_NAME|UCUM_UNITS|SDOH_DOMAIN|PARENT_QUESTION_CODE|ANSWER_CODE|ANSWER_CODE_DESCRIPTION|ANSWER_CODE_SYSTEM_NAME|POTENTIAL_NEED_INDICATED
+	test-MRN|CNYSCN|DXHMGMNUHI|EMER|emergency|http://terminology.hl7.org/CodeSystem/v3-ActCode|unknown|Unknown|http://hl7.org/fhir/encounter-status|23918007|History taking, self-administered, by computer terminal|http://snomed.info/sct|amended|Amended|http://hl7.org/fhir/observation-status|96777-8|Accountable health communities (AHC) health-related social needs screening (HRSN) tool|http://loinc.org|2023-03-11T23:24:27.495202-03:00|96778-6|Think about the place you live. Do you have problems with any of the following?|http://loinc.org||Inadequate Housng||LA32001-2|Water leaks|http://loinc.org|Yes';
+	v_csv_demographic_data_payload_text 		  := 'MPI_ID|PAT_MRN_ID|FACILITY_ID|CONSENT|FIRST_NAME|MIDDLE_NAME|LAST_NAME|ADMINISTRATIVE_SEX_CODE|ADMINISTRATIVE_SEX_CODE_DESCRIPTION|ADMINISTRATIVE_SEX_CODE_SYSTEM|SEX_AT_BIRTH_CODE|SEX_AT_BIRTH_CODE_DESCRIPTION|SEX_AT_BIRTH_CODE_SYSTEM|PAT_BIRTH_DATE|ADDRESS1|ADDRESS2|CITY|STATE|ZIP|PHONE|SSN|GENDER_IDENTITY_CODE|GENDER_IDENTITY_CODE_DESCRIPTION|GENDER_IDENTITY_CODE_SYSTEM_NAME|SEXUAL_ORIENTATION_CODE|SEXUAL_ORIENTATION_CODE_DESCRIPTION|SEXUAL_ORIENTATION_CODE_SYSTEM_NAME|PREFERRED_LANGUAGE_CODE|PREFERRED_LANGUAGE_CODE_DESCRIPTION|PREFERRED_LANGUAGE_CODE_SYSTEM_NAME|RACE_CODE|RACE_CODE_DESCRIPTION|RACE_CODE_SYSTEM_NAME|ETHNICITY_CODE|ETHNICITY_CODE_DESCRIPTION|ETHNICITY_CODE_SYSTEM_NAME|MEDICAID_CIN
+	7778047133|test-MRN|CNYSCN|Yes|James|Gary|Rodriguez|ASKU|Asked but Unknown|http://terminology.hl7.org/CodeSystem/v3-NullFlavor|M|Male|http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender|1998-03-09|969 Daniel Manors Apt. 454|Suite 11|Binghamton|NY|13901|001-837-697-5431x13565|436-99-8619|ASKU|Asked but unknown|http://snomed.info/sct|38628009|Homosexual|http://snomed.info/sct|cnr|Montenegrin|ISO|1244-3|Southeastern Indians|urn:oid:2.16.840.1.113883.6.238|2161-8|Salvadoran|urn:oid:2.16.840.1.113883.6.238|AB53156E';
+	v_csv_qe_admin_data_payload_text			  := 'PAT_MRN_ID|FACILITY_ID|FACILITY_LONG_NAME|ORGANIZATION_TYPE|FACILITY_ADDRESS1|FACILITY_ADDRESS2|FACILITY_CITY|FACILITY_STATE|FACILITY_ZIP|VISIT_PART_2_FLAG|VISIT_OMH_FLAG|VISIT_OPWDD_FLAG
+	test-MRN|CNYSCN|Crossroads NY Social Care Network|SCN|25 W 45th st|Suite 16|New York|New York|10036|No|No|No';
+		  
+
+	PERFORM techbd_udi_ingress.register_interaction_csv_request(
+	    p_interaction_id                              => v_interaction_id,
+	    p_interaction_key                             => '/flatfile/csv/Bundle',
+	    p_hub_nexus_interaction_id					  => v_hub_nexus_interaction_id,
+	    p_payload                  					  => NULL,
+        p_payload_text             					  => NULL,
+        p_rule_namespace           					  => NULL,
+		p_elaboration								  => '{"key" : "elaboration"}',		
+	    p_nature                                      => '{"nature":"Original CSV Zip Archive", "tenant_id":"QE-123456"}',
+	    p_content_type              				  => 'application/json',
+	    p_from_state                                  => 'NONE',
+	    p_to_state                                    => 'NONE',
+	    p_state_transition_reason  					  => 'state_transition_reason_1',
+	    p_user_id									  => NULL,
+		p_user_name									  => NULL,
+		p_user_session								  => 'sDDG9456rywqeiqwe54776',
+		p_user_role									  => NULL,		
+	    p_provenance                                  => 'CSV',
+	    p_hub_upsert_behavior      					  => true,	    
+	    p_source_type								  => 'csv',
+		p_csv_zip_file_name                           => '123_abc_rochester-20240911-testcase2.zip',
+	    p_csv_zip_file_content                        => E'\\x5468697320697320612062696e6172792064617461',
+	    p_csv_group_id                                => 'test',
+	    p_csv_status                                  => 'test_status',
+	    p_csv_screening_observation_data_payload_text => v_csv_screening_observation_data_payload_text,
+	    p_csv_screening_profile_data_payload_text     => v_csv_screening_profile_data_payload_text,
+		p_csv_demographic_data_payload_text 		  => v_csv_demographic_data_payload_text,
+		p_csv_qe_admin_data_payload_text			  => v_csv_qe_admin_data_payload_text,
+		p_csv_screening_observation_data_file_name	  => 'SCREENING_observation_test.csv',
+		p_csv_screening_profile_data_file_name		  => 'SCREENING_profile_test.csv',
+		p_csv_demographic_data_file_name			  => 'DEMOGRAPHIC_DATA_test.csv',
+		p_csv_qe_admin_data_file_name				  => 'QE_ADMIN_DATA_test.csv',
+		p_source_hub_interaction_id					  => v_source_hub_interaction_id,
+		p_client_ip_address							  => 'test_client_ip_address',
+		p_user_agent								  => 'test_user_agent',
+		p_origin									  => 'http',
+		p_group_hub_interaction_id					  => NULL,
+		p_sftp_session_id							  => '0cc90e96-b8bc-4642-b4ae-910444360636',
+		p_request_source							  => 'nexus'
+	);
+    
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                   WHERE hub_intr.hub_interaction_id = v_interaction_id
+	               AND hub_intr."key"                = '/flatfile/csv/Bundle'
+				   AND hub_intr.provenance           = 'CSV'),
+            'CSV - Successfully inserted into the table hub_interaction.'
+	);
+        
+   /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id
+				   AND sat_intr.provenance           = 'CSV'),
+             'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Original CSV Zip Archive" as nature.'
+	);
+        
+    /*Test 1 raw is inserted into sat_interaction_zip_file_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_zip_file_request sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id
+	               AND sat_intr.uri                  = '/flatfile/csv/Bundle'
+				   AND sat_intr.provenance           = 'CSV'),
+             'CSV - Successfully inserted one record into the table sat_interaction_zip_file_request with "Original CSV Zip Archive" as nature.'
+	);
+
+   /*Test one record is inserted into sat_interaction_user table*/
+   RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id
+	               AND sat_intr.uri                  = '/flatfile/csv/Bundle'
+				   AND sat_intr.provenance           = 'CSV'),
+            'CSV - Successfully inserted into the table sat_interaction_user.'
+	);
+    
+    /*----------------------------------------------------------------------------*/
+	/*Second call from NULL to CSV_ACCEPT and insert into sat_interaction_flat_file_csv_request and sat_interaction_http_request*/   
+    v_interaction_id_2          := 'csv-2-45-9a4f-5cc8-9c5d-b45245d90fb0';
+    v_group_hub_interaction_id	:= v_interaction_id_2;
+
+	PERFORM techbd_udi_ingress.register_interaction_csv_request(
+	    p_interaction_id                              => v_interaction_id_2,
+	    p_interaction_key                             => '/flatfile/csv/Bundle',
+	    p_hub_nexus_interaction_id					  => v_hub_nexus_interaction_id,
+	    p_payload                  					  => NULL,
+        p_payload_text             					  => NULL,
+        p_rule_namespace           					  => NULL,
+		p_elaboration								  => '{"key" : "elaboration"}',		
+	    p_nature                                      => '{"nature":"Original Flat File CSV", "tenant_id":"QE-123456"}',
+	    p_content_type              				  => 'application/json',
+	    p_from_state                                  => 'NONE',
+	    p_to_state                                    => 'NONE',
+	    p_state_transition_reason  					  => 'state_transition_reason_1',
+	    p_user_id									  => NULL,
+		p_user_name									  => NULL,
+		p_user_session								  => 'sDDG9456rywqeiqwe54776',
+		p_user_role									  => NULL,		
+	    p_provenance                                  => 'CSV',
+	    p_hub_upsert_behavior      					  => true,	    
+	    p_source_type								  => 'csv',
+		p_csv_zip_file_name                           => '123_abc_rochester-20240911-testcase2.zip',
+	    p_csv_zip_file_content                        => E'\\x5468697320697320612062696e6172792064617461',
+	    p_csv_group_id                                => 'test',
+	    p_csv_status                                  => 'test_status',
+	    p_csv_screening_observation_data_payload_text => v_csv_screening_observation_data_payload_text,
+	    p_csv_screening_profile_data_payload_text     => v_csv_screening_profile_data_payload_text,
+		p_csv_demographic_data_payload_text 		  => v_csv_demographic_data_payload_text,
+		p_csv_qe_admin_data_payload_text			  => v_csv_qe_admin_data_payload_text,
+		p_csv_screening_observation_data_file_name	  => 'SCREENING_observation_test.csv',
+		p_csv_screening_profile_data_file_name		  => 'SCREENING_profile_test.csv',
+		p_csv_demographic_data_file_name			  => 'DEMOGRAPHIC_DATA_test.csv',
+		p_csv_qe_admin_data_file_name				  => 'QE_ADMIN_DATA_test.csv',
+		p_source_hub_interaction_id					  => v_source_hub_interaction_id,
+		p_client_ip_address							  => 'test_client_ip_address',
+		p_user_agent								  => 'test_user_agent',
+		p_origin									  => 'http',
+		p_group_hub_interaction_id					  => NULL,
+		p_sftp_session_id							  => '0cc90e96-b8bc-4642-b4ae-910444360636',
+		p_request_source							  => 'nexus'
+	);
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                   WHERE hub_intr.hub_interaction_id = v_interaction_id_2
+	               AND hub_intr."key"                = '/flatfile/csv/Bundle'
+				   AND hub_intr.provenance           = 'CSV'),
+            'CSV - Successfully inserted into the table hub_interaction.'
+	);
+        
+   /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id_2
+				   AND sat_intr.provenance           = 'CSV'),
+             'CSV - Successfully inserted one record into the table sat_interaction_http_request with "Original Flat File CSV" as nature.'
+	);
+        
+    /*Test 1 raw is inserted into sat_interaction_flat_file_csv_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id_2
+	               AND sat_intr.uri                  = '/flatfile/csv/Bundle'
+				   AND sat_intr.provenance           = 'CSV'),
+             'CSV - Successfully inserted one record into the table sat_interaction_flat_file_csv_request with "Original Flat File CSV" as nature.'
+	);
+
+   /*Test record is NOT inserted into sat_interaction_user table at second call*/
+   RETURN NEXT ok(
+            NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id_2
+	               AND sat_intr.uri                  = '/flatfile/csv/Bundle'
+				   AND sat_intr.provenance           = 'CSV'),
+            'CSV - Success, Not inserted into the table sat_interaction_user while second FHIR call.'
+	);
+        
+    /*----------------------------------------------------------------------------*/
+	/*To update validation_result_payload for the full zip file, call techbd_udi_ingress.sat_interaction_csv_request_upserted function with interaction_id, uri, validation_result_payload and nature as 'Update Zip File Payload'.*/
+    SELECT techbd_udi_ingress.sat_interaction_csv_request_upserted(
+    	interaction_id				=> v_source_hub_interaction_id::text, 
+    	uri							=> '/flatfile/csv/Bundle', 
+    	validation_result_payload 	=> v_payload::jsonb,
+    	nature 						=> 'Update Zip File Payload'::text
+   	) INTO v_interaction_id;
+  
+    RETURN NEXT ok(v_interaction_id = v_source_hub_interaction_id, 'CSV - Successfully updated the table sat_interaction_zip_file_request with consolidated payload');
+      
+	/*----------------------------------------------------------------------------*/
+	/*To update the errors and status after the zip file is processed, call techbd_udi_ingress.sat_interaction_csv_request_upserted function with interaction_id, uri, error details and nature as 'Update Zip File Processing Details'.*/
+	v_interaction_id				:= NULL;
+    SELECT techbd_udi_ingress.sat_interaction_csv_request_upserted(
+    	interaction_id				=> v_source_hub_interaction_id::text, 
+    	uri							=> '/flatfile/csv/Bundle', 
+    	status						=> 'PROCESSED', 
+    	zip_file_processing_errors	=> '{"error1": "error details 1", "error2": "error details 2"}'::jsonb,
+    	nature 						=> 'Update Zip File Processing Details'::text
+   	) INTO v_interaction_id;
+  
+    RETURN NEXT ok(v_interaction_id = v_source_hub_interaction_id, 'CSV - Successfully updated the table sat_interaction_zip_file_request with status and error details');
+    
+ 
+	/*=================== Testing with CCDA File ========================*/       
+    /* First call to insert CCDA xml payload */
+    v_interaction_id            := 'ccda-1-5-9a4f-5cc8-9c5d-b65245d90fb0';
+    v_hl7_json					:= 
+			'{
+			  "resourceType" : "Bundle",
+			  "id" : "AHCHRSNQuestionnaireResponseExample",
+			  "meta" : {
+			    "lastUpdated" : "2024-02-23T00:00:00Z",
+			    "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"]
+			  },
+			  "type" : "transaction",
+			  "timestamp" : "2024-02-23T00:00:00Z",
+			  "entry" : [{
+			    "fullUrl" : "http://shinny.org/us/ny/hrsn/Patient/PatientExample",
+			    "resource" : {
+			      "resourceType" : "Patient",
+			      "id" : "PatientExample",
+			      "meta" : {
+			        "lastUpdated" : "2024-02-23T00:00:00.00Z",
+			        "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient"]
+			      },
+			      "language" : "en",
+			      "extension" : [{
+			        "extension" : [{
+			          "url" : "ombCategory",
+			          "valueCoding" : {
+			            "system" : "urn:oid:2.16.840.1.113883.6.238",
+			            "code" : "2028-9",
+			            "display" : "Asian"
+			          }
+			        },
+			        {
+			          "url" : "text",
+			          "valueString" : "Asian"
+			        }],
+			        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+			      },
+			      {
+			        "extension" : [{
+			          "url" : "ombCategory",
+			          "valueCoding" : {
+			            "system" : "urn:oid:2.16.840.1.113883.6.238",
+			            "code" : "2135-2",
+			            "display" : "Hispanic or Latino"
+			          }
+			        },
+			        {
+			          "url" : "text",
+			          "valueString" : "Hispanic or Latino"
+			        }],
+			        "url" : "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+			      }],
+			      "identifier" : [{
+			        "type" : {
+			          "coding" : [{
+			            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+			            "code" : "MR"
+			          }]
+			        },
+			        "system" : "http://www.scn.gov/facility/CUMC",
+			        "value" : "11223344",
+			        "assigner" : {
+			          "reference" : "Organization/OrganizationExampleOther-SCN1"
+			        }
+			      },
+			      {
+			        "type" : {
+			          "coding" : [{
+			            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+			            "code" : "MA"
+			          }]
+			        },
+			        "system" : "http://www.medicaid.gov/",
+			        "value" : "AA12345C"
+			      },
+			      {
+			        "type" : {
+			          "coding" : [{
+			            "system" : "http://terminology.hl7.org/CodeSystem/v2-0203",
+			            "code" : "SS",
+			            "display" : "Social Security Number"
+			          }],
+			          "text" : "Social Security Number"
+			        },
+			        "system" : "http://www.ssa.gov/",
+			        "value" : "999-34-2964"
+			      }],
+			      "name" : [{
+			        "extension" : [{
+			          "url" : "http://shinny.org/us/ny/hrsn/StructureDefinition/middle-name",
+			          "valueString" : "Bob"
+			        }],
+			        "family" : "Doe",
+			        "given" : ["Jon"]
+			      }],
+			      "telecom" : [{
+			        "system" : "phone",
+			        "value" : "555-120-6047",
+			        "use" : "home"
+			      }],
+			      "gender" : "male",
+			      "birthDate" : "1981-07-16",
+			      "address" : [{
+			        "text" : "115 Broadway Apt2 New York, NY 10032",
+			        "line" : ["115 Broadway Apt2"],
+			        "city" : "New York",
+			        "district" : "MANHATTAN",
+			        "state" : "NY",
+			        "postalCode" : "10032"
+			      }]
+			    },
+			    "request" : {
+			      "method" : "POST",
+			      "url" : "http://shinny.org/us/ny/hrsn/Patient/PatientExample"
+			    }
+			  }]
+			}';
+    v_payload_text				:= '<?xml version="1.0" encoding="UTF-8"?>
+		<ClinicalDocument xmlns="urn:hl7-org:v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:hl7-org:v3 CDA.xsd">
+		    <id root="2.16.840.1.113883.19.5.99999.1"/>
+		    <code code="34133-9" codeSystem="2.16.840.1.113883.6.1" displayName="Summary of episode note"/>
+		    <title>CCDA Sample</title>
+		    <effectiveTime value="20241016"/>
+		    <recordTarget>
+		        <patientRole>
+		            <id extension="12345" root="2.16.840.1.113883.19.5"/>
+		            <patient>
+		                <name>
+		                    <given>John</given>
+		                    <family>Doe</family>
+		                </name>
+		                <administrativeGenderCode code="M" codeSystem="2.16.840.1.113883.5.1"/>
+		                <birthTime value="19900101"/>
+		            </patient>
+		        </patientRole>
+		    </recordTarget>
+		    <author>
+		        <time value="20241016"/>
+		        <assignedAuthor>
+		            <id root="2.16.840.1.113883.19.5.99999.2"/>
+		            <assignedPerson>
+		                <name>
+		                    <given>Jane</given>
+		                    <family>Smith</family>
+		                </name>
+		            </assignedPerson>
+		        </assignedAuthor>
+		    </author>
+		</ClinicalDocument>
+		';
+    
+
+	PERFORM techbd_udi_ingress.register_interaction_ccda_request(
+        p_interaction_id           => v_interaction_id,
+        p_interaction_key          => '/ccda/Bundle',
+        p_nature                   => '{"nature":"Original CCDA Payload", "tenant_id":"QE-123456"}'::jsonb,
+        p_from_state               => 'NONE',
+	    p_to_state                 => 'CCDA_ACCEPT',
+        p_hub_nexus_interaction_id => v_hub_nexus_interaction_id,
+        p_payload                  => NULL,
+        p_payload_text             => v_payload_text,
+        p_rule_namespace           => NULL,
+        p_elaboration              => '{"key" : "elaboration"}'::jsonb,
+        p_content_type             => 'application/json',
+        p_state_transition_reason  => NULL,        
+        p_user_id	 			   => NULL,		
+		p_user_name				   => NULL,
+		p_user_session			   => NULL,
+		p_user_role				   => NULL,
+        p_created_by               => CURRENT_USER,
+        p_provenance               => 'CCDA',
+        p_hub_upsert_behavior      => true,
+        p_source_hub_interaction_id=> NULL,
+		p_client_ip_address		   => NULL,	
+		p_user_agent			   => NULL,	
+		p_origin				   => NULL,
+		p_source_type			   => 'CCDA',
+		p_group_hub_interaction_id => NULL,	
+		p_request_source		   => 'nexus'
+    );
+    
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id    = v_interaction_id
+                            AND hub_intr."key"                   = '/ccda/Bundle'
+                            AND hub_intr.provenance              = 'CCDA'
+                   ),
+            'CCDA - Successfully inserted into the table hub_interaction'
+        );
+        
+    /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+                             AND sat_intr.provenance               = 'CCDA'
+                    ),
+             'CCDA - Successfully inserted one record into the table sat_interaction_http_request with "Original CCDA Payload" as nature'
+         );
+        
+    /*Test 1 raw is inserted into sat_interaction_ccda_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_ccda_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
+							 AND sat_intr.uri                      = '/ccda/Bundle'
+                             AND sat_intr.provenance               = 'CCDA'
+                    ),
+             'CCDA - Successfully inserted one record into the table sat_interaction_ccda_request with "Original CCDA Payload" as nature'
+         );
+
+    /*Test one record is inserted into sat_interaction_user table*/
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                            WHERE sat_intr.hub_interaction_id	= v_interaction_id
+                            AND sat_intr.uri                    = '/ccda/Bundle'
+                            AND sat_intr.provenance				= 'CCDA'
+                   ),
+            'CCDA - Successfully inserted into the table sat_interaction_user'
+        );
+   
+    /*----------------------------------------------------------------------------*/
+	/* Second call to insert the FHIR bundle which is generated from CCDA json with interaction_key = '/Ccda'*/
+	v_interaction_id_2            := 'ccda-2-5-9a4f-5cc8-9c5d-b65245d90fb0';
+	PERFORM techbd_udi_ingress.register_interaction_ccda_request(
+        p_interaction_id           => v_interaction_id_2,
+        p_interaction_key          => '/ccda/Bundle',
+        p_nature                   => '{"nature":"CCDA Validation Result", "tenant_id":"QE-123456"}'::jsonb,
+        p_from_state               => 'CCDA_ACCEPT',
+	    p_to_state                 => 'VALIDATION_SUCCESS',
+        p_hub_nexus_interaction_id => v_hub_nexus_interaction_id,
+        p_payload                  => NULL,
+        p_payload_text             => v_payload_text,
+        p_rule_namespace           => NULL,
+        p_elaboration              => '{"key" : "elaboration"}'::jsonb,
+        p_content_type             => 'application/json',
+        p_state_transition_reason  => NULL,        
+        p_user_id	 			   => NULL,		
+		p_user_name				   => NULL,
+		p_user_session			   => NULL,
+		p_user_role				   => NULL,
+        p_created_by               => CURRENT_USER,
+        p_provenance               => 'CCDA',
+        p_hub_upsert_behavior      => true,
+        p_source_hub_interaction_id=> NULL,
+		p_client_ip_address		   => NULL,	
+		p_user_agent			   => NULL,	
+		p_origin				   => NULL,
+		p_source_type			   => 'CCDA',
+		p_group_hub_interaction_id => NULL,	
+		p_request_source		   => 'nexus'
+    );
+
+    RETURN NEXT ok(
+            EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
+                            WHERE hub_intr.hub_interaction_id     = v_interaction_id_2
+                            AND hub_intr."key"                    = '/ccda/Bundle'
+                            AND hub_intr.provenance               = 'CCDA'
+                   ),
+            'CCDA - Successfully inserted into the table hub_interaction'
+        );
+        
+    /*Test 1 raw is inserted into sat_interaction_http_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id_2
+                             AND sat_intr.provenance               = 'CCDA'
+                    ),
+             'CCDA - Successfully inserted one record into the table sat_interaction_http_request with "CCDA Validation Result" as nature'
+         );
+        
+    /*Test 1 raw is inserted into sat_interaction_ccda_request table*/
+    RETURN NEXT ok(
+             EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_ccda_request sat_intr
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id_2
+							 AND sat_intr.uri                      = '/ccda/Bundle'
+                             AND sat_intr.provenance               = 'CCDA'
+                    ),
+             'CCDA - Successfully inserted one record into the table sat_interaction_ccda_request with "CCDA Validation Result" as nature'
+         );
+
+   /*Test record is NOT inserted into sat_interaction_user table at second call*/
+   RETURN NEXT ok(
+            NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id_2
+	               AND sat_intr.uri                  = '/ccda/Bundle'
+				   AND sat_intr.provenance           = 'CCDA'),
+            'CSV - Success, Not inserted into the table sat_interaction_user while second FHIR call.'
+	);
+     
+	/*======================END of CCDA Testing==========================*/
+
+	/*===================================================================*/
+	/*Test the exception handling with Unique Constraint Violation*/
+       
+	PERFORM techbd_udi_ingress.register_interaction_ccda_request(
+        p_interaction_id           => v_interaction_id,
+        p_interaction_key          => '/ccda/Bundle',
+        p_nature                   => '{"nature":"Original CCDA Payload", "tenant_id":"QE-123456"}'::jsonb,
+        p_from_state               => 'NONE',
+	    p_to_state                 => 'CCDA_ACCEPT',
+        p_hub_nexus_interaction_id => v_hub_nexus_interaction_id,
+        p_payload                  => NULL,
+        p_payload_text             => v_payload_text,
+        p_rule_namespace           => NULL,
+        p_elaboration              => '{"key" : "elaboration"}'::jsonb,
+        p_content_type             => 'application/json',
+        p_state_transition_reason  => NULL,        
+        p_user_id	 			   => NULL,		
+		p_user_name				   => NULL,
+		p_user_session			   => NULL,
+		p_user_role				   => NULL,
+        p_created_by               => CURRENT_USER,
+        p_provenance               => 'CCDA',
+        p_hub_upsert_behavior      => true,
+        p_source_hub_interaction_id=> NULL,
+		p_client_ip_address		   => NULL,	
+		p_user_agent			   => NULL,	
+		p_origin				   => NULL,
+		p_source_type			   => 'CCDA',
+		p_group_hub_interaction_id => NULL,	
+		p_request_source		   => 'nexus'
+    );
+   
+    RETURN NEXT ok(
+    	EXISTS(SELECT 1 
+		    FROM techbd_udi_ingress.hub_diagnostic hub_exp
+		    WHERE hub_exp."key"      = '/ccda/Bundle'
+		    AND hub_exp.created_by   = CURRENT_USER
+		    AND hub_exp.provenance   = 'CCDA' LIMIT 1
+		), 
+		'Successfully catched the exception and inserted into the table hub_diagnostic');
+    
+    SELECT hub_exp.hub_diagnostic_id INTO v_hub_diagnostic_id
+    FROM techbd_udi_ingress.hub_diagnostic hub_exp
+    WHERE hub_exp."key"      = '/ccda/Bundle'
+    AND hub_exp.created_by   = CURRENT_USER
+    AND hub_exp.provenance   = 'CCDA' LIMIT 1;
+    
+    IF v_hub_diagnostic_id != '' THEN 
+	    RETURN NEXT ok(
+	            EXISTS((SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_exception sat_exp
+	                            WHERE sat_exp.hub_diagnostic_id  = v_hub_diagnostic_id--v_hub_diagnostic_row.hub_diagnostic_id                    
+	                            AND sat_exp.created_by           = CURRENT_USER
+	                            AND sat_exp.provenance           = 'CCDA'
+	                   ) UNION  
+	                   (SELECT 1 FROM techbd_udi_ingress.sat_diagnostic_log sat_log
+	                            WHERE sat_log.hub_diagnostic_id  = v_hub_diagnostic_id--v_hub_diagnostic_row.hub_diagnostic_id                    
+	                            AND sat_log.created_by           = CURRENT_USER
+	                            AND sat_log.provenance           = 'CCDA')),
+	            'Successfully inserted exception details into the table sat_diagnostic_exception or sat_diagnostic_log'
+	        ); 
+    END IF;
+END;
+$function$
+;
 
 
 DROP FUNCTION IF EXISTS techbd_udi_assurance.test_json_action_rule_upsert(text);
@@ -1308,7 +2168,7 @@ BEGIN
 	*/
 
     v_namespace			:= 'namespace_group_1';
-    v_json_path			:= '$.response.responseBody.OperationOutcome.validationResults[*].operationOutcome.issue[*].location[*] ? (@ == "Bundle.entry[0].resource/*Patient/PatientExample*/.extension[2].value.ofType(code)")';
+    v_json_path			:= '$.OperationOutcome.validationResults[*].operationOutcome.issue[*].location[*] ? (@ == "Bundle.entry[0].resource/*Patient/PatientExample*/.extension[2].value.ofType(code)")';
     v_action			:= 'reject';
     v_priority			:= 1;
     v_updated_by		:= CURRENT_USER;
