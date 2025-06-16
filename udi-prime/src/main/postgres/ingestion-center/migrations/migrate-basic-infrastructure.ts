@@ -883,7 +883,7 @@ const migrateSP = pgSQLa.storedProcedure(
       VALUES(
         '36eb7e17-107a-44ad-834e-9699b435708f',
         'NYeC Rule',
-        '$.response.responseBody.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*Meta.lastUpdated: minimum required = 1" && @.location[*] like_regex ".*Bundle.meta" && @.severity like_regex ".*error")',
+        '$.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*Meta.lastUpdated: minimum required = 1" && @.location[*] like_regex ".*Bundle.meta" && @.severity like_regex ".*error")',
         'reject',
         NULL,
         NULL,
@@ -916,7 +916,7 @@ const migrateSP = pgSQLa.storedProcedure(
       VALUES(
         '189b6342-3797-459f-9a4a-b8a71015f082',
         'NYeC Rule',
-        '$.response.responseBody.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*lastUpdated.*" && @.severity like_regex ".*fatal.*")',
+        '$.OperationOutcome.validationResults[*].operationOutcome.issue[*] ? (@.diagnostics like_regex ".*lastUpdated.*" && @.severity like_regex ".*fatal.*")',
         'reject',
         NULL,
         NULL,
@@ -949,7 +949,7 @@ const migrateSP = pgSQLa.storedProcedure(
       VALUES (
         'eeeb6342-3797-459f-9a4a-b8a71015f082',
         'NYeC Rule',
-        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1000: Invalid or Partial JSON.*")',
+        '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1000: Invalid or Partial JSON.*")',
         'discard',
         NULL,
         NULL,
@@ -983,7 +983,7 @@ const migrateSP = pgSQLa.storedProcedure(
       VALUES (
         'ffeb6342-3797-459f-9a4a-b8a71015f082',
         'NYeC Rule',
-        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1001*")',
+        '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1001*")',
         'discard',
         NULL,
         NULL,
@@ -1017,7 +1017,7 @@ const migrateSP = pgSQLa.storedProcedure(
       VALUES (
         'ggeb6342-3797-459f-9a4a-b8a71015f082',
         'NYeC Rule',
-        '$.response.responseBody.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1002*")',
+        '$.OperationOutcome.validationResults[*].issues[*].message ? (@ like_regex ".*TECHBD-1002*")',
         'discard',
         NULL,
         NULL,
@@ -1032,7 +1032,9 @@ const migrateSP = pgSQLa.storedProcedure(
       )
       ON CONFLICT (action_rule_id) DO NOTHING;
 
-
+      UPDATE techbd_udi_ingress.json_action_rule
+      SET json_path = regexp_replace(json_path, '^\$\.response\.responseBody', '$', 'g')
+      WHERE json_path LIKE '$.response.responseBody%';
 
       CREATE INDEX IF NOT exists json_action_rule_action_idx ON techbd_udi_ingress.json_action_rule USING btree (action);
       CREATE INDEX IF NOT EXISTS json_action_rule_json_path_idx ON techbd_udi_ingress.json_action_rule USING btree (json_path);
