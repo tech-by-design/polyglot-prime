@@ -198,7 +198,7 @@ public class FHIRService {
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
 			final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-			if ("false".equals(healthCheck)) {
+			if (healthCheck == null || "false".equals(healthCheck)) {
 				registerOriginalPayload(jooqCfg, headerParameters, requestParameters,
 						payload, interactionId, groupInteractionId, masterInteractionId,
 						sourceType, requestUriToBeOverriden, coRrelationId);
@@ -214,7 +214,7 @@ public class FHIRService {
                 final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
                         sourceType);
                 final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
-				if ("false".equals(healthCheck)) {
+				if (healthCheck == null || "false".equals(healthCheck)) {
 					payloadWithDisposition = registerValidationResults(jooqCfg, headerParameters, requestParameters,
 							result, interactionId, groupInteractionId, masterInteractionId,
 							sourceType, requestUriToBeOverriden);
