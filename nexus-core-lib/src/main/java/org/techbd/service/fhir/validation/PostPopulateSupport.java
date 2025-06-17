@@ -19,16 +19,16 @@ public class PostPopulateSupport {
         this.tracer = tracer;
     }
 
-    public void update(ValidationSupportChain validationSupportChain) {
+    public void update(ValidationSupportChain validationSupportChain, String profileBaseUrl) {
         Span span = tracer.spanBuilder("PostPopulateSupport.update").startSpan();
         try {
-            addObservationLoincCodes(validationSupportChain);
+            addObservationLoincCodes(validationSupportChain,profileBaseUrl);
         } finally {
             span.end();
         }
     }
 
-    private void addObservationLoincCodes(ValidationSupportChain validationSupportChain) {
+    private void addObservationLoincCodes(ValidationSupportChain validationSupportChain,String profileBaseUrl) {
         LOG.info("PrePopulateSupport:addObservationLoincCodes  -BEGIN");
         Span span = tracer.spanBuilder("PostPopulateSupport.addObservationLoincCodes").startSpan();
         try {
@@ -43,7 +43,7 @@ public class PostPopulateSupport {
                 loinc_valueSet.getCompose().addInclude(new ValueSet.ConceptSetComponent()
                         .setConcept(ConceptReaderUtils
                                 .getValueSetConcepts_wCode(referenceCodesPath.concat("custom-system-code.psv")))
-                        .setSystem("http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire"));
+                        .setSystem(profileBaseUrl + "/CodeSystem/NYS-HRSN-Questionnaire"));
             } finally {
                 loinc_valueSet = null;
             }
