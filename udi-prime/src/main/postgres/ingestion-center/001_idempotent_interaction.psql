@@ -5544,7 +5544,7 @@ BEGIN
 			'Input parameters into register_interaction_fhir_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	/*------------------------------*/  
 
-	IF v_nature_denorm NOT IN('Original FHIR payload', 'techByDesignDisposition', 'Forward HTTP Request', 'Forwarded HTTP Response Error') THEN
+	IF v_nature_denorm NOT IN('Original FHIR payload', 'techByDesignDisposition', 'Forward HTTP Request', 'Forwarded HTTP Response', 'Forwarded HTTP Response Error') THEN
 		RETURN jsonb_build_object('error', 'Not a valid FHIR nature',
 								  'payload', p_payload,
 								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -5717,7 +5717,7 @@ BEGIN
 	    END IF;
 	   
 		v_payload := p_payload;
-		IF (v_nature_denorm = 'techByDesignDisposition') THEN	
+		IF (v_nature_denorm = 'techByDesignDisposition' AND trim(p_interaction_key) IN ('/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/')) THEN	
 				v_disposition_json := techbd_udi_ingress.process_json_action_rules(
 					p_payload,
 					p_rule_namespace,
@@ -5744,7 +5744,7 @@ BEGIN
 		END IF;
 
 	    --2.1) Call the function with the defined parameters to upsert interaction FHIR request info.
-	   	IF trim(p_interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/', '/api/expect/fhir/bundle')	THEN	   		
+--	   	IF trim(p_interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/', '/api/expect/fhir/bundle')	THEN	   		
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
 	   			hub_interaction_id 			=> p_interaction_id,
 		        tenant_id 					=> v_tenant_id_denorm,
@@ -5776,10 +5776,10 @@ BEGIN
            	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
        	   	/*------------------------------*/															
-	    END IF;	
+--	    END IF;	
 	    
 	
-		v_return := jsonb_build_object('payload', v_payload,
+		v_return := jsonb_build_object('payload', CASE WHEN v_nature_denorm = 'techByDesignDisposition' THEN v_payload ELSE NULL END,
 									 'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 									 'interaction_id', p_interaction_id);
 	
