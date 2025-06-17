@@ -340,29 +340,7 @@
                                         + &quot;  \&quot;message\&quot;: \&quot;An unexpected system error occurred.\&quot;\n&quot;
                                         + &quot;}&quot;)))
         })
-        @ResponseBody</pre></td></tr></table>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
-<td style="text-align: left;">org/techbd/controller/http/hub/prime/api/CsvController.java</td>
-<td>76</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/controller/http/hub/prime/api/CsvController.java</td>
-<td>108</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>validateTenantId(tenantId);
-    Map&lt;String, String&gt; headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
-        null,
-        null, null, null, null,
-        null);
-    Map&lt;String, String&gt; requestParameters = new HashMap&lt;&gt;();    
-    CoreFHIRUtil.buildRequestParametersMap(requestParameters,null,
-        null, null, null, null, request.getRequestURI());
-    requestParameters.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
-    requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());</pre></td></tr></table></section></section>
+        @ResponseBody</pre></td></tr></table></section></section>
         </main>
       </div>
     </div>
