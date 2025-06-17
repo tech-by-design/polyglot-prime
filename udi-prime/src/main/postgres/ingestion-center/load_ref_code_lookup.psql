@@ -1903,6 +1903,26 @@ WHERE code_type = 'ethnicity' AND (description IS NULL OR description = '')
     'UNK',     -- Unknown
     'ASKU'     -- Asked but no answer
   );
+  
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET 
+    system_value = 'http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire',
+    display_string = 'NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool'
+WHERE code_type = 'screening_code'
+  AND code = 'NYSAHCHRSN';
+
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+('0080d144-b668-487b-b5bd-d39401951755','screening_code','NYS-AHC-HRSN','NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool','http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire',NULL,'1.5.2',NOW(),'neondb_owner','TechBD')
+ ON CONFLICT DO NOTHING;
+
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+('5f3037d0-0ea8-4423-891c-197db818503e','screening_code','NA','not applicable','http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire',NULL,'1.5.2',NOW(),'neondb_owner','TechBD')
+ ON CONFLICT DO NOTHING;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET 
+    system_value = 'http://terminology.hl7.org/CodeSystem/organization-type'
+WHERE code_type = 'organization_type' and system_value = 'https://hl7.org/fhir/R4/codesystem-organization-type.html' ;
 
 /*
 -- Step 1: Create TEMP staging table

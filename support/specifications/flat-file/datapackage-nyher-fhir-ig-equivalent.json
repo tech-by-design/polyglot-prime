@@ -194,15 +194,16 @@
           {"name": "ENCOUNTER_ID", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').id", "constraints": {"required": true, "pattern": "[A-Za-z0-9\\-\\.\\_]{1,64}"}},
           {"name": "ENCOUNTER_ID_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Encounter').identifier.system", "constraints": {"required": true, "pattern": "\\S*"}},
           {"name": "SCREENING_IDENTIFIER", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation').id", "constraints": {"required": true, "unique": true, "pattern": "[A-Za-z0-9\\-\\.\\_]{1,64}"}},
-          {"name": "SCREENING_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code", "constraints": {"required": true, "enum": ["96777-8", "97023-6", "nysahchrsn", "nys-ahc-hrsn"]}},            
+          {"name": "SCREENING_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.code", "constraints": {"required": true, "enum": ["96777-8", "97023-6", "nysahchrsn", "nys-ahc-hrsn", "na"]}},            
           {"name": "SCREENING_CODE_DESCRIPTION", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.display", "type": "string", "constraints": {"required": true, "enum": [ 
           "accountable health communities (ahc) health-related social needs screening (hrsn) tool",
           "accountable health communities (ahc) health-related social needs (hrsn) supplemental questions",
           "nys accountable health communities (ahc) health-related social needs (hrsn) screening tool",
-          "nys accountable health communities (ahc) health-related social needs screening (hrsn) tool"            
+          "nys accountable health communities (ahc) health-related social needs screening (hrsn) tool",
+          "not applicable"            
           ]
           }},                    
-          {"name": "SCREENING_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.system", "constraints": {"required": true, "enum": ["http://loinc.org","https://shinny.org/us/ny/hrsn/index.html","http://test.shinny.org/us/ny/hrsn/codesystem/nys-hrsn-questionnaire","http://shinny.org/us/ny/hrsn/codesystem/nys-hrsn-questionnaire"]}},           
+          {"name": "SCREENING_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and hasMember.exists()).code.coding.system", "constraints": {"required": true, "enum": ["http://loinc.org","https://shinny.org/us/ny/hrsn/codesystem-nys-hrsn-questionnaire.html","http://shinny.org/us/ny/hrsn/codesystem/nys-hrsn-questionnaire"]}},           
           {"name": "QUESTION_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code", "constraints": {"required": true,"enum": [ "71802-3", "96778-6", "88122-7", "88123-5", "93030-5", 
           "96779-4", "95618-5", "95617-7", "95616-9", "95615-1",
           "95614-4", "76513-1", "96780-2", "96781-0", "93159-2",
