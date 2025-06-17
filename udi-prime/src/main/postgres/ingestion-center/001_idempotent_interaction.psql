@@ -2086,7 +2086,15 @@ AS SELECT sat_interaction_fhir_request_id,
     payload,
     patient_mrn,
     concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
-    (SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ') FROM jsonb_each_text((payload->>'responseBody')::jsonb) AS json_data(key, value)) AS response_body_details,
+    CASE
+        WHEN payload->>'responseBody' IS NOT NULL
+            AND payload->>'responseBody' <> ''  THEN
+            (
+            SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ')
+            FROM jsonb_each_text((payload->>'responseBody')::jsonb) AS json_data(key, value)
+            )
+        ELSE NULL
+    END AS response_body_details,
     case 
     	when (source_type = 'CSV') then 'CSV'
         WHEN (source_type = 'CCDA') then 'CCDA'
@@ -4087,8 +4095,7 @@ AS SELECT sat_interaction_fhir_request_id,
     patient_id,
     payload,
     patient_mrn,
-    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
-    (SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ') FROM jsonb_each_text((payload->>'responseBody')::jsonb) AS json_data(key, value)) AS response_body_details,  
+    concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,    
     source_hub_interaction_id
    FROM techbd_udi_ingress.sat_interaction_fhir_request intr_hreq
 WHERE to_state = 'FAIL'::text AND source_type = 'CSV';
