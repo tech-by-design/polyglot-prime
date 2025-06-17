@@ -198,9 +198,11 @@ public class FHIRService {
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
 			final var dslContext = MirthJooqConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-			registerOriginalPayload(jooqCfg, headerParameters, requestParameters,
+			if ("false".equals(healthCheck)) {
+				registerOriginalPayload(jooqCfg, headerParameters, requestParameters,
 						payload, interactionId, groupInteractionId, masterInteractionId,
 						sourceType, requestUriToBeOverriden, coRrelationId);
+			}
 			Map<String, Object> payloadWithDisposition = null;			
             try {
                 validateJson(payload, interactionId);
@@ -212,9 +214,11 @@ public class FHIRService {
                 final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
                         sourceType);
                 final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
-				payloadWithDisposition = registerValidationResults(jooqCfg, headerParameters, requestParameters,
-						result, interactionId, groupInteractionId, masterInteractionId,
-						sourceType, requestUriToBeOverriden);	
+				if ("false".equals(healthCheck)) {
+					payloadWithDisposition = registerValidationResults(jooqCfg, headerParameters, requestParameters,
+							result, interactionId, groupInteractionId, masterInteractionId,
+							sourceType, requestUriToBeOverriden);
+				}
                 if (StringUtils.isNotEmpty(requestUri)
                         && (requestUri.equals("/Bundle/$validate") || requestUri.equals("/Bundle/$validate/"))) {
                     return result;
