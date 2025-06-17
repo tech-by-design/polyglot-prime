@@ -108,7 +108,7 @@ public class CsvController {
     CoreFHIRUtil.validateBaseFHIRProfileUrl(coreAppConfig, baseFHIRURL);
     Map<String, String> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
         null,
-        null, null, null, null,
+        null, validationSeverityLevel, null, null,
         null);
     Map<String, String> requestParameters = new HashMap<>();    
     CoreFHIRUtil.buildRequestParametersMap(requestParameters,null,

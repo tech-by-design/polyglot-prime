@@ -213,7 +213,7 @@ public class InteractionsFilter extends OncePerRequestFilter {
         setActiveInteraction(mutatableReq, rre);
         final var provenance = "%s.doFilterInternal".formatted(InteractionsFilter.class.getName());
 
-        if (persistInteractionDB && !requestURI.equals("/Bundle") && !requestURI.equals("/Bundle/")
+        if (persistInteractionDB && !requestURI.startsWith("/Bundle") && !requestURI.startsWith("/Bundle/")
         && !requestURI.equals("/Hl7/v2")  && !requestURI.equals("/Hl7/v2/")
         && !requestURI.startsWith("/flatfile/csv")  && !requestURI.startsWith("/flatfile/csv/")
         ) {
