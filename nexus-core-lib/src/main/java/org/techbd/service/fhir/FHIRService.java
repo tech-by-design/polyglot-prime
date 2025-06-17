@@ -345,11 +345,14 @@ public class FHIRService {
 						"message", ex.getErrorCode() + ": " + ex.getMessage(),
 						"severity", "FATAL")));
 
-		return Map.of(
-				"resourceType", "OperationOutcome",
+		final var immediateResult = Map.of(
+				"resourceType", "OperationOutcome", 
 				"bundleSessionId", interactionId,
 				"validationResults", List.of(validationResult)
 		);
+
+		final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
+		return result;
 	}
 
 	private void addObservabilityHeadersToResponse(final HttpServletRequest request, final HttpServletResponse response) {
