@@ -327,7 +327,7 @@ public class OrchestrationEngine {
 
                         FhirBundleValidator bundleValidator = FhirBundleValidator.builder()
                                 .fhirContext(FhirContext.forR4())
-                                .fhirValidator(initializeFhirValidator(packagePath, basePackages)) // Pass igPackageMap
+                                .fhirValidator(initializeFhirValidator(packagePath, basePackages,profileBaseUrl)) // Pass igPackageMap
                                                                                                    // directly
                                 .baseFHIRUrl(profileBaseUrl)
                                 .packagePath(packagePath)
@@ -343,7 +343,7 @@ public class OrchestrationEngine {
             }
         }
 
-        public FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages) {
+        public FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages, String profileBaseUrl) {
             Span span = tracer.spanBuilder("OrchestrationEngine.initializeFhirValidator").startSpan();
             try {
                 LOG.info("Initializing FHIR Validator for package: {} inteactionId :{} ", shinNyPackagePath,
@@ -397,7 +397,7 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
                 prePopulatedValidationSupport = null;
                 final var postPopulateSupport = new PostPopulateSupport(tracer);
-                postPopulateSupport.update(supportChain);
+                postPopulateSupport.update(supportChain,profileBaseUrl);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
                 
