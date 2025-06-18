@@ -67,8 +67,8 @@ public abstract class BaseIgValidationTest {
         // Shinny version 1.2.3
         Map<String, String> shinny = new HashMap<>();
         shinny.put("profile-base-url", "http://shinny.org/us/ny/hrsn");
-        shinny.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.4.5");
-        shinny.put("ig-version", "1.4.5");
+        shinny.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.5.2");
+        shinny.put("ig-version", "1.5.2");
         shinnyPackages.put("shinny", shinny);
 
         // Test Shinny version 1.5.2
