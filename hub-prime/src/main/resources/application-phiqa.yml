@@ -40,7 +40,7 @@ org:
         hub:
           prime:
             defaultDatalakeApiUrl: https://qa.hrsn.nyehealth.org/HRSNBundle
-            baseFHIRURL: http://test.shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
+            baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
             structureDefinitionsUrls:
               bundle: /StructureDefinition/SHINNYBundleProfile
               patient: /StructureDefinition/shinny-patient
