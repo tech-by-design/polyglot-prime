@@ -28,7 +28,7 @@ import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.Interactions.RequestResponseEncountered;
 import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.udi.UdiPrimeJpaConfig;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.util.StandardCharset;
@@ -217,23 +217,23 @@ public class InteractionsFilter extends OncePerRequestFilter {
         && !requestURI.equals("/Hl7/v2")  && !requestURI.equals("/Hl7/v2/")
         && !requestURI.startsWith("/flatfile/csv")  && !requestURI.startsWith("/flatfile/csv/")
         ) {
-            final var rihr = new RegisterInteractionHttpRequest();
+            final var rihr = new RegisterUserInteraction();
             try {
                 LOG.info("REGISTER State None : BEGIN for  interaction id : {} tenant id : {}",
                 rre.interactionId().toString(), rre.tenant());
                 final var tenant = rre.tenant();
                 final var dsl = udiPrimeJpaConfig.dsl();
-                rihr.setInteractionId(rre.interactionId().toString());
-                rihr.setNature((JsonNode)Configuration.objectMapper.valueToTree(
+                rihr.setPInteractionId(rre.interactionId().toString());
+                rihr.setPNature((JsonNode)Configuration.objectMapper.valueToTree(
                         Map.of("nature", RequestResponseEncountered.class.getName(), "tenant_id",
                                 tenant != null ? tenant.tenantId() != null ? tenant.tenantId() : "N/A" : "N/A")));
-                rihr.setContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
-                rihr.setInteractionKey(requestURI);
-                rihr.setSourceType(SourceType.FHIR.name());
-                rihr.setPayload((JsonNode) Configuration.objectMapper.valueToTree(rre));
-                rihr.setCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
-                rihr.setCreatedBy(InteractionsFilter.class.getName());
-                rihr.setProvenance(provenance);
+                rihr.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
+                rihr.setPInteractionKey(requestURI);
+                rihr.setPSourceType(SourceType.FHIR.name());
+                rihr.setPPayload((JsonNode) Configuration.objectMapper.valueToTree(rre));
+               //rihr.setPCreatedAt(createdAt); // don't let DB set this, since it might be stored out of order
+                rihr.setPCreatedBy(InteractionsFilter.class.getName());
+                rihr.setPProvenance(provenance);
                 // User details
                 if (saveUserDataToInteractions) {
                     var curUserName = "API_USER";
@@ -254,10 +254,10 @@ public class InteractionsFilter extends OncePerRequestFilter {
                             userRole = "DEFAULT_ROLE"; // TODO: Remove this when role is implemented as part of Auth
                         }
                     }
-                    rihr.setUserName(curUserName);
-                    rihr.setUserId(gitHubLoginId);
-                    rihr.setUserSession(sessionId);
-                    rihr.setUserRole(userRole);
+                    rihr.setPUserName(curUserName);
+                    rihr.setPUserId(gitHubLoginId);
+                    rihr.setPUserSession(sessionId);
+                    rihr.setPUserRole(userRole);
                 } else {
                     LOG.info("User details are not saved with Interaction as saveUserDataToInteractions: "
                             + saveUserDataToInteractions);
