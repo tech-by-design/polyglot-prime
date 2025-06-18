@@ -11,6 +11,8 @@
   <xsl:param name="patientCIN"/>
   <xsl:param name="organizationNPI"/>
   <xsl:param name="organizationTIN"/>
+  <xsl:param name="encounterType"/>
+  <xsl:param name="facilityID"/>
   <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id[not(@assigningAuthorityName)]/@extension"/>
   <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family, ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given)"/>
   <xsl:variable name="bundleTimestamp" select="/ccda:ClinicalDocument/ccda:effectiveTime/@value"/>
@@ -48,6 +50,43 @@
   <xsl:variable name="questionnaireMetaProfileUrlFull" select="concat($baseFhirUrl, $questionnaireMetaProfileUrl)"/>
   <xsl:variable name="questionnaireResponseMetaProfileUrlFull" select="concat($baseFhirUrl, $questionnaireResponseMetaProfileUrl)"/>
   <xsl:variable name="practitionerMetaProfileUrlFull" select="concat($baseFhirUrl, $practitionerMetaProfileUrl)"/>
+
+  <xsl:variable name="encounterEffectiveTime">
+    <xsl:choose>
+      <!-- First, try encompassingEncounter -->
+      <xsl:when test="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime">
+        <xsl:choose>
+          <xsl:when test="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime/@value">
+            <xsl:value-of select="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime/@value"/>
+          </xsl:when>
+          <xsl:when test="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime/ccda:low/@value">
+            <xsl:value-of select="/ccda:ClinicalDocument/ccda:componentOf/ccda:encompassingEncounter/ccda:effectiveTime/ccda:low/@value"/>
+          </xsl:when>
+        </xsl:choose>
+      </xsl:when>
+
+      <!-- Fallback to first encounter entry -->
+      <xsl:when test="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:effectiveTime">
+        <xsl:choose>
+          <xsl:when test="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:effectiveTime/@value">
+            <xsl:value-of select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:effectiveTime/@value"/>
+          </xsl:when>
+          <xsl:when test="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:effectiveTime/ccda:low/@value">
+            <xsl:value-of select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[1]/ccda:encounter/ccda:effectiveTime/ccda:low/@value"/>
+          </xsl:when>
+        </xsl:choose>
+      </xsl:when>
+    </xsl:choose>
+  </xsl:variable>
+
+  <!-- Format the encounterEffectiveTime -->
+  <xsl:variable name="encounterEffTimeValue">
+    <xsl:call-template name="formatDateTime">
+      <xsl:with-param name="dateTime" select="$encounterEffectiveTime"/>
+    </xsl:call-template>
+  </xsl:variable>
+  <!-- Remove unwanted space,if any -->
+  <xsl:variable name="encounterEffectiveTimeValue" select="normalize-space($encounterEffTimeValue)"/>
 
   <xsl:template match="/">
   {
@@ -432,7 +471,7 @@
                 }],
                 "text": "Medical Record Number"
               },
-              "system": "http://www.scn.gov/facility/<xsl:value-of select="$mrnId"/>",
+              "system": "http://www.scn.gov/facility/<xsl:value-of select="$facilityID"/>",
               "value": "<xsl:value-of select="$mrnId"/>"
               <xsl:if test="string($organizationResourceId)">
                 , "assigner": {
@@ -622,19 +661,25 @@
         "status": "<xsl:call-template name='mapEncounterStatus'>
                             <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
                         </xsl:call-template>",
-        <xsl:if test="string(ccda:code/ccda:translation/@code) or string(ccda:code/ccda:translation/@displayName)">
-        "type": [
-          {
-            "coding": [
-              {
-                "system": "http://snomed.info/sct",
-                "code": "<xsl:value-of select="ccda:code/ccda:translation/@code"/>",
-                "display": "<xsl:value-of select="ccda:code/ccda:translation/@displayName"/>"
-              }
-            ],            
-            "text": "<xsl:value-of select="ccda:code/ccda:translation/@displayName"/>"
-          }
-        ],
+        <xsl:if test="string($encounterType)">
+          <xsl:variable name="encounterTypeDisplay">
+            <xsl:call-template name="getEncounterTypeDisplay">
+              <xsl:with-param name="encounterType" select="$encounterType"/>
+            </xsl:call-template>
+          </xsl:variable>
+
+          "type": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "<xsl:value-of select="$encounterType"/>",
+                  "display": "<xsl:value-of select="$encounterTypeDisplay"/>"
+                }
+              ],
+              "text": "<xsl:value-of select="$encounterTypeDisplay"/>"
+            }
+          ],
         </xsl:if>
         "class": {
           "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
@@ -1021,7 +1066,9 @@
             <xsl:otherwise>
               "valueCodeableConcept" : {
                 "coding" : [{
-                  "system" : "http://loinc.org",
+                  "system" : "<xsl:call-template name="mapCodeSystem">
+                                <xsl:with-param name="oid" select="ccda:value/@codeSystem"/>
+                              </xsl:call-template>",
                   "code" : "<xsl:value-of select='ccda:value/@code'/>",
                   "display" : "<xsl:value-of select='ccda:value/@displayName'/>"
                 }]
@@ -1032,18 +1079,21 @@
             "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
             "display" : "<xsl:value-of select="$patientResourceName"/>"
           }
-          <xsl:if test="ccda:effectiveTime/@value or $currentTimestamp">
+          <xsl:if test="ccda:effectiveTime/@value or $encounterEffectiveTimeValue or $currentTimestamp">
             , "effectiveDateTime": "<xsl:choose>
                                       <xsl:when test="ccda:effectiveTime/@value">
                                           <xsl:call-template name="formatDateTime">
                                               <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
                                           </xsl:call-template>
                                       </xsl:when>
+                                      <xsl:when test="$encounterEffectiveTimeValue">
+                                          <xsl:value-of select="$encounterEffectiveTimeValue"/>
+                                      </xsl:when>
                                       <xsl:otherwise>
                                           <xsl:value-of select="$currentTimestamp"/>
                                       </xsl:otherwise>
                                   </xsl:choose>"
-          </xsl:if>       
+          </xsl:if>     
         },
         "request" : {
           "method" : "POST",
@@ -1202,12 +1252,15 @@
                   "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
                 }
               </xsl:if>
-              <xsl:if test="ccda:observation/ccda:effectiveTime/@value or $currentTimestamp">
+              <xsl:if test="ccda:observation/ccda:effectiveTime/@value or $encounterEffectiveTimeValue or $currentTimestamp">
                 , "effectiveDateTime": "<xsl:choose>
                                           <xsl:when test="ccda:observation/ccda:effectiveTime/@value">
                                               <xsl:call-template name="formatDateTime">
                                                   <xsl:with-param name="dateTime" select="ccda:observation/ccda:effectiveTime/@value"/>
                                               </xsl:call-template>
+                                          </xsl:when>
+                                          <xsl:when test="$encounterEffectiveTimeValue">
+                                              <xsl:value-of select="$encounterEffectiveTimeValue"/>
                                           </xsl:when>
                                           <xsl:otherwise>
                                               <xsl:value-of select="$currentTimestamp"/>
@@ -1386,6 +1439,37 @@
     </xsl:choose>
 </xsl:template>
 
+<xsl:template name="mapCodeSystem">
+  <xsl:param name="oid"/>
+  <xsl:choose>
+    <!-- SNOMED CT -->
+    <xsl:when test="$oid = '2.16.840.1.113883.6.96'">
+      <xsl:text>http://snomed.info/sct</xsl:text>
+    </xsl:when>
+    <!-- LOINC -->
+    <xsl:when test="$oid = '2.16.840.1.113883.6.1'">
+      <xsl:text>http://loinc.org</xsl:text>
+    </xsl:when>
+    <!-- CPT -->
+    <xsl:when test="$oid = '2.16.840.1.113883.6.12'">
+      <xsl:text>http://www.ama-assn.org/go/cpt</xsl:text>
+    </xsl:when>
+    <!-- HCPCS -->
+    <!-- <xsl:when test="$oid = '2.16.840.1.113883.6.285'">
+      <xsl:text>http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets</xsl:text> 
+    </xsl:when> -->
+    <!-- ICD-10-CM -->
+    <xsl:when test="$oid = '2.16.840.1.113883.6.90'">
+      <xsl:text>http://hl7.org/fhir/sid/icd-10-cm</xsl:text>
+    </xsl:when>
+    <!-- Default: urn:oid fallback -->
+    <xsl:otherwise>
+      <xsl:text>urn:oid:</xsl:text>
+      <xsl:value-of select="$oid"/>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
 <xsl:template name="mapQuestionnaireStatus">
     <xsl:param name="statusCode"/>
     <xsl:choose>
@@ -1550,5 +1634,14 @@
           }
         </xsl:if>
     }
+</xsl:template>
+
+<xsl:template name="getEncounterTypeDisplay">
+  <xsl:param name="encounterType"/>
+  <xsl:choose>
+    <xsl:when test="$encounterType = '405672008'">Direct questioning (procedure)</xsl:when>
+    <xsl:when test="$encounterType = '23918007'">History taking, self-administered, by computer terminal</xsl:when>
+    <xsl:otherwise/>
+  </xsl:choose>
 </xsl:template>
 </xsl:stylesheet>
