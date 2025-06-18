@@ -27,123 +27,68 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
         @Test
         @DisplayName("Validate SHIN-NY IG AHCHRSN QuestionnaireResponse ExampleFile")
         void testValidateShinnyIG_AHCHRSNQuestionnaireResponseExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
+            validateFile("shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
         }
 
         @Test
         @DisplayName("Validate SHIN-NY IG Patient Negative Consent ExampleFile")
         void testValidateShinnyIG_PatientNegativeConsentExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-PatientNegativeConsent.json");
+            validateFile("shinny-examples/Bundle-PatientNegativeConsent.json");
         }
 
         @Test
         @DisplayName("Validate SHIN-NY IG AHCHRSN ScreeningResponse ExampleFile")
         void testValidateShinnyIG_AHCHRSNScreeningResponseExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json");
+            validateFile("shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json");
         }
 
         @Test
         @DisplayName("Validate SHIN-NY IG NY ScreeningResponse ExampleFile")
         void testValidateShinnyIG_NYScreeningResponseExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-NYScreeningResponseExample.json");
+            validateFile("shinny-examples/Bundle-NYScreeningResponseExample.json");
+        }
+
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse Unknown1‑8 ExampleFile")
+        void testValidateShinnyIG_NYScreeningResponseExampleUnknown1to8() throws IOException {
+            validateFile("shinny-examples/Bundle-NYScreeningResponseExampleUnknown1to8.json");
+        }
+
+        @Test
+        @DisplayName("Validate SHIN-NY IG NY ScreeningResponse Declined9‑12 ExampleFile")
+        void testValidateShinnyIG_NYScreeningResponseExampleDeclined9to12() throws IOException {
+            validateFile("shinny-examples/Bundle-NYScreeningResponseExampleDeclined9to12.json");
         }
 
         @Test
         @DisplayName("Validate SHIN-NY IG Food Insecurity Assessment ExampleFile")
         void testValidateShinnyIG_FoodInsecurityAssessmentExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-ObservationAssessmentFoodInsecurityExample.json");
+            validateFile("shinny-examples/Bundle-ObservationAssessmentFoodInsecurityExample.json");
         }
 
         @Test
         @DisplayName("Validate SHIN-NY IG ServiceRequest ExampleFile")
         void testValidateShinnyIG_ServiceRequestExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-ServiceRequestExample.json");
+            validateFile("shinny-examples/Bundle-ServiceRequestExample.json");
         }
 
         @Test
         @DisplayName("Validate SHIN-NY IG Task Completed ExampleFile")
         void testValidateShinnyIG_TaskCompletedExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-TaskCompletedExample.json");
+            validateFile("shinny-examples/Bundle-TaskCompletedExample.json");
         }
 
         @Test
         @DisplayName("Validate SHIN-NY IG Task ExampleFile")
         void testValidateShinnyIG_TaskExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-TaskExample.json");
+            validateFile("shinny-examples/Bundle-TaskExample.json");
         }
 
         @Test
         @DisplayName("Validate SHIN-NY IG Task Output Procedure ExampleFile")
         void testValidateShinnyIG_TaskOutputProcedureExampleFile() throws IOException {
-                validateFile("shinny-examples/Bundle-TaskOutputProcedureExample.json");
+            validateFile("shinny-examples/Bundle-TaskOutputProcedureExample.json");
         }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG AHCHRSN ScreeningResponse ExampleFile")
-        void testValidateTestShinnyIG_AHCHRSNScreeningResponseExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-AHCHRSNScreeningResponseExample.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG NY ScreeningResponse ExampleFile")
-        void testValidateTestShinnyIG_NYScreeningResponseExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-NYScreeningResponseExample.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG Food Insecurity Assessment ExampleFile")
-        void testValidateTestShinnyIG_FoodInsecurityAssessmentExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-ObservationAssessmentFoodInsecurityExample.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG ServiceRequest ExampleFile")
-        void testValidateTestShinnyIG_ServiceRequestExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-ServiceRequestExample.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG Task Completed ExampleFile")
-        void testValidateTestShinnyIG_TaskCompletedExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-TaskCompletedExample.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG Task ExampleFile")
-        void testValidateTestShinnyIG_TaskExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-TaskExample.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG Task Output Procedure ExampleFile")
-        void testValidateTestShinnyIG_TaskOutputProcedureExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-TaskOutputProcedureExample.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG Patient Negative Consent ExampleFile")
-        void testValidateTestShinnyIG_PatientNegativeConsentExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-PatientNegativeConsent.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG AHCHRSN QuestionnaireResponse ExampleFile")
-        void testValidateTestShinnyIG_AHCHRSNQuestionnaireResponseExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-AHCHRSNQuestionnaireResponseExample.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG AHCHRSN ScreeningResponse Unknown1to8 ExampleFile")
-        void testValidateTestShinnyIG_AHCHRSNQuestionnaireResponseUnknownExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleUnknown1to8.json");
-        }
-
-        @Test
-        @DisplayName("Validate Test SHIN-NY IG AHCHRSN ScreeningResponse Declined9to12 ExampleFile")
-        void testValidateTestShinnyIG_AHCHRSNQuestionnaireResponseDeclineExampleFile() throws IOException {
-                validateFile("test-shinny-examples/Bundle-NYScreeningResponseExampleDeclined9to12.json");
-        }
-
         private void validateFile(String filePath) throws IOException {
                 List<OrchestrationEngine.ValidationResult> results = getValidationErrors(filePath);
                 assertValidationResults(results);

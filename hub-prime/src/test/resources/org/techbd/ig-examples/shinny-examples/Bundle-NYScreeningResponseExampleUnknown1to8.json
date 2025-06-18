@@ -1,6 +1,6 @@
 {
   "resourceType" : "Bundle",
-  "id" : "NYScreeningResponseExample",
+  "id" : "NYScreeningResponseExampleUnknown1to8",
   "meta" : {
     "lastUpdated" : "2024-02-23T00:00:00Z",
     "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"]
@@ -780,10 +780,10 @@
     }
   },
   {
-    "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/TransportationInsecurity93030-5",
+    "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/TransportationInsecurity93030-5Unknown",
     "resource" : {
       "resourceType" : "Observation",
-      "id" : "TransportationInsecurity93030-5",
+      "id" : "TransportationInsecurity93030-5Unknown",
       "meta" : {
         "lastUpdated" : "2024-02-23T00:00:00Z",
         "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
@@ -791,7 +791,7 @@
       "language" : "en",
       "text" : {
         "status" : "generated",
-        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_TransportationInsecurity93030-5\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation TransportationInsecurity93030-5</b></p><a name=\"TransportationInsecurity93030-5\"> </a><a name=\"hcTransportationInsecurity93030-5\"> </a><a name=\"TransportationInsecurity93030-5-en-US\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes transportation-insecurity}\">Transportation Insecurity</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 93030-5}\">In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>value</b>: <span title=\"Codes:{http://loinc.org LA32-8}\">No</span></p></div>"
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_TransportationInsecurity93030-5Unknown\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation TransportationInsecurity93030-5Unknown</b></p><a name=\"TransportationInsecurity93030-5Unknown\"> </a><a name=\"hcTransportationInsecurity93030-5Unknown\"> </a><a name=\"TransportationInsecurity93030-5Unknown-en-US\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes transportation-insecurity}\">Transportation Insecurity</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 93030-5}\">In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2023-07-12 16:08:00+0000</p><p><b>issued</b>: 2023-07-12 16:08:00+0000</p><p><b>dataAbsentReason</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/data-absent-reason unknown}\">Unknown</span></p></div>"
       },
       "status" : "final",
       "category" : [{
@@ -829,17 +829,17 @@
       },
       "effectiveDateTime" : "2023-07-12T16:08:00.000Z",
       "issued" : "2023-07-12T16:08:00.000Z",
-      "valueCodeableConcept" : {
+      "dataAbsentReason" : {
         "coding" : [{
-          "system" : "http://loinc.org",
-          "code" : "LA32-8",
-          "display" : "No"
+          "system" : "http://terminology.hl7.org/CodeSystem/data-absent-reason",
+          "code" : "unknown",
+          "display" : "Unknown"
         }]
       }
     },
     "request" : {
       "method" : "POST",
-      "url" : "http://shinny.org/us/ny/hrsn/Observation/TransportationInsecurity93030-5"
+      "url" : "http://shinny.org/us/ny/hrsn/Observation/TransportationInsecurity93030-5Unknown"
     }
   },
   {
@@ -1323,140 +1323,6 @@
     "request" : {
       "method" : "POST",
       "url" : "http://shinny.org/us/ny/hrsn/Observation/InterpersonalSafety95614-4"
-    }
-  },
-  {
-    "fullUrl" : "http://shinny.org/us/ny/hrsn/Observation/NYSAHCHRSNScreeningGroup",
-    "resource" : {
-      "resourceType" : "Observation",
-      "id" : "NYSAHCHRSNScreeningGroup",
-      "meta" : {
-        "lastUpdated" : "2024-02-23T00:00:00Z",
-        "profile" : ["http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-observation-screening-response"]
-      },
-      "language" : "en",
-      "text" : {
-        "status" : "generated",
-        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><a name=\"Observation_NYSAHCHRSNScreeningGroup\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Observation NYSAHCHRSNScreeningGroup</b></p><a name=\"NYSAHCHRSNScreeningGroup\"> </a><a name=\"hcNYSAHCHRSNScreeningGroup\"> </a><a name=\"NYSAHCHRSNScreeningGroup-en-US\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000; Language: en</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-observation-screening-response.html\">SHINNY Observation Screening Response Profile</a></p></div><p><b>status</b>: Final</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes housing-instability}, {http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes inadequate-housing}, {http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes sdoh-category-unspecified}, {http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes food-insecurity}, {http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes transportation-insecurity}, {http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes employment-status}, {http://snomed.info/sct 365458002}\">Housing Instability</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category social-history}\">Social History</span>, <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/observation-category survey}\">Survey</span></p><p><b>code</b>: <span title=\"Codes:{http://loinc.org 96777-8}\">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExample.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>effective</b>: 2020-09-10 21:56:54+0000</p><p><b>issued</b>: 2020-09-10 21:56:54+0000</p><p><b>performer</b>: <a href=\"Organization-OrganizationExampleOther-SCN1.html\">Organization Care Ridge SCN</a></p><p><b>interpretation</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation POS}\">Positive</span></p><p><b>hasMember</b>: </p><ul><li><a href=\"Observation-HousingInstability71802-3.html\">Observation Housing status</a></li><li><a href=\"Observation-InadequateHousing96778-6.html\">Observation Problems with place where you live</a></li><li><a href=\"Observation-UtilityInsecurity96779-4.html\">Observation Has the electric, gas, oil, or water company threatened to shut off services in your home in past 12 months</a></li><li><a href=\"Observation-FoodInsecurity88122-7.html\">Observation Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]</a></li><li><a href=\"Observation-FoodInsecurity88123-5.html\">Observation Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]</a></li><li><a href=\"Observation-TransportationInsecurity93030-5.html\">Observation Has lack of transportation kept you from medical appointments, meetings, work, or from getting things needed for daily living</a></li><li><a href=\"Observation-EmploymentStatus96780-2.html\">Observation Wants help finding or keeping work or a job</a></li><li><a href=\"Observation-Education96782-8.html\">Observation Wants help with school or training</a></li><li><a href=\"Observation-InterpersonalSafety95618-5.html\">Observation Physically hurt you</a></li><li><a href=\"Observation-InterpersonalSafety95617-7.html\">Observation Insult you or talk down to you</a></li><li><a href=\"Observation-InterpersonalSafety95616-9.html\">Observation Threaten you with physical harm</a></li><li><a href=\"Observation-InterpersonalSafety95615-1.html\">Observation Scream or curse at you</a></li><li><a href=\"Observation-InterpersonalSafety95614-4.html\">Observation Total score [HITS]</a></li></ul></div>"
-      },
-      "status" : "final",
-      "category" : [{
-        "coding" : [{
-          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-          "code" : "housing-instability",
-          "display" : "Housing Instability"
-        },
-        {
-          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-          "code" : "inadequate-housing",
-          "display" : "Inadequate Housing"
-        },
-        {
-          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-          "code" : "sdoh-category-unspecified",
-          "display" : "SDOH Category Unspecified"
-        },
-        {
-          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-          "code" : "food-insecurity",
-          "display" : "Food Insecurity"
-        },
-        {
-          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-          "code" : "transportation-insecurity",
-          "display" : "Transportation Insecurity"
-        },
-        {
-          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-          "code" : "employment-status",
-          "display" : "Employment Status"
-        },
-        {
-          "system" : "http://snomed.info/sct",
-          "code" : "365458002",
-          "display" : "Education and/or schooling finding"
-        }]
-      },
-      {
-        "coding" : [{
-          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
-          "code" : "social-history"
-        }]
-      },
-      {
-        "coding" : [{
-          "system" : "http://terminology.hl7.org/CodeSystem/observation-category",
-          "code" : "survey"
-        }]
-      }],
-      "code" : {
-        "coding" : [{
-          "system" : "http://loinc.org",
-          "code" : "96777-8",
-          "display" : "Accountable health communities (AHC) health-related social needs screening (HRSN) tool"
-        }]
-      },
-      "subject" : {
-        "reference" : "Patient/PatientExample"
-      },
-      "encounter" : {
-        "reference" : "Encounter/EncounterExample"
-      },
-      "effectiveDateTime" : "2020-09-10T21:56:54.671Z",
-      "issued" : "2020-09-10T21:56:54.671Z",
-      "performer" : [{
-        "reference" : "Organization/OrganizationExampleOther-SCN1"
-      }],
-      "interpretation" : [{
-        "coding" : [{
-          "system" : "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-          "code" : "POS",
-          "display" : "Positive"
-        }]
-      }],
-      "hasMember" : [{
-        "reference" : "Observation/HousingInstability71802-3"
-      },
-      {
-        "reference" : "Observation/InadequateHousing96778-6"
-      },
-      {
-        "reference" : "Observation/UtilityInsecurity96779-4"
-      },
-      {
-        "reference" : "Observation/FoodInsecurity88122-7"
-      },
-      {
-        "reference" : "Observation/FoodInsecurity88123-5"
-      },
-      {
-        "reference" : "Observation/TransportationInsecurity93030-5"
-      },
-      {
-        "reference" : "Observation/EmploymentStatus96780-2"
-      },
-      {
-        "reference" : "Observation/Education96782-8"
-      },
-      {
-        "reference" : "Observation/InterpersonalSafety95618-5"
-      },
-      {
-        "reference" : "Observation/InterpersonalSafety95617-7"
-      },
-      {
-        "reference" : "Observation/InterpersonalSafety95616-9"
-      },
-      {
-        "reference" : "Observation/InterpersonalSafety95615-1"
-      },
-      {
-        "reference" : "Observation/InterpersonalSafety95614-4"
-      }]
-    },
-    "request" : {
-      "method" : "POST",
-      "url" : "http://shinny.org/us/ny/hrsn/Observation/NYSAHCHRSNScreeningGroup"
     }
   },
   {
