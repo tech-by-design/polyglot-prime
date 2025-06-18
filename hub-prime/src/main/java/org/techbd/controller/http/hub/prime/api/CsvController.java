@@ -22,6 +22,7 @@ import org.techbd.conf.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
 import org.techbd.service.csv.CsvService;
+import org.techbd.util.FHIRUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import io.swagger.v3.oas.annotations.Parameter;
@@ -74,18 +75,19 @@ public class CsvController {
 
     validateFile(file);
     validateTenantId(tenantId);
-    Map<String, String> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
+    Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);
+    Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
         null,
         null, null, null, null,
-        null);
-    Map<String, String> requestParameters = new HashMap<>();    
-    CoreFHIRUtil.buildRequestParametersMap(requestParameters,null,
+        null);   
+    CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
         null, null, null, null, request.getRequestURI());
-    requestParameters.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
-    requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+    requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
+    requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
     Map<String, Object> responseParameters = new HashMap<>();
-    final var result  = csvService.validateCsvFile(file, requestParameters, headerParameters,responseParameters);
-    CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
+    requestDetailsMap.putAll(headerParameters);
+    final var result  = csvService.validateCsvFile(file, requestDetailsMap, responseParameters);
+    CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestDetailsMap);
     return result;
   }
 
@@ -106,22 +108,23 @@ public class CsvController {
     validateFile(file);
     validateTenantId(tenantId);
     CoreFHIRUtil.validateBaseFHIRProfileUrl(coreAppConfig, baseFHIRURL);
-    Map<String, String> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
+    Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);
+    Map<String, Object> headerParameters = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null,
         null,
         null, validationSeverityLevel, null, null,
-        null);
-    Map<String, String> requestParameters = new HashMap<>();    
-    CoreFHIRUtil.buildRequestParametersMap(requestParameters,null,
+        null);    
+    CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,null,
         null, null, null, null, request.getRequestURI());
-    requestParameters.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
-    requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+    requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
+    requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
     if (validationSeverityLevel != null) {
-      requestParameters.put(Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
+      requestDetailsMap.put(Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
     }
     headerParameters.put(Constants.BASE_FHIR_URL, baseFHIRURL);
+    requestDetailsMap.putAll(headerParameters);
     Map<String, Object> responseParameters = new HashMap<>();
-    List<Object> processedFiles = csvService.processZipFile(file, requestParameters, headerParameters, responseParameters);
-    CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
+    List<Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);
+    CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestDetailsMap);
     return ResponseEntity.ok(processedFiles);
   }
 }

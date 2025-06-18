@@ -93,6 +93,29 @@ public class Interactions {
                     body);
         }
 
+        public RequestEncountered(Map<String, String> requestParameters) {
+            this(
+                    UUID.randomUUID(),
+                    new Tenant(requestParameters),
+                    requestParameters.getOrDefault("method", "GET"),
+                    requestParameters.getOrDefault(Constants.REQUEST_URI, ""),
+                    requestParameters.getOrDefault("absoluteUrl", ""),
+                    requestParameters.getOrDefault(Constants.REQUEST_URI, ""),
+                    requestParameters.getOrDefault("clientIpAddress", "unknown"),
+                    requestParameters.getOrDefault(Constants.USER_AGENT, "unknown"),
+                    Instant.now(),
+                    requestParameters.entrySet().stream()
+                            .filter(e -> e.getKey().startsWith("header-"))
+                            .map(e -> new Header(e.getKey().replace("header-", ""), e.getValue()))
+                            .collect(Collectors.toList()),
+                    new HashMap<>(), // Parameters map (can be extended)
+                    requestParameters.getOrDefault("contentType", "application/json"),
+                    requestParameters.getOrDefault("queryString", ""),
+                    requestParameters.getOrDefault("protocol", "HTTP/1.1"),
+                    Arrays.asList(requestParameters.getOrDefault("cookies", "").split(";")),
+                    null);
+        }
+
         public RequestEncountered(Map<String, String> requestParameters, byte[] body, UUID requestId,
                 List<Header> headers) {
             this(

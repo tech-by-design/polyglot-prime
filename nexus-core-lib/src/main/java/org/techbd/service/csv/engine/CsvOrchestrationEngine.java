@@ -108,8 +108,7 @@ public class CsvOrchestrationEngine {
         private Device device;
         private MultipartFile file;
         private String masterInteractionId;
-        private Map<String,String> requestParameters;
-        private Map<String,String> headerParameters;
+        private Map<String,Object> requestParameters;
         private boolean generateBundle;
 
         public OrchestrationSessionBuilder withSessionId(final String sessionId) {
@@ -137,12 +136,8 @@ public class CsvOrchestrationEngine {
             return this;
         }
 
-        public OrchestrationSessionBuilder withRequestParameters(final Map<String,String> requestParameters) {
+        public OrchestrationSessionBuilder withRequestParameters(final Map<String,Object> requestParameters) {
             this.requestParameters = requestParameters;
-            return this;
-        }
-        public OrchestrationSessionBuilder withHeaderParameters(final Map<String,String> headerParameters) {
-            this.headerParameters = headerParameters;
             return this;
         }
 
@@ -161,7 +156,7 @@ public class CsvOrchestrationEngine {
             if (file == null) {
                 throw new IllegalArgumentException("File must not be null");
             }
-            return new OrchestrationSession(sessionId, tenantId, device, file, masterInteractionId, requestParameters,headerParameters,
+            return new OrchestrationSession(sessionId, tenantId, device, file, masterInteractionId, requestParameters,
                     generateBundle);
         }
     }
@@ -191,15 +186,13 @@ public class CsvOrchestrationEngine {
         private List<FileDetail> filesNotProcessed;
         private Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes;
         private final String tenantId;
-        Map<String,String> requestParameters;
-        Map<String,String> headerParameters;
+        Map<String,Object> requestParameters;
         private final boolean generateBundle;
 
         public OrchestrationSession(final String sessionId, final String tenantId, final Device device,
                 final MultipartFile file,
                 final String masterInteractionId,
-                final Map<String,String> requestParameters,
-                final Map<String,String> headerParameters,
+                final Map<String,Object> requestParameters,
                 boolean generateBundle) {
             this.sessionId = sessionId;
             this.tenantId = tenantId;
@@ -208,7 +201,6 @@ public class CsvOrchestrationEngine {
             this.validationResults = new HashMap<>();
             this.masterInteractionId = masterInteractionId;
             this.requestParameters = requestParameters;
-            this.headerParameters = headerParameters;
             this.generateBundle = generateBundle;
             this.payloadAndValidationOutcomes = new HashMap<>();
             this.filesNotProcessed = new ArrayList<>();
@@ -270,7 +262,7 @@ public class CsvOrchestrationEngine {
                     file.getOriginalFilename(), masterInteractionId);
         }
 
-        private void saveScreeningGroup(final String groupInteractionId, final Map<String,String> requestParameters,
+        private void saveScreeningGroup(final String groupInteractionId, final Map<String,Object> requestParameters,
                 final MultipartFile file, final List<FileDetail> fileDetailList, final String tenantId) {
             log.info("CsvOrchestrationEngine saveScreeningGroup REGISTER State NONE to CSV_ACCEPT: BEGIN for zipFileInteractionId  : {} tenant id : {}",
                     masterInteractionId, tenantId);
@@ -282,7 +274,7 @@ public class CsvOrchestrationEngine {
                 initRIHR.setPInteractionId(groupInteractionId);
                 initRIHR.setPGroupHubInteractionId(groupInteractionId);
                 initRIHR.setPSourceHubInteractionId(masterInteractionId);
-                initRIHR.setPInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                initRIHR.setPInteractionKey((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
                 initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", Nature.ORIGINAL_FLAT_FILE_CSV.getDescription(), "tenant_id",
                                 tenantId)));
@@ -292,7 +284,7 @@ public class CsvOrchestrationEngine {
                 final InetAddress localHost = InetAddress.getLocalHost();
                 final String ipAddress = localHost.getHostAddress();
                 initRIHR.setPClientIpAddress(ipAddress);
-                initRIHR.setPUserAgent(headerParameters.get(org.techbd.config.Constants.USER_AGENT));
+                initRIHR.setPUserAgent((String) requestParameters.get(org.techbd.config.Constants.USER_AGENT));
                 for (final FileDetail fileDetail : fileDetailList) {
                     switch (fileDetail.fileType()) {
                         case FileType.SDOH_PtInfo -> {
@@ -387,7 +379,7 @@ public class CsvOrchestrationEngine {
                 initRIHR.setPInteractionId(groupInteractionId);
                 initRIHR.setPGroupHubInteractionId(groupInteractionId);
                 initRIHR.setPSourceHubInteractionId(masterInteractionId);
-                initRIHR.setPInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                initRIHR.setPInteractionKey((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
                 initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
                         Map.of("nature", Nature.CSV_VALIDATION_RESULT.getDescription(), "tenant_id",
                                 tenantId)));
@@ -436,7 +428,7 @@ public class CsvOrchestrationEngine {
             final var initRIHR = new SatInteractionCsvRequestUpserted();
             try {
                 initRIHR.setInteractionId(masterInteractionId);
-                initRIHR.setUri(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+                initRIHR.setUri((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
                 initRIHR.setNature("Update Zip File Payload");
                 initRIHR.setCreatedAt(createdAt);
                 initRIHR.setCreatedBy(CsvService.class.getName());
@@ -475,7 +467,7 @@ public class CsvOrchestrationEngine {
         private static Map<String, Object> createOperationOutcome(final String masterInteractionId,
                 final String groupInteractionId,
                 final String validationResults,
-                final List<FileDetail> fileDetails, final Map<String,String> requestParameters, final long zipFileSize,
+                final List<FileDetail> fileDetails, final Map<String,Object> requestParameters, final long zipFileSize,
                 final Instant initiatedAt, final Instant completedAt, final String originalFileName) throws Exception {
             final Map<String, Object> provenance = populateProvenance(masterInteractionId,groupInteractionId, fileDetails, initiatedAt,
                     completedAt, originalFileName);
@@ -488,7 +480,7 @@ public class CsvOrchestrationEngine {
         }
 
         public Map<String, Object> generateValidationResults(final String masterInteractionId,
-                final Map<String,String> requestParameters,
+                final Map<String,Object> requestParameters,
                 final long zipFileSize,
                 final Instant initiatedAt,
                 final Instant completedAt,
@@ -497,7 +489,7 @@ public class CsvOrchestrationEngine {
 
             Map<String, Object> result = new HashMap<>();
 
-            final String userAgent = headerParameters.get(org.techbd.config.Constants.USER_AGENT);
+            final String userAgent = (String) requestParameters.get(org.techbd.config.Constants.USER_AGENT);
             final Device device = Device.INSTANCE;
             result.put("resourceType", "OperationOutcome");
             result.put("zipFileInteractionId", masterInteractionId);

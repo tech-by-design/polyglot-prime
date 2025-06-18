@@ -11,10 +11,10 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import org.techbd.config.CoreAppConfig;
-import org.techbd.config.CoreAppConfig.FhirV4Config;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
+import org.techbd.config.CoreAppConfig;
+import org.techbd.config.CoreAppConfig.FhirV4Config;
 import org.techbd.config.Interactions.Header;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -151,10 +151,10 @@ public class CoreFHIRUtil {
 
     
    
-    public static Map<String, String> buildHeaderParametersMap(String tenantId, String customDataLakeApi,
+    public static Map<String, Object> buildHeaderParametersMap(String tenantId, String customDataLakeApi,
             String dataLakeApiContentType, String requestUriToBeOverridden,
             String validationSeverityLevel, String healthCheck, String correlationId, String provenance) {
-        Map<String, String> headers = new HashMap<>();
+        Map<String, Object> headers = new HashMap<>();
         headers.put(Constants.TENANT_ID, tenantId);
         addIfNotEmpty(headers, Constants.CUSTOM_DATA_LAKE_API, customDataLakeApi);
         addIfNotEmpty(headers, Constants.DATA_LAKE_API_CONTENT_TYPE, dataLakeApiContentType);
@@ -167,7 +167,7 @@ public class CoreFHIRUtil {
         return headers;
     }
 
-    public static Map<String, String> buildRequestParametersMap(Map<String,String> requestParameters ,Boolean deleteSessionCookie,
+    public static Map<String, Object> buildRequestParametersMap(Map<String,Object> requestParameters ,Boolean deleteSessionCookie,
             String mtlsStrategy, String source, String groupInteractionId, String masterInteractionId,
             String requestUri) {
         addIfNotEmpty(requestParameters, Constants.MTLS_STRATEGY, mtlsStrategy);
@@ -181,7 +181,7 @@ public class CoreFHIRUtil {
         return requestParameters;
     }
 
-    public static void addIfNotEmpty(Map<String, String> headers, String key, String value) {
+    public static void addIfNotEmpty(Map<String, Object> headers, String key, String value) {
         if (StringUtils.isNotEmpty(value)) {
             headers.put(key, value);
         }
@@ -189,7 +189,7 @@ public class CoreFHIRUtil {
 
     
     public static void addCookieAndHeadersToResponse(HttpServletResponse response, Map<String, Object> responseParameters,
-            Map<String, String> requestParameters) {
+            Map<String, Object> requestParameters) {
         if (responseParameters.get(Constants.METRIC_COOKIE) != null) {
             response.addCookie((Cookie) responseParameters.get(Constants.METRIC_COOKIE));
         }
@@ -198,7 +198,7 @@ public class CoreFHIRUtil {
         }
         if (requestParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME) != null) {
             response.addHeader(Constants.START_TIME_ATTRIBUTE,
-                    requestParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME));
+                    (String) requestParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME));
         }
         if (responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME) != null) {
             response.addHeader(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME,
@@ -213,19 +213,22 @@ public class CoreFHIRUtil {
                     responseParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_DURATION_NANOSECS).toString());
         }
     }
-    
-   public static Map<String, Object> extractFields(JsonNode payload) {
-    var result = new HashMap<String, Object>();
-    for (var key : new String[]{"error", "interaction_id", "hub_nexus_interaction_id"}) {
-        if (payload.has(key)) {
-            result.put(key, payload.get(key).asText());
+
+    public static Map<String, Object> extractFields(JsonNode payload) {
+        var result = new HashMap<String, Object>();
+        for (var key : new String[] { "error", "interaction_id", "hub_nexus_interaction_id" }) {
+            if (payload.has(key)) {
+                result.put(key, payload.get(key).asText());
+            }
         }
+
+        if (payload.has("payload")) {
+            result.put("payload", payload.get("payload"));
+        }
+
+        return result;
     }
 
-    if (payload.has("payload")) {
-        result.put("payload", payload.get("payload")); 
-    }
 
-    return result;
-}
+
 }

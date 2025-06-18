@@ -55,7 +55,6 @@ public class CsvBundleProcessorService {
     private static final Logger LOG = LoggerFactory.getLogger(CsvBundleProcessorService.class.getName());
     private final CsvToFhirConverter csvToFhirConverter;
     private final FHIRService fhirService;
-    private static final String START_TIME_ATTRIBUTE = "startTime";
     private final CoreDataLedgerApiClient coreDataLedgerApiClient;
 
     public CsvBundleProcessorService(final CsvToFhirConverter csvToFhirConverter, final FHIRService fhirService,CoreDataLedgerApiClient coreDataLedgerApiClient) {
@@ -67,8 +66,7 @@ public class CsvBundleProcessorService {
     public List<Object> processPayload(final String masterInteractionId,
             final Map<String, PayloadAndValidationOutcome> payloadAndValidationOutcomes,
             final List<FileDetail> filesNotProcessed,
-            final Map<String,String> requestParameters,
-            final Map<String,String> headerParameters,
+            final Map<String,Object> requestParameters,
             final Map<String,Object> responseParameters,
             final String tenantId, final String originalFileName,String baseFHIRUrl) {
         LOG.info("ProcessPayload: BEGIN for zipFileInteractionId: {}, tenantId: {}, baseFHIRURL: {}", masterInteractionId, tenantId, baseFHIRUrl);
@@ -107,7 +105,7 @@ public class CsvBundleProcessorService {
                             screeningObservationData);
                     if (screeningProfileData != null) {
                         resultBundles.addAll(processScreening(groupKey, demographicData, screeningProfileData,
-                                qeAdminData, screeningObservationData, requestParameters, headerParameters, responseParameters, groupInteractionId,
+                                qeAdminData, screeningObservationData, requestParameters, responseParameters, groupInteractionId,
                                 masterInteractionId,
                                 tenantId, outcome.isValid(), outcome, isAllCsvConvertedToFhir,baseFHIRUrl));
                     }
@@ -160,7 +158,7 @@ public class CsvBundleProcessorService {
         return additionalDetails;
     }
     private void saveMiscErrorAndStatus(final List<Object> miscError, final boolean allCSvConvertedToFHIR,
-            final String masterInteractionId, final Map<String,String> requestParameters) {
+            final String masterInteractionId, final Map<String,Object> requestParameters) {
         LOG.info("SaveMiscErrorAndStatus: BEGIN for inteaction id  : {} ",
                 masterInteractionId);
         final var status = allCSvConvertedToFHIR ? "PROCESSED_SUCESSFULLY" : "PARTIALLY_PROCESSED";
@@ -171,7 +169,7 @@ public class CsvBundleProcessorService {
         try {
             initRIHR.setStatus(status);    
             initRIHR.setInteractionId(masterInteractionId);
-            initRIHR.setUri(requestParameters.get(Constants.REQUEST_URI));
+            initRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
             initRIHR.setNature("Update Zip File Processing Details");
             initRIHR.setCreatedAt(createdAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
@@ -231,7 +229,7 @@ public class CsvBundleProcessorService {
     }
 
     private void saveFhirConversionStatus(final boolean isValid, final String masterInteractionId, final String groupKey,
-            final String groupInteractionId, final String interactionId, final Map<String,String> requestParameters,
+            final String groupInteractionId, final String interactionId, final Map<String,Object> requestParameters,
             final String payload, final Map<String, Object> operationOutcome,
             final String tenantId) {
         LOG.info(
@@ -246,7 +244,7 @@ public class CsvBundleProcessorService {
             initRIHR.setPInteractionId(groupInteractionId);
             initRIHR.setPGroupHubInteractionId(groupInteractionId);
             initRIHR.setPSourceHubInteractionId(masterInteractionId);
-            initRIHR.setPInteractionKey(requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
+            initRIHR.setPInteractionKey((String) requestParameters.get(org.techbd.config.Constants.REQUEST_URI));
             initRIHR.setPNature((JsonNode) Configuration.objectMapper.valueToTree(
                     Map.of("nature", Nature.CONVERTED_TO_FHIR.getDescription(), "tenant_id",
                             tenantId)));
@@ -324,8 +322,7 @@ private List<Object> processScreening(final String groupKey,
             final Map<String, List<ScreeningProfileData>> screeningProfileData,
             final Map<String, List<QeAdminData>> qeAdminData,
             final Map<String, List<ScreeningObservationData>> screeningObservationData,
-            final Map<String,String> requestParameters,
-            final Map<String,String> headerParameters,
+            final Map<String,Object> requestParameters,
             final Map<String,Object> responseParameters,
             final String groupInteractionId,
             final String masterInteractionId,
@@ -370,17 +367,18 @@ private List<Object> processScreening(final String groupKey,
                         saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId,
                                 interactionId, requestParameters,
                                 bundle, null, tenantId);
-                        Map<String,String> headers = org.techbd.util.fhir.CoreFHIRUtil.buildHeaderParametersMap(
+                        Map<String,Object> headers = org.techbd.util.fhir.CoreFHIRUtil.buildHeaderParametersMap(
                             tenantId, null, null, null, null, null,
                             null, updatedProvenance);       
                         org.techbd.util.fhir.CoreFHIRUtil.buildRequestParametersMap(requestParameters,
-                            false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId,requestParameters.get(Constants.REQUEST_URI));
+                            false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId,(String) requestParameters.get(Constants.REQUEST_URI));
                         requestParameters.put(Constants.INTERACTION_ID, interactionId);
                         requestParameters.put(Constants.REQUEST_URI, "/Bundle");
                         requestParameters.put(Constants.GROUP_INTERACTION_ID, groupInteractionId);
                         requestParameters.put(Constants.MASTER_INTERACTION_ID, masterInteractionId);
+                        requestParameters.putAll(headers);
                         results.add(fhirService.processBundle(
-                                bundle, requestParameters,headers, responseParameters));
+                                bundle, requestParameters,responseParameters));
                         LOG.error("Bundle generated for  patient  MrId: {}, interactionId: {}, masterInteractionId: {}, groupInteractionId :{}",
                                 profile.getPatientMrIdValue(), interactionId, masterInteractionId,groupInteractionId);        
                     } else {
@@ -547,9 +545,9 @@ private List<Object> processScreening(final String groupKey,
         );
     }
 
-   private void addObservabilityHeadersToResponse(final Map<String,String> requestParameters, final Map<String,Object> responseParameters) {
+   private void addObservabilityHeadersToResponse(final Map<String,Object> requestParameters, final Map<String,Object> responseParameters) {
                 final var startTime = requestParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME) != null ? 
-                    Instant.parse(requestParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME)) : 
+                    Instant.parse((String) requestParameters.get(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME)) : 
                     Instant.now();
                 final var finishTime = Instant.now();
                 final Duration duration = Duration.between(startTime, finishTime);

@@ -199,19 +199,20 @@ public class FhirController {
                                         FhirController.class.getName(),
                                         isSync ? "sync" : "async");
                         request = new CustomRequestWrapper(request, payload);
-                        Map<String, String> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
+                        Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, customDataLakeApi,
                                         dataLakeApiContentType,
                                         requestUriToBeOverridden, validationSeverityLevel, healthCheck, coRrelationId,
                                         provenance);
-                        Map<String, String> requestParameters = new HashMap<>();
-                       CoreFHIRUtil.buildRequestParametersMap(requestParameters,deleteSessionCookie,
+                        Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);
+                        CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,deleteSessionCookie,
                                         mtlsStrategy, source, null, null,request.getRequestURI());
-                        requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString()); 
-                        requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());   
+                        requestDetailsMap.put(Constants.INTERACTION_ID,UUID.randomUUID().toString()); 
+                        requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString()); 
+                        requestDetailsMap.putAll(headers);  
                         request = new CustomRequestWrapper(request, payload);
                         Map<String, Object> responseParameters = new HashMap<>();
-                        final var result = fhirService.processBundle(payload, requestParameters, headers, responseParameters);
-                        CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
+                        final var result = fhirService.processBundle(payload, requestDetailsMap,responseParameters);
+                        CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestDetailsMap);
                         return result;
                 } finally {
                         span.end();
@@ -277,19 +278,19 @@ public class FhirController {
                         if (Boolean.TRUE.equals(deleteSessionCookie)) {
                                 deleteJSessionCookie(request, response);
                         }
-
                         request = new CustomRequestWrapper(request, payload);
-                        Map<String, String> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
+                        Map<String, Object> headers = CoreFHIRUtil.buildHeaderParametersMap(tenantId, null, null,
                                         null, null, null, null, null);
-                        Map<String, String> requestParameters = new HashMap<>();                
-                        CoreFHIRUtil.buildRequestParametersMap(requestParameters,deleteSessionCookie,
+                        Map <String,Object> requestDetailsMap = FHIRUtil.extractRequestDetails(request);            
+                        CoreFHIRUtil.buildRequestParametersMap(requestDetailsMap,deleteSessionCookie,
                                         null, null,
                                         null, null, request.getRequestURI());
-                        requestParameters.put(Constants.INTERACTION_ID,UUID.randomUUID().toString());
-                        requestParameters.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+                        requestDetailsMap.put(Constants.INTERACTION_ID,UUID.randomUUID().toString());
+                        requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+                        requestDetailsMap.putAll(headers);
                         Map<String, Object> responseParameters = new HashMap<>();
-                        final var result = fhirService.processBundle(payload, requestParameters, headers, responseParameters);
-                        CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestParameters);
+                        final var result = fhirService.processBundle(payload, requestDetailsMap,  responseParameters);
+                        CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestDetailsMap);
                         return result;
                 } finally {
                         span.end();
