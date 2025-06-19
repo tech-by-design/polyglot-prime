@@ -1624,7 +1624,7 @@ public class FHIRService {
 				initRIHR.setPFromState(State.DISPOSITION.name());
 				initRIHR.setPToState(State.FORWARD.name());
 				initRIHR.setPSourceType(sourceType);
-				//initRIHR.setPCreatedAt(forwardedAt); // don't let DB set this, use app
+				initRIHR.setPCreatedAt(forwardedAt); // don't let DB set this, use app
 				// time
 				initRIHR.setPCreatedBy(FHIRService.class.getName());
 				initRIHR.setPProvenance(provenance);
@@ -1686,7 +1686,7 @@ public class FHIRService {
 				forwardRIHR.setPFromState(State.FORWARD.name());
 				forwardRIHR.setPToState(State.COMPLETE.name());
 				forwardRIHR.setPSourceType(sourceType);
-				//forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
+				forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
 				forwardRIHR.setPCreatedBy(FHIRService.class.getName());
 				forwardRIHR.setPProvenance(provenance);
 				final var start = Instant.now();
@@ -1745,7 +1745,7 @@ public class FHIRService {
 				forwardRIHR.setPFromState(State.FORWARD.name());
 				forwardRIHR.setPToState(State.FAIL.name());
 				forwardRIHR.setPSourceType(sourceType);
-				//forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
+				forwardRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB
 				// set this, use
 				// app time
 				forwardRIHR.setPCreatedBy(FHIRService.class.getName());
@@ -1857,7 +1857,7 @@ public class FHIRService {
 						.valueToTree(errorMap));
 				errorRIHR.setPFromState(State.FORWARD.name());
 				errorRIHR.setPToState(State.FAIL.name());
-				//errorRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
+				errorRIHR.setPCreatedAt(OffsetDateTime.now()); // don't let DB set this, use app time
 				errorRIHR.setPCreatedBy(FHIRService.class.getName());
 				errorRIHR.setPProvenance(provenance);
 				final var start = Instant.now();

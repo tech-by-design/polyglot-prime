@@ -252,7 +252,7 @@ public class CsvBundleProcessorService {
             initRIHR.setPPayload(null != operationOutcome && operationOutcome.size() > 0
                     ? Configuration.objectMapper.valueToTree(operationOutcome)
                     : Configuration.objectMapper.readTree(payload));
-            // initRIHR.setPCreatedAt(forwardedAt);
+            initRIHR.setPCreatedAt(forwardedAt);
             initRIHR.setPCreatedBy(CsvService.class.getName());
             initRIHR.setPFromState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
             initRIHR.setPToState(StringUtils.isNotEmpty(payload) ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());

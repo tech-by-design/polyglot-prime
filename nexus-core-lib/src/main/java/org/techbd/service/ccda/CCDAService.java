@@ -103,7 +103,7 @@ public class CCDAService {
             rihr.setPFromState(State.CCDA_ACCEPT.name());
             rihr.setPToState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
             rihr.setPSourceType(SourceType.CCDA.name());
-            // rihr.setPCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
