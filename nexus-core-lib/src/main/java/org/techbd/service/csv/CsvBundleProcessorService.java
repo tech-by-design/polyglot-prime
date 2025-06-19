@@ -373,7 +373,6 @@ private List<Object> processScreening(final String groupKey,
                         org.techbd.util.fhir.CoreFHIRUtil.buildRequestParametersMap(requestParameters,
                             false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId,(String) requestParameters.get(Constants.REQUEST_URI));
                         requestParameters.put(Constants.INTERACTION_ID, interactionId);
-                        requestParameters.put(Constants.REQUEST_URI, "/Bundle");
                         requestParameters.put(Constants.GROUP_INTERACTION_ID, groupInteractionId);
                         requestParameters.put(Constants.MASTER_INTERACTION_ID, masterInteractionId);
                         requestParameters.putAll(headers);
