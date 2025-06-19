@@ -1597,9 +1597,26 @@ Procedure to handle the insertion or update of FHIR interaction data, managing d
  *******************************************************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_fhir_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_fhir_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb, text, text);
-
-
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_fhir_request_upserted(hub_interaction_id text, tenant_id text, uri text, nature text, from_state text, to_state text, payload jsonb, state_transition_reason text DEFAULT NULL::text, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, source_type text DEFAULT NULL::text, source_hub_interaction_id text DEFAULT NULL::text, group_hub_interaction_id text DEFAULT NULL::text)
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_fhir_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb, text, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_fhir_request_upserted(text, text, text, text, text, text, jsonb, text, timestamptz, text, text, jsonb, text, text, text, jsonb);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_fhir_request_upserted(
+	p_hub_interaction_id text, 
+	p_tenant_id text, 
+	p_uri text, 
+	p_nature text, 
+	p_from_state text, 
+	p_to_state text, 
+	p_payload jsonb, 
+	p_state_transition_reason text DEFAULT NULL::text, 
+	p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
+	p_created_by text DEFAULT NULL::text, 
+	p_provenance text DEFAULT NULL::text, 
+	p_elaboration jsonb DEFAULT NULL::jsonb, 
+	p_source_type text DEFAULT NULL::text, 
+	p_source_hub_interaction_id text DEFAULT NULL::text, 
+	p_group_hub_interaction_id text DEFAULT NULL::text,
+	p_additional_details jsonb DEFAULT NULL::jsonb
+)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
@@ -1614,9 +1631,9 @@ DECLARE
     v_pg_detail 					TEXT;
     v_pg_hint 						TEXT;
     v_pg_context 					TEXT;
-    v_created_at 					TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
-    v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
-    v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  -- Set default provenance
+    v_created_at 					TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
+    v_created_by 					TEXT 		:= COALESCE(p_created_by, current_user);  -- Default created_by to the current user if not provided
+    v_provenance 					TEXT 		:= COALESCE(p_provenance, 'unknown');  -- Set default provenance
     v_exception_id 					TEXT;
     
     -- Additional variables for extracting and holding data from the payload JSONB
@@ -1658,35 +1675,35 @@ BEGIN
 
    	/*---register diagnostic log---*/
   	v_elaboration := jsonb_build_object(
- 						'interaction_id', sat_interaction_fhir_request_upserted.hub_interaction_id,
- 						'interaction_key', sat_interaction_fhir_request_upserted.uri,
- 						'nature', sat_interaction_fhir_request_upserted.nature,
- 						'from_state', sat_interaction_fhir_request_upserted.from_state,
- 						'to_state', sat_interaction_fhir_request_upserted.to_state,
- 						'step', '- In sat_interaction_fhir_request_upserted function'
+ 						'interaction_id', p_hub_interaction_id,
+ 						'interaction_key', p_uri,
+ 						'nature', p_nature,
+ 						'from_state', p_from_state,
+ 						'to_state', p_to_state,
+ 						'step', 'sat_interaction_fhir_request_upserted function parameters'
  						);
- 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, sat_interaction_fhir_request_upserted.uri, sat_interaction_fhir_request_upserted.created_by, sat_interaction_fhir_request_upserted.provenance, 'info'::text, 
+ 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, p_uri, v_created_by, v_provenance, 'info'::text, 
 															'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
   	/*------------------------------*/
 	IF NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction t
-  		WHERE t.hub_interaction_id = sat_interaction_fhir_request_upserted.hub_interaction_id 
-  		AND t."key" = sat_interaction_fhir_request_upserted.uri) THEN
+  		WHERE t.hub_interaction_id = p_hub_interaction_id 
+  		AND t."key" = p_uri) THEN
   		RETURN NULL;	
   	END IF;
     /*---register diagnostic log---*/
   	v_elaboration := jsonb_build_object(
- 						'interaction_id', sat_interaction_fhir_request_upserted.hub_interaction_id,
- 						'interaction_key', sat_interaction_fhir_request_upserted.uri,
- 						'nature', sat_interaction_fhir_request_upserted.nature,
- 						'from_state', sat_interaction_fhir_request_upserted.from_state,
- 						'to_state', sat_interaction_fhir_request_upserted.to_state,
+ 						'interaction_id', p_hub_interaction_id,
+ 						'interaction_key', p_uri,
+ 						'nature', p_nature,
+ 						'from_state', p_from_state,
+ 						'to_state', p_to_state,
  						'step', '- Insert into sat_interaction_fhir_request'
  						);
- 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, sat_interaction_fhir_request_upserted.uri, sat_interaction_fhir_request_upserted.created_by, sat_interaction_fhir_request_upserted.provenance, 'info'::text, 
+ 	CALL techbd_udi_ingress.register_diagnostic_log(v_diagnostic_id, p_uri, v_created_by, p_provenance, 'info'::text, 
 															'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
   	/*------------------------------*/
   
-  	IF(LOWER(sat_interaction_fhir_request_upserted.nature) <> LOWER('Original FHIR payload')) THEN
+  	IF(LOWER(p_nature) <> LOWER('Original FHIR payload')) THEN
 		SELECT 
 		fhir_req.client_ip_address,			fhir_req.user_agent, 				fhir_req.bundle_id, 
 		fhir_req.bundle_last_updated,		fhir_req.organization_id,			fhir_req.organization_name, 
@@ -1706,45 +1723,32 @@ BEGIN
 		FROM
 		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
 		WHERE 1 = 1
-		AND fhir_req.hub_interaction_id = sat_interaction_fhir_request_upserted.hub_interaction_id
+		AND fhir_req.hub_interaction_id = p_hub_interaction_id
 		AND fhir_req.nature = 'Original FHIR payload';	
   	END IF;  	
 
-	IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('Original FHIR payload')) THEN				   
+	IF(LOWER(p_nature) = LOWER('Original FHIR payload')) THEN				   
     	
-		v_user_agent 				:= sat_interaction_fhir_request_upserted.payload->'request'->>'userAgent';    
-    	v_client_ip_address 		:= sat_interaction_fhir_request_upserted.payload->'request'->>'clientIpAddress';    
-    	v_issues_count 				:= jsonb_array_length(((((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'operationOutcome'::text) -> 'issue'::text);			
-    	v_outbound_http_message 	:= "substring"((((sat_interaction_fhir_request_upserted.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);   	
-		v_bundle_session_id 		:= sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->>'bundleSessionId';	 				  
-    	v_validation_engine 		:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
-    	v_ig_version				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'igVersion');        
-    	v_profile_url				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'profileUrl');      
-    	v_is_bundle_valid				:= (sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'valid');      
-    	v_validation_initiated_at 	:= to_timestamp((sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'initiatedAt')::NUMERIC);
-    	v_validation_completed_at 	:= to_timestamp((sat_interaction_fhir_request_upserted.payload->'response'->'responseBody'->'OperationOutcome'->'validationResults'->0->>'completedAt')::NUMERIC);
-    	
+		v_user_agent 				:= p_additional_details->'request'->>'User-Agent';    
+    	v_client_ip_address 		:= p_additional_details->'request'->>'remoteAddr';
+
     	SELECT hdrs->>'value'
 		INTO v_client_ip_address_forwarded
-    	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'headers') AS hdrs
-    	WHERE hdrs->>'name' = 'x-forwarded-for'
-    	;
+    	FROM jsonb_array_elements(p_additional_details->'request'->'headers') AS hdrs
+    	WHERE hdrs->>'name' = 'x-forwarded-for';
     
     	-- Extract the value of X-Observability-Metric-Interaction-Start-Time
-		SELECT header->>'value' 
-		INTO v_interaction_start_time
-		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'response'->'headers') AS header
-		WHERE header->>'name' = 'X-Observability-Metric-Interaction-Start-Time';			
+		v_interaction_start_time = p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
 	
 		-- Extract the value of X-Observability-Metric-Interaction-Finish-Time
 		SELECT header->>'value' 
 		INTO v_interaction_end_time
-		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'response'->'headers') AS header
+		FROM jsonb_array_elements(p_additional_details->'response'->'headers') AS header
 		WHERE header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time';
 
 	    SELECT entry->'resource'->>'id'
 	    INTO v_patient_id
-	    FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
+	    FROM jsonb_array_elements(p_payload->'entry') AS entry
 	    WHERE entry->'resource'->>'resourceType' = 'Patient'
 	    LIMIT 1;
 	   	   		   
@@ -1753,7 +1757,7 @@ BEGIN
 	    regexp_replace(identifier_element->'assigner'->>'reference','^Organization/', ''),
         identifier_element->>'system'
 	    INTO v_patient_mrn, v_organization_id, v_patient_mrn_source_system
-	    FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry,
+	    FROM jsonb_array_elements(p_payload->'entry') AS entry,
 	    jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
 	    WHERE entry->'resource'->>'resourceType' = 'Patient'
 	    AND identifier_element #>> '{type, coding, 0, code}' = 'MR'
@@ -1761,30 +1765,30 @@ BEGIN
 	  
 	  	SELECT entry.value->'resource'->>'name' 
 	  	INTO v_organization_name
-    	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry(value)
+    	FROM jsonb_array_elements(p_payload->'entry') AS entry(value)
    	 	WHERE 
         entry.value->'resource'->>'resourceType' = 'Organization' 
         AND entry.value->'resource'->>'id' = v_organization_id;
    	          
 	    SELECT identifier_element->>'value'
 	    INTO v_medicaid_cin
-	   	FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry,
+	   	FROM jsonb_array_elements(p_payload->'entry') AS entry,
 		jsonb_array_elements(entry->'resource'->'identifier') AS identifier_element
 		WHERE entry->'resource'->>'resourceType' = 'Patient'
 		AND identifier_element #>> '{type, coding, 0, code}' = 'MA'
 		LIMIT 1;	   	   			   	
 	   	
 	   	SELECT
-        sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->>'id',
-        sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'meta'->>'lastUpdated'
+        p_payload->>'id',
+        p_payload->'meta'->>'lastUpdated'
         INTO v_bundle_id, v_bundle_last_updated
    	 	WHERE
-        sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->>'resourceType' = 'Bundle'
+        p_payload->>'resourceType' = 'Bundle'
        	LIMIT 1;		
 	
 		SELECT STRING_AGG(DISTINCT entry->'resource'->>'resourceType', ', ') 
 		INTO v_resource_type_set
-		FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
+		FROM jsonb_array_elements(p_payload->'entry') AS entry
 		WHERE entry ? 'resource';	
 
         WITH categories AS (
@@ -1792,7 +1796,7 @@ BEGIN
                 STRING_AGG(category, ', ') AS bundle_type
             FROM (
                 SELECT 'Screening' AS category
-                FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
+                FROM jsonb_array_elements(p_payload->'entry') AS entry
                 WHERE entry->'resource'->>'resourceType' = 'Observation'
                 AND EXISTS (
                     SELECT 1 
@@ -1808,7 +1812,7 @@ BEGIN
                 UNION
 
                 SELECT 'Assessment'
-                FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
+                FROM jsonb_array_elements(p_payload->'entry') AS entry
                 WHERE entry->'resource'->>'resourceType' = 'Condition'
                 AND EXISTS (
                     SELECT 1
@@ -1819,7 +1823,7 @@ BEGIN
                 UNION
 
                 SELECT 'Referral'
-                FROM jsonb_array_elements(sat_interaction_fhir_request_upserted.payload->'request'->'requestBody'->'entry') AS entry
+                FROM jsonb_array_elements(p_payload->'entry') AS entry
                 WHERE (entry->'resource'->>'resourceType' = 'ServiceRequest'
                     AND EXISTS (
                         SELECT 1
@@ -1834,35 +1838,42 @@ BEGIN
                     ))
             ) AS category_list
         )
-        SELECT bundle_type INTO v_bundle_type FROM categories;
-
-
-	
+        SELECT bundle_type INTO v_bundle_type FROM categories;	
 	
 	END IF; /*End of : Original FHIR payload*/
 	
 	-- Save the action from the OperationOutcome->techByDesignDisposition
-	IF LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('techByDesignDisposition') THEN 
-		v_techbd_disposition_action	:= sat_interaction_fhir_request_upserted.payload->'OperationOutcome'->'techByDesignDisposition'->0->>'action';
+	IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN 
+		v_issues_count 				:= jsonb_array_length(((((p_payload -> 'OperationOutcome'::text) -> 'validationResults'::text) -> 0) -> 'operationOutcome'::text) -> 'issue'::text);			
+    	v_outbound_http_message 	:= "substring"((p_payload -> 'OperationOutcome'::text) ->> 'outboundHttpMessage'::text, 'POST[^\n]+'::text);   	
+		v_bundle_session_id 		:= p_payload->'OperationOutcome'->>'bundleSessionId';	 				  
+    	v_validation_engine 		:= (p_payload->'OperationOutcome'->'validationResults'->0->'observability'->>'name');    
+    	v_ig_version				:= (p_payload->'OperationOutcome'->'validationResults'->0->>'igVersion');        
+    	v_profile_url				:= (p_payload->'OperationOutcome'->'validationResults'->0->>'profileUrl');      
+    	v_is_bundle_valid			:= (p_payload->'OperationOutcome'->'validationResults'->0->>'valid');      
+    	v_validation_initiated_at 	:= to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'initiatedAt')::NUMERIC);
+    	v_validation_completed_at 	:= to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'completedAt')::NUMERIC);
+    	
+		v_techbd_disposition_action	:= p_payload->'OperationOutcome'->'techByDesignDisposition'->0->>'action';
 	END IF;
 
-	IF(LOWER(sat_interaction_fhir_request_upserted.nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'))) THEN
+	IF(LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'))) THEN
 		
-		IF(LOWER(sat_interaction_fhir_request_upserted.nature) = lower('Forwarded HTTP Response Error')) THEN
+		IF(LOWER(p_nature) = lower('Forwarded HTTP Response Error')) THEN
 			v_passed := FALSE;
-			v_error_message := SUBSTRING(payload ->> 'error'::text FROM POSITION((':'::text) IN (sat_interaction_fhir_request_upserted.payload ->> 'error'::text)) + 2);				
+			v_error_message := SUBSTRING(payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);				
 		END IF;
 			
-		IF(LOWER(sat_interaction_fhir_request_upserted.nature) = lower('Forwarded HTTP Response')) THEN	
-			v_response_status := substring(sat_interaction_fhir_request_upserted.payload->> 'scoredcardResponse' FROM 'TestResult:\s*(\w+)');					
+		IF(LOWER(p_nature) = lower('Forwarded HTTP Response')) THEN	
+			v_response_status := substring(p_payload->> 'scoredcardResponse' FROM 'TestResult:\s*(\w+)');					
 			IF v_response_status IS NOT NULL AND v_response_status = 'PASS' THEN
 			    v_passed := TRUE;
 			ELSE
 				IF v_error_message IS NULL THEN 
-					v_error_message := sat_interaction_fhir_request_upserted.payload->> 'insertScreeningsResponse';
+					v_error_message := p_payload->> 'insertScreeningsResponse';
 					SELECT INTO v_issues_count (regexp_matches(v_error_message, 'An unexpected error occurred: (\d+)'))[1]::INTEGER;
 				ELSE					
-					v_error_message := substring(sat_interaction_fhir_request_upserted.payload->> 'scoredcardResponse' FROM 'Exception:\s*(.*)$');
+					v_error_message := substring(p_payload->> 'scoredcardResponse' FROM 'Exception:\s*(.*)$');
 					SELECT INTO v_issues_count (regexp_matches(v_error_message, 'An unexpected validation error occurred parsing FHIR: (\d+)'))[1]::INTEGER;
 				END IF;				
 			    v_passed := FALSE;
@@ -1922,21 +1933,22 @@ BEGIN
         source_hub_interaction_id,
         group_hub_interaction_id,
         is_bundle_valid,
-        bundle_type
+        bundle_type,
+		additional_details
     )
     VALUES (
         gen_random_uuid()::TEXT,  -- Generate a unique UUID for the primary key
-        hub_interaction_id,
-        tenant_id,
-        LOWER(tenant_id),  -- Store the tenant ID in lowercase for consistency
-        uri,
-        nature,
-        payload,
+        p_hub_interaction_id,
+        p_tenant_id,
+        LOWER(p_tenant_id),  -- Store the tenant ID in lowercase for consistency
+        p_uri,
+        p_nature,
+        p_payload,
         COALESCE(v_client_ip_address_forwarded,v_client_ip_address),
         COALESCE(v_user_agent,''),
-        from_state,
-        to_state,
-        state_transition_reason,
+        p_from_state,
+        p_to_state,
+        p_state_transition_reason,
         v_outbound_http_message,
         v_error_message,
         COALESCE(v_issues_count,0),
@@ -1951,9 +1963,9 @@ BEGIN
         COALESCE(v_validation_initiated_at::TIMESTAMPTZ,NULL),
         COALESCE(v_validation_completed_at::TIMESTAMPTZ,NULL),
         v_validation_engine,
-        sat_interaction_fhir_request_upserted.elaboration,
-        created_by,
-        provenance,
+        p_elaboration,
+        v_created_by,
+        p_provenance,
         v_ig_version,
         v_profile_url,
         v_passed,
@@ -1962,73 +1974,90 @@ BEGIN
         COALESCE(v_interaction_end_time::TIMESTAMPTZ,NULL),
         v_techbd_disposition_action,
         v_patient_mrn_source_system,
-        source_type,
-        source_hub_interaction_id,
-        group_hub_interaction_id,
+        p_source_type,
+        p_source_hub_interaction_id,
+        p_group_hub_interaction_id,
         v_is_bundle_valid,
-        v_bundle_type
+        v_bundle_type,
+		p_additional_details
     ) RETURNING sat_interaction_fhir_request_id INTO v_return;  -- Return the generated UUID
 
     IF (v_return IS NOT NULL) THEN
-        IF(uri='/Bundle' OR uri='/Bundle/' OR uri='/flatfile/csv/Bundle' OR uri='/flatfile/csv/Bundle/' OR uri='/ccda/Bundle' OR uri='/ccda/Bundle/') THEN
+        IF(p_uri='/Bundle' OR p_uri='/Bundle/' OR p_uri='/flatfile/csv/Bundle' OR p_uri='/flatfile/csv/Bundle/' OR p_uri='/ccda/Bundle' OR p_uri='/ccda/Bundle/') THEN
             CALL techbd_udi_ingress.insert_fhir_session_diagnostic(
-                hub_interaction_id, 
-                tenant_id, 
-                uri, 
+                p_hub_interaction_id, 
+                p_tenant_id, 
+                p_uri, 
                 v_bundle_session_id, 
-                payload, 
-                created_by, 
-                provenance,
-                sat_interaction_fhir_request_upserted.elaboration,
+                p_payload, 
+                v_created_by, 
+                p_provenance,
+                p_elaboration,
                 v_ig_version,
                 v_validation_engine,
                 v_bundle_id
             );
-            IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('techByDesignDisposition')) THEN
+            IF(LOWER(p_nature) = LOWER('techByDesignDisposition')) THEN
                 CALL techbd_udi_ingress.insert_validation_issues(
-                    hub_interaction_id, 
-                    uri, 
-                    payload, 
-                    created_by, 
-                    provenance,
-                    sat_interaction_fhir_request_upserted.elaboration
+                    p_hub_interaction_id, 
+                    p_uri, 
+                    p_payload, 
+                    v_created_by, 
+                    p_provenance,
+                    p_elaboration
                 );
             END IF;              
-            IF(LOWER(sat_interaction_fhir_request_upserted.nature) = LOWER('Original FHIR Payload')) THEN
+            IF(LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN
                 CALL techbd_udi_ingress.insert_fhir_screening_info(
-                    hub_interaction_id, 
-                    tenant_id, 
-                    uri, 
+                    p_hub_interaction_id, 
+                    p_tenant_id, 
+                    p_uri, 
                     v_created_at, 
-                    payload,
-                    created_by, 
-                    provenance,
-                    sat_interaction_fhir_request_upserted.elaboration
+                    p_payload,
+                    v_created_by, 
+                    p_provenance,
+                    p_elaboration
                 );
                 CALL techbd_udi_ingress.insert_fhir_screening_patient(
-                    hub_interaction_id, 
-                    tenant_id, 
-                    uri, 
+                    p_hub_interaction_id, 
+                    p_tenant_id, 
+                    p_uri, 
                     v_created_at, 
-                    payload,
-                    created_by, 
-                    provenance,
-                    sat_interaction_fhir_request_upserted.elaboration,
+                    p_payload,
+                    v_created_by, 
+                    p_provenance,
+                    p_elaboration,
                     v_organization_id
                 );
                 CALL techbd_udi_ingress.insert_fhir_screening_organization(
-                    hub_interaction_id, 
-                    tenant_id, 
-                    uri, 
+                    p_hub_interaction_id, 
+                    p_tenant_id, 
+                    p_uri, 
                     v_created_at, 
-                    payload,
-                    created_by, 
-                    provenance,
-                    sat_interaction_fhir_request_upserted.elaboration 
+                    p_payload,
+                    v_created_by, 
+                    p_provenance,
+                    p_elaboration 
                 );
             END IF;                  
         END IF;         
-    END IF;        
+    END IF; 
+
+	-- Save the details from the techByDesignDisposition to other natures also
+	IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN    
+		UPDATE techbd_udi_ingress.sat_interaction_fhir_request
+			SET issues_count 			= COALESCE(v_issues_count, 0),			
+    			outbound_http_message 	= v_outbound_http_message,  	
+				bundle_session_id 		= v_bundle_session_id,	 				  
+    			validation_engine 		= v_validation_engine,   
+    			ig_version				= v_ig_version,
+    			profile_url				= v_profile_url,    
+    			is_bundle_valid			= v_is_bundle_valid,    
+    			validation_initiated_at = COALESCE(v_validation_initiated_at::TIMESTAMPTZ, NULL),
+    			validation_completed_at = COALESCE(v_validation_completed_at::TIMESTAMPTZ, NULL),    	
+				techbd_disposition_action = v_techbd_disposition_action
+		WHERE hub_interaction_id = p_hub_interaction_id AND LOWER(nature) != LOWER('techByDesignDisposition');
+	END IF;    
 
     RETURN v_return;
 EXCEPTION
@@ -2047,7 +2076,7 @@ EXCEPTION
 	    -- Log the exception, reusing the previous exception ID if it exists
 		v_exception_id := techbd_udi_ingress.register_issue(
         COALESCE(v_exception_id,NULL),
-		sat_interaction_fhir_request_upserted.uri,
+		p_uri,
 		v_error_msg,
 		v_error_type,
 		v_sqlstate,
@@ -5253,7 +5282,7 @@ register_interaction_nexus_ingestion -  function used in t he nexus integration 
     It ensures error logging, traceability, and prevents duplicate hub entries while returning a JSONB response with interaction details.
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_nexus_ingestion(text, text, text, bytea, jsonb, text, text, text, text, text, text, text, text, jsonb, jsonb, jsonb, text, text);
-
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_nexus_ingestion(text, text, text, bytea, jsonb, text, text, text, text, text, text, text, text, jsonb, jsonb, jsonb, text, timestamptz, text);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_nexus_ingestion(
     p_hub_nexus_interaction_id text,
     p_request_uri text,
@@ -5272,6 +5301,7 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_nexus_ingesti
     p_general_errors jsonb DEFAULT NULL,
     p_elaboration jsonb DEFAULT NULL,
     p_created_by text DEFAULT CURRENT_USER,
+    p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
     p_provenance text DEFAULT NULL
 )
 RETURNS jsonb
@@ -5288,16 +5318,15 @@ DECLARE
     v_sat_nexus_id 		text := gen_random_uuid()::text;
 	v_exception_id 		text := gen_random_uuid()::text;
 	v_nature_denorm 	text := trim(p_nature->>'nature');
-	v_tenant_id_denorm 	text := lower(p_nature->>'tenant_id');
-	v_created_at 		TIMESTAMPTZ := CURRENT_TIMESTAMP;
+	v_tenant_id_denorm 	text := p_nature->>'tenant_id';
+	v_created_at 		TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
 	v_user_id 			TEXT  := COALESCE(p_user_id, CURRENT_USER);	
 BEGIN
     BEGIN
 		/*
 		  This function registers an HTTP interaction request in the hub_nexus_interaction and sat_nexus_interaction_ingestion tables, storing metadata, payload, and diagnostics.
 		  It ensures error logging, traceability, and prevents duplicate hub entries while returning a JSONB response with interaction details.
-		*/	
-
+		*/		
 		/*---register diagnostic log---*/
 		v_elaboration := jsonb_build_object(
 							'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -5465,6 +5494,8 @@ register_interaction_fhir_request -  This function handles the registration of F
     - source_type: fhir/hl7/csv/ccda
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, text, bool, text, text, text, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, json);
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_fhir_request(
 	p_interaction_id text, 
 	p_interaction_key text, 
@@ -5483,13 +5514,15 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_fhir_request(
 	p_user_session text DEFAULT NULL::text, 
 	p_user_role text DEFAULT NULL::text, 
 	p_created_by text DEFAULT CURRENT_USER, 
+	p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
 	p_provenance text DEFAULT NULL::text, 
 	p_hub_upsert_behavior boolean DEFAULT true, 
 	p_source_hub_interaction_id text DEFAULT NULL::text, 
 	p_origin text DEFAULT NULL::text, 
 	p_source_type text DEFAULT NULL::text, 
 	p_group_hub_interaction_id text DEFAULT NULL::text,
-	p_request_source text DEFAULT NULL::text)
+	p_request_source text DEFAULT NULL::text,
+	p_additional_details jsonb DEFAULT NULL::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -5500,11 +5533,11 @@ DECLARE
     v_pg_detail 		TEXT;
     v_pg_hint 			TEXT;
     v_pg_context 		TEXT;
-    v_created_at 		TIMESTAMPTZ := CURRENT_TIMESTAMP;
+    v_created_at 		TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'FHIR');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
    	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
-   	v_tenant_id_denorm 	TEXT		:= lower(p_nature->>'tenant_id');   
+   	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';   
 	
    	v_from_state				TEXT;
    	v_to_state					TEXT;
@@ -5546,12 +5579,6 @@ BEGIN
 
 	IF v_nature_denorm NOT IN('Original FHIR payload', 'techByDesignDisposition', 'Forward HTTP Request', 'Forwarded HTTP Response', 'Forwarded HTTP Response Error') THEN
 		RETURN jsonb_build_object('error', 'Not a valid FHIR nature',
-								  'payload', p_payload,
-								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
-								  'interaction_id', p_interaction_id);
-	END IF;
-	IF p_interaction_key NOT IN('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/', '/api/expect/fhir/bundle') THEN
-		RETURN jsonb_build_object('error', 'Not a valid FHIR interaction_key',
 								  'payload', p_payload,
 								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
 								  'interaction_id', p_interaction_id);
@@ -5717,7 +5744,7 @@ BEGIN
 	    END IF;
 	   
 		v_payload := p_payload;
-		IF (v_nature_denorm = 'techByDesignDisposition' AND trim(p_interaction_key) IN ('/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/')) THEN	
+		IF (v_nature_denorm = 'techByDesignDisposition') THEN
 				v_disposition_json := techbd_udi_ingress.process_json_action_rules(
 					p_payload,
 					p_rule_namespace,
@@ -5744,23 +5771,23 @@ BEGIN
 		END IF;
 
 	    --2.1) Call the function with the defined parameters to upsert interaction FHIR request info.
---	   	IF trim(p_interaction_key) IN ('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/', '/api/expect/fhir/bundle')	THEN	   		
 	   		PERFORM techbd_udi_ingress.sat_interaction_fhir_request_upserted(
-	   			hub_interaction_id 			=> p_interaction_id,
-		        tenant_id 					=> v_tenant_id_denorm,
-		        uri 						=> p_interaction_key,
-		        nature 						=> v_nature_denorm,
-		        from_state 					=> p_from_state,
-		        to_state 					=> p_to_state,
-		        payload						=> v_payload,
-		        state_transition_reason		=> p_state_transition_reason,
-		        created_at 					=> v_created_at,
-		        created_by 					=> p_created_by,
-		        provenance 					=> v_provenance,
-		        elaboration					=> p_elaboration,	     
-		      	source_type					=> p_source_type, 
-		      	source_hub_interaction_id	=> p_source_hub_interaction_id,
-		      	group_hub_interaction_id	=> p_group_hub_interaction_id
+	   			p_hub_interaction_id 			=> p_interaction_id,
+		        p_tenant_id 					=> v_tenant_id_denorm,
+		        p_uri 							=> p_interaction_key,
+		        p_nature 						=> v_nature_denorm,
+		        p_from_state 					=> p_from_state,
+		        p_to_state 						=> p_to_state,
+		        p_payload						=> v_payload,
+		        p_state_transition_reason		=> p_state_transition_reason,
+		        p_created_at 					=> v_created_at,
+		        p_created_by 					=> p_created_by,
+		        p_provenance 					=> v_provenance,
+		        p_elaboration					=> p_elaboration,	     
+		      	p_source_type					=> p_source_type, 
+		      	p_source_hub_interaction_id		=> p_source_hub_interaction_id,
+		      	p_group_hub_interaction_id		=> p_group_hub_interaction_id,
+				p_additional_details			=> p_additional_details
 	       	);
 	       	/*---register diagnostic log---*/
 	       	v_elaboration := jsonb_build_object(
@@ -5771,12 +5798,12 @@ BEGIN
 								'tenant_id', v_tenant_id_denorm,
          						'from_state', p_from_state,
          						'to_state', p_to_state,
+								'additional_details', p_additional_details,
          						'step', '6. Insert into sat_interaction_fhir_request'
          						);
            	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
        																'Insert into sat_interaction_fhir_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
        	   	/*------------------------------*/															
---	    END IF;	
 	    
 	
 		v_return := jsonb_build_object('payload', CASE WHEN v_nature_denorm = 'techByDesignDisposition' THEN v_payload ELSE NULL END,
@@ -5847,6 +5874,8 @@ register_interaction_ccda_request -  This function handles the registration of C
     - source_type: fhir/hl7/csv/ccda
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_ccda_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, text, bool, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_ccda_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, text, text);
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_ccda_request(
 	p_interaction_id text, 
 	p_interaction_key text, 
@@ -5865,6 +5894,7 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_ccda_request(
 	p_user_session text DEFAULT NULL::text, 
 	p_user_role text DEFAULT NULL::text, 
 	p_created_by text DEFAULT CURRENT_USER, 
+	p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone,
 	p_provenance text DEFAULT NULL::text, 
 	p_hub_upsert_behavior boolean DEFAULT true, 
 	p_source_hub_interaction_id text DEFAULT NULL::text, 
@@ -5884,11 +5914,11 @@ DECLARE
     v_pg_detail 		TEXT;
     v_pg_hint 			TEXT;
     v_pg_context 		TEXT;
-    v_created_at 		TIMESTAMPTZ := CURRENT_TIMESTAMP;
+    v_created_at 		TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'CCDA');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
    	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
-   	v_tenant_id_denorm 	TEXT		:= lower(p_nature->>'tenant_id');
+   	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';
    
    	v_from_state				TEXT;
    	v_to_state					TEXT;
@@ -6193,6 +6223,8 @@ register_interaction_csv_request -  This function handles the registration of CS
     - source_type: fhir/hl7/csv/ccda
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_csv_request(text, text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, text, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_csv_request(text, text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
+
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_csv_request(
 	p_interaction_id text, 
 	p_interaction_key text, 
@@ -6211,6 +6243,7 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_interaction_csv_request(
 	p_user_session text DEFAULT NULL::text, 
 	p_user_role text DEFAULT NULL::text, 
 	p_created_by text DEFAULT CURRENT_USER, 
+	p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone,
 	p_provenance text DEFAULT NULL::text, 
 	p_hub_upsert_behavior boolean DEFAULT true, 
 	p_csv_zip_file_name text DEFAULT NULL::text, 
@@ -6243,11 +6276,11 @@ DECLARE
     v_pg_detail 		TEXT;
     v_pg_hint 			TEXT;
     v_pg_context 		TEXT;
-    v_created_at 		TIMESTAMPTZ := CURRENT_TIMESTAMP;
+    v_created_at 		TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'CSV');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
    	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
-   	v_tenant_id_denorm 	TEXT		:= lower(p_nature->>'tenant_id');
+   	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';
    
    	v_from_state				TEXT;
    	v_to_state					TEXT;
@@ -6605,7 +6638,7 @@ DECLARE
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'USER');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
    	v_nature_denorm 	TEXT		:= trim(p_nature->>'nature');
-   	v_tenant_id_denorm 	TEXT		:= lower(p_nature->>'tenant_id');  
+   	v_tenant_id_denorm 	TEXT		:= p_nature->>'tenant_id';  
    
    	v_from_state				TEXT;
    	v_to_state					TEXT;

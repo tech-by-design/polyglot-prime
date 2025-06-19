@@ -1061,6 +1061,7 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_inter_nexus_req_hub_nexus_inter_id_idx 
                           ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id);
       ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS request_source TEXT DEFAULT NULL; 
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS additional_details JSONB DEFAULT NULL;
 
       ${linkNexusInteraction}
       IF NOT EXISTS (
