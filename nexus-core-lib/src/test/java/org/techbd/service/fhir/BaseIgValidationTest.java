@@ -64,15 +64,15 @@ public abstract class BaseIgValidationTest {
         // Shinny version 1.2.3
         Map<String, String> shinny = new HashMap<>();
         shinny.put("profile-base-url", "http://shinny.org/us/ny/hrsn");
-        shinny.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.4.5");
-        shinny.put("ig-version", "1.4.5");
+        shinny.put("package-path", "ig-packages/shin-ny-ig/shinny/v1.5.2");
+        shinny.put("ig-version", "1.5.2");
         shinnyPackages.put("shinny", shinny);
 
-        // Test Shinny version 1.5.0
+        // Test Shinny version 1.5.2
         Map<String, String> testshinny = new HashMap<>();
         testshinny.put("profile-base-url", "http://test.shinny.org/us/ny/hrsn");
-        testshinny.put("package-path", "ig-packages/shin-ny-ig/test-shinny/v1.5.0");
-        testshinny.put("ig-version", "1.5.0");
+        testshinny.put("package-path", "ig-packages/shin-ny-ig/test-shinny/v1.5.2");
+        testshinny.put("ig-version", "1.5.2");
         shinnyPackages.put("test-shinny", testshinny);
 
         fhirV4Config.setBasePackages(basePackages);
