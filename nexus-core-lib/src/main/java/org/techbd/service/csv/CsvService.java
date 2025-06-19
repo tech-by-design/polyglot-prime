@@ -94,7 +94,7 @@ public class CsvService {
             initRIHR.setPContentType(MimeTypeUtils.APPLICATION_JSON_VALUE);
             initRIHR.setPCsvZipFileContent(file.getBytes());
             initRIHR.setPCsvZipFileName(file.getOriginalFilename());
-            // initRIHR.setCreatedAt(forwardedAt);
+            initRIHR.setPCreatedAt(forwardedAt);
             final InetAddress localHost = InetAddress.getLocalHost();
             final String ipAddress = localHost.getHostAddress();
             initRIHR.setPClientIpAddress(ipAddress);
