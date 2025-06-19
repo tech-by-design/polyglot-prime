@@ -67,6 +67,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.micrometer.common.util.StringUtils;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -358,7 +359,14 @@ public class FHIRService {
 			final var rihr = new RegisterInteractionFhirRequest();
 			final var provenance = "%s.doFilterInternal".formatted(FHIRService.class.getName());
 			final var start = Instant.now();
+			JsonNode payloadJson;
 
+			try {
+				payloadJson = Configuration.objectMapper.readTree(payload);
+			} catch (JsonProcessingException e) {
+				LOG.error("Invalid JSON format. Storing raw payload. Error: {} for interactionID :{}", e.getMessage(), interactionId,e);
+				payloadJson = TextNode.valueOf(payload);
+			}
 			prepareRequestBase(
 					rihr,
 					interactionId != null ? interactionId : UUID.randomUUID().toString(),
@@ -369,7 +377,7 @@ public class FHIRService {
 					requestParameters,
 					provenance,
 					Nature.ORIGINAL_FHIR_PAYLOAD.getDescription(),
-					Configuration.objectMapper.readTree(payload),State.NONE.name(),State.ACCEPT_FHIR_BUNDLE.name());
+					payloadJson,State.NONE.name(),State.ACCEPT_FHIR_BUNDLE.name());
 			rihr.setPAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree( Map.of("request", requestParameters)));
 			final int i = rihr.execute(jooqCfg);
 			final var end = Instant.now();
@@ -381,7 +389,6 @@ public class FHIRService {
 					interactionId,
 					responseAttributes.getOrDefault(Constants.KEY_ERROR, "N/A"),
 					responseAttributes.getOrDefault(Constants.KEY_HUB_NEXUS_INTERACTION_ID, "N/A"));
-
 		} catch (final Exception e) {
 			LOG.error("ERROR:: REGISTER Original Payload for interaction id: {}: {}",
 					interactionId, e.getMessage(), e);
