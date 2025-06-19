@@ -6,7 +6,7 @@ org:
             mTlsAwsSecrets: 
                 mTlsKeySecretName: techbd-qa-client-key
                 mTlsCertSecretName: techbd-qa-client-certificate
-        dataLedgerApiUrl: https://k77kvhgmkh.execute-api.us-east-1.amazonaws.com/qa/DataLedger
+        dataLedgerApiUrl: https://zq34s8hsvh.execute-api.us-east-1.amazonaws.com/qa/DataLedger
         dataLedgerTracking: true
         dataLedgerDiagnostics: true
         dataLedgerApiKeySecretName: techbd-nyec-dataledger-api-key
