@@ -9,7 +9,7 @@ public enum Nature {
     MESSAGE_PULLED_BY_CHANNEL("Message Pulled by Channel"),
 
     // FHIR
-    ORIGINAL_FHIR_PAYLOAD("Original FHIR payload"),
+    ORIGINAL_FHIR_PAYLOAD("Original FHIR Payload"),
     TECH_BY_DISPOSITION("techByDesignDisposition"),
     FORWARD_HTTP_REQUEST("Forward HTTP Request"),
     FORWARDED_HTTP_RESPONSE("Forwarded HTTP Response"),

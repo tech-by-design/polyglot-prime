@@ -72,6 +72,16 @@ public class CsvBundleProcessorService {
             final Map<String,Object> responseParameters,
             final String tenantId, final String originalFileName,String baseFHIRUrl) {
         LOG.info("ProcessPayload: BEGIN for zipFileInteractionId: {}, tenantId: {}, baseFHIRURL: {}", masterInteractionId, tenantId, baseFHIRUrl);
+      
+        // severity level is passed through the chain
+        String severityLevel = headerParameters.getOrDefault(
+                Constants.VALIDATION_SEVERITY_LEVEL,
+                "error" // Default to error if not specified
+        );
+        // Add to request parameters for use throughout the chain
+        requestParameters.put(Constants.VALIDATION_SEVERITY_LEVEL, severityLevel);
+        LOG.info("CsvBundleProcessorService:: Using validation severity level: {}", severityLevel);
+
         final List<Object> resultBundles = new ArrayList<>();
         final List<Object> miscErrors = new ArrayList<>();
         boolean isAllCsvConvertedToFhir = true;
@@ -123,7 +133,7 @@ public class CsvBundleProcessorService {
             } catch (final Exception e) {
                 LOG.error("Error processing payload: " + e.getMessage(), e);
                 final Map<String, Object> errors = createOperationOutcomeForError(masterInteractionId, groupInteractionId, "",
-                        "", e, provenance,outcome.fileDetails());                                
+                        "", e, provenance,outcome.fileDetails(), headerParameters);                                
                 DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
                 CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(), 
                 CoreDataLedgerApiClient.Actor.INVALID_CSV.getValue(), masterInteractionId);
@@ -370,9 +380,17 @@ private List<Object> processScreening(final String groupKey,
                         saveFhirConversionStatus(isValid, masterInteractionId, groupKey, groupInteractionId,
                                 interactionId, requestParameters,
                                 bundle, null, tenantId);
-                        Map<String,String> headers = org.techbd.util.fhir.CoreFHIRUtil.buildHeaderParametersMap(
-                            tenantId, null, null, null, null, null,
-                            null, updatedProvenance);       
+                       
+                             Map<String, String> headers = org.techbd.util.fhir.CoreFHIRUtil.buildHeaderParametersMap(
+                                tenantId,
+                                null,
+                                null,
+                                null,
+                                headerParameters.get(Constants.VALIDATION_SEVERITY_LEVEL), // Pass severity level
+                                null,
+                                null,
+                                updatedProvenance);
+
                         org.techbd.util.fhir.CoreFHIRUtil.buildRequestParametersMap(requestParameters,
                             false, null, SourceType.CSV.name(),  groupInteractionId, masterInteractionId,requestParameters.get(Constants.REQUEST_URI));
                         requestParameters.put(Constants.INTERACTION_ID, interactionId);
@@ -390,7 +408,7 @@ private List<Object> processScreening(final String groupKey,
                         final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
                                 profile.getPatientMrIdValue(), profile.getEncounterId(),
                                 new Exception("Bundle not created"),
-                                payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails());
+                                payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails(), headerParameters);
                         String bundleId =CoreFHIRUtil.extractBundleId(bundle, tenantId);                                
                         DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
                         CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(), 
@@ -406,7 +424,7 @@ private List<Object> processScreening(final String groupKey,
                     errorCount.incrementAndGet();
                     final Map<String, Object> result = createOperationOutcomeForError(masterInteractionId, interactionId,
                             profile.getPatientMrIdValue(), profile.getEncounterId(), e,
-                            payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails());
+                            payloadAndValidationOutcome.provenance(),payloadAndValidationOutcome.fileDetails(), headerParameters);
                     String bundleId =CoreFHIRUtil.extractBundleId(bundle, tenantId);                                
                     DataLedgerPayload dataLedgerPayload = DataLedgerPayload.create(
                     CoreDataLedgerApiClient.Actor.TECHBD.getValue(), CoreDataLedgerApiClient.Action.SENT.getValue(), 
@@ -444,7 +462,7 @@ private List<Object> processScreening(final String groupKey,
             final String patientMrIdValue,
             final String encounterId,
             final Exception e,
-            final Map<String, Object> provenance,List<FileDetail> fileDetails) {
+            final Map<String, Object> provenance,List<FileDetail> fileDetails,final Map<String, String> headerParameters) {
         if (e == null) {
             return Collections.emptyMap();
         }
@@ -456,9 +474,15 @@ private List<Object> processScreening(final String groupKey,
                 ", Error: " + e.getMessage();
 
         final String remediationMessage = "Error processing data.";
-
+        // Get severity level from header or use default
+        String severityLevel = "error";
+        if (headerParameters != null && headerParameters.containsKey(Constants.VALIDATION_SEVERITY_LEVEL)) {
+        severityLevel = headerParameters.get(Constants.VALIDATION_SEVERITY_LEVEL).toLowerCase();
+        }
+        
         final Map<String, Object> errorDetails = Map.of(
                 "type", "processing-error",
+                "severity", severityLevel, // added severity
                 "description", remediationMessage,
                 "message", diagnosticsMessage);
 
