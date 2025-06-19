@@ -1008,12 +1008,7 @@
 
   <!-- Sexual orientation Observation Template -->
   <xsl:template name="SexualOrientation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='sexualOrientation']/ccda:entry/ccda:observation">
-    <xsl:if test="string(ccda:code/@code) = '76690-7' 
-              and string(ccda:value/@code) != 'UNK' 
-              and string-length(ccda:value/@code) > 0 
-              and string-length(ccda:value/@nullFlavor) = 0
-              and string-length(ccda:code/@nullFlavor) = 0
-          "> 
+    <xsl:if test="string(ccda:code/@code) = '76690-7'">
       ,{
         "fullUrl" : "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$sexualOrientationResourceId'/>",
         "resource": {
