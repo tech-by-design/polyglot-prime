@@ -1187,11 +1187,11 @@ const migrateSP = pgSQLa.storedProcedure(
         test_result BOOLEAN;
         line TEXT;
       BEGIN
-          PERFORM * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_http_request'::text);
+          PERFORM * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests'::text);
           test_result = TRUE;
 
           FOR line IN
-              SELECT * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_http_request'::text)
+              SELECT * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests'::text)
           LOOP
               tap_op := tap_op || line || E'\n';
 
@@ -1203,11 +1203,11 @@ const migrateSP = pgSQLa.storedProcedure(
 
           -- Insert the test result into the test_results table
           INSERT INTO ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} (migration_version, test_name, tap_output, success, created_by, provenance)
-          VALUES ('${migrateVersion}', 'test_register_interaction_http_request', tap_op, test_result, 'ADMIN', 'pgtap');
+          VALUES ('${migrateVersion}', 'test_register_interaction_requests', tap_op, test_result, 'ADMIN', 'pgtap');
 
           -- Check if the test passed
           IF NOT test_result THEN
-              RAISE EXCEPTION 'Test failed: %', 'test_register_interaction_http_request';
+              RAISE EXCEPTION 'Test failed: %', 'test_register_interaction_requests';
           END IF;
       EXCEPTION
           -- Handle the specific error
