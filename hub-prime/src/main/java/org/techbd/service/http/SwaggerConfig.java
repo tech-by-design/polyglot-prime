@@ -170,6 +170,20 @@ public class SwaggerConfig {
                                             .in("header")
                                             .schema(new StringSchema()))
                                         .addParametersItem(new Parameter()
+                                            .name("X-TechBD-Facility-ID")
+                                            .description(
+                                                    "Mandatory header for MRN Facility code")
+                                            .required(true)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                       .addParametersItem(new Parameter()
+                                            .name("X-TechBD-Encounter-Type")
+                                            .description(
+                                                    "Mandatory header for Encounter Type Code")
+                                            .required(true)
+                                            .in("header")
+                                            .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
                                             .name("X-TechBD-OrgNPI")
                                             .description(
                                                     "Optional header to specify the NPI (National Provider Identifier) for the Organization resource. It will be used in the generated FHIR. Either this or X-TechBD-OrgTIN must be provided.")
