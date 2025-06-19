@@ -3,9 +3,6 @@ package org.techbd.service.fhir;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import org.techbd.config.State;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -55,6 +52,7 @@ import org.techbd.config.Interactions;
 import org.techbd.config.MirthJooqConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
+import org.techbd.config.State;
 import org.techbd.exceptions.ErrorCode;
 import org.techbd.exceptions.JsonValidationException;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
@@ -76,9 +74,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import jakarta.annotation.Nonnull;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.Setter;
 import reactor.core.publisher.Mono;
@@ -357,6 +353,8 @@ public class FHIRService {
 			final String coRrelationId) throws IOException {
 		final Span span = tracer.spanBuilder("FHIRService.registerOriginalPayload").startSpan();
 		try {
+			LOG.info(
+					"FHIRService -  REGISTER Original Payload BEGIN  for interaction id: {}",interactionId);
 			final var rihr = new RegisterInteractionFhirRequest();
 			final var provenance = "%s.doFilterInternal".formatted(FHIRService.class.getName());
 			final var start = Instant.now();
@@ -402,6 +400,7 @@ public class FHIRService {
 			final String requestUriToBeOverriden) throws IOException {
 		final Span span = tracer.spanBuilder("FHIRService.registerValidationResults").startSpan();
 		try {
+			LOG.info("FHIRService REGISTER Validation Results BEGIN  for interaction id: {}",interactionId);
 			final var rihr = new RegisterInteractionFhirRequest();
 			final var provenance = "%s.doFilterInternal".formatted(FHIRService.class.getName());
 			final var start = Instant.now();
@@ -448,9 +447,6 @@ public class FHIRService {
 			final String provenance,
 			final String nature,
 			final JsonNode payloadNode,String fromState,String toState) {
-		LOG.info("REGISTER {}: BEGIN for interaction id: {} tenant id: {}",
-				nature, interactionId, (String) requestParameters.get(Constants.TENANT_ID));
-
 		rihr.setPInteractionId(interactionId);
 		rihr.setPGroupHubInteractionId(groupInteractionId);
 		rihr.setPSourceHubInteractionId(masterInteractionId);
