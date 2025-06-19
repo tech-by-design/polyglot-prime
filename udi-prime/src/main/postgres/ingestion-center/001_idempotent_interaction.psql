@@ -912,7 +912,7 @@ where
  * 2. `accepted_submissions`: Counts submissions where the nature is 'Forwarded HTTP Response'.
  * 3. `rejected_submissions`: Counts submissions where the nature is 'Forwarded HTTP Response Error'.
  * 4. `pending_submissions`: Counts submissions where the nature is neither 'Forwarded HTTP Response',
- *    'Forwarded HTTP Response Error', nor 'Original FHIR payload'.
+ *    'Forwarded HTTP Response Error', nor 'Original FHIR Payload'.
  *
  * This view aggregates data for all interactions related to FHIR submissions based on the following:
  * - Interaction metadata including the nature of HTTP requests.
@@ -982,7 +982,7 @@ WITH submission_counts AS (
          SELECT sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
-                    WHEN sihr.nature = 'Original FHIR payload'::text THEN 1
+                    WHEN sihr.nature = 'Original FHIR Payload'::text THEN 1
                     ELSE NULL::integer
                 END) AS qe_total_submissions,
  
@@ -1173,7 +1173,7 @@ WITH combined_counts AS (
          SELECT sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
-                    WHEN sihr.nature = 'Original FHIR payload'::text THEN 1
+                    WHEN sihr.nature = 'Original FHIR Payload'::text THEN 1
                     ELSE NULL::integer
                 END) AS qe_total_submissions,
             count(
@@ -1271,7 +1271,7 @@ DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_needs_atten
  * 
  * Filtering:
  * - URI: The view includes only interactions with the URIs '/Bundle' or '/Bundle/'.
- * - Nature: It specifically targets interactions categorized as 'Original FHIR payload'.
+ * - Nature: It specifically targets interactions categorized as 'Original FHIR Payload'.
  * - User Agent: Requests with a user agent of 'httpyac' are excluded to focus on interactions from other sources.
  * - Time Frame: The view is restricted to interactions that occurred within the last 7 days, ensuring the summary is recent and relevant.
  * 
@@ -1298,7 +1298,7 @@ WITH cte AS (
            client_ip_address,
            user_agent
     FROM techbd_udi_ingress.sat_interaction_fhir_request
-    WHERE nature = 'Original FHIR payload'
+    WHERE nature = 'Original FHIR Payload'
       AND uri != '/api/expect/fhir/bundle'
       AND user_agent <> 'httpyac'
       AND created_at >= CURRENT_DATE - INTERVAL '7 days' 
@@ -1342,7 +1342,7 @@ ORDER BY tenant_id_lower, client_ip_address, user_agent;
  * Filtering:
  * - URI: The view includes only interactions with the URIs '/Bundle' or '/Bundle/'.
  * - Nature: It specifically targets interactions categorized as 
- *   'Original FHIR payload'.
+ *   'Original FHIR Payload'.
  * - User Agent: Requests with a user agent of 'httpyac' are excluded to focus on interactions 
  *   from other sources.
  * - Time Frame: The view is restricted to interactions that occurred within the last 7 days, 
@@ -1372,7 +1372,7 @@ WITH cte AS (
           hub_interaction_id,  
           created_at         
     FROM techbd_udi_ingress.sat_interaction_fhir_request
-    WHERE nature = 'Original FHIR payload'
+    WHERE nature = 'Original FHIR Payload'
       AND uri != '/api/expect/fhir/bundle'
       AND user_agent <> 'httpyac'
       AND created_at >= CURRENT_DATE - INTERVAL '7 days'  
@@ -1703,7 +1703,7 @@ BEGIN
 															'Insert into sat_interaction_fhir_request'::text, current_user, 'success'::text, NULL::text, 0, v_elaboration);
   	/*------------------------------*/
   
-  	IF(LOWER(p_nature) <> LOWER('Original FHIR payload')) THEN
+  	IF(LOWER(p_nature) <> LOWER('Original FHIR Payload')) THEN
 		SELECT 
 		fhir_req.client_ip_address,			fhir_req.user_agent, 				fhir_req.bundle_id, 
 		fhir_req.bundle_last_updated,		fhir_req.organization_id,			fhir_req.organization_name, 
@@ -1724,10 +1724,10 @@ BEGIN
 		techbd_udi_ingress.sat_interaction_fhir_request fhir_req
 		WHERE 1 = 1
 		AND fhir_req.hub_interaction_id = p_hub_interaction_id
-		AND fhir_req.nature = 'Original FHIR payload';	
+		AND fhir_req.nature = 'Original FHIR Payload';	
   	END IF;  	
 
-	IF(LOWER(p_nature) = LOWER('Original FHIR payload')) THEN				   
+	IF(LOWER(p_nature) = LOWER('Original FHIR Payload')) THEN				   
     	
 		v_user_agent 				:= p_additional_details->'request'->>'User-Agent';    
     	v_client_ip_address 		:= p_additional_details->'request'->>'remoteAddr';
@@ -1840,7 +1840,7 @@ BEGIN
         )
         SELECT bundle_type INTO v_bundle_type FROM categories;	
 	
-	END IF; /*End of : Original FHIR payload*/
+	END IF; /*End of : Original FHIR Payload*/
 	
 	-- Save the action from the OperationOutcome->techByDesignDisposition
 	IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN 
@@ -3204,7 +3204,7 @@ CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_tenant_stats_view  AS
         sihr.tenant_id_lower::text AS qe_name,  
         sihr.created_at::date,
         COUNT(CASE 
-                  WHEN sihr.nature = 'Original FHIR payload' THEN 1 
+                  WHEN sihr.nature = 'Original FHIR Payload' THEN 1 
                   ELSE NULL 
               END) AS qe_fhir_submission_count,        
         COUNT(CASE 
@@ -3262,7 +3262,7 @@ create or replace view techbd_udi_ingress.fhir_scn_submission as
          SELECT sihr.organization_id AS organization_id,
             count(
                 CASE
-                    WHEN sihr.nature = 'Original FHIR payload'::text THEN 1
+                    WHEN sihr.nature = 'Original FHIR Payload'::text THEN 1
                     ELSE NULL::integer
                 END) AS qe_total_submissions,
             count(
@@ -3321,7 +3321,7 @@ select
 	sihr.tenant_id_lower as qe_name,
 	count(
                 case
-                    when sihr.nature = 'Original FHIR payload'::text then 1
+                    when sihr.nature = 'Original FHIR Payload'::text then 1
                     else null::integer
                 end) as qe_total_submissions,
 	count(
@@ -3406,7 +3406,7 @@ create or replace view techbd_udi_ingress.missing_datalake_submission_details as
 from
 	techbd_udi_ingress.sat_interaction_fhir_request sihr
 where
-	sihr.nature = 'Original FHIR payload'::text
+	sihr.nature = 'Original FHIR Payload'::text
 	and (sihr.uri = any (array['/Bundle/',
 	'/Bundle']))
 	and sihr.created_at >= (CURRENT_DATE - '7 days'::interval)
@@ -3663,7 +3663,7 @@ BEGIN
             sihr.organization_id,
             count(
                 CASE 
-                    WHEN sihr.nature = 'Original FHIR payload' THEN 1 
+                    WHEN sihr.nature = 'Original FHIR Payload' THEN 1 
                     ELSE NULL 
                 END
             )::INTEGER AS qe_total_submissions,
@@ -3725,7 +3725,7 @@ BEGIN
             sihr.tenant_id_lower AS qe_name,
             count(
                 CASE
-                    WHEN sihr.nature = 'Original FHIR payload' THEN 1
+                    WHEN sihr.nature = 'Original FHIR Payload' THEN 1
                 END) AS qe_total_submissions,
             count(
                 CASE
@@ -3927,7 +3927,7 @@ BEGIN
     FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
     WHERE 
         sihr.tenant_id_lower = tenant_id_param
-        AND sihr.nature = 'Original FHIR payload'
+        AND sihr.nature = 'Original FHIR Payload'
         AND sihr.uri = ANY (ARRAY['/Bundle/', '/Bundle','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/'])
         AND sihr.created_at >= TO_TIMESTAMP(start_date_param::text, 'YYYY-MM-DD') 
         AND sihr.created_at < TO_TIMESTAMP(end_date_param::text, 'YYYY-MM-DD') + INTERVAL '1 day'
@@ -3961,7 +3961,7 @@ BEGIN
              SELECT 
                 sihr.organization_id,
                 sihr.tenant_id_lower AS qe_name,
-                count(CASE WHEN sihr.nature = ''Original FHIR payload'' THEN 1 ELSE NULL END) AS qe_total_submissions,
+                count(CASE WHEN sihr.nature = ''Original FHIR Payload'' THEN 1 ELSE NULL END) AS qe_total_submissions,
                 count(CASE WHEN sihr.nature = ''Forwarded HTTP Response'' THEN 1 ELSE NULL END) AS success_submissions,
                 count(CASE WHEN sihr.nature = ''Forwarded HTTP Response Error'' THEN 1 ELSE NULL END) AS faield_submissions,
                 max(sihr.created_at) AS recently_created_at
@@ -5577,7 +5577,7 @@ BEGIN
 			'Input parameters into register_interaction_fhir_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	/*------------------------------*/  
 
-	IF v_nature_denorm NOT IN('Original FHIR payload', 'techByDesignDisposition', 'Forward HTTP Request', 'Forwarded HTTP Response', 'Forwarded HTTP Response Error') THEN
+	IF v_nature_denorm NOT IN('Original FHIR Payload', 'techByDesignDisposition', 'Forward HTTP Request', 'Forwarded HTTP Response', 'Forwarded HTTP Response Error') THEN
 		RETURN jsonb_build_object('error', 'Not a valid FHIR nature',
 								  'payload', p_payload,
 								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
@@ -5711,7 +5711,7 @@ BEGIN
        																'Insert into sat_interaction_http_request'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
         /*------------------------------*/
        	--1) Call the function with the defined parameters to upsert user info
-       	IF(v_nature_denorm = 'Original FHIR payload') THEN     		       	
+       	IF(v_nature_denorm = 'Original FHIR Payload') THEN     		       	
 	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 		        hub_interaction_id 			=> p_interaction_id,
 		        hub_interaction_key			=> p_interaction_key, 
@@ -6613,6 +6613,7 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_user_interaction(
 	p_user_session text DEFAULT NULL::text, 
 	p_user_role text DEFAULT NULL::text, 
 	p_created_by text DEFAULT NULL::text, 
+    p_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, 
 	p_provenance text DEFAULT NULL::text, 
 	p_hub_upsert_behavior boolean DEFAULT true, 
 	p_source_hub_interaction_id text DEFAULT NULL::text, 
@@ -6633,7 +6634,7 @@ DECLARE
     v_pg_detail 		TEXT;
     v_pg_hint 			TEXT;
     v_pg_context 		TEXT;
-    v_created_at 		TIMESTAMPTZ := CURRENT_TIMESTAMP;
+    v_created_at 		TIMESTAMPTZ := COALESCE(p_created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null
     v_created_by 		TEXT 		:= COALESCE(p_created_by, current_user);
     v_provenance 		TEXT 		:= COALESCE(p_provenance, 'USER');
     v_exception_id 		TEXT		:= gen_random_uuid()::text;
