@@ -60,6 +60,14 @@
                 <stringProp name="Header.name">X-TechBD-OrgTIN</stringProp>
                 <stringProp name="Header.value">234234455</stringProp>
               </elementProp>
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">X-TechBD-Facility-ID</stringProp>
+                <stringProp name="Header.value">CUMC</stringProp>
+              </elementProp>
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">X-TechBD-Encounter-Type</stringProp>
+                <stringProp name="Header.value">23918007</stringProp>
+              </elementProp>
             </collectionProp>
           </HeaderManager>
           <hashTree/>
