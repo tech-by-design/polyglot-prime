@@ -14,7 +14,7 @@
 	<recordTarget>
 		<patientRole>
 			<id extension="362-92-8649" root="2.16.840.1.113883.4.1" />
-			<id assigningAuthorityName="EPI" extension="1942912" root="1.2.840.114350.1.1" />
+			<id assigningAuthorityName="EPI" extension="1942912" root="1.2.840.114350.1.13.861.1.7.5.737384.3434" />
 			<id assigningAuthorityName="EPI" extension="TY00987P" root="1.2.840.114350.1.1" />
 			<id assigningAuthorityName="EPI" extension="MN12345W" root="1.2.840.114350.1.1" />
 			<addr use="HP">
