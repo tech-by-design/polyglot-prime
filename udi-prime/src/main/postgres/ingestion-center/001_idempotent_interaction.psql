@@ -2115,15 +2115,6 @@ AS SELECT sat_interaction_fhir_request_id,
     payload,
     patient_mrn,
     concat_ws('-'::text, tenant_id, organization_id, patient_mrn) AS source_mrn,
-    CASE
-        WHEN payload->>'responseBody' IS NOT NULL
-            AND payload->>'responseBody' <> ''  THEN
-            (
-            SELECT string_agg(concat_ws(': ', key, COALESCE(value, 'NULL')), ', ')
-            FROM jsonb_each_text((payload->>'responseBody')::jsonb) AS json_data(key, value)
-            )
-        ELSE NULL
-    END AS response_body_details,
     case 
     	when (source_type = 'CSV') then 'CSV'
         WHEN (source_type = 'CCDA') then 'CCDA'
@@ -2381,7 +2372,7 @@ BEGIN
             (insert_fhir_session_diagnostic.payload -> 'response'::text) ->> 'encounteredAt'::text AS encounteredAt,
             insert_fhir_session_diagnostic.elaboration
         FROM LATERAL jsonb_array_elements(
-            (((insert_fhir_session_diagnostic.payload -> 'response'::text) -> 'responseBody'::text) -> 'OperationOutcome'::text) -> 'validationResults'::text
+            (insert_fhir_session_diagnostic.payload -> 'OperationOutcome'::text) -> 'validationResults'::text
         ) validationresult(value),
         LATERAL jsonb_array_elements(
             COALESCE(validationresult.value -> 'operationOutcome' -> 'issue', validationresult.value -> 'issues')
