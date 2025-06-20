@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -93,6 +93,29 @@ public class Interactions {
                     body);
         }
 
+        public RequestEncountered(Map<String, String> requestParameters) {
+            this(
+                    UUID.randomUUID(),
+                    new Tenant(requestParameters),
+                    requestParameters.getOrDefault("method", "GET"),
+                    requestParameters.getOrDefault(Constants.REQUEST_URI, ""),
+                    requestParameters.getOrDefault("absoluteUrl", ""),
+                    requestParameters.getOrDefault(Constants.REQUEST_URI, ""),
+                    requestParameters.getOrDefault("clientIpAddress", "unknown"),
+                    requestParameters.getOrDefault(Constants.USER_AGENT, "unknown"),
+                    Instant.now(),
+                    requestParameters.entrySet().stream()
+                            .filter(e -> e.getKey().startsWith("header-"))
+                            .map(e -> new Header(e.getKey().replace("header-", ""), e.getValue()))
+                            .collect(Collectors.toList()),
+                    new HashMap<>(), // Parameters map (can be extended)
+                    requestParameters.getOrDefault("contentType", "application/json"),
+                    requestParameters.getOrDefault("queryString", ""),
+                    requestParameters.getOrDefault("protocol", "HTTP/1.1"),
+                    Arrays.asList(requestParameters.getOrDefault("cookies", "").split(";")),
+                    null);
+        }
+
         public RequestEncountered(Map<String, String> requestParameters, byte[] body, UUID requestId,
                 List<Header> headers) {
             this(
@@ -163,11 +186,11 @@ public class Interactions {
         }
     }
 
-    public static void setUserDetails(RegisterInteractionHttpRequest rihr, Map<String, String> requestParameters) {
+    public static void setUserDetails(RegisterUserInteraction rihr, Map<String, String> requestParameters) {
         String curUserName = "API_USER";
         // String sessionId = requestParameters.get(Constants.REQUESTED_SESSION_ID);
-        rihr.setUserName(curUserName);
-        rihr.setUserSession(UUID.randomUUID().toString()); // TODO -check and add how to get this from mirth
+        rihr.setPUserName(curUserName);
+        rihr.setPUserSession(UUID.randomUUID().toString()); // TODO -check and add how to get this from mirth
     }
 
     public static void setActiveInteraction(Map<String, String> requestParameters, RequestResponseEncountered rre) {

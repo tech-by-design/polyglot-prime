@@ -2,6 +2,7 @@ package org.techbd.service.ccda;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -49,7 +50,7 @@ public class CCDAService {
             rihr.setPFromState(State.NONE.name());
             rihr.setPToState(State.CCDA_ACCEPT.name());
             rihr.setPSourceType(SourceType.CCDA.name());
-            // rihr.setPCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
@@ -102,7 +103,7 @@ public class CCDAService {
             rihr.setPFromState(State.CCDA_ACCEPT.name());
             rihr.setPToState(isValid ? State.VALIDATION_SUCCESS.name() : State.VALIDATION_FAILED.name());
             rihr.setPSourceType(SourceType.CCDA.name());
-            // rihr.setPCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(CCDAService.class.getName());
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());
             rihr.setPProvenance(provenance);
@@ -157,7 +158,7 @@ public class CCDAService {
             rihr.setPFromState(State.VALIDATION_SUCCESS.name());
             rihr.setPToState(conversionSuccess ? State.CONVERTED_TO_FHIR.name() : State.FHIR_CONVERSION_FAILED.name());
             rihr.setPSourceType(SourceType.CCDA.name());
-            // rihr.setCreatedAt(OffsetDateTime.now());
+            rihr.setPCreatedAt(OffsetDateTime.now());
             rihr.setPCreatedBy(CCDAService.class.getName());
 
             String provenance = "%s.saveCcdaValidation".formatted(CCDAService.class.getName());

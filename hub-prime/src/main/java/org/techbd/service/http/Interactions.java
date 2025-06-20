@@ -16,7 +16,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.techbd.conf.Configuration;
-import org.techbd.udi.auto.jooq.ingress.routines.RegisterInteractionHttpRequest;
+import org.techbd.udi.auto.jooq.ingress.routines.RegisterUserInteraction;
 import org.techbd.util.JsonText.ByteArrayToStringOrJsonSerializer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -208,7 +208,7 @@ public class Interactions {
         }
     }
 
-    public static void setUserDetails(RegisterInteractionHttpRequest rihr, HttpServletRequest request) {
+    public static void setUserDetails(RegisterUserInteraction rihr, HttpServletRequest request) {
         var curUserName = "API_USER";
         var gitHubLoginId = "N/A";
         final var sessionId = request.getRequestedSessionId();
@@ -227,10 +227,10 @@ public class Interactions {
                 }
             }
         }
-        rihr.setUserName(curUserName);
-        rihr.setUserId(gitHubLoginId);
-        rihr.setUserSession(sessionId);
-        rihr.setUserRole(userRole);
+        rihr.setPUserName(curUserName);
+        rihr.setPUserId(gitHubLoginId);
+        rihr.setPUserSession(sessionId);
+        rihr.setPUserRole(userRole);
     }
 
     public static void setActiveInteraction(final @NonNull HttpServletRequest request,
