@@ -552,19 +552,25 @@
         "status": "<xsl:call-template name='mapEncounterStatus'>
                             <xsl:with-param name='statusCode' select='ccda:statusCode/@code'/>
                         </xsl:call-template>",
-        <xsl:if test="string(ccda:code/ccda:translation/@code) or string(ccda:code/ccda:translation/@displayName)">
-        "type": [
-          {            
-            "coding": [
-              {
-                "system": "http://snomed.info/sct",
-                "code": "<xsl:value-of select="ccda:code/ccda:translation/@code"/>",
-                "display": "<xsl:value-of select="ccda:code/ccda:translation/@displayName"/>"
-              }
-            ],            
-            "text": "<xsl:value-of select="ccda:code/ccda:translation/@displayName"/>"
-          }
-        ],
+        <xsl:if test="string($encounterType)">
+          <xsl:variable name="encounterTypeDisplay">
+            <xsl:call-template name="getEncounterTypeDisplay">
+              <xsl:with-param name="encounterType" select="$encounterType"/>
+            </xsl:call-template>
+          </xsl:variable>
+
+          "type": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "<xsl:value-of select="$encounterType"/>",
+                  "display": "<xsl:value-of select="$encounterTypeDisplay"/>"
+                }
+              ],
+              "text": "<xsl:value-of select="$encounterTypeDisplay"/>"
+            }
+          ],
         </xsl:if>
         "class": {
           "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
