@@ -1732,19 +1732,19 @@ BEGIN
 		v_user_agent 				:= p_additional_details->'request'->>'User-Agent';    
     	v_client_ip_address 		:= p_additional_details->'request'->>'remoteAddr';
 
-    	SELECT hdrs->>'value'
+    	/*SELECT hdrs->>'value'
 		INTO v_client_ip_address_forwarded
     	FROM jsonb_array_elements(p_additional_details->'request'->'headers') AS hdrs
-    	WHERE hdrs->>'name' = 'x-forwarded-for';
+    	WHERE hdrs->>'name' = 'x-forwarded-for';*/
     
     	-- Extract the value of X-Observability-Metric-Interaction-Start-Time
 		v_interaction_start_time = p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
 	
 		-- Extract the value of X-Observability-Metric-Interaction-Finish-Time
-		SELECT header->>'value' 
+		/*SELECT header->>'value' 
 		INTO v_interaction_end_time
 		FROM jsonb_array_elements(p_additional_details->'response'->'headers') AS header
-		WHERE header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time';
+		WHERE header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time';*/
 
 	    SELECT entry->'resource'->>'id'
 	    INTO v_patient_id
