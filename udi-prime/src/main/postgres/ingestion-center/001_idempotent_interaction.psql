@@ -1861,7 +1861,7 @@ BEGIN
 		
 		IF(LOWER(p_nature) = lower('Forwarded HTTP Response Error')) THEN
 			v_passed := FALSE;
-			v_error_message := SUBSTRING(payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);				
+			v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);				
 		END IF;
 			
 		IF(LOWER(p_nature) = lower('Forwarded HTTP Response')) THEN	
@@ -4023,7 +4023,7 @@ SELECT
     COALESCE(fhir_summary.fhir_count_failed, 0) AS fhir_count_failed
 FROM
     techbd_udi_ingress.sat_interaction_zip_file_request sizfr
-JOIN
+LEFT JOIN
     techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
     ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id 
      AND (siffcr.nature = 'Original Flat File CSV'::text or siffcr.nature = 'CSV Validation Result'::text)
