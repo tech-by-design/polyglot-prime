@@ -221,6 +221,11 @@
             <version>2.12.5</version> <!-- Latest as of mid-2024 -->
         </dependency>
         <dependency>
+			<groupId>jakarta.persistence</groupId>
+			<artifactId>jakarta.persistence-api</artifactId>
+			<version>3.2.0-M2</version>
+		</dependency>
+        <dependency>
 			<groupId>com.github.bxforce</groupId>
 			<artifactId>commons-vfs2-spring-boot-starter</artifactId>
 			<version>1.0.1-RELEASE</version>

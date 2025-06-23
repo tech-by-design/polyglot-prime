@@ -9,7 +9,7 @@ import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
-import org.techbd.config.MirthJooqConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.service.csv.CodeLookupService;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
@@ -19,14 +19,16 @@ public abstract class BaseConverter implements IConverter {
     public static Map<String, Map<String, String>> SYSTEM_LOOKUP;
     public static Map<String, Map<String, String>> DISPLAY_LOOKUP;
     private final CodeLookupService codeLookupService;
+    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
 
-    public BaseConverter(CodeLookupService codeLookupService) {
+    public BaseConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
         this.codeLookupService = codeLookupService;
+        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
     }
 
     public String fetchCode(String valueFromCsv, String category, String interactionId) {
         if (CODE_LOOKUP == null) {
-            final var dslContext = MirthJooqConfig.dsl();
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
             BaseConverter.CODE_LOOKUP = codeLookupService.fetchCode(dslContext, interactionId);
         }
 
@@ -43,7 +45,7 @@ public abstract class BaseConverter implements IConverter {
 
     public String fetchSystem(String valueFromCsv, String category, String interactionId) {
         if (SYSTEM_LOOKUP == null) {
-            final var dslContext = MirthJooqConfig.dsl();
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
             BaseConverter.SYSTEM_LOOKUP = codeLookupService.fetchSystem(dslContext, interactionId);
         }
 
@@ -60,7 +62,7 @@ public abstract class BaseConverter implements IConverter {
 
     public String fetchDisplay(String code, String valueFromCsv, String category, String interactionId) {
         if (DISPLAY_LOOKUP == null) {
-            final var dslContext = MirthJooqConfig.dsl();
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
             BaseConverter.DISPLAY_LOOKUP = codeLookupService.fetchDisplay(dslContext, interactionId);
         }
 

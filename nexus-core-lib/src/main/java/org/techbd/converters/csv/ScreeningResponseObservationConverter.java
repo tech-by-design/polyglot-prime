@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -41,8 +42,8 @@ import org.techbd.util.DateUtil;
 @Order(6)
 public class ScreeningResponseObservationConverter extends BaseConverter {
 
-        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService) {
-                super(codeLookupService);
+        public ScreeningResponseObservationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+                super(codeLookupService,coreUdiPrimeJpaConfig);
         }
 
         private static final Logger LOG = LoggerFactory.getLogger(ScreeningResponseObservationConverter.class);

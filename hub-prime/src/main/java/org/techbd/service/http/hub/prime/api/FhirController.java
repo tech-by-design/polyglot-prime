@@ -30,8 +30,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.conf.Configuration;
 import org.techbd.config.CoreAppConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Constants;
-import org.techbd.config.MirthJooqConfig;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
 import org.techbd.service.fhir.FHIRService;
 import org.techbd.service.fhir.engine.OrchestrationEngine;
@@ -63,11 +63,13 @@ public class FhirController {
         private final OrchestrationEngine engine;
         private final CoreAppConfig appConfig;
         private final CoreDataLedgerApiClient dataLedgerApiClient;
+        private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
         private final FHIRService fhirService;
         private final Tracer tracer;
 
         public FhirController(final Tracer tracer,final OrchestrationEngine engine,
-        final CoreAppConfig appConfig ,final CoreDataLedgerApiClient dataLedgerApiClient,final FHIRService fhirService) throws IOException {
+        final CoreAppConfig appConfig ,final CoreDataLedgerApiClient dataLedgerApiClient,final FHIRService fhirService
+        ,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) throws IOException {
                 // String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
                 // appConfig = ConfigLoader.loadConfig(activeProfile);
                 // this.fhirService = new FHIRService();
@@ -82,6 +84,7 @@ public class FhirController {
                 this.fhirService = fhirService;
                 this.dataLedgerApiClient = dataLedgerApiClient;
                 this.tracer = tracer;
+                this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
         }
 
         @GetMapping(value = "/metadata", produces = { MediaType.APPLICATION_XML_VALUE })
@@ -303,7 +306,7 @@ public class FhirController {
         public Object bundleStatus(
                         @Parameter(description = "<b>mandatory</b> path variable to specify the bundle session ID.", required = true) @PathVariable String bundleSessionId,
                         final Model model, HttpServletRequest request) {
-                final var jooqDSL = MirthJooqConfig.dsl();
+                final var jooqDSL = coreUdiPrimeJpaConfig.dsl();
                 try {
                         final var result = jooqDSL.select()
                                         .from(INTERACTION_HTTP_REQUEST)

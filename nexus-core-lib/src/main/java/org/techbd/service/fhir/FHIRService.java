@@ -49,10 +49,10 @@ import org.techbd.config.CoreAppConfig.PostStdinPayloadToNyecDataLakeExternal;
 import org.techbd.config.CoreAppConfig.WithApiKeyAuth;
 import org.techbd.config.Helpers;
 import org.techbd.config.Interactions;
-import org.techbd.config.MirthJooqConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.exceptions.ErrorCode;
 import org.techbd.exceptions.JsonValidationException;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient;
@@ -95,13 +95,16 @@ public class FHIRService {
     private final CoreAppConfig coreAppConfig;
 	private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final OrchestrationEngine engine;
+	private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
 	private Tracer tracer;
 
-	public FHIRService(CoreAppConfig coreAppConfig, CoreDataLedgerApiClient coreDataLedgerApiClient,OrchestrationEngine engine) {
+	public FHIRService(CoreAppConfig coreAppConfig, CoreDataLedgerApiClient coreDataLedgerApiClient,OrchestrationEngine engine,
+	final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
 		this.coreAppConfig = coreAppConfig;
 		this.coreDataLedgerApiClient = coreDataLedgerApiClient;
 		this.tracer = GlobalOpenTelemetry.get().getTracer("FHIRService");
 		this.engine = engine;
+		this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
 	}
 
  /**
@@ -181,7 +184,7 @@ public class FHIRService {
 						SourceType.FHIR.name(), null);
 			}
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
-			final var dslContext = MirthJooqConfig.dsl();
+			final var dslContext = coreUdiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
 			if (healthCheck == null || "false".equals(healthCheck)) {
 				registerOriginalPayload(jooqCfg, requestParameters,

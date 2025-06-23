@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.converters.csv.EncounterConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
@@ -38,13 +39,15 @@ class EncounterConverterTest {
     @Mock
     CodeLookupService codeLookupService;
 
+    @Mock
+    CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+
     @InjectMocks
     private EncounterConverter encounterConverter;
     
     @BeforeEach
     void setUp() throws Exception {
-           encounterConverter = new EncounterConverter(codeLookupService);
-
+         
             Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
             profileMapField.setAccessible(true);
             profileMapField.set(null, CsvTestHelper.getProfileMap());
