@@ -128,8 +128,8 @@
                         headerName: "Error Message", field: "error", filter: "agTextColumnFilter",tooltipValueGetter: (p) =>
                         p.value, headerTooltip: "Details of any errors encountered", valueGetter: (params) => {
                             const error = params.data.error || ''; // Default to an empty string if no value
-                            const responseBodyDetails = params.data.response_body_details || ''; // Default to an empty string if no value
-                            return error && responseBodyDetails ? `${error}, ${responseBodyDetails}` : error || responseBodyDetails;
+                           // const responseBodyDetails = params.data.response_body_details || ''; // Default to an empty string if no value
+                            return error ;
                         }
                     },
                     { headerName: "Validation Issues", field: "issues_count", filter: "agTextColumnFilter", headerTooltip: "Count of validation issues associated with the interaction" },
