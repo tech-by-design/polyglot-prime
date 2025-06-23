@@ -1861,7 +1861,7 @@ BEGIN
 		
 		IF(LOWER(p_nature) = lower('Forwarded HTTP Response Error')) THEN
 			v_passed := FALSE;
-			v_error_message := SUBSTRING(payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);				
+			v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);				
 		END IF;
 			
 		IF(LOWER(p_nature) = lower('Forwarded HTTP Response')) THEN	
