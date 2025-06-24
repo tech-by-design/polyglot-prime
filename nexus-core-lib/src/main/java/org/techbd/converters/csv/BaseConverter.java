@@ -43,13 +43,13 @@ public abstract class BaseConverter implements IConverter {
         return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
     }
 
-    public String fetchSystem(String valueFromCsv, String category, String interactionId) {
+    public String fetchSystem(String code, String valueFromCsv, String category, String interactionId) {
         if (SYSTEM_LOOKUP == null) {
             final var dslContext = coreUdiPrimeJpaConfig.dsl();
             BaseConverter.SYSTEM_LOOKUP = codeLookupService.fetchSystem(dslContext, interactionId);
         }
 
-        if (valueFromCsv == null || category == null) {
+        if (code == null || category == null) {
             return valueFromCsv;
         }
         Map<String, String> innerMap = SYSTEM_LOOKUP.get(category);
@@ -57,7 +57,7 @@ public abstract class BaseConverter implements IConverter {
             return valueFromCsv;
         }
 
-        return innerMap.getOrDefault(valueFromCsv.toLowerCase(), valueFromCsv);
+        return innerMap.getOrDefault(code, valueFromCsv);
     }
 
     public String fetchDisplay(String code, String valueFromCsv, String category, String interactionId) {

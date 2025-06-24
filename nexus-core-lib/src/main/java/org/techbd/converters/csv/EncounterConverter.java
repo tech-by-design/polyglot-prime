@@ -123,8 +123,9 @@ public class EncounterConverter extends BaseConverter {
     private void populateEncounterClass(Encounter encounter, ScreeningProfileData data, String interactionId) {
         if (StringUtils.isNotEmpty(data.getEncounterClassCode())) {
             Coding encounterClass = new Coding();
-            encounterClass.setSystem(fetchSystem(data.getEncounterClassCodeSystem(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId));
-            encounterClass.setCode(fetchCode(data.getEncounterClassCode(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId));
+            String encounterClassCode = fetchCode(data.getEncounterClassCode(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId);
+            encounterClass.setSystem(fetchSystem(encounterClassCode, data.getEncounterClassCodeSystem(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId));
+            encounterClass.setCode(encounterClassCode);
 
             encounterClass.setDisplay(data.getEncounterClassCodeDescription());
             encounter.setClass_(encounterClass);
@@ -138,7 +139,7 @@ public class EncounterConverter extends BaseConverter {
             if (data.getEncounterTypeCode() != null) {
                 Coding coding = new Coding();
                 coding.setCode(data.getEncounterTypeCode());
-                coding.setSystem(fetchSystem(data.getEncounterTypeCodeSystem(), CsvConstants.ENCOUNTER_TYPE_CODE, interactionId));
+                coding.setSystem(fetchSystem(data.getEncounterTypeCode(), data.getEncounterTypeCodeSystem(), CsvConstants.ENCOUNTER_TYPE_CODE, interactionId));
                 coding.setDisplay(data.getEncounterTypeCodeDescription());
                 encounterType.addCoding(coding);
             }

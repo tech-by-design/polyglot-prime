@@ -25,9 +25,9 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.DateUtil;
 import org.techbd.util.csv.CsvConstants;
 import org.techbd.util.csv.CsvConversionUtil;
-import org.techbd.util.DateUtil;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 @Component
@@ -79,8 +79,9 @@ public class SexualOrientationObservationConverter extends BaseConverter {
                     "76690-7", "Sexual orientation")); // TODO : remove static reference
             observation.setCode(code);
             CodeableConcept value = new CodeableConcept();
-            value.addCoding(new Coding(fetchSystem(demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId),
-                    fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId),
+            String sexualOrientationCode = fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId);
+            value.addCoding(new Coding(fetchSystem(sexualOrientationCode, demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId),
+                    sexualOrientationCode,
                     demographicData.getSexualOrientationCodeDescription()));
             observation.setValue(value);
             // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));

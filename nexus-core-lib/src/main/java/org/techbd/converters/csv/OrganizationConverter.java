@@ -106,8 +106,9 @@ public class OrganizationConverter extends BaseConverter {
                     "http://www.medicaid.gov/", "MA",
                     "http://www.irs.gov/", "TAX");
 
-            String system = fetchSystem(data.getScreeningEntityIdCodeSystem(), CsvConstants.SCREENING_ENITITY_ID, interactionId); // System comes from CSV
-            String code = systemToCodeMap.getOrDefault(system, "UNKNOWN");
+            String rawSystem = data.getScreeningEntityIdCodeSystem(); // system string from CSV
+            String code = systemToCodeMap.getOrDefault(rawSystem, "UNKNOWN");
+            String system = fetchSystem(code, rawSystem, CsvConstants.SCREENING_ENITITY_ID, interactionId);
 
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
@@ -129,8 +130,9 @@ public class OrganizationConverter extends BaseConverter {
             // Create a new Coding object
             Coding coding = new Coding();
             
-            coding.setSystem(fetchSystem(data.getOrganizationTypeCodeSystem(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId) );
-            coding.setCode(fetchCode(data.getOrganizationTypeCode(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId));
+            String organizationTypeCode = fetchCode(data.getOrganizationTypeCode(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId);
+            coding.setSystem(fetchSystem(organizationTypeCode, data.getOrganizationTypeCodeSystem(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId) );
+            coding.setCode(organizationTypeCode);
             coding.setDisplay(data.getOrganizationTypeDisplay());
 
             type.addCoding(coding);

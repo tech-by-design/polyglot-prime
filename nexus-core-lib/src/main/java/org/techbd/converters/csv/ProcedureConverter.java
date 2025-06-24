@@ -15,6 +15,7 @@ import org.hl7.fhir.r4.model.Period;
 import org.hl7.fhir.r4.model.Procedure;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -28,7 +29,6 @@ import org.techbd.service.csv.CodeLookupService;
 import org.techbd.util.DateUtil;
 import org.techbd.util.csv.CsvConstants;
 import org.techbd.util.csv.CsvConversionUtil;
-import org.joda.time.DateTime;
 /**
  * Converts healthcare screening data into FHIR Procedure resources.
  * 
@@ -171,7 +171,7 @@ public class ProcedureConverter extends BaseConverter {
         // Add coding if available from CSV data
         if (StringUtils.isNotEmpty(profileData.getProcedureCode())) {
             code.addCoding(new Coding()
-                    .setSystem(fetchSystem(profileData.getProcedureCodeSystem(), CsvConstants.PROCEDURE_CODE, interactionId))
+                    .setSystem(fetchSystem(profileData.getProcedureCode(), profileData.getProcedureCodeSystem(), CsvConstants.PROCEDURE_CODE, interactionId))
                     .setCode(profileData.getProcedureCode())
                     .setDisplay(profileData.getProcedureCodeDescription()));
         }
