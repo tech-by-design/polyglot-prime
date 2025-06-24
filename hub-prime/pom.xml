@@ -41,7 +41,8 @@
 		<!-- Fallback to Maven Central for downloading dependencies not found locally -->
 		<repository>
 			<id>central</id>
-			<name>Maven Central Repository</name>			<url>https://repo.maven.apache.org/maven2</url>
+			<name>Maven Central Repository</name>			
+			<url>https://repo.maven.apache.org/maven2</url>
 		</repository>
 	</repositories>
 	<dependencyManagement>
