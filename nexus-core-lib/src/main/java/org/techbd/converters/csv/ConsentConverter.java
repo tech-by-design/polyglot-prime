@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -37,8 +38,8 @@ import io.micrometer.common.util.StringUtils;
 @Order(4)
 public class ConsentConverter extends BaseConverter {
 
-    public ConsentConverter(CodeLookupService codeLookupService) {
-        super(codeLookupService);
+    public ConsentConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+        super(codeLookupService,coreUdiPrimeJpaConfig);
     }
     private static final Logger LOG = LoggerFactory.getLogger(ConsentConverter.class.getName());
 

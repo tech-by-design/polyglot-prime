@@ -1,5 +1,22 @@
 org:
   techbd:
+    udi:
+      prime:
+        jdbc:
+          # JDBC connection settings for the UDI Prime database
+          # The environment variable ${SPRING_PROFILES_ACTIVE} should be set to the active profile (e.g., dev, qa, prod)
+          # This allows for different configurations based on the active profile
+          # Example: If SPRING_PROFILES_ACTIVE=dev, then the property will resolve to dev_TECHBD_UDI_DS_PRIME_JDBC_URL
+          url: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}
+          jdbcUrl: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_URL:}
+          username: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_USERNAME:}
+          password: ${${SPRING_PROFILES_ACTIVE}_TECHBD_UDI_DS_PRIME_JDBC_PASSWORD:}
+          driverClassName: org.postgresql.Driver
+          maximumPoolSize: 500 # Set to 500 as per your request
+          minimumIdle: 100  # Minimum idle connections in the pool
+          idleTimeout: 300000 # 30 seconds to wait for a connection from the pool
+          connectionTimeout: 30000  # 5 minutes - idle connections are removed after this time
+          maxLifetime: 1800000  # 30 minutes - connections are refreshed after this time
     ig-packages:
       fhir-v4:
         shinny-packages:

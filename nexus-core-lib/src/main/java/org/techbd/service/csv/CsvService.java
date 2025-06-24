@@ -15,7 +15,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
-import org.techbd.config.MirthJooqConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.Origin;
 import org.techbd.config.SourceType;
@@ -34,11 +34,14 @@ public class CsvService {
     private static final Logger LOG = LoggerFactory.getLogger(CsvService.class);
     private final CsvBundleProcessorService csvBundleProcessorService;
 	private final CoreDataLedgerApiClient coreDataLedgerApiClient;
+    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
     public CsvService(final CsvOrchestrationEngine engine,
-            final CsvBundleProcessorService csvBundleProcessorService,CoreDataLedgerApiClient coreDataLedgerApiClient) {
+            final CsvBundleProcessorService csvBundleProcessorService,CoreDataLedgerApiClient coreDataLedgerApiClient,
+            final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
         this.engine = engine;
         this.csvBundleProcessorService = csvBundleProcessorService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
+        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
     }
 
     public Object validateCsvFile(final MultipartFile file, final Map<String,Object> requestParameters,
@@ -51,7 +54,7 @@ public class CsvService {
                 zipFileInteractionId, requestParameters.get(Constants.TENANT_ID));
         CsvOrchestrationEngine.OrchestrationSession session = null;
         try {
-            final var dslContext = MirthJooqConfig.dsl();
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             
             saveArchiveInteraction(zipFileInteractionId,jooqCfg, requestParameters, file);
@@ -155,7 +158,7 @@ public class CsvService {
 			);
 			final var dataLedgerProvenance = "%s.processZipFile".formatted(CsvService.class.getName());
             coreDataLedgerApiClient.processRequest(dataLedgerPayload,zipFileInteractionId,dataLedgerProvenance,SourceType.CSV.name(),null);
-            final var dslContext = MirthJooqConfig.dsl();
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             saveArchiveInteraction(zipFileInteractionId,jooqCfg, requestParameters,file);
             session = engine.session()

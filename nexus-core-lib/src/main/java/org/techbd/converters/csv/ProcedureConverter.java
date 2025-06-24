@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -46,8 +47,8 @@ import org.joda.time.DateTime;
 @Order(7)
 public class ProcedureConverter extends BaseConverter {
 
-    public ProcedureConverter(CodeLookupService codeLookupService) {
-        super(codeLookupService);
+    public ProcedureConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+        super(codeLookupService,coreUdiPrimeJpaConfig);
     }
 
     // Constants

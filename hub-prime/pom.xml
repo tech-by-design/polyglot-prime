@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.techbd</groupId>
 		<artifactId>polyglot-prime</artifactId>
-		<version>0.592.0</version>
+		<version>0.594.0</version>
 		<relativePath>../pom.xml</relativePath> 
 	</parent>
 
@@ -41,7 +41,7 @@
 		<!-- Fallback to Maven Central for downloading dependencies not found locally -->
 		<repository>
 			<id>central</id>
-			<name>Maven Central Repository</name>
+			<name>Maven Central Repository</name>			
 			<url>https://repo.maven.apache.org/maven2</url>
 		</repository>
 	</repositories>
@@ -375,7 +375,7 @@
 		<dependency>
 			<groupId>org.techbd</groupId>
 			<artifactId>nexus-core-lib</artifactId>
-			<version>0.592.0</version>
+			<version>0.594.0</version>
 		</dependency>
 	</dependencies>
 

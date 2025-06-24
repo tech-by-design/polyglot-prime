@@ -7,9 +7,10 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
-import org.techbd.config.MirthJooqConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
@@ -27,10 +28,16 @@ import com.fasterxml.jackson.databind.JsonNode;
  * The service uses JOOQ routines to persist data and logs the interaction using
  * log4j.
  */
+
+ @Service
 public class CCDAService {
+    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    public CCDAService(final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
+    }
     private static final Logger logger = LoggerFactory.getLogger(CCDAService.class);
 
-    public static boolean saveOriginalCcdaPayload(String interactionId, String tenantId,
+    public boolean saveOriginalCcdaPayload(String interactionId, String tenantId,
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
@@ -40,7 +47,7 @@ public class CCDAService {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-            var jooqCfg = MirthJooqConfig.dsl().configuration();
+            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
             var rihr = new RegisterInteractionCcdaRequest();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -83,7 +90,7 @@ public class CCDAService {
      * @param operationOutcome A map containing operation outcome or metadata
      * @return true if the data is successfully saved, false otherwise
      */
-    public static boolean saveValidation(final boolean isValid, String interactionId, String tenantId,
+    public boolean saveValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
@@ -93,7 +100,7 @@ public class CCDAService {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-            var jooqCfg = MirthJooqConfig.dsl().configuration();
+            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
             var rihr = new RegisterInteractionCcdaRequest();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -137,7 +144,7 @@ public class CCDAService {
      * @param bundle            The FHIR bundle resulting from the conversion
      * @return true if the data is successfully saved, false otherwise
      */
-    public static boolean saveFhirConversionResult(boolean conversionSuccess, String interactionId,
+    public boolean saveFhirConversionResult(boolean conversionSuccess, String interactionId,
             String tenantId, String requestUri,
             Map<String, Object> bundle) {
         try {
@@ -148,7 +155,7 @@ public class CCDAService {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode bundleNode = Configuration.objectMapper.valueToTree(bundle);
-            var jooqCfg = MirthJooqConfig.dsl().configuration();
+            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
             var rihr = new RegisterInteractionCcdaRequest();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);
@@ -193,7 +200,7 @@ public class CCDAService {
      * @param operationOutcome The operation outcome details
      * @return true if saving was successful, false otherwise
      */
-    public static boolean saveCcdaValidation(final boolean isValid, String interactionId, String tenantId,
+    public boolean saveCcdaValidation(final boolean isValid, String interactionId, String tenantId,
             String requestUri, String payloadJson,
             Map<String, Object> operationOutcome) {
         try {
@@ -203,7 +210,7 @@ public class CCDAService {
                     "tenant_id", tenantId);
             JsonNode natureNode = Configuration.objectMapper.valueToTree(natureMap);
             JsonNode payloadNode = Configuration.objectMapper.valueToTree(operationOutcome);
-            var jooqCfg = MirthJooqConfig.dsl().configuration();
+            var jooqCfg = coreUdiPrimeJpaConfig.dsl().configuration();
             var rihr = new RegisterInteractionCcdaRequest();
             rihr.setPInteractionId(interactionId);
             rihr.setPInteractionKey(requestUri);

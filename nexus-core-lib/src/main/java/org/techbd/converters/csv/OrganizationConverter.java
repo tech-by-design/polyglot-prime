@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
@@ -37,8 +38,8 @@ import org.techbd.util.csv.CsvConversionUtil;
 @Order(1)
 public class OrganizationConverter extends BaseConverter {
 
-    public OrganizationConverter(CodeLookupService codeLookupService) {
-        super(codeLookupService);
+    public OrganizationConverter(CodeLookupService codeLookupService,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
+        super(codeLookupService,coreUdiPrimeJpaConfig);
     }
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationConverter.class.getName());
 

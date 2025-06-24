@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.assertj.core.api.SoftAssertions;
+import org.hl7.fhir.dstu2016may.model.codesystems.Udi;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Consent;
@@ -23,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.converters.csv.ConsentConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
@@ -44,10 +46,13 @@ class ConsentConverterTest {
     @Mock
     private CodeLookupService mockCodeLookupService;
 
+    @Mock
+    private CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+
     @BeforeEach
     void setUp() throws Exception {
             // Initialize ConsentConverter with mocked CodeLookupService
-            consentConverter = new ConsentConverter(mockCodeLookupService);
+            consentConverter = new ConsentConverter(mockCodeLookupService,coreUdiPrimeJpaConfig);
             lenient().when(mockCodeLookupService.fetchCode(any(), anyString())).thenReturn(new HashMap<>());
             lenient().when(mockCodeLookupService.fetchSystem(any(), anyString())).thenReturn(new HashMap<>());
             lenient().when(mockCodeLookupService.fetchDisplay(any(), anyString())).thenReturn(new HashMap<>());

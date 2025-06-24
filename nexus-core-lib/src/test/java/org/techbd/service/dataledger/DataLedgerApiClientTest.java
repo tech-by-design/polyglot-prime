@@ -21,7 +21,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.MirthJooqConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.Action;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.Actor;
 import org.techbd.service.dataledger.CoreDataLedgerApiClient.DataLedgerPayload;
@@ -30,6 +30,9 @@ class DataLedgerApiClientTest {
 
     @Mock
     private CoreAppConfig coreAppConfig;
+
+    @Mock
+    private CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
 
     private static MockedStatic<HttpClient> mockedHttpClient;
     private static HttpClient httpClient;
@@ -50,8 +53,7 @@ class DataLedgerApiClientTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        coreDataLedgerApiClient = new CoreDataLedgerApiClient(coreAppConfig);
-        when(MirthJooqConfig.dsl()).thenReturn(mock(org.jooq.DSLContext.class));
+        coreDataLedgerApiClient = new CoreDataLedgerApiClient(coreAppConfig,coreUdiPrimeJpaConfig);
         when(mock(org.jooq.DSLContext.class).configuration()).thenReturn(mock(org.jooq.Configuration.class));
     }
 

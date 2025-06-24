@@ -19,6 +19,7 @@ import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.converters.csv.BaseConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
@@ -31,13 +32,14 @@ class BaseConverterTest {
 
     private BaseConverter baseConverter;
     private CodeLookupService mockCodeLookupService;
+    private CoreUdiPrimeJpaConfig mockCoreUdiPrimeJpaConfig;
 
     @BeforeEach
     void setUp() throws Exception {
         mockCodeLookupService = mock(CodeLookupService.class);
         //CoreFHIRUtil.initialize(CsvTestHelper.getProfileMap(), CsvTestHelper.BASE_FHIR_URL);
         // Create a concrete subclass of BaseConverter for testing
-        baseConverter = new BaseConverter(mockCodeLookupService) {
+        baseConverter = new BaseConverter(mockCodeLookupService,mockCoreUdiPrimeJpaConfig) {
             @Override
             public ResourceType getResourceType() {
                 return ResourceType.Patient; // Example resource type
