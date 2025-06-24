@@ -19,10 +19,10 @@ public class CsvTestHelper {
    private static final String BASE_CSV_PATH = "src/test/resources/org/techbd/csv/data/latestResources/";
     
    // File names for each type of data
-   private static final String SCREENING_PROFILE_FILE = "SCREENING_PROFILE_DATA_Care_Ridge_SCN_ScreeningProf_20240223102001.csv";
-   private static final String DEMOGRAPHIC_DATA_FILE = "DEMOGRAPHIC_DATA_Care_Ridge_SCN_SDOH_PtInfo_20240223102001.csv";
-   private static final String SCREENING_OBSERVATION_FILE = "SCREENING_OBSERVATION_DATA_Care_Ridge_SCN_SDOH_ScreeningObs_20240223102001.csv";
-   private static final String QE_ADMIN_DATA_FILE = "QE_ADMIN_DATA_Care_Ridge_SCN_SDOH_QEadmin_20240223102001.csv";
+   private static final String SCREENING_PROFILE_FILE = "SDOH_ScreeningProf_CareRidgeSCN_testcase1_20250312040214.csv";
+   private static final String DEMOGRAPHIC_DATA_FILE = "SDOH_PtInfo_CareRidgeSCN_testcase1_20250312040214.csv";
+   private static final String SCREENING_OBSERVATION_FILE = "SDOH_ScreeningObs_CareRidgeSCN_testcase1_20250312040214.csv";
+   private static final String QE_ADMIN_DATA_FILE = "SDOH_QEadmin_CareRidgeSCN_testcase1_20250312040214.csv";
     
    public static ScreeningProfileData createScreeningProfileData() throws IOException {
         String csvContent = Files.readString(Path.of(BASE_CSV_PATH + SCREENING_PROFILE_FILE));

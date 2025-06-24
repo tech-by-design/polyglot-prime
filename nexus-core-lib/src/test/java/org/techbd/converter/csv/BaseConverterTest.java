@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.techbd.converters.csv.BaseConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
@@ -31,9 +33,9 @@ class BaseConverterTest {
     private CodeLookupService mockCodeLookupService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mockCodeLookupService = mock(CodeLookupService.class);
-
+        //CoreFHIRUtil.initialize(CsvTestHelper.getProfileMap(), CsvTestHelper.BASE_FHIR_URL);
         // Create a concrete subclass of BaseConverter for testing
         baseConverter = new BaseConverter(mockCodeLookupService) {
             @Override
@@ -83,13 +85,24 @@ class BaseConverterTest {
         result = baseConverter.fetchSystem("unknown", "category", "interactionId");
         assertEquals("unknown", result);
     }
-
+    
     @Test
-    void testGetProfileUrl() {
-        CanonicalType profileUrl = baseConverter.getProfileUrl();
-        assertEquals(CoreFHIRUtil.getProfileUrl("patient"), profileUrl.getValue());
-    }
+    void testGetProfileUrl1() {
+        try (MockedStatic<CoreFHIRUtil> mockedCoreUtil = mockStatic(CoreFHIRUtil.class)) {
+            // Arrange
+            String expectedUrl = "http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-patient";
+            mockedCoreUtil.when(() -> CoreFHIRUtil.getProfileUrl("patient")).thenReturn(expectedUrl);
 
+            // Act
+            CanonicalType result = baseConverter.getProfileUrl();
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(expectedUrl, result.getValue());
+            mockedCoreUtil.verify(() -> CoreFHIRUtil.getProfileUrl("patient"));
+        }
+    }
+    
     @Test
     void testCreateExtension() {
         Extension extension = BaseConverter.createExtension(
