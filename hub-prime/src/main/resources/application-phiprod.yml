@@ -33,30 +33,3 @@ management:
       enabled: true
     os:
       enabled: true
-org:
-  techbd:
-    service:
-      http:
-        hub:
-          prime:
-            baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
-            structureDefinitionsUrls:
-              bundle: /StructureDefinition/SHINNYBundleProfile
-              patient: /StructureDefinition/shinny-patient
-              consent: /StructureDefinition/shinny-Consent
-              encounter: /StructureDefinition/shinny-encounter
-              organization: /StructureDefinition/shin-ny-organization
-              observation: /StructureDefinition/shinny-observation-screening-response
-              questionnaire: /StructureDefinition/shinny-questionnaire
-              practitioner: /StructureDefinition/shin-ny-practitioner
-              questionnaireResponse: /StructureDefinition/shinny-questionnaire
-              observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
-              procedure: /StructureDefinition/shinny-sdoh-procedure
-            csv:
-              validation:
-                pythonScriptPath: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py}
-                pythonExecutable: ${TECHBD_CSV_PYTHON_EXECUTABLE:python3}
-                packagePath: ${TECHBD_CSV_PACKAGE_PATH:../support/specifications/flat-file/datapackage-nyher-fhir-ig-equivalent.json}
-                inboundPath: ${TECHBD_CSV_INBOUND_PATH:/app/techbyDesign/flatFile/inbound}
-                outputPath: ${TECHBD_CSV_INBOUND_PATH:/app/techbyDesign/flatFile/outbound}
-                ingessHomePath: ${TECHBD_CSV_INGRESS_PATH:/app/techbyDesign/flatFile/ingress}   

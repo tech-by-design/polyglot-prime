@@ -85,20 +85,6 @@ org:
           prime:
             version: @project.version@
             fhirVersion: r4
-            baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
-            structureDefinitionsUrls:
-              bundle: /StructureDefinition/SHINNYBundleProfile
-              patient: /StructureDefinition/shinny-patient
-              consent: /StructureDefinition/shinny-Consent
-              encounter: /StructureDefinition/shinny-encounter
-              organization: /StructureDefinition/shin-ny-organization
-              observation: /StructureDefinition/shinny-observation-screening-response
-              questionnaire: /StructureDefinition/shinny-questionnaire
-              practitioner: /StructureDefinition/shin-ny-practitioner
-              questionnaireResponse: /StructureDefinition/shinny-questionnaire
-              observationSexualOrientation: /StructureDefinition/shinny-observation-sexual-orientation
-              procedure: /StructureDefinition/shinny-sdoh-procedure
-            fhirUmlsApiKey: umls_api_key
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           persist:

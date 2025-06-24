@@ -1,5 +1,6 @@
 org:
     techbd:
+        baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
         defaultDatalakeApiUrl: https://qa.hrsn.nyehealth.org/HRSNBundle
         defaultDataLakeApiAuthn:
             mTlsStrategy: aws-secrets

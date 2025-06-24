@@ -15,9 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.techbd.config.Configuration;
-import org.techbd.config.MirthJooqConfig;
 import org.techbd.udi.auto.jooq.ingress.routines.SatDiagnosticDataledgerApiUpserted;
 import org.techbd.config.CoreAppConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.util.AWSUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,9 +33,10 @@ public class CoreDataLedgerApiClient {
     private final HttpClient client = HttpClient.newHttpClient();
     private final org.techbd.config.CoreAppConfig appConfig;
     private static final Logger LOG = LoggerFactory.getLogger(CoreDataLedgerApiClient.class.getName());
-
-    public CoreDataLedgerApiClient(CoreAppConfig appConfig) {
+    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
+    public CoreDataLedgerApiClient(CoreAppConfig appConfig,final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
         this.appConfig = appConfig;
+        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
     }
 
     public void processRequest(DataLedgerPayload dataLedgerPayload, String interactionId, String provenance,
@@ -139,7 +140,7 @@ public class CoreDataLedgerApiClient {
             Map<String, Object> additionalDetails) {
         try {
             SatDiagnosticDataledgerApiUpserted satDiagnosticDataledgerApiUpserted = new SatDiagnosticDataledgerApiUpserted();
-            final var dslContext = MirthJooqConfig.dsl();
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             satDiagnosticDataledgerApiUpserted.setHubInteractionId(interactionId);
             satDiagnosticDataledgerApiUpserted.setDataledgerUrl(apiUrl);
@@ -188,7 +189,7 @@ public class CoreDataLedgerApiClient {
             Map<String, Object> additionalDetails) {
         try {
             SatDiagnosticDataledgerApiUpserted satDiagnosticDataledgerApiUpserted = new SatDiagnosticDataledgerApiUpserted();
-            final var dslContext = MirthJooqConfig.dsl();
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
 
             satDiagnosticDataledgerApiUpserted.setHubInteractionId(interactionId);

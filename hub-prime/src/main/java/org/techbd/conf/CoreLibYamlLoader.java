@@ -1,6 +1,17 @@
+/**
+ * EnvironmentPostProcessor implementation that loads additional YAML configuration files
+ * from the classpath location "nexus-core-lib/application.yml" and, if present,
+ * "nexus-core-lib/application-{profile}.yml" based on the active Spring profile.
+ * <p>
+ * This allows core library configuration to be injected into the application's environment
+ * before the Spring context is fully initialized, enabling shared configuration across
+ * multiple services or modules.
+ * </p>
+ */
 package org.techbd.conf;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
@@ -20,20 +31,18 @@ public class CoreLibYamlLoader implements EnvironmentPostProcessor, Ordered {
                 for (PropertySource<?> ps : loader.load("nexus-core-lib", base)) {
                     env.getPropertySources().addLast(ps);
                 }
-            }
+            }            
+            String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
+            if (activeProfile != null && !activeProfile.isEmpty()) {
+                List<PropertySource<?>> profileProps = loader.load(
+                    "nexus-core-lib/application-" + activeProfile + ".yml",
+                    new ClassPathResource("nexus-core-lib/application-" + activeProfile + ".yml")
+                );
 
-            String[] profiles = env.getActiveProfiles();
-            if (profiles.length == 0) {
-                profiles = new String[]{"devl"}; // fallback default
-            }
-
-            for (String profile : profiles) {
-                Resource profileYaml = new ClassPathResource("nexus-core-lib/application-" + profile + ".yml");
-                if (profileYaml.exists()) {
-                    for (PropertySource<?> ps : loader.load("nexus-core-lib-" + profile, profileYaml)) {
-                        env.getPropertySources().addLast(ps);
-                    }
+                for (PropertySource<?> ps : profileProps) {
+                    env.getPropertySources().addFirst(ps);
                 }
+                env.setActiveProfiles(activeProfile);
             }
         } catch (IOException e) {
             throw new RuntimeException("Could not load nexus-core-lib YAML", e);

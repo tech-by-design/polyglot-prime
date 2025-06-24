@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -27,7 +26,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.techbd.config.Configuration;
 import org.techbd.config.Constants;
 import org.techbd.config.CoreAppConfig;
-import org.techbd.config.MirthJooqConfig;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.config.Nature;
 import org.techbd.config.SourceType;
 import org.techbd.config.State;
@@ -59,12 +58,15 @@ public class CsvBundleProcessorService {
     private final FHIRService fhirService;
     private final CoreDataLedgerApiClient coreDataLedgerApiClient;
     private final CoreAppConfig coreAppConfig;
+    private final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
 
-    public CsvBundleProcessorService(final CsvToFhirConverter csvToFhirConverter, final FHIRService fhirService,CoreDataLedgerApiClient coreDataLedgerApiClient,CoreAppConfig coreAppConfig) {
+    public CsvBundleProcessorService(final CsvToFhirConverter csvToFhirConverter, final FHIRService fhirService,
+    CoreDataLedgerApiClient coreDataLedgerApiClient,CoreAppConfig coreAppConfig, final CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig) {
         this.csvToFhirConverter = csvToFhirConverter;
         this.fhirService = fhirService;
         this.coreDataLedgerApiClient = coreDataLedgerApiClient;
         this.coreAppConfig = coreAppConfig;
+        this.coreUdiPrimeJpaConfig = coreUdiPrimeJpaConfig;
     }
 
     public List<Object> processPayload(final String masterInteractionId,
@@ -177,7 +179,7 @@ public class CsvBundleProcessorService {
         LOG.info("SaveMiscErrorAndStatus: BEGIN for inteaction id  : {} ",
                 masterInteractionId);
         final var status = allCSvConvertedToFHIR ? "PROCESSED_SUCESSFULLY" : "PARTIALLY_PROCESSED";
-        final var dslContext = MirthJooqConfig.dsl();
+        final var dslContext = coreUdiPrimeJpaConfig.dsl();
         final var jooqCfg = dslContext.configuration();
         final var createdAt = OffsetDateTime.now();
         final var initRIHR = new SatInteractionCsvRequestUpserted();
@@ -253,7 +255,7 @@ public class CsvBundleProcessorService {
         final var forwardedAt = OffsetDateTime.now();
         final var initRIHR = new RegisterInteractionCsvRequest();
         try {
-            final var dslContext = MirthJooqConfig.dsl();
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
             initRIHR.setPOrigin("http");
             initRIHR.setPInteractionId(groupInteractionId);

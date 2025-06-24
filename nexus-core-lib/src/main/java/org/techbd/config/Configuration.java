@@ -1,8 +1,15 @@
 package org.techbd.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.regex.Pattern;
+
+import org.springframework.core.env.Environment;
+import org.springframework.util.PropertyPlaceholderHelper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -45,7 +52,28 @@ public class Configuration {
             }
         }
     }
+    public static List<String> checkProperties(Environment environment, String... propertyExpressions) {
+        final var missingProperties = new ArrayList<String>();
 
+        for (String propertyExpression : propertyExpressions) {
+            missingProperties.add(propertyExpression);
+            try {
+                final var placeholderHelper = new PropertyPlaceholderHelper("${", "}", ":", true);
+                final var resolvedPropertyName = placeholderHelper.replacePlaceholders(propertyExpression,
+                        environment::getProperty);
+                missingProperties.add(Optional.ofNullable(resolvedPropertyName).orElseThrow());
+                if (environment.getProperty(resolvedPropertyName) == null
+                        && System.getenv(resolvedPropertyName) == null) {
+                    missingProperties.add(resolvedPropertyName);
+                }
+            } catch (IllegalArgumentException | NoSuchElementException ex) {
+                // Add the expression itself if it couldn't be resolved
+                missingProperties.add(propertyExpression);
+            }
+        }
+
+        return missingProperties;
+    }
     public static Map<String, String> getEnvVarsAvailable(final String regexPattern) {
         final var matchingVariables = new HashMap<String, String>();
         final var pattern = Pattern.compile(regexPattern);
