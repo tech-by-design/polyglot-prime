@@ -1855,10 +1855,14 @@ BEGIN
     	v_validation_completed_at 	:= to_timestamp((p_payload->'OperationOutcome'->'validationResults'->0->>'completedAt')::NUMERIC);
     	
 		v_techbd_disposition_action	:= p_payload->'OperationOutcome'->'techByDesignDisposition'->0->>'action';
+        IF v_techbd_disposition_action = 'discard' THEN
+			v_interaction_end_time := CURRENT_TIMESTAMP;
+		END IF;
 	END IF;
 
 	IF(LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'))) THEN
-		
+		v_interaction_end_time = p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
+
 		IF(LOWER(p_nature) = lower('Forwarded HTTP Response Error')) THEN
 			v_passed := FALSE;
 			v_error_message := SUBSTRING(p_payload ->> 'error'::text FROM POSITION((':'::text) IN (p_payload ->> 'error'::text)) + 2);				
@@ -1995,7 +1999,8 @@ BEGIN
                 p_elaboration,
                 v_ig_version,
                 v_validation_engine,
-                v_bundle_id
+                v_bundle_id,
+				v_created_at
             );
             IF(LOWER(p_nature) = LOWER('techByDesignDisposition')) THEN
                 CALL techbd_udi_ingress.insert_validation_issues(
@@ -2053,11 +2058,18 @@ BEGIN
     			ig_version				= v_ig_version,
     			profile_url				= v_profile_url,    
     			is_bundle_valid			= v_is_bundle_valid,    
-    			validation_initiated_at = COALESCE(v_validation_initiated_at::TIMESTAMPTZ, NULL),
-    			validation_completed_at = COALESCE(v_validation_completed_at::TIMESTAMPTZ, NULL),    	
+    			validation_initiated_at = v_validation_initiated_at::TIMESTAMPTZ,
+    			validation_completed_at = v_validation_completed_at::TIMESTAMPTZ,    	
 				techbd_disposition_action = v_techbd_disposition_action
 		WHERE hub_interaction_id = p_hub_interaction_id AND LOWER(nature) != LOWER('techByDesignDisposition');
-	END IF;    
+	END IF;  
+
+    -- Save 'interaction_end_time' from the 'Forwarded HTTP Response' and 'Forwarded HTTP Response error' to other natures also  
+	IF (LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'))) THEN
+		UPDATE techbd_udi_ingress.sat_interaction_fhir_request
+			SET interaction_end_time = v_interaction_end_time::TIMESTAMPTZ
+		WHERE hub_interaction_id = p_hub_interaction_id;
+	END IF;   
 
     RETURN v_return;
 EXCEPTION
@@ -2345,7 +2357,8 @@ CREATE OR REPLACE PROCEDURE techbd_udi_ingress.insert_fhir_session_diagnostic(
     IN elaboration JSONB,
     IN ig_version TEXT,
     IN validation_engine TEXT,
-    IN bundle_id TEXT
+    IN bundle_id TEXT, 
+    IN created_at timestamp with time zone DEFAULT NULL::timestamp with time zone
 )
 LANGUAGE plpgsql
 AS $$
@@ -2360,6 +2373,7 @@ DECLARE
     v_pg_context 					TEXT;
     v_created_by 					TEXT 		:= COALESCE(created_by, current_user);  -- Default created_by to the current user if not provided
     v_provenance 					TEXT 		:= COALESCE(provenance, 'unknown');  
+    v_created_at 					TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);  -- Ensure created_at is not null 
 BEGIN
     -- Extract values from the JSONB payload variable
     FOR session_diagnostic_set IN
@@ -2369,7 +2383,7 @@ BEGIN
             ((issue.value -> 'extension'::text) -> 0) ->> 'valueInteger'::text AS line,
             ((issue.value -> 'extension'::text) -> 1) ->> 'valueInteger'::text AS "column",
             (issue.value -> 'location'::text) ->> 0 AS diagnostics,
-            (insert_fhir_session_diagnostic.payload -> 'response'::text) ->> 'encounteredAt'::text AS encounteredAt,
+            --(insert_fhir_session_diagnostic.payload -> 'response'::text) ->> 'encounteredAt'::text AS encounteredAt,
             insert_fhir_session_diagnostic.elaboration
         FROM LATERAL jsonb_array_elements(
             (insert_fhir_session_diagnostic.payload -> 'OperationOutcome'::text) -> 'validationResults'::text
@@ -2409,7 +2423,8 @@ BEGIN
             session_diagnostic_set.line,
             session_diagnostic_set.column,
             session_diagnostic_set.diagnostics,
-            session_diagnostic_set.encounteredAt,
+            --session_diagnostic_set.encounteredAt,
+            v_created_at,
             session_diagnostic_set.elaboration,
             insert_fhir_session_diagnostic.created_by,
             insert_fhir_session_diagnostic.provenance,
