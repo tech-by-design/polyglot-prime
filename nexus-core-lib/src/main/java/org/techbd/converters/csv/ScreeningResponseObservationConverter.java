@@ -34,9 +34,9 @@ import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
 import org.techbd.service.csv.CodeLookupService;
+import org.techbd.util.DateUtil;
 import org.techbd.util.csv.CsvConstants;
 import org.techbd.util.csv.CsvConversionUtil;
-import org.techbd.util.DateUtil;
 
 @Component
 @Order(6)
@@ -137,7 +137,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                                     CodeableConcept componentCode = new CodeableConcept();
                                     componentCode.addCoding(new Coding(
-                                            fetchSystem(data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE,
+                                            fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE,
                                                     interactionId),
                                             data.getQuestionCode(),
                                             fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
@@ -146,7 +146,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                     CodeableConcept value = new CodeableConcept();
                                     String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
                                     value.addCoding(new Coding(
-                                            fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId),
+                                            fetchSystem(answerCode, data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId),
                                             answerCode,
                                             fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId)));
                                     component.setValue(value);
@@ -158,7 +158,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                     CodeableConcept value = new CodeableConcept();
                                     String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
                                     value.addCoding(new Coding(
-                                            fetchSystem(data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE,
+                                            fetchSystem(answerCode, data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE,
                                                     interactionId),
                                             answerCode,
                                             fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId)));
@@ -183,7 +183,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         createCategory("http://terminology.hl7.org/CodeSystem/observation-category",
                                                         "survey", null));
                         CodeableConcept code = new CodeableConcept();
-                        code.addCoding(new Coding(fetchSystem(data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId), data.getQuestionCode(),
+                        code.addCoding(new Coding(fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId), data.getQuestionCode(),
                                         fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
                         observation.setCode(code);
                         observation.setSubject(new Reference("Patient/" +
@@ -423,10 +423,10 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                     CodeableConcept code = new CodeableConcept();
 
                         String scrngCode = fetchCode(firstData.getScreeningCode(), CsvConstants.SCREENING_CODE, interactionId);
-                        String system = fetchSystem(firstData.getScreeningCodeSystem(), CsvConstants.SCREENING_CODE, interactionId);
+                        String system = fetchSystem(scrngCode, firstData.getScreeningCodeSystem(), CsvConstants.SCREENING_CODE, interactionId);
                         String display = firstData.getScreeningCodeDescription();
 
-                if ("NYSAHCHRSN".equalsIgnoreCase(scrngCode) || "NYS-AHC-HRSN".equalsIgnoreCase(scrngCode)) {
+                if ("NYSAHCHRSN".equalsIgnoreCase(scrngCode) || "NYS-AHC-HRSN".equalsIgnoreCase(scrngCode) || "NA".equalsIgnoreCase(scrngCode)) {
                         code.addCoding(new Coding()
                         .setSystem("http://loinc.org")
                         .setCode("100698-0")

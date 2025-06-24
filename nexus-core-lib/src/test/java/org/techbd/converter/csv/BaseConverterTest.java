@@ -1,10 +1,7 @@
 package org.techbd.converter.csv;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -81,10 +78,10 @@ class BaseConverterTest {
 
         BaseConverter.SYSTEM_LOOKUP = systemLookup;
 
-        String result = baseConverter.fetchSystem("example", "category", "interactionId");
+        String result = baseConverter.fetchSystem("example", "category", "interactionId", null);
         assertEquals("mappedSystem", result);
 
-        result = baseConverter.fetchSystem("unknown", "category", "interactionId");
+        result = baseConverter.fetchSystem("unknown", "category", "interactionId", null);
         assertEquals("unknown", result);
     }
     

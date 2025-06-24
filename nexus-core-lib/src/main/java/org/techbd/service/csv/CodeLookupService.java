@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.jooq.DSLContext;
 import org.jooq.Record2;
@@ -64,19 +63,24 @@ public class CodeLookupService {
         LOG.info("CodeLookupService::fetchSystem fetching values from database - BEGIN - interaction Id: {}", interactionId);
         try {
             List<Record2<String, String>> records = dsl
-                    .select(REF_CODE_LOOKUP_SYSTEM_VIEW.CODE_TYPE, REF_CODE_LOOKUP_SYSTEM_VIEW.SYSTEM_VALUES)
-                    .from(REF_CODE_LOOKUP_SYSTEM_VIEW)
+                    .select(REF_CODE_LOOKUP_CODE_VIEW.CODE_TYPE, REF_CODE_LOOKUP_CODE_VIEW.CODES.cast(String.class))
+                    .from(REF_CODE_LOOKUP_CODE_VIEW)
                     .fetch();
     
             Map<String, Map<String, String>> result = records.stream()
                     .collect(Collectors.toMap(
                             Record2::component1,
-                            record -> parseCommaSeparatedValues(record.component2()).stream()
+                            record -> {
+                                List<Map<String, String>> codesList = parseJsonCodes(record.component2());
+                                return codesList.stream()
+                                    .filter(map -> map != null && map.get("code") != null && map.get("system") != null)
                                     .collect(Collectors.toMap(
-                                            val -> val.toLowerCase(),
-                                            val -> val,
-                                            (existing, replacement) -> existing
-                                    ))
+                                        map -> map.get("code"),
+                                        map -> map.get("system"),
+                                        (existing, replacement) -> existing
+                                    ));
+                            },
+                            (existing, replacement) -> existing
                     ));
     
             return result;
@@ -139,17 +143,4 @@ public class CodeLookupService {
         }
     }
 
-    private static List<String> parseCommaSeparatedValues(Object value) {
-        if (value instanceof String) {
-            return Stream.of(((String) value).split(","))
-                    .map(String::trim)
-                    .collect(Collectors.toList());
-        } else if (value instanceof List<?>) {
-            return ((List<?>) value).stream()
-                    .map(Object::toString)
-                    .collect(Collectors.toList());
-        }
-        return Collections.emptyList();
-    }
-    
 }
