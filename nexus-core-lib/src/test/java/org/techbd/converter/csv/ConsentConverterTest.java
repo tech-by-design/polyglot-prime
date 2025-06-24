@@ -1,5 +1,8 @@
 package org.techbd.converter.csv;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.assertj.core.api.SoftAssertions;
+import org.hl7.fhir.dstu2016may.model.codesystems.Udi;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.Consent;
@@ -16,14 +20,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.techbd.config.CoreUdiPrimeJpaConfig;
 import org.techbd.converters.csv.ConsentConverter;
 import org.techbd.model.csv.DemographicData;
 import org.techbd.model.csv.QeAdminData;
 import org.techbd.model.csv.ScreeningObservationData;
 import org.techbd.model.csv.ScreeningProfileData;
+import org.techbd.service.csv.CodeLookupService;
 import org.techbd.util.fhir.CoreFHIRUtil;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -35,9 +42,20 @@ class ConsentConverterTest {
 
     @InjectMocks
     private ConsentConverter consentConverter;
+     
+    @Mock
+    private CodeLookupService mockCodeLookupService;
+
+    @Mock
+    private CoreUdiPrimeJpaConfig coreUdiPrimeJpaConfig;
 
     @BeforeEach
     void setUp() throws Exception {
+            // Initialize ConsentConverter with mocked CodeLookupService
+            consentConverter = new ConsentConverter(mockCodeLookupService,coreUdiPrimeJpaConfig);
+            lenient().when(mockCodeLookupService.fetchCode(any(), anyString())).thenReturn(new HashMap<>());
+            lenient().when(mockCodeLookupService.fetchSystem(any(), anyString())).thenReturn(new HashMap<>());
+            lenient().when(mockCodeLookupService.fetchDisplay(any(), anyString())).thenReturn(new HashMap<>());
             Field profileMapField = CoreFHIRUtil.class.getDeclaredField("PROFILE_MAP");
             profileMapField.setAccessible(true);
             profileMapField.set(null, CsvTestHelper.getProfileMap());
