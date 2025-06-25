@@ -1416,7 +1416,8 @@ ORDER BY request_created_at DESC;
 
 
 DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_user_upserted(text, text, text, jsonb, text, text, text, text, text, jsonb, timestamptz, text, text);
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_user_upserted(hub_interaction_id text, hub_interaction_key text, nature text, payload jsonb, user_id text, user_name text, user_session text, user_role text, tenant_id text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text)
+DROP FUNCTION IF EXISTS techbd_udi_ingress.sat_interaction_user_upserted(text, text, text, jsonb, text, text, text, text, text, jsonb, timestamptz, text, text, jsonb);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.sat_interaction_user_upserted(hub_interaction_id text, hub_interaction_key text, nature text, payload jsonb, user_id text, user_name text, user_session text, user_role text, tenant_id text DEFAULT NULL::text, elaboration jsonb DEFAULT NULL::jsonb, created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, created_by text DEFAULT NULL::text, provenance text DEFAULT NULL::text, p_additional_details jsonb DEFAULT NULL::jsonb)
  RETURNS text
  LANGUAGE plpgsql
 AS $function$
@@ -1430,16 +1431,32 @@ DECLARE
     v_created_at 					TIMESTAMPTZ := COALESCE(created_at, CURRENT_TIMESTAMP);
     v_created_by 					TEXT := COALESCE(created_by, current_user);
     v_provenance 					TEXT := COALESCE(provenance, 'unknown');
-    v_exception_id 					TEXT;
+    v_exception_id 					TEXT := gen_random_uuid()::text;
    	v_hub_interaction_key 			TEXT;
    	v_return						TEXT;
    	v_client_ip_address				TEXT;
-   	v_client_ip_address_forwarded	TEXT;
+   	v_client_ip_address_forwarded	TEXT := NULL;
    	v_user_agent		    		TEXT;
    	v_intr_start_time 				TIMESTAMPTZ := NULL;
    	v_intr_finish_time 				TIMESTAMPTZ := NULL;
+	v_elaboration 					JSONB := NULL;
+	v_user_id 						TEXT  := COALESCE(user_id, CURRENT_USER);
 
 BEGIN
+	/*---register diagnostic log---*/
+	v_elaboration := jsonb_build_object(
+							'interaction_id', hub_interaction_id,
+							'interaction_key', hub_interaction_key,
+							'nature', nature,	
+							'tenant_id', tenant_id,							
+							'p_additional_details', p_additional_details,
+							'step', '0. Input parameters into sat_interaction_user_upserted function'
+							);
+	CALL techbd_udi_ingress.register_diagnostic_log(
+			v_exception_id, hub_interaction_key, v_created_by, v_provenance, 'info'::text, 
+			'Input parameters into sat_interaction_user_upserted function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+	/*------------------------------*/  
+
     -- Verify hub_interaction details
    	SELECT t."key" INTO v_hub_interaction_key
   	FROM techbd_udi_ingress.hub_interaction t
@@ -1449,25 +1466,32 @@ BEGIN
   	IF(v_hub_interaction_key IS NULL) THEN
   		RETURN NULL;	
   	END IF;
-  	
-  	-- Extract Observability Metrics Start and Finish Time
-	SELECT
-	MAX(CASE WHEN header->>'name' = 'X-Observability-Metric-Interaction-Start-Time' THEN header->>'value' ELSE NULL END),
-	MAX(CASE WHEN header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time' THEN header->>'value' ELSE NULL END) 
-	INTO v_intr_start_time,v_intr_finish_time
-	FROM jsonb_array_elements(sat_interaction_user_upserted.payload->'response'->'headers') AS header
-	;
 
-	-- Extract Client IP Address
-   	v_client_ip_address := sat_interaction_user_upserted.payload -> 'request'->>'clientIpAddress';
-
-	-- Extract Client IP Address Forwarded
-    SELECT h.value ->> 'value'::text INTO v_client_ip_address_forwarded
-    FROM jsonb_array_elements((sat_interaction_user_upserted.payload -> 'request'::text) -> 'headers'::text) h(value)
-    WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text;   
-   
-   -- Extract User Agent
-   	v_user_agent := sat_interaction_user_upserted.payload -> 'request'->>'userAgent';
+	IF p_additional_details IS NOT NULL THEN
+		v_user_agent 			:= p_additional_details->'request'->>'User-Agent';    
+	    v_client_ip_address 	:= p_additional_details->'request'->>'remoteAddr';
+		v_intr_start_time 		:= p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
+		v_intr_finish_time 		:= p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
+	ELSE
+	  	-- Extract Observability Metrics Start and Finish Time
+		SELECT
+		MAX(CASE WHEN header->>'name' = 'X-Observability-Metric-Interaction-Start-Time' THEN header->>'value' ELSE NULL END),
+		MAX(CASE WHEN header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time' THEN header->>'value' ELSE NULL END) 
+		INTO v_intr_start_time,v_intr_finish_time
+		FROM jsonb_array_elements(sat_interaction_user_upserted.payload->'response'->'headers') AS header
+		;
+	
+		-- Extract Client IP Address
+	   	v_client_ip_address := sat_interaction_user_upserted.payload -> 'request'->>'clientIpAddress';
+	
+		-- Extract Client IP Address Forwarded
+	    SELECT h.value ->> 'value'::text INTO v_client_ip_address_forwarded
+	    FROM jsonb_array_elements((sat_interaction_user_upserted.payload -> 'request'::text) -> 'headers'::text) h(value)
+	    WHERE (h.value ->> 'name'::text) = 'x-forwarded-for'::text;   
+	   
+	   -- Extract User Agent
+	   	v_user_agent := sat_interaction_user_upserted.payload -> 'request'->>'userAgent';
+	END IF;
 
     INSERT INTO techbd_udi_ingress.sat_interaction_user (
 	sat_interaction_user_id
@@ -1669,7 +1693,7 @@ DECLARE
     v_elaboration 					JSONB 	:= NULL;
     v_diagnostic_id 				TEXT  	:= gen_random_uuid()::text;
    	v_is_bundle_valid				BOOLEAN	:= NULL;
-   	v_bundle_type				TEXT 	:= NULL;
+   	v_bundle_type				    TEXT 	:= NULL;
 
 BEGIN
 
@@ -1738,7 +1762,7 @@ BEGIN
     	WHERE hdrs->>'name' = 'x-forwarded-for';*/
     
     	-- Extract the value of X-Observability-Metric-Interaction-Start-Time
-		v_interaction_start_time = p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
+		v_interaction_start_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Start-Time';
 	
 		-- Extract the value of X-Observability-Metric-Interaction-Finish-Time
 		/*SELECT header->>'value' 
@@ -1861,7 +1885,7 @@ BEGIN
 	END IF;
 
 	IF(LOWER(p_nature) IN(lower('Forwarded HTTP Response Error'), LOWER('Forwarded HTTP Response'), LOWER('Forward HTTP Request'))) THEN
-		v_interaction_end_time = p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
+		v_interaction_end_time := p_additional_details->'request'->>'X-Observability-Metric-Interaction-Finish-Time';
 
 		IF(LOWER(p_nature) = lower('Forwarded HTTP Response Error')) THEN
 			v_passed := FALSE;
@@ -5731,7 +5755,8 @@ BEGIN
 		        elaboration					=> p_elaboration,
 		        created_at 					=> v_created_at,
 		        created_by 					=> p_created_by,
-		        provenance 					=> v_provenance
+		        provenance 					=> v_provenance,
+				p_additional_details		=> p_additional_details
 	       	); 
 	      	/*---register diagnostic log---*/
 	      	v_elaboration := jsonb_build_object(
@@ -5742,6 +5767,7 @@ BEGIN
 								'tenant_id', v_tenant_id_denorm,
          						'from_state', p_from_state,
          						'to_state', p_to_state,
+                                'additional_details', p_additional_details,
          						'step', '4. Insert into user info'
          						);
          	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
@@ -5935,6 +5961,14 @@ DECLARE
    	v_payload					JSONB := NULL;
     v_elaboration 				JSONB := NULL;
     v_user_id 					TEXT  := COALESCE(p_user_id, CURRENT_USER);	
+	v_additional_details		JSONB := jsonb_build_object(
+										    'request', jsonb_build_object(
+										        'User-Agent', p_user_agent,
+										        'remoteAddr', p_client_ip_address,
+										        'X-Observability-Metric-Interaction-Start-Time', CURRENT_TIMESTAMP,
+										        'X-Observability-Metric-Interaction-Finish-Time', CURRENT_TIMESTAMP
+										    )
+										);
    
 BEGIN 
 	/*
@@ -6118,7 +6152,8 @@ BEGIN
 		        elaboration					=> p_elaboration,
 		        created_at 					=> v_created_at,
 		        created_by 					=> p_created_by,
-		        provenance 					=> v_provenance
+		        provenance 					=> v_provenance,
+				p_additional_details		=> v_additional_details
 	       	); 
 	      	/*---register diagnostic log---*/
 	      	v_elaboration := jsonb_build_object(
@@ -6129,6 +6164,7 @@ BEGIN
 								'tenant_id', v_tenant_id_denorm,
          						'from_state', p_from_state,
          						'to_state', p_to_state,
+								'additional_details', v_additional_details,
          						'step', '4. Insert into user info'
          						);
          	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
@@ -6297,6 +6333,14 @@ DECLARE
    	v_payload					JSONB := NULL;
     v_elaboration 				JSONB := NULL;
     v_user_id 					TEXT  := COALESCE(p_user_id, CURRENT_USER);	
+	v_additional_details		JSONB := jsonb_build_object(
+										    'request', jsonb_build_object(
+										    'User-Agent', p_user_agent,
+										    'remoteAddr', p_client_ip_address,
+										    'X-Observability-Metric-Interaction-Start-Time', CURRENT_TIMESTAMP,
+										    'X-Observability-Metric-Interaction-Finish-Time', CURRENT_TIMESTAMP
+										  )
+										);
    
 BEGIN 
 	/*
@@ -6480,7 +6524,8 @@ BEGIN
 		        elaboration					=> p_elaboration,
 		        created_at 					=> v_created_at,
 		        created_by 					=> p_created_by,
-		        provenance 					=> v_provenance
+		        provenance 					=> v_provenance,
+				p_additional_details		=> v_additional_details
 	       	); 
 	      	/*---register diagnostic log---*/
 	      	v_elaboration := jsonb_build_object(
@@ -6491,6 +6536,7 @@ BEGIN
 								'tenant_id', v_tenant_id_denorm,
          						'from_state', p_from_state,
          						'to_state', p_to_state,
+         						'additional_details', v_additional_details,
          						'step', '4. Insert into user info'
          						);
          	CALL techbd_udi_ingress.register_diagnostic_log(v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
@@ -6601,6 +6647,8 @@ register_user_interaction -  This function is designed to handle the registratio
     - source_type: fhir/hl7/csv/ccda
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_user_interaction(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, text, bool, text, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_user_interaction(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_user_interaction(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, text, text, text, timestamptz, timestamptz);
 CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_user_interaction(
 	p_interaction_id text, 
 	p_interaction_key text, 
@@ -6629,7 +6677,9 @@ CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_user_interaction(
 	p_source_type text DEFAULT NULL::text, 
 	p_group_hub_interaction_id text DEFAULT NULL::text, 
 	p_sftp_session_id text DEFAULT NULL::text,
-	p_request_source text DEFAULT NULL::text)
+	p_request_source text DEFAULT NULL::text,
+	p_intr_start_time timestamp with time zone DEFAULT NULL::timestamp with time zone,
+   	p_intr_finish_time timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -6656,6 +6706,14 @@ DECLARE
    	v_payload					JSONB := NULL;
     v_elaboration 				JSONB := NULL;
     v_user_id 					TEXT  := COALESCE(p_user_id, current_user);	
+	v_additional_details		JSONB := jsonb_build_object(
+										    'request', jsonb_build_object(
+										        'User-Agent', p_user_agent,
+										        'remoteAddr', p_client_ip_address,
+										        'X-Observability-Metric-Interaction-Start-Time', p_intr_start_time,
+										        'X-Observability-Metric-Interaction-Finish-Time', p_intr_finish_time
+										    )
+										);
    
 BEGIN 
 	/* This function is designed to handle the registration and upserting of HTTP interaction requests into user anf http interaction tables in the 
@@ -6674,22 +6732,13 @@ BEGIN
 							'nature', p_nature,
 							'from_state', p_from_state,
 							'to_state', p_to_state,
-							'step', '0. Input parameters into register_interaction_fhir_request function'
+							'step', '0. Input parameters into register_user_interaction function'
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
 			v_exception_id, p_interaction_key, v_created_by, p_provenance, 'info'::text, 
-			'Input parameters into register_interaction_fhir_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+			'Input parameters into register_user_interaction function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	/*------------------------------*/  
-
-	IF p_interaction_key IN('/Bundle', '/Bundle/', '/Bundle/$validate', '/Bundle/$validate/', '/api/expect/fhir/bundle', 
-							'/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/', 
-							'/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/') THEN
-		RETURN jsonb_build_object('error', 'Not a valid user interaction_key',
-								  'payload', p_payload,
-								  'hub_nexus_interaction_id', p_hub_nexus_interaction_id,
-								  'interaction_id', p_interaction_id);
-	END IF;
-		
+	
 	-- Check hub_nexus_interaction exists
     IF p_hub_nexus_interaction_id IS NOT NULL AND NOT EXISTS (
         SELECT 1 FROM techbd_udi_ingress.hub_nexus_interaction
@@ -6820,7 +6869,7 @@ BEGIN
 
        	--1) Call the function with the defined parameters to upsert user info
        	IF(v_nature_denorm = 'org.techbd.service.http.Interactions$RequestResponseEncountered' AND trim(p_interaction_key) NOT IN ('/Hl7/v2', '/Hl7/v2/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/flatfile/csv/Bundle/$validate', '/flatfile/csv/Bundle/$validate/', '/ccda/Bundle', '/ccda/Bundle/', '/ccda/Bundle/$validate', '/ccda/Bundle/$validate/')) THEN     		       	
-	    	PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
+			PERFORM techbd_udi_ingress.sat_interaction_user_upserted(
 		        hub_interaction_id 			=> p_interaction_id,
 		        hub_interaction_key			=> p_interaction_key, 
 	            nature						=> v_nature_denorm,
@@ -6833,7 +6882,8 @@ BEGIN
 		        elaboration					=> p_elaboration,
 		        created_at 					=> v_created_at,
 		        created_by 					=> v_created_by,
-		        provenance 					=> v_provenance
+		        provenance 					=> v_provenance,
+				p_additional_details		=> v_additional_details
 	       	); 
 	      	/*---register diagnostic log---*/
 	      	v_elaboration := jsonb_build_object(

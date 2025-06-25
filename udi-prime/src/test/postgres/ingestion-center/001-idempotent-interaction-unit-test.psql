@@ -59,7 +59,7 @@ BEGIN
 
 	-- Check function: register_user_interaction
 	RETURN NEXT has_function(schema_name, 'register_user_interaction',
-	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text'], 
+	    ARRAY['text', 'text', 'jsonb', 'jsonb', 'text', 'text', 'text', 'jsonb', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'text', 'boolean', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'text', 'timestamptz', 'timestamptz'], 
 		'Function register_user_interaction exists'
 	);   
     
@@ -228,7 +228,17 @@ BEGIN
 	    p_source_type              => 'fhir'::text,
 	    p_group_hub_interaction_id => NULL::text,
 	    p_request_source   		   => NULL::text,
-		p_additional_details	   => '{"user_agent" : "user123"}'::jsonb
+		p_additional_details	   => '{
+							  "request": {    
+							    "remoteAddr": "127.0.0.1",
+							    "remoteHost": "127.0.0.1",
+							    "remotePort": 51768,
+							    "requestUri": "/Bundle",
+							    "requestUrl": "http://localhost:8080/flatfile/csv/Bundle",
+							    "X-Observability-Metric-Interaction-Start-Time": "2025-06-19T04:22:50.833643177Z",
+								"X-Observability-Metric-Interaction-Finish-Time": "2025-06-23T07:38:26.389583933Z"
+							  }
+							}'::jsonb
 	);
     
     RETURN NEXT ok(
