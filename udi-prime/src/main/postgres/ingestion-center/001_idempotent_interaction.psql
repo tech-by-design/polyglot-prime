@@ -1910,6 +1910,10 @@ BEGIN
 			
 	END IF; /*End of: Forwarded HTTP Response Error. Forwarded HTTP Response*/
 	
+    IF v_interaction_end_time IS NULL AND POSITION('$validate' IN p_uri) > 0 THEN
+	    v_interaction_end_time := CURRENT_TIMESTAMP;
+	END IF;
+
 	BEGIN
 		v_bundle_last_updated := v_bundle_last_updated::TIMESTAMPTZ;
 	EXCEPTION
@@ -2075,7 +2079,7 @@ BEGIN
 	-- Save the details from the techByDesignDisposition to other natures also
 	IF LOWER(p_nature) = LOWER('techByDesignDisposition') THEN    
 		UPDATE techbd_udi_ingress.sat_interaction_fhir_request
-			SET issues_count 			= COALESCE(v_issues_count, 0),			
+			SET --issues_count 			= COALESCE(v_issues_count, 0),			
     			outbound_http_message 	= v_outbound_http_message,  	
 				bundle_session_id 		= v_bundle_session_id,	 				  
     			validation_engine 		= v_validation_engine,   
