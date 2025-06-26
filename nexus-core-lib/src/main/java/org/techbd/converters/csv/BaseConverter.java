@@ -77,6 +77,28 @@ public abstract class BaseConverter implements IConverter {
         return innerMap.getOrDefault(code, valueFromCsv);
     }
 
+    public String getOmbRaceCategory(String ombCategoryCode, String interactionId) {
+        return getCategoryType("ombRaceCategory", ombCategoryCode, interactionId);
+    }
+
+    public String getOmbEthnicityCategory(String ombCategoryCode, String interactionId) {
+        return getCategoryType("ombEthnicityCategory", ombCategoryCode, interactionId);
+    }
+
+    private String getCategoryType(String categoryType, String code, String interactionId) {
+        if (CODE_LOOKUP == null) {
+            final var dslContext = coreUdiPrimeJpaConfig.dsl();
+            CODE_LOOKUP = codeLookupService.fetchCode(dslContext, interactionId);
+        }
+
+        Map<String, String> categoryMap = CODE_LOOKUP.get(categoryType);
+        if (categoryMap != null && categoryMap.containsKey(code.toLowerCase())) {
+            return "ombCategory";
+        }
+
+        return "detailed";
+    }
+
     public CanonicalType getProfileUrl() {
         return new CanonicalType(CoreFHIRUtil.getProfileUrl(getResourceType().name().toLowerCase()));
     }
