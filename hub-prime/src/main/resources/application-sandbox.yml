@@ -5,16 +5,6 @@ org:
         interactions:
           defaultPersistStrategy: "{ \"nature\": \"fs\" }"
           saveUserDataToInteractions: true
-        hub:
-          prime:
-            csv:
-              validation:
-                pythonScriptPath: ${TECHBD_CSV_PYTHON_SCRIPT_PATH:../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py}
-                pythonExecutable: ${TECHBD_CSV_PYTHON_EXECUTABLE:python3}
-                packagePath: ${TECHBD_CSV_PACKAGE_PATH:../support/specifications/flat-file/datapackage-nyher-fhir-ig-equivalent.json}
-                inboundPath: ${TECHBD_CSV_INBOUND_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/flatFile/inbound
-                outputPath: ${TECHBD_CSV_INBOUND_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/flatFile/outbound
-                ingessHomePath: ${TECHBD_CSV_INGRESS_PATH:/mnt/wsl/Ubuntu-22.04/tmp}/techbyDesign/flatFile/ingress
 management:
   endpoints:
     enabled-by-default: true
