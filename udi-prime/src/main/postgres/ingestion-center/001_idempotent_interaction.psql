@@ -1769,6 +1769,7 @@ BEGIN
 		INTO v_interaction_end_time
 		FROM jsonb_array_elements(p_additional_details->'response'->'headers') AS header
 		WHERE header->>'name' = 'X-Observability-Metric-Interaction-Finish-Time';*/
+        v_interaction_end_time := CURRENT_TIMESTAMP;
 
 	    SELECT entry->'resource'->>'id'
 	    INTO v_patient_id
@@ -2088,7 +2089,12 @@ BEGIN
     			is_bundle_valid			= v_is_bundle_valid,    
     			validation_initiated_at = v_validation_initiated_at::TIMESTAMPTZ,
     			validation_completed_at = v_validation_completed_at::TIMESTAMPTZ,    	
-				techbd_disposition_action = v_techbd_disposition_action
+				techbd_disposition_action = v_techbd_disposition_action,
+    			interaction_end_time    = CASE 
+			                                   WHEN v_techbd_disposition_action = 'discard' 
+			                                   THEN CURRENT_TIMESTAMP 
+			                                   ELSE interaction_end_time 
+			                                END
 		WHERE hub_interaction_id = p_hub_interaction_id AND LOWER(nature) != LOWER('techByDesignDisposition');
 	END IF;  
 
