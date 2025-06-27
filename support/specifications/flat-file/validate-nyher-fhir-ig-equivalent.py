@@ -110,7 +110,9 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                 raise FileNotFoundError(f"File for resource '{resource['name']}' not found.")
 
             # Update the resource dictionary with the path
-            resource_with_path = {**resource, "path": path}
+            resource_with_path = {**resource, "path": path, "dialect": {
+                    "skipInitialSpace": True
+            }}  # Add dialect options if needed
             resources.append(resource_with_path)
 
         # Construct the final package descriptor with dynamic paths
@@ -192,6 +194,41 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                 if any(field.name == field_name for field in resource.schema.fields)
             ]
             resource = transform(resource, steps=transform_steps)
+
+        # Define helper functions outside the loop to avoid closure issues
+        # def strip_whitespace(value):
+        #     return value.strip() if isinstance(value, str) else value 
+        
+        # def strip_and_lowercase(value):
+        #     if isinstance(value, str):
+        #         return value.strip().lower()
+        #     return value
+
+        # for resource in package.resources:
+        #     # Create a list to hold all transform steps
+        #     transform_steps = []
+            
+        #     # Get field names that need special processing (lowercase)
+        #     special_fields = {field_name for field_name, _ in common_transform_steps 
+        #                     if any(field.name == field_name for field in resource.schema.fields)}
+            
+        #     # Process all string fields
+        #     for field in resource.schema.fields:
+        #         if field.type == "string":
+        #             if field.name in special_fields:
+        #                 # Apply both strip and lowercase for special fields
+        #                 transform_steps.append(
+        #                     steps.cell_convert(field_name=field.name, function=strip_and_lowercase)
+        #                 )
+        #             else:
+        #                 # Apply only strip for regular string fields
+        #                 transform_steps.append(
+        #                     steps.cell_convert(field_name=field.name, function=strip_whitespace)
+        #                 )
+            
+        #     # Apply all transforms to the resource
+        #     if transform_steps:
+        #         resource = transform(resource, steps=transform_steps)
 
         checklist = Checklist(checks=[ValidateAnswerCode()])
         # Validate the package
