@@ -56,8 +56,6 @@
                         <id root="2.16.840.1.113883.3.227.2845.10.41.1.1"/>
                         <code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="{$consentDisplay}"/>
                         <xsl:copy-of select="$consent/hl7:statusCode"/>
-                        <xsl:copy-of select="$consent/hl7:effectiveTime"/>
-                        <xsl:copy-of select="$consent/hl7:value"/>
                     </consent>
                 </authorization>
             </xsl:if>
