@@ -36,21 +36,42 @@
             <xsl:copy-of select="hl7:legalAuthenticator"/>
             <xsl:copy-of select="hl7:documentationOf"/>
 
+            <!-- Medent - always have consent details in Procedures section with  Entry.observation.entryRelationship.observation.code = "105511-0" and answer in Entry.observation.entryRelationship.observation.value (Yes/No)  -->
+            <xsl:variable name="consent" select="
+                hl7:component/hl7:structuredBody/hl7:component
+                /hl7:section[hl7:code[@code='47519-4']]
+                /hl7:entry/hl7:observation/hl7:entryRelationship
+                /hl7:observation[hl7:code/@code = '105511-0']
+            "/>
+            <xsl:if test="$consent">
+                <xsl:variable name="consentDisplay">
+                    <xsl:choose>
+                        <xsl:when test="$consent/hl7:value/@displayName = 'Yes'">permit</xsl:when>
+                        <xsl:otherwise>deny</xsl:otherwise>
+                    </xsl:choose>
+                </xsl:variable>      
+
+                <authorization>
+                    <consent>
+                        <id root="2.16.840.1.113883.3.227.2845.10.41.1.1"/>
+                        <code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="{$consentDisplay}"/>
+                        <xsl:copy-of select="$consent/hl7:statusCode"/>
+                        <xsl:copy-of select="$consent/hl7:effectiveTime"/>
+                        <xsl:copy-of select="$consent/hl7:value"/>
+                    </consent>
+                </authorization>
+            </xsl:if>
+
             <!-- Add a sample consent section if none exists -->
-            <xsl:choose>
-                <xsl:when test="hl7:authorization/hl7:consent">
-                    <xsl:copy-of select="hl7:authorization"/>
-                </xsl:when>
-                <xsl:otherwise>
-                    <authorization>
-                        <consent>
-                            <id root="2.16.840.1.113883.3.933"/>                            
-                            <code code="OPT-OUT" codeSystem="2.16.840.1.113883.5.8" displayName="deny"/>
-                            <statusCode code="completed"/>
-                        </consent>
-                    </authorization>
-                </xsl:otherwise>
-            </xsl:choose>
+            <xsl:if test="not($consent)">
+                <authorization>
+                    <consent>
+                        <id root="2.16.840.1.113883.3.227.2845.10.41.1.1"/>
+                        <code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="deny"/>
+                        <statusCode code="completed"/>
+                    </consent>
+                </authorization>
+            </xsl:if>
 
             <xsl:copy-of select="hl7:componentOf"/>
 
