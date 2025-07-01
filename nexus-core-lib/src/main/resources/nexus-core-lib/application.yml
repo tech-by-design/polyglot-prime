@@ -2,12 +2,12 @@ org:
   techbd:
     csv:
       validation:
-        pythonScriptPath: ../support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py
+        pythonScriptPath: support/specifications/flat-file/validate-nyher-fhir-ig-equivalent.py
         pythonExecutable: python3
-        packagePath: ../support/specifications/flat-file/datapackage-nyher-fhir-ig-equivalent.json
+        packagePath: support/specifications/flat-file/datapackage-nyher-fhir-ig-equivalent.json
         inboundPath: /app/techbyDesign/flatFile/inbound
         outputPath: /app/techbyDesign/flatFile/outbound
-        ingressHomePath: /app/techbyDesign/flatFile/ingress  
+        ingressHomePath: /app/techbyDesign/flatFile/ingress   
     udi:
       prime:
         jdbc:
