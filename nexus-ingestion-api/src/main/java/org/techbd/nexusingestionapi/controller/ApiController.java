@@ -179,8 +179,7 @@ public class ApiController {
         String datePath = uploadTime.format(DATE_PATH_FORMATTER);
         // String s3PrefixPath = String.format("%s/%s/%s-%s",
         //         msgType, datePath, timestamp, interactionId);
-        String s3PrefixPath = String.format("%s/%s-%s",
-                 datePath, timestamp, interactionId);
+        String s3PrefixPath = String.format("%s/%s-%s/", datePath, timestamp, interactionId);
         String metadataPrefixPath = String.format("%s/%s/metadata/%s", datePath, timestamp, interactionId);         
         String objectKey = s3PrefixPath + JSON_EXTENSION;
         String metadataKey = metadataPrefixPath + METADATA_SUFFIX;
