@@ -5532,7 +5532,7 @@ register_interaction_fhir_request -  This function handles the registration of F
     function logs the exception using the register_issue function.
     Returns a JSONB object representing either the inserted data or an error.
     - origin: http/sftp
-    - source_type: fhir/hl7/csv/ccda
+    - source_type: fhir
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, text, bool, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, json);
@@ -5914,7 +5914,7 @@ register_interaction_ccda_request -  This function handles the registration of C
     function logs the exception using the register_issue function.
     Returns a JSONB object representing either the inserted data or an error.
     - origin: http/sftp
-    - source_type: fhir/hl7/csv/ccda
+    - source_type: ccda
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_ccda_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, text, bool, text, text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_ccda_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, text, text);
@@ -6273,7 +6273,7 @@ register_interaction_csv_request -  This function handles the registration of CS
     function logs the exception using the register_issue function.
     Returns a JSONB object representing either the inserted data or an error.
     - origin: http/sftp
-    - source_type: fhir/hl7/csv/ccda
+    - source_type: csv
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_csv_request(text, text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, text, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_csv_request(text, text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
