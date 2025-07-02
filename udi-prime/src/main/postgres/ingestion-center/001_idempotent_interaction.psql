@@ -5532,7 +5532,7 @@ register_interaction_fhir_request -  This function handles the registration of F
     function logs the exception using the register_issue function.
     Returns a JSONB object representing either the inserted data or an error.
     - origin: http/sftp
-    - source_type: fhir/hl7/csv/ccda
+    - source_type: fhir
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, text, bool, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_fhir_request(text, text, jsonb, jsonb, text, text, text, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, json);
@@ -5614,7 +5614,7 @@ BEGIN
 							'step', '0. Input parameters into register_interaction_fhir_request function'
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
-			v_exception_id, p_interaction_key, p_created_by, p_provenance, 'info'::text, 
+			v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
 			'Input parameters into register_interaction_fhir_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	/*------------------------------*/  
 
@@ -5914,7 +5914,7 @@ register_interaction_ccda_request -  This function handles the registration of C
     function logs the exception using the register_issue function.
     Returns a JSONB object representing either the inserted data or an error.
     - origin: http/sftp
-    - source_type: fhir/hl7/csv/ccda
+    - source_type: ccda
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_ccda_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, text, bool, text, text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_ccda_request(text, text, jsonb, text, text, text, jsonb, text, text, jsonb, text, text, text, text, text, text, text, timestamptz, text, bool, text, text, text, text, text, text, text);
@@ -6002,11 +6002,11 @@ BEGIN
 							'nature', p_nature,
 							'from_state', p_from_state,
 							'to_state', p_to_state,
-							'step', '0. Input parameters into register_interaction_csv_request function'
+							'step', '0. Input parameters into register_interaction_ccda_request function'
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
-			v_exception_id, p_interaction_key, p_created_by, p_provenance, 'info'::text, 
-			'Input parameters into register_interaction_csv_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
+			v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
+			'Input parameters into register_interaction_ccda_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	/*------------------------------*/ 
 
 	IF v_nature_denorm NOT IN('Original CCDA Payload', 'CCDA Validation Result', 'Converted to FHIR') THEN
@@ -6273,7 +6273,7 @@ register_interaction_csv_request -  This function handles the registration of CS
     function logs the exception using the register_issue function.
     Returns a JSONB object representing either the inserted data or an error.
     - origin: http/sftp
-    - source_type: fhir/hl7/csv/ccda
+    - source_type: csv
 *******************************************************************************************/
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_csv_request(text, text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, text, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
 DROP FUNCTION IF EXISTS techbd_udi_ingress.register_interaction_csv_request(text, text, text, jsonb, text, text, jsonb, jsonb, text, text, text, text, text, text, text, text, text, timestamptz, text, bool, text, bytea, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text);
@@ -6377,7 +6377,7 @@ BEGIN
 							'step', '0. Input parameters into register_interaction_csv_request function'
 							);
 	CALL techbd_udi_ingress.register_diagnostic_log(
-			v_exception_id, p_interaction_key, p_created_by, p_provenance, 'info'::text, 
+			v_exception_id, p_interaction_key, p_created_by, v_provenance, 'info'::text, 
 			'Input parameters into register_interaction_csv_request function'::text, v_user_id, 'success'::text, NULL::text, 0, v_elaboration);
 	/*------------------------------*/ 
 
