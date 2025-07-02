@@ -36,12 +36,12 @@ public class AwsService {
         return metadata;
     }
 
-    public String saveToS3(Map<String, String> headers, MultipartFile file) {
+    public String saveToS3(String key,Map<String, String> headers, MultipartFile file, Map<String, String>  metadata) {
         String tenantId = extractTenantId(headers);
-        Map<String, String> metadata = extractMetadata(file);
+        // Map<String, String> metadata = extractMetadata(file);
 
         try {
-            String key = "uploads/" + tenantId + "/" + file.getOriginalFilename();
+            // String key = "uploads/" + tenantId + "/" + file.getOriginalFilename();
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(Constants.BUCKET_NAME) // Using Constants.BUCKET_NAME

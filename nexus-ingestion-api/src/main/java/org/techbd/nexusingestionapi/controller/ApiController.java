@@ -1,6 +1,5 @@
 package org.techbd.nexusingestionapi.controller;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -14,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,6 +48,13 @@ public class ApiController {
         this.objectMapper = objectMapper;
     }
 
+    @PostMapping(value ="/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body("success");
+    }
+
     @PostMapping(value ="/ingest")
     public ResponseEntity<String> handleCSVBundle(
             @RequestParam("file") @Nonnull MultipartFile file,
@@ -76,7 +81,36 @@ public class ApiController {
         }
     }
 
-    private ResponseEntity<String> processJsonRequest(String body, RequestContext context) {
+
+    private ResponseEntity<String> processMultipartFileRequest(MultipartFile file, RequestContext context) {
+        try {
+            String bucketName = Constants.BUCKET_NAME;
+            Map<String, String> s3Metadata = buildS3Metadata(context);
+            // Build metadata
+            Map<String, Object> metadataJson = buildMetadataJson(context);
+
+            String metadataContent = objectMapper.writeValueAsString(metadataJson);
+
+            System.out.println("Metadata Content MultiPart: " + metadataContent);
+
+            // Save metadata to S3
+            s3Service.saveToS3(bucketName, context.metadataKey(), metadataContent, null);
+
+            // Save file to S3
+            String s3Response = s3Service.saveToS3(context.objectKey(),context.headers(), file, s3Metadata);
+
+            // Send to SQS
+            String messageId = sendToSqs(context, s3Response);
+
+            // Create response
+            return createSuccessResponse(messageId, context);
+
+        } catch (Exception e) {
+            log.error("Error processing multipart file request", e);
+            throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
+        }
+    }
+ private ResponseEntity<String> processJsonRequest(String body, RequestContext context) {
         try {
             // Upload data to S3
             String bucketName = Constants.BUCKET_NAME;
@@ -108,36 +142,6 @@ public class ApiController {
             throw new RuntimeException("Failed to process request: " + e.getMessage(), e);
         }
     }
-
-    private ResponseEntity<String> processMultipartFileRequest(MultipartFile file, RequestContext context) {
-        try {
-            String bucketName = Constants.BUCKET_NAME;
-
-            // Build metadata
-            Map<String, Object> metadataJson = buildMetadataJson(context);
-
-            String metadataContent = objectMapper.writeValueAsString(metadataJson);
-
-            System.out.println("Metadata Content MultiPart: " + metadataContent);
-
-            // Save metadata to S3
-            s3Service.saveToS3(bucketName, context.metadataKey(), metadataContent, null);
-
-            // Save file to S3
-            String s3Response = s3Service.saveToS3(context.headers(), file);
-
-            // Send to SQS
-            String messageId = sendToSqs(context, s3Response);
-
-            // Create response
-            return createSuccessResponse(messageId, context);
-
-        } catch (Exception e) {
-            log.error("Error processing multipart file request", e);
-            throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
-        }
-    }
-
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty() || file.getOriginalFilename() == null
                 || file.getOriginalFilename().trim().isEmpty()) {
@@ -177,8 +181,9 @@ public class ApiController {
         //         msgType, datePath, timestamp, interactionId);
         String s3PrefixPath = String.format("%s/%s-%s",
                  datePath, timestamp, interactionId);
+        String metadataPrefixPath = String.format("%s/%s/metadata/%s", datePath, timestamp, interactionId);         
         String objectKey = s3PrefixPath + JSON_EXTENSION;
-        String metadataKey = s3PrefixPath + METADATA_SUFFIX;
+        String metadataKey = metadataPrefixPath + METADATA_SUFFIX;
         String fullS3Path = S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
 
         String userAgent = headers.getOrDefault(Constants.REQ_HEADER_USER_AGENT, Constants.DEFAULT_USER_AGENT);
@@ -274,12 +279,12 @@ public class ApiController {
 
         //// TODO: Uncomment this section when needed this JSON format.
         //// Wrap in parent object
-        // Map<String, Object> wrapper = new HashMap<>();
-        // wrapper.put("key", context.objectKey());
-        // wrapper.put("json_metadata", jsonMetadata);
+        Map<String, Object> wrapper = new HashMap<>();
+        wrapper.put("key", context.objectKey());
+        wrapper.put("json_metadata", jsonMetadata);
 
-        // return wrapper;
-        return jsonMetadata;
+        return wrapper;
+        // return jsonMetadata;
     }
 
     /**
