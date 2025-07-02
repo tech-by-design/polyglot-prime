@@ -50,43 +50,14 @@ public class ApiController {
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping({"/Bundle", "/Bundle/",
-        "/Bundle/$validate", "/Bundle/$validate/",
-        "/ccda/Bundle", "/ccda/Bundle/",
-        "/ccda/Bundle/$validate", "/ccda/Bundle/$validate/"})
-    public ResponseEntity<String> handleRequest(
-            @RequestBody String body,
-            @RequestHeader Map<String, String> headers,
-            HttpServletRequest request) {
-
-        String uri = request.getRequestURI();
-        boolean isCcda = uri.contains("ccda");
-        String msgType = isCcda ? "ccda" : "fhir";
-        String fileExtension = isCcda ? XML_EXTENSION : JSON_EXTENSION;
-
-        RequestContext context = createRequestContext(
-                headers,
-                request,
-                msgType,
-                body.getBytes(StandardCharsets.UTF_8).length,
-                extractOriginalFileName(headers, UUID.randomUUID().toString(), fileExtension)
-        );
-
-        return processJsonRequest(body, context);
-    }
-
-    @PostMapping({"/flatfile/csv/Bundle", "/flatfile/csv/Bundle/",
-        "/flatfile/csv/Bundle/$validate", "/flatfile/csv/Bundle/$validate/"})
+    @PostMapping(value ="/ingest")
     public ResponseEntity<String> handleCSVBundle(
             @RequestParam("file") @Nonnull MultipartFile file,
             @RequestHeader Map<String, String> headers,
             HttpServletRequest request) {
-
         validateFile(file);
-
         RequestContext context = createRequestContext(
-                headers, request, "csv", file.getSize(), file.getOriginalFilename());
-
+                headers, request, file.getSize(), file.getOriginalFilename());
         return processMultipartFileRequest(file, context);
     }
 
@@ -182,25 +153,30 @@ public class ApiController {
     private RequestContext createRequestContext(
             Map<String, String> headers,
             HttpServletRequest request,
-            String msgType,
+        //    String msgType,
             long fileSize,
             String originalFileName) {
-
         String tenantId = headers.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(Constants.REQ_HEADER_TENANT_ID))
                 .map(Map.Entry::getValue)
                 .findFirst()
-                .orElse(Constants.DEFAULT_TENANT_ID);
-
+                .orElse(null);
+        if (tenantId == null || tenantId.trim().isEmpty()) {
+            tenantId = Constants.TENANT_ID;
+        }
+        if (tenantId == null || tenantId.trim().isEmpty()) {
+            tenantId = Constants.DEFAULT_TENANT_ID;
+        }
         String interactionId = UUID.randomUUID().toString();
         Instant now = Instant.now();
         String timestamp = String.valueOf(now.toEpochMilli());
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
 
         String datePath = uploadTime.format(DATE_PATH_FORMATTER);
-        String s3PrefixPath = String.format("%s/%s/%s-%s",
-                msgType, datePath, timestamp, interactionId);
-
+        // String s3PrefixPath = String.format("%s/%s/%s-%s",
+        //         msgType, datePath, timestamp, interactionId);
+        String s3PrefixPath = String.format("%s/%s-%s",
+                 datePath, timestamp, interactionId);
         String objectKey = s3PrefixPath + JSON_EXTENSION;
         String metadataKey = s3PrefixPath + METADATA_SUFFIX;
         String fullS3Path = S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
@@ -218,7 +194,6 @@ public class ApiController {
                 request.getRequestURI(),
                 tenantId,
                 interactionId,
-                msgType,
                 uploadTime,
                 timestamp,
                 originalFileName,
@@ -275,7 +250,7 @@ public class ApiController {
 
         jsonMetadata.put("tenantId", context.tenantId());
         jsonMetadata.put("interactionId", context.interactionId());
-        jsonMetadata.put("msgType", context.msgType());
+        // jsonMetadata.put("msgType", context.msgType());
         jsonMetadata.put("uploadDate", String.format("%d-%02d-%02d",
                 context.uploadTime().getYear(), context.uploadTime().getMonthValue(), context.uploadTime().getDayOfMonth()));
         jsonMetadata.put("timestamp", context.timestamp());
@@ -315,7 +290,7 @@ public class ApiController {
         message.put("tenantId", context.tenantId());
         message.put("interactionId", context.interactionId());
         message.put("requestUrl", context.requestUrl());
-        message.put("msgType", context.msgType());
+        // message.put("msgType", context.msgType());
         message.put("timestamp", context.timestamp());
         message.put("fileName", context.fileName());
         message.put("fileSize", String.valueOf(context.fileSize()));
@@ -345,7 +320,7 @@ public class ApiController {
         message.put("tenantId", context.tenantId());
         message.put("interactionId", context.interactionId());
         message.put("requestUrl", context.requestUrl());
-        message.put("msgType", context.msgType());
+        // message.put("msgType", context.msgType());
         message.put("timestamp", context.timestamp());
         message.put("fileName", context.fileName());
         message.put("fileSize", String.valueOf(context.fileSize()));
@@ -371,7 +346,6 @@ public class ApiController {
             String requestUrl,
             String tenantId,
             String interactionId,
-            String msgType,
             ZonedDateTime uploadTime,
             String timestamp,
             String fileName,

@@ -43,7 +43,7 @@ public class ApiControllerTest {
             "/Bundle",
             "testTenant",
             "12345",
-            "fhir",
+            //"fhir",
             ZonedDateTime.now(),
             "1716899999999",
             "testFile.json",
@@ -83,7 +83,7 @@ public class ApiControllerTest {
             "/Bundle",
             "testTenant",
             "abcde-12345",
-            "fhir",
+          //  "fhir",
             ZonedDateTime.parse("2025-05-28T12:00:00Z"),
             "1716899999999",
             "example.json",
@@ -103,7 +103,7 @@ public class ApiControllerTest {
 
         assertEquals("testTenant", metadataJson.get("tenantId"));
         assertEquals("abcde-12345", metadataJson.get("interactionId"));
-        assertEquals("fhir", metadataJson.get("msgType"));
+     //   assertEquals("fhir", metadataJson.get("msgType"));
         assertEquals("example.json", metadataJson.get("fileName"));
         assertEquals("2048", metadataJson.get("fileSize"));
         assertEquals("s3://test-bucket/fhir/2025/05/28-abcde-12345.json", metadataJson.get("s3ObjectPath"));
