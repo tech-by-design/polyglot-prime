@@ -48,19 +48,12 @@ public class ApiController {
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping(value ="/test")
-    public ResponseEntity<String> test() {
-        return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body("success");
-    }
-
     @PostMapping(value ="/ingest")
     public ResponseEntity<String> handleCSVBundle(
             @RequestParam("file") @Nonnull MultipartFile file,
             @RequestHeader Map<String, String> headers,
             HttpServletRequest request) {
-        validateFile(file);
+       // validateFile(file);
         RequestContext context = createRequestContext(
                 headers, request, file.getSize(), file.getOriginalFilename());
         return processMultipartFileRequest(file, context);
