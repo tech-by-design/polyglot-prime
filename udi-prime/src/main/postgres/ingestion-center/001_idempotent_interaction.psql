@@ -4453,6 +4453,7 @@ ranked_sicr AS (
         sicr.*,
         ROW_NUMBER() OVER (PARTITION BY hub_interaction_id ORDER BY created_at DESC) AS rn
     FROM techbd_udi_ingress.sat_interaction_fhir_request sicr
+    WHERE  source_type = 'CCDA'::text
 )
 SELECT
     sicr.sat_interaction_fhir_request_id AS sat_interaction_ccda_request_id,
