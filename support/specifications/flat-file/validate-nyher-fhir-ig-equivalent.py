@@ -157,6 +157,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             ("ANSWER_CODE_DESCRIPTION", "answer_code_description"),    
             ("ANSWER_CODE_SYSTEM", "answer_code_system"), 
             ("OBSERVATION_CATEGORY_SDOH_CODE", "observation_category_sdoh_code"),  
+            ("OBSERVATION_CATEGORY_SDOH_TEXT", "observation_category_sdoh_text"),
             ("DATA_ABSENT_REASON_CODE", "data_absent_reason_code"),
             ("DATA_ABSENT_REASON_DISPLAY", "data_absent_reason_display"),
             ("POTENTIAL_NEED_INDICATED", "potential_need_indicated"),
