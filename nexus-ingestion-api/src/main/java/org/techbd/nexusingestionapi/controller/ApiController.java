@@ -34,7 +34,7 @@ public class ApiController {
 
     private static final String JSON_EXTENSION = ".json";
     private static final String XML_EXTENSION = ".xml";
-    private static final String METADATA_SUFFIX = "_metadata.json";
+    private static final String METADATA_SUFFIX = "metadata.json";
     private static final String S3_PREFIX = "s3://";
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
@@ -172,11 +172,22 @@ public class ApiController {
         String datePath = uploadTime.format(DATE_PATH_FORMATTER);
         // String s3PrefixPath = String.format("%s/%s/%s-%s",
         //         msgType, datePath, timestamp, interactionId);
-        String s3PrefixPath = String.format("%s/%s/%s", datePath, timestamp, interactionId);
-        String metadataPrefixPath = String.format("%s/%s/metadata/%s", datePath, timestamp, interactionId);         
-        String objectKey = s3PrefixPath;// + JSON_EXTENSION;
-        String metadataKey = metadataPrefixPath + METADATA_SUFFIX;
+
+        String fileExtension = originalFileName.substring(originalFileName.lastIndexOf('.') + 1); // e.g., csv
+        String fileBaseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')); // e.g., ttest
+
+        String s3PrefixPath = String.format("data/%s/%s/%s", datePath, timestamp, interactionId);
+        String metadataPrefixPath = String.format("metadata/%s/%s/%s", datePath, timestamp, interactionId);
+
+        // Updated keys
+        String objectKey = String.format("data/%s/%s-%s-%s.%s",
+                datePath, timestamp, interactionId, fileBaseName, fileExtension);
+
+        String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
+                datePath, timestamp, interactionId, fileBaseName, fileExtension);
+
         String fullS3Path = S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+
 
         String userAgent = headers.getOrDefault(Constants.REQ_HEADER_USER_AGENT, Constants.DEFAULT_USER_AGENT);
 
