@@ -117,43 +117,68 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation
                                         .setStatus(Observation.ObservationStatus
                                                         .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE, interactionId)));
-                        if (!data.getObservationCategorySdohCode().isEmpty()) {
-                                observation.addCategory(createCategory(
-                                                "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                                                fetchCode(data.getObservationCategorySdohCode(), CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId),
-                                                data.getObservationCategorySdohText()));
+                        if (data.getObservationCategorySdohCode() != null
+                                        && !data.getObservationCategorySdohCode().isEmpty()) {
+                                String[] rawCodes = data.getObservationCategorySdohCode().split(";");
+                                String sdohText = data.getObservationCategorySdohText();
+
+                                for (String rawCode : rawCodes) {
+                                        String trimmedCode = rawCode.trim();
+                                        if (!trimmedCode.isEmpty()) {
+                                                String code = fetchCode(trimmedCode,
+                                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                                                interactionId);
+                                                String text = fetchDisplay(trimmedCode, sdohText,
+                                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE,
+                                                                interactionId);
+
+                                                observation.addCategory(createCategory(
+                                                                "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                                                                code, text));
+                                        }
+                                }
                         } else {
                                 observation.addCategory(createCategory(
-                                                "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                                                "sdoh-category-unspecified", "SDOH Category Unspecified"));
-
+                                        "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                                        "sdoh-category-unspecified", "SDOH Category Unspecified"));
                         }
 
                         Set<String> excludedQuestionCodes = Set.of("95614-4", "77594-0", "71969-0");
                         if (!excludedQuestionCodes.contains(data.getQuestionCode())) {
                             if ("96778-6".equals(data.getQuestionCode())) {
-                                if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
-                                    Observation.ObservationComponentComponent component = new Observation.ObservationComponentComponent();
+                                if (data.getAnswerCode() != null && !data.getAnswerCode().isEmpty()) {
+                                        String[] rawAnswerCodes = data.getAnswerCode().split(";");
 
-                                    CodeableConcept componentCode = new CodeableConcept();
-                                    componentCode.addCoding(new Coding(
-                                            fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE,
-                                                    interactionId),
-                                            data.getQuestionCode(),
-                                            fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)));
-                                    component.setCode(componentCode);
+                                        // Create the component (only once)
+                                        Observation.ObservationComponentComponent component = new Observation.ObservationComponentComponent();
 
-                                    CodeableConcept value = new CodeableConcept();
-                                    String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
-                                    value.addCoding(new Coding(
-                                            fetchSystem(answerCode, data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId),
-                                            answerCode,
-                                            fetchDisplay(answerCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId)));
-                                    component.setValue(value);
+                                        // Set the question code
+                                        CodeableConcept componentCode = new CodeableConcept();
+                                        componentCode.addCoding(new Coding(
+                                                fetchSystem(data.getQuestionCode(), data.getQuestionCodeSystem(), CsvConstants.QUESTION_CODE, interactionId),
+                                                data.getQuestionCode(),
+                                                fetchDisplay(data.getQuestionCode(), data.getQuestionCodeDescription(), CsvConstants.QUESTION_CODE, interactionId)
+                                        ));
+                                        component.setCode(componentCode);
 
-                                    observation.addComponent(component);
+                                        // Prepare the shared valueCodeableConcept with multiple codings
+                                        CodeableConcept value = new CodeableConcept();
+
+                                        for (String rawCode : rawAnswerCodes) {
+                                        String trimmedCode = rawCode.trim();
+                                        if (!trimmedCode.isEmpty()) {
+                                                String answerCode = fetchCode(trimmedCode, CsvConstants.ANSWER_CODE, interactionId);
+                                                String answerSystem = fetchSystem(answerCode, data.getAnswerCodeSystem(), CsvConstants.ANSWER_CODE, interactionId);
+                                                String answerDisplay = fetchDisplay(trimmedCode, data.getAnswerCodeDescription(), CsvConstants.ANSWER_CODE, interactionId);
+
+                                                value.addCoding(new Coding(answerSystem, answerCode, answerDisplay));
+                                        }
+                                        }
+
+                                        component.setValue(value);
+                                        observation.addComponent(component);
                                 }
-                            } else {
+                                } else {
                                 if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
                                     CodeableConcept value = new CodeableConcept();
                                     String answerCode = fetchCode(data.getAnswerCode(), CsvConstants.ANSWER_CODE, interactionId);
@@ -399,23 +424,34 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                 groupObservation.addCategory(createCategory(CATEGORY_URL, "survey", null));
 
                 // Add SDOH categories from group members
+                // Helper record for code/text pair
+                record CategoryCodeText(String code, String text) {}
+
                 groupData.stream()
-                                .map(data -> fetchCode(data.getObservationCategorySdohCode(),
-                                                CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId))
-                                .filter(code -> code != null && code instanceof String && !((String) code).isEmpty())
-                                .distinct()
-                                .forEach(sdohCode -> {
-                                        ScreeningObservationData data = groupData.stream()
-                                                        .filter(d -> fetchCode(d.getObservationCategorySdohCode(),
-                                                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId)
-                                                                        .equals(sdohCode))
-                                                        .findFirst()
-                                                        .get();
-                                        groupObservation.addCategory(createCategory(
-                                                        SDOH_CATEGORY_URL,
-                                                        sdohCode,
-                                                        data.getObservationCategorySdohText()));
-                                });
+                .flatMap(data -> {
+                        String[] rawCodeArr = (data.getObservationCategorySdohCode() != null)
+                                ? data.getObservationCategorySdohCode().split(";")
+                                : new String[0];
+
+                        List<CategoryCodeText> codeTextList = new ArrayList<>();
+
+                        for (String rawCode : rawCodeArr) {
+                        String trimmedCode = rawCode.trim();
+                        if (!trimmedCode.isEmpty()) {
+                                String code = fetchCode(trimmedCode, CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
+                                if (code != null && !code.isEmpty()) {
+                                String text = fetchDisplay(trimmedCode, data.getObservationCategorySdohText(),
+                                        CsvConstants.OBSERVATION_CATEGORY_SDOH_CODE, interactionId);
+                                codeTextList.add(new CategoryCodeText(code, text));
+                                }
+                        }
+                        }
+
+                        return codeTextList.stream();
+                })
+                .distinct()
+                .forEach(ct -> groupObservation.addCategory(
+                        createCategory(SDOH_CATEGORY_URL, ct.code(), ct.text())));
 
                 // Set code from groupData (take from first available)
                 ScreeningObservationData firstData = groupData.stream().findFirst().orElse(null);
