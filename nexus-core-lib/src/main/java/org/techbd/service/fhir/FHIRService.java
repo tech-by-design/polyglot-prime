@@ -382,6 +382,14 @@ public class FHIRService {
 					Nature.ORIGINAL_FHIR_PAYLOAD.getDescription(),
 					payloadJson,State.NONE.name(),State.ACCEPT_FHIR_BUNDLE.name());
 			rihr.setPAdditionalDetails((JsonNode) Configuration.objectMapper.valueToTree( Map.of("request", requestParameters)));
+			if (requestParameters.get(Constants.ELABORATION) != null) {
+				try {
+					JsonNode elaborationNode = Configuration.objectMapper.readTree((String) requestParameters.get(Constants.ELABORATION));
+					rihr.setPElaboration(elaborationNode);
+				} catch (JsonProcessingException e) {
+					LOG.error("Invalid elaboration JSON. Storing as string. Error: {} for interactionID :{}", e.getMessage(), interactionId, e);
+				}
+			}
 			final int i = rihr.execute(jooqCfg);
 			final var end = Instant.now();
 			final JsonNode response = rihr.getReturnValue();
