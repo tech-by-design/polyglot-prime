@@ -1111,13 +1111,16 @@
   <!-- Observation Template -->
   <xsl:template name="Observation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship">
     <!-- <xsl:if test="string(ccda:observation/ccda:code/@code) != '76690-7' and string(ccda:observation/ccda:value/@code) != 'UNK' and string(ccda:observation/ccda:value/@code) != ''">  -->
-    <xsl:if test="string(ccda:observation/ccda:value/@code) != 'UNK' 
+    <xsl:if test="(string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' or string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-declined' ) 
+            or (
+              string(ccda:observation/ccda:value/@code) != 'UNK' 
               and string-length(ccda:observation/ccda:value/@code) > 0 
               and string(ccda:observation/ccda:code/@code) != 'UNK' 
               and string-length(ccda:observation/ccda:code/@code) > 0
               and string-length(ccda:observation/ccda:value/@nullFlavor) = 0
               and string-length(ccda:observation/ccda:code/@nullFlavor) = 0
               and (ccda:observation/ccda:code/@codeSystemName = 'LOINC' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED CT')
+            )
           ">
 
       <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
@@ -1212,40 +1215,86 @@
                                 </xsl:when>
                               </xsl:choose>
                             },
-                            "valueCodeableConcept" : {
-                              "coding": [{
-                                "system": "http://loinc.org",
-                                "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
-                                "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                              }]
-                              <xsl:choose>
-                                <xsl:when test="ccda:observation/ccda:value/@originalText">
-                                  , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
+                            <xsl:choose>
+                                <xsl:when test="ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' 
+                                             or ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-declined'">
+                                  <xsl:variable name="dataAbsentReasonCode">
+                                    <xsl:call-template name="getDataAbsentReasonFhirCode">
+                                      <xsl:with-param name="dataAbsentReason" select="ccda:observation/ccda:value/ccda:translation/@code"/>
+                                    </xsl:call-template>
+                                  </xsl:variable>
+                                  "dataAbsentReason": {
+                                      "coding": [
+                                          {
+                                              "system": "http://terminology.hl7.org/CodeSystem/data-absent-reason",
+                                              "code": "<xsl:value-of select="$dataAbsentReasonCode"/>",
+                                              "display": "<xsl:call-template name="getDataAbsentReasonFhirDisplay">
+                                                            <xsl:with-param name="dataAbsentReasonCode" select="$dataAbsentReasonCode"/>
+                                                          </xsl:call-template>"
+                                          }
+                                      ]
+                                  }
                                 </xsl:when>
-                                <xsl:when test="ccda:observation/ccda:value/@displayName">
-                                  , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                                </xsl:when>
-                              </xsl:choose>
-                            }
+                                <xsl:otherwise>
+                                    "valueCodeableConcept" : {
+                                      "coding": [{
+                                        "system": "http://loinc.org",
+                                        "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
+                                        "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                                      }]
+                                      <xsl:choose>
+                                        <xsl:when test="ccda:observation/ccda:value/@originalText">
+                                          , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
+                                        </xsl:when>
+                                        <xsl:when test="ccda:observation/ccda:value/@displayName">
+                                          , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                                        </xsl:when>
+                                      </xsl:choose>
+                                    }
+                                </xsl:otherwise>
+                            </xsl:choose>   
                         }
                   ],
                 </xsl:when>
                 <xsl:otherwise>
-                  "valueCodeableConcept" : {
-                    "coding": [{
-                      "system": "http://loinc.org",
-                      "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
-                      "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                    }]
-                    <xsl:choose>
-                      <xsl:when test="ccda:observation/ccda:value/@originalText">
-                        , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
-                      </xsl:when>
-                      <xsl:when test="ccda:observation/ccda:value/@displayName">
-                        , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
-                      </xsl:when>
-                    </xsl:choose>
-                  },
+                  <xsl:choose>
+                    <xsl:when test="ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' 
+                                 or ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-declined'">
+                      <xsl:variable name="dataAbsentReasonCode">
+                        <xsl:call-template name="getDataAbsentReasonFhirCode">
+                          <xsl:with-param name="dataAbsentReason" select="ccda:observation/ccda:value/ccda:translation/@code"/>
+                        </xsl:call-template>
+                      </xsl:variable>
+                      "dataAbsentReason": {
+                          "coding": [
+                              {
+                                  "system": "http://terminology.hl7.org/CodeSystem/data-absent-reason",
+                                  "code": "<xsl:value-of select="$dataAbsentReasonCode"/>",
+                                  "display": "<xsl:call-template name="getDataAbsentReasonFhirDisplay">
+                                                <xsl:with-param name="dataAbsentReasonCode" select="$dataAbsentReasonCode"/>
+                                              </xsl:call-template>"
+                              }
+                          ]
+                      },
+                    </xsl:when>
+                    <xsl:otherwise>
+                        "valueCodeableConcept" : {
+                          "coding": [{
+                            "system": "http://loinc.org",
+                            "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
+                            "display": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                          }]
+                          <xsl:choose>
+                            <xsl:when test="ccda:observation/ccda:value/@originalText">
+                              , "text": "<xsl:value-of select='ccda:observation/ccda:value/@originalText'/>"
+                            </xsl:when>
+                            <xsl:when test="ccda:observation/ccda:value/@displayName">
+                              , "text": "<xsl:value-of select='ccda:observation/ccda:value/@displayName'/>"
+                            </xsl:when>
+                          </xsl:choose>
+                        },
+                    </xsl:otherwise>
+                  </xsl:choose>                  
                 </xsl:otherwise>
               </xsl:choose> 
               "subject": {
@@ -1646,6 +1695,24 @@
   <xsl:choose>
     <xsl:when test="$encounterType = '405672008'">Direct questioning (procedure)</xsl:when>
     <xsl:when test="$encounterType = '23918007'">History taking, self-administered, by computer terminal</xsl:when>
+    <xsl:otherwise/>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template name="getDataAbsentReasonFhirCode">
+  <xsl:param name="dataAbsentReason"/>
+  <xsl:choose>
+    <xsl:when test="$dataAbsentReason = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer'">asked-unknown</xsl:when>
+    <xsl:when test="$dataAbsentReason = 'X-SDOH-FLO-1570000066-Patient-declined'">asked-declined</xsl:when>
+    <xsl:otherwise/>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template name="getDataAbsentReasonFhirDisplay">
+  <xsl:param name="dataAbsentReasonCode"/>
+  <xsl:choose>
+    <xsl:when test="$dataAbsentReasonCode = 'asked-unknown'">Asked But Unknown</xsl:when>
+    <xsl:when test="$dataAbsentReasonCode = 'asked-declined'">Asked But Declined</xsl:when>
     <xsl:otherwise/>
   </xsl:choose>
 </xsl:template>

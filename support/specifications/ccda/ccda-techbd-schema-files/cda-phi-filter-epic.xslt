@@ -84,8 +84,13 @@
                                 /hl7:observation
                                     [hl7:code
                                         [(@codeSystemName = 'LOINC' or @codeSystemName = 'SNOMED' or @codeSystemName = 'SNOMED CT') and (not(@code = 'UNK') and string-length(@code) > 0)] 
-                                    and hl7:value
-                                        [not(@code = 'UNK') and string-length(@code) > 0 and string-length(@nullFlavor) = 0]
+                                    and ((
+                                               hl7:value/hl7:translation/@code = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' 
+                                            or hl7:value/hl7:translation/@code = 'X-SDOH-FLO-1570000066-Patient-declined'
+                                        ) or (
+                                            hl7:value
+                                                [not(@code = 'UNK') and string-length(@code) > 0 and string-length(@nullFlavor) = 0]
+                                        ))
                                     ]
                             ]"/>
                     <xsl:if test="$observations">
