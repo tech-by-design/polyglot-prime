@@ -157,6 +157,7 @@ public class FhirController {
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
                         // "profile" is the same name that HL7 validator uses
                         @Parameter(description = "Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.", required = false) @RequestHeader(value = Constants.DATALAKE_API_URL, required = false) String customDataLakeApi,
+                        @Parameter(description = "Optional header to provide elaboration details.", required = false) @RequestHeader(value = "X-TechBD-Elaboration", required = false) String elaboration,
                         @Parameter(description = "Optional header to specify the request URI to override. This parameter is used for requests forwarded from Mirth Connect, where we override it with the initial request URI from Mirth Connect.", required = false) @RequestHeader(value = "X-TechBD-Override-Request-URI", required = false) String requestUriToBeOverridden,
                         @Parameter(description = "An optional header to provide a UUID that if provided will be used as interaction id.", required = false) @RequestHeader(value = "X-Correlation-ID", required = false) String coRrelationId,
                         @Parameter(description = """
@@ -211,6 +212,7 @@ public class FhirController {
                                         mtlsStrategy, source, null, null,request.getRequestURI());
                         requestDetailsMap.put(Constants.INTERACTION_ID,UUID.randomUUID().toString()); 
                         requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString()); 
+                        requestDetailsMap.put(Constants.ELABORATION, elaboration);
                         requestDetailsMap.putAll(headers);  
                         request = new CustomRequestWrapper(request, payload);
                         Map<String, Object> responseParameters = new HashMap<>();
