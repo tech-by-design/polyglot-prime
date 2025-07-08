@@ -158,7 +158,7 @@ the bundle is valid and excludes records targeting the '/api/expect/fhir/bundle'
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_fhir_request_summary CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_fhir_request_summary
-AS SELECT DISTINCT ON (hub_interaction_id) created_at AS interaction_created_at,
+AS SELECT  created_at AS interaction_created_at,
     hub_interaction_id AS interaction_id,
     uri,
     tenant_id,
@@ -180,9 +180,14 @@ AS SELECT DISTINCT ON (hub_interaction_id) created_at AS interaction_created_at,
             WHEN is_bundle_valid = true THEN 'Valid'::text
             WHEN is_bundle_valid = false THEN 'Invalid'::text
             ELSE NULL::text
-        END AS is_bundle_valid
+        END AS is_bundle_valid,
+    CASE
+    WHEN trim(elaboration->>'status') = 'TechBD-Generated' THEN 'TechBD Generated'
+    ELSE ''
+	END AS is_consent_generated_by_techbd
    FROM techbd_udi_ingress.sat_interaction_fhir_request htt_req
   WHERE uri <> '/api/expect/fhir/bundle'::text
+  AND nature = 'Original FHIR Payload'
   ORDER BY hub_interaction_id, created_at DESC;
 
 
