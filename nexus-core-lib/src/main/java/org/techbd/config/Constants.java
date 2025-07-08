@@ -26,6 +26,7 @@ public interface Constants {
     public static final String OVERRIDE_REQUEST_URI = "X-TechBD-Override-Request-URI";
     public static final String DELETE_SESSION = "delete-session-cookie";
     public static final String OBSERVABILITY_METRIC_INTERACTION_START_TIME = "X-Observability-Metric-Interaction-Start-Time";
+    public static final String ELABORATION = "X-TechBD-Elaboration";
     public static final String OBSERVABILITY_METRIC_INTERACTION_FINISH_TIME = "X-Observability-Metric-Interaction-Finish-Time";
     public static final String OBSERVABILITY_METRIC_INTERACTION_DURATION_NANOSECS = "X-Observability-Metric-Interaction-Duration-Nanosecs";
     public static final String OBSERVABILITY_METRIC_INTERACTION_DURATION_MILLISECS = "X-Observability-Metric-Interaction-Duration-Millisecs";
