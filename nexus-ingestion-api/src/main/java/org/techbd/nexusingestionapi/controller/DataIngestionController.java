@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 @RestController
 @Slf4j
-public class ApiController {
+public class DataIngestionController {
 
     private static final String JSON_EXTENSION = ".json";
     private static final String XML_EXTENSION = ".xml";
@@ -42,7 +42,7 @@ public class ApiController {
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
 
-    public ApiController(AwsService s3Service, SqsClient sqsClient, ObjectMapper objectMapper) {
+    public DataIngestionController(AwsService s3Service, SqsClient sqsClient, ObjectMapper objectMapper) {
         this.s3Service = s3Service;
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
