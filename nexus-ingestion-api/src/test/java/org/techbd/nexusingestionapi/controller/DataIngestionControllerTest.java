@@ -16,12 +16,12 @@ import org.techbd.nexusingestionapi.service.AwsService;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-public class ApiControllerTest {
+public class DataIngestionControllerTest {
 
     private AwsService s3Service;
     private SqsClient sqsClient;
     private ObjectMapper objectMapper;
-    private ApiController controller;
+    private DataIngestionController controller;
 
     @BeforeEach
     void setup() {
