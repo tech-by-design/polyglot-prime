@@ -135,6 +135,7 @@ AS SELECT hub_interaction_id AS interaction_id,
     CASE 
     	WHEN (source_type = 'CSV') then 'CSV'
         WHEN (source_type = 'CCDA') then 'CCDA'
+        WHEN (source_type = 'HL7V2') then 'HL7V2'
     	WHEN (source_type = 'fhir') then 'FHIR'
     	WHEN (source_type = 'FHIR') then 'FHIR'
     	ELSE 'FHIR'
@@ -173,7 +174,7 @@ AS SELECT  created_at AS interaction_created_at,
     resource_type_set AS resource_types,
     source_hub_interaction_id,
         CASE
-            WHEN source_type = ANY (ARRAY['CSV'::text, 'CCDA'::text]) THEN source_type
+            WHEN source_type = ANY (ARRAY['CSV'::text, 'CCDA'::text, 'HL7V2'::text]) THEN source_type
             ELSE 'FHIR'::text
         END AS source_type,
         CASE
@@ -2170,6 +2171,7 @@ AS SELECT sat_interaction_fhir_request_id,
     case 
     	when (source_type = 'CSV') then 'CSV'
         WHEN (source_type = 'CCDA') then 'CCDA'
+        WHEN (source_type = 'HL7V2') then 'HL7V2'
     	when (source_type = 'fhir') then 'FHIR'
     	when (source_type = 'FHIR') then 'FHIR'
     	else 'FHIR'
@@ -4483,6 +4485,43 @@ SELECT
 FROM ranked_sicr sicr
 JOIN fhir_summary ON sicr.hub_interaction_id = fhir_summary.hub_interaction_id
 WHERE sicr.rn = 1
+ORDER BY sicr.created_at DESC;
+
+/*******************************************************************************************
+This view retrieves the most recent HL7V2 interaction per `hub_interaction_id` from the 
+`sat_interaction_fhir_request` table. It includes metadata and payload details, along with 
+a derived FHIR conversion status indicating whether a corresponding FHIR payload exists. 
+Only the latest record per interaction is retained, and interactions are filtered by 
+`source_type = 'HL7V2'`.
+*******************************************************************************************/
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_hl7v2_request CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_hl7v2_request
+AS 
+SELECT
+    sicr.sat_interaction_fhir_request_id AS sat_interaction_fhir_request_id,
+    sicr.hub_interaction_id,
+    sicr.tenant_id,
+    sicr.tenant_id_lower,
+    sicr.uri,
+    sicr.nature,
+    sicr.payload,
+    'true' AS fhir_conversion_status,
+    sicr.payload AS ccda_payload_text,
+    sicr.client_ip_address,
+    sicr.user_agent,
+    sicr.from_state,
+    sicr.to_state,
+    sicr.state_transition_reason,
+    sicr.elaboration,
+    'HL7V2' AS origin,
+    sicr.created_at,
+    sicr.created_by,
+    sicr.provenance
+FROM techbd_udi_ingress.sat_interaction_fhir_request sicr  
+WHERE  
+  source_type = 'HL7V2'::text
 ORDER BY sicr.created_at DESC;
 
     
