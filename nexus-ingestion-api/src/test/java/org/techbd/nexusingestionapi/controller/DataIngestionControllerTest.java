@@ -28,7 +28,7 @@ public class DataIngestionControllerTest {
         s3Service = mock(AwsService.class);
         sqsClient = mock(SqsClient.class);
         objectMapper = new ObjectMapper();
-        controller = new ApiController(s3Service, sqsClient, objectMapper);
+        controller = new DataIngestionController(s3Service, sqsClient, objectMapper);
     }
 
     @Test
@@ -38,7 +38,7 @@ public class DataIngestionControllerTest {
             "X-Tenant-Id", "testTenant"
         );
 
-        ApiController.RequestContext context = new ApiController.RequestContext(
+        DataIngestionController.RequestContext context = new DataIngestionController.RequestContext(
             headers,
             "/Bundle",
             "testTenant",
@@ -78,7 +78,7 @@ public class DataIngestionControllerTest {
             "Content-Type", "application/json"
         );
 
-        ApiController.RequestContext context = new ApiController.RequestContext(
+        DataIngestionController.RequestContext context = new DataIngestionController.RequestContext(
             headers,
             "/Bundle",
             "testTenant",
