@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head> 
+ 
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <!-- Include Font Awesome in your HTML -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">    
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 8px 0px 10px 15px;
+        }
+    </style>
+    <script type="module">
+        import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+        import ModalAide from '@presentation/shell/modal-aide.js';
+
+        const schemaName = 'techbd_udi_ingress';
+        const viewName = 'interaction_hl7v2_request';   
+        const viewdetail = 'interaction_http_request_payload';
+        const modalAide = new ModalAide();
+               
+
+        // Define downloadPayload globally
+        window.downloadPayload = async function (ccda_payload_text, tenant_id, nature) {
+            
+            // Decode the encoded CCDA payload text
+            const decodedPayload = ccda_payload_text;
+
+            // Create a Blob from the CCDA payload text
+            const blob = new Blob([decodedPayload], { type: "application/xml" });
+
+            // Get current date and time
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[-:T]/g, '').split('.')[0]; // Format: YYYYMMDDHHMMSS
+
+            // Create a URL for the Blob
+            const url = URL.createObjectURL(blob);
+
+            // Create a temporary link to trigger the download
+            const tempLink = document.createElement('a');
+            tempLink.href = url;
+            tempLink.download = `${tenant_id}_${nature}_${timestamp}.xml`;
+            document.body.appendChild(tempLink);
+            tempLink.click();
+
+            // Clean up
+            document.body.removeChild(tempLink);
+            URL.revokeObjectURL(url);
+
+         
+        };
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            function downloadCellRenderer(params) {
+                const ccda_payload_text = params.data.ccda_payload_text; 
+                const tenant_id = params.data.tenant_id; 
+                const nature = params.data.nature;
+
+                // Create a download link placeholder
+                const downloadLink = `<a href="#" onclick="window.downloadPayload( \`${ccda_payload_text}\`,'${tenant_id}','${nature}'); return false;" style="text-decoration: none; color: #007bff;">
+        <i class="fas fa-download"></i>
+    </a>`;
+
+                return downloadLink;
+            }            
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([
+                    {
+                        headerName: "Request Time",
+                        field: "created_at",
+                        filter: "agDateColumnFilter",
+                        headerTooltip: "The timestamp indicating when the interaction was initiated."
+                    },                    
+                    {
+                        headerName: "TechBD Interaction ID",
+                        field: "hub_interaction_id",
+                        filter: "agTextColumnFilter",
+                        headerTooltip: "The unique identifier for each interaction.",
+                        cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/interaction_id/${params.value}.json`));
+                        }, modalAide)
+                    },
+                    { headerName: "TechBD Tenant ID", field: "tenant_id", headerTooltip: "ID of the tenant involved in the interaction", filter: "agTextColumnFilter" },
+                    { headerName: "FHIR Conversion Status", field: "fhir_conversion_status", headerTooltip: "The status of the FHIR conversion", filter: "agTextColumnFilter" },
+                    { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
+                    { headerName: "Nature", field: "nature", headerTooltip: "The nature of the interaction", filter: "agTextColumnFilter" },
+                    { headerName: "Origin", field: "origin",  headerTooltip: "The origin of the interaction", filter: "agTextColumnFilter" },
+                    { headerName: "User Agent", field: "user_agent", headerTooltip: "The user agent used in the interaction",  filter: "agTextColumnFilter" },
+                    { headerName: "IP Address", field: "client_ip_address",  headerTooltip: "The IP address of the client making the interaction", filter: "agTextColumnFilter" },
+                    // {
+                    //      headerName: "Download Payload", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                    //      headerTooltip: "Download Payload", filter: false, suppressFilter: true
+                    // }
+                    
+                ])
+                .withServerSideDatasource(
+                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    (data, valueCols) => {
+                        return valueCols.map(col => ({
+                            headerName: col.displayName,
+                            field: col.field
+                        }));
+                    },
+                ) 
+                .withModalAide(modalAide)
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            agGridInstance.init('serverDataGrid');
+        });
+    </script>    
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="grid-description">             
+            This widget offers a clear and concise overview of HL7V2-based HTTP interactions, highlighting essential details such as the Hub Interaction ID and Tenant ID to identify and link each interaction. 
+            It provides information about the Request URI, the Nature of the interaction, and metadata like Client IP Address and User Agent to trace the origin and context of requests. 
+            Users can track State Transitions, including changes from one state to another and the reasons for those transitions.
+            <!--  The widget also includes detailed Payload Information, such as the HL7V2 payload text, to provide visibility into the data being processed. 
+            Additionally, users have the option to **download the HL7V2 payload** as an XML file for further analysis. --> With interactive filtering and sorting options, users can efficiently analyze interactions, identify issues, and ensure seamless data flow for HL7V2 requests. 
+            Users can click on the TechBD Interaction ID to view detailed information in a popup.
+        </div>
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>        
+    </div>
+</body>
+
+</html>
