@@ -26,6 +26,9 @@
   <xsl:param name="observationResourceSha256Id"/>
   <xsl:param name="sexualOrientationResourceId"/>
   <xsl:param name="questionnaireResponseResourceSha256Id"/>
+  <xsl:param name="grouperObservationResourceSha256Id"/> 
+  <xsl:param name="categoryXml"/>
+  <xsl:param name="grouperScreeningCode"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -116,6 +119,8 @@
                                 | /ccda:ClinicalDocument/ccda:author
                                 | /ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='encounters']/ccda:entry[position()=1]/ccda:encounter
                                 "/>
+              <!-- Call Grouper Observation template -->
+              <xsl:call-template name="GrouperObservation"/>
     ]
   }
   </xsl:template>
@@ -1135,7 +1140,7 @@
 
           <xsl:variable name="observationResourceId">
             <xsl:call-template name="generateFixedLengthResourceId">
-              <xsl:with-param name="prefixString" select="concat(generate-id(ccda:observation/ccda:code/@code), position())"/>
+              <xsl:with-param name="prefixString" select="$questionCode"/>
               <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
             </xsl:call-template>
           </xsl:variable>
@@ -1716,4 +1721,129 @@
     <xsl:otherwise/>
   </xsl:choose>
 </xsl:template>
+
+<!-- Grouper Observation Template -->
+  <xsl:template name="GrouperObservation">
+    <xsl:variable name="grouperObs" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship"/>
+    <xsl:variable name="grouperScreening" select="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation"/>
+    <xsl:if test="$grouperObs">
+        <xsl:variable name="grouperObservationResourceId">
+          <xsl:call-template name="generateFixedLengthResourceId">
+            <xsl:with-param name="prefixString" select="$grouperScreeningCode"/>
+            <xsl:with-param name="sha256ResourceId" select="$grouperObservationResourceSha256Id"/>
+          </xsl:call-template>
+        </xsl:variable>
+        ,{
+          "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$grouperObservationResourceId'/>",
+          "resource": {
+            "resourceType": "Observation",
+            "id": "<xsl:value-of select="$grouperObservationResourceId"/>",
+            "meta": {
+              "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
+              "profile": ["<xsl:value-of select='$observationMetaProfileUrlFull'/>"]
+            },
+            "language": "en",
+            "status": "<xsl:call-template name='mapObservationStatus'>
+                          <xsl:with-param name='statusCode' select='$grouperScreening/ccda:statusCode/@code'/>
+                        </xsl:call-template>",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://loinc.org",
+                  "code": "<xsl:value-of select='$grouperScreeningCode'/>",
+                  "display": "Social Determinants of Health screening report Document"
+                }
+              ]
+            },
+            "subject": {
+              "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+              "display": "<xsl:value-of select='$patientResourceName'/>"
+            },
+            <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
+              "encounter": {
+                "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+              },
+            </xsl:if>
+            "effectiveDateTime": "<xsl:choose>
+                                      <xsl:when test='$grouperScreening/ccda:effectiveTime/@value'>
+                                        <xsl:call-template name='formatDateTime'>
+                                          <xsl:with-param name='dateTime' select='$grouperScreening/ccda:effectiveTime/@value'/>
+                                        </xsl:call-template>
+                                      </xsl:when>
+                                      <xsl:when test='$encounterEffectiveTimeValue'>
+                                        <xsl:value-of select='$encounterEffectiveTimeValue'/>
+                                      </xsl:when>
+                                      <xsl:otherwise>
+                                        <xsl:value-of select='$currentTimestamp'/>
+                                      </xsl:otherwise>
+                                   </xsl:choose>",
+            "issued": "<xsl:value-of select='$currentTimestamp'/>",
+            <xsl:if test="string($organizationResourceId)">
+              "performer": [{
+                "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+              }],
+            </xsl:if>
+            "category": [
+              {
+                "coding": [
+                  <xsl:value-of select='$categoryXml'/>
+                ]
+              },
+              {
+                "coding": [{
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "social-history"
+                }]
+              },
+              {
+                "coding": [{
+                  "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                  "code": "survey"
+                }]
+              }
+            ],
+            "hasMember": [
+              <xsl:for-each select="$grouperObs">
+                <xsl:variable name="questionCode" select="ccda:observation/ccda:code/@code"/>
+                <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->                
+                <xsl:variable name="categoryCode">
+                        <xsl:call-template name="mapObservationCategoryCodes">
+                          <xsl:with-param name="questionCode" select="$questionCode"/>
+                        </xsl:call-template>
+                      </xsl:variable>
+
+                <xsl:if test="string($categoryCode) and (
+                          (string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' 
+                          or string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-declined' ) 
+                                or (
+                                  string(ccda:observation/ccda:value/@code) != 'UNK' 
+                                  and string-length(ccda:observation/ccda:value/@code) > 0 
+                                  and string(ccda:observation/ccda:code/@code) != 'UNK' 
+                                  and string-length(ccda:observation/ccda:code/@code) > 0
+                                  and string-length(ccda:observation/ccda:value/@nullFlavor) = 0
+                                  and string-length(ccda:observation/ccda:code/@nullFlavor) = 0
+                                  and (ccda:observation/ccda:code/@codeSystemName = 'LOINC' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED CT')
+                                )
+                          )
+                    ">                      
+                        <xsl:variable name="observationResourceId">
+                          <xsl:call-template name="generateFixedLengthResourceId">
+                            <xsl:with-param name="prefixString" select="$questionCode"/>
+                            <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
+                          </xsl:call-template>
+                        </xsl:variable>
+                        <xsl:if test="position() > 1">,</xsl:if>
+                        { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }
+                </xsl:if>
+              </xsl:for-each>
+            ]
+          },
+          "request": {
+            "method": "POST",
+            "url": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$grouperObservationResourceId'/>"
+          }
+        }
+      <!-- </xsl:for-each> -->
+    </xsl:if>
+  </xsl:template>
 </xsl:stylesheet>
