@@ -1,4 +1,4 @@
-package org.techbd.service;
+package org.techbd.ingest.service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.techbd.commons.Constants;
+import org.techbd.ingest.commons.Constants;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;

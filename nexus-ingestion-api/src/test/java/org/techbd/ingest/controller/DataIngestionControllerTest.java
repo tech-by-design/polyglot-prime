@@ -1,4 +1,4 @@
-package org.techbd.controller;
+package org.techbd.ingest.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.techbd.service.AwsService;
+import org.techbd.ingest.service.AwsService;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 

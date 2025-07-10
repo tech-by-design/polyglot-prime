@@ -1,4 +1,4 @@
-package org.techbd.controller;
+package org.techbd.ingest.controller;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.techbd.commons.Constants;
-import org.techbd.service.AwsService;
+import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.service.AwsService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

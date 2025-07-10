@@ -1,4 +1,4 @@
-package org.techbd.config;
+package org.techbd.ingest.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
