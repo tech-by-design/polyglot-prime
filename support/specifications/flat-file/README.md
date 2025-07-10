@@ -12,7 +12,7 @@ It supports CSV validation for social determinants of health (SDOH) data files t
 
 The CSV file names in this project follow a strict naming convention to ensure consistency and compatibility with the validation process. Each file name is structured as follows:  
 
-**`SDOH_<DATA_CATEGORY>_{OrganizationName}_{groupIdentifier}_YYYYMMDDhhmmss.csv`**  
+**`SDOH_<DATA_CATEGORY>_{OrganizationName}_{groupIdentifier}.csv`**  
 
 All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting, and they must be encoded in **UTF-8** to ensure proper validation and data processing.  
 
@@ -26,19 +26,15 @@ All CSV files are **comma-separated (comma-delimited)** to maintain uniformity i
      - `SDOH_ScreeningProf` - Represents screening profile data.  
      - `SDOH_ScreeningObs` - Represents screening observation data.  
 
-2. **`{OrganizationName}`**:  
+2. **`{OrganizationIdentifier}`**:  
    - This represents the organization identifier but **does not** contain the actual name of the organization. Instead, it is a predefined identifier assigned to the organization (e.g., `CareRidgeSCN`).  
 
-3. **`{groupIdentifier}`**:  
-   - This part of the file name is flexible and may include the following components for better identification:  
-     - **Test Case or Scenario Identifier**: A specific identifier to distinguish different test cases or scenarios (e.g., `testcase1`).  
+3.  **`{groupIdentifier}`**:
+    * This component links related files. All CSV files that belong to a single set (like `QEadmin`, `PtInfo`, `ScreeningObs`, and `ScreeningProf`) **must share the exact same group identifier**. This ensures they're processed as one unit and converted into a valid FHIR bundle.
 
-4. **`YYYYMMDDhhmmss`**:  
-   - This represents the timestamp indicating when the data was generated or collected. It follows the format:  
-     - **YYYY** - Year  
-     - **MM** - Month  
-     - **DD** - Day  
-     - **hhmmss** - Hour, Minute, and Second in 24-hour format  
+    * The `groupIdentifier` can be any unique string, such as a **UUID**, a **job ID**, or a manually assigned name (e.g., `testcase1`). While it's not strictly mandatory, appending a timestamp (e.g., `YYYYMMDDhhmmss`) can help ensure uniqueness—particularly when files are generated dynamically as part of a batch process.
+   If you choose to include a timestamp in the `groupIdentifier`, it is important to ensure that the same timestamp value is used consistently across all files within that group. This allows the system to correctly recognize and associate the files as part of a single logical group. In our examples, we sometimes use timestamps to demonstrate how a dynamically generated `groupIdentifier` might look, but the key requirement is consistency across the grouped files.    
+
 
 ### Example File Names  
 
