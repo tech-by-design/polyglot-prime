@@ -1,4 +1,4 @@
-package org.techbd.nexusingestionapi.config;
+package org.techbd.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

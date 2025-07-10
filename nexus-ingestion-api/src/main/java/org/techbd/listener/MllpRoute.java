@@ -1,4 +1,4 @@
-package org.techbd.nexusingestionapi.listener;
+package org.techbd.listener;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.stereotype.Component;

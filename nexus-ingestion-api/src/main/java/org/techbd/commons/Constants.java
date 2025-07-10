@@ -1,4 +1,4 @@
-package org.techbd.nexusingestionapi.commons;
+package org.techbd.commons;
 
 public class Constants {
     public static final String SECRET_NAME = System.getenv("ORG_TECHBD_SERVICE_SECRET_NAME");
