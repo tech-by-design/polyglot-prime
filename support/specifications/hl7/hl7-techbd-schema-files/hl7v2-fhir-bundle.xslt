@@ -568,7 +568,7 @@
 
 <!-- Sexual orientation Observation Template -->
   <xsl:template name="SexualOrientationFromOBX">
-  <xsl:for-each select="//OBX[OBX.3/OBX.3.1 = '76690-7' and string(OBX.5/OBX.5.1) != 'UNK' and string-length(OBX.5/OBX.5.1) > 0]">
+  <xsl:for-each select="//OBX[OBX.3/OBX.3.1 = '76690-7' and string-length(OBX.5/OBX.5.1) > 0]">
     <xsl:if test="position() != 1">
       <xsl:text>,</xsl:text>
     </xsl:if>
@@ -621,45 +621,16 @@
 				}]
 			  }
 			</xsl:when>
-
-			<!-- If OBX.2 = CWE (Coded With Exceptions) -->
-			<xsl:when test="OBX.2 = 'CWE'">
-			  "valueCodeableConcept": {
-				"coding": [{
-				  "system": "http://loinc.org",
-				  "code": "<xsl:value-of select='OBX.5/OBX.5.1'/>",
-				  "display": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
-				}]
-				<xsl:choose>
-				  <xsl:when test="string(OBX.5/OBX.5.9)">
-					<xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.9'/>"
-				  </xsl:when>
-				  <xsl:when test="string(OBX.5/OBX.5.2)">
-					<xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
-				  </xsl:when>
-				</xsl:choose>
-			  }
-			</xsl:when>
-
-			<!-- If OBX.2 = ST (String) -->
-			<xsl:when test="OBX.2 = 'ST'">
-			  "valueString": "<xsl:value-of select='OBX.5'/>"
-			</xsl:when>
-
-			<!-- If OBX.2 = NM (Numeric) -->
-			<xsl:when test="OBX.2 = 'NM'">
-			  "valueQuantity": {
-				"value": <xsl:value-of select='OBX.5'/> 
-				<xsl:if test="string(OBX.6/OBX.6.1)">
-				  <xsl:text>,</xsl:text> "unit": "<xsl:value-of select='OBX.6/OBX.6.1'/>"
-				</xsl:if>
-			  }
-			</xsl:when>
-
-			<!-- Fallback to string -->
+			
 			<xsl:otherwise>
-			  "valueString": "<xsl:value-of select='OBX.5'/>"
-			</xsl:otherwise>
+              "valueCodeableConcept" : {
+                "coding" : [{
+                  "system" : "http://snomed.info/sct",
+                  "code" : "<xsl:value-of select='OBX.5/OBX.5.1'/>",
+                  "display" : "<xsl:value-of select='OBX.5/OBX.5.2'/>"
+                }]
+              }
+            </xsl:otherwise>
 
 		  </xsl:choose>
 
@@ -701,8 +672,7 @@
       
       <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
       <xsl:variable name="questionCode" select="OBX.3/OBX.3.1"/>
-      <xsl:variable name="categoryCode">
-	  
+      <xsl:variable name="categoryCode">	  
               <xsl:call-template name="mapObservationCategoryCodes">
                 <xsl:with-param name="questionCode" select="$questionCode"/>
               </xsl:call-template>
@@ -711,7 +681,7 @@
 
           <xsl:variable name="observationResourceId">
             <xsl:call-template name="generateFixedLengthResourceId">
-              <xsl:with-param name="prefixString" select="concat(generate-id(ccda:observation/ccda:code/@code), position())"/>
+              <xsl:with-param name="prefixString" select="concat(generate-id(questionCode), position())"/>
               <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
             </xsl:call-template>
           </xsl:variable>
@@ -812,7 +782,6 @@
 				],
 			  </xsl:when>
 			  <xsl:otherwise>
-				<xsl:if test="OBX/OBX.2 = 'CWE'">
 				  "valueCodeableConcept": {
 					"coding": [{
 					  "system": "http://loinc.org",
@@ -827,8 +796,7 @@
 						<xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
 					  </xsl:when>
 					</xsl:choose>
-				  }
-				</xsl:if>
+				  },
 			  </xsl:otherwise>
 			</xsl:choose>
               "subject": {
@@ -1129,7 +1097,7 @@
 
       }
 
-      <!-- <xsl:if test="//ROL">
+      <xsl:if test="//ROL">
         <xsl:text>,</xsl:text>
         "participant": [{
           "type": [{
@@ -1144,9 +1112,9 @@
             "display": "<xsl:value-of select='normalize-space(concat(//ROL/ROL.4/ROL.4.3, &quot; &quot;, //ROL/ROL.4/ROL.4.2))'/>"
           }
         }]
-      </xsl:if> -->
+      </xsl:if>
 
-      <!-- <xsl:if test="string(//PV1/PV1.3/PV1.3.1)">
+      <xsl:if test="string(//PV1/PV1.3/PV1.3.1)">
         <xsl:text>,</xsl:text>
         "location": [{
           "location": {
@@ -1154,9 +1122,9 @@
             "display": "<xsl:value-of select='//PV1/PV1.3/PV1.3.9'/>"
           }
         }]
-      </xsl:if> -->
+      </xsl:if>
 
-      <!-- <xsl:if test="string(//PV1/PV1.3/PV1.3.1) or string(//PV1/PV1.3/PV1.3.6)">
+      <xsl:if test="string(//PV1/PV1.3/PV1.3.1) or string(//PV1/PV1.3/PV1.3.6)">
         <xsl:text>,</xsl:text>
         "serviceProvider": {
           <xsl:if test="string(//PV1/PV1.3/PV1.3.1)">
@@ -1167,7 +1135,7 @@
             "display": "<xsl:value-of select='//PV1/PV1.3/PV1.3.6'/>"
           </xsl:if>
         }
-      </xsl:if> -->
+      </xsl:if>
     },
     "request": {
       "method": "POST",
@@ -1179,7 +1147,13 @@
 
 <!-- Consent Template -->
   <xsl:template name="ConsentFromOBX">
-  <xsl:variable name="consentOBX" select="OBX[OBX.3/OBX.3.2 = 'AHC-HRSN Patient Consent'][1]"/>
+  <xsl:variable name="consentOBX" select="//OBX[normalize-space(OBX.3/OBX.3.2) = 'AHC-HRSN Patient Consent'][1]"/>
+  
+   <!-- Define boolean: is consent given -->
+  <xsl:variable name="isConsentGiven"
+                select="contains(normalize-space($consentOBX/OBX.5/OBX.5.1), 'Patient Consents') or 
+                        contains(normalize-space($consentOBX/OBX.5/OBX.5.1), 'Yes')"/>
+						
   {
     "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Consent/<xsl:value-of select='$consentResourceId'/>",
     "resource": {
@@ -1190,7 +1164,7 @@
         "profile": ["<xsl:value-of select='$consentMetaProfileUrlFull'/>"]
       },
       "status": "<xsl:choose>
-        <xsl:when test='contains(string($consentOBX/OBX.5), &quot;Patient Consents&quot;) or contains(string($consentOBX/OBX.5), &quot;Yes&quot;)'>active</xsl:when>
+        <xsl:when test='$isConsentGiven'>active</xsl:when>
         <xsl:otherwise>rejected</xsl:otherwise>
       </xsl:choose>",
       "scope": {
@@ -1234,7 +1208,7 @@
       }],
       "provision": {
         "type": "<xsl:choose>
-          <xsl:when test='contains(string($consentOBX/OBX.5), &quot;Patient Consents&quot;) or contains(string($consentOBX/OBX.5), &quot;Yes&quot;)'>permit</xsl:when>
+          <xsl:when test='$isConsentGiven'>permit</xsl:when>
           <xsl:otherwise>deny</xsl:otherwise>
         </xsl:choose>"
       },
@@ -1330,7 +1304,6 @@
 <xsl:template name="generateFixedLengthResourceId">
   <xsl:param name="prefixString"/>
   <xsl:param name="sha256ResourceId"/>
-
   <xsl:variable name="trimmedHashId" select="substring(concat($prefixString, $sha256ResourceId), 1, 64)"/>
   <xsl:variable name="resourceUId" select="$trimmedHashId"/>
   <xsl:copy-of select="$resourceUId"/>
