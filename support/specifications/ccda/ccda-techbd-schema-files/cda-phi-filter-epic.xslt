@@ -45,7 +45,7 @@
                     <authorization>
                         <consent>
                             <id root="2.16.840.1.113883.3.933"/>                            
-                            <code code="OPT-OUT" codeSystem="2.16.840.1.113883.5.8" displayName="deny"/>
+                            <code code="59284-0" codeSystem="2.16.840.1.113883.6.1" displayName="deny"/>
                             <statusCode code="completed"/>
                         </consent>
                     </authorization>
