@@ -1,34 +1,33 @@
 package org.techbd.ingest.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.techbd.ingest.service.AwsService;
+import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.service.MetadataBuilderService;
+import org.techbd.ingest.service.router.IngestionRouter;
 
-import software.amazon.awssdk.services.sqs.SqsClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DataIngestionControllerTest {
 
-    private AwsService s3Service;
-    private SqsClient sqsClient;
     private ObjectMapper objectMapper;
     private DataIngestionController controller;
-
+    private IngestionRouter ingestionRouter;
+    private MetadataBuilderService metadataBuilderService;
     @BeforeEach
     void setup() {
-        s3Service = mock(AwsService.class);
-        sqsClient = mock(SqsClient.class);
+        metadataBuilderService = mock(MetadataBuilderService.class);
+        ingestionRouter = mock(IngestionRouter.class);
         objectMapper = new ObjectMapper();
-        controller = new DataIngestionController(s3Service, sqsClient, objectMapper);
+        controller = new DataIngestionController(ingestionRouter, objectMapper);
     }
 
     @Test
@@ -38,7 +37,7 @@ public class DataIngestionControllerTest {
             "X-Tenant-Id", "testTenant"
         );
 
-        DataIngestionController.RequestContext context = new DataIngestionController.RequestContext(
+        RequestContext context = new RequestContext(
             headers,
             "/Bundle",
             "testTenant",
@@ -59,7 +58,7 @@ public class DataIngestionControllerTest {
             "192.168.1.1"
         );
 
-        Map<String, String> metadata = controller.buildS3Metadata(context);
+        Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
 
         assertEquals("12345", metadata.get("interactionId"));
         assertEquals("testTenant", metadata.get("tenantId"));
@@ -78,7 +77,7 @@ public class DataIngestionControllerTest {
             "Content-Type", "application/json"
         );
 
-        DataIngestionController.RequestContext context = new DataIngestionController.RequestContext(
+        RequestContext context = new RequestContext(
             headers,
             "/Bundle",
             "testTenant",
@@ -99,7 +98,7 @@ public class DataIngestionControllerTest {
             "172.16.1.1"
         );
 
-        Map<String, Object> metadataJson = controller.buildMetadataJson(context);
+        Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
 
         assertEquals("testTenant", metadataJson.get("tenantId"));
         assertEquals("abcde-12345", metadataJson.get("interactionId"));

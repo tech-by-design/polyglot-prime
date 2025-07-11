@@ -4,8 +4,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,45 +18,42 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.Constants;
-import org.techbd.ingest.service.AwsService;
+import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.service.router.IngestionRouter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 @RestController
 @Slf4j
 public class DataIngestionController {
     private static final Logger LOG = LoggerFactory.getLogger(DataIngestionController.class.getName());
-    private static final String JSON_EXTENSION = ".json";
-    private static final String XML_EXTENSION = ".xml";
-    private static final String METADATA_SUFFIX = "metadata.json";
+
     private static final String S3_PREFIX = "s3://";
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-
-    private final AwsService s3Service;
-    private final SqsClient sqsClient;
+    private final IngestionRouter ingestionRouter;
     private final ObjectMapper objectMapper;
 
-    public DataIngestionController(AwsService s3Service, SqsClient sqsClient, ObjectMapper objectMapper) {
-        this.s3Service = s3Service;
-        this.sqsClient = sqsClient;
+    public DataIngestionController(IngestionRouter ingestionRouter, ObjectMapper objectMapper) {
+        this.ingestionRouter = ingestionRouter;
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping(value ="/ingest")
-    public ResponseEntity<String> handleCSVBundle(
+    @PostMapping(value = "/ingest")
+    public ResponseEntity<String> ingest(
             @RequestParam("file") @Nonnull MultipartFile file,
             @RequestHeader Map<String, String> headers,
-            HttpServletRequest request) {
-       // validateFile(file);
+            HttpServletRequest request) throws Exception {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Uploaded file is empty");
+        }
         RequestContext context = createRequestContext(
                 headers, request, file.getSize(), file.getOriginalFilename());
-        return processMultipartFileRequest(file, context);
+        Map<String, String> responseMap = ingestionRouter.routeAndProcess(file, context);
+        return ResponseEntity.ok(objectMapper.writeValueAsString(responseMap));
     }
 
     @ExceptionHandler(Exception.class)
@@ -76,39 +71,10 @@ public class DataIngestionController {
         }
     }
 
-
-    private ResponseEntity<String> processMultipartFileRequest(MultipartFile file, RequestContext context) {
-        try {
-            String bucketName = Constants.BUCKET_NAME;
-            Map<String, String> s3Metadata = buildS3Metadata(context);
-            // Build metadata
-            Map<String, Object> metadataJson = buildMetadataJson(context);
-
-            String metadataContent = objectMapper.writeValueAsString(metadataJson);
-
-            System.out.println("Metadata Content MultiPart: " + metadataContent);
-
-            // Save metadata to S3
-            s3Service.saveToS3(bucketName, context.metadataKey(), metadataContent, null);
-
-            // Save file to S3
-            String s3Response = s3Service.saveToS3(context.objectKey(),context.headers(), file, s3Metadata);
-
-            // Send to SQS
-            String messageId = sendToSqs(context, s3Response);
-
-            // Create response
-            return createSuccessResponse(messageId, context);
-
-        } catch (Exception e) {
-            log.error("Error processing multipart file request", e);
-            throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
-        }
-    }
     private RequestContext createRequestContext(
             Map<String, String> headers,
             HttpServletRequest request,
-        //    String msgType,
+            // String msgType,
             long fileSize,
             String originalFileName) {
         String tenantId = headers.entrySet().stream()
@@ -129,7 +95,7 @@ public class DataIngestionController {
 
         String datePath = uploadTime.format(DATE_PATH_FORMATTER);
         // String s3PrefixPath = String.format("%s/%s/%s-%s",
-        //         msgType, datePath, timestamp, interactionId);
+        // msgType, datePath, timestamp, interactionId);
 
         String fileExtension = originalFileName.substring(originalFileName.lastIndexOf('.') + 1); // e.g., csv
         String fileBaseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')); // e.g., ttest
@@ -145,7 +111,6 @@ public class DataIngestionController {
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
 
         String fullS3Path = S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
-
 
         String userAgent = headers.getOrDefault(Constants.REQ_HEADER_USER_AGENT, Constants.DEFAULT_USER_AGENT);
 
@@ -173,127 +138,6 @@ public class DataIngestionController {
                 protocol,
                 localAddress,
                 remoteAddress);
-    }
-
-    /**
-     * This function generates the metadata for the S3 object, as there is a 2kb
-     * size limit. The detailed metadata will be saved in a separate file with
-     * the suffix "_metadata.json".
-     */
-    public Map<String, String> buildS3Metadata(RequestContext context) {
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("interactionId", context.interactionId());
-        metadata.put("tenantId", context.tenantId());
-        metadata.put("fileName", context.fileName());
-        metadata.put("FileSize", String.valueOf(context.fileSize()));
-        metadata.put("s3ObjectPath", context.fullS3Path());
-        metadata.put("UploadTime", context.uploadTime().toString());
-        metadata.put("UploadedBy", context.userAgent());
-        return metadata;
-    }
-
-    /**
-     * This function generates the _metadata.json content for the S3 object.
-     */
-    public Map<String, Object> buildMetadataJson(RequestContext context) {
-        Map<String, Object> jsonMetadata = new HashMap<>();
-
-        jsonMetadata.put("tenantId", context.tenantId());
-        jsonMetadata.put("interactionId", context.interactionId());
-        // jsonMetadata.put("msgType", context.msgType());
-        jsonMetadata.put("uploadDate", String.format("%d-%02d-%02d",
-                context.uploadTime().getYear(), context.uploadTime().getMonthValue(), context.uploadTime().getDayOfMonth()));
-        jsonMetadata.put("timestamp", context.timestamp());
-        jsonMetadata.put("fileName", context.fileName());
-        jsonMetadata.put("fileSize", String.valueOf(context.fileSize()));
-        jsonMetadata.put("sourceSystem", "Mirth Connect");
-        jsonMetadata.put("s3ObjectPath", context.fullS3Path());
-        jsonMetadata.put("requestUrl", context.requestUrl());
-        jsonMetadata.put("fullRequestUrl", context.fullRequestUrl());
-        jsonMetadata.put("queryParams", context.queryParams());
-        jsonMetadata.put("protocol", context.protocol());
-        jsonMetadata.put("localAddress", context.localAddress());
-        jsonMetadata.put("remoteAddress", context.remoteAddress());
-
-        // Convert headers to list of single-entry maps
-        List<Map<String, String>> headerList = context.headers().entrySet().stream()
-                .map(entry -> Map.of(entry.getKey(), entry.getValue()))
-                .toList();
-
-        jsonMetadata.put("headers", headerList);
-
-        //// TODO: Uncomment this section when needed this JSON format.
-        //// Wrap in parent object
-        Map<String, Object> wrapper = new HashMap<>();
-        wrapper.put("key", context.objectKey());
-        wrapper.put("json_metadata", jsonMetadata);
-
-        return wrapper;
-        // return jsonMetadata;
-    }
-
-    private ResponseEntity<String> createSuccessResponse(String messageId, RequestContext context) {
-        try {
-            Map<String, String> response = Map.of(
-                    "messageId", messageId,
-                    "interactionId", context.interactionId(),
-                    "fullS3Path", context.fullS3Path(),
-                    "timestamp", context.timestamp());
-
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(objectMapper.writeValueAsString(response));
-        } catch (Exception e) {
-            log.error("Error creating success response", e);
-            throw new RuntimeException("Failed to create response: " + e.getMessage(), e);
-        }
-    }
-
-    private String sendToSqs(RequestContext context, String s3Response) throws Exception {
-        Map<String, Object> message = new HashMap<>();
-        message.put("tenantId", context.tenantId());
-        message.put("interactionId", context.interactionId());
-        message.put("requestUrl", context.requestUrl());
-        // message.put("msgType", context.msgType());
-        message.put("timestamp", context.timestamp());
-        message.put("fileName", context.fileName());
-        message.put("fileSize", String.valueOf(context.fileSize()));
-        message.put("s3ObjectId", context.objectKey());
-        message.put("s3ObjectPath", context.fullS3Path());
-
-        if (s3Response != null) {
-            message.put("s3Response", s3Response);
-        }
-
-        String messageJson = objectMapper.writeValueAsString(message);
-
-        return sqsClient.sendMessage(SendMessageRequest.builder()
-                .queueUrl(Constants.FIFO_Q_URL)
-                .messageBody(messageJson)
-                .messageGroupId(context.tenantId())
-                .build())
-                .messageId();
-    }
-
-    record RequestContext(
-            Map<String, String> headers,
-            String requestUrl,
-            String tenantId,
-            String interactionId,
-            ZonedDateTime uploadTime,
-            String timestamp,
-            String fileName,
-            long fileSize,
-            String objectKey,
-            String metadataKey,
-            String fullS3Path,
-            String userAgent,
-            String fullRequestUrl,
-            String queryParams,
-            String protocol,
-            String localAddress,
-            String remoteAddress) {
-
     }
 
 }
