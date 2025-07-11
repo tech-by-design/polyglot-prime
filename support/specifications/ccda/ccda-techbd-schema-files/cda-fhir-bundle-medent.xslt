@@ -1822,9 +1822,10 @@
         <xsl:when test="string($grouperObs/ccda:code/@code)">
           <xsl:value-of select="$grouperObs/ccda:code/@code"/>
         </xsl:when>
-        <xsl:otherwise>
+        <xsl:when test="string($grouperScreeningCode) and normalize-space($grouperScreeningCode) != ''">
           <xsl:value-of select="$grouperScreeningCode"/>
-        </xsl:otherwise>
+        </xsl:when>
+        <xsl:otherwise>96777-8</xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
 
@@ -1858,7 +1859,7 @@
                   "code": "<xsl:value-of select='$screeningCode'/>",
                   "display": "<xsl:call-template name="mapScreeningCodeDisplay">
                                 <xsl:with-param name="screeningCode" select="$screeningCode"/>
-                              </xsl:call-template>""
+                              </xsl:call-template>"
                 }
                 <xsl:if test="starts-with($screeningCode, 'NYS')">
                   ,{
