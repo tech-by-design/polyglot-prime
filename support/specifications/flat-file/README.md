@@ -14,7 +14,7 @@ The CSV file names in this project follow a strict naming convention to ensure c
 
 **`SDOH_<DATA_CATEGORY>_{OrganizationName}_{groupIdentifier}.csv`**  
 
-All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting, and they must be encoded in **UTF-8** to ensure proper validation and data processing.  
+All CSV files are **comma-separated (comma-delimited)** to maintain uniformity in data formatting, and they must be encoded in **UTF-8** to ensure proper validation and data processing. Additionally, field names are case-sensitive and must be written in **capital letters** (uppercase).
 
 ### Components of the File Name  
 
