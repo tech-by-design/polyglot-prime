@@ -140,22 +140,12 @@
           "profile": ["<xsl:value-of select='$patientMetaProfileUrlFull'/>"]
         }
         <xsl:if test="//PID/PID.15">
-		  ,"communication": [
-			{
-			  "language": {
-				"coding": [
-				  {
-					"system": "urn:ietf:bcp:47",
-					"code": "<xsl:choose>
-							   <xsl:when test='//PID/PID.15/PID.15.1 = &quot;001&quot; or not(string(//PID/PID.15/PID.15.1))'>en</xsl:when>
-							   <xsl:otherwise><xsl:value-of select='PID/PID.15/PID.15.1'/></xsl:otherwise>
-							 </xsl:choose>"
-				  }
-				]
-			  },
-			  "preferred": true
-			}
-		  ]
+		  ,"language": 
+				"<xsl:choose>
+					<xsl:when test='//PID/PID.15/PID.15.1 = &quot;001&quot; or not(string(//PID/PID.15/PID.15.1))'>en</xsl:when>
+					<xsl:otherwise><xsl:value-of select='PID/PID.15/PID.15.1'/></xsl:otherwise>
+				</xsl:choose>"
+
 		</xsl:if>
 
         <!--If there is Official Name, print it, otherwise print first occuring name-->
@@ -235,24 +225,6 @@
 						<xsl:if test="PID.11.5">
 						  "postalCode": "<xsl:value-of select="PID.11.5"/>"
 						</xsl:if>
-                        <!-- <xsl:if test="string(ccda:country)">
-                            , "country": "<xsl:value-of select="ccda:country"/>"
-                        </xsl:if>
-                        <xsl:if test="ccda:useablePeriod">
-                            ,"period": {
-                                <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">
-                                    "start": "<xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:low/@value"/>
-                                              </xsl:call-template>"
-                                </xsl:if>
-                                <xsl:if test="string(ccda:useablePeriod/ccda:high/@value)">
-                                    <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
-                                    "end": "<xsl:call-template name="formatDateTime">
-                                                <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:high/@value"/>
-                                            </xsl:call-template>"
-                                </xsl:if>
-                            }
-                        </xsl:if> -->
                     } <xsl:if test="position() != last()">,</xsl:if>
                 </xsl:for-each>
             ]
@@ -545,19 +517,89 @@
 			}]
 		  }
 		</xsl:if>
+		
+		<xsl:if test="//NK1">
+		  , "contact": [
+			<xsl:for-each select="//NK1">
+			  {
+				<!-- Relationship: NK1.7 -->
+				<xsl:if test="string(NK1.7)">
+				  "relationship": [{
+					"coding": [{
+					  "system": "http://terminology.hl7.org/CodeSystem/v2-0063",
+					  "code": "<xsl:value-of select='NK1.7'/>",
+					  "display": "<xsl:value-of select='NK1.7'/>"
+					}]
+				  }],
+				</xsl:if>
+
+				<!-- Name: NK1.2 -->
+				<xsl:if test="string(NK1.2/NK1.2.1) or string(NK1.2/NK1.2.2)">
+				  "name": {
+					<xsl:if test="string(NK1.2/NK1.2.1)">
+					  "family": "<xsl:value-of select='NK1.2/NK1.2.1'/>"<xsl:if test="string(NK1.2/NK1.2.2)">,</xsl:if>
+					</xsl:if>
+					<xsl:if test="string(NK1.2/NK1.2.2)">
+					  "given": ["<xsl:value-of select='NK1.2/NK1.2.2'/>"]
+					</xsl:if>
+				  },
+				</xsl:if>
+
+				<!-- Telecom: NK1.5 (phone), NK1.6 (business phone), NK1.40 (mobile) -->
+				<xsl:if test="string(NK1.5) or string(NK1.6) or string(NK1.40)">
+				  "telecom": [
+					<xsl:if test="string(NK1.5)">
+					  { "system": "phone", "value": "<xsl:value-of select='NK1.5'/>" }<xsl:if test="string(NK1.6) or string(NK1.40)">,</xsl:if>
+					</xsl:if>
+					<xsl:if test="string(NK1.6)">
+					  { "system": "phone", "value": "<xsl:value-of select='NK1.6'/>" }<xsl:if test="string(NK1.40)">,</xsl:if>
+					</xsl:if>
+					<xsl:if test="string(NK1.40)">
+					  { "system": "phone", "value": "<xsl:value-of select='NK1.40'/>" }
+					</xsl:if>
+				  ],
+				</xsl:if>
+
+				<!-- Address: NK1.4 -->
+				<xsl:if test="NK1.4">
+				  "address": {
+					<xsl:if test="string(NK1.4/NK1.4.1)">
+					  "line": ["<xsl:value-of select='NK1.4/NK1.4.1'/>"]
+					</xsl:if>
+					<xsl:if test="string(NK1.4/NK1.4.3)">
+					  , "city": "<xsl:value-of select='NK1.4/NK1.4.3'/>"
+					</xsl:if>
+					<xsl:if test="string(NK1.4/NK1.4.4)">
+					  , "state": "<xsl:value-of select='NK1.4/NK1.4.4'/>"
+					</xsl:if>
+					<xsl:if test="string(NK1.4/NK1.4.5)">
+					  , "postalCode": "<xsl:value-of select='NK1.4/NK1.4.5'/>"
+					</xsl:if>
+				  }
+				</xsl:if>
+			  }<xsl:if test="position() != last()">,</xsl:if>
+			</xsl:for-each>
+		  ]
+		</xsl:if>
       
-      <!-- <xsl:if test="string(//PID.15/PID.15.1)">
-		  , "communication" : [{
-			"language" : {
-			  "coding" : [{
-				"code" : "<xsl:value-of select='//PID.15/PID.15.1'/>"
-			  }]
+      <xsl:if test="//PID/PID.15">
+		  ,"communication": [
+			{
+			  "language": {
+				"coding": [
+				  {
+					"system": "urn:ietf:bcp:47",
+					"code": "<xsl:choose>
+							   <xsl:when test='//PID/PID.15/PID.15.1 = &quot;001&quot; or not(string(//PID/PID.15/PID.15.1))'>en</xsl:when>
+							   <xsl:otherwise><xsl:value-of select='PID/PID.15/PID.15.1'/></xsl:otherwise>
+							 </xsl:choose>"
+				  }
+				]
+			  },
+			  "preferred": true
 			}
-			<xsl:if test="string(//PID.15/PID.15.1)">
-			  , "preferred" : true
-			</xsl:if>
-		  }]
-		</xsl:if>  -->     
+		  ]
+		</xsl:if>    
     }
     , "request" : {
         "method" : "POST",
@@ -584,15 +626,6 @@
           "status": "<xsl:call-template name='mapObservationStatus'>
                        <xsl:with-param name='statusCode' select='OBX.11'/>
                      </xsl:call-template>",
-          "category": [
-            {
-              "coding": [{
-                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                "code": "social-history",
-                "display": "Social History"
-              }]
-            }
-          ],
           "code": {
             "coding": [{
               "system": "http://loinc.org",
@@ -612,12 +645,12 @@
           <xsl:choose>
 
 			<!-- If value is unknown or empty -->
-			<xsl:when test="OBX.5/OBX.5.1 = 'UNK' or normalize-space(OBX.5/OBX.5.1) = ''">
+			<xsl:when test="OBX.5/OBX.5.1 = 'UNK' or OBX.5/OBX.5.1 = 'OTH'">
 			  "valueCodeableConcept": {
 				"coding": [{
 				  "system": "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
-				  "code": "UNK",
-				  "display": "Unknown"
+				  "code": "<xsl:value-of select='OBX.5/OBX.5.1'/>",
+				  "display": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
 				}]
 			  }
 			</xsl:when>
@@ -896,97 +929,92 @@
           ],
         </xsl:if>
         "name": "<xsl:value-of select='//XON/XON.1'/>"
-        <xsl:if test="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom[not(@nullFlavor)]">
-            , "telecom": [
-                <xsl:for-each select="ccda:assignedAuthor/ccda:representedOrganization/ccda:telecom[not(@nullFlavor)]">
-                    {
-                        <xsl:if test="@value">
-                            "system": "<xsl:choose>
-                                    <xsl:when test="contains(@value, 'tel:')">phone</xsl:when>
-                                    <xsl:when test="contains(@value, 'mailto:')">email</xsl:when>
-                                    <xsl:otherwise>other</xsl:otherwise>
-                                </xsl:choose>",
-                        </xsl:if>
-                        <xsl:if test="@use">
-                            "use": "<xsl:choose>
-                                <xsl:when test="@use='AS' or @use='DIR' or @use='PUB' or @use='WP'">work</xsl:when>
-                                <xsl:when test="@use='BAD'">old</xsl:when>
-                                <xsl:when test="@use='H' or @use='HP' or @use='HV'">home</xsl:when>
-                                <xsl:when test="@use='MC' or @use='PG'">mobile</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
-                        </xsl:if>
-                        "value": "<xsl:value-of select="@value"/>"
-                    }
-                    <xsl:if test="position() != last()">,</xsl:if>
-                </xsl:for-each>
-            ]
-        </xsl:if>
-        <xsl:if test="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]">
-            , "address": [
-                <xsl:for-each select="ccda:assignedAuthor/ccda:representedOrganization/ccda:addr[not(@nullFlavor)]">
-                    {
-                        <xsl:if test="@use">
-                            "use": "<xsl:choose>
-                                <xsl:when test="@use='HP' or @use='H'">home</xsl:when>
-                                <xsl:when test="@use='WP'">work</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
-                        </xsl:if>
-                        <xsl:if test="string(ccda:streetAddressLine) or string(ccda:city) or string(ccda:state) or string(ccda:postalCode)">
-                            "text": "<xsl:for-each select="ccda:streetAddressLine">
-                                  <xsl:value-of select="."/>
-                                  <xsl:if test="position() != last()">, </xsl:if>
-                              </xsl:for-each>
-                              <xsl:if test="string(ccda:city)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:city"/></xsl:if>
-                              <xsl:if test="string(ccda:state)">, <xsl:value-of select="ccda:state"/></xsl:if>
-                              <xsl:if test="string(ccda:postalCode)"> <xsl:text> </xsl:text><xsl:value-of select="ccda:postalCode"/></xsl:if>" ,
-                        </xsl:if>
-                        <xsl:if test="ccda:streetAddressLine">
-                            "line": [
-                                <xsl:for-each select="ccda:streetAddressLine">
-                                    "<xsl:value-of select="."/>"
-                                    <xsl:if test="position() != last()">, </xsl:if>
-                                </xsl:for-each>
-                            ]
-                        </xsl:if>
-                        <xsl:if test="string(ccda:city)">
-                            , "city": "<xsl:value-of select="ccda:city"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:county)">
-                            , "district": "<xsl:value-of select="ccda:county"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:state)">
-                            , "state": "<xsl:value-of select="ccda:state"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:postalCode)">
-                            , "postalCode": "<xsl:value-of select="ccda:postalCode"/>"
-                        </xsl:if>
-                        <xsl:if test="string(ccda:country)">
-                            , "country": "<xsl:value-of select="ccda:country"/>"
-                        </xsl:if>
-                        <xsl:if test="ccda:useablePeriod">
-                            ,"period": {
-                                <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">
-                                    "start": "<xsl:call-template name="formatDateTime">
-                                                  <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:low/@value"/>
-                                              </xsl:call-template>"
-                                </xsl:if>
-                                <xsl:if test="string(ccda:useablePeriod/ccda:high/@value)">
-                                    <xsl:if test="string(ccda:useablePeriod/ccda:low/@value)">, </xsl:if>
-                                    "end": "<xsl:call-template name="formatDateTime">
-                                                <xsl:with-param name="dateTime" select="ccda:useablePeriod/ccda:high/@value"/>
-                                            </xsl:call-template>"
-                                </xsl:if>
-                            }
-                        </xsl:if>
-                    } <xsl:if test="position() != last()">,</xsl:if>
-                </xsl:for-each>
-            ]
-        </xsl:if>
+        <xsl:if test="//ORC.23">
+		  , "telecom": [
+			<xsl:for-each select="//ORC.23">
+			  {
+				<xsl:if test="string(//ORC.23.1)">
+				  "value": "<xsl:value-of select='//ORC.23.1'/>"
+				</xsl:if>
+				<xsl:if test="string(//ORC.23.3)">
+				  <xsl:if test="string(//ORC.23.1)">, </xsl:if>
+				  "system": "<xsl:choose>
+					<xsl:when test="//ORC.23.3 = 'PH'">phone</xsl:when>
+					<xsl:when test="//ORC.23.3 = 'FX'">fax</xsl:when>
+					<xsl:when test="//ORC.23.3 = 'Internet'">email</xsl:when>
+					<xsl:otherwise>other</xsl:otherwise>
+				  </xsl:choose>"
+				</xsl:if>
+				<xsl:if test="string(//ORC.23.2)">
+				  <xsl:if test="string(//ORC.23.1) or string(//ORC.23.3)">, </xsl:if>
+				  "use": "<xsl:choose>
+					<xsl:when test="//ORC.23.2 = 'WP'">work</xsl:when>
+					<xsl:when test="//ORC.23.2 = 'H'">home</xsl:when>
+					<xsl:when test="//ORC.23.2 = 'TMP'">temp</xsl:when>
+					<xsl:when test="//ORC.23.2 = 'MC' or ORC.23.2 = 'PG'">mobile</xsl:when>
+					<xsl:otherwise><xsl:value-of select='//ORC.23.2'/></xsl:otherwise>
+				  </xsl:choose>"
+				</xsl:if>
+			  }<xsl:if test="position() != last()">,</xsl:if>
+			</xsl:for-each>
+		  ]
+		</xsl:if>
+        <xsl:if test="//ORC.22">
+		  , "address": [
+			<xsl:for-each select="//ORC.22">
+			  {
+				<xsl:variable name="comma" select="false()" />
+				<xsl:if test="string(ORC.22.7)">
+				  "use": "<xsl:choose>
+							<xsl:when test="ORC.22.7 = 'H' or ORC.22.7 = 'HP'">home</xsl:when>
+							<xsl:when test="ORC.22.7 = 'WP'">work</xsl:when>
+							<xsl:when test="ORC.22.7 = 'TMP'">temp</xsl:when>
+							<xsl:when test="ORC.22.7 = 'OLD' or ORC.22.7 = 'BAD'">old</xsl:when>
+							<xsl:otherwise><xsl:value-of select="ORC.22.7"/></xsl:otherwise>
+						 </xsl:choose>"
+				  <xsl:text>,</xsl:text>
+				</xsl:if>
+
+				<xsl:if test="string(ORC.22.1) or string(ORC.22.2) or string(ORC.22.3) or string(ORC.22.4) or string(ORC.22.5) or string(ORC.22.6)">
+				  "text": "<xsl:value-of select="normalize-space(concat(ORC.22.1, ' ', ORC.22.2, ' ', ORC.22.3, ' ', ORC.22.4, ' ', ORC.22.5, ' ', ORC.22.6))"/>"
+				  <xsl:if test="string(ORC.22.1) or string(ORC.22.2)">,<xsl:text/></xsl:if>
+				</xsl:if>
+
+				<xsl:if test="string(ORC.22.1) or string(ORC.22.2)">
+				  "line": [
+					<xsl:if test="string(ORC.22.1)">
+					  "<xsl:value-of select='ORC.22.1'/>"<xsl:if test="string(ORC.22.2)">,</xsl:if>
+					</xsl:if>
+					<xsl:if test="string(ORC.22.2)">
+					  "<xsl:value-of select='ORC.22.2'/>"
+					</xsl:if>
+				  ]
+				  <xsl:if test="string(ORC.22.3) or string(ORC.22.4) or string(ORC.22.5) or string(ORC.22.6) or string(ORC.22.9)">,<xsl:text/></xsl:if>
+				</xsl:if>
+
+				<xsl:if test="string(ORC.22.3)">
+				  "city": "<xsl:value-of select='ORC.22.3'/>"<xsl:if test="string(ORC.22.4) or string(ORC.22.5) or string(ORC.22.6) or string(ORC.22.9)">,<xsl:text/></xsl:if>
+				</xsl:if>
+
+				<xsl:if test="string(ORC.22.9)">
+				  "district": "<xsl:value-of select='ORC.22.9'/>"<xsl:if test="string(ORC.22.4) or string(ORC.22.5) or string(ORC.22.6)">,<xsl:text/></xsl:if>
+				</xsl:if>
+
+				<xsl:if test="string(ORC.22.4)">
+				  "state": "<xsl:value-of select='ORC.22.4'/>"<xsl:if test="string(ORC.22.5) or string(ORC.22.6)">,<xsl:text/></xsl:if>
+				</xsl:if>
+
+				<xsl:if test="string(ORC.22.5)">
+				  "postalCode": "<xsl:value-of select='ORC.22.5'/>"<xsl:if test="string(ORC.22.6)">,<xsl:text/></xsl:if>
+				</xsl:if>
+
+				<xsl:if test="string(ORC.22.6)">
+				  "country": "<xsl:value-of select='ORC.22.6'/>"
+				</xsl:if>
+			  }<xsl:if test="position() != last()">,</xsl:if>
+			</xsl:for-each>
+		  ]
+		</xsl:if>
       },
       "request" : {
         "method" : "POST",
@@ -1124,18 +1152,18 @@
         }]
       </xsl:if>
 
-      <xsl:if test="string(//PV1/PV1.3/PV1.3.1) or string(//PV1/PV1.3/PV1.3.6)">
-        <xsl:text>,</xsl:text>
-        "serviceProvider": {
-          <xsl:if test="string(//PV1/PV1.3/PV1.3.1)">
-            "reference": "Organization/<xsl:value-of select='//PV1/PV1.3/PV1.3.1'/>"
-            <xsl:if test="string(//PV1/PV1.3/PV1.3.6)">,</xsl:if>
-          </xsl:if>
-          <xsl:if test="string(//PV1/PV1.3/PV1.3.6)">
-            "display": "<xsl:value-of select='//PV1/PV1.3/PV1.3.6'/>"
-          </xsl:if>
-        }
-      </xsl:if>
+      <xsl:if test="string(//PL.1) or string(//PL.6)">
+	  <xsl:text>,</xsl:text>
+	  "serviceProvider": {
+		<xsl:if test="string(//PL.1)">
+		  "reference": "Organization/<xsl:value-of select='//PL.1'/>"
+		  <xsl:if test="string(//PL.6)">,</xsl:if>
+		</xsl:if>
+		<xsl:if test="string(//PL.6)">
+		  "display": "<xsl:value-of select='//PL.6'/>"
+		</xsl:if>
+	  }
+	</xsl:if>
     },
     "request": {
       "method": "POST",
