@@ -188,48 +188,32 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
         ]
 
         for resource in package.resources:
-            # Create transform steps only for fields that exist in the current resource
-            transform_steps = [
-                steps.cell_convert(field_name=field_name, function=lambda value: value.lower())
-                for field_name, _ in common_transform_steps
-                if any(field.name == field_name for field in resource.schema.fields)
-            ]
-            resource = transform(resource, steps=transform_steps)
-
-        # Define helper functions outside the loop to avoid closure issues
-        # def strip_whitespace(value):
-        #     return value.strip() if isinstance(value, str) else value 
-        
-        # def strip_and_lowercase(value):
-        #     if isinstance(value, str):
-        #         return value.strip().lower()
-        #     return value
-
-        # for resource in package.resources:
-        #     # Create a list to hold all transform steps
-        #     transform_steps = []
-            
-        #     # Get field names that need special processing (lowercase)
-        #     special_fields = {field_name for field_name, _ in common_transform_steps 
-        #                     if any(field.name == field_name for field in resource.schema.fields)}
-            
-        #     # Process all string fields
-        #     for field in resource.schema.fields:
-        #         if field.type == "string":
-        #             if field.name in special_fields:
-        #                 # Apply both strip and lowercase for special fields
-        #                 transform_steps.append(
-        #                     steps.cell_convert(field_name=field.name, function=strip_and_lowercase)
-        #                 )
-        #             else:
-        #                 # Apply only strip for regular string fields
-        #                 transform_steps.append(
-        #                     steps.cell_convert(field_name=field.name, function=strip_whitespace)
-        #                 )
-            
-        #     # Apply all transforms to the resource
-        #     if transform_steps:
-        #         resource = transform(resource, steps=transform_steps)
+            try:
+                # Create transform steps only for fields that exist in the current resource
+                transform_steps = [
+                    steps.cell_convert(field_name=field_name, function=lambda value: value.lower())
+                    for field_name, _ in common_transform_steps
+                    if any(field.name == field_name for field in resource.schema.fields)
+                ]
+                resource = transform(resource, steps=transform_steps)
+            except Exception as e:
+                file_in_error_path = getattr(resource, "path", None)  # or resource.name, depending on your library
+                file_in_error = os.path.basename(file_in_error_path) if file_in_error_path else None
+                error_message = str(e)
+                # Extract missing field name as before
+                match = re.search(r"'(.*?)'", error_message)
+                missing_field = match.group(1) if match else "Unknown field"
+                file_info = f" in file '{file_in_error}'" if file_in_error else ""
+                user_friendly_message = (
+                    f"The field '{missing_field}' is missing or incorrectly named in the dataset{file_info}. "
+                    f"Please check if it exists in the CSV file and matches the expected schema."
+                )
+                results["errorsSummary"].append({
+                    "fieldName": missing_field,
+                    "fileName": file_in_error,
+                    "message": user_friendly_message,
+                    "type": "data-processing-errors"
+                })
 
         checklist = Checklist(checks=[ValidateAnswerCode()])
         # Validate the package
@@ -246,28 +230,7 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             "message": str(e),
             "type": "file-missing-error"
         })
-
-    except Exception as e:
-        error_message = str(e)
-
-        # Check if the error is related to missing fields in transformation
-        if "selection is not a field or valid field index" in error_message:
-            # Extract the missing field name from the error message
-            match = re.search(r"'(.*?)'", error_message)
-            missing_field = match.group(1) if match else "Unknown field"
-
-            user_friendly_message = (
-                f"The field '{missing_field}' is missing or incorrectly named in the dataset. "
-                f"Please check if it exists in the CSV file and matches the expected schema."
-            )
-        else:
-            user_friendly_message = error_message  # Keep other errors as-is
-
-        results["errorsSummary"].append({
-            "fieldName": None,
-            "message": user_friendly_message,
-            "type": "data-processing-errors"
-        })
+ 
 
 
     # Write the results to a JSON file if output_path is provided, otherwise print to console
