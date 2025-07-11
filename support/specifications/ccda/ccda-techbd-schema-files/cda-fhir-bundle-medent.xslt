@@ -1852,10 +1852,21 @@
             "code": {
               "coding": [
                 {
-                  "system": "http://loinc.org",
+                  "system": "<xsl:call-template name="mapScreeningCodeSystem">
+                                <xsl:with-param name="screeningCode" select="$screeningCode"/>
+                              </xsl:call-template>",
                   "code": "<xsl:value-of select='$screeningCode'/>",
-                  "display": "<xsl:value-of select='ccda:code/@displayName'/>"
+                  "display": "<xsl:call-template name="mapScreeningCodeDisplay">
+                                <xsl:with-param name="screeningCode" select="$screeningCode"/>
+                              </xsl:call-template>""
                 }
+                <xsl:if test="starts-with($screeningCode, 'NYS')">
+                  ,{
+                    "code": "100698-0",
+                    "system": "http://loinc.org",
+                    "display": "Social Determinants of Health screening report Document"
+                  }
+                </xsl:if>
               ]
             },
             "subject": {
@@ -1906,40 +1917,34 @@
               }
             ],
             "hasMember": [
-              <xsl:for-each select="ccda:entryRelationship/ccda:observation">
-                <xsl:variable name="questionCode" select="ccda:code/@code"/>                
+              <xsl:variable name="allowedCodes" select="'|71802-3|96778-6|96779-4|88122-7|88123-5|93030-5|96780-2|96782-8|95618-5|95617-7|95616-9|95615-1|95614-4|'" />
+              <xsl:for-each select="ccda:entryRelationship/ccda:observation[
+                                      (
+                                        string(ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer'
+                                        or string(ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-declined'
+                                        or (
+                                          string(ccda:value/@code) != 'UNK' 
+                                          and string-length(ccda:value/@code) > 0 
+                                          and string(ccda:code/@code) != 'UNK' 
+                                          and string-length(ccda:code/@code) > 0
+                                          and string-length(ccda:value/@nullFlavor) = 0
+                                          and string-length(ccda:code/@nullFlavor) = 0
+                                          and (ccda:code/@codeSystemName = 'LOINC' or ccda:code/@codeSystemName = 'SNOMED' or ccda:code/@codeSystemName = 'SNOMED CT')
+                                        )
+                                      )
+                                      and contains($allowedCodes, concat('|', ccda:code/@code, '|'))
+                                    ]">
+                  <xsl:variable name="questionCode" select="ccda:code/@code"/>
 
-                <xsl:if test="
-                      (string(ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' or string(ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-declined' ) 
-                        or (
-                            string(ccda:value/@code) != 'UNK' 
-                            and string-length(ccda:value/@code) > 0 
-                            and string(ccda:code/@code) != 'UNK' 
-                            and string-length(ccda:code/@code) > 0
-                            and string-length(ccda:value/@nullFlavor) = 0
-                            and string-length(ccda:code/@nullFlavor) = 0
-                            and (ccda:code/@codeSystemName = 'LOINC' or ccda:code/@codeSystemName = 'SNOMED' or ccda:code/@codeSystemName = 'SNOMED CT')
-                        )
-                    ">
-
-                    <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->                
-                    <xsl:variable name="categoryCode">
-                      <xsl:call-template name="mapObservationCategoryCodes">
-                        <xsl:with-param name="questionCode" select="$questionCode"/>
-                      </xsl:call-template>
-                    </xsl:variable>
-
-                    <xsl:if test="string($categoryCode)">
-                        <xsl:variable name="observationResourceId">
-                          <xsl:call-template name="generateFixedLengthResourceId">
-                            <xsl:with-param name="prefixString" select="$questionCode"/>
-                            <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
-                          </xsl:call-template>
-                        </xsl:variable>
-                        
-                        { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }  <xsl:if test="position() != last()">,</xsl:if>                    
-                    </xsl:if>
-                </xsl:if>
+                  <xsl:variable name="observationResourceId">
+                    <xsl:call-template name="generateFixedLengthResourceId">
+                      <xsl:with-param name="prefixString" select="$questionCode"/>
+                      <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
+                    </xsl:call-template>
+                  </xsl:variable>
+                  
+                  <xsl:if test="position() > 1">,</xsl:if>
+                  { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }
               </xsl:for-each>
             ]
           },
@@ -1950,6 +1955,31 @@
         }
       </xsl:for-each>
     </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="mapScreeningCodeDisplay">
+    <xsl:param name="screeningCode"/>
+    <xsl:choose>
+      <xsl:when test="$screeningCode = 'NYSAHCHRSN'">NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool [Alternate]</xsl:when>
+      <xsl:when test="$screeningCode = 'NYS-AHC-HRSN'">INYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool</xsl:when>
+      <xsl:when test="$screeningCode = '96777-8'">Accountable health communities (AHC) health-related social needs screening (HRSN) tool</xsl:when>
+      <xsl:when test="$screeningCode = '97023-6'">Accountable health communities (AHC) health-related social needs (HRSN) supplemental questions</xsl:when> 
+      <xsl:when test="$screeningCode = '100698-0'">Social Determinants of Health screening report Document</xsl:when>    
+      <xsl:otherwise>
+        <xsl:text/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template name="mapScreeningCodeSystem">
+    <xsl:param name="screeningCode"/>
+    <xsl:choose>
+      <xsl:when test="$screeningCode = 'NYSAHCHRSN' or $screeningCode = 'NYS-AHC-HRSN'">http://test.shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire</xsl:when>
+      <xsl:when test="$screeningCode = '96777-8' or $screeningCode = '97023-6' or $screeningCode = '100698-0'">http://loinc.org</xsl:when>
+      <xsl:otherwise>
+        <xsl:text>http://loinc.org</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
 </xsl:stylesheet>
