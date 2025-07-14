@@ -2,8 +2,8 @@
   <id>4c5e0958-d0a7-45d8-be4f-01032c2d5429</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.23</description>
-  <revision>161</revision>
+  <description>Version: 0.4.25</description>
+  <revision>165</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -22,29 +22,54 @@
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
         <firstResponse>false</firstResponse>
-        <processingThreads>0</processingThreads>
+        <processingThreads>1</processingThreads>
         <resourceIds class="linked-hash-map">
           <entry>
             <string>Default Resource</string>
             <string>[Default Resource]</string>
           </entry>
         </resourceIds>
-        <queueBufferSize>0</queueBufferSize>
+        <queueBufferSize>1000</queueBufferSize>
       </sourceConnectorProperties>
       <xmlBody>false</xmlBody>
       <parseMultipart>false</parseMultipart>
       <includeMetadata>false</includeMetadata>
-      <binaryMimeTypes></binaryMimeTypes>
+      <binaryMimeTypes>text/xml</binaryMimeTypes>
       <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
-      <responseContentType></responseContentType>
+      <responseContentType>application/json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
       <responseStatusCode></responseStatusCode>
-      <responseHeaders class="linked-hash-map"/>
+      <responseHeaders class="linked-hash-map">
+        <entry>
+          <string>Access-Control-Allow-Origin</string>
+          <list>
+            <string>*</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Methods</string>
+          <list>
+            <string>GET, POST, OPTIONS</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Headers</string>
+          <list>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Screening-Code</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Credentials</string>
+          <list>
+            <string>true</string>
+          </list>
+        </entry>
+      </responseHeaders>
       <responseHeadersVariable></responseHeadersVariable>
       <useResponseHeadersVariable>false</useResponseHeadersVariable>
       <charset>DEFAULT_ENCODING</charset>
-      <contextPath></contextPath>
-      <timeout></timeout>
+      <contextPath>/</contextPath>
+      <timeout>300000</timeout>
       <staticResources/>
     </properties>
     <transformer version="4.5.0">
@@ -296,6 +321,13 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 
 	//5. Encounter Type
 	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
+
+	//Screening code (used for Grouper resource) for Epic CCD files
+	var screeningCode = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Screening-Code&apos;);	
+	logger.info(&quot;X-TechBD-Screening-Code: &quot; + screeningCode);
+	if (screeningCode &amp;&amp; String(screeningCode).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-Screening-Code&apos;, screeningCode);
+	}
 }
 
 // If any missing headers were found, throw a single error
@@ -621,6 +653,140 @@ function generateUUID(resource, resourceIdName, transformer) {
 	return transformer;
 }
 
+function getCategoryDisplay(code) {
+    switch (code) {
+        case &apos;71802-3&apos;:
+            return &apos;Housing Instability&apos;;
+        case &apos;96778-6&apos;:
+            return &apos;Inadequate Housing&apos;;
+        case &apos;96779-4&apos;:
+            return &apos;Utility Insecurity&apos;;
+        case &apos;88122-7&apos;:
+        case &apos;88123-5&apos;:
+            return &apos;Food Insecurity&apos;;
+        case &apos;93030-5&apos;:
+            return &apos;Transportation Insecurity&apos;;
+        case &apos;96780-2&apos;:
+            return &apos;Employment Status&apos;;
+        case &apos;96782-8&apos;:
+            return &apos;Education/Training&apos;;
+        case &apos;95618-5&apos;:
+        case &apos;95617-7&apos;:
+        case &apos;95616-9&apos;:
+        case &apos;95615-1&apos;:
+        case &apos;95614-4&apos;:
+            return &apos;Interpersonal Safety&apos;;
+        default:
+            return &apos;SDOH Category Unspecified&apos;;
+    }
+}
+
+function getCategoryCode(code) {
+    switch (code) {
+        case &apos;71802-3&apos;:
+            return &apos;housing-instability&apos;;
+        case &apos;96778-6&apos;:
+            return &apos;inadequate-housing&apos;;
+        case &apos;96779-4&apos;:
+            return &apos;utility-insecurity&apos;;
+        case &apos;88122-7&apos;:
+        case &apos;88123-5&apos;:
+            return &apos;food-insecurity&apos;;
+        case &apos;93030-5&apos;:
+            return &apos;transportation-insecurity&apos;;
+        case &apos;96780-2&apos;:
+            return &apos;employment-status&apos;;
+        case &apos;96782-8&apos;:
+        case &apos;95618-5&apos;:
+        case &apos;95617-7&apos;:
+        case &apos;95616-9&apos;:
+        case &apos;95615-1&apos;:
+        case &apos;95614-4&apos;:
+            return &apos;sdoh-category-unspecified&apos;;
+        default:
+            return null;
+    }
+}
+
+// Define Namespace Resolver
+function getObservationCategoryCodes(transformer, observations) {    
+    var xml = new XML(observations); // Parse the source message as XML    
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
+    default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
+
+    // Extract all observation code attributes
+    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;) {
+	    var codes = xml..component
+	                   .structuredBody
+	                   .component
+	                   .section.(@ID == &apos;observations&apos;)
+	                   .entry
+	                   .observation
+	                   .entryRelationship
+	                   .observation
+	                   .code.@code;
+     }
+     else {
+     	var codes = xml..component
+	                   .structuredBody
+	                   .component
+	                   .section.(@ID == &apos;observations&apos;)
+	                   .entry
+	                   .observation
+	                   .entryRelationship
+	                   .observation
+	                   .entryRelationship
+	                   .observation
+	                   .code.@code;
+     }
+
+	for (var i = 0; i &lt; codes.length(); i++) {
+	    logger.info(&quot;Code: &quot; + codes[i]);
+	}
+
+	// collect unique category codes
+	var categorySet = {};
+	for (var i = 0; i &lt; codes.length(); i++) {
+	    var code = getCategoryCode(codes[i].toString().trim());
+	    if (code &amp;&amp; !(code in categorySet)) {
+	        categorySet[code] = getCategoryDisplay(codes[i].toString().trim());  
+	    }
+	}
+	for (var code in categorySet) {
+	    if (categorySet.hasOwnProperty(code)) {
+	        logger.info(&quot;Category Code: &quot; + code + &quot;, Display: &quot; + categorySet[code]);
+	    }
+	}
+	
+	var categoryJsonArray = [];
+	for (var code in categorySet) {
+	    categoryJsonArray.push({
+	        code: code,
+	        display: categorySet[code]
+	    });
+	}
+
+	//Build Category json from Category codes to pass to the xslt file as transformer parameter
+	var categoryXml = &apos;[&apos;;
+	for (var i = 0; i &lt; categoryJsonArray.length; i++) {
+	    categoryXml += &apos;{&apos; +
+	        &apos;&quot;system&quot;: &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;,&apos; +
+	        &apos;&quot;code&quot;: &quot;&apos; + categoryJsonArray[i].code + &apos;&quot;,&apos; +
+	        &apos;&quot;display&quot;: &quot;&apos; + categoryJsonArray[i].display + &apos;&quot;}&apos;;
+	
+	    if (i !== categoryJsonArray.length - 1) {
+	        categoryXml += &apos;,&apos;;
+	    }
+	}	
+	categoryXml += &apos;]&apos;;              
+	
+	// set context variable
+	//msg[&apos;categoryXml&apos;] = categoryXml;
+	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
+	logger.info(&quot;categoryXml : &quot; + categoryXml);
+	return transformer;
+}
+
 // Define Namespace Resolver
 function setResourceIdParameters(transformer) {
     	// Parse XML
@@ -694,6 +860,31 @@ function setResourceIdParameters(transformer) {
 	        logger.error(&quot;Encounter resource not found in the XML.&quot;);
 	    }
 	}
+
+	///Grouper Observation Resource 
+	var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;
+     var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;
+     var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+	var combinedText = mrn + cin + &apos;Grouper Observation Resource&apos; + currentTimestamp;
+     var sha256Hash = generateSHA256(new java.lang.String(combinedText)); 
+    
+     transformer.setParameter(&apos;grouperObservationResourceSha256Id&apos;, sha256Hash);
+     logger.info(&apos;grouperObservationResourceSha256Id&apos; + &quot; : &quot; + sha256Hash);
+
+     transformer = getObservationCategoryCodes(transformer, doc); //observations
+
+     //For Epic files, use the value of the header variable,&apos;X-TechBD-Screening-Code&apos;, as the Grouper Screening Code, otherwise use the LOINC code &apos;100698-0&apos;
+     //For Medent files, take the value from code.code
+     var grouperScreeningCode = channelMap.get(&apos;X-TechBD-Screening-Code&apos;);
+     if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Epic&apos; &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
+	    grouperScreeningCode = &apos;100698-0&apos;;
+	    logger.info(&quot;Defaulting grouperScreeningCode to 100698-0 for Epic&quot;);
+	}
+	if (!grouperScreeningCode) {
+	    grouperScreeningCode = &apos;&apos;;
+	}
+     transformer.setParameter(&apos;grouperScreeningCode&apos;, String(grouperScreeningCode));
+     logger.info(&apos;grouperScreeningCode&apos; + &quot; : &quot; + grouperScreeningCode);
 	
 	return transformer;
 }
@@ -1435,7 +1626,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 			var transformer = transformerFactory.newTransformer(xsltSource);
 	
 			// Set the current timestamp parameter in ISO 8601 format
-			//var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ssXXX&quot;).format(new java.util.Date());
 			var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
 			transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp); // Pass the parameter to XSLT
 			transformer = set_fhir_resource_profile_urls(transformer); // Pass all the profile urls as parameters to XSLT
@@ -1737,7 +1927,7 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
           <entry>
             <string>Access-Control-Allow-Headers</string>
             <list>
-              <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type</string>
+              <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Screening-Code</string>
             </list>
           </entry>
           <entry>
@@ -1930,7 +2120,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1751964670071</time>
+        <time>1752488345579</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
