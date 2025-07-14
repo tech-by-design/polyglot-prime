@@ -523,15 +523,26 @@
 			<xsl:for-each select="//NK1">
 			  {
 				<!-- Relationship: NK1.7 -->
-				<xsl:if test="string(NK1.7)">
-				  "relationship": [{
-					"coding": [{
-					  "system": "http://terminology.hl7.org/CodeSystem/v2-0063",
-					  "code": "<xsl:value-of select='NK1.7'/>",
-					  "display": "<xsl:value-of select='NK1.7'/>"
-					}]
-				  }],
-				</xsl:if>
+				<xsl:choose>
+				  <xsl:when test="string(NK1.7/NK1.7.1)">
+					"relationship": [{
+					  "coding": [{
+						"system": "http://terminology.hl7.org/CodeSystem/v2-0063",
+						"code": "<xsl:value-of select='NK1.7/NK1.7.1'/>",
+						"display": "<xsl:value-of select='NK1.7/NK1.7.2'/>"
+					  }]
+					}],
+				  </xsl:when>
+				  <xsl:when test="string(NK1.3/NK1.3.1)">
+					"relationship": [{
+					  "coding": [{
+						"system": "http://terminology.hl7.org/CodeSystem/v2-0063",
+						"code": "<xsl:value-of select='NK1.3/NK1.3.1'/>",
+						"display": "<xsl:value-of select='NK1.3/NK1.3.2'/>"
+					  }]
+					}],
+				  </xsl:when>
+				</xsl:choose>
 
 				<!-- Name: NK1.2 -->
 				<xsl:if test="string(NK1.2/NK1.2.1) or string(NK1.2/NK1.2.2)">
@@ -803,7 +814,7 @@
 						"display": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
 					  }]
 					  <xsl:choose>
-						<xsl:when test="string(OBX/OBX.5/OBX.5.9)">
+						<xsl:when test="string(OBX.5/OBX.5.9)">
 						  <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.9'/>"
 						</xsl:when>
 						<xsl:when test="string(OBX.5/OBX.5.2)">
@@ -813,6 +824,15 @@
 					}
 				  }
 				],
+			  </xsl:when>
+			  <xsl:when test="string(OBX.3/OBX.3.1) = '95614-4'">
+				"valueCodeableConcept": {
+					"coding": [{
+					  "system": "http://unitsofmeasure.org",
+					  "display": "{Number}"
+					}]
+					<xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.1'/>"
+				  },
 			  </xsl:when>
 			  <xsl:otherwise>
 				  "valueCodeableConcept": {
@@ -1131,8 +1151,23 @@
           "type": [{
             "coding": [{
               "system": "http://terminology.hl7.org/CodeSystem/participant-type",
-              "code": "<xsl:value-of select='//ROL/ROL.3/ROL.3.1'/>",
-              "display": "<xsl:value-of select='//ROL/ROL.3/ROL.3.2'/>"
+              "code": "<xsl:choose>
+					   <xsl:when test='string(OBR.32/OBR.32.1/OBR.32.1.1)'>
+						 <xsl:value-of select='OBR.32/OBR.32.1/OBR.32.1.1'/>
+					   </xsl:when>
+					   <xsl:when test='string(OBR.34/OBR.34.1/OBR.34.1.1)'>
+						 <xsl:value-of select='OBR.34/OBR.34.1/OBR.34.1.1'/>
+					   </xsl:when>
+					 </xsl:choose>",
+
+			"display": "<xsl:choose>
+						  <xsl:when test='string(OBR.32/OBR.32.1/OBR.32.1.3) or string(OBR.32/OBR.32.1/OBR.32.1.2)'>
+							<xsl:value-of select="normalize-space(concat(OBR.32/OBR.32.1/OBR.32.1.3, ' ', OBR.32/OBR.32.1/OBR.32.1.2))"/>
+						  </xsl:when>
+						  <xsl:when test='string(OBR.34/OBR.34.1/OBR.34.1.3) or string(OBR.34/OBR.34.1/OBR.34.1.2)'>
+							<xsl:value-of select="normalize-space(concat(OBR.34/OBR.34.1/OBR.34.1.3, ' ', OBR.34/OBR.34.1/OBR.34.1.2))"/>
+						  </xsl:when>
+					   </xsl:choose>"
             }]
           }],
           "individual": {
@@ -1147,7 +1182,14 @@
         "location": [{
           "location": {
             "reference": "Location/<xsl:value-of select='//PV1/PV1.3/PV1.3.1'/>",
-            "display": "<xsl:value-of select='//PV1/PV1.3/PV1.3.9'/>"
+            "display": "<xsl:choose>
+              <xsl:when test='string(PV1.3/PV1.3.4/PV1.3.4.1)'>
+                <xsl:value-of select='PV1.3/PV1.3.4/PV1.3.4.1'/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select='PV1.3/PV1.3.7'/>
+              </xsl:otherwise>
+           </xsl:choose>"
           }
         }]
       </xsl:if>
