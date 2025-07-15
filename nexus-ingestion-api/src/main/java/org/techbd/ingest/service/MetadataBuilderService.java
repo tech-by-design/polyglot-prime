@@ -13,42 +13,42 @@ import java.util.stream.Collectors;
 public class MetadataBuilderService {
 public Map<String, String> buildS3Metadata(RequestContext context) {
         Map<String, String> metadata = new HashMap<>();
-        metadata.put("interactionId", context.interactionId());
-        metadata.put("tenantId", context.tenantId());
-        metadata.put("fileName", context.fileName());
-        metadata.put("FileSize", String.valueOf(context.fileSize()));
-        metadata.put("s3ObjectPath", context.fullS3Path());
-        metadata.put("UploadTime", context.uploadTime().toString());
-        metadata.put("UploadedBy", context.userAgent());
+        metadata.put("interactionId", context.getInteractionId());
+        metadata.put("tenantId", context.getTenantId());
+        metadata.put("fileName", context.getFileName());
+        metadata.put("FileSize", String.valueOf(context.getFileSize()));
+        metadata.put("s3ObjectPath", context.getFullS3Path());
+        metadata.put("UploadTime", context.getUploadTime().toString());
+        metadata.put("UploadedBy", context.getUserAgent());
         return metadata;
     }
 
     public Map<String, Object> buildMetadataJson(RequestContext context) {
         Map<String, Object> jsonMetadata = new HashMap<>();
-        jsonMetadata.put("tenantId", context.tenantId());
-        jsonMetadata.put("interactionId", context.interactionId());
+        jsonMetadata.put("tenantId", context.getTenantId());
+        jsonMetadata.put("interactionId", context.getInteractionId());
         jsonMetadata.put("uploadDate", String.format("%d-%02d-%02d",
-                context.uploadTime().getYear(), context.uploadTime().getMonthValue(), context.uploadTime().getDayOfMonth()));
-        jsonMetadata.put("timestamp", context.timestamp());
-        jsonMetadata.put("fileName", context.fileName());
-        jsonMetadata.put("fileSize", String.valueOf(context.fileSize()));
+                context.getUploadTime().getYear(), context.getUploadTime().getMonthValue(), context.getUploadTime().getDayOfMonth()));
+        jsonMetadata.put("timestamp", context.getTimestamp());
+        jsonMetadata.put("fileName", context.getFileName());
+        jsonMetadata.put("fileSize", String.valueOf(context.getFileSize()));
         jsonMetadata.put("sourceSystem", "Mirth Connect");
-        jsonMetadata.put("s3ObjectPath", context.fullS3Path());
-        jsonMetadata.put("requestUrl", context.requestUrl());
-        jsonMetadata.put("fullRequestUrl", context.fullRequestUrl());
-        jsonMetadata.put("queryParams", context.queryParams());
-        jsonMetadata.put("protocol", context.protocol());
-        jsonMetadata.put("localAddress", context.localAddress());
-        jsonMetadata.put("remoteAddress", context.remoteAddress());
+        jsonMetadata.put("s3ObjectPath", context.getFullS3Path());
+        jsonMetadata.put("requestUrl", context.getRequestUrl());
+        jsonMetadata.put("fullRequestUrl", context.getFullRequestUrl());
+        jsonMetadata.put("queryParams", context.getQueryParams());
+        jsonMetadata.put("protocol", context.getProtocol());
+        jsonMetadata.put("localAddress", context.getLocalAddress());
+        jsonMetadata.put("remoteAddress", context.getRemoteAddress());
 
-        List<Map<String, String>> headerList = context.headers().entrySet().stream()
+        List<Map<String, String>> headerList = context.getHeaders().entrySet().stream()
                 .map(entry -> Map.of(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
 
         jsonMetadata.put("headers", headerList);
 
         Map<String, Object> wrapper = new HashMap<>();
-        wrapper.put("key", context.objectKey());
+        wrapper.put("key", context.getObjectKey());
         wrapper.put("json_metadata", jsonMetadata);
 
         return wrapper;
@@ -56,14 +56,14 @@ public Map<String, String> buildS3Metadata(RequestContext context) {
 
     public Map<String, Object> buildSqsMessage(RequestContext context) {
         Map<String, Object> message = new HashMap<>();
-        message.put("tenantId", context.tenantId());
-        message.put("interactionId", context.interactionId());
-        message.put("requestUrl", context.requestUrl());
-        message.put("timestamp", context.timestamp());
-        message.put("fileName", context.fileName());
-        message.put("fileSize", context.fileSize());
-        message.put("s3ObjectId", context.objectKey());
-        message.put("s3ObjectPath", context.fullS3Path());
+        message.put("tenantId", context.getTenantId());
+        message.put("interactionId", context.getInteractionId());
+        message.put("requestUrl", context.getRequestUrl());
+        message.put("timestamp", context.getTimestamp());
+        message.put("fileName", context.getFileName());
+        message.put("fileSize", context.getFileSize());
+        message.put("s3ObjectId", context.getObjectKey());
+        message.put("s3ObjectPath", context.getFullS3Path());
 
         if (context.getS3Response() != null) {
             message.put("s3Response", context.getS3Response());

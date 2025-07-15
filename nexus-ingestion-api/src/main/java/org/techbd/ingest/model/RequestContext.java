@@ -3,6 +3,11 @@ package org.techbd.ingest.model;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class RequestContext {
     private final Map<String, String> headers;
     private final String requestUrl;
@@ -48,29 +53,5 @@ public class RequestContext {
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
     }
-
-    public Map<String, String> headers() { return headers; }
-    public String requestUrl() { return requestUrl; }
-    public String tenantId() { return tenantId; }
-    public String interactionId() { return interactionId; }
-    public ZonedDateTime uploadTime() { return uploadTime; }
-    public String timestamp() { return timestamp; }
-    public String fileName() { return fileName; }
-    public long fileSize() { return fileSize; }
-    public String objectKey() { return objectKey; }
-    public String metadataKey() { return metadataKey; }
-    public String fullS3Path() { return fullS3Path; }
-    public String userAgent() { return userAgent; }
-    public String fullRequestUrl() { return fullRequestUrl; }
-    public String queryParams() { return queryParams; }
-    public String protocol() { return protocol; }
-    public String localAddress() { return localAddress; }
-    public String remoteAddress() { return remoteAddress; }
-
-    public String getS3Response() { return s3Response; }
-    public void setS3Response(String s3Response) { this.s3Response = s3Response; }
-
-    public String getMessageId() { return messageId; }
-    public void setMessageId(String messageId) { this.messageId = messageId; }
 }
 

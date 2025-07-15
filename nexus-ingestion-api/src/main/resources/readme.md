@@ -148,10 +148,7 @@ public void uploadToS3(MultipartFile file) throws Exception {
                         .contentType(file.getContentType())
                         .build(),
                 RequestBody.fromBytes(content));
-
-        System.out.println("✅ Uploaded to S3 bucket: " + bucket + " with key: " + key);
     } catch (Exception e) {
-        System.err.println("❌ Failed to upload to S3: " + e.getMessage());
         throw e;
     }
 }
@@ -203,10 +200,7 @@ public void uploadToS3AndSqs(MultipartFile file) throws Exception {
                 .messageGroupId("upload-group")
                 .messageDeduplicationId(UUID.randomUUID().toString())
                 .build());
-
-        System.out.println("📨 Message sent to SQS: " + sqsQueueUrl);
     } catch (Exception e) {
-        System.err.println("❌ Failed to upload/send: " + e.getMessage());
         throw e;
     }
 }

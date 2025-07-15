@@ -40,6 +40,7 @@ public class DataIngestionController {
     public DataIngestionController(IngestionRouter ingestionRouter, ObjectMapper objectMapper) {
         this.ingestionRouter = ingestionRouter;
         this.objectMapper = objectMapper;
+        LOG.info("DataIngestionController initialized");
     }
 
     @PostMapping(value = "/ingest")
@@ -47,24 +48,39 @@ public class DataIngestionController {
             @RequestParam("file") @Nonnull MultipartFile file,
             @RequestHeader Map<String, String> headers,
             HttpServletRequest request) throws Exception {
+        String interactionId = UUID.randomUUID().toString();
+        LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
+
         if (file == null || file.isEmpty()) {
+            LOG.warn("Uploaded file is empty. interactionId={}", interactionId);
             throw new IllegalArgumentException("Uploaded file is empty");
         }
-        RequestContext context = createRequestContext(
+        RequestContext context = createRequestContext(interactionId,
                 headers, request, file.getSize(), file.getOriginalFilename());
+        LOG.info("DataIngestionController:: RequestContext created for interactionId={}", interactionId);
+
         Map<String, String> responseMap = ingestionRouter.routeAndProcess(file, context);
-        return ResponseEntity.ok(objectMapper.writeValueAsString(responseMap));
+        LOG.info("DataIngestionController:: File processed successfully. interactionId={}", interactionId);
+
+        String responseJson = objectMapper.writeValueAsString(responseMap);
+        LOG.info("DataIngestionController:: Returning response for interactionId={}", interactionId);
+        return ResponseEntity.ok(responseJson);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
-        log.error("Error processing request", e);
+        // Try to extract interactionId from exception or context if possible
+        String interactionId = "unknown";
+        LOG.error("DataIngestionController:: Error processing request. interactionId={}", interactionId, e);
         Map<String, String> error = Map.of("error", e.getMessage());
         try {
+            String errorJson = objectMapper.writeValueAsString(error);
+            LOG.info("DataIngestionController:: Returning BAD_REQUEST for interactionId={}", interactionId);
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body(objectMapper.writeValueAsString(error));
+                    .body(errorJson);
         } catch (Exception ex) {
+            LOG.error("DataIngestionController:: Error serializing error response. interactionId={}", interactionId, ex);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("{\"error\":\"Internal server error\"}");
@@ -72,11 +88,13 @@ public class DataIngestionController {
     }
 
     private RequestContext createRequestContext(
+            String interactionId,
             Map<String, String> headers,
             HttpServletRequest request,
-            // String msgType,
             long fileSize,
             String originalFileName) {
+        LOG.info("DataIngestionController:: Creating RequestContext. interactionId={}", interactionId);
+
         String tenantId = headers.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(Constants.REQ_HEADER_TENANT_ID))
                 .map(Map.Entry::getValue)
@@ -88,14 +106,12 @@ public class DataIngestionController {
         if (tenantId == null || tenantId.trim().isEmpty()) {
             tenantId = Constants.DEFAULT_TENANT_ID;
         }
-        String interactionId = UUID.randomUUID().toString();
+
         Instant now = Instant.now();
         String timestamp = String.valueOf(now.toEpochMilli());
         ZonedDateTime uploadTime = now.atZone(ZoneOffset.UTC);
 
         String datePath = uploadTime.format(DATE_PATH_FORMATTER);
-        // String s3PrefixPath = String.format("%s/%s/%s-%s",
-        // msgType, datePath, timestamp, interactionId);
 
         String fileExtension = originalFileName.substring(originalFileName.lastIndexOf('.') + 1); // e.g., csv
         String fileBaseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')); // e.g., ttest
@@ -103,7 +119,6 @@ public class DataIngestionController {
         String s3PrefixPath = String.format("data/%s/%s/%s", datePath, timestamp, interactionId);
         String metadataPrefixPath = String.format("metadata/%s/%s/%s", datePath, timestamp, interactionId);
 
-        // Updated keys
         String objectKey = String.format("data/%s/%s-%s-%s.%s",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
 
@@ -119,6 +134,8 @@ public class DataIngestionController {
         String protocol = request.getProtocol();
         String localAddress = request.getLocalAddr();
         String remoteAddress = request.getRemoteAddr();
+
+        LOG.info("DataIngestionController:: RequestContext built for interactionId={}: tenantId={}, objectKey={}", interactionId, tenantId, objectKey);
 
         return new RequestContext(
                 headers,
@@ -139,5 +156,4 @@ public class DataIngestionController {
                 localAddress,
                 remoteAddress);
     }
-
 }
