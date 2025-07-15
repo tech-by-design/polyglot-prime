@@ -6,6 +6,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MetadataBuilderService;
 import org.techbd.ingest.service.S3UploadService;
@@ -18,13 +19,16 @@ public class S3UploadStep implements MessageProcessingStep {
     private final S3UploadService s3UploadService;
     private final MetadataBuilderService metadataBuilderService;
     private final ObjectMapper objectMapper;
+    private final AppConfig appConfig;
 
     public S3UploadStep(S3UploadService s3UploadService,
                         MetadataBuilderService metadataBuilderService,
-                        ObjectMapper objectMapper) {
+                        ObjectMapper objectMapper,
+                        AppConfig appConfig) {
         this.s3UploadService = s3UploadService;
         this.metadataBuilderService = metadataBuilderService;
         this.objectMapper = objectMapper;
+        this.appConfig = appConfig;
     }
 
     @Override
@@ -33,8 +37,8 @@ public class S3UploadStep implements MessageProcessingStep {
             Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
             Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
             String metadataContent = objectMapper.writeValueAsString(metadataJson);
-            s3UploadService.uploadStringContent(Constants.BUCKET_NAME, context.metadataKey(), metadataContent, null);
-            String s3Response = s3UploadService.uploadFile(context.objectKey(), Constants.BUCKET_NAME, file, metadata);
+            s3UploadService.uploadStringContent(appConfig.getAws().getS3().getBucket(), context.metadataKey(), metadataContent, null);
+            String s3Response = s3UploadService.uploadFile(context.objectKey(), appConfig.getAws().getS3().getBucket(), file, metadata);
             context.setS3Response(s3Response);
         } catch (Exception e) {
             throw new RuntimeException("S3 Upload Step Failed", e);

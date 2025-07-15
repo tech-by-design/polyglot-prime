@@ -1,5 +1,5 @@
-server:
-    port: 9999
+# server:
+#     port: 9999
 org:
   techbd:
     aws:

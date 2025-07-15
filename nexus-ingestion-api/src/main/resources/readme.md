@@ -101,8 +101,17 @@ aws --endpoint-url=$LOCALSTACK_ENDPOINT sqs list-queues
 ```
 
 ---
+## 🔗 8.  Set up Environment
 
-## 🔗 8. Access Resources from Java 
+Before running AWS CLI or Java SDK commands, set these environment variables:
+
+```bash
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=us-east-1
+export LOCALSTACK_ENDPOINT=http://localhost:4566
+```
+## 🔗 9. Access Resources from Java 
 
 The following Java methods show how to:
 
