@@ -1066,26 +1066,44 @@
             </xsl:if>
           },
           <xsl:choose>
-            <xsl:when test="string(ccda:value/@code) = 'UNK' or string(ccda:value/@code) = ''">
-              "valueCodeableConcept" : {
-                "coding" : [{
-                  "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
-                  "code" : "UNK",
-                  "display" : "Unknown"
-                }]
-              },
-            </xsl:when>
-            <xsl:otherwise>
-              "valueCodeableConcept" : {
-                "coding" : [{
-                  "system" : "<xsl:call-template name="mapCodeSystem">
-                                <xsl:with-param name="oid" select="ccda:value/@codeSystem"/>
-                              </xsl:call-template>",
-                  "code" : "<xsl:value-of select='ccda:value/@code'/>",
-                  "display" : "<xsl:value-of select='ccda:value/@displayName'/>"
-                }]
-              },
-            </xsl:otherwise>
+              <xsl:when test="string(ccda:value/@code) = 'UNK' or string(ccda:value/@nullFlavor) = 'UNK'">
+                "valueCodeableConcept" : {
+                  "coding" : [{
+                    "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+                    "code" : "UNK",
+                    "display" : "Unknown"
+                  }]
+                },
+              </xsl:when>
+              <xsl:when test="string(ccda:value/@code) = 'OTH' or string(ccda:value/@nullFlavor) = 'OTH'">
+                "valueCodeableConcept" : {
+                  "coding" : [{
+                    "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+                    "code" : "OTH",
+                    "display" : "Other"
+                  }]
+                },
+              </xsl:when>
+              <xsl:when test="string(ccda:value/@code) = ''">
+                "valueCodeableConcept" : {
+                  "coding" : [{
+                    "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+                    "code" : "UNK",
+                    "display" : "Unknown"
+                  }]
+                },
+              </xsl:when>
+              <xsl:otherwise>
+                "valueCodeableConcept" : {
+                  "coding" : [{
+                    "system" : "<xsl:call-template name='mapCodeSystem'>
+                                  <xsl:with-param name='oid' select='ccda:value/@codeSystem'/>
+                                </xsl:call-template>",
+                    "code" : "<xsl:value-of select='ccda:value/@code'/>",
+                    "display" : "<xsl:value-of select='ccda:value/@displayName'/>"
+                  }]
+                },
+              </xsl:otherwise>
           </xsl:choose>
           "subject": {
             "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
@@ -1116,8 +1134,8 @@
   </xsl:template>
 
   <!-- Observation Template -->
-  <xsl:variable name="allowedCodes" select="'71802-3 96778-6 96779-4 88122-7 88123-5 93030-5 96780-2 96782-8 95618-5 95617-7 95616-9 95615-1 95614-4'" />
   <xsl:template name="Observation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship">
+    <xsl:variable name="allowedCodes" select="'71802-3 96778-6 96779-4 88122-7 88123-5 93030-5 96780-2 96782-8 95618-5 95617-7 95616-9 95615-1 95614-4'" />
     <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
     <xsl:variable name="questionCode" select="ccda:observation/ccda:code/@code"/>
 
@@ -1136,6 +1154,7 @@
                   and string-length(ccda:observation/ccda:code/@nullFlavor) = 0
                   and (ccda:observation/ccda:code/@codeSystemName = 'LOINC' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED CT')
                 )
+                or (string(ccda:observation/ccda:code/@code) = '95614-4' and string-length(ccda:observation/ccda:value/@value) > 0)
               ">
 
           <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
@@ -1291,6 +1310,15 @@
                               ]
                           },
                         </xsl:when>
+                        <xsl:when test="string(ccda:observation/ccda:code/@code) = '95614-4'"> <!--Total Safety Score-->
+                            "valueCodeableConcept" : {
+                              "coding": [{
+                                "system": "http://unitsofmeasure.org",
+                                "display": "{Number}"
+                              }],
+                              "text": "<xsl:value-of select='ccda:observation/ccda:value/@value'/>"
+                            },
+                        </xsl:when> 
                         <xsl:otherwise>
                             "valueCodeableConcept" : {
                               "coding": [{
@@ -1846,6 +1874,10 @@
                                     and string-length(ccda:code/@nullFlavor) = 0
                                     and (ccda:code/@codeSystemName = 'LOINC' or ccda:code/@codeSystemName = 'SNOMED' or ccda:code/@codeSystemName = 'SNOMED CT')
                                   )
+                                  or (
+                                      $questionCode = '95614-4'
+                                      and string-length(ccda:value/@value) > 0
+                                    )
                                 )">
                     <xsl:copy-of select="."/>
                   </xsl:if>
