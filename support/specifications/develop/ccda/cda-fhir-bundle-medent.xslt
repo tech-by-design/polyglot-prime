@@ -1064,7 +1064,7 @@
             "text" : "<xsl:value-of select='ccda:code/@displayName'/>"
           },
           <xsl:choose>
-            <xsl:when test="string(ccda:value/@code) = 'UNK' or string(ccda:value/@code) = ''">
+            <xsl:when test="string(ccda:value/@code) = 'UNK' or string(ccda:value/@nullFlavor) = 'UNK'">
               "valueCodeableConcept" : {
                 "coding" : [{
                   "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
@@ -1073,6 +1073,24 @@
                 }]
               },
             </xsl:when>
+            <xsl:when test="string(ccda:value/@code) = 'OTH' or string(ccda:value/@nullFlavor) = 'OTH'">
+              "valueCodeableConcept" : {
+                "coding" : [{
+                  "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+                  "code" : "OTH",
+                  "display" : "Other"
+                }]
+              },
+            </xsl:when>
+            <xsl:when test="string(ccda:value/@code) = ''">
+                "valueCodeableConcept" : {
+                  "coding" : [{
+                    "system" : "http://terminology.hl7.org/CodeSystem/v3-NullFlavor",
+                    "code" : "UNK",
+                    "display" : "Unknown"
+                  }]
+                },
+              </xsl:when>
             <xsl:otherwise>
               "valueCodeableConcept" : {
                 "coding" : [{
@@ -1114,26 +1132,36 @@
   </xsl:template>
 
   <!-- Observation Template -->
-  <xsl:variable name="allowedCodes" select="'71802-3 96778-6 96779-4 88122-7 88123-5 93030-5 96780-2 96782-8 95618-5 95617-7 95616-9 95615-1 95614-4'" />
   <xsl:template name="Observation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship">
     <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
+    <xsl:variable name="allowedCodes" select="' 71802-3 96778-6 96779-4 88122-7 88123-5 93030-5 96780-2 96782-8 95618-5 95617-7 95616-9 95615-1 95614-4 '" />
+    <!-- Set questionCode -->
     <xsl:variable name="questionCode" select="ccda:observation/ccda:code/@code"/>
-    <!-- Check if questionCode is in the allowed list -->
-    <xsl:if test="contains(concat(' ', $allowedCodes, ' '), concat(' ', $questionCode, ' '))">
-      <!-- Generate the observation only if it is the first occurrence of this code -->
-      <xsl:if test="not(preceding::ccda:entryRelationship[ccda:observation/ccda:code/@code = $questionCode])">  
-        <xsl:if test="(string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' or string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-declined' ) 
-              or (
-                string(ccda:observation/ccda:value/@code) != 'UNK' 
-                and string-length(ccda:observation/ccda:value/@code) > 0 
-                and string(ccda:observation/ccda:code/@code) != 'UNK' 
-                and string-length(ccda:observation/ccda:code/@code) > 0
-                and string-length(ccda:observation/ccda:value/@nullFlavor) = 0
-                and string-length(ccda:observation/ccda:code/@nullFlavor) = 0
-                and (ccda:observation/ccda:code/@codeSystemName = 'LOINC' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED CT')
-              )
-            ">
-        
+
+    <xsl:if test="
+        contains(concat(' ', $allowedCodes, ' '), concat(' ', $questionCode, ' '))
+        and not(preceding-sibling::ccda:entryRelationship[ccda:observation/ccda:code/@code = $questionCode])
+        and (
+          ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer'
+          or ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-declined'
+          or (
+            string(ccda:observation/ccda:value/@code) != 'UNK'
+            and string-length(ccda:observation/ccda:value/@code) > 0
+            and string($questionCode) != 'UNK'
+            and string-length($questionCode) > 0
+            and string-length(ccda:observation/ccda:value/@nullFlavor) = 0
+            and string-length(ccda:observation/ccda:code/@nullFlavor) = 0
+            and (ccda:observation/ccda:code/@codeSystemName = 'LOINC'
+              or ccda:observation/ccda:code/@codeSystemName = 'SNOMED'
+              or ccda:observation/ccda:code/@codeSystemName = 'SNOMED CT')
+          )
+          or (
+            $questionCode = '95614-4'
+            and string-length(ccda:observation/ccda:value/@value) > 0
+          )
+        )
+      ">
+
         <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
         <xsl:variable name="categoryCode">
                 <xsl:call-template name="mapObservationCategoryCodes">
@@ -1287,6 +1315,15 @@
                             ]
                         },
                       </xsl:when>
+                      <xsl:when test="string(ccda:observation/ccda:code/@code) = '95614-4'"> <!--Total Safety Score-->
+                          "valueCodeableConcept" : {
+                            "coding": [{
+                              "system": "http://unitsofmeasure.org",
+                              "display": "{Number}"
+                            }],
+                            "text": "<xsl:value-of select='ccda:observation/ccda:value/@value'/>"
+                          },
+                      </xsl:when>
                       <xsl:otherwise>
                           "valueCodeableConcept" : {
                             "coding": [{
@@ -1344,8 +1381,6 @@
             }
           </xsl:if>
         </xsl:if>
-      </xsl:if>
-    </xsl:if>
   </xsl:template>
 
   <xsl:template name="formatDateTime">
@@ -1866,6 +1901,10 @@
                                     and string-length(ccda:code/@nullFlavor) = 0
                                     and (ccda:code/@codeSystemName = 'LOINC' or ccda:code/@codeSystemName = 'SNOMED' or ccda:code/@codeSystemName = 'SNOMED CT')
                                   )
+                                  or (
+                                      $questionCode = '95614-4'
+                                      and string-length(ccda:value/@value) > 0
+                                    )
                                 )">
                     <xsl:copy-of select="."/>
                   </xsl:if>
