@@ -42,7 +42,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Organization').type.coding.system
   - `type` string
   - `constraints`:
-    - `enum` ['http://terminology.hl7.org/codesystem/organization-type', 'https://hl7.org/fhir/r4/codesystem-organization-type.html']
+    - `pattern` `^(http://terminology\.hl7\.org/codesystem/organization-type|https://hl7\.org/fhir/r4/codesystem-organization-type\.html)(;\s*(http://terminology\.hl7\.org/codesystem/organization-type|https://hl7\.org/fhir/r4/codesystem-organization-type\.html))*$`
 ### `ENCOUNTER_LOCATION`
   - `description` Bundle.entry.resource.where(resourceType ='Encounter').location.location.reference
   - `type` string
@@ -408,7 +408,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `enum` ['_geneticobservationinterpretation', 'car', '_observationinterpretationchange', 'b', 'd', 'u', 'w', '_observationinterpretationexceptions', '<', '>', 'ie', '_observationinterpretationnormality', 'a', 'aa', 'hh', 'll', 'h', 'hu', 'l', 'lu', 'n', '_observationinterpretationsusceptibility', 'i', 'ncl', 'ns', 'r', 'syn-r', 's', 'sdd', 'syn-s', 'ex', 'hx', 'lx', 'observationinterpretationdetection', 'ind', 'e', 'neg', 'nd', 'pos', 'det', 'observationinterpretationexpectation', 'exp', 'une', 'reactivityobservationinterpretation', 'nr', 'rr', 'wr', 'null']
+    - `pattern` `^(_geneticobservationinterpretation|car|_observationinterpretationchange|b|d|u|w|_observationinterpretationexceptions|<|>|ie|_observationinterpretationnormality|a|aa|hh|ll|h|hu|l|lu|n|_observationinterpretationsusceptibility|i|ncl|ns|r|syn-r|s|sdd|syn-s|ex|hx|lx|observationinterpretationdetection|ind|e|neg|nd|pos|det|observationinterpretationexpectation|exp|une|reactivityobservationinterpretation|nr|rr|wr|null)(;\s*(_geneticobservationinterpretation|car|_observationinterpretationchange|b|d|u|w|_observationinterpretationexceptions|<|>|ie|_observationinterpretationnormality|a|aa|hh|ll|h|hu|l|lu|n|_observationinterpretationsusceptibility|i|ncl|ns|r|syn-r|s|sdd|syn-s|ex|hx|lx|observationinterpretationdetection|ind|e|neg|nd|pos|det|observationinterpretationexpectation|exp|une|reactivityobservationinterpretation|nr|rr|wr|null))*$`
 ### `SCREENING_START_DATETIME`
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').effectiveDateTime OR Bundle.entry.resource.where(resourceType = 'Observation').effectivePeriod.start
   - `type` string
@@ -559,7 +559,7 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').valueCoding.system
   - `type` string
   - `constraints`:
-    - `enum` ['urn:oid:2.16.840.1.113883.6.238', 'http://terminology.hl7.org/codesystem/v3-nullflavor']
+    - `pattern` `^(urn:oid:2\.16\.840\.1\.113883\.6\.238|http://terminology\.hl7\.org/codesystem/v3-nullflavor)(;\s*(urn:oid:2\.16\.840\.1\.113883\.6\.238|http://terminology\.hl7\.org/codesystem/v3-nullflavor))*$`
 ### `ETHNICITY_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.code
   - `type` string
@@ -574,37 +574,37 @@
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.system
   - `type` string
   - `constraints`:
-    - `enum` ['urn:oid:2.16.840.1.113883.6.238', 'http://terminology.hl7.org/codesystem/v3-nullflavor', '2.16.840.1.113883.5.1008', '2.16.840.1.113883.4.642.4.1048']
+    - `pattern` `^(urn:oid:2\.16\.840\.1\.113883\.6\.238|http://terminology\.hl7\.org/codesystem/v3-nullflavor|2\.16\.840\.1\.113883\.5\.1008|2\.16\.840\.1\.113883\.4\.642\.4\.1048)(;\s*(urn:oid:2\.16\.840\.1\.113883\.6\.238|http://terminology\.hl7\.org/codesystem/v3-nullflavor|2\.16\.840\.1\.113883\.5\.1008|2\.16\.840\.1\.113883\.4\.642\.4\.1048))*$`
 ### `PERSONAL_PRONOUNS_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['la29518-0', 'la29519-8', 'la29520-6', 'oth', 'unk']
+    - `pattern` `^(la29518-0|la29519-8|la29520-6|oth|unk)(;\s*(la29518-0|la29519-8|la29520-6|oth|unk))*$`
 ### `PERSONAL_PRONOUNS_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.display
   - `type` string
   - `constraints`:
-    - `enum` ['he/him/his/his/himself', 'she/her/her/hers/herself', 'they/them/their/theirs/themselves', 'other', 'unknown']
+    - `pattern` `^(he/him/his/his/himself|she/her/her/hers/herself|they/them/their/theirs/themselves|other|unknown)(;\s*(he/him/his/his/himself|she/her/her/hers/herself|they/them/their/theirs/themselves|other|unknown))*$`
 ### `PERSONAL_PRONOUNS_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.system
   - `type` string
   - `constraints`:
-    - `enum` ['http://loinc.org/', 'http://loinc.org', 'http://terminology.hl7.org/codesystem/v3-nullflavor']
+    - `pattern` `^(http://loinc\.org/|http://loinc\.org|http://terminology\.hl7\.org/codesystem/v3-nullflavor)(;\s*(http://loinc\.org/|http://loinc\.org|http://terminology\.hl7\.org/codesystem/v3-nullflavor))*$`
 ### `GENDER_IDENTITY_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.code
   - `type` string
   - `constraints`:
-    - `enum` ['33791000087105', '407376001', '407377005', '446131000124102', '446141000124107', '446151000124109', 'oth', 'unk', 'asked-declined']
+    - `pattern` `^(33791000087105|407376001|407377005|446131000124102|446141000124107|446151000124109|oth|unk|asked-declined)(;\s*(33791000087105|407376001|407377005|446131000124102|446141000124107|446151000124109|oth|unk|asked-declined))*$`
 ### `GENDER_IDENTITY_CODE_DESCRIPTION`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display
   - `type` string
   - `constraints`:
-    - `enum` ['identifies as nonbinary gender (finding)', 'male-to-female transsexual (finding)', 'female-to-male transsexual (finding)', 'identifies as non-conforming gender (finding)', 'identifies as female gender (finding)', 'identifies as male gender (finding)', 'other', 'unknown', 'asked but declined']
+    - `pattern` `^(identifies as nonbinary gender \(finding\)|male-to-female transsexual \(finding\)|female-to-male transsexual \(finding\)|identifies as non-conforming gender \(finding\)|identifies as female gender \(finding\)|identifies as male gender \(finding\)|other|unknown|asked but declined)(;\s*(identifies as nonbinary gender \(finding\)|male-to-female transsexual \(finding\)|female-to-male transsexual \(finding\)|identifies as non-conforming gender \(finding\)|identifies as female gender \(finding\)|identifies as male gender \(finding\)|other|unknown|asked but declined))*$`
 ### `GENDER_IDENTITY_CODE_SYSTEM`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.system
   - `type` string
   - `constraints`:
-    - `enum` ['http://terminology.hl7.org/codesystem/v3-nullflavor', 'http://terminology.hl7.org/codesystem/data-absent-reason', 'http://snomed.info/sct', 'http://shinny.org/us/ny/hrsn/structuredefinition/shinny-gender-identity']
+    - `pattern` `^(http://terminology\.hl7\.org/codesystem/v3-nullflavor|http://terminology\.hl7\.org/codesystem/data-absent-reason|http://snomed\.info/sct|http://shinny\.org/us/ny/hrsn/structuredefinition/shinny-gender-identity)(;\s*(http://terminology\.hl7\.org/codesystem/v3-nullflavor|http://terminology\.hl7\.org/codesystem/data-absent-reason|http://snomed\.info/sct|http://shinny\.org/us/ny/hrsn/structuredefinition/shinny-gender-identity))*$`
 ### `PREFERRED_LANGUAGE_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').communication.language.coding.code & Bundle.entry.resource.where(resourceType ='Patient').communication.preferred = true
   - `type` string

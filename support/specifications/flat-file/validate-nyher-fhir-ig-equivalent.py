@@ -58,6 +58,13 @@ class ValidateAnswerCode(Check):
                 yield errors.RowError.from_row(row, note=note)
                
 
+def clean_results(results):
+    """Remove empty errorsSummary from results to avoid displaying null/empty arrays"""
+    cleaned_results = results.copy()
+    if "errorsSummary" in cleaned_results and not cleaned_results["errorsSummary"]:
+        del cleaned_results["errorsSummary"]
+    return cleaned_results
+
 def validate_package(spec_path, file1, file2, file3, file4, output_path):
     
     results = {
@@ -90,7 +97,8 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                 })
 
             # Write errors to output.json and skip further processing
-            print(json.dumps(results, indent=4))
+            cleaned_results = clean_results(results)
+            print(json.dumps(cleaned_results, indent=4))
             return  # Skip Frictionless validation
         
                 # Only extract data if there are no errors in the summary
@@ -237,7 +245,8 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
     if output_path:
         with open(output_path, 'w') as json_file:
             try:
-                json.dump(results, json_file, indent=4, default=str)
+                cleaned_results = clean_results(results)
+                json.dump(cleaned_results, json_file, indent=4, default=str)
                 print(f"Validation results written to '{output_path}'.")
                 return True
             except Exception as e:
@@ -245,20 +254,21 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                 "fieldName": None,
                 "message": f"Error converting results to JSON: {str(e)}",
                 "type": "data-processing-errors"
-                }) 
+                })
                 print(results)
                 return False
 
-    else: 
+    else:
         try:
-            print(json.dumps(results, indent=4, default=str))
+            cleaned_results = clean_results(results)
+            print(json.dumps(cleaned_results, indent=4, default=str))
             return True
         except Exception as e:
             results["errorsSummary"].append({
             "fieldName": None,
             "message": f"Error converting results to JSON: {str(e)}",
             "type": "data-processing-errors"
-            }) 
+            })
             print(results)
             return False
 
@@ -277,7 +287,8 @@ if __name__ == "__main__":
         "message": error_message,
         "type": "argument-error"
         })
-        print(json.dumps(results, indent=4))
+        cleaned_results = clean_results(results)
+        print(json.dumps(cleaned_results, indent=4))
         sys.exit(1)
 
     # Parse arguments
@@ -302,8 +313,9 @@ if __name__ == "__main__":
             "message": error_message,
             "type": "file-missing-error"
         }) 
-        print(json.dumps(results, indent=4))
-        sys.exit(1)        
+        cleaned_results = clean_results(results)
+        print(json.dumps(cleaned_results, indent=4))
+        sys.exit(1)
 
     # Run validation
     validate_package(spec_path, file1, file2, file3, file4, output_path)
