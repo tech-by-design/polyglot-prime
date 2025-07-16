@@ -127,15 +127,25 @@ public class OrganizationConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(data.getOrganizationTypeCode()) || StringUtils.isNotEmpty(data.getOrganizationTypeDisplay())) {
             CodeableConcept type = new CodeableConcept();
 
-            // Create a new Coding object
-            Coding coding = new Coding();
-            
-            String organizationTypeCode = fetchCode(data.getOrganizationTypeCode(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId);
-            coding.setSystem(fetchSystem(organizationTypeCode, data.getOrganizationTypeCodeSystem(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId) );
-            coding.setCode(organizationTypeCode);
-            coding.setDisplay(data.getOrganizationTypeDisplay());
+            // Split codes and displays
+            String[] codes = StringUtils.defaultString(data.getOrganizationTypeCode()).split(";");
+            String[] displays = StringUtils.defaultString(data.getOrganizationTypeDisplay()).split(";");
 
-            type.addCoding(coding);
+            for (int i = 0; i < codes.length; i++) {
+                String rawCode = codes[i].trim();
+                if (StringUtils.isNotEmpty(rawCode)) {
+                    String code = fetchCode(rawCode, CsvConstants.ORGANIZATION_TYPE_CODE, interactionId);
+                    String display = (i < displays.length) ? displays[i].trim() : null;
+                    display = fetchDisplay(code, display, CsvConstants.ORGANIZATION_TYPE_CODE, interactionId);
+
+                    Coding coding = new Coding();
+                    coding.setCode(code);
+                    coding.setDisplay(display);
+                    coding.setSystem(fetchSystem(code, data.getOrganizationTypeCodeSystem(), CsvConstants.ORGANIZATION_TYPE_CODE, interactionId));
+
+                    type.addCoding(coding);
+                }
+            }
 
             organization.setType(Collections.singletonList(type));
         }
