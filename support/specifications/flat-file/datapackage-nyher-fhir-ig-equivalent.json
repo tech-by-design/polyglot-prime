@@ -325,14 +325,15 @@
             "not permitted"
           ]
           }},
-          {"name": "POTENTIAL_NEED_INDICATED", "type": "string","description":"Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.code", "constraints":{"required":true,
-              "enum": [
-                "_geneticobservationinterpretation", "car", "_observationinterpretationchange", "b", "d", "u", "w", "_observationinterpretationexceptions", "<", ">",
-                "ie", "_observationinterpretationnormality", "a", "aa", "hh", "ll", "h", "hu", "l", "lu", "n", "_observationinterpretationsusceptibility", "i", "ncl", "ns",
-                "r", "syn-r", "s", "sdd", "syn-s", "ex", "hx", "lx", "observationinterpretationdetection", "ind", "e", "neg", "nd", "pos", "det",
-                "observationinterpretationexpectation", "exp", "une", "reactivityobservationinterpretation", "nr", "rr", "wr", "null"
-              ]
-            }},
+          {
+            "name": "POTENTIAL_NEED_INDICATED",
+            "type": "string",
+            "description": "Bundle.entry.resource.where(resourceType ='Observation').interpretation.coding.code",
+            "constraints": {
+              "required": true,
+              "pattern": "^(_geneticobservationinterpretation|car|_observationinterpretationchange|b|d|u|w|_observationinterpretationexceptions|<|>|ie|_observationinterpretationnormality|a|aa|hh|ll|h|hu|l|lu|n|_observationinterpretationsusceptibility|i|ncl|ns|r|syn-r|s|sdd|syn-s|ex|hx|lx|observationinterpretationdetection|ind|e|neg|nd|pos|det|observationinterpretationexpectation|exp|une|reactivityobservationinterpretation|nr|rr|wr|null)(;\\s*(_geneticobservationinterpretation|car|_observationinterpretationchange|b|d|u|w|_observationinterpretationexceptions|<|>|ie|_observationinterpretationnormality|a|aa|hh|ll|h|hu|l|lu|n|_observationinterpretationsusceptibility|i|ncl|ns|r|syn-r|s|sdd|syn-s|ex|hx|lx|observationinterpretationdetection|ind|e|neg|nd|pos|det|observationinterpretationexpectation|exp|une|reactivityobservationinterpretation|nr|rr|wr|null))*$"
+            }
+          },
           {"name": "SCREENING_START_DATETIME", "type": "string","description":"Bundle.entry.resource.where(resourceType = 'Observation').effectiveDateTime OR Bundle.entry.resource.where(resourceType = 'Observation').effectivePeriod.start", "constraints": { "required":true, "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"}},
           {"name": "SCREENING_END_DATETIME", "type": "string","description":"Bundle.entry.resource.where(resourceType = 'Observation').effectivePeriod.end" , "constraints": { "pattern": "^([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"}} 
         ],
@@ -440,39 +441,39 @@
             {"name": "ETHNICITY_CODE_SYSTEM", "type": "string", "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').valueCoding.system", "constraints": {  "enum":[
               "urn:oid:2.16.840.1.113883.6.238", "http://terminology.hl7.org/codesystem/v3-nullflavor", "2.16.840.1.113883.5.1008", "2.16.840.1.113883.4.642.4.1048"
             ]}},              
-            {"name": "PERSONAL_PRONOUNS_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code", "constraints": {"enum":["la29518-0", "la29519-8", "la29520-6", "oth", "unk"]}},
-            {"name": "PERSONAL_PRONOUNS_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.display", "constraints": {"enum": [
-              "he/him/his/his/himself",
-              "she/her/her/hers/herself",
-              "they/them/their/theirs/themselves",
-              "other",
-              "unknown"
-            ]} },
+            {
+              "name": "PERSONAL_PRONOUNS_CODE",
+              "type": "string",
+              "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.code",
+              "constraints": {
+                "pattern": "^(la29518-0|la29519-8|la29520-6|oth|unk)(;\\s*(la29518-0|la29519-8|la29520-6|oth|unk))*$"
+              }
+            },
+            {
+              "name": "PERSONAL_PRONOUNS_DESCRIPTION",
+              "type": "string",
+              "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.display",
+              "constraints": {
+                "pattern": "^(he/him/his/his/himself|she/her/her/hers/herself|they/them/their/theirs/themselves|other|unknown)(;\\s*(he/him/his/his/himself|she/her/her/hers/herself|they/them/their/theirs/themselves|other|unknown))*$"
+              }
+            },
             {"name": "PERSONAL_PRONOUNS_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns').valueCodeableConcept.coding.system", "constraints": {"enum":[ "http://loinc.org/","http://loinc.org", "http://terminology.hl7.org/codesystem/v3-nullflavor"]} },             
-            {"name": "GENDER_IDENTITY_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.code", "constraints": {    "enum": [
-              "33791000087105",
-              "407376001",
-              "407377005",
-              "446131000124102",
-              "446141000124107",
-              "446151000124109",
-              "oth",
-              "unk",
-              "asked-declined"
-            ]}},            
-          {"name": "GENDER_IDENTITY_CODE_DESCRIPTION", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display", "constraints": {  
-            "enum": [
-              "identifies as nonbinary gender (finding)",
-              "male-to-female transsexual (finding)",
-              "female-to-male transsexual (finding)",
-              "identifies as non-conforming gender (finding)",
-              "identifies as female gender (finding)",
-              "identifies as male gender (finding)",
-              "other",
-              "unknown",
-              "asked but declined"
-            ]
-          }},
+            {
+              "name": "GENDER_IDENTITY_CODE",
+              "type": "string",
+              "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.code",
+              "constraints": {
+                "pattern": "^(33791000087105|407376001|407377005|446131000124102|446141000124107|446151000124109|oth|unk|asked-declined)(;\\s*(33791000087105|407376001|407377005|446131000124102|446141000124107|446151000124109|oth|unk|asked-declined))*$"
+              }
+            },           
+            {
+            "name": "GENDER_IDENTITY_CODE_DESCRIPTION",
+            "type": "string",
+            "description": "Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.display",
+            "constraints": {
+              "pattern": "^(identifies as nonbinary gender \\(finding\\)|male-to-female transsexual \\(finding\\)|female-to-male transsexual \\(finding\\)|identifies as non-conforming gender \\(finding\\)|identifies as female gender \\(finding\\)|identifies as male gender \\(finding\\)|other|unknown|asked but declined)(;\\s*(identifies as nonbinary gender \\(finding\\)|male-to-female transsexual \\(finding\\)|female-to-male transsexual \\(finding\\)|identifies as non-conforming gender \\(finding\\)|identifies as female gender \\(finding\\)|identifies as male gender \\(finding\\)|other|unknown|asked but declined))*$"
+            }
+            },
           {"name": "GENDER_IDENTITY_CODE_SYSTEM", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').extension.where(url='http://terminology.hl7.org/CodeSystem/v3-NullFlavor').valueCodeableConcept.coding.system", "constraints": { "enum":["http://terminology.hl7.org/codesystem/v3-nullflavor",
           "http://terminology.hl7.org/codesystem/data-absent-reason",
           "http://snomed.info/sct",
