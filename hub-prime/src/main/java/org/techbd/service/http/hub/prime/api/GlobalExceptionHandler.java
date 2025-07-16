@@ -115,7 +115,7 @@ public class GlobalExceptionHandler {
     @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Unable to process the response due to an internal error\"}")))
     public ResponseEntity<ErrorResponse> handleHttpMessageNotWritableException(HttpMessageNotWritableException ex) {
         return handleException(ex, "We encountered an error while processing your file.",
-                    HttpStatus.BAD_REQUEST);
+                HttpStatus.BAD_REQUEST);
     }
 
     private ResponseEntity<ErrorResponse> handleException(Exception ex, String customMessage, HttpStatus status) {
@@ -142,8 +142,36 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ApiResponse(responseCode = "400", description = "File Upload Error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"File upload failed. Please upload the file again.\"}")))
     public ResponseEntity<String> handleMultipartException(MultipartException e) {
+        String errorMessage = "File upload failed.";
+
+        if (e.getCause() != null) {
+            Throwable cause = e.getCause();
+            String causeClass = cause.getClass().getSimpleName();
+            String causeMessage = cause.getMessage() != null ? cause.getMessage().toLowerCase() : "";
+
+            if ("MaxUploadSizeExceededException".equals(causeClass)) {
+                errorMessage = "File upload failed: Uploaded file is too large.";
+            } else if ("IllegalStateException".equals(causeClass)) {
+                errorMessage = "File upload failed: The request was too large or malformed.";
+            } else if ("MultipartException".equals(causeClass)) {
+                errorMessage = "File upload failed: Multipart request error.";
+            } else if (causeMessage.contains("content-type") && causeMessage.contains("not multipart")) {
+                errorMessage = "File upload failed: Content-Type is not multipart/form-data.";
+            } else if (causeMessage.contains("missing") && causeMessage.contains("boundary")) {
+                errorMessage = "File upload failed: Missing multipart boundary in request.";
+            } else if (causeMessage.contains("ioexception") || cause instanceof java.io.IOException) {
+                errorMessage = "File upload failed: I/O error during file upload.";
+            } else if (causeMessage.contains("disk") && causeMessage.contains("space")) {
+                errorMessage = "File upload failed: Server is out of disk space.";
+            } else if (causeMessage.contains("connection") && causeMessage.contains("reset")) {
+                errorMessage = "File upload failed: Client connection was reset.";
+            } else if (causeMessage.contains("stream ended unexpectedly")) {
+                errorMessage = "File upload failed: Stream ended unexpectedly. Please retry.";
+            }
+        }
+
         LOG.error("Multipart request parsing failed", e);
-        String responseBody = "{\"status\":\"Error\",\"message\":\"File upload failed. Please upload the file again.\"}";
+        String responseBody = String.format("{\"status\":\"Error\",\"message\":\"%s\"}", errorMessage);
         return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
     }
 }
