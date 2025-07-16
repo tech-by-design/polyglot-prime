@@ -13,6 +13,7 @@
   <xsl:param name="organizationNPI"/>
   <xsl:param name="organizationTIN"/>
   <xsl:param name="facilityID"/>
+  <xsl:param name="OrganizationName"/>
   <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id[not(@assigningAuthorityName)]/@extension"/>
   <xsl:variable name="patientResourceName" 
   select="normalize-space(concat(
@@ -907,7 +908,6 @@
             <xsl:choose>
 
               <!-- NPI -->
-              <!-- <xsl:when test="ccda:assignedAuthor/ccda:id[@root='2.16.840.1.113883.4.6']"> -->
               <xsl:when test="$organizationNPI">
                 {
                   "use": "official",
@@ -921,13 +921,11 @@
                     ]
                   },
                   "system": "http://hl7.org/fhir/sid/us-npi",
-                  <!-- "value": "<xsl:value-of select='ccda:assignedAuthor/ccda:id[@root=&quot;2.16.840.1.113883.4.6&quot;]/@extension'/>" -->
                   "value": "<xsl:value-of select='$organizationNPI'/>"
                 }
               </xsl:when>
 
               <!-- TAX -->
-              <!-- <xsl:when test="ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName='TAX']"> -->
               <xsl:when test="$organizationTIN">
                 {
                   "use": "official",
@@ -941,14 +939,22 @@
                     ]
                   },
                   "system": "http://www.irs.gov/",
-                  <!-- "value": "<xsl:value-of select='ccda:assignedAuthor/ccda:representedOrganization/ccda:id[@assigningAuthorityName=&quot;TAX&quot;]/@extension'/>" -->
                   "value": "<xsl:value-of select='$organizationTIN'/>"
                 }
               </xsl:when>
             </xsl:choose>
           ],
         </xsl:if>
-        "name": "<xsl:value-of select='//XON/XON.1'/>"
+		
+        "name": "<xsl:choose>
+           <xsl:when test='normalize-space(//MSH/MSH.6)'>
+             <xsl:value-of select='//MSH/MSH.6'/>
+           </xsl:when>
+           <xsl:otherwise>
+             <xsl:value-of select='$OrganizationName'/>
+           </xsl:otherwise>
+         </xsl:choose>"
+
         <xsl:if test="//ORC.23">
 		  , "telecom": [
 			<xsl:for-each select="//ORC.23">
@@ -1145,51 +1151,65 @@
 
       }
 
-      <xsl:if test="//ROL">
-        <xsl:text>,</xsl:text>
-        "participant": [{
-          "type": [{
-            "coding": [{
-              "system": "http://terminology.hl7.org/CodeSystem/participant-type",
-              "code": "<xsl:choose>
-					   <xsl:when test='string(OBR.32/OBR.32.1/OBR.32.1.1)'>
-						 <xsl:value-of select='OBR.32/OBR.32.1/OBR.32.1.1'/>
-					   </xsl:when>
-					   <xsl:when test='string(OBR.34/OBR.34.1/OBR.34.1.1)'>
-						 <xsl:value-of select='OBR.34/OBR.34.1/OBR.34.1.1'/>
-					   </xsl:when>
-					 </xsl:choose>",
+		<xsl:if test="string(//OBR.32/OBR.32.1)">
+			<xsl:text>,</xsl:text>
+			"participant": [{
+			  "type": [{
+				"coding": [{
+				  "system": "http://terminology.hl7.org/CodeSystem/participant-type",
+				  "code": "<xsl:choose>
+						   <xsl:when test='normalize-space(//OBR.32/OBR.32.1)'>
+							 <xsl:value-of select='substring-before(//OBR.32/OBR.32.1, "&amp;")'/>
+						   </xsl:when>
+						   <xsl:when test='normalize-space(//OBR.34/OBR.34.1)'>
+							 <xsl:value-of select='substring-before(//OBR.34/OBR.34.1, "&amp;")'/>
+						   </xsl:when>
+						 </xsl:choose>",
 
-			"display": "<xsl:choose>
-						  <xsl:when test='string(OBR.32/OBR.32.1/OBR.32.1.3) or string(OBR.32/OBR.32.1/OBR.32.1.2)'>
-							<xsl:value-of select="normalize-space(concat(OBR.32/OBR.32.1/OBR.32.1.3, ' ', OBR.32/OBR.32.1/OBR.32.1.2))"/>
-						  </xsl:when>
-						  <xsl:when test='string(OBR.34/OBR.34.1/OBR.34.1.3) or string(OBR.34/OBR.34.1/OBR.34.1.2)'>
-							<xsl:value-of select="normalize-space(concat(OBR.34/OBR.34.1/OBR.34.1.3, ' ', OBR.34/OBR.34.1/OBR.34.1.2))"/>
-						  </xsl:when>
-					   </xsl:choose>"
-            }]
-          }],
-          "individual": {
-            "reference": "Practitioner/<xsl:value-of select='//ROL/ROL.4/ROL.4.1'/>",
-            "display": "<xsl:value-of select='normalize-space(concat(//ROL/ROL.4/ROL.4.3, &quot; &quot;, //ROL/ROL.4/ROL.4.2))'/>"
-          }
-        }]
-      </xsl:if>
+				"display": "<xsl:choose>
+					  <xsl:when test='normalize-space(OBR.32/OBR.32.1)'>
+              <xsl:variable name='fv32' select='OBR.32/OBR.32.1'/>
+              <xsl:variable name='after32' select='substring-after($fv32, "&amp;")'/>
+              <xsl:variable name='sub2_32' select='substring-before($after32, "&amp;")'/>
+              <xsl:variable name='sub3_32' select='substring-after($after32, "&amp;")'/>
+              <xsl:value-of select='normalize-space(concat($sub3_32, " ", $sub2_32))'/>
+					  </xsl:when>
+
+					  <xsl:when test='normalize-space(OBR.34/OBR.34.1)'>
+              <xsl:variable name='fv34' select='OBR.34/OBR.34.1'/>
+              <xsl:variable name='after34' select='substring-after($fv34, "&amp;")'/>
+              <xsl:variable name='sub2_34' select='substring-before($after34, "&amp;")'/>
+              <xsl:variable name='sub3_34' select='substring-after($after34, "&amp;")'/>
+              <xsl:value-of select='normalize-space(concat($sub3_34, " ", $sub2_34))'/>
+					  </xsl:when>
+					</xsl:choose>"
+				}]
+			  }],
+			  "individual": {
+				"reference": "Practitioner/<xsl:value-of select='//ROL/ROL.4/ROL.4.1'/>",
+				"display": "<xsl:value-of select='normalize-space(concat(//ROL/ROL.4/ROL.4.3, &quot; &quot;, //ROL/ROL.4/ROL.4.2))'/>"
+			  }
+			}]
+		</xsl:if>
 
       <xsl:if test="string(//PV1/PV1.3/PV1.3.1)">
         <xsl:text>,</xsl:text>
         "location": [{
           "location": {
             "reference": "Location/<xsl:value-of select='//PV1/PV1.3/PV1.3.1'/>",
-            "display": "<xsl:choose>
-              <xsl:when test='string(PV1.3/PV1.3.4/PV1.3.4.1)'>
-                <xsl:value-of select='PV1.3/PV1.3.4/PV1.3.4.1'/>
-              </xsl:when>
-              <xsl:otherwise>
-                <xsl:value-of select='PV1.3/PV1.3.7'/>
-              </xsl:otherwise>
-           </xsl:choose>"
+        <xsl:variable name="pv1Field" select="PV1.3"/>
+        <xsl:variable name="comp4" select="tokenize($pv1Field, '\^')[4]"/>
+        <xsl:variable name="comp7" select="tokenize($pv1Field, '\^')[7]"/>
+        <xsl:variable name="subcomp4_1" select="substring-before($comp4, '&amp;')"/>
+
+        "display": "<xsl:choose>
+                <xsl:when test='normalize-space($subcomp4_1)'>
+                <xsl:value-of select='$subcomp4_1'/>
+                </xsl:when>
+                <xsl:otherwise>
+                <xsl:value-of select='$comp7'/>
+                </xsl:otherwise>
+					   </xsl:choose>"
           }
         }]
       </xsl:if>

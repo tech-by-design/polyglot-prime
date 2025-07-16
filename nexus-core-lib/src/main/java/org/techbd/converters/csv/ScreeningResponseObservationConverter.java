@@ -234,16 +234,22 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                             observation.addPerformer(new Reference("Organization/" + organizationId));
                         }
                         String[] codes = StringUtils.defaultString(data.getPotentialNeedIndicated()).split(";");
+                                CodeableConcept interpretation = new CodeableConcept();
+
                                 for (String rawCode : codes) {
                                 rawCode = rawCode.trim();
-                                        if (StringUtils.isNotEmpty(rawCode)) {
-                                                String potentialNeedIndicated = fetchCode(rawCode, CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
-                                                CodeableConcept interpretation = new CodeableConcept();
-                                                interpretation.addCoding(
-                                                        new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", potentialNeedIndicated, "Positive")
-                                                );
-                                                observation.addInterpretation(interpretation);
-                                        }
+                                if (StringUtils.isNotEmpty(rawCode)) {
+                                        String potentialNeedIndicated = fetchCode(rawCode, CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
+                                        String display = fetchDisplay(potentialNeedIndicated, "Positive", CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
+
+                                        interpretation.addCoding(
+                                        new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", potentialNeedIndicated, display)
+                                        );
+                                }
+                                }
+
+                                if (!interpretation.getCoding().isEmpty()) {
+                                observation.addInterpretation(interpretation);
                                 }
                         //TO-DO
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
