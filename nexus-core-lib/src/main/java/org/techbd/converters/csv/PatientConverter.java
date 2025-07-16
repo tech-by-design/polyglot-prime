@@ -193,23 +193,48 @@ public class PatientConverter extends BaseConverter {
         }
 
         if (StringUtils.isNotEmpty(demographicData.getPersonalPronounsCode())) {
-            Extension pronounsExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns");
-            String personalPronounsCode = fetchCode(demographicData.getPersonalPronounsCode(), CsvConstants.PERSONAL_PRONOUNS_CODE, interactionId);
-            pronounsExtension.setValue(new CodeableConcept().addCoding(new Coding()
-                    .setSystem(fetchSystem(personalPronounsCode, demographicData.getPersonalPronounsSystem(), CsvConstants.PERSONAL_PRONOUNS_CODE, interactionId))
-                    .setCode(personalPronounsCode)
-                    .setDisplay(demographicData.getPersonalPronounsDescription())));
-            patient.addExtension(pronounsExtension);
+            String[] codes = demographicData.getPersonalPronounsCode().split(";");
+            String[] displays = StringUtils.defaultString(demographicData.getPersonalPronounsDescription()).split(";");
+
+            for (int i = 0; i < codes.length; i++) {
+                String rawCode = codes[i].trim();
+                if (StringUtils.isNotEmpty(rawCode)) {
+                    String code = fetchCode(rawCode, CsvConstants.PERSONAL_PRONOUNS_CODE, interactionId);
+                    String display = (i < displays.length) ? displays[i].trim() : null;
+                    display = fetchDisplay(code, display, CsvConstants.PERSONAL_PRONOUNS_CODE, interactionId);
+
+                    Extension pronounsExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-personal-pronouns");
+                    CodeableConcept concept = new CodeableConcept().addCoding(new Coding()
+                            .setSystem(fetchSystem(code, demographicData.getPersonalPronounsSystem(), CsvConstants.PERSONAL_PRONOUNS_CODE, interactionId))
+                            .setCode(code)
+                            .setDisplay(display));
+
+                    pronounsExtension.setValue(concept);
+                    patient.addExtension(pronounsExtension);
+                }
+            }
         }
 
         if (StringUtils.isNotEmpty(demographicData.getGenderIdentityCode())) {
-            Extension genderIdentityExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity");
-            String genderIdentityCode = fetchCode(demographicData.getGenderIdentityCode(), CsvConstants.GENDER_IDENTITY_CODE, interactionId);
-            genderIdentityExtension.setValue(new CodeableConcept().addCoding(new Coding()
-                    .setSystem(fetchSystem(genderIdentityCode, demographicData.getGenderIdentityCodeSystem(), CsvConstants.GENDER_IDENTITY_CODE, interactionId))
-                    .setCode(genderIdentityCode)
-                    .setDisplay(demographicData.getGenderIdentityCodeDescription())));
-            patient.addExtension(genderIdentityExtension);
+            String[] codes = demographicData.getGenderIdentityCode().split(";");
+            String[] systems = StringUtils.defaultString(demographicData.getGenderIdentityCodeSystem()).split(";");
+            String[] descriptions = StringUtils.defaultString(demographicData.getGenderIdentityCodeDescription()).split(";");
+
+            for (int i = 0; i < codes.length; i++) {
+                String rawCode = codes[i].trim();
+                if (StringUtils.isNotEmpty(rawCode)) {
+                    String code = fetchCode(rawCode, CsvConstants.GENDER_IDENTITY_CODE, interactionId);
+                    String system = fetchSystem(code, (i < systems.length ? systems[i].trim() : null), CsvConstants.GENDER_IDENTITY_CODE, interactionId);
+                    String display = fetchDisplay(code, (i < descriptions.length ? descriptions[i].trim() : null), CsvConstants.GENDER_IDENTITY_CODE, interactionId);
+
+                    Extension genderIdentityExtension = new Extension("http://shinny.org/us/ny/hrsn/StructureDefinition/shinny-gender-identity");
+                    CodeableConcept genderConcept = new CodeableConcept().addCoding(
+                            new Coding().setSystem(system).setCode(code).setDisplay(display)
+                    );
+                    genderIdentityExtension.setValue(genderConcept);
+                    patient.addExtension(genderIdentityExtension);
+                }
+            }
         }
     }
     private static Patient populatePatientName(Patient patient, DemographicData demographicData) {

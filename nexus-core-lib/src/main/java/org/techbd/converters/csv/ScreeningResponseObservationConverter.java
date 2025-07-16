@@ -233,11 +233,18 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         if (organizationId != null) {
                             observation.addPerformer(new Reference("Organization/" + organizationId));
                         }
-                        CodeableConcept interpretation = new CodeableConcept();
-                        interpretation.addCoding(
-                                new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
-                                        fetchCode(data.getPotentialNeedIndicated(), CsvConstants.POTENTIAL_NEED_INDICATED, interactionId), "Positive"));
-                        observation.addInterpretation(interpretation);
+                        String[] codes = StringUtils.defaultString(data.getPotentialNeedIndicated()).split(";");
+                                for (String rawCode : codes) {
+                                rawCode = rawCode.trim();
+                                        if (StringUtils.isNotEmpty(rawCode)) {
+                                                String potentialNeedIndicated = fetchCode(rawCode, CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
+                                                CodeableConcept interpretation = new CodeableConcept();
+                                                interpretation.addCoding(
+                                                        new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", potentialNeedIndicated, "Positive")
+                                                );
+                                                observation.addInterpretation(interpretation);
+                                        }
+                                }
                         //TO-DO
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 
