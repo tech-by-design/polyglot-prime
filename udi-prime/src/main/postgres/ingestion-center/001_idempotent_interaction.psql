@@ -2597,10 +2597,16 @@ BEGIN
             WHEN (insert_fhir_screening_info.payload ->> 'resourceType' = 'Bundle') THEN (insert_fhir_screening_info.payload -> 'meta' ->> 'lastUpdated')
             ELSE NULL
         END AS survey_date_time,
-        (SELECT (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value'
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
-         LIMIT 1) AS patient_mrn,
+        (SELECT id.value ->> 'value'
+		   FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value),
+		        jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
+		   WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Patient'
+		     AND EXISTS (
+		         SELECT 1
+		         FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
+		         WHERE coding.value ->> 'code' = 'MR'
+		     )
+		   LIMIT 1) AS patient_mrn,
         (SELECT (((entry.value -> 'resource') -> 'name') -> 0) ->> 'text'
            FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
           WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
@@ -2959,8 +2965,26 @@ BEGIN
                 (((entry.value -> 'resource') -> 'address') -> 0) ->> 'state' AS state,
                 (((entry.value -> 'resource') -> 'address') -> 0) ->> 'postalCode' AS postal_code,
                 ((((((entry.value -> 'resource') -> 'communication') -> 0) -> 'language') -> 'coding') -> 0) ->> 'code' AS language,
-                (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value' AS medical_record_number,
-                (((entry.value -> 'resource') -> 'identifier') -> 3) ->> 'value' AS social_security_number,
+				(
+			        SELECT id.value ->> 'value'
+			        FROM jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
+			        WHERE EXISTS (
+			            SELECT 1
+			            FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
+			            WHERE coding.value ->> 'code' = 'MR'
+			        )
+			        LIMIT 1
+			    ) AS medical_record_number,
+				(
+			        SELECT id.value ->> 'value'
+			        FROM jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
+			        WHERE EXISTS (
+			            SELECT 1
+			            FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
+			            WHERE coding.value ->> 'code' = 'SS'
+			        )
+			        LIMIT 1
+			    ) AS social_security_number,
                 array_to_string(
                     ARRAY(
                         SELECT (org_entry.value -> 'resource') ->> 'id'
