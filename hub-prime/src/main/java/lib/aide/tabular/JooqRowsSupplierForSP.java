@@ -365,6 +365,17 @@ public class JooqRowsSupplierForSP {
             case "get_interaction_http_request" -> {
                 return new GetInteractionHttpRequest().call();
             }
+            case "get_interaction_observe" -> {
+                // Temporary solution: use raw SQL to call the function until JOOQ classes are regenerated
+                Map<String, LocalDate> paramMap = parseDates(paramsJson, objectMapper, formatter);
+                LocalDate startDate = paramMap.get("start_date");
+                LocalDate endDate = paramMap.get("end_date");
+
+                // Create a table from the function call using raw SQL
+                String functionCall = String.format("techbd_udi_ingress.get_interaction_observe('%s', '%s')",
+                    startDate.toString(), endDate.toString());
+                return DSL.table(functionCall);
+            }
             case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" -> {
                 Map<String, LocalDate> dateMap = parseDates(paramsJson, objectMapper, formatter);
                 Map<String, String> paramsMap = objectMapper.readValue(paramsJson, Map.class);

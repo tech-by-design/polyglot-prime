@@ -228,6 +228,49 @@ FROM (
 ORDER BY duration_millisecs DESC;
 
 
+/*******************************************************************************************
+This function returns HTTP interaction metrics filtered by date range. It provides detailed
+interaction data including interaction ID, URI, start time, finish time, and calculated
+duration in milliseconds. The function accepts start_date and end_date parameters to filter
+interactions within the specified time range.
+*******************************************************************************************/
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_interaction_observe(DATE, DATE);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_observe(
+    start_date DATE,
+    end_date DATE
+)
+RETURNS TABLE (
+    interaction_id TEXT,
+    uri TEXT,
+    start_time TIMESTAMP WITH TIME ZONE,
+    finish_time TIMESTAMP WITH TIME ZONE,
+    duration_millisecs NUMERIC,
+    interaction_http_request_id TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM (
+        SELECT DISTINCT ON (intr_observe.interaction_id)
+            intr_observe.interaction_id,
+            intr_observe.uri,
+            intr_observe.start_time,
+            intr_observe.finish_time,
+            EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000::numeric AS duration_millisecs,
+            intr_observe.sat_interaction_http_request_id AS interaction_http_request_id
+        FROM techbd_udi_ingress.interaction_http_request intr_observe
+        WHERE intr_observe.start_time IS NOT NULL
+          AND intr_observe.finish_time IS NOT NULL
+          AND intr_observe.start_time >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD')
+          AND intr_observe.start_time < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
+        ORDER BY intr_observe.interaction_id,
+                 EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000 DESC
+    ) AS sub
+    ORDER BY duration_millisecs DESC;
+END;
+$$ LANGUAGE plpgsql;
+
 
 /*******************************************************************************************************************************
  * Function to register an HTTP interaction request, handling potential unique constraint violations
@@ -2554,10 +2597,16 @@ BEGIN
             WHEN (insert_fhir_screening_info.payload ->> 'resourceType' = 'Bundle') THEN (insert_fhir_screening_info.payload -> 'meta' ->> 'lastUpdated')
             ELSE NULL
         END AS survey_date_time,
-        (SELECT (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value'
-           FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
-          WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
-         LIMIT 1) AS patient_mrn,
+        (SELECT id.value ->> 'value'
+		   FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value),
+		        jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
+		   WHERE (entry.value -> 'resource') ->> 'resourceType' = 'Patient'
+		     AND EXISTS (
+		         SELECT 1
+		         FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
+		         WHERE coding.value ->> 'code' = 'MR'
+		     )
+		   LIMIT 1) AS patient_mrn,
         (SELECT (((entry.value -> 'resource') -> 'name') -> 0) ->> 'text'
            FROM jsonb_array_elements(insert_fhir_screening_info.payload -> 'entry') entry(value)
           WHERE ((entry.value -> 'resource') ->> 'resourceType') = 'Patient'
@@ -2916,8 +2965,26 @@ BEGIN
                 (((entry.value -> 'resource') -> 'address') -> 0) ->> 'state' AS state,
                 (((entry.value -> 'resource') -> 'address') -> 0) ->> 'postalCode' AS postal_code,
                 ((((((entry.value -> 'resource') -> 'communication') -> 0) -> 'language') -> 'coding') -> 0) ->> 'code' AS language,
-                (((entry.value -> 'resource') -> 'identifier') -> 0) ->> 'value' AS medical_record_number,
-                (((entry.value -> 'resource') -> 'identifier') -> 3) ->> 'value' AS social_security_number,
+				(
+			        SELECT id.value ->> 'value'
+			        FROM jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
+			        WHERE EXISTS (
+			            SELECT 1
+			            FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
+			            WHERE coding.value ->> 'code' = 'MR'
+			        )
+			        LIMIT 1
+			    ) AS medical_record_number,
+				(
+			        SELECT id.value ->> 'value'
+			        FROM jsonb_array_elements((entry.value -> 'resource') -> 'identifier') id(value)
+			        WHERE EXISTS (
+			            SELECT 1
+			            FROM jsonb_array_elements(id.value -> 'type' -> 'coding') coding(value)
+			            WHERE coding.value ->> 'code' = 'SS'
+			        )
+			        LIMIT 1
+			    ) AS social_security_number,
                 array_to_string(
                     ARRAY(
                         SELECT (org_entry.value -> 'resource') ->> 'id'
