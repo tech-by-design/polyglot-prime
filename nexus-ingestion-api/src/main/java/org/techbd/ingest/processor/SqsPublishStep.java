@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.config.AppConfig;
 import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.service.MessageGroupService;
 import org.techbd.ingest.service.MetadataBuilderService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,12 +41,14 @@ public class SqsPublishStep implements MessageProcessingStep {
     private final ObjectMapper objectMapper;
     private final MetadataBuilderService metadataBuilderService;
     private final AppConfig appConfig;
+    private final MessageGroupService messageGroupService;
 
     public SqsPublishStep(SqsClient sqsClient, ObjectMapper objectMapper, MetadataBuilderService metadataBuilderService,
-            AppConfig appConfig) {
+            AppConfig appConfig, MessageGroupService messageGroupService) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.metadataBuilderService = metadataBuilderService;
+        this.messageGroupService = messageGroupService;
         this.appConfig = appConfig;
         LOG.info("SqsPublishStep initialized");
     }
@@ -66,7 +69,7 @@ public class SqsPublishStep implements MessageProcessingStep {
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody(messageJson)
-                    .messageGroupId(context.getTenantId())
+                    .messageGroupId(messageGroupService.createMessageGroupId(context))
                     .build())
                     .messageId();
             context.setMessageId(messageId);
@@ -93,7 +96,7 @@ public class SqsPublishStep implements MessageProcessingStep {
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody(messageJson)
-                    .messageGroupId(context.getTenantId())
+                    .messageGroupId(messageGroupService.createMessageGroupId(context))
                     .build())
                     .messageId();
             context.setMessageId(messageId);

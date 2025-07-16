@@ -43,6 +43,9 @@ public class RequestContext {
     private final String protocol;
     private final String localAddress;
     private final String remoteAddress;
+    private final String sourceIp;
+    private final String destinationIp;
+    private final String destinationPort;
 
     private String s3Response;
     private String messageId;
@@ -51,7 +54,8 @@ public class RequestContext {
                           ZonedDateTime uploadTime, String timestamp, String fileName, long fileSize,
                           String objectKey, String metadataKey, String fullS3Path, String userAgent,
                           String fullRequestUrl, String queryParams, String protocol,
-                          String localAddress, String remoteAddress) {
+                          String localAddress, String remoteAddress, String sourceIp, String destinationIp,
+                          String destinationPort) {
         this.headers = headers;
         this.requestUrl = requestUrl;
         this.tenantId = tenantId;
@@ -69,6 +73,9 @@ public class RequestContext {
         this.protocol = protocol;
         this.localAddress = localAddress;
         this.remoteAddress = remoteAddress;
+        this.sourceIp = sourceIp;
+        this.destinationIp = destinationIp;
+        this.destinationPort = destinationPort;
     }
 }
 

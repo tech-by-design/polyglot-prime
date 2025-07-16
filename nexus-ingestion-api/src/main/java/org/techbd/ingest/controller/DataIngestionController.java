@@ -125,11 +125,18 @@ public class DataIngestionController {
             String originalFileName) {
         LOG.info("DataIngestionController:: Creating RequestContext. interactionId={}", interactionId);
 
-        String tenantId = headers.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(Constants.REQ_HEADER_TENANT_ID))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(null);
+        String sourceIp = null;
+        var tenantId = headers.get(Constants.REQ_HEADER_TENANT_ID);
+        final var xForwardedFor = headers.get(Constants.REQ_HEADER_X_FORWARDED_FOR);
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            sourceIp = xForwardedFor.split(",")[0].trim();
+        } else {
+            sourceIp = headers.get(Constants.REQ_HEADER_X_REAL_IP);
+        }
+
+        // Extract destination IP and port
+        final var destinationIp = headers.get(Constants.REQ_X_SERVER_IP);
+        final var destinationPort = headers.get(Constants.REQ_X_SERVER_PORT);
         if (tenantId == null || tenantId.trim().isEmpty()) {
             tenantId = Constants.TENANT_ID;
         }
@@ -184,6 +191,10 @@ public class DataIngestionController {
                 queryParams,
                 protocol,
                 localAddress,
-                remoteAddress);
+                remoteAddress,
+                sourceIp,
+                destinationIp,
+                destinationPort
+        );
     }
 }
