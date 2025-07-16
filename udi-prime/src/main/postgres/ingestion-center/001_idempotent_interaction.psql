@@ -228,6 +228,49 @@ FROM (
 ORDER BY duration_millisecs DESC;
 
 
+/*******************************************************************************************
+This function returns HTTP interaction metrics filtered by date range. It provides detailed
+interaction data including interaction ID, URI, start time, finish time, and calculated
+duration in milliseconds. The function accepts start_date and end_date parameters to filter
+interactions within the specified time range.
+*******************************************************************************************/
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_interaction_observe(DATE, DATE);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_observe(
+    start_date DATE,
+    end_date DATE
+)
+RETURNS TABLE (
+    interaction_id TEXT,
+    uri TEXT,
+    start_time TIMESTAMP WITH TIME ZONE,
+    finish_time TIMESTAMP WITH TIME ZONE,
+    duration_millisecs NUMERIC,
+    interaction_http_request_id TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM (
+        SELECT DISTINCT ON (intr_observe.interaction_id)
+            intr_observe.interaction_id,
+            intr_observe.uri,
+            intr_observe.start_time,
+            intr_observe.finish_time,
+            EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000::numeric AS duration_millisecs,
+            intr_observe.sat_interaction_http_request_id AS interaction_http_request_id
+        FROM techbd_udi_ingress.interaction_http_request intr_observe
+        WHERE intr_observe.start_time IS NOT NULL
+          AND intr_observe.finish_time IS NOT NULL
+          AND intr_observe.start_time >= TO_TIMESTAMP(start_date::text, 'YYYY-MM-DD')
+          AND intr_observe.start_time < TO_TIMESTAMP(end_date::text, 'YYYY-MM-DD') + INTERVAL '1 day'
+        ORDER BY intr_observe.interaction_id,
+                 EXTRACT(epoch FROM intr_observe.finish_time - intr_observe.start_time) * 1000 DESC
+    ) AS sub
+    ORDER BY duration_millisecs DESC;
+END;
+$$ LANGUAGE plpgsql;
+
 
 /*******************************************************************************************************************************
  * Function to register an HTTP interaction request, handling potential unique constraint violations
