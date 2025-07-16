@@ -1,0 +1,13 @@
+org:
+  techbd:
+    aws:
+      region: us-east-1
+      access-key: test
+      secret-key: test
+      s3:
+        bucket: local-bucket
+        endpoint: http://localhost:4566
+      sqs:
+        endpoint: http://localhost:4566
+        base-url: http://localhost:4566/000000000000
+        fifo-queue-url: http://localhost:4566/000000000000/local-queue.fifo

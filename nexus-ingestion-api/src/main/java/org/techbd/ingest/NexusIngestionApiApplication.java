@@ -1,4 +1,4 @@
-package org.techbd.nexusingestionapi;
+package org.techbd.ingest;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
