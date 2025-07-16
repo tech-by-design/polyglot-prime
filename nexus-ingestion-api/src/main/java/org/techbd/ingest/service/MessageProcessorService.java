@@ -8,7 +8,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.processor.MessageProcessingStep;
-
+/**
+ * {@code MessageProcessorService} is responsible for orchestrating the processing of messages
+ * through a configurable sequence of {@link MessageProcessingStep} implementations.
+ * <p>
+ * It supports both multipart file uploads and raw JSON/String content, allowing flexible
+ * ingestion workflows across different sources. Each step in the pipeline performs a distinct
+ * task, such as validation, transformation, persistence, or publishing to downstream systems.
+ * </p>
+ *
+ * <p>Processing steps are executed in the order they are provided, enabling deterministic
+ * and extensible handling of incoming messages.</p>
+ */
 @Service
 public class MessageProcessorService {
     private static final Logger LOG = LoggerFactory.getLogger(MessageProcessorService.class);
@@ -20,6 +31,13 @@ public class MessageProcessorService {
         LOG.info("MessageProcessorService:: initialized");
     }
 
+    /**
+     * Processes a multipart file by executing each configured processing step in sequence.
+     *
+     * @param context The request context containing metadata for the operation.
+     * @param file    The multipart file to process.
+     * @return A map containing the result of the processing, including message ID and S3 path.
+     */
     public Map<String, String> processMessage(RequestContext context, MultipartFile file) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("MessageProcessorService:: processMessage called with MultipartFile. interactionId={}, filename={}, filesize={}", 
@@ -34,6 +52,13 @@ public class MessageProcessorService {
         return createSuccessResponse(context.getMessageId(), context);
     }
 
+    /**
+     * Processes a raw string content by executing each configured processing step in sequence.
+     *
+     * @param context The request context containing metadata for the operation.
+     * @param content The raw string content to process.
+     * @return A map containing the result of the processing, including message ID and S3 path.
+     */
     public Map<String, String> processMessage(RequestContext context, String content) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("MessageProcessorService:: processMessage called with String content. interactionId={}", interactionId);
@@ -45,6 +70,13 @@ public class MessageProcessorService {
         return createSuccessResponse(context.getMessageId(), context);
     }
 
+    /**
+     * Creates a success response map containing the message ID, interaction ID, S3 path, and timestamp.
+     *
+     * @param messageId The ID of the processed message.
+     * @param context   The request context containing metadata for the operation.
+     * @return A map with success details.
+     */
     private Map<String, String> createSuccessResponse(String messageId, RequestContext context) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         try {

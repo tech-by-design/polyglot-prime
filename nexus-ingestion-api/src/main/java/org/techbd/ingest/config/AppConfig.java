@@ -3,7 +3,11 @@ package org.techbd.ingest.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-
+/*  
+ * AppConfig is a configuration class that holds application-specific settings.
+ * It uses Spring's ConfigurationProperties to map properties from application.yml or application.properties.
+ * This class is used to access AWS-related configurations such as region, secret name, access key, and secret key.
+ */
 @org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "org.techbd")
 @ConfigurationPropertiesScan

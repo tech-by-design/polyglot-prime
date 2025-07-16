@@ -1,6 +1,5 @@
 package org.techbd.ingest.service;
 
-
 import org.springframework.stereotype.Service;
 import org.techbd.ingest.model.RequestContext;
 
@@ -9,9 +8,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * {@code MetadataBuilderService} is a utility service responsible for building metadata maps
+ * and structured messages used in S3 and SQS operations.
+ * <p>
+ * It extracts relevant fields from the {@link RequestContext}, such as tenant ID,
+ * interaction ID, source type, file name, and timestamp, and formats them into
+ * maps or message payloads suitable for:
+ * </p>
+ * <ul>
+ *   <li>Adding metadata to S3 object uploads</li>
+ *   <li>Constructing SQS message bodies or attributes</li>
+ * </ul>
+ *
+ * <p>
+ * This service helps enforce a consistent metadata structure across the ingestion pipeline.
+ * </p>
+ */
 @Service
 public class MetadataBuilderService {
-public Map<String, String> buildS3Metadata(RequestContext context) {
+
+    /**
+     * Builds a metadata map for S3 object upload from the provided request context.
+     *
+     * @param context The request context containing metadata for the operation.
+     * @return A map of S3 metadata key-value pairs.
+     */
+    public Map<String, String> buildS3Metadata(RequestContext context) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("interactionId", context.getInteractionId());
         metadata.put("tenantId", context.getTenantId());
@@ -23,6 +46,13 @@ public Map<String, String> buildS3Metadata(RequestContext context) {
         return metadata;
     }
 
+    /**
+     * Builds a detailed JSON metadata map for S3 object upload from the provided request context.
+     * Includes headers and additional request information.
+     *
+     * @param context The request context containing metadata for the operation.
+     * @return A map containing the object key and a nested metadata map.
+     */
     public Map<String, Object> buildMetadataJson(RequestContext context) {
         Map<String, Object> jsonMetadata = new HashMap<>();
         jsonMetadata.put("tenantId", context.getTenantId());
@@ -54,6 +84,13 @@ public Map<String, String> buildS3Metadata(RequestContext context) {
         return wrapper;
     }
 
+    /**
+     * Builds a message map for SQS publishing from the provided request context.
+     * Includes S3 object information and optional S3 response.
+     *
+     * @param context The request context containing metadata for the operation.
+     * @return A map representing the SQS message payload.
+     */
     public Map<String, Object> buildSqsMessage(RequestContext context) {
         Map<String, Object> message = new HashMap<>();
         message.put("tenantId", context.getTenantId());

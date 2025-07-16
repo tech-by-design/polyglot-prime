@@ -1,0 +1,9 @@
+# Rename this file `.envrc` and use it during development.
+# Secrets should be kept in a vault or passed through environments
+# and never stored in Git.
+
+# If you want use these, remember to start VSCode or your IDE after `direnv allow`
+
+export SPRING_PROFILES_ACTIVE=sandbox
+export AWS_S3_BUCKET_NAME=local-bucket
+export AWS_SQS_QUEUE_NAME=http://localhost:4566/000000000000/local-queue.fifo

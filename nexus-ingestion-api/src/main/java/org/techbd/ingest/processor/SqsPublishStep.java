@@ -17,7 +17,20 @@ import org.slf4j.LoggerFactory;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-
+/**
+ * {@code SqsPublishStep} is a {@link MessageProcessingStep} implementation responsible for
+ * publishing messages to an Amazon SQS queue.
+ * <p>
+ * This step is typically used to send messages containing metadata and content to SQS
+ * for downstream processing by other services or systems.
+ * </p>
+ *
+ * <p>
+ * It supports both {@link MultipartFile} and raw {@link String} content. The message body
+ * is typically constructed using details from the {@link RequestContext}, including source,
+ * identifiers, and correlation metadata.
+ * </p>
+ */
 @Component
 @Order(2)
 public class SqsPublishStep implements MessageProcessingStep {
@@ -45,9 +58,13 @@ public class SqsPublishStep implements MessageProcessingStep {
         try {
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
             String messageJson = objectMapper.writeValueAsString(message);
-            LOG.info("SqsPublishStep:: Sending message to SQS. interactionId={}", interactionId);
+            String queueUrl = appConfig.getAws().getSqs().getFifoQueueUrl() != null
+                    ? appConfig.getAws().getSqs().getFifoQueueUrl()
+                    : Constants.FIFO_Q_URL;
+            LOG.info("SqsPublishStep:: Sending message to SQS. interactionId={}, queueUrl={}", interactionId, queueUrl);
+
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
-                    .queueUrl(appConfig.getAws().getSqs().getFifoQueueUrl())
+                    .queueUrl(queueUrl)
                     .messageBody(messageJson)
                     .messageGroupId(context.getTenantId())
                     .build())
@@ -68,9 +85,13 @@ public class SqsPublishStep implements MessageProcessingStep {
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
             message.put("content", content);
             String messageJson = objectMapper.writeValueAsString(message);
-            LOG.info("SqsPublishStep:: Sending message to SQS. interactionId={}", interactionId);
+            String queueUrl = appConfig.getAws().getSqs().getFifoQueueUrl() != null
+                    ? appConfig.getAws().getSqs().getFifoQueueUrl()
+                    : Constants.FIFO_Q_URL;
+            LOG.info("SqsPublishStep:: Sending message to SQS. interactionId={}, queueUrl={}", interactionId, queueUrl);
+
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
-                    .queueUrl(Constants.FIFO_Q_URL)
+                    .queueUrl(queueUrl)
                     .messageBody(messageJson)
                     .messageGroupId(context.getTenantId())
                     .build())

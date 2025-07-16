@@ -27,6 +27,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Controller for handling data ingestion requests.
+ * This controller processes file uploads and string content ingestion.
+ */
 @RestController
 @Slf4j
 public class DataIngestionController {
@@ -43,6 +47,15 @@ public class DataIngestionController {
         LOG.info("DataIngestionController initialized");
     }
 
+    /**
+     * Endpoint to handle file ingestion requests.
+     *
+     * @param file    The file to be ingested.
+     * @param headers The request headers containing metadata.
+     * @param request The HTTP servlet request.
+     * @return A response entity containing the result of the ingestion process.
+     * @throws Exception If an error occurs during processing.
+     */
     @PostMapping(value = "/ingest")
     public ResponseEntity<String> ingest(
             @RequestParam("file") @Nonnull MultipartFile file,
@@ -67,6 +80,15 @@ public class DataIngestionController {
         return ResponseEntity.ok(responseJson);
     }
 
+    /**
+     * Endpoint to handle string content ingestion requests.
+     *
+     * @param content The string content to be ingested.
+     * @param headers The request headers containing metadata.
+     * @param request The HTTP servlet request.
+     * @return A response entity containing the result of the ingestion process.
+     * @throws Exception If an error occurs during processing.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
         // Try to extract interactionId from exception or context if possible
@@ -86,7 +108,15 @@ public class DataIngestionController {
                     .body("{\"error\":\"Internal server error\"}");
         }
     }
-
+    /**
+     * Function to handle string content ingestion requests.
+     *
+     * @param content The string content to be ingested.
+     * @param headers The request headers containing metadata.
+     * @param request The HTTP servlet request.
+     * @return A response entity containing the result of the ingestion process.
+     * @throws Exception If an error occurs during processing.
+     */
     private RequestContext createRequestContext(
             String interactionId,
             Map<String, String> headers,

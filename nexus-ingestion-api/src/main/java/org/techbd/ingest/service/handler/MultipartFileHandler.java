@@ -9,6 +9,15 @@ import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.MessageProcessorService;
 
+/**
+ * {@code MultipartFileHandler} is an implementation of {@link IngestionSourceHandler} that
+ * handles ingestion of {@link MultipartFile} sources.
+ * <p>
+ * This handler validates whether the provided source is a {@code MultipartFile} and delegates
+ * its processing to the {@link MessageProcessorService}. It is typically used to process
+ * file uploads sent via multipart/form-data requests.
+ * </p>
+ */
 @Component
 public class MultipartFileHandler implements IngestionSourceHandler {
     private static final Logger LOG = LoggerFactory.getLogger(MultipartFileHandler.class);
@@ -20,6 +29,12 @@ public class MultipartFileHandler implements IngestionSourceHandler {
         LOG.info("MultipartFileHandler initialized");
     }
 
+    /**
+     * Checks if the source object is a valid MultipartFile.
+     *
+     * @param source The source object to check.
+     * @return true if the source is a valid MultipartFile, false otherwise.
+     */
     @Override
     public boolean canHandle(Object source) {
         boolean canHandle = source instanceof MultipartFile;
@@ -28,6 +43,13 @@ public class MultipartFileHandler implements IngestionSourceHandler {
         return canHandle;
     }
 
+    /**
+     * Processes the MultipartFile by delegating to the MessageProcessorService.
+     *
+     * @param source  The MultipartFile to process.
+     * @param context The request context containing metadata for processing.
+     * @return A map containing the result of the processing.
+     */
     @Override
     public Map<String, String> handleAndProcess(Object source, RequestContext context) {
         String interactionId = context != null ? context.getInteractionId() : "unknown";

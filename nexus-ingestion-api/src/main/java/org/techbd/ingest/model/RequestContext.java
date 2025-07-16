@@ -5,7 +5,24 @@ import java.util.Map;
 
 import lombok.Getter;
 import lombok.Setter;
-
+/**
+ * {@code RequestContext} holds metadata about the current request being processed.
+ * <p>
+ * It encapsulates information such as:
+ * <ul>
+ *   <li>HTTP headers and request URL</li>
+ *   <li>Tenant ID and interaction ID</li>
+ *   <li>Upload timestamp</li>
+ *   <li>File-related details (e.g., name, type)</li>
+ *   <li>S3 path/location</li>
+ *   <li>Any additional contextual data needed during ingestion</li>
+ * </ul>
+ * </p>
+ *
+ * <p>
+ * This context object is passed through each step of the ingestion pipeline
+ * to maintain continuity and enable traceability, logging, and downstream processing.
+ */
 @Getter
 @Setter
 public class RequestContext {
