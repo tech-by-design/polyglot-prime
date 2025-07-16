@@ -1,5 +1,11 @@
-package org.techbd.nexusingestionapi.commons;
-
+package org.techbd.ingest.commons;
+/**
+ * Constants class holds various constants used throughout the application.
+ * <p>
+ * It includes environment variable names, request header names, and default values
+ * for tenant ID and user agent.
+ * </p>
+ */
 public class Constants {
     public static final String SECRET_NAME = System.getenv("ORG_TECHBD_SERVICE_SECRET_NAME");
     public static final String SQS_BASE_URL = System.getenv("ORG_TECHBD_SERVICE_SQS_BASE_URL");
