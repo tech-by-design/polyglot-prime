@@ -1871,7 +1871,196 @@ WHERE code_type = 'answer_code' AND code = 'LA13914-9' AND (display_string IS NU
 
 UPDATE techbd_udi_ingress.ref_code_lookup
 SET display_string = 'I choose not to answer this question'
-WHERE code_type = 'answer_code' AND code = 'LA30122-8' AND (display_string IS NULL OR display_string = '') ;	 
+WHERE code_type = 'answer_code' AND code = 'LA30122-8' AND (display_string IS NULL OR display_string = '') ;
+
+-- Update potential_need_indicated entries with proper display strings and system values
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'GeneticObservationInterpretation', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = '_GeneticObservationInterpretation' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Carrier', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'CAR' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'ObservationInterpretationChange', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = '_ObservationInterpretationChange' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Better', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'B' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Significant change down', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'D' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Significant change up', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'U' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Worse', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'W' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'ObservationInterpretationExceptions', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = '_ObservationInterpretationExceptions' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Off scale low', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = '<' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Off scale high', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = '>' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Insufficient evidence', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'IE' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'ObservationInterpretationNormality', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = '_ObservationInterpretationNormality' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Abnormal', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'A' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Critical abnormal', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'AA' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Critical high', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'HH' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Critical low', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'LL' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'High', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'H' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Significantly high', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'HU' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Low', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'L' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Significantly low', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'LU' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Normal', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'N' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'ObservationInterpretationSusceptibility', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = '_ObservationInterpretationSusceptibility' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Intermediate', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'I' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'No CLSI defined breakpoint', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'NCL' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Non-susceptible', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'NS' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Resistant', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'R' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Synergy - resistant', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'SYN-R' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Susceptible', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'S' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Susceptible-dose dependent', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'SDD' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Synergy - susceptible', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'SYN-S' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'outside threshold', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'EX' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'above high threshold', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'HX' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'below low threshold', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'LX' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'ObservationInterpretationDetection', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'ObservationInterpretationDetection' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Indeterminate', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'IND' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Equivocal', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'E' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Negative', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'NEG' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Not detected', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'ND' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Positive', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'POS' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Detected', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'DET' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'ObservationInterpretationExpectation', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'ObservationInterpretationExpectation' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Expected', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'EXP' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Unexpected', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'UNE' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'ReactivityObservationInterpretation', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'ReactivityObservationInterpretation' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Non-reactive', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'NR' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Reactive', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'RR' AND (display_string IS NULL OR display_string = '');
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Weakly reactive', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
+WHERE code_type = 'potential_need_indicated' AND code = 'WR' AND (display_string IS NULL OR display_string = '');
 
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id, code_type, code, display_string, system_value, description, ig_version, created_at, created_by, provenance) VALUES
 ('29ab8222-046d-4186-ba3b-6cd4059f4340', 'race', '2131-1', 'Other Race', 'urn:oid:2.16.840.1.113883.6.238', 'ombCategory', '1.4.2', CURRENT_TIMESTAMP, 'neondb_owner', 'TechBD'),
