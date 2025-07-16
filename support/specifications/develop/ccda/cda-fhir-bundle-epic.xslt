@@ -1318,6 +1318,36 @@
                               }],
                               "text": "<xsl:value-of select='ccda:observation/ccda:value/@value'/>"
                             },
+
+                            <!-- Gather all filtered observations for derivedFrom -->
+                            <xsl:variable name="derivedFromCodes" select="'|95618-5|95617-7|95616-9|95615-1|'" />
+                            <!-- Gather valid derivedFrom observations -->
+                            <xsl:variable name="derivedObservations">
+                              <xsl:for-each select="/ccda:ClinicalDocument//ccda:observation">
+                                <xsl:variable name="code" select="ccda:code/@code"/>
+                                <xsl:if test="string($code)
+                                              and contains($derivedFromCodes, concat('|', $code, '|'))
+                                              and not(preceding::ccda:observation[ccda:code/@code = $code])">
+                                  <xsl:copy-of select="."/>
+                                </xsl:if>
+                              </xsl:for-each>
+                            </xsl:variable>
+
+                            <!-- Output derivedFrom JSON if observations found -->
+                            <xsl:if test="exsl:node-set($derivedObservations)/ccda:observation">
+                              "derivedFrom": [
+                                <xsl:for-each select="exsl:node-set($derivedObservations)/ccda:observation">
+                                  <xsl:variable name="code" select="ccda:code/@code"/>
+                                  <xsl:variable name="observationResourceId">
+                                    <xsl:call-template name="generateFixedLengthResourceId">
+                                      <xsl:with-param name="prefixString" select="$code"/>
+                                      <xsl:with-param name="sha256ResourceId" select="$observationResourceSha256Id"/>
+                                    </xsl:call-template>
+                                  </xsl:variable>
+                                  { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
+                                </xsl:for-each>
+                              ],
+                            </xsl:if>
                         </xsl:when> 
                         <xsl:otherwise>
                             "valueCodeableConcept" : {
