@@ -1156,7 +1156,7 @@
 			"participant": [{
 			  "type": [{
 				"coding": [{
-				  "system": "http://terminology.hl7.org/CodeSystem/participant-type",
+				  "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
 				  "code": "<xsl:choose>
 						   <xsl:when test='normalize-space(//OBR.32/OBR.32.1)'>
 							 <xsl:value-of select='substring-before(//OBR.32/OBR.32.1, "&amp;")'/>
@@ -1167,21 +1167,22 @@
 						 </xsl:choose>",
 
 				"display": "<xsl:choose>
-					  <xsl:when test='normalize-space(OBR.32/OBR.32.1)'>
-              <xsl:variable name='fv32' select='OBR.32/OBR.32.1'/>
-              <xsl:variable name='after32' select='substring-after($fv32, "&amp;")'/>
-              <xsl:variable name='sub2_32' select='substring-before($after32, "&amp;")'/>
-              <xsl:variable name='sub3_32' select='substring-after($after32, "&amp;")'/>
-              <xsl:value-of select='normalize-space(concat($sub3_32, " ", $sub2_32))'/>
+					  <xsl:when test='normalize-space(//OBR.32/OBR.32.1)'>
+						<xsl:variable name='fv32' select='//OBR.32/OBR.32.1'/>
+						<xsl:variable name='after32' select='substring-after($fv32, "&amp;")'/>
+						<xsl:variable name='sub2_32' select='substring-before($after32, "&amp;")'/>
+						<xsl:variable name='sub3_32' select='substring-after($after32, "&amp;")'/>
+						<xsl:value-of select='normalize-space(concat($sub3_32, " ", $sub2_32))'/>
 					  </xsl:when>
 
-					  <xsl:when test='normalize-space(OBR.34/OBR.34.1)'>
-              <xsl:variable name='fv34' select='OBR.34/OBR.34.1'/>
-              <xsl:variable name='after34' select='substring-after($fv34, "&amp;")'/>
-              <xsl:variable name='sub2_34' select='substring-before($after34, "&amp;")'/>
-              <xsl:variable name='sub3_34' select='substring-after($after34, "&amp;")'/>
-              <xsl:value-of select='normalize-space(concat($sub3_34, " ", $sub2_34))'/>
+					  <xsl:when test='normalize-space(//OBR.34/OBR.34.1)'>
+						<xsl:variable name='fv34' select='//OBR.34/OBR.34.1'/>
+						<xsl:variable name='after34' select='substring-after($fv34, "&amp;")'/>
+						<xsl:variable name='sub2_34' select='substring-before($after34, "&amp;")'/>
+						<xsl:variable name='sub3_34' select='substring-after($after34, "&amp;")'/>
+						<xsl:value-of select='normalize-space(concat($sub3_34, " ", $sub2_34))'/>
 					  </xsl:when>
+
 					</xsl:choose>"
 				}]
 			  }],
@@ -1197,19 +1198,14 @@
         "location": [{
           "location": {
             "reference": "Location/<xsl:value-of select='//PV1/PV1.3/PV1.3.1'/>",
-        <xsl:variable name="pv1Field" select="PV1.3"/>
-        <xsl:variable name="comp4" select="tokenize($pv1Field, '\^')[4]"/>
-        <xsl:variable name="comp7" select="tokenize($pv1Field, '\^')[7]"/>
-        <xsl:variable name="subcomp4_1" select="substring-before($comp4, '&amp;')"/>
-
-        "display": "<xsl:choose>
-                <xsl:when test='normalize-space($subcomp4_1)'>
-                <xsl:value-of select='$subcomp4_1'/>
-                </xsl:when>
-                <xsl:otherwise>
-                <xsl:value-of select='$comp7'/>
-                </xsl:otherwise>
-					   </xsl:choose>"
+            "display": "<xsl:choose>
+			  <xsl:when test='string(//PV1/PV1.3/PV1.3.4)'>
+				<xsl:value-of select='//PV1/PV1.3/PV1.3.4'/>
+			  </xsl:when>
+			  <xsl:otherwise>
+				<xsl:value-of select='//PV1/PV1.3/PV1.3.7'/>
+			  </xsl:otherwise>
+			</xsl:choose>"
           }
         }]
       </xsl:if>
