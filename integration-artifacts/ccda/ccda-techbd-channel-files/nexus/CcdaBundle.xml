@@ -1,0 +1,1474 @@
+<channel version="4.5.3">
+  <id>83249468-2069-451d-b980-b88c3f5ecac2</id>
+  <nextMetaDataId>12</nextMetaDataId>
+  <name>CcdaBundle</name>
+  <description>Version: 0.3.0</description>
+  <revision>6</revision>
+  <sourceConnector version="4.5.3">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
+      <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+      </pluginProperties>
+      <listenerConnectorProperties version="4.5.3">
+        <host>0.0.0.0</host>
+        <port>9002</port>
+      </listenerConnectorProperties>
+      <sourceConnectorProperties version="4.5.3">
+        <responseVariable>finalResponse</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <xmlBody>false</xmlBody>
+      <parseMultipart>true</parseMultipart>
+      <includeMetadata>false</includeMetadata>
+      <binaryMimeTypes>text/xml</binaryMimeTypes>
+      <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
+      <responseContentType>application/json</responseContentType>
+      <responseDataTypeBinary>false</responseDataTypeBinary>
+      <responseStatusCode>200</responseStatusCode>
+      <responseHeaders class="linked-hash-map">
+        <entry>
+          <string>Access-Control-Allow-Origin</string>
+          <list>
+            <string>https://hub.dev.techbd.org</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Methods</string>
+          <list>
+            <string>GET, POST, OPTIONS</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Headers</string>
+          <list>
+            <string>Content-Type, Authorization, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, accept </string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Expose-Headers</string>
+          <list>
+            <string>Location, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI</string>
+          </list>
+        </entry>
+      </responseHeaders>
+      <responseHeadersVariable></responseHeadersVariable>
+      <useResponseHeadersVariable>false</useResponseHeadersVariable>
+      <charset>UTF-8</charset>
+      <contextPath>/ccda/Bundle/</contextPath>
+      <timeout>300000</timeout>
+      <staticResources/>
+    </properties>
+    <transformer version="4.5.3">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+          <name>Common JS functions</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/**
+* Replacer function to remove empty values
+*/&#xd;function removeEmptyValues(key, value) {&#xd;  // Remove values that are empty strings, null, undefined, or empty objects/arrays&#xd;  if (value === &quot;&quot; || value === null || value === undefined || &#xd;      (typeof value === &quot;object&quot; &amp;&amp; Object.keys(value).length === 0) ||&#xd;      (Array.isArray(value) &amp;&amp; value.length === 0)) {&#xd;    return undefined; // Exclude the key from the result&#xd;  }&#xd;  return value; // Keep the value as is&#xd;}
+
+
+/**
+* Util function to generate json string wit hstatus and message
+*/
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+/*
+* Util function to generate json error message
+*/
+function getJsonInvalidOperationOutcome(errorMsg, code) {
+	return { &quot;OperationOutcome&quot;: {
+                    &quot;validationResults&quot;: [
+                        {
+                            &quot;operationOutcome&quot;: {
+                                &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;issue&quot;: [
+                                    {
+                                        &quot;severity&quot;: &quot;error&quot;,
+                                        &quot;code&quot;: code,
+                                        &quot;details&quot;: {
+                                            &quot;text&quot;: errorMsg
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            };
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+          <name>Validate HTTP Request and collect headers</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <script>logger.info(&quot;HTTP request validation started.&quot;);
+
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(&quot;Request URL: &quot; + requestedPath);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+logger.info(&quot;X-TechBD-Tenant-ID: &quot; + tenantId);
+
+// Check if the header is null or empty
+if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
+   // Log the error for debugging
+   var errorMessage = &apos;Bad Request: Missing required header X-TechBD-Tenant-ID&apos;;
+   logger.error(errorMessage);
+   setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+   throw errorMessage; // Stop further processing by throwing an exception
+}
+
+// Store the tenant ID in the globalMap for further use
+globalMap.put(&apos;tenantId&apos;, tenantId);
+
+
+// Retrieve the Content-Type header
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
+   var errorMessage = &apos;Content-Type is not multipart/form-data or not contains boundary details.&apos;;
+   logger.error(errorMessage);
+   setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+   throw errorMessage; // Stop further processing by throwing an exception
+}
+
+// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+globalMap.put(&apos;userAgent&apos;, userAgent);
+logger.info(&quot;User-Agent: &quot; + userAgent);
+
+globalMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+globalMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+
+// Initialize missing headers array
+var missingHeaders = [];
+
+// Helper to check and store missing header
+function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
+   var value = $(&apos;headers&apos;).getHeader(headerName);
+   logger.info(headerName + &quot;: &quot; + value);
+
+   if (value == null || String(value).trim() === &quot;&quot;) {
+       missingHeaders.push(&quot;Missing required header &quot; + displayName);
+   } else if (storeInMap) {
+       channelMap.put(mapKey || headerName, value);
+   }
+
+   return value;
+}
+
+// Check Tenant ID
+checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;X-TechBD-Tenant-ID&apos;, true, &apos;tenantId&apos;);
+
+// Content-Type validation
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;)) {
+   missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+}
+
+// User-Agent
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+channelMap.put(&apos;userAgent&apos;, userAgent);
+logger.info(&quot;User-Agent: &quot; + userAgent);
+
+// URI + Path
+channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+
+// FHIR specific headers
+if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
+   checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;X-TechBD-CIN&apos;, true, &apos;patientCIN&apos;);
+
+   var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
+   logger.info(&quot;X-TechBD-OrgNPI: &quot; + organizationNPI);
+
+   var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
+   logger.info(&quot;X-TechBD-OrgTIN: &quot; + organizationTIN);
+
+   if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
+       (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {
+       missingHeaders.push(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);
+   } else {
+       if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {
+           channelMap.put(&apos;organizationNPI&apos;, organizationNPI);
+       }
+       if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {
+           channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
+       }
+   }
+
+   checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;X-TechBD-Facility-ID&apos;, true, &apos;facilityID&apos;);
+   checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
+}
+
+// If any missing headers were found, throw a single error
+if (missingHeaders.length &gt; 0) {
+   var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
+   logger.error(errorMessage);
+   setErrorResponse(400, errorMessage);
+   throw errorMessage;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Parse the incoming request (assumes multipart form data)
+var rawData = connectorMessage.getRawData();
+
+// Check if rawData is empty
+if (!rawData || rawData.trim().length === 0) {
+   errorMessage = &quot;No file provided in the request.&quot;;
+   setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+   throw errorMessage;
+}
+
+// Parse the rawData as multipart form data
+var boundary = rawData.split(&quot;\r\n&quot;)[0];
+var parts = rawData.split(boundary);
+
+// Initialize variables to store file content
+var fileContent = null;
+
+// Loop through parts to find the file part
+var i = 0;
+for each (var part in parts) {
+   if (part.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;;&apos;) !== -1) {
+       logger.info(&quot;Part count &quot; + ++i);
+       // Extract the file content (skip headers)
+       var contentStartIndex = part.indexOf(&quot;\r\n\r\n&quot;) + 4;
+       fileContent = part.substring(contentStartIndex, part.lastIndexOf(&quot;\r\n&quot;));
+       break;
+   }
+}
+
+// Validate the file content
+if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length === 0) {
+   errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+   // Set the HTTP response status to 400 (Bad Request)
+   setErrorResponse(400, errorMessage);
+   throw errorMessage;
+} else {
+   logger.info(&quot;fileContent not null. Size: &quot; + fileContent.length + &quot; bytes.&quot;);
+   globalMap.put(&apos;fileContent&apos;, fileContent);
+   
+}
+
+var ccdaSchemaFolder = java.lang.System.getenv(&quot;MC_CCDA_SCHEMA_FOLDER&quot;);
+if(ccdaSchemaFolder != null) {
+   globalMap.put(&apos;ccdaSchemaFolder&apos;, ccdaSchemaFolder);
+   logger.info(&quot;ccdaSchemaFolder: &quot; + ccdaSchemaFolder);
+} else {
+   var errorMessage = &apos;MC_CCDA_SCHEMA_FOLDER variable is not set&apos;;
+   logger.error(errorMessage);
+   setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+   throw errorMessage; // Stop further processing by throwing an exception
+}
+
+globalMap.put(&apos;xsdFilePath&apos;, ccdaSchemaFolder + &apos;CDA.xsd&apos;);
+globalMap.put(&apos;cdaPhiFilter&apos;, ccdaSchemaFolder + &apos;cda-phi-filter.xslt&apos;);
+globalMap.put(&apos;cdaPhiBundle&apos;, ccdaSchemaFolder + &apos;cda-fhir-bundle.xslt&apos;);
+
+
+logger.info(&quot;using xsdFilePath: &quot; + globalMap.get(&apos;xsdFilePath&apos;));
+logger.info(&quot;using cdaPhiFilter: &quot; + globalMap.get(&apos;cdaPhiFilter&apos;));
+logger.info(&quot;using cdaPhiBundle: &quot; + globalMap.get(&apos;cdaPhiBundle&apos;));
+
+
+///////////////////////////////////////////
+// Set path for schema and related files //
+///////////////////////////////////////////
+
+/*
+* Util function to get vender identifier details and choose the xslt file according to the vendor
+*/
+function getManufacturerModelName(xmlData) {
+	try {
+		if (xmlData) {
+			var ccdaSchemaFolder = channelMap.get(&apos;ccdaSchemaFolder&apos;);
+			var xmlDoc = new XML(xmlData); // Convert XML string to XML object
+			var cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter.xslt&quot;;
+			var cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle.xslt&quot;;
+			
+			var manufacturerModelName = &apos;&apos;;
+			var ehrVendor = &apos;&apos;;
+			var lowerName = &apos;&apos;;
+			var modelNode = &apos;&apos;;
+			
+			manufacturerModelName = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice.*::manufacturerModelName.toString();
+			if (manufacturerModelName != undefined &amp;&amp; manufacturerModelName.toString().length &gt; 0) {
+				logger.info(&quot;Extracted Manufacturer Model Name: &quot; + manufacturerModelName);
+				lowerName = manufacturerModelName.toLowerCase();
+			} else {
+			     logger.warn(&quot;manufacturerModelName is empty&quot;);
+			}
+			                    
+			if (lowerName.indexOf(&quot;epic&quot;) !== -1) {
+			    	ehrVendor = &quot;Epic&quot;;
+			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-epic.xslt&quot;;
+				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-epic.xslt&quot;;
+			} else if (lowerName.indexOf(&quot;medent&quot;) !== -1) {
+			    	ehrVendor = &quot;Medent&quot;;
+			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-medent.xslt&quot;;
+				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-medent.xslt&quot;;
+			} else {
+			    	ehrVendor = &quot;Other&quot;;
+			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter.xslt&quot;;
+				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle.xslt&quot;;
+			}
+			
+			logger.info(&quot;ehrVendor: &quot; + ehrVendor);
+			channelMap.put(&apos;ehrVendor&apos;, ehrVendor);
+			channelMap.put(&apos;cdaPhiFilter&apos;, cdaPhiFilterXsltPath);
+			channelMap.put(&apos;cdaPhiBundle&apos;, cdaFhirBundleXsltPath);
+			
+			logger.info(&quot;using cdaPhiFilter: &quot; + channelMap.get(&apos;cdaPhiFilter&apos;));
+			logger.info(&quot;using cdaPhiBundle: &quot; + channelMap.get(&apos;cdaPhiBundle&apos;));
+
+		} else {
+		    logger.error(&quot;xmlData is undefined or empty.&quot;);
+		}
+	} catch (e) {
+       //logger.warn(&quot;Error parsing manufacturerModelName: &quot; + e);
+       var errorMsg;
+       if (e instanceof JavaException) {
+          errorMsg = &quot;Error parsing manufacturerModelName: &quot; + e.toString();
+       } else {
+          errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
+       }
+       logger.error(errorMsg);
+
+       // Failure: Return an OperationOutcome JSON response with validation errors
+       responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
+
+       throw new Error(errorMsg);
+    }
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+          <name>step_validate_profile_urls_env_variables</name>
+          <sequenceNumber>2</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/**
+ * Util function to generate a hash string using SHA-256 that can be used as the resource id in FHIR Bundle.
+ * Workaround for Java Module System restrictions by using alternative approaches.
+ */
+
+// SHA-256 hash generation function
+function generateSHA256(inputString) {
+    try {
+        var MessageDigest = java.security.MessageDigest;
+        var md = MessageDigest.getInstance(&quot;SHA-256&quot;);
+        md.update(new java.lang.String(inputString).getBytes(&quot;UTF-8&quot;));   
+        var digest = md.digest();
+        return bytesToHex(digest);
+    } catch (e) {
+        logger.error(&quot;Error generating SHA-256 hash: &quot; + e);
+        throw e;
+    }
+}
+
+// Helper function to convert byte array to hex string
+function bytesToHex(byteArray) {
+    var hexString = new java.lang.StringBuilder();
+    for (var i = 0; i &lt; byteArray.length; i++) {
+        var hex = java.lang.Integer.toHexString(0xff &amp; byteArray[i]);
+        if (hex.length == 1) hexString.append(&apos;0&apos;);
+        hexString.append(hex);
+    }
+    return hexString.toString();
+}
+
+// Simple function to extract text between tags
+function extractTextBetweenTags(xml, tagName) {
+    try {
+        var startTag = &quot;&lt;&quot; + tagName + &quot;&gt;&quot;;
+        var endTag = &quot;&lt;/&quot; + tagName + &quot;&gt;&quot;;
+        var startPos = xml.indexOf(startTag);
+        
+        if (startPos === -1) {
+            // Try with namespace
+            startTag = &quot;&lt;[^&gt;]*:&quot; + tagName + &quot;[^&gt;]*&gt;&quot;;
+            var regex = new RegExp(startTag, &quot;i&quot;);
+            var match = xml.match(regex);
+            if (match) {
+                startPos = match.index;
+                var tagContent = match[0];
+                var tagEndPos = startPos + tagContent.length;
+                
+                // Find the closing tag - might have namespace too
+                var closingTagRegex = new RegExp(&quot;&lt;/[^&gt;]*:&quot; + tagName + &quot;&gt;&quot;, &quot;i&quot;);
+                var closingMatch = xml.substr(tagEndPos).match(closingTagRegex);
+                if (closingMatch) {
+                    var endPos = tagEndPos + closingMatch.index;
+                    return xml.substring(tagEndPos, endPos);
+                }
+            }
+            return &quot;&quot;;
+        }
+        
+        startPos += startTag.length;
+        var endPos = xml.indexOf(endTag, startPos);
+        
+        if (endPos === -1) {
+            return &quot;&quot;;
+        }
+        
+        return xml.substring(startPos, endPos);
+    } catch (e) {
+        logger.error(&quot;Error extracting text between tags: &quot; + e);
+        return &quot;&quot;;
+    }
+}
+
+// Generate a hash for a resource based on tag content
+function generateResourceHash(xml, tagName, resourceName, resourceIdName, transformer) {
+    try {
+        var content = extractTextBetweenTags(xml, tagName);
+        if (content &amp;&amp; content.trim() !== &quot;&quot;) {
+            // Add resource name to the content for consistent hashing
+            content = resourceName + &quot;: &quot; + content;
+            var hash = generateSHA256(content);
+            transformer.setParameter(resourceIdName, hash);
+            logger.info(resourceIdName + &quot; : &quot; + hash);
+        } else {
+            logger.warn(tagName + &quot; not found or empty in the XML.&quot;);
+        }
+        return transformer;
+    } catch (e) {
+        logger.error(&quot;Error generating resource hash for &quot; + tagName + &quot;: &quot; + e);
+        return transformer;
+    }
+}
+
+// Set resource ID parameters for the transformer without using DOM parsing
+function setResourceIdParameters(transformer) {
+    try {
+        var sourceXml = $(&apos;phi_filtered_ccd&apos;);
+        
+        // Using string operations instead of DOM to avoid module issues
+        if (!sourceXml) {
+            logger.error(&quot;phi_filtered_ccd not found&quot;);
+            return transformer;
+        }
+
+         // Generate Bundle ID first - this is our primary fix
+        var clinicalDocumentContent = extractTextBetweenTags(sourceXml, &quot;ClinicalDocument&quot;);
+        if (clinicalDocumentContent &amp;&amp; clinicalDocumentContent.trim() !== &quot;&quot;) {
+            var bundleHash = generateSHA256(&quot;Bundle: &quot; + clinicalDocumentContent);
+            transformer.setParameter(&quot;bundleId&quot;, bundleHash);
+            logger.info(&quot;bundleId : &quot; + bundleHash);
+        } else {
+            logger.warn(&quot;ClinicalDocument element not found or is empty.&quot;);
+            // Fallback to ensure we always have a bundle ID
+            var fallbackBundleId = generateSHA256(&quot;Bundle: &quot; + new Date().getTime());
+            transformer.setParameter(&quot;bundleId&quot;, fallbackBundleId);
+            logger.info(&quot;bundleId (fallback) : &quot; + fallbackBundleId);
+        }
+        // Extract and hash each resource
+       // transformer = generateResourceHash(sourceXml, &quot;ClinicalDocument&quot;, &quot;ClinicalDocument&quot;, &quot;bundleId&quot;, transformer);
+        transformer = generateResourceHash(sourceXml, &quot;patientRole&quot;, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
+        transformer = generateResourceHash(sourceXml, &quot;consent&quot;, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer);
+        transformer = generateResourceHash(sourceXml, &quot;author&quot;, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
+        transformer = generateResourceHash(sourceXml, &quot;Questionnaire&quot;, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
+        transformer = generateResourceHash(sourceXml, &quot;observations&quot;, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+        transformer = generateResourceHash(sourceXml, &quot;sexualOrientation&quot;, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
+        
+        // Handle Questionnaire response - more complex extraction
+        var observationsContent = extractTextBetweenTags(sourceXml, &quot;observations&quot;);
+        if (observationsContent &amp;&amp; observationsContent.trim() !== &quot;&quot;) {
+            var entryContent = extractTextBetweenTags(observationsContent, &quot;entry&quot;);
+            if (entryContent &amp;&amp; entryContent.trim() !== &quot;&quot;) {
+                var qrContent = &quot;QuestionnaireResponse: &quot; + entryContent;
+                var hash = generateSHA256(qrContent);
+                transformer.setParameter(&quot;questionnaireResponseResourceSha256Id&quot;, hash);
+                logger.info(&quot;questionnaireResponseResourceSha256Id : &quot; + hash);
+            } else {
+                logger.warn(&quot;No entry found inside observations.&quot;);
+            }
+        }
+
+
+        // Handle Encounter
+        var encounterContent = extractTextBetweenTags(sourceXml, &quot;encompassingEncounter&quot;);
+        if (encounterContent &amp;&amp; encounterContent.trim() !== &quot;&quot;) {
+            transformer = generateResourceHash(sourceXml, &quot;encompassingEncounter&quot;, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer);
+        } else {
+            var encountersContent = extractTextBetweenTags(sourceXml, &quot;encounters&quot;);
+            if (encountersContent &amp;&amp; encountersContent.trim() !== &quot;&quot;) {
+                var encounterEntryContent = extractTextBetweenTags(encountersContent, &quot;entry&quot;);
+                if (encounterEntryContent &amp;&amp; encounterEntryContent.trim() !== &quot;&quot;) {
+                    var encounterHash = generateSHA256(&quot;Encounter: &quot; + encounterEntryContent);
+                    transformer.setParameter(&quot;encounterResourceId&quot;, encounterHash);
+                    logger.info(&quot;encounterResourceId : &quot; + encounterHash);
+                } else {
+                    logger.warn(&quot;No entry found inside Encounters.&quot;);
+                }
+            } else {
+                logger.warn(&quot;Encounter Resource not found in the XML.&quot;);
+            }
+        }
+        
+        return transformer;
+    } catch (e) {
+        logger.error(&quot;Error in setResourceIdParameters: &quot; + e);
+        throw e;
+    }
+}
+
+/**
+ * Util function to get FHIR resource profile URLs and set as parameters to the transformer
+ * which converts the XML file to FHIR Bundle.
+ */
+function set_fhir_resource_profile_urls(transformer) {
+    try {
+        var System = java.lang.System;
+        var baseFhirUrl = System.getenv(&quot;BASE_FHIR_URL&quot;);   
+        var bundleMetaProfileUrl = System.getenv(&quot;PROFILE_URL_BUNDLE&quot;); 
+        var patientMetaProfileUrl = System.getenv(&quot;PROFILE_URL_PATIENT&quot;); 
+        var encounterMetaProfileUrl = System.getenv(&quot;PROFILE_URL_ENCOUNTER&quot;); 
+        var consentMetaProfileUrl = System.getenv(&quot;PROFILE_URL_CONSENT&quot;); 
+        var organizationMetaProfileUrl = System.getenv(&quot;PROFILE_URL_ORGANIZATION&quot;); 
+        var observationMetaProfileUrl = System.getenv(&quot;PROFILE_URL_OBSERVATION&quot;); 
+        var observationSexualOrientationMetaProfileUrl = System.getenv(&quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;); 
+        var questionnaireMetaProfileUrl = System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE&quot;); 
+        var questionnaireResponseMetaProfileUrl = System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
+        var practitionerMetaProfileUrl = System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
+
+        // Set profile URLs as transformer parameters
+        function setProfileParameter(paramName, envValue) {
+            if(envValue != null) {
+                transformer.setParameter(paramName, envValue);
+                globalMap.put(paramName, envValue);
+                logger.info(paramName + &quot;: &quot; + envValue);
+                return true;
+            } else {
+                var errorMessage = paramName + &apos; variable is not set&apos;;
+                logger.error(errorMessage);
+                setErrorResponse(500, errorMessage);
+                throw errorMessage;
+            }
+        }
+
+        // Set all required parameters
+        setProfileParameter(&quot;baseFhirUrl&quot;, baseFhirUrl);
+        setProfileParameter(&quot;bundleMetaProfileUrl&quot;, bundleMetaProfileUrl);
+        setProfileParameter(&quot;patientMetaProfileUrl&quot;, patientMetaProfileUrl);
+        setProfileParameter(&quot;encounterMetaProfileUrl&quot;, encounterMetaProfileUrl);
+        setProfileParameter(&quot;consentMetaProfileUrl&quot;, consentMetaProfileUrl);
+        setProfileParameter(&quot;organizationMetaProfileUrl&quot;, organizationMetaProfileUrl);
+        setProfileParameter(&quot;observationMetaProfileUrl&quot;, observationMetaProfileUrl);
+        setProfileParameter(&quot;observationSexualOrientationMetaProfileUrl&quot;, observationSexualOrientationMetaProfileUrl);
+        setProfileParameter(&quot;questionnaireMetaProfileUrl&quot;, questionnaireMetaProfileUrl);
+        setProfileParameter(&quot;questionnaireResponseMetaProfileUrl&quot;, questionnaireResponseMetaProfileUrl);
+        setProfileParameter(&quot;practitionerMetaProfileUrl&quot;, practitionerMetaProfileUrl);
+
+        // Generate resource ids and set as parameter to pass to xslt 
+        transformer = setResourceIdParameters(transformer);
+
+        return transformer;
+    } catch (e) {
+        logger.error(&quot;Error in set_fhir_resource_profile_urls: &quot; + e);
+        throw e;
+    }
+}
+//********************************************************************
+/**
+*	Function to Check the existance of Consent section in the CCDA xml file and set the header variable &apos;X-TechBD-Elaboration&apos;.
+*	This function is called while the /Bundle request
+*/
+function getConsentResourceStatus(sourceXml) {
+	try {
+		//var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+		var factory = DocumentBuilderFactory.newInstance();
+		
+		factory.setNamespaceAware(true);
+		var builder = factory.newDocumentBuilder();
+		//var doc = builder.parse(new java.io.ByteArrayInputStream(sourceXml.getBytes(&quot;UTF-8&quot;)));
+		var inputStream = new java.io.ByteArrayInputStream(new java.lang.String(sourceXml).getBytes(&quot;UTF-8&quot;));
+	     var doc = builder.parse(inputStream);
+		
+	    	var consentInfo = {};
+	    	consentInfo.code = &apos;Consent-Status&apos;;
+	
+		var authorization = doc.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;authorization&quot;);
+		
+		if (authorization.getLength() &gt; 0) {
+		    var authorizationNode = authorization.item(0);    
+		    var consent = authorizationNode.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;consent&quot;);
+		
+		    if (consent.getLength() &gt; 0) {
+		        var consentNode = consent.item(0);        
+		        var codeElements = consentNode.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;code&quot;);
+		
+		        if (codeElements.getLength() &gt; 0) {
+		            var codeElement = codeElements.item(0);
+		            var codeAttr = codeElement.getAttribute(&quot;code&quot;);
+		            if (codeAttr == &quot;59284-0&quot;) {
+		                consentInfo.status = &quot;provided&quot;;
+		            } else {
+		                consentInfo.status = &quot;TechBD-Generated&quot;;
+		            }
+		        } else {
+		            consentInfo.status = &quot;TechBD-Generated&quot;;
+		        }
+		    } else {	
+		        consentInfo.status = &quot;TechBD-Generated&quot;;
+		    }
+		} else {
+		    	// Fallback: Check &lt;component&gt;/&lt;structuredBody&gt;/&lt;component&gt;/&lt;section code=&apos;47519-4&apos;&gt; and nested observation[code=&apos;105511-0&apos;]
+			var sections = doc.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;section&quot;);
+
+			for (var i = 0; i &lt; sections.getLength(); i++) {
+			 var section = sections.item(i);
+			 var codeElements = section.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;code&quot;);
+			
+			 if (codeElements.getLength() &gt; 0) {
+			     var sectionCode = codeElements.item(0).getAttribute(&quot;code&quot;);
+			
+			     if (sectionCode == &quot;47519-4&quot;) {
+			         // Inside the correct section. Now find observation -&gt; entryRelationship -&gt; observation[code=&apos;105511-0&apos;]
+			         var entries = section.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;entry&quot;);
+			
+			         for (var j = 0; j &lt; entries.getLength(); j++) {
+			             var entry = entries.item(j);
+			             var obsList = entry.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;observation&quot;);
+			
+			             for (var k = 0; k &lt; obsList.getLength(); k++) {
+			                 var observation = obsList.item(k);
+			                 var entryRels = observation.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;entryRelationship&quot;);
+			
+			                 for (var m = 0; m &lt; entryRels.getLength(); m++) {
+			                     var entryRel = entryRels.item(m);
+			                     var nestedObsList = entryRel.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;observation&quot;);
+			
+			                     for (var n = 0; n &lt; nestedObsList.getLength(); n++) {
+			                         var nestedObs = nestedObsList.item(n);
+			                         var nestedCodeElements = nestedObs.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;code&quot;);
+			
+			                         if (nestedCodeElements.getLength() &gt; 0) {
+			                             var obsCode = nestedCodeElements.item(0).getAttribute(&quot;code&quot;);
+			                             if (obsCode == &quot;105511-0&quot;) {
+			                                 consentInfo.status = &quot;provided&quot;;
+			                                 break;
+			                             }
+			                         }
+			                     }
+			                 }
+			             }
+			         }
+			     }
+			 }
+			}
+			
+			// If nothing was found
+			if (!consentInfo.status) {
+			 consentInfo.status = &quot;TechBD-Generated&quot;;
+			}
+		}
+		
+		// Convert to JSON string (optional, for sending/logging)
+		var consentJsonString = JSON.stringify(consentInfo);
+		logger.info(&quot;Consent Info JSON: &quot; + consentJsonString);
+		channelMap.put(&apos;elaboration&apos;, consentJsonString);
+	} catch (e) {
+        var errorMsg;
+        if (e instanceof JavaException) {
+           errorMsg = &quot;Error parsing Consent Resource: &quot; + e.toString();
+        } else {
+           errorMsg = &quot;Unexpected error during getting Consent Resource: &quot; + e.message;
+        }
+        logger.error(errorMsg);
+
+        // Failure: Return an OperationOutcome JSON response with validation errors
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
+
+        throw new Error(errorMsg);
+     }
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+          <name>API endpoint processing</name>
+          <sequenceNumber>3</sequenceNumber>
+          <enabled>true</enabled>
+          <script>logger.info(&quot;FHIR Bundle Validate - Start&quot;);
+
+var fileContent = globalMap.get(&apos;fileContent&apos;);
+var trimmed = fileContent.trim();
+
+if (trimmed.includes(&quot;&lt;ClinicalDocument&quot;)) {
+    logger.info(&quot;Detected XML content&quot;);
+} else if (trimmed.length &lt; 500 &amp;&amp; /^[A-Za-z0-9\s.,\-]+$/.test(trimmed)) {
+    logger.info(&quot;Detected plain text content&quot;);
+} else {
+    var errorMessage = &quot;Unsupported file type based on content. Only .xml and .txt formats are allowed.&quot;;
+    setErrorResponse(400, errorMessage);
+   // responseMap.put(&quot;finalResponse&quot;, JSON.stringify(getJsonInvalidOperationOutcome(errorMessage, &quot;unsupported-file&quot;)));
+    throw new Error(errorMessage);
+}
+
+//***************************************************
+
+var classpath = java.lang.System.getProperty(&quot;java.class.path&quot;);
+logger.info(&quot;Classpath: &quot; + classpath);
+
+// Retrieve logging functions
+var logInfo = globalMap.get(&quot;logInfo&quot;);
+var logError = globalMap.get(&quot;logError&quot;);
+var logDebug = globalMap.get(&quot;logDebug&quot;);
+
+if (!globalMap.containsKey(&quot;ccdaService&quot;)) {
+    var ccdaService = SpringContextHolder.getBean(Packages.org.techbd.service.ccda.CCDAService);
+    globalMap.put(&quot;ccdaService&quot;, ccdaService);
+}
+var ccdaService = globalMap.get(&quot;ccdaService&quot;);
+
+logInfo(&quot;CCDAService bean loaded successfully.&quot;, channelMap);
+
+// Use logInfo instead of logger.info - same pattern as preprocessor
+var logInfo = globalMap.get(&quot;logInfo&quot;);
+if (logInfo == null) {
+    logInfo = function(message, map) {
+        logger.info(message + (map ? JSON.stringify(map) : &quot;&quot;));
+    };
+}
+
+logInfo(&quot;***** CCDAService class loaded successfully *****&quot;, channelMap);
+
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logInfo(&quot;***** Request URL: &quot; + requestedPath + &quot; *****&quot;, channelMap);
+
+if (requestedPath == &quot;/&quot;) {
+    return;
+}
+
+    // Bundle processing endpoint section - Fixed version
+ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
+  
+    
+    globalMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+
+    try {
+        // Retrieve the XML content
+        var xmlContent = globalMap.get(&apos;fileContent&apos;);
+
+        // Parse the XML content into an XML object
+        var xmlDoc = xmlContent;
+        var cdStartIndex = xmlDoc.trim().indexOf(&apos;&lt;ClinicalDocument&apos;); 
+        var cleanedXml = xmlDoc.substring(cdStartIndex); 
+        
+        //logInfo(&quot;Cleaned XML Document:\n&quot; + cleanedXml, channelMap);
+        
+        if (!xmlDoc.includes(&apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&apos;)) {
+            
+            var clinicalDocumentIndex = xmlDoc.indexOf(&apos;&lt;ClinicalDocument&apos;);
+        
+            // Add the XML declaration before the &lt;ClinicalDocument&gt; tag
+            if (clinicalDocumentIndex !== -1) {
+                xmlDoc = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos; + xmlDoc.substring(clinicalDocumentIndex);
+            }
+        }
+        //logInfo(&quot;After xml tag added : &quot; + xmlDoc, channelMap);        
+
+        // Remove any trailing non-XML content
+        var lastClosingTagIndex = xmlDoc.lastIndexOf(&apos;&gt;&apos;);
+        if (lastClosingTagIndex !== xmlDoc.length - 1) {
+            xmlDoc = xmlDoc.substring(0, lastClosingTagIndex + 1);
+        }
+            
+        //logInfo(&quot;xmlDoc: &quot; + xmlDoc, channelMap);
+
+        // Extract the XML content from the form-data 
+        var xmlStartIndex = xmlDoc.trim().indexOf(&apos;&lt;?xml&apos;); 
+        var sourceXml = xmlDoc.substring(xmlStartIndex); 
+
+        if (!sourceXml || sourceXml.length === 0) {
+            logInfo(&quot;No XML data received in the request.&quot;, channelMap);
+            responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;)));
+            throw new Error(&quot;No XML data received in the request.&quot;);
+        }
+//*************************************************************************************
+               logger.info(&quot;Source XML Content: &quot; + sourceXml); 
+//**////////////////////////////////////////////////**///
+
+// **ADD THE SCHEMA CLEANUP CODE HERE**
+// Remove problematic schema location attributes and namespaces
+sourceXml = sourceXml.replace(/\sxmlns:xsi=&quot;[^&quot;]*&quot;/g, &quot;&quot;); 
+sourceXml = sourceXml.replace(/\sxsi:schemaLocation=&quot;[^&quot;]*&quot;/g, &quot;&quot;); 
+sourceXml = sourceXml.replace(/\sxsi:noNamespaceSchemaLocation=&quot;[^&quot;]*&quot;/g, &quot;&quot;); 
+
+// Handle abstract value elements - add xsi:type for value elements that need it
+sourceXml = sourceXml.replace(/&lt;value(\s[^&gt;]*)?&gt;/g, function(match, attrs) {
+    if (attrs &amp;&amp; attrs.indexOf(&apos;xsi:type&apos;) !== -1) {
+        return match; 
+    }
+    return &apos;&lt;value xsi:type=&quot;ST&quot;&apos; + (attrs || &apos;&apos;) + &apos;&gt;&apos;;
+});
+
+// Add back xsi namespace if we added xsi:type attributes
+if (sourceXml.indexOf(&apos;xsi:type&apos;) !== -1 &amp;&amp; sourceXml.indexOf(&apos;xmlns:xsi&apos;) === -1) {
+    sourceXml = sourceXml.replace(&apos;&lt;ClinicalDocument&apos;, &apos;&lt;ClinicalDocument xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&apos;);
+}
+  
+//********************************
+
+getManufacturerModelName(sourceXml); // Load the XSLT template
+//getConsentResourceStatus(sourceXml); // Check the existance of Consent section in the CCDA xml file and set the header variable &apos;X-TechBD-Elaboration&apos;
+
+//*******************************
+//validateLowHighDates(sourceXml); //Check the low and high dates in address
+                
+                //***************************
+                var xmlSource = new javax.xml.transform.stream.StreamSource(new java.io.StringReader(sourceXml));
+        
+        // Success: Create a structured OperationOutcome JSON response
+        var successResponse = {
+            &quot;OperationOutcome&quot;: {
+                &quot;validationResults&quot;: [
+                    {
+                        &quot;operationOutcome&quot;: {
+                            &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                            &quot;issue&quot;: [
+                                {
+                                    &quot;severity&quot;: &quot;information&quot;,
+                                    &quot;code&quot;: &quot;informational&quot;,
+                                    &quot;details&quot;: {
+                                        &quot;text&quot;: &quot;CCD XML is valid according to the XSD.&quot;
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        };
+      
+        
+        // Load the XSLT template for PHI filtering
+        var xsltPath = globalMap.get(&apos;cdaPhiFilter&apos;);
+        
+        var xsltFile = new java.io.File(xsltPath);
+        
+        var xsltStream = new java.io.FileInputStream(xsltFile);
+        
+        // Create the transformer
+        var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
+       
+        var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+        
+        var transformer = transformerFactory.newTransformer(xsltSource);
+        
+        
+        // Prepare input and output streams
+        var xmlInputStream = new java.io.StringReader(sourceXml);
+        var xmlOutputStream = new java.io.StringWriter();
+        var originalCcdFile = new javax.xml.transform.stream.StreamSource(xmlInputStream);
+        var phiFilterOutput = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
+        
+        // Generate a unique interaction ID
+        var interactionId = java.util.UUID.randomUUID().toString();
+        
+        
+        // Step 1: Save the original CCDA payload
+        var saveOriginalResult = ccdaService.saveOriginalCcdaPayload(
+            interactionId,
+            tenantId,
+            requestedPath,
+            sourceXml,
+            successResponse  
+        );
+        
+        if (saveOriginalResult) {
+            logInfo(&quot;***** Original CCDA payload saved successfully with interactionId: &quot; + interactionId + &quot; *****&quot;, channelMap);
+        } else {
+            logInfo(&quot;***** Failed to save original CCDA payload! *****&quot;, channelMap);
+        }
+        
+ // Step 2: Save the validation result
+  
+    var validationResult = ccdaService.saveValidation(
+        true, // isValid
+        interactionId,
+        tenantId,
+        requestedPath,
+        sourceXml, // Pass the XML as a string
+        successResponse // Pass the operation outcome object
+    );
+
+    if (validationResult) {
+        logInfo(&quot;***** Validation result saved successfully! *****&quot;, channelMap);
+    } else {
+        logError(&quot;***** Failed to save validation result! *****&quot;, channelMap);
+    }
+
+    // Perform the PHI filtering transformation
+    transformer.transform(originalCcdFile, phiFilterOutput);
+
+    // Store the transformed XML in the channel map
+    var phiFilteredXml = xmlOutputStream.toString();
+    channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
+    
+    // Step 3: Bundle transformation
+    // Load the XSLT template for bundling
+    var xsltPath = globalMap.get(&apos;cdaPhiBundle&apos;);
+    var xsltFile = new java.io.File(xsltPath);
+    var xsltStream = new java.io.FileInputStream(xsltFile);
+
+    // Create the transformer
+    var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
+    var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+    var transformer = transformerFactory.newTransformer(xsltSource);
+
+    // Set the current timestamp parameter in ISO 8601 format
+    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+    transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp); // Pass the parameter to XSLT
+
+    transformer = set_fhir_resource_profile_urls(transformer);
+
+
+// Retrieve the X-TechBD-Base-FHIR-URL header
+			var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
+			logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
+               transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
+				  
+   
+    // Retrieve the VALID_URLS environment variable (comma-separated list)
+    var validUrlsEnv = Packages.java.lang.System.getenv(&quot;MC_VALID_FHIR_URLS&quot;);
+    logInfo(&quot;MC_VALID_FHIR_URLS from environment: &quot; + validUrlsEnv, channelMap);
+
+    // Convert VALID_URLS to an array for validation
+    var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;) : [];
+
+    logInfo(&quot;Current Timestamp: &quot; + currentTimestamp, channelMap); // Log the timestamp
+
+    // Prepare input and output streams for bundle transformation
+    var xmlInputStream = new java.io.StringReader(phiFilteredXml);
+    var xmlOutputStream = new java.io.StringWriter();
+    var phiFilteredCcdFile = new javax.xml.transform.stream.StreamSource(xmlInputStream);
+    var bundleOutput = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
+
+  // Perform the transformation
+transformer.transform(phiFilteredCcdFile, bundleOutput);
+
+  // Store the transformed XML in the channel map
+  var ccdFhirBundle = xmlOutputStream.toString();
+ channelMap.put(&apos;ccd_fhir_bundle&apos;, ccdFhirBundle);
+  logInfo(&quot;CCD FHIR Bundle: &quot; + ccdFhirBundle, channelMap);
+
+    var jsonObject = JSON.parse(ccdFhirBundle);
+    var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
+    
+    jsonObject = JSON.parse(cleanedJsonString);
+    var nanLogs = [];
+   
+    if (nanLogs.length &gt; 0) {
+        logInfo(&quot; Detected NaN values in FHIR bundle:&quot;, channelMap);
+        nanLogs.forEach(function (log) {
+            logInfo(log, channelMap);
+        });
+    }
+
+    // Create a success response for the bundle transformation
+    var bundleSuccessResponse = {
+        &quot;Bundle&quot;: {
+            &quot;resourceType&quot;: &quot;Bundle&quot;,
+            &quot;type&quot;: &quot;document&quot;,
+            &quot;timestamp&quot;: currentTimestamp
+        }
+    };
+
+    // Step 4: Save the FHIR conversion result
+    var conversionSuccess = ccdaService.saveFhirConversionResult(
+        true, // conversion successful
+        interactionId,
+        tenantId,
+        requestedPath,
+        jsonObject // The actual FHIR bundle
+    );
+
+    if (conversionSuccess) {
+        logInfo(&quot;***** FHIR conversion result saved successfully! *****&quot;, channelMap);
+        logInfo(&quot;***** Data saved with interactionId: &quot; + interactionId + &quot; *****&quot;, channelMap);
+    } else {
+        logError(&quot;***** Failed to save FHIR conversion result! *****&quot;, channelMap);
+    }
+    
+var requestParameters = channelMap.get(&quot;requestParameters&quot;);
+if (!requestParameters) {
+    // If not found, create new one
+    requestParameters = new java.util.HashMap();
+    requestParameters.put(&quot;tenantId&quot;, tenantId);
+    requestParameters.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+    requestParameters.put(&quot;requestUri&quot;, &quot;/Bundle&quot;);
+    requestParameters.put(&quot;requestedPath&quot;, &quot;/ccda/Bundle&quot;);
+    channelMap.put(&quot;requestParameters&quot;, requestParameters);
+    logInfo(&quot;Created new requestParameters&quot;, channelMap);
+} else {
+    
+    logInfo(&quot;Using existing requestParameters from channelMap&quot;, channelMap);
+    
+    // Optionally update with current values if needed
+    requestParameters.put(&quot;tenantId&quot;, tenantId);
+    requestParameters.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+    requestParameters.put(&quot;requestedPath&quot;, &quot;/ccda/Bundle&quot;);
+}
+
+    if (conversionSuccess &amp;&amp; cleanedJsonString &amp;&amp; cleanedJsonString.trim() !== &quot;&quot;) {
+        logInfo(&quot;Preparing to call processFHIRBundle&quot;, channelMap);
+        var processFHIRBundle = globalMap.get(&quot;processFHIRBundle&quot;);
+        if (processFHIRBundle) {
+            channelMap.put(&quot;requestUri&quot;, &quot;/Bundle&quot;);
+            
+            //var validationResults = processFHIRBundle(tenantId, channelMap, cleanedJsonString, responseMap);
+            var validationResults = processFHIRBundle(tenantId, channelMap, ccdFhirBundle, responseMap);
+            responseMap.put(&quot;resultJSON&quot;, validationResults);
+            logInfo(&quot;FHIR bundle processing completed successfully&quot;, channelMap);
+            logInfo(&quot;Submission result: &quot; + JSON.stringify(validationResults), channelMap);
+        } else {
+            logError(&quot;processFHIRBundle function not found in globalMap.&quot;, channelMap);
+        }
+    }
+
+    // Convert the XML document to JSON
+    const jsonResult = cleanedJsonString;
+    globalMap.put(&apos;jsonResult&apos;, jsonResult);
+    responseMap.put(&apos;finalResponse&apos;, validationResults);
+
+} catch (e) {
+    var errorMsg = &quot;Error processing XML : &quot; + e.message;
+    logError(errorMsg, channelMap);
+
+    // Create error response
+    var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;);
+  
+    // Attempt to save error information if we have an interactionId
+    if (typeof interactionId !== &apos;undefined&apos;) {
+        try {
+            // Save validation failure
+            var validationResult = ccdaService.saveValidation(
+                false, // Validation failed
+                interactionId,
+                tenantId,
+                requestedPath,
+                e.message, // Error message as payload text
+                errorResponse // Error response as payload
+            );
+
+            if (validationResult) {
+                logInfo(&quot;***** Validation error saved successfully! *****&quot;, channelMap);
+            } else {
+                logError(&quot;***** Failed to save validation error! *****&quot;, channelMap);
+            }
+
+            // Save FHIR conversion failure
+            var conversionResult = ccdaService.saveFhirConversionResult(
+                false, // conversion failed
+                interactionId,
+                tenantId,
+                requestedPath,
+                errorResponse // Error response
+            );
+
+            if (conversionResult) {
+                logInfo(&quot;***** FHIR conversion failure record saved successfully! *****&quot;, channelMap);
+            } else {
+                logError(&quot;***** Failed to save FHIR conversion failure record! *****&quot;, channelMap);
+            }
+
+
+        } catch (dbError) {
+            logError(&quot;***** Database save error for failure: &quot; + dbError.message + &quot; *****&quot;, channelMap);
+        }
+    }
+
+    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(errorResponse));
+    throw e;
+}
+
+
+function findNaNs(obj, path, logList) {
+    if (typeof obj === &apos;number&apos; &amp;&amp; isNaN(obj)) {
+        logList.push(&quot;❌ NaN found at path: &quot; + path);
+    } else if (Array.isArray(obj)) {
+        for (var i = 0; i &lt; obj.length; i++) {
+            findNaNs(obj[i], path + &quot;[&quot; + i + &quot;]&quot;, logList);
+        }
+    } else if (typeof obj === &apos;object&apos; &amp;&amp; obj !== null) {
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                findNaNs(obj[key], path + &quot;.&quot; + key, logList);
+            }
+        }
+    }
+}
+ }</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>XML</inboundDataType>
+      <outboundDataType>RAW</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.5.3">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.5.3">
+          <stripNamespaces>false</stripNamespaces>
+        </serializationProperties>
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.5.3">
+          <splitType>Element_Name</splitType>
+          <elementName></elementName>
+          <level>1</level>
+          <query></query>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="4.5.3">
+      <elements>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;) &quot; equals &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <field>sourceMap.get(&apos;contextPath&apos;) </field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;/ccda/Bundle/&apos;</string>
+            <string>&apos;/ccda/Bundle&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;) &quot; equals &apos;POST&apos;</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <operator>AND</operator>
+          <field>sourceMap.get(&apos;method&apos;) </field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;POST&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+      </elements>
+    </filter>
+    <transportName>HTTP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="4.5.3">
+      <metaDataId>1</metaDataId>
+      <name>dest_bundle_validate</name>
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.5.3">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.5.3">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <channelId>none</channelId>
+        <channelTemplate>${message.encodedData}</channelTemplate>
+        <mapVariables/>
+      </properties>
+      <transformer version="4.5.3">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.3">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.3">
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+            <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;validate&apos;</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>$(&apos;endpoint&apos;)</field>
+            <condition>EQUALS</condition>
+            <values>
+              <string>&apos;validate&apos;</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
+      </filter>
+      <transportName>Channel Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="4.5.3">
+      <metaDataId>2</metaDataId>
+      <name>dest_bundle</name>
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.5.3">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.5.3">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <channelId>none</channelId>
+        <channelTemplate>${message.encodedData}</channelTemplate>
+        <mapVariables/>
+      </properties>
+      <transformer version="4.5.3">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.3">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.3">
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+            <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;bundle&apos;</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>$(&apos;endpoint&apos;)</field>
+            <condition>EQUALS</condition>
+            <values>
+              <string>&apos;bundle&apos;</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
+      </filter>
+      <transportName>Channel Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>// Modify the message variable below to pre process data
+// Set default source for this channel
+//channelMap.put(&quot;source&quot;, &quot;CCDA&quot;); // or &quot;CSV&quot;, &quot;HL7&quot;, etc.
+
+var requestParameters = channelMap.get(&quot;requestParameters&quot;);
+var SourceType = Packages.org.techbd.config.SourceType;
+var source = SourceType.CCDA.name(); 
+
+requestParameters.put(Packages.org.techbd.config.Constants.SOURCE_TYPE, source.trim());
+
+return message;</preprocessingScript>
+  <postprocessingScript>//// This script executes once after a message has been processed
+//// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+//
+////Version: 0.4.3 - Added support for X-TechBD-Base-FHIR-URL
+//
+//var endpoint = globalMap.get(&quot;endpoint&quot;);
+//if(endpoint == &apos;bundle&apos;) {
+//	// Get the response from the HTTP Writer destination
+//	var destinationName = &quot;dest_bundle&quot;;
+//	var destinationResponse = responseMap.get(destinationName);
+//	
+//	// Check if the response exists
+//	if (destinationResponse) {
+//	    var responseStatus = destinationResponse.getStatus();  // HTTP status code
+//	    var responseData = destinationResponse.getMessage();   // Response message body
+//		responseMap.put(&apos;finalResponse&apos;, responseData);
+//		
+//	    // Log the response details
+//	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
+//	    logger.info(&quot;Status Code: &quot; + responseStatus);
+//	    logger.info(&quot;Response Data: &quot; + responseData);
+//	} else {
+//	    logger.info(&quot;No response found for destination: &quot; + destinationName);
+//	}
+//}
+
+return;</postprocessingScript>
+  <deployScript>
+return;
+</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="4.5.3">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>false</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>mirth_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>mirth_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="4.5.3">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1752213217736</time>
+        <timezone>Asia/Calcutta</timezone>
+      </lastModified>
+      <pruningSettings>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>1</userId>
+    </metadata>
+  </exportData>
+</channel>
