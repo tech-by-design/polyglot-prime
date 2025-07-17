@@ -634,7 +634,7 @@
   - `description` Bundle.entry.resource.where(resourceType = 'Observation').where(meta.profile = 'http://shinny.org/us/ny/hrsn/StructureDefinition/shin-ny-observation-sexual-orientation').valueCodeableConcept.coding.system
   - `type` string
   - `constraints`:
-    - `enum` ['http://snomed.info/sct', 'http://terminology.hl7.org/codesystem/v3-nullflavor']
+    - `enum` ['http://snomed.info/sct', 'http://terminology.hl7.org/codesystem/v3-nullflavor', 'http://terminology.hl7.org/CodeSystem/data-absent-reason']
 ### `PATIENT_LAST_UPDATED`
   - `description` Bundle.entry.resource.where(resourceType ='Patient').meta.lastUpdated
   - `type` string

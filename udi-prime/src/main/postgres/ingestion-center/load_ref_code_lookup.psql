@@ -2062,6 +2062,11 @@ UPDATE techbd_udi_ingress.ref_code_lookup
 SET display_string = 'Weakly reactive', system_value = 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation'
 WHERE code_type = 'potential_need_indicated' AND code = 'WR' AND (display_string IS NULL OR display_string = '');
 
+-- Update system value for gender_identity 'asked-declined' code
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET system_value = 'http://terminology.hl7.org/CodeSystem/data-absent-reason'
+WHERE code_type = 'gender_identity' AND code = 'asked-declined';
+
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id, code_type, code, display_string, system_value, description, ig_version, created_at, created_by, provenance) VALUES
 ('29ab8222-046d-4186-ba3b-6cd4059f4340', 'race', '2131-1', 'Other Race', 'urn:oid:2.16.840.1.113883.6.238', 'ombCategory', '1.4.2', CURRENT_TIMESTAMP, 'neondb_owner', 'TechBD'),
 ('04400af9-f56d-44f7-8aea-d077ae281546', 'race', 'UNK', 'unknown', 'http://terminology.hl7.org/CodeSystem/v3-NullFlavor', 'ombCategory', '1.4.2', CURRENT_TIMESTAMP, 'neondb_owner', 'TechBD'),
@@ -2122,6 +2127,10 @@ WHERE code_type = 'ethnicity'
 
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
 ('3cd0cad8-6d23-40f3-99c4-2e3623741ae7','ethnicity','asked-declined','asked but declined','2.16.840.1.113883.4.642.4.1048',NULL,'1.5.2',NOW(),'neondb_owner','TechBD')
+ ON CONFLICT DO NOTHING;
+
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+('414edf76-ee9a-4bd7-807a-3ecb00d4de2e','sexual_orientation','asked-declined','Asked But Declined','http://terminology.hl7.org/CodeSystem/data-absent-reason',NULL,'1.5.2',NOW(),'neondb_owner','TechBD')
  ON CONFLICT DO NOTHING;
 
 
