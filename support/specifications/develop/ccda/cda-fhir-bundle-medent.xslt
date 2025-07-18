@@ -382,7 +382,6 @@
 
                 <xsl:variable name="ethSystem">
                   <xsl:choose>
-                    <xsl:when test="$ethCode = 'UNK' or $ethCode = 'ASKU'">http://terminology.hl7.org/CodeSystem/v3-NullFlavor</xsl:when>
                     <xsl:when test="@code">urn:oid:<xsl:value-of select="@codeSystem"/></xsl:when>
                     <xsl:otherwise></xsl:otherwise>
                   </xsl:choose>
