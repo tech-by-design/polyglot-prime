@@ -177,6 +177,16 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                                         component.setValue(value);
                                         observation.addComponent(component);
+                                } else if (!data.getDataAbsentReasonCode().isEmpty()) {
+                                    CodeableConcept dataAbsentReason = new CodeableConcept();
+                                    dataAbsentReason.addCoding(
+                                            new Coding()
+                                                    .setSystem(
+                                                            "http://terminology.hl7.org/CodeSystem/data-absent-reason")
+                                                    .setCode(fetchCode(data.getDataAbsentReasonCode(),
+                                                            CsvConstants.DATA_ABSENT_REASON_CODE, interactionId))
+                                                    .setDisplay(data.getDataAbsentReasonDisplay()));
+                                    observation.setDataAbsentReason(dataAbsentReason);
                                 }
                                 } else {
                                 if (!data.getAnswerCode().isEmpty() && !data.getAnswerCodeDescription().isEmpty()) {
