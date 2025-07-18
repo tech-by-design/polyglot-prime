@@ -39,7 +39,7 @@ org:
             # 1. Update BaseIgValidationTest.getIgPackages()
             # 2. Download latest examples to hub-prime/src/test/resources/org/techbd/ig-examples/test-shinny-examples
             # 3. Verify OrchestrationEngineTest and IgPublicationIssuesTest pass
-            ig-version: 1.5.2
+            ig-version: 1.5.3
           shinny-v1-5-2:
             profile-base-url: http://shinny.org/us/ny/hrsn
             package-path: ig-packages/shin-ny-ig/shinny/v1.5.2
@@ -53,7 +53,7 @@ org:
           us-core: ig-packages/fhir-v4/us-core/stu-7.0.0
           sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.2.0
           uv-sdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
-    baseFHIRURL: http://shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
+    baseFHIRURL: http://test.shinny.org/us/ny/hrsn #This is the default FHIR url used in generating FHIR from CSV
     validation-severity-level: error  # Possible values: fatal, error, warning, information
     structureDefinitionsUrls:
       bundle: /StructureDefinition/SHINNYBundleProfile
