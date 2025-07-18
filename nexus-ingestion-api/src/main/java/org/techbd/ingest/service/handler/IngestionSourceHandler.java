@@ -27,7 +27,7 @@ import org.techbd.ingest.model.RequestContext;
  * </ol>
  */
 public interface IngestionSourceHandler {
-    boolean canHandle(Object source);
+    boolean canHandle(Object source, RequestContext context);
     Map<String, String> handleAndProcess(Object source, RequestContext context);
 }
 

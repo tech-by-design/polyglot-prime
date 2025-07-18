@@ -3,6 +3,7 @@ package org.techbd.ingest.model;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 /**
@@ -25,6 +26,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@AllArgsConstructor
 public class RequestContext {
     private final Map<String, String> headers;
     private final String requestUrl;

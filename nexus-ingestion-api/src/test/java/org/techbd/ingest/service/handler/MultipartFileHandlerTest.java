@@ -58,13 +58,13 @@ class MultipartFileHandlerTest {
     @Test
     void testCanHandle_withMultipartFile() {
         MultipartFile mockFile = new MockMultipartFile("file", "test.csv", "text/csv", "data".getBytes());
-        assertTrue(multipartFileHandler.canHandle(mockFile));
+        assertTrue(multipartFileHandler.canHandle(mockFile, context));
     }
 
     @Test
     void testCanHandle_withInvalidSource() {
-        assertFalse(multipartFileHandler.canHandle("Not a MultipartFile"));
-        assertFalse(multipartFileHandler.canHandle(null));
+        assertFalse(multipartFileHandler.canHandle("Not a MultipartFile", context));
+        assertFalse(multipartFileHandler.canHandle(null, context));
     }
 
     @Test

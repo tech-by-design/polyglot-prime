@@ -63,14 +63,14 @@ class IngestionRouterTest {
         Object source = "validInput";
         Map<String, String> expected = Map.of("status", "handled-by-handler1");
 
-        when(handler1.canHandle(source)).thenReturn(true);
+        when(handler1.canHandle(source, context)).thenReturn(true);
         when(handler1.handleAndProcess(source, context)).thenReturn(expected);
 
         Map<String, String> result = router.routeAndProcess(source, context);
 
         assertEquals(expected, result);
         verify(handler1, times(1)).handleAndProcess(source, context);
-        verify(handler2, never()).canHandle(any());
+        verify(handler2, never()).canHandle(any(), any());
         verify(handler2, never()).handleAndProcess(any(), any());
     }
 
@@ -79,14 +79,14 @@ class IngestionRouterTest {
         Object source = "fallbackInput";
         Map<String, String> expected = Map.of("status", "handled-by-handler2");
 
-        when(handler1.canHandle(source)).thenReturn(false);
-        when(handler2.canHandle(source)).thenReturn(true);
+        when(handler1.canHandle(source, context)).thenReturn(false);
+        when(handler2.canHandle(source, context)).thenReturn(true);
         when(handler2.handleAndProcess(source, context)).thenReturn(expected);
 
         Map<String, String> result = router.routeAndProcess(source, context);
 
         assertEquals(expected, result);
-        verify(handler1, times(1)).canHandle(source);
+        verify(handler1, times(1)).canHandle(source, context);
         verify(handler1, never()).handleAndProcess(any(), any());
         verify(handler2, times(1)).handleAndProcess(source, context);
     }
@@ -95,8 +95,8 @@ class IngestionRouterTest {
     void testRouteAndProcess_whenNoHandlerCanHandle() {
         Object source = "unknownInput";
 
-        when(handler1.canHandle(source)).thenReturn(false);
-        when(handler2.canHandle(source)).thenReturn(false);
+        when(handler1.canHandle(source, context)).thenReturn(false);
+        when(handler2.canHandle(source, context)).thenReturn(false);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> router.routeAndProcess(source, context));
@@ -108,8 +108,8 @@ class IngestionRouterTest {
     void testRouteAndProcess_withNullSource() {
         Object source = null;
 
-        when(handler1.canHandle(source)).thenReturn(false);
-        when(handler2.canHandle(source)).thenReturn(false);
+        when(handler1.canHandle(source, context)).thenReturn(false);
+        when(handler2.canHandle(source, context)).thenReturn(false);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> router.routeAndProcess(source, context));
@@ -124,7 +124,7 @@ class IngestionRouterTest {
         IngestionSourceHandler mllpHandler = mock(IngestionSourceHandler.class);
         IngestionSourceHandler multipartHandler = mock(IngestionSourceHandler.class);
 
-        when(mllpHandler.canHandle(hl7Message)).thenReturn(true);
+        when(mllpHandler.canHandle(hl7Message, context)).thenReturn(true);
         Map<String, String> response = Map.of("status", "processed-hl7");
         when(mllpHandler.handleAndProcess(hl7Message, context)).thenReturn(response);
 
@@ -133,9 +133,9 @@ class IngestionRouterTest {
         Map<String, String> result = ingestionRouter.routeAndProcess(hl7Message, context);
 
         assertEquals(response, result);
-        verify(mllpHandler, times(1)).canHandle(hl7Message);
+        verify(mllpHandler, times(1)).canHandle(hl7Message, context);
         verify(mllpHandler, times(1)).handleAndProcess(hl7Message, context);
-        verify(multipartHandler, never()).canHandle(any());
+        verify(multipartHandler, never()).canHandle(any(), any());
         verify(multipartHandler, never()).handleAndProcess(any(), any());
     }
 
@@ -146,8 +146,8 @@ class IngestionRouterTest {
         IngestionSourceHandler mllpHandler = mock(IngestionSourceHandler.class);
         IngestionSourceHandler multipartHandler = mock(IngestionSourceHandler.class);
 
-        when(mllpHandler.canHandle(file)).thenReturn(false);
-        when(multipartHandler.canHandle(file)).thenReturn(true);
+        when(mllpHandler.canHandle(file, context)).thenReturn(false);
+        when(multipartHandler.canHandle(file, context)).thenReturn(true);
         Map<String, String> response = Map.of("status", "processed-multipart");
         when(multipartHandler.handleAndProcess(file, context)).thenReturn(response);
 
@@ -156,7 +156,7 @@ class IngestionRouterTest {
         Map<String, String> result = ingestionRouter.routeAndProcess(file, context);
 
         assertEquals(response, result);
-        verify(mllpHandler, times(1)).canHandle(file);
+        verify(mllpHandler, times(1)).canHandle(file, context);
         verify(mllpHandler, never()).handleAndProcess(any(), any());
         verify(multipartHandler, times(1)).handleAndProcess(file, context);
     }

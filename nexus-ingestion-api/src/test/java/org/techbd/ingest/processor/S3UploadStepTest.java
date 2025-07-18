@@ -2,12 +2,14 @@ package org.techbd.ingest.processor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ServiceClientConfiguration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
@@ -81,7 +84,9 @@ class S3UploadStepTest {
                 "192.168.1.2",
                 "8080"
         );
-
+        S3ServiceClientConfiguration mockConfig = mock(S3ServiceClientConfiguration.class);
+        when(s3Client.serviceClientConfiguration()).thenReturn(mockConfig);
+        when(mockConfig.endpointOverride()).thenReturn(Optional.empty());
         s3UploadStep = new S3UploadStep(metadataBuilderService, objectMapper, appConfig, s3Client);
     }
 

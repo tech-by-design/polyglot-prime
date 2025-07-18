@@ -25,4 +25,5 @@ public class Constants {
     public static final String BUCKET_NAME = System.getenv("AWS_S3_BUCKET_NAME");
     public static final String FIFO_Q_URL = System.getenv("AWS_SQS_QUEUE_NAME");
     public static final String TENANT_ID = System.getenv("TENANT_ID");
+    public static final String S3_PREFIX = "s3://";
     }

@@ -34,9 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 public class DataIngestionController {
-    private static final Logger LOG = LoggerFactory.getLogger(DataIngestionController.class.getName());
-
-    private static final String S3_PREFIX = "s3://";
+    private static final Logger LOG = LoggerFactory.getLogger(DataIngestionController.class.getName()); 
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private final IngestionRouter ingestionRouter;
     private final ObjectMapper objectMapper;
@@ -162,7 +160,7 @@ public class DataIngestionController {
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
 
-        String fullS3Path = S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
 
         String userAgent = headers.getOrDefault(Constants.REQ_HEADER_USER_AGENT, Constants.DEFAULT_USER_AGENT);
 
