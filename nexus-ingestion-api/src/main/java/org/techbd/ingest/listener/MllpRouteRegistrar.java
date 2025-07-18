@@ -1,16 +1,15 @@
 package org.techbd.ingest.listener;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Arrays;
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @Slf4j

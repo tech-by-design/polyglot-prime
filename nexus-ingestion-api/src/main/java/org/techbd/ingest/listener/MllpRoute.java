@@ -41,7 +41,7 @@ public class MllpRoute extends RouteBuilder {
 
                     try {
                         Message hapiMsg = parser.parse(hl7Message);
-                        ingestionRouter.routeAndProcess(hapiMsg, buildRequestContext(exchange, hl7Message, interactionId));
+                        ingestionRouter.routeAndProcess(hl7Message, buildRequestContext(exchange, hl7Message, interactionId));
                         Message ack = hapiMsg.generateACK();
                         exchange.getMessage().setBody(parser.encode(ack));
                         logger.info("[PORT {}] Processed HL7 message successfully. interactionId={}", port, interactionId);
