@@ -1,0 +1,378 @@
+<channel version="4.5.3">
+  <id>2b068a2e-062b-49f3-ac21-5cd2bcc1b9e7</id>
+  <nextMetaDataId>6</nextMetaDataId>
+  <name>AwsSqsFifoQueueListener</name>
+  <description>v0.1.4</description>
+  <revision>3</revision>
+  <sourceConnector version="4.5.3">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="4.5.3">
+      <pluginProperties/>
+      <pollConnectorProperties version="4.5.3">
+        <pollingType>INTERVAL</pollingType>
+        <pollOnStart>false</pollOnStart>
+        <pollingFrequency>10000</pollingFrequency>
+        <pollingHour>0</pollingHour>
+        <pollingMinute>0</pollingMinute>
+        <cronJobs/>
+        <pollConnectorPropertiesAdvanced>
+          <weekly>true</weekly>
+          <inactiveDays>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+          </inactiveDays>
+          <dayOfMonth>1</dayOfMonth>
+          <allDay>true</allDay>
+          <startingHour>8</startingHour>
+          <startingMinute>0</startingMinute>
+          <endingHour>17</endingHour>
+          <endingMinute>0</endingMinute>
+        </pollConnectorPropertiesAdvanced>
+      </pollConnectorProperties>
+      <sourceConnectorProperties version="4.5.3">
+        <responseVariable>None</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <script>// === Import Java classes ===
+var SqsClient = Packages.software.amazon.awssdk.services.sqs.SqsClient;
+var Region = Packages.software.amazon.awssdk.regions.Region;
+var ReceiveMessageRequest = Packages.software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+var DeleteMessageRequest = Packages.software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+
+
+// Initialize missing environment variables array
+var missingEnvVars = [];
+
+// Fetch and check environment variable: AWS_REGION
+var awsRegion = java.lang.System.getenv(&quot;AWS_REGION&quot;);
+if(awsRegion != null) {
+    //globalMap.put(&apos;awsRegion&apos;, awsRegion);
+    logger.info(&quot;awsRegion: &quot; + awsRegion);
+} else {
+    missingEnvVars.push(&quot;AWS_REGION is not set&quot;);
+}
+
+// Fetch and check environment variable: AWS_SQS_URL
+var awsSqsUrl = java.lang.System.getenv(&quot;AWS_SQS_URL&quot;);
+if(awsSqsUrl != null) {
+    //globalMap.put(&apos;awsSqsUrl&apos;, awsSqsUrl);
+    logger.info(&quot;awsSqsUrl: &quot; + awsSqsUrl);
+} else {
+    missingEnvVars.push(&quot;AWS_SQS_URL is not set&quot;);
+}
+
+// If any env vars are missing, throw a single error
+if (missingEnvVars.length &gt; 0) {
+    var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    //setErrorResponse(500, errorMessage); // Internal Server Error
+    throw errorMessage;
+}
+
+// === AWS SQS Configuration ===
+var region = Region.of(awsRegion); // Use Region.of(...) to avoid classloader issues // &quot;us-east-1&quot;
+
+// === Build SQS Client ===
+var sqsClient;
+try {
+    sqsClient = SqsClient.builder()
+        .region(region)
+        .build();
+    logger.info(&quot;✅ SqsClient loaded and built successfully!&quot;);
+} catch (e) {
+    logger.error(&quot;❌ AWS SDK SqsClient failed: &quot; + e);
+    throw e; // Stop execution if client cannot be built
+}
+
+// === Prepare Receive Request ===
+var receiveRequest = ReceiveMessageRequest.builder()
+    .queueUrl(awsSqsUrl)
+    .maxNumberOfMessages(1)
+    .waitTimeSeconds(10)
+    .build();
+
+try {
+    var response = sqsClient.receiveMessage(receiveRequest);
+    var messages = response.messages();
+
+    if (!messages.isEmpty()) {
+        var msg = messages.get(0);
+        var body = msg.body();
+        var receiptHandle = msg.receiptHandle();
+
+        logger.info(&quot;📩 Received SQS Message: &quot; + body);
+
+        // Store values for Writer / Destination
+        globalChannelMap.put(&quot;sqsMsg&quot;, body);
+        globalChannelMap.put(&quot;receiptHandle&quot;, receiptHandle);
+        globalChannelMap.put(&quot;sqsMessageObject&quot;, msg);
+
+        // Optional: Delete after reading (comment this if debugging)
+        var deleteRequest = DeleteMessageRequest.builder()
+            .queueUrl(awsSqsUrl)
+            .receiptHandle(receiptHandle)
+            .build();
+
+        sqsClient.deleteMessage(deleteRequest);
+        logger.info(&quot;🗑️ SQS Message deleted.&quot;);
+
+    } else {
+        logger.info(&quot;⏳ No messages in queue.&quot;);
+    }
+} catch (ex) {
+    logger.error(&quot;❌ Failed to receive or process SQS message: &quot; + ex);
+}
+</script>
+    </properties>
+    <transformer version="4.5.3">
+      <elements/>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>RAW</inboundDataType>
+      <outboundDataType>RAW</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="4.5.3">
+      <elements/>
+    </filter>
+    <transportName>JavaScript Reader</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="4.5.3">
+      <metaDataId>1</metaDataId>
+      <name>dest_router</name>
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.5.3">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.5.3">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <script>// ===== JavaScript Writer (AWS SDK v2) =====
+var S3Client = Packages.software.amazon.awssdk.services.s3.S3Client;
+var GetObjectRequest = Packages.software.amazon.awssdk.services.s3.model.GetObjectRequest;
+var Region = Packages.software.amazon.awssdk.regions.Region;
+var IOUtils = Packages.org.apache.commons.io.IOUtils;
+
+// Get values from channel map
+var inputMsg = globalChannelMap.get(&quot;sqsMsg&quot;) || {};
+var s3Path = globalChannelMap.get(&quot;s3Path&quot;) || inputMsg.fullS3Path || inputMsg.s3ObjectPath;
+
+function resetResources() {
+    globalChannelMap.remove(&quot;sqsMsg&quot;);
+    globalChannelMap.remove(&quot;s3Path&quot;);
+}
+
+function downloadFromS3(s3Path) {
+    if (!s3Path) throw &quot;S3 path is empty&quot;;
+
+    var s3Bucket = s3Path.split(&apos;/&apos;)[2];
+    var s3Key = s3Path.split(&apos;/&apos;).slice(3).join(&apos;/&apos;);
+
+    logger.info(&quot;📥 Downloading from S3 — Bucket: &quot; + s3Bucket + &quot;, Key: &quot; + s3Key);
+
+    var s3Client = S3Client.builder()
+        .region(Region.US_EAST_1)
+        .build();
+
+    var getRequest = GetObjectRequest.builder()
+        .bucket(s3Bucket)
+        .key(s3Key)
+        .build();
+
+    var s3Object = s3Client.getObject(getRequest);
+    return IOUtils.toString(s3Object, &quot;UTF-8&quot;);
+}
+
+function sendMessageToChannel(msg) {
+    if (!msg) {
+        logger.error(&quot;❌ No message to process.&quot;);
+        return false;
+    }
+
+    try {
+        var fileName = s3Path ? s3Path.substring(s3Path.lastIndexOf(&quot;/&quot;) + 1) : &quot;unknown&quot;;
+        var interactionId = msg.interactionId || &quot;unknown&quot;;
+        logger.info(&quot;📄 File: &quot; + fileName + &quot; | 🧾 Interaction ID: &quot; + interactionId);
+
+        var fileContent = downloadFromS3(s3Path);
+        logger.info(&quot;📦 Downloaded File Content:\n&quot; + fileContent);
+
+        msg.fetchedContent = fileContent;
+
+        // Optional routing
+        /*
+        var targetChannel = determineChannel(msg);
+        if (targetChannel) {
+            logger.info(&quot;➡️ Routing to: &quot; + targetChannel);
+            var status = router.routeMessage(targetChannel, new RawMessage(JSON.stringify(msg)));
+            logger.info(&quot;✅ Route Status: &quot; + status);
+            resetResources();
+            return true;
+        } else {
+            logger.error(&quot;❌ Target channel not found.&quot;);
+            return false;
+        }
+        */
+
+    } catch (e) {
+        logger.error(&quot;❌ Error in writer: &quot; + e);
+        return false;
+    }
+}
+
+return sendMessageToChannel(inputMsg);
+</script>
+      </properties>
+      <transformer version="4.5.3">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.3">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.3">
+        <elements/>
+      </filter>
+      <transportName>JavaScript Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>// Modify the message variable below to pre process data
+return;
+//return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+return;</postprocessingScript>
+  <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="4.5.3">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>RAW</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>true</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>mirth_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>mirth_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="4.5.3">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1752729356824</time>
+        <timezone>Asia/Calcutta</timezone>
+      </lastModified>
+      <pruningSettings>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>1</userId>
+    </metadata>
+  </exportData>
+</channel>
