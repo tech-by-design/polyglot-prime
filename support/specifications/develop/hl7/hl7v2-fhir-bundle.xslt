@@ -269,64 +269,71 @@
 			<xsl:variable name="ombRaceCodes" select="'1002-5 2028-9 2054-5 2076-8 2106-3 UNK ASKU'" />
 			<xsl:variable name="ombEthnicityCodes" select="'2135-2 2186-5 UNK ASKU'" />
 
-			<!-- RACE extension -->
-			<xsl:if test="string(//PID.10.1)">
-			  {
-				"extension": [
-				  {
-					"url": "<xsl:choose>
+		  <!-- RACE extension -->
+		  <xsl:if test="string(//PID.10.1)">
+			{
+			  "extension": [
+				{
+				  "url": "<xsl:choose>
 							  <xsl:when test="contains($ombRaceCodes, //PID.10.1)">ombCategory</xsl:when>
-							  <xsl:otherwise>detailed</xsl:otherwise>
-							</xsl:choose>",
-					"valueCoding": {
-					  "system": "urn:oid:<xsl:value-of select='//PID.10.3'/>",
-					  "code": "<xsl:value-of select='//PID.10.1'/>",
-					  "display": "<xsl:value-of select='//PID.10.2'/>"
-					}
-				  },
-				  {
-					"url": "text",
-					"valueString": "<xsl:value-of select='//PID.10.2'/>"
+							<xsl:otherwise>detailed</xsl:otherwise>
+						  </xsl:choose>",
+				  "valueCoding": {
+					"system": "urn:oid:<xsl:value-of select='//PID.10.3'/>",
+					"code": "<xsl:value-of select='//PID.10.1'/>",
+					"display": "<xsl:value-of select='//PID.10.2'/>"
 				  }
-				],
-				"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
-			  }
+				},
+				{
+				  "url": "text",
+				  "valueString": "<xsl:value-of select='//PID.10.2'/>"
+				}
+			  ],
+			  "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+			}
+			<xsl:if test="string(//PID.22.1) or string(//PID.8.1)">
+			  <xsl:text>,</xsl:text>
 			</xsl:if>
+		  </xsl:if>
 
-			<!-- ETHNICITY extension -->
-			<xsl:if test="string(//PID.22.1)">
-			  ,{
-				"extension": [
-				  {
-					"url": "<xsl:choose>
+		  <!-- ETHNICITY extension -->
+		  <xsl:if test="string(//PID.22.1)">
+			{
+			  "extension": [
+				{
+				  "url": "<xsl:choose>
 							  <xsl:when test="contains($ombEthnicityCodes, //PID.22.1)">ombCategory</xsl:when>
-							  <xsl:otherwise>detailed</xsl:otherwise>
-							</xsl:choose>",
-					"valueCoding": {
-					  "system": "urn:oid:<xsl:value-of select='//PID.22.3'/>",
-					  "code": "<xsl:value-of select='//PID.22.1'/>",
-					  "display": "<xsl:value-of select='//PID.22.2'/>"
-					}
-				  },
-				  {
-					"url": "text",
-					"valueString": "<xsl:value-of select='//PID.22.2'/>"
+							<xsl:otherwise>detailed</xsl:otherwise>
+						  </xsl:choose>",
+				  "valueCoding": {
+					"system": "urn:oid:<xsl:value-of select='//PID.22.3'/>",
+					"code": "<xsl:value-of select='//PID.22.1'/>",
+					"display": "<xsl:value-of select='//PID.22.2'/>"
 				  }
-				],
-				"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
-			  }
-			</xsl:if>
-
-			<!-- Administrative Gender extension -->
+				},
+				{
+				  "url": "text",
+				  "valueString": "<xsl:value-of select='//PID.22.2'/>"
+				}
+			  ],
+			  "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+			}
 			<xsl:if test="string(//PID.8.1)">
-			  ,{
-				"url": "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
-				"valueCode": "<xsl:call-template name='mapAdministrativeGenderCode'>
-								<xsl:with-param name='genderCode' select='//PID.8.1'/>
-							  </xsl:call-template>"
-			  }
+			  <xsl:text>,</xsl:text>
 			</xsl:if>
-		  ]
+		  </xsl:if>
+
+		  <!-- Administrative Gender extension -->
+		  <xsl:if test="string(//PID.8.1)">
+			{
+			  "url": "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
+			  "valueCode": "<xsl:call-template name='mapAdministrativeGenderCode'>
+							  <xsl:with-param name='genderCode' select='//PID.8.1'/>
+							</xsl:call-template>"
+			}
+		  </xsl:if>
+
+		  <xsl:text>]</xsl:text>
 		</xsl:if>
 
       <xsl:variable name="cinId" select="$patientCIN"/>
