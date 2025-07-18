@@ -1,121 +1,83 @@
 package org.techbd.ingest.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.time.ZonedDateTime;
-import java.util.List;
+import java.io.InputStream;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.service.MetadataBuilderService;
 import org.techbd.ingest.service.router.IngestionRouter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class DataIngestionControllerTest {
+import jakarta.servlet.http.HttpServletRequest;
+
+class DataIngestionControllerTest {
+
+    @Mock
+    private IngestionRouter ingestionRouter;
+
+    @Mock
+    private HttpServletRequest servletRequest;
 
     private ObjectMapper objectMapper;
+
+    @InjectMocks
     private DataIngestionController controller;
-    private IngestionRouter ingestionRouter;
-    private MetadataBuilderService metadataBuilderService;
+
     @BeforeEach
-    void setup() {
-        metadataBuilderService = mock(MetadataBuilderService.class);
-        ingestionRouter = mock(IngestionRouter.class);
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
         objectMapper = new ObjectMapper();
         controller = new DataIngestionController(ingestionRouter, objectMapper);
+        when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost:8080/ingest"));
+        when(servletRequest.getQueryString()).thenReturn("param=value");
+        when(servletRequest.getProtocol()).thenReturn("HTTP/1.1");
+        when(servletRequest.getLocalAddr()).thenReturn("127.0.0.1");
+        when(servletRequest.getRemoteAddr()).thenReturn("192.168.0.1");
     }
 
-    @Test
-    void testBuildS3Metadata() {
-        Map<String, String> headers = Map.of(
-            "User-Agent", "JUnit-Test-Agent",
-            "X-Tenant-Id", "testTenant"
-        );
-
-        RequestContext context = new RequestContext(
-            headers,
-            "/Bundle",
-            "testTenant",
-            "12345",
-            //"fhir",
-            ZonedDateTime.now(),
-            "1716899999999",
-            "testFile.json",
-            1024L,
-            "fhir/2025/05/28-12345.json",
-            "fhir/2025/05/28-12345_metadata.json",
-            "s3://test-bucket/fhir/2025/05/28-12345.json",
-            "JUnit-Test-Agent",
-            "http://localhost:8080/Bundle",
-            "param=value",
-            "HTTP/1.1",
-            "127.0.0.1",
-            "192.168.1.1"
-        );
-
-        Map<String, String> metadata = metadataBuilderService.buildS3Metadata(context);
-
-        assertEquals("12345", metadata.get("interactionId"));
-        assertEquals("testTenant", metadata.get("tenantId"));
-        assertEquals("testFile.json", metadata.get("fileName"));
-        assertEquals("1024", metadata.get("FileSize"));
-        assertEquals("s3://test-bucket/fhir/2025/05/28-12345.json", metadata.get("s3ObjectPath"));
-        assertNotNull(metadata.get("UploadTime"));
-        assertEquals("JUnit-Test-Agent", metadata.get("UploadedBy"));
+    static Stream<String> fileNames() {
+        return Stream.of(
+                "test.csv", "test.json", "test.hl7", "test.xml", "test.zip");
     }
 
-    @Test
-    void testBuildMetadataJson() {
-        Map<String, String> headers = Map.of(
-            "User-Agent", "JUnit-Test-Agent",
-            "X-Tenant-Id", "testTenant",
-            "Content-Type", "application/json"
-        );
+    @ParameterizedTest
+    @MethodSource("fileNames")
+    void testIngestEndpointWithDifferentFiles(String fileName) throws Exception {
+        // Arrange
+        InputStream inputStream = getClass().getResourceAsStream("/org/techbd/ingest/examples/" + fileName);
+        assert inputStream != null : "Test file not found: " + fileName;
 
-        RequestContext context = new RequestContext(
-            headers,
-            "/Bundle",
-            "testTenant",
-            "abcde-12345",
-          //  "fhir",
-            ZonedDateTime.parse("2025-05-28T12:00:00Z"),
-            "1716899999999",
-            "example.json",
-            2048L,
-            "fhir/2025/05/28-abcde-12345.json",
-            "fhir/2025/05/28-abcde-12345_metadata.json",
-            "s3://test-bucket/fhir/2025/05/28-abcde-12345.json",
-            "JUnit-Test-Agent",
-            "http://localhost:8080/Bundle",
-            "q=123",
-            "HTTP/1.1",
-            "10.0.0.1",
-            "172.16.1.1"
-        );
+        byte[] fileBytes = inputStream.readAllBytes();
+        MockMultipartFile mockFile = new MockMultipartFile("file", fileName, null, fileBytes);
 
-        Map<String, Object> metadataJson = metadataBuilderService.buildMetadataJson(context);
+        Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
+        Map<String, String> mockResponse = Map.of("status", "SUCCESS", "fileName", fileName);
 
-        assertEquals("testTenant", metadataJson.get("tenantId"));
-        assertEquals("abcde-12345", metadataJson.get("interactionId"));
-     //   assertEquals("fhir", metadataJson.get("msgType"));
-        assertEquals("example.json", metadataJson.get("fileName"));
-        assertEquals("2048", metadataJson.get("fileSize"));
-        assertEquals("s3://test-bucket/fhir/2025/05/28-abcde-12345.json", metadataJson.get("s3ObjectPath"));
-        assertEquals("http://localhost:8080/Bundle", metadataJson.get("fullRequestUrl"));
-        assertEquals("q=123", metadataJson.get("queryParams"));
-        assertEquals("HTTP/1.1", metadataJson.get("protocol"));
-        assertEquals("10.0.0.1", metadataJson.get("localAddress"));
-        assertEquals("172.16.1.1", metadataJson.get("remoteAddress"));
-        assertEquals("Mirth Connect", metadataJson.get("sourceSystem"));
+        when(ingestionRouter.routeAndProcess(eq(mockFile), any(RequestContext.class)))
+                .thenReturn(mockResponse);
 
-        // Check headers list
-        List<?> headerList = (List<?>) metadataJson.get("headers");
-        assertNotNull(headerList);
-        assertEquals(3, headerList.size());
+        // Act
+        ResponseEntity<String> response = controller.ingest(mockFile, mockHeaders, servletRequest);
+
+        // Assert
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getBody()).contains("SUCCESS", fileName);
+
+        verify(ingestionRouter).routeAndProcess(eq(mockFile), any(RequestContext.class));
     }
 }

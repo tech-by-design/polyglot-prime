@@ -34,9 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 public class DataIngestionController {
-    private static final Logger LOG = LoggerFactory.getLogger(DataIngestionController.class.getName());
-
-    private static final String S3_PREFIX = "s3://";
+    private static final Logger LOG = LoggerFactory.getLogger(DataIngestionController.class.getName()); 
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private final IngestionRouter ingestionRouter;
     private final ObjectMapper objectMapper;
@@ -125,11 +123,18 @@ public class DataIngestionController {
             String originalFileName) {
         LOG.info("DataIngestionController:: Creating RequestContext. interactionId={}", interactionId);
 
-        String tenantId = headers.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(Constants.REQ_HEADER_TENANT_ID))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(null);
+        String sourceIp = null;
+        var tenantId = headers.get(Constants.REQ_HEADER_TENANT_ID);
+        final var xForwardedFor = headers.get(Constants.REQ_HEADER_X_FORWARDED_FOR);
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            sourceIp = xForwardedFor.split(",")[0].trim();
+        } else {
+            sourceIp = headers.get(Constants.REQ_HEADER_X_REAL_IP);
+        }
+
+        // Extract destination IP and port
+        final var destinationIp = headers.get(Constants.REQ_X_SERVER_IP);
+        final var destinationPort = headers.get(Constants.REQ_X_SERVER_PORT);
         if (tenantId == null || tenantId.trim().isEmpty()) {
             tenantId = Constants.TENANT_ID;
         }
@@ -155,7 +160,7 @@ public class DataIngestionController {
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
 
-        String fullS3Path = S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
 
         String userAgent = headers.getOrDefault(Constants.REQ_HEADER_USER_AGENT, Constants.DEFAULT_USER_AGENT);
 
@@ -184,6 +189,10 @@ public class DataIngestionController {
                 queryParams,
                 protocol,
                 localAddress,
-                remoteAddress);
+                remoteAddress,
+                sourceIp,
+                destinationIp,
+                destinationPort
+        );
     }
 }

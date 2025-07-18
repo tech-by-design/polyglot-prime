@@ -36,10 +36,10 @@ public class MultipartFileHandler implements IngestionSourceHandler {
      * @return true if the source is a valid MultipartFile, false otherwise.
      */
     @Override
-    public boolean canHandle(Object source) {
+    public boolean canHandle(Object source, RequestContext context) {
         boolean canHandle = source instanceof MultipartFile;
-        LOG.info("MultipartFileHandler:: canHandle called. Source type: {}, Result: {}", 
-                source != null ? source.getClass().getSimpleName() : "null", canHandle);
+        LOG.info("MultipartFileHandler:: canHandle called. Source type: {}, Result: {}, interactionId={}", 
+                source != null ? source.getClass().getSimpleName() : "null", canHandle, context != null ? context.getInteractionId() : "unknown");
         return canHandle;
     }
 

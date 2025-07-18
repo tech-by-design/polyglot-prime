@@ -51,7 +51,7 @@ public class IngestionRouter {
                 source != null ? source.getClass().getSimpleName() : "null", interactionId);
 
         return handlers.stream()
-                .filter(h -> h.canHandle(source))
+                .filter(h -> h.canHandle(source,context))
                 .findFirst()
                 .map(handler -> {
                     LOG.info("IngestionRouter:: Handler {} selected for processing. interactionId={}", handler.getClass().getSimpleName(), interactionId);

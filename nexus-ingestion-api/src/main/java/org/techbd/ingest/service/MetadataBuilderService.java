@@ -62,7 +62,7 @@ public class MetadataBuilderService {
         jsonMetadata.put("timestamp", context.getTimestamp());
         jsonMetadata.put("fileName", context.getFileName());
         jsonMetadata.put("fileSize", String.valueOf(context.getFileSize()));
-        jsonMetadata.put("sourceSystem", "Mirth Connect");
+        jsonMetadata.put("sourceSystem", context.getUserAgent());
         jsonMetadata.put("s3ObjectPath", context.getFullS3Path());
         jsonMetadata.put("requestUrl", context.getRequestUrl());
         jsonMetadata.put("fullRequestUrl", context.getFullRequestUrl());

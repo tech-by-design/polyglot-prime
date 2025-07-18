@@ -1,0 +1,4 @@
+MSH|^~\&|SendingApp|SendingFacility|ReceivingApp|ReceivingFacility|202506301200||ADT^A01|123456|P|2.5.1
+EVN|A01|202506301200
+PID|1||123456^^^Hospital^MR||Doe^John^A||19800101|M|||123 Main St^^Metropolis^NY^10001^USA||(123)456-7890|||S||123456789|987-65-4320
+PV1|1|I|W^389^1^Hospital||||1234^Smith^Jane^A^MD|||||||||||123456^PrimaryCare^Joe^M^MD|||||||||||||||||||||||||202506301200
