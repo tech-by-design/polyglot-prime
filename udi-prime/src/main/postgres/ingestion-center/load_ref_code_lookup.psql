@@ -2067,6 +2067,11 @@ UPDATE techbd_udi_ingress.ref_code_lookup
 SET system_value = 'http://terminology.hl7.org/CodeSystem/data-absent-reason'
 WHERE code_type = 'gender_identity' AND code = 'asked-declined';
 
+-- Update display_string for ethnicity code '2186-5'
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET display_string = 'Non Hispanic or Latino'
+WHERE code_type = 'ethnicity' AND code = '2186-5';
+
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id, code_type, code, display_string, system_value, description, ig_version, created_at, created_by, provenance) VALUES
 ('29ab8222-046d-4186-ba3b-6cd4059f4340', 'race', '2131-1', 'Other Race', 'urn:oid:2.16.840.1.113883.6.238', 'ombCategory', '1.4.2', CURRENT_TIMESTAMP, 'neondb_owner', 'TechBD'),
 ('04400af9-f56d-44f7-8aea-d077ae281546', 'race', 'UNK', 'unknown', 'http://terminology.hl7.org/CodeSystem/v3-NullFlavor', 'ombCategory', '1.4.2', CURRENT_TIMESTAMP, 'neondb_owner', 'TechBD'),
