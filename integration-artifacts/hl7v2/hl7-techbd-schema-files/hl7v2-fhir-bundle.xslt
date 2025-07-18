@@ -263,78 +263,155 @@
 		  ]
 		</xsl:if>
         
-      <xsl:if test="string(//PID.10.1) or string(//PID.22.1) or string(//PID.8.1)">
-		  , "extension": [
-			<!-- Declare OMB code sets -->
-			<xsl:variable name="ombRaceCodes" select="'1002-5 2028-9 2054-5 2076-8 2106-3 UNK ASKU'" />
-			<xsl:variable name="ombEthnicityCodes" select="'2135-2 2186-5 UNK ASKU'" />
+      <xsl:if test="ccda:patient/ccda:raceCode or ccda:patient/ccda:ethnicGroupCode or ccda:patient/ccda:administrativeGenderCode/@code">
+      , "extension": [
+        <!-- Declare OMB code sets -->
+        <xsl:variable name="ombRaceCodes" select="'1002-5 2028-9 2054-5 2076-8 2106-3 UNK ASKU'" />
+        <xsl:variable name="ombEthnicityCodes" select="'2135-2 2186-5 UNK ASKU'" />
 
-		  <!-- RACE extension -->
-		  <xsl:if test="string(//PID.10.1)">
-			{
-			  "extension": [
-				{
-				  "url": "<xsl:choose>
-							  <xsl:when test="contains($ombRaceCodes, //PID.10.1)">ombCategory</xsl:when>
-							<xsl:otherwise>detailed</xsl:otherwise>
-						  </xsl:choose>",
-				  "valueCoding": {
-					"system": "urn:oid:<xsl:value-of select='//PID.10.3'/>",
-					"code": "<xsl:value-of select='//PID.10.1'/>",
-					"display": "<xsl:value-of select='//PID.10.2'/>"
-				  }
-				},
-				{
-				  "url": "text",
-				  "valueString": "<xsl:value-of select='//PID.10.2'/>"
-				}
-			  ],
-			  "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
-			}
-			<xsl:if test="string(//PID.22.1) or string(//PID.8.1)">
-			  <xsl:text>,</xsl:text>
-			</xsl:if>
-		  </xsl:if>
+        <!-- RACE extension -->
+        <xsl:if test="ccda:patient/ccda:raceCode">
+          {
+            "extension": [
+              <xsl:for-each select="ccda:patient/ccda:raceCode">
+                <xsl:variable name="raceCode">
+                  <xsl:choose>
+                    <xsl:when test="@code"><xsl:value-of select="@code"/></xsl:when>
+                    <xsl:when test="@nullFlavor"><xsl:value-of select="@nullFlavor"/></xsl:when>
+                  </xsl:choose>
+                </xsl:variable>
 
-		  <!-- ETHNICITY extension -->
-		  <xsl:if test="string(//PID.22.1)">
-			{
-			  "extension": [
-				{
-				  "url": "<xsl:choose>
-							  <xsl:when test="contains($ombEthnicityCodes, //PID.22.1)">ombCategory</xsl:when>
-							<xsl:otherwise>detailed</xsl:otherwise>
-						  </xsl:choose>",
-				  "valueCoding": {
-					"system": "urn:oid:<xsl:value-of select='//PID.22.3'/>",
-					"code": "<xsl:value-of select='//PID.22.1'/>",
-					"display": "<xsl:value-of select='//PID.22.2'/>"
-				  }
-				},
-				{
-				  "url": "text",
-				  "valueString": "<xsl:value-of select='//PID.22.2'/>"
-				}
-			  ],
-			  "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
-			}
-			<xsl:if test="string(//PID.8.1)">
-			  <xsl:text>,</xsl:text>
-			</xsl:if>
-		  </xsl:if>
+                <xsl:variable name="raceDisplay">
+                  <xsl:choose>
+                    <xsl:when test="@code"><xsl:value-of select="@displayName"/></xsl:when>
+                    <xsl:otherwise>
+                      <xsl:call-template name="getRaceEthnicityNullFlavorDisplay">
+                        <xsl:with-param name="nullFlavor" select="@nullFlavor"/>
+                      </xsl:call-template>
+                    </xsl:otherwise>
+                  </xsl:choose>
+                </xsl:variable>
 
-		  <!-- Administrative Gender extension -->
-		  <xsl:if test="string(//PID.8.1)">
-			{
-			  "url": "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
-			  "valueCode": "<xsl:call-template name='mapAdministrativeGenderCode'>
-							  <xsl:with-param name='genderCode' select='//PID.8.1'/>
-							</xsl:call-template>"
-			}
-		  </xsl:if>
+                <xsl:variable name="raceUrl">
+                  <xsl:choose>
+                    <xsl:when test="contains($ombRaceCodes, $raceCode)">ombCategory</xsl:when>
+                    <xsl:otherwise>detailed</xsl:otherwise>
+                  </xsl:choose>
+                </xsl:variable>
 
-		  <xsl:text>]</xsl:text>
-		</xsl:if>
+                <xsl:variable name="raceSystem">
+                  <xsl:choose>
+                    <xsl:when test="@code">urn:oid:<xsl:value-of select="@codeSystem"/></xsl:when>
+                    <xsl:otherwise></xsl:otherwise>
+                    <!-- <xsl:otherwise>http://terminology.hl7.org/CodeSystem/v3-NullFlavor</xsl:otherwise> -->
+                  </xsl:choose>
+                </xsl:variable>
+
+                {
+                  "url": "<xsl:value-of select='$raceUrl'/>",
+                  "valueCoding": {
+                    "system": "<xsl:value-of select='$raceSystem'/>",
+                    "code": "<xsl:value-of select='$raceCode'/>",
+                    "display": "<xsl:value-of select='$raceDisplay'/>"
+                  }
+                }<xsl:if test="position() != last()">,</xsl:if>
+              </xsl:for-each>
+              ,{
+                "url": "text",
+                "valueString": "<xsl:for-each select='ccda:patient/ccda:raceCode'>
+                                  <xsl:choose>
+                                    <xsl:when test='@code'><xsl:value-of select='@displayName'/></xsl:when>
+                                    <xsl:otherwise>
+                                      <xsl:call-template name='getRaceEthnicityNullFlavorDisplay'>
+                                        <xsl:with-param name='nullFlavor' select='@nullFlavor'/>
+                                      </xsl:call-template>
+                                    </xsl:otherwise>
+                                  </xsl:choose>
+                                  <xsl:if test='position() != last()'>, </xsl:if>
+                                </xsl:for-each>"
+              }
+            ],
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+          },
+        </xsl:if>
+
+        <!-- ETHNICITY extension -->
+        <xsl:if test="ccda:patient/ccda:ethnicGroupCode">
+          {
+            "extension": [
+              <xsl:for-each select="ccda:patient/ccda:ethnicGroupCode">
+                <xsl:variable name="ethCode">
+                  <xsl:choose>
+                    <xsl:when test="@code"><xsl:value-of select="@code"/></xsl:when>
+                    <xsl:when test="@nullFlavor"><xsl:value-of select="@nullFlavor"/></xsl:when>
+                  </xsl:choose>
+                </xsl:variable>
+
+                <xsl:variable name="ethDisplay">
+                  <xsl:choose>
+                    <xsl:when test="@code"><xsl:value-of select="@displayName"/></xsl:when>
+                    <xsl:otherwise>
+                      <xsl:call-template name="getRaceEthnicityNullFlavorDisplay">
+                        <xsl:with-param name="nullFlavor" select="@nullFlavor"/>
+                      </xsl:call-template>
+                    </xsl:otherwise>
+                  </xsl:choose>
+                </xsl:variable>
+
+                <xsl:variable name="ethUrl">
+                  <xsl:choose>
+                    <xsl:when test="contains($ombEthnicityCodes, $ethCode)">ombCategory</xsl:when>
+                    <xsl:otherwise>detailed</xsl:otherwise>
+                  </xsl:choose>
+                </xsl:variable>
+
+                <xsl:variable name="ethSystem">
+                  <xsl:choose>
+                    <xsl:when test="@code">urn:oid:<xsl:value-of select="@codeSystem"/></xsl:when>
+                    <xsl:otherwise></xsl:otherwise>
+                    <!-- <xsl:otherwise>http://terminology.hl7.org/CodeSystem/v3-NullFlavor</xsl:otherwise> -->
+                  </xsl:choose>
+                </xsl:variable>
+
+                {
+                  "url": "<xsl:value-of select='$ethUrl'/>",
+                  "valueCoding": {
+                    "system": "<xsl:value-of select='$ethSystem'/>",
+                    "code": "<xsl:value-of select='$ethCode'/>",
+                    "display": "<xsl:value-of select='$ethDisplay'/>"
+                  }
+                }<xsl:if test="position() != last()">,</xsl:if>
+              </xsl:for-each>
+              ,{
+                "url": "text",
+                "valueString": "<xsl:for-each select='ccda:patient/ccda:ethnicGroupCode'>
+                                  <xsl:choose>
+                                    <xsl:when test='@code'><xsl:value-of select='@displayName'/></xsl:when>
+                                    <xsl:otherwise>
+                                      <xsl:call-template name='getRaceEthnicityNullFlavorDisplay'>
+                                        <xsl:with-param name='nullFlavor' select='@nullFlavor'/>
+                                      </xsl:call-template>
+                                    </xsl:otherwise>
+                                  </xsl:choose>
+                                  <xsl:if test='position() != last()'>, </xsl:if>
+                                </xsl:for-each>"
+              }
+            ],
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+          }
+        </xsl:if>
+
+        <!-- GenderCode extension -->
+        <xsl:if test="string(ccda:patient/ccda:administrativeGenderCode/@code)">
+        ,{
+            "url": "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender", 
+            "valueCode": "<xsl:call-template name='mapAdministrativeGenderCode'>
+                              <xsl:with-param name='genderCode' select='ccda:patient/ccda:administrativeGenderCode/@code'/>
+                          </xsl:call-template>"
+        }
+        </xsl:if>
+      ]
+      </xsl:if>
 
       <xsl:variable name="cinId" select="$patientCIN"/>
 

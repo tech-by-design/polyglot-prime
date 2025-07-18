@@ -65,11 +65,11 @@ public class InteractionsController {
     public String httpsccda(final Model model, final HttpServletRequest request) {
         return presentation.populateModel("page/interactions/httpsccda", model, request);
     }       
-    @GetMapping("/interactions/httpshl7v2")
-    @RouteMapping(label = "HL7V2 via HTTPs", title = "HL7V2 via HTTPs", siblingOrder = 60)
-    public String httpshl7v2(final Model model, final HttpServletRequest request) {
-        return presentation.populateModel("page/interactions/httpshl7v2", model, request);
-    } 
+    // @GetMapping("/interactions/httpshl7v2")
+    // @RouteMapping(label = "HL7V2 via HTTPs", title = "HL7V2 via HTTPs", siblingOrder = 60)
+    // public String httpshl7v2(final Model model, final HttpServletRequest request) {
+    //     return presentation.populateModel("page/interactions/httpshl7v2", model, request);
+    // } 
     @Operation(summary = "Recent SFTP Interactions")
     @GetMapping("/support/interaction/sftp/recent.json")
     @ResponseBody

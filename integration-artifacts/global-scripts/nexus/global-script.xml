@@ -1,0 +1,728 @@
+<map>
+  <entry>
+    <string>Undeploy</string>
+    <string>// This script executes once for each deploy, undeploy, or redeploy task
+// if at least one channel was undeployed
+// You only have access to the globalMap here to persist data
+return;</string>
+  </entry>
+  <entry>
+    <string>Postprocessor</string>
+    <string>// This script executes once after a message has been processed
+// This script applies across all channels
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+// You have access to &quot;response&quot;, if returned from the channel postprocessor
+// Log message processing completion
+//if (channelName == &apos;AwsSqsFifoQueueListener&apos;){
+//	return;
+//}
+if (channelName == &apos;AwsSqsFifoQueueListener&apos;){
+} else {
+var logInfo = globalMap.get(&quot;logInfo&quot;);
+var startTime = channelMap.get(&quot;startTime&quot;);
+if (startTime != null) {
+    var endTime = new Date().getTime();
+    var duration = endTime - startTime;
+    logInfo(&quot;==== END of Message Processing received at channel. Duration: &quot; + duration + &quot; ms ====&quot;, channelMap);
+} else {
+    logInfo(&quot;==== END of Message Processing received at channel ====&quot;, channelMap);
+}
+}
+return;</string>
+  </entry>
+  <entry>
+    <string>Deploy</string>
+    <string>// Modify the message variable below to pre process data
+// This script applies across all channels
+var BufferedOutputStream = Packages.java.io.BufferedOutputStream;
+var ObjectMapper = Packages.com.fasterxml.jackson.databind.ObjectMapper;
+var JavaTimeModule = Packages.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+var SpringContextHolder = Packages.org.techbd.SpringContextHolder;
+/*************************************GLOBAL OBJECTS CREATION  -BEGIN ***************************************************************
+ * This block is responsible for initializing and storing singleton-like Java objects  
+ * in `globalMap`. Objects that need to be instantiated only once for the application&apos;s  
+ * lifecycle should be initialized here.  
+ *
+ * **Purpose &amp; Best Practices:**
+ * - Ensures efficient memory utilization and performance optimization.
+ * - Reduces redundant object creation by storing instances in `globalMap`.
+ * - Objects stored here should be read from `globalMap` within **preprocessors** or **transformers**  
+ *   instead of re-instantiating them.
+ *
+ * **Objects Initialized:**
+ * 1. **appConfig** (`org.techbd.config.ConfigLoader`):
+ *    - Loads application configuration using `ConfigLoader`.
+ *    - Loads all properties from application.yml and the properties in specific environment yml
+ *
+ * 2. **fhirService** (`org.techbd.service.fhir.FHIRService`):
+ *    - Core FHIR service responsible for processing FHIR-related operations.
+ *    - Uses `appConfig` for configuration.
+ *    - Uses `OrchestrationEngine` (`org.techbd.service.fhir.engine.OrchestrationEngine`)  
+ *      for processing FHIR requests.
+ *    - Stored in `globalMap` to prevent redundant instantiations.
+ *    - Responsible for loading IG packages and resources
+ *
+ * **Usage:**
+ * - Preprocessors and transformers should **retrieve** these objects from `globalMap`  
+ *   instead of creating new instances.
+ * - To add a new singleton-like Java object, initialize it **once** and store it in `globalMap`.  
+ *
+ * **Example Retrieval in a Transformer:**
+ * ```javascript
+ * var fhirService = globalMap.get(&quot;fhirService&quot;);
+ * fhirService.processFHIRData(someData);
+ * ```
+ */
+
+if (!globalMap.containsKey(&quot;fhirService&quot;)) {
+   var fhirService = SpringContextHolder.getBean(Packages.org.techbd.service.fhir.FHIRService);
+   globalMap.put(&quot;fhirService&quot;, fhirService);
+}
+
+if (!globalMap.containsKey(&quot;csvService&quot;)) {
+     var csvService = SpringContextHolder.getBean(Packages.org.techbd.service.csv.CsvService);
+      globalMap.put(&quot;csvService&quot;, csvService);
+}
+
+if (!globalMap.containsKey(&quot;ccdaService&quot;)) {
+    var ccdaService = SpringContextHolder.getBean(Packages.org.techbd.service.ccda.CCDAService);
+    globalMap.put(&quot;ccdaService&quot;, ccdaService);
+}
+
+//AwsSqsFifoQueueListener
+
+
+
+
+if (!globalMap.containsKey(&quot;mapper&quot;)) {
+    var mapper = new ObjectMapper();
+    mapper.registerModule(new JavaTimeModule());
+    globalMap.put(&quot;mapper&quot;, mapper);
+}
+
+/********************************************GLOBAL OBJECTS CREATION  -END ******************************************************/
+/**
+ * Retrieves the Interaction ID from the channel map.
+ * If not found, returns &quot;UNKNOWN_INTERACTION&quot;.
+ */
+function getInteractionId(channelMap) {
+    var interactionId = channelMap.get(&quot;interactionId&quot;);
+    return interactionId ? interactionId : &quot;UNKNOWN_INTERACTION&quot;;
+}
+
+// Ensure globalMap has the logger functions when the channel starts
+globalMap.put(&quot;logInfo&quot;, function(message,channelMap) {
+    var channelId = channelMap.get(&quot;channelId&quot;);
+    var channelName = channelMap.get(&quot;channelName&quot;);
+    logger.info(&quot;[ ChannelID: &quot; + channelId + &quot;][ ChannelName: &quot; + channelName + &quot;][ InteractionID: &quot; + getInteractionId(channelMap) + &quot;] &quot; + message);
+});
+
+globalMap.put(&quot;logError&quot;, function(message,channelMap) {
+    var channelId = channelMap.get(&quot;channelId&quot;);
+    var channelName = channelMap.get(&quot;channelName&quot;);	
+    logger.error(&quot;[ ChannelID: &quot; + channelId + &quot;][ ChannelName: &quot; + channelName + &quot;][ InteractionID: &quot; + getInteractionId(channelMap) + &quot;] &quot; + message);
+});
+
+globalMap.put(&quot;logDebug&quot;, function(message,channelMap) {
+    var channelId = channelMap.get(&quot;channelId&quot;);
+    var channelName = channelMap.get(&quot;channelName&quot;);	
+   logger.debug(&quot;[ ChannelID: &quot; + channelId + &quot;][ ChannelName: &quot; + channelName + &quot;][ InteractionID: &quot; + getInteractionId(channelMap) + &quot;] &quot; + message);
+});
+
+///*
+// * This global function is used to build a map of request parameters.  
+// * It is called in the preprocessor for every message to populate necessary metadata  
+// * required for processing the FHIR request.
+// *
+// * The function ensures that required request parameters are set and validated  
+// * before proceeding with further processing.
+// *
+// * **Parameters:**
+// * @param {string} interactionId - A unique identifier for the interaction.
+// *
+// * **Request Parameters Included:**
+// * - `REQUEST_URI`: The request URI (e.g., `/Bundle/$validate`), determines validation logic.
+// * - `INTERACTION_ID`: A unique identifier for tracking the interaction.
+// * - `ORIGIN`: The source of the request (e.g., HTTP).
+// * - `SOURCE_TYPE`: Specifies the type of data source (e.g., FHIR).
+// * - `OBSERVABILITY_METRIC_INTERACTION_START_TIME`: A placeholder timestamp (to be replaced dynamically).
+// *
+// *
+// *
+// * @returns {java.util.HashMap} A map containing request parameters.
+// */
+function getRequestParameters(interactionId, channelMap, sourceMap) {
+   var requestParameters = new Packages.java.util.HashMap();
+   var requestUri = sourceMap.get(&apos;contextPath&apos;);
+   var parameters = sourceMap.get(&apos;parameters&apos;);
+   var requestUrl = sourceMap.get(&apos;requestUrl&apos;);
+   var protocol = sourceMap.get(&apos;protocol&apos;);
+   var localAddress = sourceMap.get(&apos;localAddress&apos;);
+   var remoteAddress = sourceMap.get(&apos;remoteAddress&apos;);
+   var SourceType = Packages.org.techbd.config.SourceType;
+   var Origin = Packages.org.techbd.config.Origin;
+   var origin = Origin.HTTP.name();
+   var source = SourceType.FHIR.name(); //Add source accordingly in preprocessor of respective channels.Default value is FHIR
+  
+   if (parameters &amp;&amp; parameters.getParameter(&quot;origin&quot;)) {
+       origin = parameters.getParameter(&quot;origin&quot;).trim();
+   }
+   if (parameters &amp;&amp; parameters.getParameter(&quot;source&quot;)) {
+       source = parameters.getParameter(&quot;source&quot;).trim();
+   }
+	
+	
+   if (requestUri &amp;&amp; requestUri.trim() !== &quot;&quot;) {
+       requestParameters.put(Packages.org.techbd.config.Constants.REQUEST_URI, requestUri.trim());
+   }
+   logger.info(&quot;###### : &quot;+requestUri);
+   if (interactionId &amp;&amp; interactionId.trim() !== &quot;&quot;) {
+       if (requestUri == &quot;/flatfile/csv/Bundle/$validate/&quot;  || requestUri == &quot;/flatfile/csv/Bundle/&quot; ){
+       requestParameters.put(Packages.org.techbd.config.Constants.MASTER_INTERACTION_ID, interactionId.trim());
+       }else{ 
+      	requestParameters.put(Packages.org.techbd.config.Constants.INTERACTION_ID, interactionId.trim());
+       }
+   }
+   if (origin &amp;&amp; origin.trim() !== &quot;&quot;) {
+       requestParameters.put(Packages.org.techbd.config.Constants.ORIGIN, origin.trim());
+   }
+   if (source &amp;&amp; source.trim() !== &quot;&quot;) {
+       requestParameters.put(Packages.org.techbd.config.Constants.SOURCE_TYPE, source.trim());
+   }
+  // **Fetch predefined constants from parameters and put them in requestParameters**
+   var constantsToFetch = [
+       Packages.org.techbd.config.Constants.DELETE_USER_SESSION_COOKIE,
+       Packages.org.techbd.config.Constants.IMMEDIATE
+   ];
+
+   if (parameters) {
+       for (var i = 0; i &lt; constantsToFetch.length; i++) {
+           var key = constantsToFetch[i];
+           var value = parameters.getParameter(key);
+		  logger.info(&quot;key =&quot; +key +  &quot;   value =   &quot;+value);
+           if (value &amp;&amp; value.toString().trim() !== &quot;&quot;) {
+               requestParameters.put(key, value.toString().trim());
+           }
+       }
+   }
+
+   var sdf = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss&apos;Z&apos;&quot;);
+   var currentTime = sdf.format(new java.util.Date());
+
+   requestParameters.put(
+       Packages.org.techbd.config.Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME,
+       currentTime
+   );
+
+   return requestParameters;
+}
+
+
+
+/*
+ * This global function is called in the preprocessor for every incoming message.
+ * It retrieves and adds necessary header parameters to a HashMap.
+ * 
+ * - Checks for required header parameters (e.g., User-Agent, Tenant ID).
+ * - Ensures any new header parameter required by a channel is added here.
+ * - Performs null checks before adding parameters to add only the ones available in request.
+ *
+ *
+ * @returns {java.util.HashMap} A map containing header parameters.
+ */
+function getHeaderParameters(headers, channelMap, sourceMap) {
+    var headerParameters = new Packages.java.util.HashMap();
+
+    var constantsToFetch = [
+        Packages.org.techbd.config.Constants.USER_AGENT,
+        Packages.org.techbd.config.Constants.TENANT_ID,
+        Packages.org.techbd.config.Constants.HEALTH_CHECK,
+        Packages.org.techbd.config.Constants.CORRELATION_ID,
+        Packages.org.techbd.config.Constants.OVERRIDE_REQUEST_URI,
+        Packages.org.techbd.config.Constants.PROVENANCE,
+        Packages.org.techbd.config.Constants.DATA_LAKE_API_CONTENT_TYPE,
+        Packages.org.techbd.config.Constants.CUSTOM_DATA_LAKE_API,
+        Packages.org.techbd.config.Constants.MTLS_STRATEGY,
+        Packages.org.techbd.config.Constants.GROUP_INTERACTION_ID,
+        Packages.org.techbd.config.Constants.MASTER_INTERACTION_ID,
+        Packages.org.techbd.config.Constants.SOURCE_TYPE,
+        Packages.org.techbd.config.Constants.VALIDATION_SEVERITY_LEVEL,
+        Packages.org.techbd.config.Constants.BASE_FHIR_URL
+    ];
+
+    // Fetch and store only the required headers
+    for (var i = 0; i &lt; constantsToFetch.length; i++) {
+        var key = constantsToFetch[i];
+        var value = headers.getHeader(key);
+
+        if (value &amp;&amp; value.toString().trim() !== &quot;&quot;) {
+            headerParameters.put(key, value.toString().trim());
+        }
+    }
+
+    // Generate and add Provenance header
+    var provenanceHeader = createProvenanceHeader(sourceMap, channelMap);
+    if (provenanceHeader) {
+        headerParameters.put(Packages.org.techbd.config.Constants.PROVENANCE, provenanceHeader);
+    }
+
+    return headerParameters;
+}
+
+
+
+
+
+/*
+ * Creates a provenance JSON string to be sent as a header parameter (&quot;X-Provenance&quot;).
+ * The provenance information is extracted from `sourceMap` and `channelMap`.
+ * 
+ * @param {Object} sourceMap - Contains details of the incoming request, such as headers, method, URI, etc.
+ *   Expected keys:
+ *     - headers
+ *     - localPort
+ *     - method
+ *     - remotePort
+ *     - contextPath
+ *     - uri
+ *     - url
+ *     - protocol
+ *     - remoteAddress
+ * 
+ * @param {Object} channelMap - Contains additional details related to the processing channel.
+ *   Expected keys:
+ *     - headerParameters
+ *     - requestParameters
+ *     - channelName
+ *     - startTime
+ *     - requestUri
+ *     - channelId
+ * 
+ * @returns {string} - A JSON string representing the provenance information.
+ */
+function createProvenanceHeader(sourceMap, channelMap) {
+    var provenance = new Packages.java.util.HashMap();
+    if (sourceMap != null) {
+        provenance.put(&quot;headers&quot;, sourceMap.get(&quot;headers&quot;));
+        provenance.put(&quot;localPort&quot;, sourceMap.get(&quot;localPort&quot;));
+        provenance.put(&quot;method&quot;, sourceMap.get(&quot;method&quot;));
+        provenance.put(&quot;remotePort&quot;, sourceMap.get(&quot;remotePort&quot;));
+        provenance.put(&quot;contextPath&quot;, sourceMap.get(&quot;contextPath&quot;));
+        provenance.put(&quot;uri&quot;, sourceMap.get(&quot;uri&quot;));
+        provenance.put(&quot;url&quot;, sourceMap.get(&quot;url&quot;));
+        provenance.put(&quot;protocol&quot;, sourceMap.get(&quot;protocol&quot;));
+        provenance.put(&quot;remoteAddress&quot;, sourceMap.get(&quot;remoteAddress&quot;));
+    }
+    if (channelMap != null) {
+        provenance.put(&quot;headerParameters&quot;, channelMap.get(&quot;headerParameters&quot;));
+        provenance.put(&quot;requestParameters&quot;, channelMap.get(&quot;requestParameters&quot;));
+        provenance.put(&quot;channelName&quot;, channelMap.get(&quot;channelName&quot;));
+        provenance.put(&quot;startTime&quot;, channelMap.get(&quot;startTime&quot;));
+        provenance.put(&quot;requestUri&quot;, channelMap.get(&quot;requestUri&quot;));
+        provenance.put(&quot;channelId&quot;, channelMap.get(&quot;channelId&quot;));
+    }
+    return JSON.stringify(provenance);
+}
+
+/*
+* This function invokes the core Java library for FHIR processing.
+* Based on the request URI:
+* 
+* - If the request URI is &quot;/Bundle/$validate&quot;, it performs bundle validation 
+*   against the SHINNY Implementation Guide (IG) using the profile URL in 
+*   the request payload.
+* - If the request URI is &quot;/Bundle/$validate&quot;, it validates the bundle and 
+*   sends both the bundle and the OperationOutcome response to the NYEC API.
+*/
+function convertMapToJson(map) {
+   var mapper = globalMap.get(&quot;mapper&quot;);	
+   return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(map);
+}
+
+globalMap.put(&quot;convertMapToJson&quot;, convertMapToJson);
+
+/**
+ * Global function to validate request header parameters based on rules.
+ * 
+ * Supported Rules:
+ * 1. &quot;isRequired&quot;    - Ensures the parameter is not missing or empty.
+ * 2. &quot;isAllowedValue&quot; - Ensures the parameter matches one of the allowed values.
+ * 3. &quot;isAValidUrl&quot;    - Validates if the parameter is a properly formatted URL.
+ * 4. &quot;isValidUUID&quot;    - Ensures the parameter is a valid UUID.
+ * 
+ * @param {string} paramName - The name of the header parameter (e.g., &quot;X-TechBD-Tenant-ID&quot;).
+ * @param {string} paramValue - The value of the header parameter.
+ * @param {string} validationRule - The rule to execute (e.g., &quot;isRequired&quot;, &quot;isValidUUID&quot;).
+ * @param {Object} responseMap - The responseMap object to update with errors.
+ * @param {int} statusCode - HTTP status code (e.g., 400 for BadRequest).
+ * @param {Array} allowedValues - Optional: List of allowed values (used for &quot;isAllowedValue&quot;).
+ * @returns {boolean} - Returns true if validation fails, otherwise false.
+ */
+function validate(paramName, paramValue, validationRule, responseMap, statusCode, allowedValues) {
+    var UUID = Packages.java.util.UUID;
+    var isValid = true;
+    var errorMessage = &quot;&quot;;
+
+    switch (validationRule) {
+        case &quot;isRequired&quot;:
+            if (!paramValue || paramValue.trim() === &quot;&quot;) {
+                errorMessage = paramName + &quot; must be provided&quot;;
+                isValid = false;
+            }
+            break;
+
+        case &quot;isAllowedValue&quot;:
+            if (!allowedValues || allowedValues.indexOf(paramValue) === -1) {
+                errorMessage = paramName + &quot; must be one of: &quot; + JSON.stringify(allowedValues);
+                isValid = false;
+            }
+            break;
+
+        case &quot;isAValidUrl&quot;:
+            try {
+                var url = new java.net.URL(paramValue);
+            } catch (e) {
+                errorMessage = paramName + &quot; is not a valid URL&quot;;
+                isValid = false;
+            }
+            break;
+
+        case &quot;isValidUUID&quot;:
+            try {
+                UUID.fromString(paramValue);
+            } catch (e) {
+                errorMessage = paramName + &quot; should be a valid UUID&quot;;
+                isValid = false;
+            }
+            break;
+
+        default:
+            errorMessage = &quot;Unknown validation rule: &quot; + validationRule;
+            isValid = false;
+    }
+
+    if (!isValid) {
+        logger.error(&quot;Validation Error: &quot; + errorMessage);
+        responseMap.put(&apos;status&apos;, statusCode.toString());
+        responseMap.put(&apos;error&apos;, errorMessage);
+        responseMap.put(&apos;result&apos;, JSON.stringify({ &quot;status&quot;: &quot;Error&quot;, &quot;message&quot;: errorMessage }));
+    }
+
+    return !isValid;  // Returns true if validation fails
+}
+
+///*
+// * This function Processes an FHIR Bundle by validating it using the FHIR service.
+// *
+// * @function processFHIRBundle
+// * @param {string} tenantId - The tenant identifier for multi-tenancy support.
+// * @param {Map} channelMap - A map containing request-related parameters.
+// * @param {Object} connectorMessage - The connector message containing the raw FHIR Bundle.
+// * @param {Map} responseMap - A map to store response-related parameters.
+// * @returns {string} - A JSON string containing OperationOutcome of fhir bundle validated against 
+// * SHIN-NY IG with hapi-fhir validator 
+// */
+//globalMap.put(&quot;processFHIRBundle&quot;, function(tenantId, channelMap, connectorMessage, responseMap) {
+//    var fhirService = globalMap.get(&quot;fhirService&quot;);
+//    logger.info(&quot;fhirService.orchestraionengin&quot;+fhirService.getEngine());
+////    logger.info(&quot;fhirService.orchestraionengin.appConfig&quot;+fhirService.getEngine().getAppConfig());
+////    logger.info(&quot;fhirService.appConfig&quot;+fhirService.getAppConfig());
+//    var convertMapToJson = globalMap.get(&quot;convertMapToJson&quot;);
+//
+//    if (!fhirService || !convertMapToJson) {
+//        logger.error(&quot;Missing fhirService or convertMapToJson in globalMap.&quot;);
+//        return;
+//    }
+//
+//    //var requestParameters = channelMap.get(&quot;requestParameters&quot;);
+//    //var headerParameters = channelMap.get(&quot;headerParameters&quot;);
+//    //var responseParameters = new Packages.java.util.HashMap();
+//
+//
+//var requestParameters  = channelMap.get(&apos;requestParameters&apos;);
+//var headerParameters   = channelMap.get(&apos;headerParameters&apos;);
+//var requestDetailsMap  = new java.util.HashMap(); // Map&lt;String,Object&gt;
+//
+//var Constants = Packages.org.techbd.Constants;
+//
+//
+//if (requestParameters != null) {
+//    requestDetailsMap.putAll(requestParameters);
+//}
+//if (headerParameters != null) {
+//    requestDetailsMap.putAll(headerParameters);
+//}
+//var responseParameters = new java.util.HashMap();
+//
+//
+//    
+//    logger.info(&quot;payload&quot;+connectorMessage.getRawData());
+//    var bundleJson = JSON.parse(connectorMessage.getRawData());
+//    var validationResults = fhirService.processBundle(
+//        connectorMessage.getRawData(), 
+//        requestDetailsMap, 
+//       /* headerParameters, */
+//        responseParameters
+//    );
+//    return convertMapToJson(validationResults);
+//});
+//#########################################above one is original one###########################################################
+
+globalMap.put(&quot;processFHIRBundle&quot;, function(tenantId, channelMap, connectorMessageOrString, responseMap) {
+    var fhirService = globalMap.get(&quot;fhirService&quot;);
+    var convertMapToJson = globalMap.get(&quot;convertMapToJson&quot;);
+
+    if (!fhirService || !convertMapToJson) {
+        logger.error(&quot;Missing fhirService or convertMapToJson in globalMap.&quot;);
+        return;
+    }
+
+    // Try to get raw JSON string
+    var jsonString;
+    try {
+        if (typeof connectorMessageOrString.getRawData === &apos;function&apos;) {
+            jsonString = connectorMessageOrString.getRawData(); // live channel
+        } else {
+            jsonString = connectorMessageOrString; // manual call
+        }
+    } catch (e) {
+        logger.error(&quot;Invalid connectorMessageOrString: &quot; + e);
+        throw e;
+    }
+
+    var requestParameters = channelMap.get(&apos;requestParameters&apos;);
+    var headerParameters = channelMap.get(&apos;headerParameters&apos;);
+    var requestDetailsMap = new java.util.HashMap();
+
+    if (requestParameters != null) {
+        requestDetailsMap.putAll(requestParameters);
+    }
+    if (headerParameters != null) {
+        requestDetailsMap.putAll(headerParameters);
+    }
+
+    var responseParameters = new java.util.HashMap();
+
+    var validationResults = fhirService.processBundle(
+        jsonString,
+        requestDetailsMap,
+        responseParameters
+    );
+
+    return convertMapToJson(validationResults);
+});
+
+
+globalMap.put(&quot;processCSVZipFile&quot;, function(channelMap, sourceMap, connectorMessage, responseMap,processType) {
+    var csvService = globalMap.get(&quot;csvService&quot;);
+    var logError = globalMap.get(&quot;logError&quot;);
+    var logInfo = globalMap.get(&quot;logInfo&quot;);
+
+    try {
+     
+	
+	/* ----------------------------------------------------------------------
+	   1.  Read the raw body exactly as Mirth received it
+	---------------------------------------------------------------------- */
+	var bodyStr = connectorMessage.getRawData();      // java.lang.String
+	
+	/* ----------------------------------------------------------------------
+	   2.  Detect newline style (\r\n or \n) and capture the FIRST line
+	---------------------------------------------------------------------- */
+	var nlPos = bodyStr.indexOf(&apos;\r\n&apos;);
+	var newlineLen = 2;
+	if (nlPos &lt; 0) {                     // maybe just \n
+	    nlPos = bodyStr.indexOf(&apos;\n&apos;);
+	    newlineLen = 1;
+	}
+	if (nlPos &lt; 0) {
+	    throw &apos;Could not detect boundary line (no newline in body).&apos;;
+	}
+	var dashBoundary = bodyStr.substring(0, nlPos);   // e.g. &quot;--WebKitFormBoundary7MA4YWxkTrZu0gW&quot;
+	if (!dashBoundary.startsWith(&apos;--&apos;)) {
+	    throw &apos;Multipart boundary line does not start with &quot;--&quot;: &apos; + dashBoundary;
+	}
+	var boundary    = dashBoundary.substring(2);
+	var endBoundary = dashBoundary + &apos;--&apos;;
+	
+	/* ----------------------------------------------------------------------
+	   3.  Work with a byte‑preserving ISO‑8859‑1 string
+	---------------------------------------------------------------------- */
+	var bodyIso = new java.lang.String(
+	        bodyStr.getBytes(&apos;ISO-8859-1&apos;), &apos;ISO-8859-1&apos;);   // lossless re‑encode
+	
+	/* ----------------------------------------------------------------------
+	   4.  Find the part with  name=&quot;file&quot;
+	---------------------------------------------------------------------- */
+	var dispIdx = bodyIso.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;&apos;);
+	if (dispIdx &lt; 0) {
+	    throw &apos;Could not locate multipart section with name=&quot;file&quot;.&apos;;
+	}
+	var hdrEnd = bodyIso.indexOf(&apos;\r\n\r\n&apos;, dispIdx);
+	if (hdrEnd &lt; 0) {
+	    hdrEnd = bodyIso.indexOf(&apos;\n\n&apos;, dispIdx);           // LF‑only fallback
+	    if (hdrEnd &lt; 0) throw &apos;Malformed multipart header (no blank line).&apos;;
+	}
+	
+	/* -------- Extract filename from Content-Disposition header ---------- */
+	var dispLineStart = bodyIso.lastIndexOf(&apos;Content-Disposition&apos;, hdrEnd);
+	var filenameMatch = bodyIso.substring(dispLineStart, hdrEnd).match(/filename=&quot;([^&quot;]+)&quot;/);
+	var filename = (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) ? filenameMatch[1] : &apos;uploaded-file.zip&apos;;
+	
+	// Sanitize filename to avoid path traversal or bad characters
+	filename = filename.trim()
+	                   .replace(/^.*[\/\\]/, &apos;&apos;)           // remove any folder path
+	                   .replace(/[^\w\-.]/g, &apos;_&apos;);          // allow only alphanum, underscore, dash, dot
+	
+	/* ----------------------------------------------------------------------
+	   5.  Set dataStart *after* CRLFCRLF (or LFLF) …
+	---------------------------------------------------------------------- */
+	var dataStart = hdrEnd + (bodyIso.charAt(hdrEnd) == &apos;\r&apos; ? 4 : 2);
+	
+	/* ---------- 5a. Trim any extra leading newline ----------------------- */
+	if (bodyIso.substring(dataStart, dataStart + 2) == &apos;\r\n&apos;) {
+	    dataStart += 2;                  // skip CRLF
+	} else if (bodyIso.charAt(dataStart) == &apos;\n&apos;) {
+	    dataStart += 1;                  // skip single LF
+	}
+	
+	/* ----------------------------------------------------------------------
+	   6.  Locate the next boundary (end of file part)
+	---------------------------------------------------------------------- */
+	var nextBndIdx = bodyIso.indexOf(&apos;\r\n&apos; + dashBoundary, dataStart);
+	if (nextBndIdx &lt; 0) {                                    // maybe LF‑only
+	    nextBndIdx = bodyIso.indexOf(&apos;\n&apos; + dashBoundary, dataStart);
+	}
+	if (nextBndIdx &lt; 0) {
+	    throw &apos;Closing boundary after file part not found.&apos;;
+	}
+	var dataEnd = nextBndIdx;
+	
+	/* ---------- 6a. Trim trailing newline just before boundary ----------- */
+	if (bodyIso.substring(dataEnd - 2, dataEnd) == &apos;\r\n&apos;) {
+	    dataEnd -= 2;
+	} else if (bodyIso.substring(dataEnd - 1, dataEnd) == &apos;\n&apos;) {
+	    dataEnd -= 1;
+	}
+	
+	/* ----------------------------------------------------------------------
+	   7.  Extract pure ZIP bytes
+	---------------------------------------------------------------------- */
+	var attachmentBytes = bodyIso.substring(dataStart, dataEnd)
+	                             .getBytes(&apos;ISO-8859-1&apos;);
+	logger.info(&apos;Recovered ZIP byte length: &apos; + attachmentBytes.length);
+	
+	/* Optional sanity check: first four bytes should be 80 75 3 4 (PK\03\04) */
+	logger.info(
+	    &apos;First four ZIP bytes: &apos; +
+	    (attachmentBytes[0] &amp; 0xff) + &apos; &apos; +
+	    (attachmentBytes[1] &amp; 0xff) + &apos; &apos; +
+	    (attachmentBytes[2] &amp; 0xff) + &apos; &apos; +
+	    (attachmentBytes[3] &amp; 0xff));
+	
+	/* ----------------------------------------------------------------------
+	   8.  Wrap and validate
+	---------------------------------------------------------------------- */
+	var SimpleMultipartFile = Packages.org.techbd.service.csv.SimpleMultipartFile;  //Packages.org.springframework.web.multipart.MultipartFile
+	var multipartFile = new SimpleMultipartFile(
+	        filename,
+	        &apos;application/zip&apos;,
+	        attachmentBytes);
+	
+	var requestParameters  = channelMap.get(&apos;requestParameters&apos;);
+	var headerParameters   = channelMap.get(&apos;headerParameters&apos;);
+	var requestDetailsMap  = new java.util.HashMap(); // Map&lt;String,Object&gt;
+	
+	var Constants = Packages.org.techbd.Constants;
+	
+	
+	if (requestParameters != null) {
+	    requestDetailsMap.putAll(requestParameters);
+	}
+	if (headerParameters != null) {
+	    requestDetailsMap.putAll(headerParameters);
+	}
+	var responseParameters = new java.util.HashMap();
+	if(processType == &quot;validate&quot;){
+	var result = csvService.validateCsvFile(
+	        multipartFile,
+	        requestDetailsMap,
+	        /*headerParameters,*/
+	        responseParameters);
+	       
+	       /* Packages.org.techbd.util.CoreFHIRUtil.addCookieAndHeadersToResponse(
+		    response,
+		    responseParameters,
+		    requestDetailsMap
+			);
+			*/
+			
+	        return convertMapToJson(result);
+	}else if(processType == &quot;bundle&quot;){
+		var result = csvService.processZipFile(
+	        multipartFile,
+	        requestDetailsMap,
+	        /*headerParameters,*/
+	        responseParameters);
+
+	        /*
+	        Packages.org.techbd.util.CoreFHIRUtil.addCookieAndHeadersToResponse(
+		    response,
+		    responseParameters,
+		    requestDetailsMap
+			);
+			*/
+			
+	        return convertMapToJson(result);
+		
+	}
+	
+	return null; 
+
+    } catch (e) {
+        logError(&quot;CSV Validation Error: &quot; + e, channelMap);
+        return null;
+    }
+});
+
+
+globalMap.put(&quot;getRequestParameters&quot;, getRequestParameters);
+globalMap.put(&quot;getHeaderParameters&quot;, getHeaderParameters);
+</string>
+  </entry>
+  <entry>
+    <string>Preprocessor</string>
+    <string>// Modify the message variable below to pre process data
+// This script applies across all channels
+//
+if (channelName == &apos;AwsSqsFifoQueueListener&apos;){
+}
+else if (channelName == &apos;MLLP-Client-Arjun&apos;) {
+    // do nothing — skip processing for your test channel
+}
+else if (channelName == &apos;MLLP - Client&apos;) {
+    // do nothing — skip processing for your test channel
+}
+ else {
+
+var logInfo = globalMap.get(&quot;logInfo&quot;);
+var interactionId = java.util.UUID.randomUUID().toString();
+var sdf = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss&apos;Z&apos;&quot;);
+channelMap.put(&quot;interactionId&quot;, interactionId);
+channelMap.put(&quot;channelId&quot;,channelId);
+channelMap.put(&quot;channelName&quot;,channelName);
+
+logInfo(&quot;==== BEGIN of Message Processing received at channel ==== &quot;,channelMap);
+var startTime = new Date().getTime();
+channelMap.put(&quot;startTime&quot;, startTime);
+var headers = $(&apos;headers&apos;);
+var getRequestParameters = globalMap.get(&quot;getRequestParameters&quot;);
+var getHeaderParameters = globalMap.get(&quot;getHeaderParameters&quot;);
+channelMap.put(&quot;requestParameters&quot;, getRequestParameters(interactionId,channelMap,sourceMap));
+channelMap.put(&quot;headerParameters&quot;, getHeaderParameters(headers,channelMap,sourceMap));
+}
+
+return;
+</string>
+  </entry>
+</map>
