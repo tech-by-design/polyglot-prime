@@ -54,7 +54,8 @@ public class MllpRoute extends RouteBuilder {
                                     partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage())));
                         } catch (Exception ex2) {
                             logger.error("[PORT {}] Error generating NACK. interactionId={} reason={}", port, interactionId, ex2.getMessage(),ex2);
-                            nack = "MSH|^~\\&|||||||ACK^O01|1|P|2.3\rMSA|AE|1\r";
+                            nack = "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|202507181500||ACK^O01|1|P|2.3\r" +
+                            "MSA|AE|1|Error: Unexpected failure\r";
                         }
                         exchange.getMessage().setBody(nack);
                     }
@@ -71,37 +72,25 @@ public class MllpRoute extends RouteBuilder {
                 headers.put(k, (String) v);
             }
         });
-
-        String sourceIp = null;
         String tenantId = headers.get(Constants.REQ_HEADER_TENANT_ID);
-        String xForwardedFor = headers.get(Constants.REQ_HEADER_X_FORWARDED_FOR);
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            sourceIp = xForwardedFor.split(",")[0].trim();
-        } else {
-            sourceIp = headers.get(Constants.REQ_HEADER_X_REAL_IP);
-        }
-
+        String sourceIp = extractSourceIp(headers);
         String destinationIp = headers.get(Constants.REQ_X_SERVER_IP);
         String destinationPort = headers.get(Constants.REQ_X_SERVER_PORT);
-
         if (tenantId == null || tenantId.trim().isEmpty()) {
             tenantId = Constants.TENANT_ID;
         }
         if (tenantId == null || tenantId.trim().isEmpty()) {
             tenantId = Constants.DEFAULT_TENANT_ID;
         }
-
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "hl7-message";
         String fileExtension = "hl7";
         String originalFileName = fileBaseName + "." + fileExtension;
-
         String objectKey = String.format("data/%s/%s-%s-%s.%s",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
         String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
                 datePath, timestamp, interactionId, fileBaseName, fileExtension);
         String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
-
         return new RequestContext(
                 headers,
                 "/hl7",
@@ -123,6 +112,19 @@ public class MllpRoute extends RouteBuilder {
                 sourceIp,
                 destinationIp,
                 destinationPort);
+    }
+  
+    private String extractSourceIp(Map<String, String> headers) {
+        String xForwardedFor = headers.get(Constants.REQ_HEADER_X_FORWARDED_FOR);
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            // Return the first IP in the comma-separated list
+            return xForwardedFor.split(",")[0].trim();
+        }
+        String xRealIp = headers.get(Constants.REQ_HEADER_X_REAL_IP);
+        if (xRealIp != null && !xRealIp.isBlank()) {
+            return xRealIp.trim();
+        }
+        return null;
     }
 
     /**
