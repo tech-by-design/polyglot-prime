@@ -15,6 +15,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MultipartException;
+import org.techbd.ingest.commons.Constants;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -92,14 +93,14 @@ public class GlobalExceptionHandler {
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
             HttpSession session = request.getSession(false);
-            String tenantId = request.getHeader(REQ_HEADER_TENANT_ID);
+            String tenantId = request.getHeader(Constants.REQ_HEADER_TENANT_ID);
             String sessionId = session != null ? session.getId() : "No session";
             String userAgent = request.getHeader("User-Agent");
             String remoteAddr = request.getRemoteAddr();
-            String forwardedFor = request.getHeader(REQ_HEADER_X_FORWARDED_FOR);
-            String realIp = request.getHeader(REQ_HEADER_X_REAL_IP);
-            String serverIp = request.getHeader(REQ_X_SERVER_IP);
-            String serverPort = request.getHeader(REQ_X_SERVER_PORT);
+            String forwardedFor = request.getHeader(Constants.REQ_HEADER_X_FORWARDED_FOR);
+            String realIp = request.getHeader(Constants.REQ_HEADER_X_REAL_IP);
+            String serverIp = request.getHeader(Constants.REQ_X_SERVER_IP);
+            String serverPort = request.getHeader(Constants.REQ_X_SERVER_PORT);
             String method = request.getMethod();
             String uri = request.getRequestURI();
             String queryString = request.getQueryString();
