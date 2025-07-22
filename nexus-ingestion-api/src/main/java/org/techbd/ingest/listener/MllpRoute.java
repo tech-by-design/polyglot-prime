@@ -51,13 +51,13 @@ public class MllpRoute extends RouteBuilder {
                         exchange.getMessage().setBody(ackMessage);
                         logger.info("[PORT {}] Processed HL7 message successfully. Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                     } catch (Exception e) {
-                        logger.error("[PORT {}] Error processing HL7 message. interactionId={} reason={}", port, interactionId, e.getMessage());
+                        logger.error("[PORT {}] Error processing HL7 message. interactionId= {} reason={}", port, interactionId, e.getMessage(),e);
                         try {
                             Message partial = parser.parse(hl7Message);
                             Message generatedNack  = partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage()));
                             nack = addNteWithInteractionId(generatedNack, interactionId);
                         } catch (Exception ex2) {
-                            logger.error("[PORT {}] Error generating NACK. interactionId={} reason={}", port, interactionId, ex2.getMessage());
+                            logger.error("[PORT {}] Error generating NACK. interactionId= {} reason={}", port, interactionId, ex2.getMessage(),ex2);
                             nack = "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|202507181500||ACK^O01|1|P|2.3\r" +
                             "MSA|AE|1|Error: Unexpected failure\r" +
                             "NTE|1||InteractionID: " + interactionId + "\r";
