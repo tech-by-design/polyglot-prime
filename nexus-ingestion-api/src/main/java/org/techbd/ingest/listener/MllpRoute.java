@@ -16,6 +16,8 @@ import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.parser.GenericParser;
+import ca.uhn.hl7v2.parser.PipeParser;
+import ca.uhn.hl7v2.util.Terser;
 
 public class MllpRoute extends RouteBuilder {
 
@@ -31,36 +33,49 @@ public class MllpRoute extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        from("mllp://0.0.0.0:" + port)
+         from("mllp://0.0.0.0:" + port + "?autoAck=false") 
                 .routeId("hl7-mllp-listener-" + port)
                 .log("[PORT " + port + "] Received HL7 message")
                 .process(exchange -> {
                     String hl7Message = exchange.getIn().getBody(String.class);
                     GenericParser parser = new GenericParser();
                     String interactionId = UUID.randomUUID().toString();
-
+                    String nack;
                     try {
                         Message hapiMsg = parser.parse(hl7Message);
                         ingestionRouter.routeAndProcess(hl7Message, buildRequestContext(exchange, hl7Message, interactionId));
                         Message ack = hapiMsg.generateACK();
-                        exchange.getMessage().setBody(parser.encode(ack));
-                        logger.info("[PORT {}] Processed HL7 message successfully. interactionId={}", port, interactionId);
+                        String ackMessage = addNteWithInteractionId(ack, interactionId);
+                        logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
+                        exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
+                        exchange.getMessage().setBody(ackMessage);
+                        logger.info("[PORT {}] Processed HL7 message successfully. Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                     } catch (Exception e) {
-                        logger.error("[PORT {}] Error processing HL7 message. interactionId={} reason={}", port, interactionId, e.getMessage(),e);
-                        String nack;
+                        logger.error("[PORT {}] Error processing HL7 message. interactionId={} reason={}", port, interactionId, e.getMessage());
                         try {
                             Message partial = parser.parse(hl7Message);
-                            nack = parser.encode(
-                                    partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage())));
+                            Message generatedNack  = partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage()));
+                            nack = addNteWithInteractionId(generatedNack, interactionId);
                         } catch (Exception ex2) {
-                            logger.error("[PORT {}] Error generating NACK. interactionId={} reason={}", port, interactionId, ex2.getMessage(),ex2);
+                            logger.error("[PORT {}] Error generating NACK. interactionId={} reason={}", port, interactionId, ex2.getMessage());
                             nack = "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|202507181500||ACK^O01|1|P|2.3\r" +
-                            "MSA|AE|1|Error: Unexpected failure\r";
+                            "MSA|AE|1|Error: Unexpected failure\r" +
+                            "NTE|1||InteractionID: " + interactionId + "\r";
                         }
+                        exchange.setProperty("CamelMllpAcknowledgementString", nack);
                         exchange.getMessage().setBody(nack);
                     }
                 })
                 .log("[PORT " + port + "] ACK/NAK sent");
+    }
+
+    public static String addNteWithInteractionId(Message ackMessage, String interactionId) throws HL7Exception {
+        Terser terser = new Terser(ackMessage);
+        ackMessage.addNonstandardSegment("NTE");
+        terser.set("/NTE(0)-1", "1");
+        terser.set("/NTE(0)-3", "InteractionID: " + interactionId);
+        PipeParser parser = new PipeParser();
+        return parser.encode(ackMessage);
     }
 
     private RequestContext buildRequestContext(Exchange exchange, String hl7Message, String interactionId) {
