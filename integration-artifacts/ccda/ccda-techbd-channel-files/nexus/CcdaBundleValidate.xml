@@ -2,8 +2,8 @@
   <id>eeaee164-d407-4114-a1b2-11edccc1c12d</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>CcdaBundleValidate</name>
-  <description>Version: 0.3.0</description>
-  <revision>6</revision>
+  <description>Version: 0.4.0</description>
+  <revision>14</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -89,7 +89,7 @@
       <responseHeadersVariable></responseHeadersVariable>
       <useResponseHeadersVariable>false</useResponseHeadersVariable>
       <charset>UTF-8</charset>
-      <contextPath>/ccda/Bundle/$validate</contextPath>
+      <contextPath>/</contextPath>
       <timeout>300000</timeout>
       <staticResources/>
     </properties>
@@ -1376,7 +1376,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1752213198381</time>
+        <time>1753092623486</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
