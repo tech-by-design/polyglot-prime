@@ -177,7 +177,8 @@ function getRequestParameters(interactionId, channelMap, sourceMap) {
    }
    logger.info(&quot;###### : &quot;+requestUri);
    if (interactionId &amp;&amp; interactionId.trim() !== &quot;&quot;) {
-       if (requestUri == &quot;/flatfile/csv/Bundle/$validate/&quot;  || requestUri == &quot;/flatfile/csv/Bundle/&quot; ){
+       if (requestUri == &quot;/flatfile/csv/Bundle/$validate/&quot;  || requestUri == &quot;/flatfile/csv/Bundle/&quot; ||
+       requestUri == &quot;/flatfile/csv/Bundle/$validate&quot;  || requestUri == &quot;/flatfile/csv/Bundle&quot;){
        requestParameters.put(Packages.org.techbd.config.Constants.MASTER_INTERACTION_ID, interactionId.trim());
        }else{ 
       	requestParameters.put(Packages.org.techbd.config.Constants.INTERACTION_ID, interactionId.trim());

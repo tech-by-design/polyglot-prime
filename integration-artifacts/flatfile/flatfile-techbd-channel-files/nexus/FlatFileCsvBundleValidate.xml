@@ -2,8 +2,8 @@
   <id>86f28a80-ee90-4257-be9c-e2dd9e008a33</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundleValidate</name>
-  <description>Version: 0.3.0</description>
-  <revision>26</revision>
+  <description>Version: 0.4.0</description>
+  <revision>40</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -89,7 +89,7 @@
       <responseHeadersVariable></responseHeadersVariable>
       <useResponseHeadersVariable>false</useResponseHeadersVariable>
       <charset>UTF-8</charset>
-      <contextPath>flatfile/csv/Bundle/$validate</contextPath>
+      <contextPath>/</contextPath>
       <timeout>30000</timeout>
       <staticResources/>
     </properties>
@@ -354,7 +354,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1752151189284</time>
+        <time>1753092568341</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
