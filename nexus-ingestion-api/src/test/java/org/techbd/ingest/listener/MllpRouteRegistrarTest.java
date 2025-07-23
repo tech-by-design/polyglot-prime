@@ -59,7 +59,7 @@ public class MllpRouteRegistrarTest {
   @Test
   public void testNoRoutesWhenPortsRawIsBlank() {
     MllpRouteRegistrar registrar = new MllpRouteRegistrar(factory, beanFactory);
-    ReflectionTestUtils.setField(registrar, "portsRaw", "   "); // blank string
+    ReflectionTestUtils.setField(registrar, "portsRaw", "   "); 
 
     List<RouteBuilder> result = registrar.registerMllpRoutes();
 
@@ -70,7 +70,7 @@ public class MllpRouteRegistrarTest {
   @Test
   public void testRegisterMllpRoutesWithPortRange() {
     MllpRouteRegistrar registrar = new MllpRouteRegistrar(factory, beanFactory);
-    ReflectionTestUtils.setField(registrar, "portsRaw", "2575-2577"); // expands to 2575, 2576, 2577
+    ReflectionTestUtils.setField(registrar, "portsRaw", "2575-2577"); 
 
     List<RouteBuilder> routes = registrar.registerMllpRoutes();
 
@@ -94,7 +94,7 @@ public void testFailureDuringRouteInitialization() {
     MllpRouteFactory failingFactory = mock(MllpRouteFactory.class);
     ConfigurableBeanFactory mockBeanFactory = mock(ConfigurableBeanFactory.class);
 
-    MllpRoute route2575 = mock(MllpRoute.class); // ✅ Mock MllpRoute, not RouteBuilder
+    MllpRoute route2575 = mock(MllpRoute.class);
     when(failingFactory.create(2575)).thenReturn(route2575);
     when(failingFactory.create(2576)).thenThrow(new RuntimeException("Port in use"));
 
