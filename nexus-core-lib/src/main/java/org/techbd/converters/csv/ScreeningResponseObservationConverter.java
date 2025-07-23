@@ -117,8 +117,22 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         observation
                                         .setStatus(Observation.ObservationStatus
                                                         .fromCode(fetchCode(screeningProfileData.getScreeningStatusCode(), CsvConstants.SCREENING_STATUS_CODE, interactionId)));
-                        if (data.getObservationCategorySdohCode() != null
-                                        && !data.getObservationCategorySdohCode().isEmpty()) {
+
+                        if ("96782-8".equals(data.getQuestionCode())) {
+                                CodeableConcept category = new CodeableConcept();
+
+                                category.addCoding(new Coding()
+                                                .setSystem("http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes")
+                                                .setCode("sdoh-category-unspecified")
+                                                .setDisplay("SDOH Category Unspecified"));
+
+                                category.addCoding(new Coding()
+                                                .setSystem("http://snomed.info/sct")
+                                                .setCode("365458002")
+                                                .setDisplay("Education and/or schooling finding"));
+
+                                observation.addCategory(category);
+                        } else {
                                 String[] rawCodes = data.getObservationCategorySdohCode().split(";");
                                 String sdohText = data.getObservationCategorySdohText();
 
@@ -137,10 +151,6 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                                 code, text));
                                         }
                                 }
-                        } else {
-                                observation.addCategory(createCategory(
-                                        "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                                        "sdoh-category-unspecified", "SDOH Category Unspecified"));
                         }
 
                         Set<String> excludedQuestionCodes = Set.of("95614-4", "77594-0", "71969-0");
@@ -179,13 +189,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                         observation.addComponent(component);
                                 } else if (!data.getDataAbsentReasonCode().isEmpty()) {
                                     CodeableConcept dataAbsentReason = new CodeableConcept();
+                                    String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                    String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
                                     dataAbsentReason.addCoding(
                                             new Coding()
                                                     .setSystem(
                                                             "http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                    .setCode(fetchCode(data.getDataAbsentReasonCode(),
-                                                            CsvConstants.DATA_ABSENT_REASON_CODE, interactionId))
-                                                    .setDisplay(data.getDataAbsentReasonDisplay()));
+                                                    .setCode(dataAbsentReasonCode)
+                                                    .setDisplay(dataAbsentReasonDisplay));
                                     observation.setDataAbsentReason(dataAbsentReason);
                                 }
                                 } else {
@@ -200,13 +211,14 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                     observation.setValue(value);
                                 } else if (!data.getDataAbsentReasonCode().isEmpty()) {
                                     CodeableConcept dataAbsentReason = new CodeableConcept();
+                                    String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                    String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
                                     dataAbsentReason.addCoding(
                                             new Coding()
                                                     .setSystem(
                                                             "http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                    .setCode(fetchCode(data.getDataAbsentReasonCode(),
-                                                            CsvConstants.DATA_ABSENT_REASON_CODE, interactionId))
-                                                    .setDisplay(data.getDataAbsentReasonDisplay()));
+                                                    .setCode(dataAbsentReasonCode)
+                                                    .setDisplay(dataAbsentReasonDisplay));
                                     observation.setDataAbsentReason(dataAbsentReason);
                                 }
                             }
@@ -275,13 +287,13 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                 observation.setValue(coding);
                                         } else if (!data.getDataAbsentReasonCode().isEmpty()) {
                                                 CodeableConcept dataAbsentReason = new CodeableConcept();
-                
+                                                String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                                String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
                                                 dataAbsentReason.addCoding(
                                                         new Coding()
                                                         .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                        .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId) )
-                                                        .setDisplay(data.getDataAbsentReasonDisplay()));
-                
+                                                        .setCode(dataAbsentReasonCode)
+                                                        .setDisplay(dataAbsentReasonDisplay));
                                                 observation.setDataAbsentReason(dataAbsentReason);
                                         }
                                 }
@@ -301,13 +313,13 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                                                }
                                         }  else if (!data.getDataAbsentReasonCode().isEmpty()) {
                                                 CodeableConcept dataAbsentReason = new CodeableConcept();
-                
+                                                String dataAbsentReasonCode = fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
+                                                String dataAbsentReasonDisplay = fetchDisplay(dataAbsentReasonCode, data.getDataAbsentReasonDisplay(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId);
                                                 dataAbsentReason.addCoding(
                                                         new Coding()
                                                         .setSystem("http://terminology.hl7.org/CodeSystem/data-absent-reason")
-                                                        .setCode(fetchCode(data.getDataAbsentReasonCode(), CsvConstants.DATA_ABSENT_REASON_CODE, interactionId) )
-                                                        .setDisplay(data.getDataAbsentReasonDisplay()));
-                
+                                                        .setCode(dataAbsentReasonCode)
+                                                        .setDisplay(dataAbsentReasonDisplay));
                                                 observation.setDataAbsentReason(dataAbsentReason);
                                         } else {
                                             quantity.setValue(0.0);
@@ -483,7 +495,7 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
 
                         String scrngCode = fetchCode(firstData.getScreeningCode(), CsvConstants.SCREENING_CODE, interactionId);
                         String system = fetchSystem(scrngCode, firstData.getScreeningCodeSystem(), CsvConstants.SCREENING_CODE, interactionId);
-                        String display = firstData.getScreeningCodeDescription();
+                        String display = fetchDisplay(scrngCode, firstData.getScreeningCodeDescription(), CsvConstants.SCREENING_CODE, interactionId);
 
                 if ("NYSAHCHRSN".equalsIgnoreCase(scrngCode) || "NYS-AHC-HRSN".equalsIgnoreCase(scrngCode) || "NA".equalsIgnoreCase(scrngCode)) {
                         code.addCoding(new Coding()
