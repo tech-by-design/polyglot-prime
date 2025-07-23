@@ -2,6 +2,8 @@ package org.techbd.ingest.listener;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,16 +34,40 @@ public class MllpRouteRegistrar {
             log.warn("HL7_MLLP_PORTS is empty — no MLLP routes will be created.");
             return List.of();
         }
-
-        return Arrays.stream(portsRaw.split(","))
+        List<Integer> ports = Arrays.stream(portsRaw.split(","))
                 .map(String::trim)
-                .map(Integer::parseInt)
+                .flatMap((String portSpec) -> {
+                    if (portSpec.contains("-")) {
+                        String[] range = portSpec.split("-");
+                        if (range.length != 2) {
+                            throw new IllegalArgumentException("Invalid port range: " + portSpec);
+                        }
+                        int start = Integer.parseInt(range[0].trim());
+                        int end = Integer.parseInt(range[1].trim());
+                        if (start > end) {
+                            throw new IllegalArgumentException("Invalid port range (start > end): " + portSpec);
+                        }
+                        return IntStream.rangeClosed(start, end).mapToObj(Integer::valueOf);
+                    } else {
+                        return Stream.of(Integer.parseInt(portSpec));
+                    }
+                })
+                .distinct()
+                .sorted()
+                .toList();
+
+        return ports.stream()
                 .map(port -> {
-                    MllpRoute route = routeFactory.create(port);
-                    String beanName = "mllpRoute_" + port;
-                    beanFactory.registerSingleton(beanName, route);
-                    log.info("Registered MllpRoute bean '{}' for port {}", beanName, port);
-                    return (RouteBuilder) route;
+                    try {
+                        MllpRoute route = routeFactory.create(port); // may throw
+                        String beanName = "mllpRoute_" + port;
+                        beanFactory.registerSingleton(beanName, route);
+                        log.info("Registered MllpRoute bean '{}' for port {}", beanName, port);
+                        return (RouteBuilder) route;
+                    } catch (Exception e) {
+                        log.error("Failed to create or register MLLP route on port {}: {}", port, e.getMessage(), e);
+                        throw new IllegalStateException("Failed to initialize MLLP route on port " + port, e);
+                    }
                 })
                 .toList();
     }
