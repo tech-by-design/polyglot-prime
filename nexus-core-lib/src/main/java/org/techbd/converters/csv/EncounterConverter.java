@@ -103,7 +103,8 @@ public class EncounterConverter extends BaseConverter {
 
         populatePatientReference(encounter, idsGenerated);
 
-        populateLocationReference(encounter, screeningProfileData, idsGenerated);
+        //populateLocationReference(encounter, screeningProfileData, idsGenerated);
+        
         // Narrative text = new Narrative();
         // text.setStatus(NarrativeStatus.GENERATED);
         // encounter.setText(text);
@@ -124,10 +125,10 @@ public class EncounterConverter extends BaseConverter {
         if (StringUtils.isNotEmpty(data.getEncounterClassCode())) {
             Coding encounterClass = new Coding();
             String encounterClassCode = fetchCode(data.getEncounterClassCode(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId);
+            String encounterClassDescription = fetchDisplay(encounterClassCode, data.getEncounterClassCodeDescription(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId);
             encounterClass.setSystem(fetchSystem(encounterClassCode, data.getEncounterClassCodeSystem(), CsvConstants.ENCOUNTER_CLASS_CODE, interactionId));
             encounterClass.setCode(encounterClassCode);
-
-            encounterClass.setDisplay(data.getEncounterClassCodeDescription());
+            encounterClass.setDisplay(encounterClassDescription);
             encounter.setClass_(encounterClass);
         }
     }
