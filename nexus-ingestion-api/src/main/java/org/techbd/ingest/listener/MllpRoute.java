@@ -33,37 +33,36 @@ public class MllpRoute extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        from("mllp://0.0.0.0:" + port)
+         from("mllp://0.0.0.0:" + port + "?autoAck=false") 
                 .routeId("hl7-mllp-listener-" + port)
                 .log("[PORT " + port + "] Received HL7 message")
                 .process(exchange -> {
                     String hl7Message = exchange.getIn().getBody(String.class);
                     GenericParser parser = new GenericParser();
                     String interactionId = UUID.randomUUID().toString();
-
+                    String nack;
                     try {
                         Message hapiMsg = parser.parse(hl7Message);
                         ingestionRouter.routeAndProcess(hl7Message, buildRequestContext(exchange, hl7Message, interactionId));
                         Message ack = hapiMsg.generateACK();
                         String ackMessage = addNteWithInteractionId(ack, interactionId);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
+                        exchange.setProperty("CamelMllpAcknowledgementString", ackMessage);
                         exchange.getMessage().setBody(ackMessage);
                         logger.info("[PORT {}] Processed HL7 message successfully. Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
                     } catch (Exception e) {
-                        logger.error("[PORT {}] Error processing HL7 message. interactionId= {} reason= {}", port, interactionId, e.getMessage(),e);
-                        String nack;
+                        logger.error("[PORT {}] Error processing HL7 message. interactionId= {} reason={}", port, interactionId, e.getMessage(),e);
                         try {
                             Message partial = parser.parse(hl7Message);
-                            Message nackMsg = partial.generateACK(AcknowledgmentCode.AE,
-                                    new HL7Exception(e.getMessage()));
-                            nack = addNteWithInteractionId(nackMsg, interactionId); 
+                            Message generatedNack  = partial.generateACK(AcknowledgmentCode.AE, new HL7Exception(e.getMessage()));
+                            nack = addNteWithInteractionId(generatedNack, interactionId);
                         } catch (Exception ex2) {
-                            logger.error("[PORT {}] Error generating NACK. interactionId= {} reason={}", port,
-                                    interactionId, ex2.getMessage(), ex2);
+                            logger.error("[PORT {}] Error generating NACK. interactionId= {} reason={}", port, interactionId, ex2.getMessage(),ex2);
                             nack = "MSH|^~\\&|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|202507181500||ACK^O01|1|P|2.3\r" +
-                                    "MSA|AE|1|Error: Unexpected failure\r" +
-                                    "NTE|1|InteractionID: " + interactionId + "\r";
+                            "MSA|AE|1|Error: Unexpected failure\r" +
+                            "NTE|1||InteractionID: " + interactionId + "\r";
                         }
+                        exchange.setProperty("CamelMllpAcknowledgementString", nack);
                         exchange.getMessage().setBody(nack);
                     }
                 })
@@ -78,7 +77,7 @@ public class MllpRoute extends RouteBuilder {
         PipeParser parser = new PipeParser();
         return parser.encode(ackMessage);
     }
-    
+
     private RequestContext buildRequestContext(Exchange exchange, String hl7Message, String interactionId) {
         ZonedDateTime uploadTime = ZonedDateTime.now();
         String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
