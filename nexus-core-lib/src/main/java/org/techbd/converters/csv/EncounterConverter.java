@@ -141,7 +141,7 @@ public class EncounterConverter extends BaseConverter {
                 Coding coding = new Coding();
                 coding.setCode(data.getEncounterTypeCode());
                 coding.setSystem(fetchSystem(data.getEncounterTypeCode(), data.getEncounterTypeCodeSystem(), CsvConstants.ENCOUNTER_TYPE_CODE, interactionId));
-                coding.setDisplay(data.getEncounterTypeCodeDescription());
+                coding.setDisplay(fetchDisplay(data.getEncounterTypeCode(), data.getEncounterTypeCodeDescription(), CsvConstants.ENCOUNTER_TYPE_CODE, interactionId));
                 encounterType.addCoding(coding);
             }
 
