@@ -414,7 +414,7 @@ public class PatientConverter extends BaseConverter {
                     Coding coding = new Coding();
                     coding.setSystem(fetchSystem(langCode, data.getPreferredLanguageCodeSystem(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
                     coding.setCode(langCode);
-                    coding.setDisplay(data.getPreferredLanguageCodeDescription());
+                    coding.setDisplay(fetchDisplay(langCode, data.getPreferredLanguageCodeDescription(), CsvConstants.PREFERRED_LANGUAGE_CODE, interactionId));
                     CodeableConcept language = new CodeableConcept();
                     language.addCoding(coding);
                     PatientCommunicationComponent communication = new PatientCommunicationComponent();
