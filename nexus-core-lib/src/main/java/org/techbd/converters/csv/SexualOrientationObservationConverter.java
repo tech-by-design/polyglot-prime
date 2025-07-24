@@ -82,7 +82,7 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             String sexualOrientationCode = fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId);
             value.addCoding(new Coding(fetchSystem(sexualOrientationCode, demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId),
                     sexualOrientationCode,
-                    demographicData.getSexualOrientationCodeDescription()));
+                    fetchDisplay(sexualOrientationCode, demographicData.getSexualOrientationCodeDescription(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId)));
             observation.setValue(value);
             // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
             // observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated())); //Not Used
