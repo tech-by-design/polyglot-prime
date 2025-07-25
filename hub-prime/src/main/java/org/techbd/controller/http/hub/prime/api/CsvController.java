@@ -94,7 +94,6 @@ public class CsvController {
   @PostMapping(value = { "/flatfile/csv/Bundle", "/flatfile/csv/Bundle/" }, consumes = {
       MediaType.MULTIPART_FORM_DATA_VALUE })
   @ResponseBody
-  @Async
   public ResponseEntity<Object> handleCsvUploadAndConversion(
       @Parameter(description = "ZIP file containing CSV data. Must not be null.", required = true) @RequestPart("file") @Nonnull MultipartFile file,
       @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
@@ -123,7 +122,7 @@ public class CsvController {
     headerParameters.put(Constants.BASE_FHIR_URL, baseFHIRURL);
     requestDetailsMap.putAll(headerParameters);
     Map<String, Object> responseParameters = new HashMap<>();
-    List<Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);
+    Map<String, Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);
     CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestDetailsMap);
     return ResponseEntity.ok(processedFiles);
   }
