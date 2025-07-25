@@ -39,10 +39,7 @@
           {"name": "FACILITY_CITY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.city & Bundle.entry.resource.where(resourceType ='Organization').address.text"},
           {"name": "FACILITY_STATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.state & Bundle.entry.resource.where(resourceType ='Organization').address.text", 
           "constraints": { "enum": [
-            "ak", "al", "ar", "as", "az", "ca", "co", "ct", "dc", "de", "fl", "fm", "ga", "gu", "hi", "ia", "id", "il", "in",
-            "ks", "ky", "la", "ma", "md", "me", "mh", "mi", "mn", "mo", "mp", "ms", "mt", "nc", "nd", "ne", "nh", "nj", "nm",
-            "nv", "ny", "oh", "ok", "or", "pa", "pr", "pw", "ri", "sc", "sd", "tn", "tx", "ut", "va", "vi", "vt", "wa", "wi",
-            "wv", "wy"
+             "ny", "new york"  
           ] }},
             {"name": "FACILITY_ZIP", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.postalCode & Bundle.entry.resource.where(resourceType ='Organization').address.text", "constraints": { "pattern": "^\\d{5}(-?\\d{4})?$"}}, 
           {"name": "FACILITY_COUNTY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').address.district  & Bundle.entry.resource.where(resourceType ='Organization').address.text" }, 
@@ -329,10 +326,7 @@
           {"name": "ADDRESS2", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.text"},          
           {"name": "CITY", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.city", "constraints": {"required": true} },
           {"name": "STATE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.state", "constraints": {"required": true, "enum":[
-            "ak", "al", "ar", "as", "az", "ca", "co", "ct", "dc", "de", "fl", "fm", "ga", "gu", "hi", "ia", "id", "il", "in",
-            "ks", "ky", "la", "ma", "md", "me", "mh", "mi", "mn", "mo", "mp", "ms", "mt", "nc", "nd", "ne", "nh", "nj", "nm",
-            "nv", "ny", "oh", "ok", "or", "pa", "pr", "pw", "ri", "sc", "sd", "tn", "tx", "ut", "va", "vi", "vt", "wa", "wi",
-            "wv", "wy"
+             "ny", "new york"  
           ]
           }},
           {"name": "ZIP", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').address.postalCode", "constraints": { "required": true, "pattern": "^\\d{5}(-?\\d{4})?$"}},
