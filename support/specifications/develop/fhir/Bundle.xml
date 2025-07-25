@@ -2,8 +2,8 @@
   <id>0dad5b96-492c-4d04-95a0-a19b67601040</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>Bundle</name>
-  <description>Version: 0.5.0</description>
-  <revision>38</revision>
+  <description>Version: 0.6.0</description>
+  <revision>42</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -76,7 +76,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept </string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level </string>
           </list>
         </entry>
         <entry>
@@ -140,7 +140,7 @@ if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
           <script>var logInfo = globalMap.get(&quot;logInfo&quot;);
 var logError = globalMap.get(&quot;logError&quot;);
 var logDebug = globalMap.get(&quot;logDebug&quot;);
-var logError = globalMap.get(&quot;logError&quot;);
+
 var processFHIRBundle = globalMap.get(&quot;processFHIRBundle&quot;);
 if (processFHIRBundle) {
     var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
@@ -340,7 +340,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753362813165</time>
+        <time>1753438173161</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
