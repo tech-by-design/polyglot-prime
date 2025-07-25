@@ -1,0 +1,1144 @@
+<channel version="4.5.3">
+  <id>02ae1b8c-a5fb-4655-85d6-29040ebe8ae5</id>
+  <nextMetaDataId>3</nextMetaDataId>
+  <name>HL7V2 Bundle</name>
+  <description>Version: 0.1.1</description>
+  <revision>126</revision>
+  <sourceConnector version="4.5.3">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
+      <pluginProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>false</mutualTlsEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>true</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+      </pluginProperties>
+      <listenerConnectorProperties version="4.5.3">
+        <host>0.0.0.0</host>
+        <port>9006</port>
+      </listenerConnectorProperties>
+      <sourceConnectorProperties version="4.5.3">
+        <responseVariable>finalResponse</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <xmlBody>true</xmlBody>
+      <parseMultipart>true</parseMultipart>
+      <includeMetadata>false</includeMetadata>
+      <binaryMimeTypes>application/.*(?&lt;!json|xml)$|image/.*|video/.*|audio/.*</binaryMimeTypes>
+      <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
+      <responseContentType>text/json</responseContentType>
+      <responseDataTypeBinary>false</responseDataTypeBinary>
+      <responseStatusCode></responseStatusCode>
+      <responseHeaders class="linked-hash-map">
+        <entry>
+          <string>Access-Control-Allow-Origin</string>
+          <list>
+            <string>*</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Methods</string>
+          <list>
+            <string>GET, POST, OPTIONS</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Headers</string>
+          <list>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Credentials</string>
+          <list>
+            <string>true</string>
+          </list>
+        </entry>
+      </responseHeaders>
+      <responseHeadersVariable></responseHeadersVariable>
+      <useResponseHeadersVariable>false</useResponseHeadersVariable>
+      <charset>DEFAULT_ENCODING</charset>
+      <contextPath>/</contextPath>
+      <timeout>30000</timeout>
+      <staticResources/>
+    </properties>
+    <transformer version="4.5.3">
+      <elements/>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>XML</inboundDataType>
+      <outboundDataType>HL7V2</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.5.3">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.5.3">
+          <stripNamespaces>false</stripNamespaces>
+        </serializationProperties>
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.5.3">
+          <splitType>Element_Name</splitType>
+          <elementName></elementName>
+          <level>1</level>
+          <query></query>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.5.3">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.5.3">
+          <handleRepetitions>true</handleRepetitions>
+          <handleSubcomponents>true</handleSubcomponents>
+          <useStrictParser>false</useStrictParser>
+          <useStrictValidation>false</useStrictValidation>
+          <stripNamespaces>false</stripNamespaces>
+          <segmentDelimiter>\r</segmentDelimiter>
+          <convertLineBreaks>true</convertLineBreaks>
+        </serializationProperties>
+        <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.5.3">
+          <useStrictParser>false</useStrictParser>
+          <useStrictValidation>false</useStrictValidation>
+          <segmentDelimiter>\r</segmentDelimiter>
+        </deserializationProperties>
+        <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.5.3">
+          <splitType>MSH_Segment</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+        <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.5.3">
+          <segmentDelimiter>\r</segmentDelimiter>
+          <successfulACKCode>AA</successfulACKCode>
+          <successfulACKMessage></successfulACKMessage>
+          <errorACKCode>AE</errorACKCode>
+          <errorACKMessage>An Error Occurred Processing Message.</errorACKMessage>
+          <rejectedACKCode>AR</rejectedACKCode>
+          <rejectedACKMessage>Message Rejected.</rejectedACKMessage>
+          <msh15ACKAccept>false</msh15ACKAccept>
+          <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
+        </responseGenerationProperties>
+        <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.5.3">
+          <successfulACKCode>AA,CA</successfulACKCode>
+          <errorACKCode>AE,CE</errorACKCode>
+          <rejectedACKCode>AR,CR</rejectedACKCode>
+          <validateMessageControlId>true</validateMessageControlId>
+          <originalMessageControlId>Destination_Encoded</originalMessageControlId>
+          <originalIdMapVariable></originalIdMapVariable>
+        </responseValidationProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="4.5.3">
+      <elements>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos; or &apos;/hl7v2/Bundle/$validate&apos;</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <field>sourceMap.get(&apos;contextPath&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;/hl7v2/Bundle&apos;</string>
+            <string>&apos;/hl7v2/Bundle/&apos;</string>
+            <string>&apos;/hl7v2/Bundle/$validate&apos;</string>
+            <string>&apos;/hl7v2/Bundle/$validate/&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; is blank</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <operator>AND</operator>
+          <field>sourceMap.get(&apos;method&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;POST&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+      </elements>
+    </filter>
+    <transportName>HTTP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="4.5.3">
+      <metaDataId>1</metaDataId>
+      <name>Destination 1</name>
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.5.3">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.5.3">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <channelId>none</channelId>
+        <channelTemplate>${message.encodedData}</channelTemplate>
+        <mapVariables/>
+      </properties>
+      <transformer version="4.5.3">
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+            <name>Common Js func.</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>/**
+* Replacer function to remove empty values
+*/&#xd;function removeEmptyValues(key, value) {&#xd;  // Remove values that are empty strings, null, undefined, or empty objects/arrays&#xd;  if (value === &quot;&quot; || value === null || value === undefined || &#xd;      (typeof value === &quot;object&quot; &amp;&amp; Object.keys(value).length === 0) ||&#xd;      (Array.isArray(value) &amp;&amp; value.length === 0)) {&#xd;    return undefined; // Exclude the key from the result&#xd;  }&#xd;  return value; // Keep the value as is&#xd;}
+
+
+/**
+* Util function to generate json string wit hstatus and message
+*/
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+/*
+* Util function to generate json error message
+*/
+function getJsonInvalidOperationOutcome(errorMsg, code) {
+	return { &quot;OperationOutcome&quot;: {
+                    &quot;validationResults&quot;: [
+                        {
+                            &quot;operationOutcome&quot;: {
+                                &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;issue&quot;: [
+                                    {
+                                        &quot;severity&quot;: &quot;error&quot;,
+                                        &quot;code&quot;: code,
+                                        &quot;details&quot;: {
+                                            &quot;text&quot;: errorMsg
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            };
+}
+
+function sendDataLedgerSync(payload) {
+    logger.info(&quot;sendDataLedgerSync: &quot; + payload);
+    
+    var apiUrl = java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;);
+    var dataLedgerApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
+
+    logger.info(&quot;API URL: &quot; + apiUrl);
+
+    if (apiUrl == null) {
+        throw new Error(&quot;Environment variable DATA_LEDGER_API_URL is not set.&quot;);
+    }
+    if (dataLedgerApiKey == null) {
+        throw new Error(&quot;Environment variable &apos;TECHBD_NYEC_DATALEDGER_API_KEY&apos; is not set.&quot;);
+    }
+
+    try {
+        var HttpClients = org.apache.http.impl.client.HttpClients;
+        var HttpPost = org.apache.http.client.methods.HttpPost;
+        var StringEntity = org.apache.http.entity.StringEntity;
+        var EntityUtils = org.apache.http.util.EntityUtils;
+
+        var httpClient = HttpClients.createDefault();
+        var httpPost = new HttpPost(apiUrl);
+
+        httpPost.setHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);
+        httpPost.setHeader(&quot;Accept&quot;, &quot;application/json&quot;);
+       
+        if (dataLedgerApiKey != null) {
+        	httpPost.setHeader(&quot;x-api-key&quot;, dataLedgerApiKey); // ✅ Add x-api-key header
+        }
+
+        var entity = new StringEntity(payload, &quot;UTF-8&quot;);
+        httpPost.setEntity(entity);
+
+        var response = httpClient.execute(httpPost);
+        try {
+            var statusCode = response.getStatusLine().getStatusCode();
+            logger.info(&quot;sendDataLedgerSync response status: &quot; + statusCode);
+            var responseBody = EntityUtils.toString(response.getEntity());
+
+            if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {
+                logger.info(&quot;Data Ledger API Response: &quot; + responseBody);
+                return {
+                    statusCode: statusCode,
+                    body: responseBody
+                };
+            } else {
+                logger.error(&quot;Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);
+                throw new Error(&quot;Request failed with status &quot; + statusCode);
+            }
+        } finally {
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+    } catch (error) {
+        logger.error(&quot;Data Ledger API Request Failed: &quot; + error.message);
+        throw error;
+    }
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+            <name>Validate HTTP Request and collect headers</name>
+            <sequenceNumber>1</sequenceNumber>
+            <enabled>true</enabled>
+            <script>logger.info(&quot;HTTP request validation started.&quot;);
+
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(&quot;Request URL: &quot; + requestedPath);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+// Initialize missing headers array
+var missingHeaders = [];
+
+// Helper to check and store missing header
+function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
+    var value = $(&apos;headers&apos;).getHeader(headerName);
+    logger.info(headerName + &quot;: &quot; + value);
+
+    if (value == null || String(value).trim() === &quot;&quot;) {
+        missingHeaders.push(&quot;Missing required header &quot; + displayName);
+    } else if (storeInMap) {
+        channelMap.put(mapKey || headerName, value);
+    }
+
+    return value;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+// Mandatory: X-TechBD-Tenant-ID
+checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;X-TechBD-Tenant-ID&apos;, true, &apos;tenantId&apos;);
+
+// Retrieve the Content-Type header
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
+    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+}
+
+// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+channelMap.put(&apos;userAgent&apos;, userAgent);
+logger.info(&quot;User-Agent: &quot; + userAgent);
+
+var OrganizationName = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Organization-Name&apos;);
+channelMap.put(&apos;OrganizationName&apos;, OrganizationName);
+logger.info(&quot;OrganizationName: &quot; + OrganizationName);
+
+channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+
+//** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
+if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
+	//1.CIN
+	checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;X-TechBD-CIN&apos;, true, &apos;patientCIN&apos;);
+	
+	//2.NPI
+	var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
+	logger.info(&quot;X-TechBD-OrgNPI: &quot; + organizationNPI);
+	
+	//3.TIN
+	var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
+	logger.info(&quot;X-TechBD-OrgTIN: &quot; + organizationTIN);
+	
+	// Check if both are missing — only then it&apos;s an error
+	if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
+	    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {
+	    missingHeaders.push(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);
+	} else {
+	    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);
+	    }
+	    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
+	    }
+	}
+	
+	//4. Facility Code
+	checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;X-TechBD-Facility-ID&apos;, true, &apos;facilityID&apos;);
+
+	//5. Encounter Type
+	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
+}
+
+// If any missing headers were found, throw a single error
+if (missingHeaders.length &gt; 0) {
+    var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+
+
+//////////////////////////////////////////////////////
+// Read environment variables and set to global map //
+//////////////////////////////////////////////////////
+
+// Initialize missing environment variables array
+var missingEnvVars = [];
+
+// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
+var fhirBundleSubmissionApiUrl = java.lang.System.getenv(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
+if(fhirBundleSubmissionApiUrl != null) {
+    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
+    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
+} else {
+    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
+}
+
+// If any env vars are missing, throw a single error
+if (missingEnvVars.length &gt; 0) {
+    var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Internal Server Error
+    throw errorMessage;
+}
+
+logger.info(&quot;HTTP request validation ended.&quot;);</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+            <name>step_validate_profile_urls_env_variables</name>
+            <sequenceNumber>2</sequenceNumber>
+            <enabled>true</enabled>
+            <script>/**
+* Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
+*/
+
+
+/**
+* Util function to get FHIR resource profile URLs and set as parameters to the transformer which converts the XML file to FHIR Bundle.
+*/
+function set_fhir_resource_profile_urls(transformer) {
+	var baseFhirUrl = java.lang.System.getenv(&quot;BASE_FHIR_URL&quot;);   
+	var bundleMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_BUNDLE&quot;); 
+	var patientMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PATIENT&quot;); 
+	var encounterMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ENCOUNTER&quot;); 
+	var consentMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_CONSENT&quot;); 
+	var organizationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ORGANIZATION&quot;); 
+	var observationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_OBSERVATION&quot;); 
+	var observationSexualOrientationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;); 
+	var questionnaireMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE&quot;); 
+	var questionnaireResponseMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
+	var practitionerMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
+	var procedureMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PROCEDURE&quot;);
+
+	if(baseFhirUrl != null) {
+		transformer.setParameter(&quot;baseFhirUrl&quot;, baseFhirUrl);
+		channelMap.put(&apos;baseFhirUrl&apos;, baseFhirUrl);
+		logger.info(&quot;baseFhirUrl: &quot; + baseFhirUrl);
+	} else {
+		var errorMessage = &apos;BASE_FHIR_URL variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	
+	if(bundleMetaProfileUrl != null) {
+		transformer.setParameter(&quot;bundleMetaProfileUrl&quot;, bundleMetaProfileUrl);
+		channelMap.put(&apos;bundleMetaProfileUrl&apos;, bundleMetaProfileUrl);
+		logger.info(&quot;bundleMetaProfileUrl: &quot; + bundleMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_BUNDLE variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	
+	if(patientMetaProfileUrl != null) {
+		transformer.setParameter(&quot;patientMetaProfileUrl&quot;, patientMetaProfileUrl);
+		channelMap.put(&apos;patientMetaProfileUrl&apos;, patientMetaProfileUrl);
+		logger.info(&quot;patientMetaProfileUrl: &quot; + patientMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_PATIENT variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	
+	if(encounterMetaProfileUrl != null) {
+		transformer.setParameter(&quot;encounterMetaProfileUrl&quot;, encounterMetaProfileUrl);
+		channelMap.put(&apos;encounterMetaProfileUrl&apos;, encounterMetaProfileUrl);
+		logger.info(&quot;encounterMetaProfileUrl: &quot; + encounterMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_ENCOUNTER variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	
+	if(consentMetaProfileUrl != null) {
+		transformer.setParameter(&quot;consentMetaProfileUrl&quot;, consentMetaProfileUrl);
+		channelMap.put(&apos;consentMetaProfileUrl&apos;, consentMetaProfileUrl);
+		logger.info(&quot;consentMetaProfileUrl: &quot; + consentMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_CONSENT variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+		
+	if(organizationMetaProfileUrl != null) {
+		transformer.setParameter(&quot;organizationMetaProfileUrl&quot;, organizationMetaProfileUrl);
+		channelMap.put(&apos;organizationMetaProfileUrl&apos;, organizationMetaProfileUrl);
+		logger.info(&quot;organizationMetaProfileUrl: &quot; + organizationMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_ORGANIZATION variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+			
+	if(observationMetaProfileUrl != null) {
+		transformer.setParameter(&quot;observationMetaProfileUrl&quot;, observationMetaProfileUrl);
+		channelMap.put(&apos;observationMetaProfileUrl&apos;, observationMetaProfileUrl);
+		logger.info(&quot;observationMetaProfileUrl: &quot; + observationMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_OBSERVATION variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+				
+	if(observationSexualOrientationMetaProfileUrl != null) {
+		transformer.setParameter(&quot;observationSexualOrientationMetaProfileUrl&quot;, observationSexualOrientationMetaProfileUrl);
+		channelMap.put(&apos;observationSexualOrientationMetaProfileUrl&apos;, observationSexualOrientationMetaProfileUrl);
+		logger.info(&quot;observationSexualOrientationMetaProfileUrl: &quot; + observationSexualOrientationMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_SEXUAL_ORIENTATION variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+					
+	if(questionnaireMetaProfileUrl != null) {
+		transformer.setParameter(&quot;questionnaireMetaProfileUrl&quot;, questionnaireMetaProfileUrl);
+		channelMap.put(&apos;questionnaireMetaProfileUrl&apos;, questionnaireMetaProfileUrl);
+		logger.info(&quot;questionnaireMetaProfileUrl: &quot; + questionnaireMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_QUESTIONNAIRE variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+						
+	if(questionnaireResponseMetaProfileUrl != null) {
+		transformer.setParameter(&quot;questionnaireResponseMetaProfileUrl&quot;, questionnaireResponseMetaProfileUrl);
+		channelMap.put(&apos;questionnaireResponseMetaProfileUrl&apos;, questionnaireResponseMetaProfileUrl);
+		logger.info(&quot;questionnaireResponseMetaProfileUrl: &quot; + questionnaireResponseMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_QUESTIONNAIRE_RESPONSE variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+							
+	if(practitionerMetaProfileUrl != null) {
+		transformer.setParameter(&quot;practitionerMetaProfileUrl&quot;, practitionerMetaProfileUrl);
+		channelMap.put(&apos;practitionerMetaProfileUrl&apos;, practitionerMetaProfileUrl);
+		logger.info(&quot;practitionerMetaProfileUrl: &quot; + practitionerMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_PRACTITIONER variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+
+	if(procedureMetaProfileUrl != null) {
+		transformer.setParameter(&quot;procedureMetaProfileUrl&quot;, procedureMetaProfileUrl);
+		channelMap.put(&apos;procedureMetaProfileUrl&apos;, procedureMetaProfileUrl);
+		logger.info(&quot;procedureMetaProfileUrl: &quot; + procedureMetaProfileUrl);
+	} else {
+		var errorMessage = &apos;PROFILE_URL_PROCEDURE variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+
+	transformer.setParameter(&quot;patientCIN&quot;, channelMap.get(&apos;patientCIN&apos;)); // Pass the parameter to XSLT
+	if (channelMap.get(&apos;organizationNPI&apos;)) {
+		transformer.setParameter(&quot;organizationNPI&quot;, channelMap.get(&apos;organizationNPI&apos;)); // Pass the parameter to XSLT
+	}		
+	if (channelMap.get(&apos;organizationTIN&apos;)) {
+		transformer.setParameter(&quot;organizationTIN&quot;, channelMap.get(&apos;organizationTIN&apos;)); // Pass the parameter to XSLT
+	}
+	if (channelMap.get(&apos;facilityID&apos;)) {
+		transformer.setParameter(&quot;facilityID&quot;, channelMap.get(&apos;facilityID&apos;)); // Pass the parameter to XSLT
+	}
+	if (channelMap.get(&apos;encounterType&apos;)) {
+		transformer.setParameter(&quot;encounterType&quot;, channelMap.get(&apos;encounterType&apos;)); // Pass the parameter to XSLT
+	}
+	if (channelMap.get(&apos;OrganizationName&apos;)) {
+		transformer.setParameter(&quot;OrganizationName&quot;, channelMap.get(&apos;OrganizationName&apos;)); // Pass the parameter to XSLT
+	}
+
+
+	return transformer;
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
+            <name>API endpoint processing</name>
+            <sequenceNumber>3</sequenceNumber>
+            <enabled>true</enabled>
+            <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);logger.info(&quot;Request URL: &quot; + requestedPath);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
+//////////////////////////////////////////////
+
+
+    //*********** DATA LEDGER ***************
+    var randomSuffix = Math.floor(Math.random() * 10000);
+    channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+   var currentTimestampBegin = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
+    // Add 3 more random digits to simulate microseconds
+    var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
+    return &apos;.&apos; + micros + &apos;Z&apos;;
+  });
+
+
+    var interactionId = java.util.UUID.randomUUID().toString();
+    channelMap.put(&quot;interactionId&quot;,interactionId);
+    logger.info(&quot;InteractionId: &quot; + interactionId);
+    var payload = JSON.stringify({
+        executedAt: currentTimestampBegin,
+        actor: &quot;TechBD&quot;,
+        action: &quot;received&quot;, 
+        destination: &quot;TechBD&quot;,
+        dataId: interactionId,
+        payloadType: &quot;hrsnBundle&quot;
+    });
+
+
+	// Check if tracking is enabled
+	var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+	if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
+	    logger.info(&quot;data ledger api call -BEGIN received&quot;);
+	    try {
+	        sendDataLedgerSync(payload);
+	    } catch (e) {
+	        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
+	    }
+	    logger.info(&quot;data ledger api call -END received&quot;);
+	} else {
+	    logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
+	}
+	//*********** DATA LEDGER ***************
+
+
+
+	
+	channelMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+
+	/////
+	var rawMessage = connectorMessage.getTransformedData(); // msg contains the entire raw message
+	
+	// Extract the XML content from the form-data (i.e., skip the metadata)
+	var xmlStartIndex = rawMessage.indexOf(&apos;&lt;?xml&apos;); // Find the XML declaration
+	var xmlContent = rawMessage.substring(xmlStartIndex); // Extract the XML part
+	
+	if (!xmlContent || xmlContent.length === 0) {
+		logger.error(&quot;No XML data received in the request.&quot;);
+		responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;, &quot;Invalid&quot;)));
+		throw new Error(&quot;No XML data received in the request.&quot;);
+	}
+}
+
+
+
+try {
+    var rawTransformedData = connectorMessage.getTransformedData();
+	logger.info(&quot;Raw HL7 Message (pre-clean): &quot; + rawTransformedData);
+	
+
+    // Load XSLT from file system
+   // var xsltPathFromEnv = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-fhir-bundle.xslt&quot;;
+    var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
+    logger.info(&quot;HL7_XSLT_PATH: &quot; + xsltPathFromEnv);
+    var xsltPath = xsltPathFromEnv;
+    var xsltFile = new java.io.File(xsltPath);
+    var xsltStream = new java.io.FileInputStream(xsltFile);
+
+    // Create transformer
+    var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
+    var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+    var transformer = transformerFactory.newTransformer(xsltSource);
+    set_fhir_resource_profile_urls(transformer);
+
+    
+
+    // Optional: pass parameters to XSLT
+    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+    transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp);
+
+    var bundleId = java.util.UUID.randomUUID().toString();
+    transformer.setParameter(&quot;bundleId&quot;, bundleId);
+
+    var patientResourceId = java.util.UUID.randomUUID().toString();
+    transformer.setParameter(&quot;patientResourceId&quot;, patientResourceId);
+
+    var consentResourceId = java.util.UUID.randomUUID().toString();
+    transformer.setParameter(&quot;consentResourceId&quot;, consentResourceId);
+
+    var organizationResourceId = java.util.UUID.randomUUID().toString();
+    transformer.setParameter(&quot;organizationResourceId&quot;, organizationResourceId);
+
+    var encounterResourceId = java.util.UUID.randomUUID().toString();
+    transformer.setParameter(&quot;encounterResourceId&quot;, encounterResourceId);
+
+    var sexualOrientationResourceId = java.util.UUID.randomUUID().toString();
+    transformer.setParameter(&quot;sexualOrientationResourceId&quot;, sexualOrientationResourceId);
+
+    var observationResourceSha256Id = java.util.UUID.randomUUID().toString();
+    transformer.setParameter(&quot;observationResourceSha256Id&quot;, observationResourceSha256Id);
+
+    // Retrieve the X-TechBD-Base-FHIR-URL header
+		var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
+		logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
+
+
+    // Retrieve the VALID_URLS environment variable (comma-separated list)
+		var validUrlsEnv = java.lang.System.getenv(&quot;MC_VALID_FHIR_URLS&quot;);
+		logger.info(&quot;MC_VALID_FHIR_URLS from environment: &quot; + validUrlsEnv);
+		
+		// Convert VALID_URLS to an array for validation
+		var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
+		
+		// Check if the header value is valid
+		if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() !== &quot;&quot;) {
+		    if (validUrls.includes(customBaseFhirUrl)) {
+		        // Store valid value in channelMap
+		        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
+			   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
+		    } else {
+		        // Throw a Bad Request error if the URL is not in the valid list
+				var errorMessage = &apos;Bad Request: The provided X-TechBD-Base-FHIR-URL is invalid.&apos;;
+				logger.error(errorMessage);
+				setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+				throw errorMessage; // Stop further processing by throwing an exception
+		    }
+		}
+
+    
+
+    // Transform
+    var xmlInputStream = new java.io.StringReader(rawTransformedData);
+    var xmlOutputStream = new java.io.StringWriter();
+    var input = new javax.xml.transform.stream.StreamSource(xmlInputStream);
+    var output = new javax.xml.transform.stream.StreamResult(xmlOutputStream);
+
+    try {
+    			transformer.transform(input, output);&#xd;		&#xd;			// Store the transformed XML in the channel map&#xd;			var hl7FhirBundle = xmlOutputStream.toString();&#xd;			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);&#xd;			logger.info(&quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);&#xd;&#xd;			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object&#xd;			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;			logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);&#xd;		} catch (e) {
+			var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
+        		// Failure: Return an OperationOutcome JSON response for general errors
+		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
+			        &#xd;		    logger.error(&quot;Error during HL7 FHIR bundle transformation: &quot; + e);&#xd;		    throw e;&#xd;		}
+
+		// Convert the XML document to JSON
+		const jsonResult = cleanedJsonString;
+		channelMap.put(&apos;jsonResult&apos;, jsonResult);
+		responseMap.put(&apos;finalResponse&apos;, JSON.stringify(jsonResult));
+ 
+
+
+
+
+
+
+
+
+
+var logInfo = globalMap.get(&quot;logInfo&quot;);&#xd;
+var logError = globalMap.get(&quot;logError&quot;);&#xd;
+var logDebug = globalMap.get(&quot;logDebug&quot;);&#xd;
+var logError = globalMap.get(&quot;logError&quot;);&#xd;
+var processFHIRBundle = globalMap.get(&quot;processFHIRBundle&quot;);&#xd;
+if (processFHIRBundle) {&#xd;
+    var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);&#xd;
+    channelMap.put(&quot;requestUri&quot;, &quot;/Bundle&quot;);&#xd;
+    var validationResults = processFHIRBundle(tenantId, channelMap, jsonResult, responseMap);&#xd;
+    responseMap.put(&quot;finalResponse&quot;, validationResults);&#xd;
+} else {&#xd;
+    logError(&quot;processFHIRBundle function not found in globalMap.&quot;, channelMap);&#xd;
+}
+
+
+
+
+
+    
+
+    channelMap.put(&apos;xslt_result&apos;, cleanedJsonString);
+
+    
+    return cleanedJsonString;
+
+} catch (e) {
+    var errorMsg = &quot;Error during XSLT transformation: &quot; + e.message + &quot;\nDetails: &quot; + e;
+    logger.error(errorMsg);
+    channelMap.put(&apos;xslt_result&apos;, errorMsg);
+    throw e;
+}
+
+function removeEmptyValues(key, value) {   
+// Remove values that are empty strings, null, undefined, or empty objects/arrays   
+if (value === &quot;&quot; || value === null || value === undefined ||       
+(typeof value === &quot;object&quot; &amp;&amp; Object.keys(value).length === 0) ||       
+(Array.isArray(value) &amp;&amp; value.length === 0)) {     
+return undefined; // Exclude the key from the result   
+}   
+return value; // Keep the value as is 
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>HL7V2</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.5.3">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.5.3">
+            <handleRepetitions>true</handleRepetitions>
+            <handleSubcomponents>true</handleSubcomponents>
+            <useStrictParser>false</useStrictParser>
+            <useStrictValidation>false</useStrictValidation>
+            <stripNamespaces>false</stripNamespaces>
+            <segmentDelimiter>\r</segmentDelimiter>
+            <convertLineBreaks>true</convertLineBreaks>
+          </serializationProperties>
+          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.5.3">
+            <useStrictParser>false</useStrictParser>
+            <useStrictValidation>false</useStrictValidation>
+            <segmentDelimiter>\r</segmentDelimiter>
+          </deserializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.5.3">
+            <splitType>MSH_Segment</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.5.3">
+            <segmentDelimiter>\r</segmentDelimiter>
+            <successfulACKCode>AA</successfulACKCode>
+            <successfulACKMessage></successfulACKMessage>
+            <errorACKCode>AE</errorACKCode>
+            <errorACKMessage>An Error Occurred Processing Message.</errorACKMessage>
+            <rejectedACKCode>AR</rejectedACKCode>
+            <rejectedACKMessage>Message Rejected.</rejectedACKMessage>
+            <msh15ACKAccept>false</msh15ACKAccept>
+            <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
+          </responseGenerationProperties>
+          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.5.3">
+            <successfulACKCode>AA,CA</successfulACKCode>
+            <errorACKCode>AE,CE</errorACKCode>
+            <rejectedACKCode>AR,CR</rejectedACKCode>
+            <validateMessageControlId>true</validateMessageControlId>
+            <originalMessageControlId>Destination_Encoded</originalMessageControlId>
+            <originalIdMapVariable></originalIdMapVariable>
+          </responseValidationProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.5.3">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.5.3">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.5.3">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.3">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.5.3">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.5.3">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.5.3">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.5.3">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.5.3">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.5.3">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.3">
+        <elements/>
+      </filter>
+      <transportName>Channel Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="4.5.3">
+      <metaDataId>2</metaDataId>
+      <name>dest_bundle</name>
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.5.3">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.5.3">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <channelId>none</channelId>
+        <channelTemplate>${finalResponse}</channelTemplate>
+        <mapVariables/>
+      </properties>
+      <transformer version="4.5.3">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>HL7V2</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.5.3">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2SerializationProperties" version="4.5.3">
+            <handleRepetitions>true</handleRepetitions>
+            <handleSubcomponents>true</handleSubcomponents>
+            <useStrictParser>false</useStrictParser>
+            <useStrictValidation>false</useStrictValidation>
+            <stripNamespaces>false</stripNamespaces>
+            <segmentDelimiter>\r</segmentDelimiter>
+            <convertLineBreaks>true</convertLineBreaks>
+          </serializationProperties>
+          <deserializationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DeserializationProperties" version="4.5.3">
+            <useStrictParser>false</useStrictParser>
+            <useStrictValidation>false</useStrictValidation>
+            <segmentDelimiter>\r</segmentDelimiter>
+          </deserializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2BatchProperties" version="4.5.3">
+            <splitType>MSH_Segment</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+          <responseGenerationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseGenerationProperties" version="4.5.3">
+            <segmentDelimiter>\r</segmentDelimiter>
+            <successfulACKCode>AA</successfulACKCode>
+            <successfulACKMessage></successfulACKMessage>
+            <errorACKCode>AE</errorACKCode>
+            <errorACKMessage>An Error Occurred Processing Message.</errorACKMessage>
+            <rejectedACKCode>AR</rejectedACKCode>
+            <rejectedACKMessage>Message Rejected.</rejectedACKMessage>
+            <msh15ACKAccept>false</msh15ACKAccept>
+            <dateFormat>yyyyMMddHHmmss.SSS</dateFormat>
+          </responseGenerationProperties>
+          <responseValidationProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2ResponseValidationProperties" version="4.5.3">
+            <successfulACKCode>AA,CA</successfulACKCode>
+            <errorACKCode>AE,CE</errorACKCode>
+            <rejectedACKCode>AR,CR</rejectedACKCode>
+            <validateMessageControlId>true</validateMessageControlId>
+            <originalMessageControlId>Destination_Encoded</originalMessageControlId>
+            <originalIdMapVariable></originalIdMapVariable>
+          </responseValidationProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.3">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.3">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.3">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.3">
+        <elements/>
+      </filter>
+      <transportName>Channel Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>message = message.replace(/^\s*(\r?\n)+/, &apos;&apos;);
+
+
+
+var requestParameters = channelMap.get(&quot;requestParameters&quot;);&#xd;
+var SourceType = Packages.org.techbd.config.SourceType;&#xd;
+var source = SourceType.HL7.name(); &#xd;
+&#xd;
+requestParameters.put(Packages.org.techbd.config.Constants.SOURCE_TYPE, source.trim());
+
+return message;
+</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+
+// Version: 0.4.3 - Added support for X-TechBD-Base-FHIR-URL
+// Version: 0.4.15 - Added filters to source and bundle destination and changed the globalMap usage to channelMap
+/*
+var endpoint = channelMap.get(&quot;endpoint&quot;);
+if(endpoint == &apos;bundle&apos;) {
+	// Get the response from the HTTP Writer destination
+	var destinationName = &quot;dest_bundle&quot;;
+	var destinationResponse = responseMap.get(destinationName);
+	
+	// Check if the response exists
+	if (destinationResponse) {
+	    var responseStatus = destinationResponse.getStatus();  // HTTP status code
+	    var responseData = destinationResponse.getMessage();   // Response message body
+		responseMap.put(&apos;finalResponse&apos;, responseData);
+		
+	    // Log the response details
+	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
+	    logger.info(&quot;Status Code: &quot; + responseStatus);
+	    logger.info(&quot;Response Data: &quot; + responseData);
+	} else {
+	    logger.info(&quot;No response found for destination: &quot; + destinationName);
+	}
+}
+*/
+return;</postprocessingScript>
+  <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="4.5.3">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>true</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>mirth_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>mirth_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="4.5.3">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1753255336013</time>
+        <timezone>Asia/Kolkata</timezone>
+      </lastModified>
+      <pruningSettings>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>1</userId>
+    </metadata>
+  </exportData>
+</channel>
