@@ -32,4 +32,7 @@ public enum State {
     // CCD-specific States
     CCDA_ACCEPT,
 
+    // HL7-specific States
+    HL7_ACCEPT,
+
 }
