@@ -166,7 +166,12 @@ public class OrganizationConverter extends BaseConverter {
                 fullAddressText += ", " + qrAdminData.getFacilityCity();
             }
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityState())) {
-                fullAddressText += ", " + qrAdminData.getFacilityState();
+                if(qrAdminData.getFacilityState().equalsIgnoreCase("New York")) {
+                    address.setState("NY");
+                    fullAddressText += ", " + address.getState();
+                } else {
+                    fullAddressText += ", " + fetchCode(qrAdminData.getFacilityState(), CsvConstants.STATE, interactionId);
+                }
             }
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityZip())) {
                 fullAddressText += " " + qrAdminData.getFacilityZip();
@@ -186,7 +191,6 @@ public class OrganizationConverter extends BaseConverter {
 
             address.setCity(qrAdminData.getFacilityCity());
             address.setDistrict(qrAdminData.getFacilityCounty());
-            address.setState(fetchCode(qrAdminData.getFacilityState(), CsvConstants.STATE, interactionId));
             address.setPostalCode(qrAdminData.getFacilityZip());
 
             organization.addAddress(address);

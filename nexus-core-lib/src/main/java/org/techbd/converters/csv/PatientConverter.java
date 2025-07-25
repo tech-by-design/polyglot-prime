@@ -391,7 +391,11 @@ public class PatientConverter extends BaseConverter {
             .filter(StringUtils::isNotEmpty)
             .ifPresent(address::addLine);
             address.setCity(data.getCity());
-            address.setState(fetchCode(data.getState(), CsvConstants.STATE, interactionId));
+            if(data.getState().equalsIgnoreCase("New York")) {
+                address.setState("NY");
+            } else {
+                address.setState(fetchCode(data.getState(), CsvConstants.STATE, interactionId));
+            }
             Optional.ofNullable(data.getCounty())
                     .filter(StringUtils::isNotEmpty)
                     .ifPresent(address::setDistrict);
@@ -399,7 +403,7 @@ public class PatientConverter extends BaseConverter {
                     .filter(StringUtils::isNotEmpty)
                     .ifPresent(address::setPostalCode);
             String addressText = String.format("%s %s, %s %s", address.getLine().get(0), address.getCity(),
-                fetchCode(data.getState(), CsvConstants.STATE, interactionId), address.getPostalCode());
+                address.getState(), address.getPostalCode());
             address.setText(addressText);
 
             patient.addAddress(address);

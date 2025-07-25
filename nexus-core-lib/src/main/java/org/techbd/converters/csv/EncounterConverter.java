@@ -138,17 +138,14 @@ public class EncounterConverter extends BaseConverter {
             CodeableConcept encounterType = new CodeableConcept();
 
             if (data.getEncounterTypeCode() != null) {
+                String encounterDisplay = fetchDisplay(data.getEncounterTypeCode(), data.getEncounterTypeCodeDescription(), CsvConstants.ENCOUNTER_TYPE_CODE, interactionId);
                 Coding coding = new Coding();
                 coding.setCode(data.getEncounterTypeCode());
                 coding.setSystem(fetchSystem(data.getEncounterTypeCode(), data.getEncounterTypeCodeSystem(), CsvConstants.ENCOUNTER_TYPE_CODE, interactionId));
-                coding.setDisplay(fetchDisplay(data.getEncounterTypeCode(), data.getEncounterTypeCodeDescription(), CsvConstants.ENCOUNTER_TYPE_CODE, interactionId));
+                coding.setDisplay(encounterDisplay);
                 encounterType.addCoding(coding);
+                encounterType.setText(encounterDisplay);
             }
-
-            if (data.getEncounterTypeCodeDescription() != null) {
-                encounterType.setText(data.getEncounterTypeCodeDescription());
-            }
-
             encounter.getType().add(encounterType);
         }
     }
