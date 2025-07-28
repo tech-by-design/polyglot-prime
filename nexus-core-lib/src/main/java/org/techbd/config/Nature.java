@@ -24,7 +24,11 @@ public enum Nature {
     CONVERTED_TO_FHIR("Converted to FHIR"),
     // CCD
     ORIGINAL_CCDA_PAYLOAD("Original CCDA Payload"),
-    CCDA_VALIDATION_RESULT("CCDA Validation Result");
+    CCDA_VALIDATION_RESULT("CCDA Validation Result"),
+
+     // HL7
+     ORIGINAL_HL7_PAYLOAD("Original HL7 Payload"),
+     HL7_VALIDATION_RESULT("HL7 Validation Result");
 
     private final String description;
 
