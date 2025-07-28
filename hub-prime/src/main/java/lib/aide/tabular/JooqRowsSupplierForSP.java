@@ -24,6 +24,7 @@ import org.jooq.TableLike;
 import org.jooq.impl.DSL;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirNeedsAttention;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirNeedsAttentionDetails;
+import org.techbd.udi.auto.jooq.ingress.tables.GetFhirPatientScreeningQuestionsAnswers;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmission;
 import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetInteractionHttpRequest;
@@ -69,7 +70,15 @@ public class JooqRowsSupplierForSP {
 
         // Fetch results
         Result<?> result = finalQuery.fetch();
-        return formatData(result.intoMaps());
+
+        // Use different formatting based on stored procedure
+        if ("get_fhir_patient_screening_questions_answers".equals(storedProcName)) {
+            // For screening questions, return data without complex formatting to avoid null issues
+            return result.intoMaps();
+        } else {
+            // For other stored procedures, use the standard formatting
+            return formatData(result.intoMaps());
+        }
     }
 
     private Condition buildConditions(TabularRowsRequestForSP payload) {
@@ -375,6 +384,15 @@ public class JooqRowsSupplierForSP {
                 String functionCall = String.format("techbd_udi_ingress.get_interaction_observe('%s', '%s')",
                     startDate.toString(), endDate.toString());
                 return DSL.table(functionCall);
+            }
+            case "get_fhir_patient_screening_questions_answers" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);
+
+                String hubInteractionId = paramMap.get("p_hub_interaction_id");
+                String patientMrn = paramMap.get("p_patient_mrn"); 
+
+                return new GetFhirPatientScreeningQuestionsAnswers().call(hubInteractionId, patientMrn);
             }
             case "get_fhir_needs_attention_details", "get_missing_datalake_submission_details" -> {
                 Map<String, LocalDate> dateMap = parseDates(paramsJson, objectMapper, formatter);
