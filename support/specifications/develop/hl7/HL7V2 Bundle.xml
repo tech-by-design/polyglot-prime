@@ -2,8 +2,8 @@
   <id>25dd1794-5435-4282-a189-4a2df9aed0a2</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>HL7V2 Bundle</name>
-  <description>Version: 0.1.2</description>
-  <revision>70</revision>
+  <description>Version: 0.1.3</description>
+  <revision>78</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -750,8 +750,8 @@ try {
 	
 
     // Load XSLT from file system
-   // var xsltPathFromEnv = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-fhir-bundle.xslt&quot;;
-    var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
+    var xsltPathFromEnv = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-fhir-bundle.xslt&quot;;
+   // var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
     logger.info(&quot;HL7_XSLT_PATH: &quot; + xsltPathFromEnv);
     var xsltPath = xsltPathFromEnv;
     var xsltFile = new java.io.File(xsltPath);
@@ -1084,7 +1084,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753450647138</time>
+        <time>1753676023135</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
