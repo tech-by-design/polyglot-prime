@@ -4,7 +4,6 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="urn:hl7-org:v3"
     xmlns:voc="urn:hl7-org:v3/voc"
-    xsi:schemaLocation="urn:hl7-org:v3 ../ccda-techbd-schema-files/CDA.xsd"
     exclude-result-prefixes="hl7">
 
     <xsl:output method="xml" indent="yes"/>
@@ -12,21 +11,29 @@
 
     <!-- Root template -->
     <xsl:template match="/hl7:ClinicalDocument">
-        <!-- Check if xml-stylesheet exists -->
-        <xsl:choose>
-            <xsl:when test="processing-instruction('xml-stylesheet')">
-                <!-- Copy existing xml-stylesheet from input -->
-                <xsl:processing-instruction name="xml-stylesheet">
-                    <xsl:value-of select="processing-instruction('xml-stylesheet')"/>
-                </xsl:processing-instruction>
-            </xsl:when>
-        </xsl:choose>
+        <!-- Copy xml-stylesheet if present -->
+        <xsl:if test="processing-instruction('xml-stylesheet')">
+            <xsl:processing-instruction name="xml-stylesheet">
+                <xsl:value-of select="processing-instruction('xml-stylesheet')"/>
+            </xsl:processing-instruction>
+        </xsl:if>
         <xsl:text>&#10;</xsl:text>
 
-        <xsl:copy>
-            <xsl:copy-of select="@*"/>
+        <xsl:element name="ClinicalDocument">
+            <!-- Copy all attributes except xsi:schemaLocation -->
+            <xsl:for-each select="@*">
+                <xsl:if test="name() != 'xsi:schemaLocation'">
+                    <xsl:attribute name="{name()}">
+                        <xsl:value-of select="."/>
+                    </xsl:attribute>
+                </xsl:if>
+            </xsl:for-each>
+
+            <!-- Always set schemaLocation -->
+            <xsl:attribute name="xsi:schemaLocation">
+                <xsl:text>urn:hl7-org:v3 ../ccda-techbd-schema-files/CDA.xsd</xsl:text>
+            </xsl:attribute>
             
-            <!-- Keep necessary elements -->
             <xsl:copy-of select="hl7:realmCode | hl7:typeId | hl7:templateId | hl7:id | hl7:code | hl7:title"/>
             <xsl:copy-of select="hl7:effectiveTime | hl7:confidentialityCode | hl7:languageCode"/>
             <xsl:copy-of select="hl7:setId | hl7:versionNumber"/>
@@ -42,19 +49,20 @@
                 /hl7:section[hl7:code[@code='47519-4']]
                 /hl7:entry/hl7:observation/hl7:entryRelationship
                 /hl7:observation[hl7:code/@code = '105511-0']
-            "/>
+            "/>   
             <xsl:if test="$consent">
                 <xsl:variable name="consentDisplay">
                     <xsl:choose>
                         <xsl:when test="$consent/hl7:value/@displayName = 'Yes'">permit</xsl:when>
                         <xsl:otherwise>deny</xsl:otherwise>
                     </xsl:choose>
-                </xsl:variable>      
-
+                </xsl:variable>
                 <authorization>
                     <consent>
                         <id root="2.16.840.1.113883.3.227.2845.10.41.1.1"/>
-                        <code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="{$consentDisplay}"/>
+                        <code code="105511-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC">
+                            <xsl:attribute name="displayName"><xsl:value-of select="$consentDisplay"/></xsl:attribute>
+                        </code>
                         <xsl:copy-of select="$consent/hl7:statusCode"/>
                     </consent>
                 </authorization>
@@ -81,7 +89,6 @@
                         <xsl:if test="$encounterEntry">
                             <component>
                                 <section ID="encounters">
-                                    <xsl:copy-of select="@*"/>
                                     <xsl:copy-of select="hl7:templateId |hl7:code | hl7:title"/>
                                     <xsl:copy-of select="$encounterEntry" />
                                 </section>
@@ -90,7 +97,6 @@
                     </xsl:if>
 
                     <!-- Extract and place all other observations -->
-                    <!-- <xsl:variable name="observations" select="//hl7:section[hl7:code[@code='47519-4']]/hl7:entry/hl7:observation/hl7:entryRelationship[hl7:observation/hl7:code[@codeSystemName='LOINC' or @codeSystemName='SNOMED' or @codeSystemName='SNOMED CT']]"/> -->
                     <xsl:variable name="observations" select="hl7:component
                             /hl7:structuredBody
                             /hl7:component
@@ -181,7 +187,6 @@
 
                 </structuredBody>
             </component>
-        </xsl:copy>
+        </xsl:element>
     </xsl:template>
-
 </xsl:stylesheet>
