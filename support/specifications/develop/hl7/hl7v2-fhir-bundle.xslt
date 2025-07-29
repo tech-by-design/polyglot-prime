@@ -24,8 +24,6 @@
 		  //PID/PID.9/PID.9.2, &quot; &quot;, 
 		  //PID/PID.9/PID.9.3
 		))"/>
-  <!-- <xsl:variable name="bundleTimestamp" select="/ccda:ClinicalDocument/ccda:effectiveTime/@value"/> -->
-  <!-- <xsl:variable name="bundleTimestamp" select="//OBX[OBX.3/OBX.3.2 = 'AHC-HRSN Patient Consent'][1]/OBX.14/OBX.14.1"/> -->
   <xsl:variable name="bundleTimestamp" select="MSH/MSH.7/MSH.7.1"/>
 
   <xsl:param name="bundleId"/>
@@ -39,6 +37,7 @@
   <xsl:param name="questionnaireResponseResourceSha256Id"/>
   <xsl:param name="procedureResourceSha256Id"/>
   <xsl:param name="grouperObservationResourceSha256Id"/>
+  <xsl:param name="categoryXml"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -194,15 +193,6 @@
 			  , "address": [
 				<xsl:for-each select="//PID.11[PID.11.1 or PID.11.3 or PID.11.4 or PID.11.5]">
 				  {
-                        <!-- <xsl:if test="@use">
-                            "use": "<xsl:choose>
-                                <xsl:when test="@use='HP' or @use='H'">home</xsl:when>
-                                <xsl:when test="@use='WP'">work</xsl:when>
-                                <xsl:when test="@use='TMP'">temp</xsl:when>
-                                <xsl:when test="@use='OLD' or @use='BAD'">old</xsl:when>
-                                <xsl:otherwise><xsl:value-of select="@use"/></xsl:otherwise>
-                            </xsl:choose>",
-                        </xsl:if> -->
 						<!-- text -->
 						<xsl:if test="PID.11.1 or PID.11.2 or PID.11.3 or PID.11.4 or PID.11.5 or PID.11.6">
 						  "text": "<xsl:value-of select="normalize-space(concat(PID.11.1, ' ', PID.11.2, ' ', PID.11.3, ' ', PID.11.4, ' ', PID.11.5, ' ', PID.11.6))"/>",
@@ -266,77 +256,92 @@
 		  ]
 		</xsl:if>
         
-      <xsl:if test="string(//PID.10.1) or string(//PID.22.1) or string(//PID.8.1)">
+	  <xsl:if test="//PID.10 or //PID.22 or //PID.8.1">
 		  , "extension": [
-			<!-- Declare OMB code sets -->
 			<xsl:variable name="ombRaceCodes" select="'1002-5 2028-9 2054-5 2076-8 2106-3 UNK ASKU'" />
 			<xsl:variable name="ombEthnicityCodes" select="'2135-2 2186-5 UNK ASKU'" />
 
-		  <!-- RACE extension -->
-		  <xsl:if test="string(//PID.10.1)">
-			{
-			  "extension": [
-				{
-				  "url": "<xsl:choose>
-							  <xsl:when test="contains($ombRaceCodes, //PID.10.1)">ombCategory</xsl:when>
-							<xsl:otherwise>detailed</xsl:otherwise>
-						  </xsl:choose>",
-				  "valueCoding": {
-					"system": "urn:oid:<xsl:value-of select='//PID.10.3'/>",
-					"code": "<xsl:value-of select='//PID.10.1'/>",
-					"display": "<xsl:value-of select='//PID.10.2'/>"
+			<!-- RACE extension -->
+			<xsl:if test="//PID.10">
+			  {
+				"extension": [
+				  <xsl:for-each select="//PID.10">
+					<xsl:if test="position() > 1"><xsl:text>,</xsl:text></xsl:if>
+					{
+					  "url": "<xsl:choose>
+								<xsl:when test="contains($ombRaceCodes, PID.10.1)">ombCategory</xsl:when>
+								<xsl:otherwise>detailed</xsl:otherwise>
+							 </xsl:choose>",
+					  "valueCoding": {
+						"system": "<xsl:choose>
+									 <xsl:when test='PID.10.1 = "UNK" or PID.10.1 = "ASKU"'>http://terminology.hl7.org/CodeSystem/v3-NullFlavor</xsl:when>
+									 <xsl:otherwise>urn:oid:<xsl:value-of select='PID.10.3'/></xsl:otherwise>
+							   </xsl:choose>",						
+						"code": "<xsl:value-of select='PID.10.1'/>",
+						"display": "<xsl:value-of select='PID.10.2'/>"
+					  }
+					}
+				  </xsl:for-each>
+				  <xsl:if test="//PID.10"><xsl:text>,</xsl:text></xsl:if>
+				  {
+					"url": "text",
+					"valueString": "<xsl:for-each select='//PID.10'>
+									  <xsl:value-of select='PID.10.2'/>
+									  <xsl:if test='position() != last()'>
+										<xsl:text>, </xsl:text>
+									  </xsl:if>
+									</xsl:for-each>"
 				  }
-				},
-				{
-				  "url": "text",
-				  "valueString": "<xsl:value-of select='//PID.10.2'/>"
-				}
-			  ],
-			  "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
-			}
-			<xsl:if test="string(//PID.22.1) or string(//PID.8.1)">
-			  <xsl:text>,</xsl:text>
+				],
+				"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+			  }
+			  <xsl:if test="//PID.22"><xsl:text>,</xsl:text></xsl:if>
 			</xsl:if>
-		  </xsl:if>
 
-		  <!-- ETHNICITY extension -->
-		  <xsl:if test="string(//PID.22.1)">
-			{
-			  "extension": [
-				{
-				  "url": "<xsl:choose>
-							  <xsl:when test="contains($ombEthnicityCodes, //PID.22.1)">ombCategory</xsl:when>
-							<xsl:otherwise>detailed</xsl:otherwise>
-						  </xsl:choose>",
-				  "valueCoding": {
-					"system": "urn:oid:<xsl:value-of select='//PID.22.3'/>",
-					"code": "<xsl:value-of select='//PID.22.1'/>",
-					"display": "<xsl:value-of select='//PID.22.2'/>"
+			<!-- ETHNICITY extension -->
+			<xsl:if test="//PID.22">
+			  {
+				"extension": [
+				  <xsl:for-each select="//PID.22">
+					<xsl:if test="position() > 1"><xsl:text>,</xsl:text></xsl:if>
+					{
+					  "url": "<xsl:choose>
+								<xsl:when test="contains($ombEthnicityCodes, PID.22.1)">ombCategory</xsl:when>
+								<xsl:otherwise>detailed</xsl:otherwise>
+							 </xsl:choose>",
+					  "valueCoding": {
+						"system": "urn:oid:<xsl:value-of select='PID.22.3'/>",
+						"code": "<xsl:value-of select='PID.22.1'/>",
+						"display": "<xsl:value-of select='PID.22.2'/>"
+					  }
+					}
+				  </xsl:for-each>
+				  <xsl:if test="//PID.22"><xsl:text>,</xsl:text></xsl:if>
+				  {
+					"url": "text",
+					"valueString": "<xsl:for-each select='//PID.22'>
+									  <xsl:value-of select='PID.22.2'/>
+									  <xsl:if test='position() != last()'>
+										<xsl:text>, </xsl:text>
+									  </xsl:if>
+									</xsl:for-each>"
 				  }
-				},
-				{
-				  "url": "text",
-				  "valueString": "<xsl:value-of select='//PID.22.2'/>"
-				}
-			  ],
-			  "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
-			}
+				],
+				"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+			  }
+			  <xsl:if test="//PID.8.1"><xsl:text>,</xsl:text></xsl:if>
+			</xsl:if>
+
+			<!-- Administrative Gender -->
 			<xsl:if test="string(//PID.8.1)">
-			  <xsl:text>,</xsl:text>
+			  {
+				"url": "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
+				"valueCode": "<xsl:call-template name='mapAdministrativeGenderCode'>
+								<xsl:with-param name='genderCode' select='//PID.8.1'/>
+							  </xsl:call-template>"
+			  }
 			</xsl:if>
-		  </xsl:if>
-
-		  <!-- Administrative Gender extension -->
-		  <xsl:if test="string(//PID.8.1)">
-			{
-			  "url": "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender",
-			  "valueCode": "<xsl:call-template name='mapAdministrativeGenderCode'>
-							  <xsl:with-param name='genderCode' select='//PID.8.1'/>
-							</xsl:call-template>"
-			}
-		  </xsl:if>
-
-		  <xsl:text>]</xsl:text>
+		  ]
 		</xsl:if>
 
       <xsl:variable name="cinId" select="$patientCIN"/>
@@ -1247,9 +1252,9 @@
 <!-- Grouper Observation from HL7 OBX Template -->
 <xsl:template name="GrouperObservationFromOBR">
   <!-- Loop through each OBR (i.e., one screening panel per OBR) -->
-  <xsl:for-each select="//OBR">
-    <xsl:variable name="screeningCode" select="//OBR.4/OBR.4.1"/>
-    <xsl:variable name="screeningDisplay" select="//OBR.4/OBR.4.2"/>
+  <xsl:for-each select="//OBR[OBR.4/OBR.4.1 = '96777-8' or OBR.4/OBR.4.1 = '97023-6' or OBR.4/OBR.4.1 = 'NYSAHCHRSN' or OBR.4/OBR.4.1 = 'NYS-AHC-HRSN']">
+    <xsl:variable name="screeningCode" select="OBR.4/OBR.4.1"/>
+    <xsl:variable name="screeningDisplay" select="OBR.4/OBR.4.2"/>
 	  
 	  <xsl:variable name="obrCode" select="OBR.4/OBR.4.1"/>
 	  <xsl:variable name="grouperObservationResourceId">
@@ -1307,36 +1312,11 @@
 				  <xsl:text>,</xsl:text>
 				</xsl:if>
         "category": [
-		
-		<xsl:variable name="categorySystem" select="'http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes'" />
-
-		  <xsl:for-each select="following-sibling::OBX[
-								  generate-id(preceding-sibling::OBR[1]) = generate-id(current())
-								  and normalize-space(OBX.3/OBX.3.2) != 'AHC-HRSN Patient Consent'
-								  and string(normalize-space(OBX.3/OBX.3.1)) != ''
-								]">
-			<xsl:variable name="questionCode" select="normalize-space(OBX.3/OBX.3.1)" />
-			<xsl:variable name="categoryCode">
-			  <xsl:call-template name="mapObservationCategoryCodes">
-				<xsl:with-param name="questionCode" select="$questionCode"/>
-			  </xsl:call-template>
-			</xsl:variable>
-			
-			<xsl:if test="string($categoryCode) != ''">
-			{
-			  "coding": [{
-				"system": "<xsl:value-of select='$categorySystem'/>",
-				"code": "<xsl:value-of select='$categoryCode'/>",
-				"display": "<xsl:call-template name='mapSDOHCategoryCodeDisplay'>
-							  <xsl:with-param name='questionCode' select='$questionCode'/>
-							  <xsl:with-param name='categoryCode' select='$categoryCode'/>
-							</xsl:call-template>"
-			  }]
-			}
-			<!-- <xsl:if test="position() != last()">,</xsl:if> -->
-			<xsl:text>,</xsl:text>
-			</xsl:if>
-		  </xsl:for-each>
+		  {
+                "coding": [
+                  <xsl:value-of select='$categoryXml'/>
+                ]
+              },
           {
             "coding": [{
               "system": "http://terminology.hl7.org/CodeSystem/observation-category",
@@ -1382,6 +1362,7 @@
       }
     }
   </xsl:for-each>
+  <!-- </xsl:if> -->
 </xsl:template>
 
 <xsl:template name="formatDateTime">
