@@ -3639,10 +3639,24 @@ BEGIN
     	v_return := sat_interaction_csv_request_upserted.interaction_id;
 
 	ELSIF nature = 'Update Zip File Processing Details' THEN /*Update the errors and status after the zip file is processed*/
-    	UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
-    		SET status = sat_interaction_csv_request_upserted.status::text,
-				general_errors = sat_interaction_csv_request_upserted.zip_file_processing_errors::jsonb
-    		WHERE hub_interaction_id = sat_interaction_csv_request_upserted.interaction_id;
+		IF sat_interaction_csv_request_upserted.status IS NOT NULL THEN
+			UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
+			SET status = sat_interaction_csv_request_upserted.status
+			WHERE hub_interaction_id = interaction_id;
+		END IF;
+
+		IF zip_file_processing_errors IS NOT NULL THEN
+			UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
+			SET general_errors = zip_file_processing_errors
+			WHERE hub_interaction_id = interaction_id;
+		END IF;
+
+		IF sat_interaction_csv_request_upserted.elaboration IS NOT NULL THEN
+			UPDATE techbd_udi_ingress.sat_interaction_zip_file_request
+			SET elaboration = sat_interaction_csv_request_upserted.elaboration
+			WHERE hub_interaction_id = interaction_id;
+		END IF;
+
     	v_return := sat_interaction_csv_request_upserted.interaction_id;
     
     ELSIF nature = 'Original CSV Zip Archive' THEN 
