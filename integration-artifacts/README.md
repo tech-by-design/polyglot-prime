@@ -15,7 +15,7 @@ Below is a table of the main subfolders and links to their documentation:
 | flatfile         | Nexus Flat file channels                 | [Documentation](flatfile/flatfile-techbd-channel-files/nexus/README.md) |
 | hl7v2/hl7-techbd-channel-files/mirth-connect | HL7v2 Mirth Connect channels | [Documentation](hl7v2/hl7-techbd-channel-files/mirth-connect/readme.md) |
 | hl7v2/hl7-techbd-channel-files/nexus         | HL7v2 Nexus channels         | [Documentation](hl7v2/hl7-techbd-channel-files/nexus/readme.md) |
-| hl7v2/hl7-techbd-schema-files | HL7v2 schema files          | [Documentation](hl7v2/hl7-techbd-schema-files/readme.md) |
+| hl7v2/hl7-techbd-schema-files | HL7v2 schema files          | [Documentation](hl7v2/hl7-techbd-schema-files/README.md) |
 | ccda/ccda-techbd-schema-files | CCDA TechBD schema files    | [Documentation](ccda/ccda-techbd-schema-files/README.md) |
 
 

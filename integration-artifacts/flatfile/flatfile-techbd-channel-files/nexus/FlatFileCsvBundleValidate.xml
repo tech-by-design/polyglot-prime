@@ -2,8 +2,8 @@
   <id>86f28a80-ee90-4257-be9c-e2dd9e008a33</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundleValidate</name>
-  <description>Version: 0.4.0</description>
-  <revision>40</revision>
+  <description>Version: 0.6.0</description>
+  <revision>48</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -59,7 +59,7 @@
       <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
       <responseContentType>application/json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode></responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
         <entry>
           <string>Access-Control-Allow-Origin</string>
@@ -76,7 +76,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept </string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level </string>
           </list>
         </entry>
         <entry>
@@ -110,7 +110,7 @@ function createJsonResponse(status, message) {
 * Util function to set error response.
 */
 function setErrorResponse(statusCode, errorMessage) {
-    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
     responseMap.put(&apos;message&apos;, errorMessage);
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }</script>
@@ -151,7 +151,8 @@ if (processCSVZipFile) {
         logger.warn(&quot;validation result is null&quot;);
     } else {
         logger.info(&quot;validation result: &quot; + result);
-        responseMap.put(&quot;finalResponse&quot;, result);
+		responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.
+		responseMap.put(&quot;finalResponse&quot;, result);
     }
 } else {
     logger.error(&quot;processCSVZipFile function not found in globalMap&quot;, channelMap);
@@ -354,7 +355,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753092568341</time>
+        <time>1753438282992</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
