@@ -2,16 +2,13 @@
   <id>25dd1794-5435-4282-a189-4a2df9aed0a2</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>HL7V2 Bundle</name>
-  <description>Version: 0.1.3</description>
-  <revision>78</revision>
+  <description>Version: 0.2.0</description>
+  <revision>98</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -33,6 +30,9 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -59,12 +59,12 @@
       <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
       <responseContentType>text/json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode></responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
         <entry>
           <string>Access-Control-Allow-Origin</string>
           <list>
-            <string>*</string>
+            <string>https://hub.dev.techbd.org</string>
           </list>
         </entry>
         <entry>
@@ -76,7 +76,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type</string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-TechBD-CIN, X-TechBD-Facility-ID, X-TechBD-Encounter-Type, X-TechBD-OrgNPI, X-TechBD-OrgTIN</string>
           </list>
         </entry>
         <entry>
@@ -115,7 +115,7 @@
     <filter version="4.5.3">
       <elements>
         <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
-          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos; or &apos;/hl7v2/Bundle/$validate&apos;</name>
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <field>sourceMap.get(&apos;contextPath&apos;)</field>
@@ -123,12 +123,10 @@
           <values>
             <string>&apos;/hl7v2/Bundle&apos;</string>
             <string>&apos;/hl7v2/Bundle/&apos;</string>
-            <string>&apos;/hl7v2/Bundle/$validate&apos;</string>
-            <string>&apos;/hl7v2/Bundle/$validate/&apos;</string>
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
         <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
-          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; is blank</name>
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <operator>AND</operator>
@@ -389,15 +387,6 @@ if (missingHeaders.length &gt; 0) {
 
 // Initialize missing environment variables array
 var missingEnvVars = [];
-
-// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
-var fhirBundleSubmissionApiUrl = java.lang.System.getenv(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
-if(fhirBundleSubmissionApiUrl != null) {
-    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
-    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
-} else {
-    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
-}
 
 // If any env vars are missing, throw a single error
 if (missingEnvVars.length &gt; 0) {
@@ -736,6 +725,7 @@ if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2
 	
 	if (!xmlContent || xmlContent.length === 0) {
 		logger.error(&quot;No XML data received in the request.&quot;);
+		responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.
 		responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;, &quot;Invalid&quot;)));
 		throw new Error(&quot;No XML data received in the request.&quot;);
 	}
@@ -751,7 +741,7 @@ try {
 
     // Load XSLT from file system
     var xsltPathFromEnv = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-fhir-bundle.xslt&quot;;
-   // var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
+    // var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
     logger.info(&quot;HL7_XSLT_PATH: &quot; + xsltPathFromEnv);
     var xsltPath = xsltPathFromEnv;
     var xsltFile = new java.io.File(xsltPath);
@@ -829,12 +819,14 @@ try {
     			transformer.transform(input, output);&#xd;		&#xd;			// Store the transformed XML in the channel map&#xd;			var hl7FhirBundle = xmlOutputStream.toString();&#xd;			channelMap.put(&apos;hl7_fhir_bundle&apos;, hl7FhirBundle);&#xd;			logger.info(&quot;HL7 FHIR Bundle: &quot; + hl7FhirBundle);&#xd;&#xd;			var jsonObject = JSON.parse(hl7FhirBundle); // Parse the string into an object&#xd;			var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);&#xd;			logger.info(&quot;Cleaned JSON : &quot; + cleanedJsonString);&#xd;		} catch (e) {
 			var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;	
         		// Failure: Return an OperationOutcome JSON response for general errors
+        		responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.
 		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
 			        &#xd;		    logger.error(&quot;Error during HL7 FHIR bundle transformation: &quot; + e);&#xd;		    throw e;&#xd;		}
 
 		// Convert the XML document to JSON
 		const jsonResult = cleanedJsonString;
 		channelMap.put(&apos;jsonResult&apos;, jsonResult);
+		responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.
 		responseMap.put(&apos;finalResponse&apos;, JSON.stringify(jsonResult));
  
 
@@ -851,7 +843,8 @@ var processFHIRBundle = globalMap.get(&quot;processFHIRBundle&quot;);&#xd;
 if (processFHIRBundle) {&#xd;
     var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);&#xd;
     channelMap.put(&quot;requestUri&quot;, &quot;/Bundle&quot;);&#xd;
-    var validationResults = processFHIRBundle(tenantId, channelMap, jsonResult, responseMap);&#xd;
+    var validationResults = processFHIRBundle(tenantId, channelMap, jsonResult, responseMap);
+    responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.&#xd;
     responseMap.put(&quot;finalResponse&quot;, validationResults);&#xd;
 } else {&#xd;
     logError(&quot;processFHIRBundle function not found in globalMap.&quot;, channelMap);&#xd;
@@ -934,7 +927,8 @@ return value; // Keep the value as is
   <preprocessingScript>message = message.replace(/^\s*(\r?\n)+/, &apos;&apos;);
 
 
-&#xd;
+if ( (sourceMap.get(&apos;contextPath&apos;) == &apos;/hl7v2/Bundle&apos; || sourceMap.get(&apos;contextPath&apos;) == &apos;/hl7v2/Bundle/&apos;) &amp;&amp;
+    sourceMap.get(&apos;method&apos;) == &apos;POST&apos;) {&#xd;
 &#xd;
 // Step 1: Read raw request body&#xd;
 var rawData = connectorMessage.getRawData();&#xd;
@@ -1010,6 +1004,8 @@ var source = SourceType.HL7.name(); &#xd;
 &#xd;
 requestParameters.put(Packages.org.techbd.config.Constants.SOURCE_TYPE, source.trim());
 
+ }
+ 
 return message;
 </preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
@@ -1084,7 +1080,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753676023135</time>
+        <time>1753772102776</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
