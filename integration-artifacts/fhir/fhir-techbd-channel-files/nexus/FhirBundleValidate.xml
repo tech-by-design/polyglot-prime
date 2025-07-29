@@ -1,9 +1,9 @@
 <channel version="4.5.3">
   <id>d956fcd1-8630-43c0-b55f-b6281506b63d</id>
   <nextMetaDataId>2</nextMetaDataId>
-  <name>BundleValidate</name>
-  <description>Version: 0.4.0</description>
-  <revision>28</revision>
+  <name>FhirBundleValidate</name>
+  <description>Version: 0.6.0</description>
+  <revision>39</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -59,7 +59,7 @@
       <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
       <responseContentType>application/json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode>200</responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
         <entry>
           <string>Access-Control-Allow-Origin</string>
@@ -76,7 +76,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept</string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level </string>
           </list>
         </entry>
         <entry>
@@ -110,7 +110,7 @@ function createJsonResponse(status, message) {
 * Util function to set error response.
 */
 function setErrorResponse(statusCode, errorMessage) {
-    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
     responseMap.put(&apos;message&apos;, errorMessage);
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }</script>
@@ -151,6 +151,7 @@ if (processFHIRBundle) {
     channelMap.put(&quot;requestUri&quot;, &quot;/Bundle/$validate&quot;);
     var validationResults = processFHIRBundle(tenantId, channelMap, connectorMessage, responseMap);
     logInfo(&quot;validationResults&quot; + validationResults, channelMap);
+    responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.
     responseMap.put(&quot;finalResponse&quot;, validationResults);
 } else {
     logError(&quot;processFHIRBundle function not found in globalMap.&quot;, channelMap);
@@ -339,7 +340,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753161960321</time>
+        <time>1753767373357</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

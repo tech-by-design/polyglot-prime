@@ -1,14 +1,17 @@
 <channel version="4.5.3">
   <id>0dad5b96-492c-4d04-95a0-a19b67601040</id>
   <nextMetaDataId>2</nextMetaDataId>
-  <name>Bundle</name>
-  <description>Version: 0.4.0</description>
-  <revision>29</revision>
+  <name>FhirBundle</name>
+  <description>Version: 0.6.0</description>
+  <revision>43</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -30,9 +33,6 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -59,7 +59,7 @@
       <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
       <responseContentType>text/plain</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
-      <responseStatusCode></responseStatusCode>
+      <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
         <entry>
           <string>Access-Control-Allow-Origin</string>
@@ -76,7 +76,7 @@
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept </string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL, DataLake-API-Content-Type, X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level </string>
           </list>
         </entry>
         <entry>
@@ -110,7 +110,7 @@ function createJsonResponse(status, message) {
 * Util function to set error response.
 */
 function setErrorResponse(statusCode, errorMessage) {
-    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Set HTTP status
     responseMap.put(&apos;message&apos;, errorMessage);
     responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
 }</script>
@@ -140,12 +140,13 @@ if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
           <script>var logInfo = globalMap.get(&quot;logInfo&quot;);
 var logError = globalMap.get(&quot;logError&quot;);
 var logDebug = globalMap.get(&quot;logDebug&quot;);
-var logError = globalMap.get(&quot;logError&quot;);
+
 var processFHIRBundle = globalMap.get(&quot;processFHIRBundle&quot;);
 if (processFHIRBundle) {
     var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
     channelMap.put(&quot;requestUri&quot;, &quot;/Bundle&quot;);
     var validationResults = processFHIRBundle(tenantId, channelMap, connectorMessage, responseMap);
+    responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.
     responseMap.put(&quot;finalResponse&quot;, validationResults);
 } else {
     logError(&quot;processFHIRBundle function not found in globalMap.&quot;, channelMap);
@@ -339,7 +340,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753092671302</time>
+        <time>1753767396287</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
