@@ -57,10 +57,10 @@
   },
   {
     "type": "Global script",
-    "channel": "",
-    "version": "2.1.0",
-    "editedby": "dev2",
-    "date": "2025-07-27"
+    "channel": "global-script.xml",
+    "version": "",
+    "editedby": "anoopvarma-2000-p",
+    "date": "2025-07-24"
   },
   {
     "type": "AwsSqsFifoQueueListener",
