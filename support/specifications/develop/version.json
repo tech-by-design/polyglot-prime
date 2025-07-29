@@ -1,0 +1,76 @@
+[
+  {
+    "type": "FHIR",
+    "channel": "FhirBundle.xml",
+    "version": "0.6.0",
+    "editedby": "anoopvarma-2000-p",
+    "date": "2025-07-24"
+  },
+  {
+    "type": "FHIR",
+    "channel": "FhirBundleValidate.xml",
+    "version": "0.6.0",
+    "editedby": "anoopvarma-2000-p",
+    "date": "2025-07-24"
+  },
+  
+    {
+    "type": "CCDA",
+    "channel": "CcdaBundle.xml",
+    "version": "0.6.0",
+    "editedby": "anoopvarma-2000-p",
+    "date": "2025-07-28"
+  },
+  {
+    "type": "CCDA",
+    "channel": "CcdaBundleValidate.xml",
+    "version": "0.6.0",
+    "editedby": "anoopvarma-2000-p",
+    "date": "2025-07-28"
+  },
+  
+      {
+    "type": "FLAT FILE",
+    "channel": "FlatFileCsvBundle.xml",
+    "version": "0.6.0",
+    "editedby": "anoopvarma-2000-p",
+    "date": "2025-07-24"
+  },
+  {
+    "type": "FLAT FILE",
+    "channel": "CcdaBundleValidate.xml",
+    "version": "0.6.0",
+    "editedby": "anoopvarma-2000-p",
+    "date": "2025-07-24"
+  },
+  
+  {
+    "type": "HL7v2",
+    "channel": "",
+    "version": "",
+    "editedby": "",
+    "date": ""
+  },
+  {
+    "type": "HL7v2",
+    "channel": "",
+    "version": "",
+    "editedby": "",
+    "date": ""
+  },
+    {
+    "type": "Global script",
+    "channel": "",
+    "version": "2.1.0",
+    "editedby": "dev2",
+    "date": "2025-07-27"
+  },
+  
+    {
+    "type": "AwsSqsFifoQueueListener",
+    "channel": "AwsSqsFifoQueueListener.xml",
+    "version": "",
+    "editedby": "",
+    "date": ""
+  }  
+]
