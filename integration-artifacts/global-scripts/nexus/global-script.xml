@@ -16,6 +16,12 @@ return;</string>
 //if (channelName == &apos;AwsSqsFifoQueueListener&apos;){
 //	return;
 //}
+if (channelName == &apos;MLLP-Client-2575&apos;) {
+    // do nothing — skip processing for your test channel
+}
+else if (channelName == &apos;MLLP-Client&apos;) {
+    // do nothing — skip processing for your test channel
+} else
 if (channelName == &apos;AwsSqsFifoQueueListener&apos;){
 } else {
 var logInfo = globalMap.get(&quot;logInfo&quot;);
@@ -89,6 +95,10 @@ if (!globalMap.containsKey(&quot;ccdaService&quot;)) {
     globalMap.put(&quot;ccdaService&quot;, ccdaService);
 }
 
+if (!globalMap.containsKey(&quot;hl7Service&quot;)) {
+    var hl7Service = SpringContextHolder.getBean(Packages.org.techbd.service.hl7.HL7Service);
+    globalMap.put(&quot;hl7Service&quot;, hl7Service);
+}
 //AwsSqsFifoQueueListener
 
 
@@ -698,10 +708,10 @@ globalMap.put(&quot;getHeaderParameters&quot;, getHeaderParameters);
 //
 if (channelName == &apos;AwsSqsFifoQueueListener&apos;){
 }
-else if (channelName == &apos;MLLP-Client-Arjun&apos;) {
+else if (channelName == &apos;MLLP-Client-2575&apos;) {
     // do nothing — skip processing for your test channel
 }
-else if (channelName == &apos;MLLP - Client&apos;) {
+else if (channelName == &apos;MLLP-Client&apos;) {
     // do nothing — skip processing for your test channel
 }
  else {
@@ -723,7 +733,7 @@ channelMap.put(&quot;requestParameters&quot;, getRequestParameters(interactionId
 channelMap.put(&quot;headerParameters&quot;, getHeaderParameters(headers,channelMap,sourceMap));
 }
 
-return;
+return message;
 </string>
   </entry>
 </map>

@@ -1,9 +1,9 @@
 <channel version="4.5.3">
-  <id>0dad5b96-492c-4d04-95a0-a19b67601040</id>
+  <id>d956fcd1-8630-43c0-b55f-b6281506b63d</id>
   <nextMetaDataId>2</nextMetaDataId>
-  <name>Bundle</name>
+  <name>FhirBundleValidate</name>
   <description>Version: 0.6.0</description>
-  <revision>42</revision>
+  <revision>39</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -36,7 +36,7 @@
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
-        <port>9000</port>
+        <port>9001</port>
       </listenerConnectorProperties>
       <sourceConnectorProperties version="4.5.3">
         <responseVariable>finalResponse</responseVariable>
@@ -53,11 +53,11 @@
         <queueBufferSize>1000</queueBufferSize>
       </sourceConnectorProperties>
       <xmlBody>false</xmlBody>
-      <parseMultipart>true</parseMultipart>
+      <parseMultipart>false</parseMultipart>
       <includeMetadata>false</includeMetadata>
-      <binaryMimeTypes>application/.*(?&lt;!json|xml)$|image/.*|video/.*|audio/.*</binaryMimeTypes>
-      <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
-      <responseContentType>text/plain</responseContentType>
+      <binaryMimeTypes></binaryMimeTypes>
+      <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
+      <responseContentType>application/json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
       <responseStatusCode>${status}</responseStatusCode>
       <responseHeaders class="linked-hash-map">
@@ -70,7 +70,7 @@
         <entry>
           <string>Access-Control-Allow-Methods</string>
           <list>
-            <string>GET, POST, OPTIONS </string>
+            <string>GET, POST, OPTIONS</string>
           </list>
         </entry>
         <entry>
@@ -88,9 +88,9 @@
       </responseHeaders>
       <responseHeadersVariable></responseHeadersVariable>
       <useResponseHeadersVariable>false</useResponseHeadersVariable>
-      <charset>UTF-8</charset>
+      <charset>DEFAULT_ENCODING</charset>
       <contextPath>/</contextPath>
-      <timeout>30000</timeout>
+      <timeout>10000</timeout>
       <staticResources/>
     </properties>
     <transformer version="4.5.3">
@@ -134,23 +134,29 @@ if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
-          <name>FHIR validation and submission</name>
+          <name>FHIR Validation</name>
           <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
-          <script>var logInfo = globalMap.get(&quot;logInfo&quot;);
+          <script>logger.info(&quot;Received message: &quot; + connectorMessage.getRawData());
+var logInfo = globalMap.get(&quot;logInfo&quot;);
+logInfo(&quot;inside channel processor -BEGIN&quot;, channelMap);
+
 var logError = globalMap.get(&quot;logError&quot;);
 var logDebug = globalMap.get(&quot;logDebug&quot;);
-
 var processFHIRBundle = globalMap.get(&quot;processFHIRBundle&quot;);
 if (processFHIRBundle) {
+    logInfo(&quot;processFHIRBundle&quot; + processFHIRBundle, channelMap);
     var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-    channelMap.put(&quot;requestUri&quot;, &quot;/Bundle&quot;);
+    logInfo(&quot;tenantid&quot; + tenantId, channelMap);
+    channelMap.put(&quot;requestUri&quot;, &quot;/Bundle/$validate&quot;);
     var validationResults = processFHIRBundle(tenantId, channelMap, connectorMessage, responseMap);
+    logInfo(&quot;validationResults&quot; + validationResults, channelMap);
     responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.
     responseMap.put(&quot;finalResponse&quot;, validationResults);
 } else {
     logError(&quot;processFHIRBundle function not found in globalMap.&quot;, channelMap);
-}</script>
+}
+logInfo(&quot;inside channel processor -END&quot;, channelMap);</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
       </elements>
       <inboundTemplate encoding="base64"></inboundTemplate>
@@ -173,14 +179,14 @@ if (processFHIRBundle) {
     <filter version="4.5.3">
       <elements>
         <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
-          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/Bundle/&apos; or &apos;/Bundle&apos;</name>
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/Bundle/$validate/&apos; or &apos;/Bundle/$validate&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <field>sourceMap.get(&apos;contextPath&apos;)</field>
           <condition>EQUALS</condition>
           <values>
-            <string>&apos;/Bundle/&apos;</string>
-            <string>&apos;/Bundle&apos;</string>
+            <string>&apos;/Bundle/$validate/&apos;</string>
+            <string>&apos;/Bundle/$validate&apos;</string>
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
         <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
@@ -280,19 +286,13 @@ if (processFHIRBundle) {
 var logInfo = globalMap.get(&quot;logInfo&quot;);
 var logError = globalMap.get(&quot;logError&quot;);
 var logDebug = globalMap.get(&quot;logDebug&quot;);
-logInfo(&quot;Validate Header and Request Parameters BEGIN in channel preprocessor : &quot;,channelMap);
-var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
-if (validate(&quot;X-TechBD-Tenant-ID&quot;, tenantId, &quot;isRequired&quot;, responseMap, 400)) {
-    return;
-}
-var correlationId =$(&apos;headers&apos;).getHeader(&quot;X-Correlation-ID&quot;);
-if (correlationId &amp;&amp; correlationId.trim() !== &quot;&quot;) {
-    if (validate(&quot;X-Correlation-ID&quot;, correlationId, &quot;isValidUUID&quot;, responseMap, 400)) {
-        return;
-    }
-}
+//logInfo(&quot;Validate Header and Request Parameters BEGIN in channel preprocessor : &quot;,channelMap);
+//var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+//if (validate(&quot;X-TechBD-Tenant-ID&quot;, tenantId, &quot;isRequired&quot;, responseMap, 400)) {
+//    return;
+//}
 //TODO - check and add other parameters /header validation for /Bundle
-logInfo(&quot;Validate Header and Request Parameters END  in channel preprocessor : &quot;,channelMap);</preprocessingScript>
+//logInfo(&quot;Validate Header and Request Parameters END  in channel preprocessor : &quot;,channelMap);</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
 return;</postprocessingScript>
@@ -340,7 +340,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753438173161</time>
+        <time>1753767373357</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
