@@ -35,7 +35,8 @@ All schema files in this folder are referenced by integration channels and valid
 
 ## �🔗 Related Documentation
 
-- [CCDA Channel Files](../ccda-techbd-channel-files/README.md)
+- [CCDA Channel Files (Mirth Connect)](../ccda-techbd-channel-files/mirth-connect/README.md)
+- [CCDA Channel Files (Nexus)](../ccda-techbd-channel-files/nexus/README.md)
 - [Integration Artifacts Index](../../README.md)
 
 ---
