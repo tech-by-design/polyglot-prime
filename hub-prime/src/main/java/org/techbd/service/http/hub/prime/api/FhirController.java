@@ -166,7 +166,7 @@ public class FhirController {
                                         If the header is not provided, <code>application/json</code> will be used.
                                         """, required = false) @RequestHeader(value = Constants.DATALAKE_API_CONTENT_TYPE, required = false) String dataLakeApiContentType,
                         @Parameter(description = "Header to decide whether the request is just for health check. If <code>true</code>, no information will be recorded in the database. It will be <code>false</code> in by default.", required = false) @RequestHeader(value = Constants.HEALTH_CHECK_HEADER, required = false) String healthCheck,
-                        @Parameter(hidden = true, description = "Optional parameter to decide whether the Datalake submission to be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false) boolean isSync,
+                        @Parameter(hidden = true, description = "Optional parameter to decide whether response should be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
 
                         @Parameter(hidden = true, description = """
                                         An optional parameter specifies whether the scoring engine API should be called with or without mTLS.<br>

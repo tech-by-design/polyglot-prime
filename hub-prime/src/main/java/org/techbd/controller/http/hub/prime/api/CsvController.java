@@ -100,6 +100,7 @@ public class CsvController {
       @Parameter(description = "Optional header to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value will be used.", required = false) @RequestHeader(value = "X-TechBD-Base-FHIR-URL", required = false) String baseFHIRURL,
       @Parameter(hidden = true, description = "Parameter to specify origin of the request.", required = false) @RequestParam(value = "origin", required = false,defaultValue = "HTTP") String origin,
       @Parameter(hidden = true, description = "Parameter to specify sftp session id.", required = false) @RequestParam(value = "sftp-session-id", required = false) String sftpSessionId,
+      @Parameter(hidden = true, description = "Optional parameter to decide whether response should be synchronous or asynchronous.", required = false) @RequestParam(value = "immediate", required = false,defaultValue = "true") boolean isSync,
       @Parameter(description = "Optional header to set validation severity level (`information`, `warning`, `error`, `fatal`).", required = false) @RequestHeader(value = "X-TechBD-Validation-Severity-Level", required = false) String validationSeverityLevel,
       HttpServletRequest request,
       HttpServletResponse response) throws Exception {
@@ -116,13 +117,14 @@ public class CsvController {
         null, null, null, null, request.getRequestURI());
     requestDetailsMap.put(Constants.MASTER_INTERACTION_ID, UUID.randomUUID().toString());
     requestDetailsMap.put(Constants.OBSERVABILITY_METRIC_INTERACTION_START_TIME, Instant.now().toString());
+    requestDetailsMap.put(Constants.IMMEDIATE, isSync);
     if (validationSeverityLevel != null) {
       requestDetailsMap.put(Constants.VALIDATION_SEVERITY_LEVEL, validationSeverityLevel);
     }
     headerParameters.put(Constants.BASE_FHIR_URL, baseFHIRURL);
     requestDetailsMap.putAll(headerParameters);
     Map<String, Object> responseParameters = new HashMap<>();
-    Map<String, Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);
+    List<Object> processedFiles = csvService.processZipFile(file, requestDetailsMap, responseParameters);
     CoreFHIRUtil.addCookieAndHeadersToResponse(response, responseParameters, requestDetailsMap);
     return ResponseEntity.ok(processedFiles);
   }

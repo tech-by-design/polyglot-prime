@@ -144,12 +144,8 @@ public class FHIRService {
 			final String tenantId = (String)requestParameters.get(Constants.TENANT_ID);
 			final String source = (String)requestParameters.get(Constants.SOURCE_TYPE);
 			String dataLakeApiContentType = (String)requestParameters.get(Constants.DATA_LAKE_API_CONTENT_TYPE);
-
-			final String origin = (String)requestParameters.get(Constants.ORIGIN);
-			final String deletesessioncookie = (String)requestParameters.get(Constants.DELETE_USER_SESSION_COOKIE); 
 			final String customDataLakeApi = (String)requestParameters.get(Constants.CUSTOM_DATA_LAKE_API);
 			final String healthCheck = (String)requestParameters.get(Constants.HEALTH_CHECK);
-			final String isSync = (String)requestParameters.get(Constants.IMMEDIATE);
 			final String provenance = (String)requestParameters.get(Constants.PROVENANCE);
 			final String mtlsStrategy = (String)requestParameters.get(Constants.MTLS_STRATEGY);
 			final String groupInteractionId = (String)requestParameters.get(Constants.GROUP_INTERACTION_ID);
