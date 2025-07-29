@@ -29,19 +29,124 @@ AS SELECT hub_interaction_id,
 /*============================================================================================================*/
 
 /*******************************************************************************************
- * View of FHIR Screening Questions and Answers. * 
+ * View of FHIR Screening Questions and Answers. *
  ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.fhir_patient_screening_questions_answers CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_patient_screening_questions_answers
 AS WITH filtered_resources AS (
+    SELECT
+        sihr.hub_interaction_id,
+        sihr.tenant_id,
+        jsonb_array_elements(sihr.payload -> 'entry') AS entry,
+        sihr.patient_mrn
+    FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+    WHERE sihr.uri IN (
+        '/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
+        '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/'
+    )
+    AND sihr.nature = 'Original FHIR Payload' 
+),
+filtered_data AS (
+    SELECT
+        fr.hub_interaction_id,
+        fr.tenant_id,
+        fr.entry -> 'resource' AS resource,
+        (fr.entry -> 'resource') ->> 'resourceType' AS resource_type,
+        fr.patient_mrn
+    FROM filtered_resources fr
+    WHERE (fr.entry -> 'resource' ->> 'resourceType') = 'Observation'
+),
+single_answers AS (
+    SELECT
+        hub_interaction_id,
+        tenant_id,
+        resource,
+        resource_type,
+        patient_mrn,
+        (((resource -> 'code') -> 'coding') -> 0) ->> 'display' AS question,
+        (((resource -> 'code') -> 'coding') -> 0) ->> 'code' AS question_code,
+        (((resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'display' AS answer,
+        (((resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code' AS answer_code
+    FROM filtered_data
+    WHERE resource_type = 'Observation'
+    AND resource ? 'valueCodeableConcept'
+),
+multi_answers AS (
+    SELECT
+        fd.hub_interaction_id,
+        fd.tenant_id,
+        fd.resource,
+        fd.resource_type,
+        fd.patient_mrn,
+        comp -> 'code' -> 'coding' -> 0 ->> 'display' AS question,
+        comp -> 'code' -> 'coding' -> 0 ->> 'code' AS question_code,
+        coding ->> 'display' AS answer,
+        coding ->> 'code' AS answer_code
+    FROM filtered_data fd 
+    CROSS JOIN LATERAL jsonb_array_elements(fd.resource -> 'component') AS comp
+    CROSS JOIN LATERAL jsonb_array_elements(comp -> 'valueCodeableConcept' -> 'coding') AS coding
+    WHERE fd.resource_type = 'Observation'
+    AND fd.resource ? 'component'
+)
+SELECT
+    hub_interaction_id,
+    tenant_id,
+    patient_mrn,
+    resource,
+    resource_type,
+    question,
+    question_code,
+    answer,
+    answer_code
+FROM single_answers 
+
+UNION ALL
+
+SELECT
+    hub_interaction_id,
+    tenant_id,
+    patient_mrn,
+    resource,
+    resource_type,
+    question,
+    question_code,
+    answer,
+    answer_code
+FROM multi_answers ;
+
+/*******************************************************************************************
+ * Stored Procedure for FHIR Screening Questions and Answers with Filtering. *
+ ******************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_patient_screening_questions_answers1(TEXT, TEXT);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_patient_screening_questions_answers(TEXT, TEXT);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_patient_screening_questions_answers(
+    p_hub_interaction_id TEXT DEFAULT NULL,
+    p_patient_mrn TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    hub_interaction_id TEXT,
+    tenant_id TEXT, 
+    resource_type TEXT,
+    patient_mrn TEXT,
+    question TEXT,
+    question_code TEXT,
+    answer TEXT,
+    answer_code TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH filtered_resources AS (
          SELECT sihr.hub_interaction_id,
             sihr.tenant_id,
             jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry,
             sihr.patient_mrn
            FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
-          WHERE 
-          sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/','/hl7v2/Bundle', '/hl7v2/Bundle/') 
+          WHERE
+          sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/','/hl7v2/Bundle', '/hl7v2/Bundle/')
           AND sihr.nature = 'Original FHIR Payload'::text
+          -- Apply filters if provided
+          AND (p_hub_interaction_id IS NULL OR sihr.hub_interaction_id = p_hub_interaction_id)
+          AND (p_patient_mrn IS NULL OR sihr.patient_mrn = p_patient_mrn)
         ), filtered_data AS (
          SELECT fr.hub_interaction_id,
             fr.tenant_id,
@@ -49,19 +154,55 @@ AS WITH filtered_resources AS (
             (fr.entry -> 'resource'::text) ->> 'resourceType'::text AS resource_type,
             fr.patient_mrn
            FROM filtered_resources fr
+          WHERE (fr.entry -> 'resource' ->> 'resourceType') = 'Observation'
+        ), single_answers AS (
+         SELECT fd.hub_interaction_id,
+            fd.tenant_id,
+            fd.resource_type,
+            fd.patient_mrn,
+            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'display' AS question,
+            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'code' AS question_code,
+            (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'display' AS answer,
+            (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code' AS answer_code
+           FROM filtered_data fd
+          WHERE fd.resource_type = 'Observation'
+            AND fd.resource ? 'valueCodeableConcept'
+        ), multi_answers AS (
+         SELECT fd.hub_interaction_id,
+            fd.tenant_id,
+            fd.resource_type,
+            fd.patient_mrn,
+            comp -> 'code' -> 'coding' -> 0 ->> 'display' AS question,
+            comp -> 'code' -> 'coding' -> 0 ->> 'code' AS question_code,
+            coding ->> 'display' AS answer,
+            coding ->> 'code' AS answer_code
+           FROM filtered_data fd
+           CROSS JOIN LATERAL jsonb_array_elements(fd.resource -> 'component') AS comp
+           CROSS JOIN LATERAL jsonb_array_elements(comp -> 'valueCodeableConcept' -> 'coding') AS coding
+          WHERE fd.resource_type = 'Observation'
+            AND fd.resource ? 'component'
         )
- SELECT hub_interaction_id,
-    tenant_id,
-    resource,
-    resource_type,
-    patient_mrn,
-    (((resource -> 'code'::text) -> 'coding'::text) -> 0) ->> 'display'::text AS question,
-    (((resource -> 'code'::text) -> 'coding'::text) -> 0) ->> 'code'::text AS question_code,
-    (((resource -> 'valueCodeableConcept'::text) -> 'coding'::text) -> 0) ->> 'display'::text AS answer,
-    (((resource -> 'valueCodeableConcept'::text) -> 'coding'::text) -> 0) ->> 'code'::text AS answer_code
-   FROM filtered_data
-  WHERE resource_type = 'Observation'::text;
-
+    SELECT sa.hub_interaction_id,
+        sa.tenant_id,
+        sa.resource_type,
+        sa.patient_mrn,
+        sa.question,
+        sa.question_code,
+        sa.answer,
+        sa.answer_code
+       FROM single_answers sa
+     UNION ALL
+     SELECT ma.hub_interaction_id,
+        ma.tenant_id,
+        ma.resource_type,
+        ma.patient_mrn,
+        ma.question,
+        ma.question_code,
+        ma.answer,
+        ma.answer_code
+       FROM multi_answers ma;
+END;
+$$ LANGUAGE plpgsql;
 
 
 /*******************************************************************************************

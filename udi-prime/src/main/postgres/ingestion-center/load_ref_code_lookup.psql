@@ -2067,6 +2067,10 @@ UPDATE techbd_udi_ingress.ref_code_lookup
 SET system_value = 'http://terminology.hl7.org/CodeSystem/data-absent-reason'
 WHERE code_type = 'gender_identity' AND code = 'asked-declined';
 
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET system_value = 'http://terminology.hl7.org/CodeSystem/data-absent-reason'
+WHERE code_type = 'ethnicity' AND code = 'asked-declined';
+
 -- Update display_string for ethnicity code '2186-5'
 UPDATE techbd_udi_ingress.ref_code_lookup
 SET display_string = 'Non Hispanic or Latino'
