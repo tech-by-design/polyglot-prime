@@ -1,40 +1,42 @@
 /**
  * Utility class for initializing and holding a static Spring {@link ApplicationContext}
- * for the application. This context is configured to:
- * <ul>
- *   <li>Load Java beans annotated with Spring annotations from the {@code bridgelink} module,
- *       specifically via the {@link org.techbd.config.AppInitializationConfig} configuration class.</li>
- *   <li>Load configuration properties from YAML files (e.g., {@code application.yml} and
- *       profile-specific files like {@code application-{profile}.yml}) using the Spring
- *       {@link org.springframework.boot.env.YamlPropertySourceLoader}.</li>
- *   <li>Support Spring's active profile mechanism by reading the {@code SPRING_PROFILES_ACTIVE}
- *       environment variable and loading the corresponding profile-specific YAML configuration,
- *       similar to how Spring Boot handles configuration profiles.</li>
- * </ul>
+ * for the application. This is primarily used in the {@code bridgelink} module to enable 
+ * dependency injection and bean management without having to manually instantiate or wire objects.
+ *
  * <p>
- * Provides a static method to retrieve beans from the context, and a {@link Tracer} bean
- * that falls back to a default tracer if none is defined in the context.
+ * The context is configured using the {@link org.techbd.config.AppInitializationConfig} class,
+ * which defines the application's base configuration and Spring-managed beans.
+ * </p>
+ *
+ * <p>
+ * This class does <b>not</b> manually manage active profiles. Instead, profile-specific configuration
+ * (such as loading {@code application-{profile}.yml}) is handled by the Spring environment,
+ * and optionally extended by the {@link org.techbd.conf.CoreLibYamlLoader} class, which implements
+ * {@link org.springframework.boot.env.EnvironmentPostProcessor} to load shared core library
+ * configuration from {@code nexus-core-lib/application.yml} and its profile-specific variants.
+ * </p>
+ *
+ * <p>
+ * This class provides:
+ * <ul>
+ *   <li>A static method {@link #getBean(Class)} to retrieve beans from the application context.</li>
+ *   <li>A {@link io.opentelemetry.api.trace.Tracer} bean that attempts to fetch a tracing implementation
+ *       from the context, falling back to the global tracer if none is available.</li>
+ * </ul>
  * </p>
  */
 package org.techbd;
 
-import java.io.IOException;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.PropertySource;
-import org.springframework.core.io.ClassPathResource;
 import org.techbd.config.AppInitializationConfig;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Tracer;
-
 
 public class SpringContextHolder {
     private static ApplicationContext context;
@@ -42,48 +44,17 @@ public class SpringContextHolder {
     static {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ConfigurableEnvironment env = ctx.getEnvironment();
-
-        YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
-
-        try {
-            List<PropertySource<?>> yamlProps = loader.load("nexus-core-lib/application.yml", new ClassPathResource("nexus-core-lib/application.yml"));
-
-            for (PropertySource<?> ps : yamlProps) {
-                env.getPropertySources().addLast(ps);
-            }
-
-            String activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
-            LOG.info("#################################Active Spring profile: {}", activeProfile);
-            if (activeProfile != null && !activeProfile.isEmpty()) {
-                List<PropertySource<?>> profileProps = loader.load(
-                    "nexus-core-lib/application-" + activeProfile + ".yml",
-                    new ClassPathResource("nexus-core-lib/application-" + activeProfile + ".yml")
-                );
-
-                for (PropertySource<?> ps : profileProps) {
-                    env.getPropertySources().addFirst(ps);
-                }
-
-                env.setActiveProfiles(activeProfile);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load YAML properties", e);
-        }
-
         ctx.register(AppInitializationConfig.class);
-        
         ctx.refresh();
         context = ctx;
     }
-
     public static <T> T getBean(Class<T> clazz) {
         return context.getBean(clazz);
     }
 
-       @Bean
+    @Bean
     public Tracer tracer(ApplicationContext context) {
         Tracer tracer = null;
-
         try {
             tracer = context.getBean(Tracer.class);
         } catch (Exception e) {
@@ -91,12 +62,9 @@ public class SpringContextHolder {
                 tracer = GlobalOpenTelemetry.getTracer("default-tracer");
             }
         }
-
-        // Fallback to the GlobalOpenTelemetry Tracer if not found
         if (tracer == null) {
             tracer = GlobalOpenTelemetry.getTracer("default-tracer");
         }
-        
         return tracer;
     }
 }
