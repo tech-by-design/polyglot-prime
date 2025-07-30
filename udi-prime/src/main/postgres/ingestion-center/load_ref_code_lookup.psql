@@ -2149,6 +2149,11 @@ SET
 WHERE code_type = 'race'
   AND code = '2131-1' ;
 
+INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
+('68ca3dfa-a24d-4f2c-a352-68b34e254e49','gender_identity','33791000087105','Identifies as nonbinary gender (finding)','http://snomed.info/sct',NULL,'1.4.2','2025-05-27 05:22:52.5561+00','neondb_owner','TechBD')
+ ON CONFLICT DO NOTHING;
+
+
 /*
 -- Step 1: Create TEMP staging table
 CREATE TEMP TABLE ref_code_lookup_staging (
