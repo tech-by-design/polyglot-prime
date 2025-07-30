@@ -2153,6 +2153,18 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 ('68ca3dfa-a24d-4f2c-a352-68b34e254e49','gender_identity','33791000087105','Identifies as nonbinary gender (finding)','http://snomed.info/sct',NULL,'1.4.2','2025-05-27 05:22:52.5561+00','neondb_owner','TechBD')
  ON CONFLICT DO NOTHING;
 
+ UPDATE techbd_udi_ingress.ref_code_lookup
+SET 
+    system_value = 'http://terminology.hl7.org/CodeSystem/data-absent-reason'
+WHERE code_type = 'sexual_orientation'
+  AND code = 'ASKU' ;
+
+UPDATE techbd_udi_ingress.ref_code_lookup
+SET 
+    system_value = 'http://terminology.hl7.org/CodeSystem/data-absent-reason'
+WHERE code_type = 'sexual_orientation'
+  AND code = 'UNK' ;
+
 
 /*
 -- Step 1: Create TEMP staging table
