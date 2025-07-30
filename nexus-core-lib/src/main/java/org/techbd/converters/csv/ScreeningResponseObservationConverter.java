@@ -255,24 +255,27 @@ public class ScreeningResponseObservationConverter extends BaseConverter {
                         if (organizationId != null) {
                             observation.addPerformer(new Reference("Organization/" + organizationId));
                         }
-                        String[] codes = StringUtils.defaultString(data.getPotentialNeedIndicated()).split(";");
+                        String rawValue = StringUtils.trimToEmpty(data.getPotentialNeedIndicated());
+                        if (!"NULL".equalsIgnoreCase(rawValue)) {
+                                String[] codes = StringUtils.defaultString(rawValue).split(";");
                                 CodeableConcept interpretation = new CodeableConcept();
 
                                 for (String rawCode : codes) {
-                                rawCode = rawCode.trim();
-                                if (StringUtils.isNotEmpty(rawCode)) {
+                                        rawCode = rawCode.trim();
+                                        if (StringUtils.isNotEmpty(rawCode) && !"NULL".equalsIgnoreCase(rawCode)) {
                                         String potentialNeedIndicated = fetchCode(rawCode, CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
                                         String display = fetchDisplay(potentialNeedIndicated, "Positive", CsvConstants.POTENTIAL_NEED_INDICATED, interactionId);
 
                                         interpretation.addCoding(
-                                        new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", potentialNeedIndicated, display)
+                                                new Coding("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", potentialNeedIndicated, display)
                                         );
-                                }
+                                        }
                                 }
 
                                 if (!interpretation.getCoding().isEmpty()) {
-                                observation.addInterpretation(interpretation);
+                                        observation.addInterpretation(interpretation);
                                 }
+                        }
                         //TO-DO
                         questionAndAnswerCode.put(data.getQuestionCode(), data.getAnswerCode());
 

@@ -78,17 +78,27 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             code.addCoding(new Coding("http://loinc.org", // TODO : remove static reference
                     "76690-7", "Sexual orientation")); // TODO : remove static reference
             observation.setCode(code);
+
             CodeableConcept value = new CodeableConcept();
-            String sexualOrientationCode = fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId);
-            value.addCoding(new Coding(fetchSystem(sexualOrientationCode, demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId),
-                    sexualOrientationCode,
-                    fetchDisplay(sexualOrientationCode, demographicData.getSexualOrientationCodeDescription(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId)));
+            String originalCode = demographicData.getSexualOrientationCode();
+            String mappedCode = originalCode;
+
+            if ("ASKU".equalsIgnoreCase(originalCode)) {
+                mappedCode = "asked-unknown";
+            } else if ("UNK".equalsIgnoreCase(originalCode)) {
+                mappedCode = "unknown";
+            } else {
+                mappedCode = fetchCode(originalCode, CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId);
+            }
+
+            value.addCoding(new Coding(
+                    fetchSystem(originalCode, demographicData.getSexualOrientationCodeSystem(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId),
+                    mappedCode,
+                    fetchDisplay(originalCode, demographicData.getSexualOrientationCodeDescription(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId)
+            ));
+
             observation.setValue(value);
-            // observation.setId("Observation"+CsvConversionUtil.sha256(demographicData.getPatientMrIdValue()));
-            // observation.setEffective(new DateTimeType(demographicData.getSexualOrientationLastUpdated())); //Not Used
-            // Narrative text = new Narrative();
-            // text.setStatus(Narrative.NarrativeStatus.fromCode("generated")); //TODO : remove static reference
-            // observation.setText(text);
+            
             BundleEntryComponent entry = new BundleEntryComponent();
             entry.setFullUrl(fullUrl);
             entry.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST)
