@@ -1,5 +1,7 @@
 package org.techbd.service.http.hub.prime.api;
 
+import java.util.concurrent.TimeoutException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MultipartException;
+import org.techbd.util.SystemDiagnosticsLogger;
 
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -91,6 +94,9 @@ public class GlobalExceptionHandler {
         return handleException(ex, "Unsupported media type", HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
 
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"An unexpected system error occurred.\"}")))
     public ResponseEntity<String> handleGeneralException(Exception ex) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
                 .getRequest();
@@ -105,7 +111,7 @@ public class GlobalExceptionHandler {
         LOG.error(
                 "Internal Server Error occurred. Tenant ID: {}, Session ID: {},  User-Agent: {}, Remote Address: {}, Method: {}, Query: {}, URI: {}",
                 tenantId, sessionId, userAgent, remoteAddress, method, queryString, requestUri, ex);
-
+        SystemDiagnosticsLogger.logBasicSystemStats();
         String responseBody = "{\"status\":\"Error\",\"message\":\"An unexpected system error occurred.\"}";
         return new ResponseEntity<>(responseBody, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -169,9 +175,22 @@ public class GlobalExceptionHandler {
                 errorMessage = "File upload failed: Stream ended unexpectedly. Please retry.";
             }
         }
-
+        SystemDiagnosticsLogger.logBasicSystemStats();
         LOG.error("Multipart request parsing failed", e);
         String responseBody = String.format("{\"status\":\"Error\",\"message\":\"%s\"}", errorMessage);
         return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+    }
+  
+    @ExceptionHandler(TimeoutException.class)
+    @ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
+    @ApiResponse(responseCode = "408", description = "Request Timeout", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"status\":\"Error\",\"message\":\"Request timed out. Please try again.\"}")))
+    public ResponseEntity<ErrorResponse> handleTimeoutException(TimeoutException ex) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
+                .getRequest();
+        String tenantId = request.getHeader("X-TechBD-Tenant-ID");
+        LOG.error("Request timed out. Tenant ID: {}", tenantId, ex);
+        SystemDiagnosticsLogger.logBasicSystemStats();
+        ErrorResponse response = new ErrorResponse("Error", "Request timed out. Please try again.");
+        return new ResponseEntity<>(response, HttpStatus.REQUEST_TIMEOUT);
     }
 }
