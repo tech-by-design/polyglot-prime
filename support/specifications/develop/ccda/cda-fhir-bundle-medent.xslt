@@ -16,7 +16,7 @@
   <xsl:param name="encounterType"/>
   <xsl:param name="facilityID"/>
   <xsl:variable name="patientRoleId" select="//ccda:patientRole/ccda:id[not(@assigningAuthorityName)]/@extension"/>
-  <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient/ccda:name/ccda:family[1], ' ', //ccda:patientRole/ccda:patient/ccda:name/ccda:given[1])"/>
+  <xsl:variable name="patientResourceName" select="concat(//ccda:patientRole/ccda:patient[1]/ccda:name[1]/ccda:family[1], ' ', //ccda:patientRole/ccda:patient[1]/ccda:name[1]/ccda:given[1])"/>
   <xsl:variable name="bundleTimestamp" select="/ccda:ClinicalDocument/ccda:effectiveTime/@value"/>
 
   <xsl:param name="bundleId"/>
@@ -33,6 +33,7 @@
   <xsl:param name="categoryXml"/>
   <xsl:param name="grouperScreeningCode"/>
   <xsl:param name="locationResourceId"/>
+  <xsl:param name="componentAnswersXml"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -1279,41 +1280,10 @@
                                         , "text": "<xsl:value-of select='ccda:observation/ccda:code/@displayName'/>"
                                       </xsl:when>
                                     </xsl:choose>
+                                  },
+                                  "valueCodeableConcept": {
+                                    "coding": <xsl:value-of select='$componentAnswersXml'/>
                                   }
-                                  <!-- Gather all filtered observations with the same code -->
-                                  <xsl:variable name="multipleAnswersCodes" select="'|96778-6|'" />
-                                  <!-- Gather valid observations -->
-                                  <xsl:variable name="multipleAnswersObservations">
-                                    <xsl:for-each select="/ccda:ClinicalDocument//ccda:observation">
-                                      <xsl:variable name="maCode" select="ccda:code/@code"/>
-                                      <xsl:if test="string($maCode)
-                                                    and contains($multipleAnswersCodes, concat('|', $maCode, '|'))">
-                                        <xsl:copy-of select="."/>
-                                      </xsl:if>
-                                    </xsl:for-each>
-                                  </xsl:variable>
-
-                                  <!-- Output multiple answers for the observation -->
-                                  <xsl:if test="exsl:node-set($multipleAnswersObservations)/ccda:observation[
-                                                  ccda:value/@code and
-                                                  not(preceding::ccda:observation[ccda:value/@code = current()/ccda:value/@code])
-                                                ]">
-                                    ,"valueCodeableConcept": {
-                                      "coding": [
-                                        <xsl:for-each select="exsl:node-set($multipleAnswersObservations)/ccda:observation[
-                                          ccda:value/@code and
-                                          not(preceding::ccda:observation[ccda:value/@code = current()/ccda:value/@code])
-                                        ]">
-                                          {
-                                            "system": "http://loinc.org",
-                                            "code": "<xsl:value-of select='ccda:value/@code'/>",
-                                            "display": "<xsl:value-of select='ccda:value/@displayName'/>"
-                                          }
-                                          <xsl:if test="position() != last()">,</xsl:if>
-                                        </xsl:for-each>
-                                      ]
-                                    }
-                                  </xsl:if>
                               }
                         ],
                       </xsl:when>
