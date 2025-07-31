@@ -604,7 +604,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:encounterParticipant/@typeCode)">
+        <xsl:if test="string(ccda:encounterParticipant/@typeCode) and (string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
         , "participant": [
                 {
                   <xsl:if test="string(ccda:encounterParticipant/@typeCode)">
@@ -726,7 +726,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:participant/@typeCode)">
+        <xsl:if test="string(ccda:participant/@typeCode) and (string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given) or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family))">
         , "participant": [
                 {
                     <xsl:if test="string(ccda:participant/@typeCode)"> 
