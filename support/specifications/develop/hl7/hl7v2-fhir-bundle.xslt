@@ -38,6 +38,7 @@
   <xsl:param name="procedureResourceSha256Id"/>
   <xsl:param name="grouperObservationResourceSha256Id"/>
   <xsl:param name="categoryXml"/>
+  <xsl:param name="componentAnswersXml"/>  
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -256,6 +257,7 @@
 		  ]
 		</xsl:if>
         
+      <!-- <xsl:if test="string(//PID.10.1) or string(//PID.22.1) or string(//PID.8.1)"> -->
 	  <xsl:if test="//PID.10 or //PID.22 or //PID.8.1">
 		  , "extension": [
 			<xsl:variable name="ombRaceCodes" select="'1002-5 2028-9 2054-5 2076-8 2106-3 UNK ASKU'" />
@@ -721,19 +723,20 @@
 					  </xsl:choose>
 					},
 					"valueCodeableConcept": {
-					  "coding": [{
-						"system": "http://loinc.org",
-						"code": "<xsl:value-of select='OBX.5/OBX.5.1'/>",
-						"display": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
-					  }]
-					  <xsl:choose>
-						<xsl:when test="string(OBX.5/OBX.5.9)">
-						  <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.9'/>"
-						</xsl:when>
-						<xsl:when test="string(OBX.5/OBX.5.2)">
-						  <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.2'/>"
-						</xsl:when>
-					  </xsl:choose>
+					  <!-- "coding": [{ -->
+						<!-- "system": "http://loinc.org", -->
+						<!-- "code": "<xsl:value-of select='OBX.5/OBX.5.1'/>", -->
+						<!-- "display": "<xsl:value-of select='OBX.5/OBX.5.2'/>" -->
+					  <!-- }] -->
+					  <!-- <xsl:choose> -->
+						<!-- <xsl:when test="string(OBX.5/OBX.5.9)"> -->
+						  <!-- <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.9'/>" -->
+						<!-- </xsl:when> -->
+						<!-- <xsl:when test="string(OBX.5/OBX.5.2)"> -->
+						  <!-- <xsl:text>,</xsl:text> "text": "<xsl:value-of select='OBX.5/OBX.5.2'/>" -->
+						<!-- </xsl:when> -->
+					  <!-- </xsl:choose> -->
+					  "coding": <xsl:value-of select='$componentAnswersXml'/>
 					}
 				  }
 				],
@@ -882,11 +885,11 @@
         </xsl:if>
 		
         "name": "<xsl:choose>
-           <xsl:when test='normalize-space(//MSH/MSH.6)'>
-             <xsl:value-of select='//MSH/MSH.6'/>
+           <xsl:when test='normalize-space($OrganizationName)'>
+             <xsl:value-of select='$OrganizationName'/>
            </xsl:when>
            <xsl:otherwise>
-             <xsl:value-of select='$OrganizationName'/>
+             <xsl:value-of select='//MSH/MSH.6'/>
            </xsl:otherwise>
          </xsl:choose>"
 
@@ -998,7 +1001,8 @@
           "<xsl:value-of select='$encounterMetaProfileUrlFull'/>"
         ]
       },
-      "status": "<xsl:call-template name='mapEncounterStatusFromHL7'/>"
+      <!-- "status": "<xsl:call-template name='mapEncounterStatusFromHL7'/>" -->
+	  "status": "finished"
 
       <xsl:if test="string(//PV1/PV1.2/PV1.2.1)">
 		  <xsl:text>,</xsl:text>
@@ -1086,7 +1090,7 @@
 
       }
 
-		<xsl:if test="string(//OBR.32/OBR.32.1)">
+		<xsl:if test="(//OBR.32/OBR.32.1 or //OBR.34/OBR.34.1) and (//ROL/ROL.4/ROL.4.3 or //ROL/ROL.4/ROL.4.2)">
 			<xsl:text>,</xsl:text>
 			"participant": [{
 			  "type": [{
@@ -1122,7 +1126,7 @@
 				}]
 			  }],
 			  "individual": {
-				"reference": "Practitioner/<xsl:value-of select='//ROL/ROL.4/ROL.4.1'/>",
+				<!-- "reference": "Practitioner/<xsl:value-of select='//ROL/ROL.4/ROL.4.1'/>", -->
 				"display": "<xsl:value-of select='normalize-space(concat(//ROL/ROL.4/ROL.4.3, &quot; &quot;, //ROL/ROL.4/ROL.4.2))'/>"
 			  }
 			}]
@@ -1395,14 +1399,14 @@
       </xsl:choose>
   </xsl:template>
 
-<xsl:template name="mapEncounterStatusFromHL7">
-  <xsl:choose>
-    <xsl:when test="//PV1/PV1.44/PV1.44.1 and //PV1/PV1.45/PV1.45.1">finished</xsl:when>
-    <xsl:when test="//PV1/PV1.44/PV1.44.1 and not(//PV1/PV1.45/PV1.45.1)">in-progress</xsl:when>
-    <xsl:when test="//PV2/PV2.24/PV2.24.1 and not(//PV1/PV1.44/PV1.44.1)">planned</xsl:when>
-    <xsl:otherwise>unknown</xsl:otherwise>
-  </xsl:choose>
-</xsl:template>
+<!-- <xsl:template name="mapEncounterStatusFromHL7"> -->
+  <!-- <xsl:choose> -->
+    <!-- <xsl:when test="//PV1/PV1.44/PV1.44.1 and //PV1/PV1.45/PV1.45.1">finished</xsl:when> -->
+    <!-- <xsl:when test="//PV1/PV1.44/PV1.44.1 and not(//PV1/PV1.45/PV1.45.1)">in-progress</xsl:when> -->
+    <!-- <xsl:when test="//PV2/PV2.24/PV2.24.1 and not(//PV1/PV1.44/PV1.44.1)">planned</xsl:when> -->
+    <!-- <xsl:otherwise>unknown</xsl:otherwise> -->
+  <!-- </xsl:choose> -->
+<!-- </xsl:template> -->
 
 <xsl:template name="mapObservationCategoryCodes">
   <xsl:param name="questionCode"/>
