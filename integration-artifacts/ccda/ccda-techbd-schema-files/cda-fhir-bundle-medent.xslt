@@ -613,7 +613,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:encounterParticipant/@typeCode) and string(ccda:encounterParticipant/ccda:assignedEntity/ccda:id/@extension)">
+        <xsl:if test="string(ccda:encounterParticipant/@typeCode)">
         , "participant": [
                 {
                   <xsl:if test="string(ccda:encounterParticipant/@typeCode)"> 
@@ -632,7 +632,6 @@
                       ]
                     </xsl:if>
                     , "individual": {
-                        "reference": "Practitioner/<xsl:value-of select="ccda:encounterParticipant/ccda:assignedEntity/ccda:id/@extension"/>",
                         "display": "<xsl:value-of select="concat(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given, ' ', ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
                     }
                 }
@@ -735,7 +734,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:participant/@typeCode) and string(ccda:participant/ccda:assignedEntity/ccda:id/@extension)">
+        <xsl:if test="string(ccda:participant/@typeCode)">
             , "participant": [
                 {
                     "type": [
@@ -752,7 +751,6 @@
                         }
                       ]
                     , "individual": {
-                        "reference": "Practitioner/<xsl:value-of select="ccda:participant/ccda:assignedEntity/ccda:id/@extension"/>",
                         "display": "<xsl:value-of select="concat(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given, ' ', ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
                     }
                 }

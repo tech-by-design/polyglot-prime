@@ -588,7 +588,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:encounterParticipant/@typeCode) and string(ccda:encounterParticipant/ccda:assignedEntity/ccda:id/@extension)">
+        <xsl:if test="string(ccda:encounterParticipant/@typeCode)">
         , "participant": [
                 {
                   <xsl:if test="string(ccda:encounterParticipant/@typeCode)">
@@ -606,11 +606,8 @@
                         }
                       ]
                     </xsl:if>
-                    <xsl:if test="string(ccda:encounterParticipant/ccda:assignedEntity/ccda:id/@extension) or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
+                    <xsl:if test="string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
                     , "individual": {
-                        <xsl:if test="string(ccda:encounterParticipant/ccda:assignedEntity/ccda:id/@extension)"> 
-                          "reference": "Practitioner/<xsl:value-of select="ccda:encounterParticipant/ccda:assignedEntity/ccda:id/@extension"/>",
-                        </xsl:if>
                         "display": "<xsl:value-of select="concat(ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given, ' ', ccda:encounterParticipant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
                     }
                     </xsl:if>
@@ -711,7 +708,7 @@
             }
           </xsl:when>
         </xsl:choose>
-        <xsl:if test="string(ccda:participant/@typeCode) and string(ccda:participant/ccda:assignedEntity/ccda:id/@extension)">
+        <xsl:if test="string(ccda:participant/@typeCode)">
         , "participant": [
                 {
                     <xsl:if test="string(ccda:participant/@typeCode)"> 
@@ -729,11 +726,8 @@
                         }
                       ]
                     </xsl:if>
-                    <xsl:if test="string(ccda:participant/ccda:assignedEntity/ccda:id/@extension) or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
+                    <xsl:if test="string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given)  or string(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)">
                     , "individual": {
-                        <xsl:if test="string(ccda:participant/ccda:assignedEntity/ccda:id/@extension)"> 
-                          "reference": "Practitioner/<xsl:value-of select="ccda:participant/ccda:assignedEntity/ccda:id/@extension"/>",
-                        </xsl:if>
                         "display": "<xsl:value-of select="concat(ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:given, ' ', ccda:participant/ccda:assignedEntity/ccda:assignedPerson/ccda:name/ccda:family)"/>"
                     }
                     </xsl:if>
