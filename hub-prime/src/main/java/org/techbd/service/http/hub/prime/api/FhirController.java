@@ -151,7 +151,6 @@ public class FhirController {
                                         + "}")))
         })
         @ResponseBody
-        @Async
         public Object validateBundleAndForward(
                         @Parameter(description = "Payload for the API. This <b>must not</b> be <code>null</code>.", required = true) final @RequestBody @Nonnull String payload,
                         @Parameter(description = "Parameter to specify the Tenant ID. This is a <b>mandatory</b> parameter.", required = true) @RequestHeader(value = Configuration.Servlet.HeaderName.Request.TENANT_ID, required = true) String tenantId,
