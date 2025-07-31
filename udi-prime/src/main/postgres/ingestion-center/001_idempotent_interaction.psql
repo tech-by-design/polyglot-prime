@@ -4842,10 +4842,6 @@ BEGIN
   		RETURN NULL;	
   	END IF;
   
-  	IF sat_interaction_ccda_request_upserted.ccda_payload_text IS NULL THEN
-  		RETURN NULL;	
-  	END IF;
-  
   	-- The INSERT statement inserts a new record into the sat_interaction_ccda_request table, generating a UUID for the primary key.
     -- If the operation succeeds, the generated UUID is returned.
     INSERT INTO techbd_udi_ingress.sat_interaction_ccda_request (
