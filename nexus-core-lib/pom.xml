@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.techbd</groupId>
         <artifactId>polyglot-prime</artifactId>
-        <version>0.638.0</version>
+        <version>0.639.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
