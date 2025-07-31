@@ -80,15 +80,15 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             observation.setCode(code);
 
             CodeableConcept value = new CodeableConcept();
-            String originalCode = demographicData.getSexualOrientationCode();
-            String mappedCode = originalCode;
+            String originalCode = fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId);
+            String mappedCode;
 
             if ("ASKU".equalsIgnoreCase(originalCode)) {
                 mappedCode = "asked-unknown";
             } else if ("UNK".equalsIgnoreCase(originalCode)) {
                 mappedCode = "unknown";
             } else {
-                mappedCode = fetchCode(originalCode, CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId);
+                mappedCode = originalCode;
             }
 
             value.addCoding(new Coding(
