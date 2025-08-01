@@ -182,7 +182,8 @@ public class InteractionsFilter extends OncePerRequestFilter {
         final var mutatableResp = new ContentCachingResponseWrapper(origResponse);
 
         // Check for the X-TechBD-HealthCheck header
-        if ("true".equals(origRequest.getHeader(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER))) {
+        String healthCheckHeader = origRequest.getHeader(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER);
+        if ("true".equalsIgnoreCase(healthCheckHeader != null ? healthCheckHeader.trim() : null)) {
             LOG.info("%s is true, skipping persistence.".formatted(AppConfig.Servlet.HeaderName.Request.HEALTH_CHECK_HEADER));
             chain.doFilter(origRequest, origResponse);  // Skip the rest of the steps, as it is a health check request.
             return;
