@@ -2,13 +2,16 @@
   <id>25dd1794-5435-4282-a189-4a2df9aed0a2</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>HL7V2 Bundle</name>
-  <description>Version: 0.3.0</description>
-  <revision>110</revision>
+  <description>Version: 0.3.1</description>
+  <revision>117</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -30,9 +33,6 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -953,8 +953,8 @@ try {
 	
 
     // Load XSLT from file system
-    //var xsltPathFromEnv = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-fhir-bundle.xslt&quot;;
-    var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
+    var xsltPathFromEnv = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-fhir-bundle.xslt&quot;;
+    //var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
     logger.info(&quot;HL7_XSLT_PATH: &quot; + xsltPathFromEnv);
     var xsltPath = xsltPathFromEnv;
     var xsltFile = new java.io.File(xsltPath);
@@ -1296,7 +1296,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753937726880</time>
+        <time>1754027921182</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
