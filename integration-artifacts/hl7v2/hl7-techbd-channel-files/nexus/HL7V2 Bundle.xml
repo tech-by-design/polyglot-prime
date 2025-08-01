@@ -2,13 +2,16 @@
   <id>25dd1794-5435-4282-a189-4a2df9aed0a2</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>HL7V2 Bundle</name>
-  <description>Version: 0.2.0</description>
-  <revision>98</revision>
+  <description>Version: 0.3.1</description>
+  <revision>117</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.3">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="4.5.3">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
@@ -30,9 +33,6 @@
           <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
           <truststoreUid/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.3">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="4.5.3">
         <host>0.0.0.0</host>
@@ -575,6 +575,219 @@ function set_fhir_resource_profile_urls(transformer) {
 
 
 	return transformer;
+}
+
+function getConsentResourceStatus(sourceXml) {&#xd;
+ try {&#xd;
+  var consentInfo = {};&#xd;
+      consentInfo.code = &apos;Consent-Status&apos;;&#xd;
+      consentInfo.status = &quot;TechBD-Generated&quot;;&#xd;
+  var xmlDoc = new XML(sourceXml); // Convert XML string to XML object   &#xd;
+  //default xml namespace = &quot;urn:hl7-org:v3&quot;; // Default namespace for HL7 documents&#xd;
+  var consentCode = &quot;&quot;;&#xd;
+  for each (var obx in xmlDoc..OBX) {&#xd;
+      var obx32 = &quot;&quot;;&#xd;
+      if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {&#xd;
+          obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString();&#xd;
+      }&#xd;
+  &#xd;
+      if (obx32 == &quot;AHC-HRSN Patient Consent&quot;) {&#xd;
+          if (obx[&quot;OBX.5&quot;] != null &amp;&amp; obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;] != null) {&#xd;
+              consentCode = obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;].toString();&#xd;
+          }&#xd;
+          break;&#xd;
+      }&#xd;
+  }&#xd;
+  logger.info(&quot;Consent Code: &quot; + consentCode);&#xd;
+  if (consentCode != undefined &amp;&amp; consentCode.length &gt; 0) {&#xd;
+      logger.info(&quot;Consent Code: &quot; + consentCode);&#xd;
+          consentInfo.status = &quot;provided&quot;;&#xd;
+  }  &#xd;
+  // Convert to JSON string (optional, for sending/logging)&#xd;
+  var consentJsonString = JSON.stringify(consentInfo);&#xd;
+  logger.info(&quot;Consent Info JSON: &quot; + consentJsonString);&#xd;
+  channelMap.put(&apos;elaboration&apos;, consentJsonString);&#xd;
+ } catch (e) {&#xd;
+        var errorMsg;&#xd;
+        if (e instanceof JavaException) {&#xd;
+           errorMsg = &quot;Error parsing Consent Resource: &quot; + e.toString();&#xd;
+        } else {&#xd;
+           errorMsg = &quot;Unexpected error during getting Consent Resource: &quot; + e.message;&#xd;
+        }&#xd;
+        logger.error(errorMsg);&#xd;
+ &#xd;
+        // Failure: Return an OperationOutcome JSON response with validation errors&#xd;
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));&#xd;
+ &#xd;
+        throw new Error(errorMsg);&#xd;
+     }&#xd;
+}&#xd;
+&#xd;
+function getCategoryDisplay(code) {&#xd;
+    switch (code) {&#xd;
+        case &apos;71802-3&apos;:&#xd;
+            return &apos;Housing Instability&apos;;&#xd;
+        case &apos;96778-6&apos;:&#xd;
+            return &apos;Inadequate Housing&apos;;&#xd;
+        case &apos;96779-4&apos;:&#xd;
+            return &apos;Utility Insecurity&apos;;&#xd;
+        case &apos;88122-7&apos;:&#xd;
+        case &apos;88123-5&apos;:&#xd;
+            return &apos;Food Insecurity&apos;;&#xd;
+        case &apos;93030-5&apos;:&#xd;
+            return &apos;Transportation Insecurity&apos;;&#xd;
+        case &apos;96780-2&apos;:&#xd;
+            return &apos;Employment Status&apos;;&#xd;
+        case &apos;96782-8&apos;:&#xd;
+        case &apos;95618-5&apos;:&#xd;
+        case &apos;95617-7&apos;:&#xd;
+        case &apos;95616-9&apos;:&#xd;
+        case &apos;95615-1&apos;:&#xd;
+        case &apos;95614-4&apos;:&#xd;
+            return &apos;SDOH Category Unspecified&apos;;&#xd;
+        default:&#xd;
+            return &apos;SDOH Category Unspecified&apos;;&#xd;
+    }&#xd;
+}&#xd;
+&#xd;
+function getCategoryCode(code) {&#xd;
+    switch (code) {&#xd;
+        case &apos;71802-3&apos;:&#xd;
+            return &apos;housing-instability&apos;;&#xd;
+        case &apos;96778-6&apos;:&#xd;
+            return &apos;inadequate-housing&apos;;&#xd;
+        case &apos;96779-4&apos;:&#xd;
+            return &apos;utility-insecurity&apos;;&#xd;
+        case &apos;88122-7&apos;:&#xd;
+        case &apos;88123-5&apos;:&#xd;
+            return &apos;food-insecurity&apos;;&#xd;
+        case &apos;93030-5&apos;:&#xd;
+            return &apos;transportation-insecurity&apos;;&#xd;
+        case &apos;96780-2&apos;:&#xd;
+            return &apos;employment-status&apos;;&#xd;
+        case &apos;96782-8&apos;:&#xd;
+        case &apos;95618-5&apos;:&#xd;
+        case &apos;95617-7&apos;:&#xd;
+        case &apos;95616-9&apos;:&#xd;
+        case &apos;95615-1&apos;:&#xd;
+        case &apos;95614-4&apos;:&#xd;
+            return &apos;sdoh-category-unspecified&apos;;&#xd;
+        default:&#xd;
+            return null;&#xd;
+    }&#xd;
+}&#xd;
+&#xd;
+// Define Namespace Resolver&#xd;
+function getObservationCategoryCodes(transformer, observations) {    &#xd;
+    var xml = new XML(observations);  &#xd;
+&#xd;
+    var categorySystem = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;;&#xd;
+&#xd;
+ var categorySet = {};&#xd;
+&#xd;
+ var children = xml.children();&#xd;
+    var currentOBR = null;&#xd;
+&#xd;
+    for each (var child in children) {&#xd;
+     var nodeName = child.name().localName;&#xd;
+ &#xd;
+     if (nodeName === &apos;OBR&apos;) {&#xd;
+         currentOBR = child;&#xd;
+     } else if (nodeName === &apos;OBX&apos; &amp;&amp; currentOBR != null) {&#xd;
+         var questionCode = &quot;&quot;;&#xd;
+         var displayCode = &quot;&quot;;&#xd;
+ &#xd;
+         if (child[&quot;OBX.3&quot;] != null) {&#xd;
+             if (child[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;] != null) {&#xd;
+                 questionCode = child[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString().trim();&#xd;
+             }&#xd;
+             if (child[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {&#xd;
+                 displayCode = child[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString().trim();&#xd;
+             }&#xd;
+         }&#xd;
+ &#xd;
+         // Filter like in XSLT logic&#xd;
+         if (questionCode === &apos;&apos; || displayCode === &apos;AHC-HRSN Patient Consent&apos;) {&#xd;
+             continue;&#xd;
+         }&#xd;
+ &#xd;
+         var categoryCode = getCategoryCode(questionCode);&#xd;
+         var categoryDisplay = getCategoryDisplay(questionCode);&#xd;
+ &#xd;
+         if (categoryCode &amp;&amp; !(categoryCode in categorySet)) {&#xd;
+             categorySet[categoryCode] = categoryDisplay;&#xd;
+         }&#xd;
+     }&#xd;
+ }&#xd;
+&#xd;
+    // Build the category JSON array&#xd;
+    var categoryJsonArray = [];&#xd;
+    for (var code in categorySet) {&#xd;
+        categoryJsonArray.push({&#xd;
+            system: categorySystem,&#xd;
+            code: code,&#xd;
+            display: categorySet[code]&#xd;
+        });&#xd;
+    }&#xd;
+&#xd;
+     var categoryXml = JSON.stringify(categoryJsonArray);&#xd;
+ &#xd;
+ transformer.setParameter(&apos;categoryXml&apos;, categoryXml);&#xd;
+ logger.info(&quot;categoryXml : &quot; + categoryXml);&#xd;
+ return transformer;&#xd;
+}&#xd;
+&#xd;
+function generateSHA256(inputString) {&#xd;
+    //var md = MessageDigest.getInstance(&quot;SHA-256&quot;);&#xd;
+    var md = Packages.java.security.MessageDigest.getInstance(&quot;SHA-256&quot;);&#xd;
+    md.update(inputString.getBytes(&quot;UTF-8&quot;));   &#xd;
+    var digest = md.digest();&#xd;
+    return bytesToHex(digest);&#xd;
+}&#xd;
+&#xd;
+function bytesToHex(byteArray) {&#xd;
+    var hexString = new java.lang.StringBuilder();&#xd;
+    for (var i = 0; i &lt; byteArray.length; i++) {&#xd;
+        var hex = java.lang.Integer.toHexString(0xff &amp; byteArray[i]);&#xd;
+        if (hex.length == 1) hexString.append(&apos;0&apos;);&#xd;
+        hexString.append(hex);&#xd;
+    }&#xd;
+    return hexString.toString();&#xd;
+}&#xd;
+&#xd;
+function getPatientMRN(sourceXml){&#xd;
+ var xmlDoc = new XML(sourceXml);&#xd;
+ var patientMRN = xmlDoc..PID[&quot;PID.3&quot;][&quot;PID.3.1&quot;].toString().trim();&#xd;
+ channelMap.put(&apos;patientMRN&apos;, patientMRN);&#xd;
+ logger.info(&quot;patientMRN: &quot; + patientMRN);&#xd;
+ &#xd;
+}&#xd;
+&#xd;
+function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, additionalString) {&#xd;
+    if (sourceXml != undefined) { &#xd;
+     var xmlDoc = new XML(sourceXml);&#xd;
+        // Get MRN and CIN from channelMap&#xd;
+        var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;&#xd;
+        var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;&#xd;
+        var combinedText = mrn + cin;&#xd;
+&#xd;
+        if (typeof additionalString !== &apos;undefined&apos; &amp;&amp; additionalString != null &amp;&amp; additionalString !== &apos;&apos;) {&#xd;
+            combinedText += additionalString;&#xd;
+            logger.info(&quot;Including additionalString in SHA-256: &quot; + additionalString);&#xd;
+        }&#xd;
+&#xd;
+        var resourceText = resourceName + xmlDoc.toString().trim();&#xd;
+        combinedText += resourceText;&#xd;
+&#xd;
+        // Generate SHA-256 hash&#xd;
+        var sha256Hash = generateSHA256(new java.lang.String(combinedText));&#xd;
+        transformer.setParameter(resourceIdName, sha256Hash);&#xd;
+        logger.info(resourceIdName + &quot; : &quot; + sha256Hash);&#xd;
+    } else {&#xd;
+        logger.error(resourceName + &quot; not found in the XML.&quot;);&#xd;
+    }&#xd;
+&#xd;
+    return transformer;&#xd;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
@@ -741,7 +954,7 @@ try {
 
     // Load XSLT from file system
     var xsltPathFromEnv = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/hl7v2-fhir-bundle.xslt&quot;;
-    // var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
+    //var xsltPathFromEnv = &quot;hl7v2-fhir-bundle.xslt&quot;;
     logger.info(&quot;HL7_XSLT_PATH: &quot; + xsltPathFromEnv);
     var xsltPath = xsltPathFromEnv;
     var xsltFile = new java.io.File(xsltPath);
@@ -762,23 +975,23 @@ try {
     var bundleId = java.util.UUID.randomUUID().toString();
     transformer.setParameter(&quot;bundleId&quot;, bundleId);
 
-    var patientResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;patientResourceId&quot;, patientResourceId);
+    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());&#xd;
+&#xd;
+    transformer = generateSHA256Id(rawTransformedData, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);&#xd;
+&#xd;
+    transformer = generateSHA256Id(rawTransformedData, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);&#xd;
+&#xd;
+    transformer = generateSHA256Id(rawTransformedData, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);&#xd;
+&#xd;
+ 	transformer = generateSHA256Id(rawTransformedData, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, currentTimestamp);&#xd;
+&#xd;
+    transformer = generateSHA256Id(rawTransformedData, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);&#xd;
+&#xd;
+    transformer = generateSHA256Id(rawTransformedData, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);&#xd;
+&#xd;
+    transformer = generateSHA256Id(rawTransformedData, &quot;groupObservations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
 
-    var consentResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;consentResourceId&quot;, consentResourceId);
-
-    var organizationResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;organizationResourceId&quot;, organizationResourceId);
-
-    var encounterResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;encounterResourceId&quot;, encounterResourceId);
-
-    var sexualOrientationResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;sexualOrientationResourceId&quot;, sexualOrientationResourceId);
-
-    var observationResourceSha256Id = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;observationResourceSha256Id&quot;, observationResourceSha256Id);
+    
 
     // Retrieve the X-TechBD-Base-FHIR-URL header
 		var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
@@ -808,7 +1021,10 @@ try {
 		}
 
     
-
+	var sourceXml = connectorMessage.getTransformedData();&#xd;
+	getConsentResourceStatus(sourceXml);&#xd;
+	getPatientMRN(sourceXml);&#xd;
+	getObservationCategoryCodes(transformer, sourceXml);
     // Transform
     var xmlInputStream = new java.io.StringReader(rawTransformedData);
     var xmlOutputStream = new java.io.StringWriter();
@@ -1080,7 +1296,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753772102776</time>
+        <time>1754027921182</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>

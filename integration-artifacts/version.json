@@ -51,9 +51,9 @@
   {
     "type": "HL7v2",
     "channel": "HL7V2 Bundle.xml",
-    "version": "",
-    "editedby": "",
-    "date": ""
+    "version": "0.3.1",
+    "editedby": "vinodaravind01",
+    "date": "2025-08-01"
   },
   {
     "type": "Global script",
