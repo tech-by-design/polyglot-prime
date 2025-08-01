@@ -30,16 +30,16 @@
   {
     "type": "FLAT FILE",
     "channel": "FlatFileCsvBundle.xml",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-24"
+    "date": "2025-07-31"
   },
   {
     "type": "FLAT FILE",
-    "channel": "CcdaBundleValidate.xml",
-    "version": "0.6.0",
+    "channel": "FlatFileCsvBundleValidate.xml",
+    "version": "0.7.0",
     "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-24"
+    "date": "2025-07-31"
   },
   {
     "type": "HL7v2",
