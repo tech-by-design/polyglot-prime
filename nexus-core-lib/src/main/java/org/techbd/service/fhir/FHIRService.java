@@ -182,7 +182,7 @@ public class FHIRService {
             LOG.info("Bundle processing start at {} for interaction id {}.", interactionId);
 			final var dslContext = coreUdiPrimeJpaConfig.dsl();
             final var jooqCfg = dslContext.configuration();
-			if (healthCheck == null || "false".equals(healthCheck)) {
+			if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
 				registerOriginalPayload(jooqCfg, requestParameters,
 						payload, interactionId, groupInteractionId, masterInteractionId,
 						source, requestUriToBeOverriden, coRrelationId);
