@@ -2,10 +2,10 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
     layout:decorate="~{layout/prime}">
 
-<head> 
-     <!-- Include Font Awesome in your HTML -->
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-     <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+<head>
+    <!-- Include Font Awesome in your HTML -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
@@ -19,31 +19,33 @@
         import ModalAide from '@presentation/shell/modal-aide.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'interaction_csv_http'; 
+        const viewName = 'interaction_csv_http';
         const viewdetail = 'interaction_csv_http_fhir_request';
-        const pipupviewName = 'interaction_http_fhir_request';  
+        const pipupviewName = 'interaction_http_fhir_request';
         const downloadviewName = 'interaction_csv_http_stat_file_data';
         const modalAide = new ModalAide();
         const fhirColumnDefs = [
-            { headerName: "TechBD Interaction ID", field: "interaction_id", filter: "agTextColumnFilter", 
-            cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
-                            modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${pipupviewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
-             }, modalAide) },
-            { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter" },            
+            {
+                headerName: "TechBD Interaction ID", field: "interaction_id", filter: "agTextColumnFilter",
+                cellRenderer: AGGridAide.modalCellRenderer((params, modalAide) => {
+                    modalAide.viewFetchedJsonValue(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${pipupviewName}/sat_interaction_http_request_id/${params.data.sat_interaction_http_request_id}.json`));
+                }, modalAide)
+            },
+            { headerName: "Bundle ID", field: "bundle_id", filter: "agTextColumnFilter" },
             { headerName: "Bundle Resource Type", field: "bundle_resource_type", filter: "agTextColumnFilter" },
-            { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter" }  ,
+            { headerName: "Source MRN", field: "source_mrn", filter: "agTextColumnFilter" },
             { headerName: "Patient MRN", field: "patient_mrn", filter: "agTextColumnFilter" },
-            { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },                                      
-            { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },   
+            { headerName: "MRN Source", field: "patient_mrn_source_system", filter: "agTextColumnFilter", headerTooltip: "Source of the patient MRN" },
+            { headerName: "URI", field: "uri", filter: "agTextColumnFilter", headerTooltip: "The URI associated with the interaction" },
             { headerName: "Nature", field: "nature", filter: "agTextColumnFilter" },
             { headerName: "From State", field: "from_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
-            { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },            
+            { headerName: "To State", field: "to_state", filter: "agTextColumnFilter", headerTooltip: "The state transition details of the interaction" },
             { headerName: "Validation Issues", field: "issues_count", filter: "agTextColumnFilter", headerTooltip: "Count of issues encountered during validation" },
             { headerName: "FHIR Resources", field: "resource_types", filter: "agTextColumnFilter", headerTooltip: "Types of FHIR resources involved in the interaction" },
             { headerName: "IP Address", field: "client_ip_address", filter: "agTextColumnFilter", headerTooltip: "IP address of the client making the request" },
             { headerName: "User Agent", field: "user_agent", filter: "agTextColumnFilter", headerTooltip: "User agent (browser or system) used in the request" },
         ];
-        function getFhirGridData(params) { 
+        function getFhirGridData(params) {
             const hub_interaction_id = params.data.hub_interaction_id;
             fetch(window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewdetail}/source_hub_interaction_id/${hub_interaction_id}.json`))
                 .then(response => {
@@ -59,7 +61,7 @@
                 .catch(error => {
                     console.error('Error fetching details data' + error);
                 });
-        }               
+        }
 
         // Define downloadZipFile globally
         window.downloadZipFile = async function (apiUrl, csvZipFileName = 'csv_files') {
@@ -69,13 +71,13 @@
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                
+
                 // Get the JSON data
                 const data = await response.json();
                 if (!data || data.length === 0) {
                     throw new Error('No data received from API');
                 }
-                
+
                 // Extract file names and payloads from multiple objects in the array
                 const files = [];
                 data.forEach(item => {
@@ -92,33 +94,72 @@
                         files.push({ name: item.screening_observation_data_file_name, content: item.screening_observation_data_payload_text });
                     }
                 });
-                
+
                 if (files.length === 0) {
                     throw new Error('No valid files found in API response');
                 }
-                
+
                 // Create a new ZIP file
                 const zip = new JSZip();
                 files.forEach(file => {
-                    zip.file(file.name , file.content); // Add files to zip
+                    zip.file(file.name, file.content); // Add files to zip
                 });
-                
+
                 // Generate the ZIP file and trigger download
                 const zipBlob = await zip.generateAsync({ type: 'blob' });
                 const url = URL.createObjectURL(zipBlob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = csvZipFileName ;
+                link.download = csvZipFileName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
-            
+
             } catch (error) {
                 console.error('Error downloading ZIP file:', error);
             }
         };
 
+        // Define downloadValidationResult globally
+        window.downloadValidationResult = async function (apiUrl, file_name = 'validation_result.json') {
+            try {
+                // Fetch data from the API
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                // Get the JSON data
+                const data = await response.json();
+
+                // Extract only the payload from the response
+                const payload = data[0]?.validation_result_payload;
+
+                // Convert the payload to a JSON string
+                const jsonString = JSON.stringify(payload, null, 2);
+
+                // Create a Blob from the JSON string
+                const blob = new Blob([jsonString], { type: "application/json" });
+
+                // Create a URL for the Blob
+                const url = URL.createObjectURL(blob);
+
+                // Create a temporary link to trigger the download
+                const tempLink = document.createElement('a');
+                tempLink.href = url;
+                tempLink.download = file_name + '.json';
+                document.body.appendChild(tempLink);
+                tempLink.click();
+
+                // Clean up
+                document.body.removeChild(tempLink);
+                URL.revokeObjectURL(url);
+
+            } catch (error) {
+                console.error('Error downloading payload:', error);
+            }
+        };
 
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -126,7 +167,7 @@
             function downloadCellRenderer(params) {
                 const zip_file_hub_interaction_id = params.data.hub_interaction_id;
                 const csv_zip_file_name = params.data.csv_zip_file_name || '';
- 
+
                 // Create the URL for the API call
                 const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${downloadviewName}/zip_file_hub_interaction_id/${zip_file_hub_interaction_id}.json`;
                 if (params.data.file_count === 0) {
@@ -136,10 +177,21 @@
                 return `<a href="#" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
                     <i class="fas fa-download"></i>
                 </a>`;
- 
+
             }
 
-            
+            function downloadValidationResultCellRenderer(params) {
+                const hub_interaction_id = params.data.hub_interaction_id;
+                const file_name = `${params.data.csv_zip_file_name}_validation_result.json`;
+                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/interaction_csv_http_validation_result/hub_interaction_id/${hub_interaction_id}.json`;
+
+                return `<a href="#" onclick="window.downloadValidationResult('${apiUrl}','${file_name}'); return false;" style="text-decoration: none; color: #007bff;">
+                                        <i class="fas fa-download"></i>
+                                    </a>`;
+
+            }
+
+
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
                     {
@@ -147,7 +199,7 @@
                         field: "created_at",
                         filter: "agDateColumnFilter",
                         headerTooltip: "The timestamp indicating when the interaction was initiated."
-                    },                    
+                    },
                     {
                         headerName: "TechBD Zip File Interaction ID",
                         field: "hub_interaction_id",
@@ -160,15 +212,23 @@
                     { headerName: "TechBD Tenant ID", field: "tenant_id", headerTooltip: "ID of the tenant involved in the interaction", filter: "agTextColumnFilter" },
                     { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
                     { headerName: "File Count", field: "file_count", headerTooltip: "The total number of files processed, including demographic, administrative, observation, and profile files.", filter: "agNumberColumnFilter" },
-                    { headerName: "FHIR Count", field: "fhir_count",  headerTooltip: "The total number of FHIR interactions associated with this HTTP request.", filter: "agNumberColumnFilter", cellRenderer: 'agGroupCellRenderer' },
-                    { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.",  filter: "agNumberColumnFilter" },
-                    { headerName: "Origin", field: "origin",  headerTooltip: "The origin of the interaction", filter: "agNumberColumnFilter" },
-                    { headerName: "SFTP Session ID", field: "sftp_session_id",  headerTooltip: "The SFTP session ID associated with the interaction", filter: "agNumberColumnFilter" },
+                    { headerName: "FHIR Count", field: "fhir_count", headerTooltip: "The total number of FHIR interactions associated with this HTTP request.", filter: "agNumberColumnFilter", cellRenderer: 'agGroupCellRenderer' },
+                    { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.", filter: "agNumberColumnFilter" },
+                    { headerName: "Origin", field: "origin", headerTooltip: "The origin of the interaction", filter: "agNumberColumnFilter" },
+                    { headerName: "SFTP Session ID", field: "sftp_session_id", headerTooltip: "The SFTP session ID associated with the interaction", filter: "agNumberColumnFilter" },
                     {
-                        headerName: "Download Zip File", field: "", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
-                        headerTooltip: "Download Zip File", filter: false, suppressFilter: true 
+                        headerName: "Zip File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
+                        headerTooltip: "Download Zip File", filter: false, suppressFilter: true
+                    },
+                    {
+                        headerName: "OperationOutcome",
+                        field: "validation_result_file_name",
+                        cellClass: "flex justify-center items-center",
+                        cellRenderer: downloadValidationResultCellRenderer,
+                        headerTooltip: "Download OperationOutcome",
+                        filter: false,
+                        suppressFilter: true
                     }
-                    
                 ])
                 .withServerSideDatasource(
                     window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
@@ -198,17 +258,31 @@
 
             agGridInstance.init('serverDataGrid');
         });
-    </script>    
+    </script>
 </head>
 
 <body>
     <div layout:fragment="content">
-        <div class="grid-description">             
-            This widget provides a comprehensive overview of CSV-based HTTP interactions, including processed request details. Key columns include the Hub Interaction ID, which serves as the unique identifier for each interaction, and the Request Time timestamp indicating when the interaction occurred. The File Count aggregates the number of associated demographic, administrative, observation, and profile files.
-            The widget also highlights the total FHIR interactions (FHIR Count), breaking them down into Successful FHIR Interactions and Failed FHIR Interactions. Users can click on the FHIR Count to open a dropdown, which provides detailed information about each FHIR interaction, including specifics on successful and failed transactions. This allows users to explore patterns in data processing outcomes, validate successful data flows, and identify issues related to failed interactions.
-            Sorting and filtering options empower users to analyze interactions effectively, offering enhanced flexibility in reviewing and understanding the data.
+        <div class="grid-description">
+            This widget provides a comprehensive overview of CSV-based HTTP interactions, including processed request
+            details. Key columns include the Hub Interaction ID, which serves as the unique identifier for each
+            interaction, and the Request Time timestamp indicating when the interaction occurred. The File Count
+            aggregates the number of associated demographic, administrative, observation, and profile files.
+
+            The widget also highlights the total FHIR interactions (FHIR Count), breaking them down into Successful FHIR
+            Interactions and Failed FHIR Interactions. Users can click on the FHIR Count to open a dropdown, which
+            provides detailed information about each FHIR interaction, including specifics on successful and failed
+            transactions. This allows users to explore patterns in data processing outcomes, validate successful data
+            flows, and identify issues related to failed interactions.
+
+            In addition, users have access to Download Zip File and Download OperationOutcome fields. These options
+            allow for direct downloading of the original zip file and the corresponding OperationOutcome response,
+            facilitating deeper analysis and debugging of specific transactions.
+
+            Sorting and filtering options empower users to analyze interactions effectively, offering enhanced
+            flexibility in reviewing and understanding the data.
         </div>
-        <div id="serverDataGrid" class="ag-theme-alpine"></div>        
+        <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>
 </body>
 
