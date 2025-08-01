@@ -178,16 +178,16 @@ public class CsvBundleProcessorService {
             final String masterInteractionId, final Map<String,Object> requestParameters) {
         LOG.info("SaveMiscErrorAndStatus: BEGIN for inteaction id  : {} ",
                 masterInteractionId);
-        final var status = allCSvConvertedToFHIR ? "PROCESSED_SUCESSFULLY" : "PARTIALLY_PROCESSED";
+        //final var status = allCSvConvertedToFHIR ? "PROCESSED_SUCESSFULLY" : "PARTIALLY_PROCESSED";
         final var dslContext = coreUdiPrimeJpaConfig.dsl();
         final var jooqCfg = dslContext.configuration();
         final var createdAt = OffsetDateTime.now();
         final var initRIHR = new SatInteractionCsvRequestUpserted();
         try {
-            initRIHR.setStatus(status);    
+          //  initRIHR.setStatus(status);    
             initRIHR.setInteractionId(masterInteractionId);
             initRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
-            initRIHR.setNature("Update Zip File Processing Details");
+            initRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
             initRIHR.setCreatedAt(createdAt);
             initRIHR.setCreatedBy(CsvService.class.getName());
             initRIHR.setZipFileProcessingErrors(CollectionUtils.isNotEmpty(miscError) ?

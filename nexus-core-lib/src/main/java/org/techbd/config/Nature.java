@@ -20,6 +20,7 @@ public enum Nature {
     ORIGINAL_FLAT_FILE_CSV("Original Flat File CSV"),
     CSV_VALIDATION_RESULT("CSV Validation Result"),
     CSV_TO_FHIR_CONVERSION("CSV to FHIR Conversion"),
+    UPDATE_ZIP_FILE_PROCESSING_DETAILS("Update Zip File Processing Details"),
 
     CONVERTED_TO_FHIR("Converted to FHIR"),
     // CCD
