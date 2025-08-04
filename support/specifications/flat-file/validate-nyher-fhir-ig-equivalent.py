@@ -173,6 +173,9 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
             ("SEXUAL_ORIENTATION_CODE_SYSTEM", "sexual_orientation_code_system")            
         ]
 
+        # Track errors to avoid duplicates
+        seen_errors = set()
+
         for resource in package.resources:
             try:
                 # Create transform steps only for fields that exist in the current resource
@@ -189,17 +192,22 @@ def validate_package(spec_path, file1, file2, file3, file4, output_path):
                 # Extract missing field name as before
                 match = re.search(r"'(.*?)'", error_message)
                 missing_field = match.group(1) if match else "Unknown field"
-                file_info = f" in file '{file_in_error}'" if file_in_error else ""
-                user_friendly_message = (
-                    f"The field '{missing_field}' is missing or incorrectly named in the dataset{file_info}. "
-                    f"Please check if it exists in the CSV file and matches the expected schema."
-                )
-                results["errorsSummary"].append({
-                    "fieldName": missing_field,
-                    "fileName": file_in_error,
-                    "message": user_friendly_message,
-                    "type": "data-processing-errors"
-                })
+
+                # Create a unique key for this error to avoid duplicates
+                error_key = (missing_field)
+
+                if error_key not in seen_errors:
+                    seen_errors.add(error_key)
+                    file_info = f" in file '{file_in_error}'" if file_in_error else ""
+                    user_friendly_message = (
+                        f"The field '{missing_field}' is missing or incorrectly named in the dataset. "
+                        f"Please check if it exists in the CSV file and matches the expected schema."
+                    )
+                    results["errorsSummary"].append({
+                        "fieldName": missing_field,
+                        "message": user_friendly_message,
+                        "type": "data-processing-errors"
+                    })
 
         checklist = Checklist(checks=[ValidateAnswerCode()])
         # Validate the package
