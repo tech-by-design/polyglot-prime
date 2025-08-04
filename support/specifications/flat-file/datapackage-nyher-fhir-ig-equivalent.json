@@ -288,9 +288,9 @@
           {"name": "FACILITY_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Organization').name", "constraints": {"required": true,  "pattern":"[ \\r\\n\\t\\S]+"}},
           {"name": "PATIENT_MEDICAID_ID", "type": "string" , "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'MA').value", "constraints": {"required": true, "pattern": "^[A-Za-z]{2}\\d{5}[A-Za-z]$"}  },                   
           {"name": "PATIENT_SS_ID_VALUE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').identifier.where(type.coding.code = 'SS').value"  },         
-          {"name": "FAMILY_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').name.family", "constraints": {"required": true, "pattern": "[\\r\\n\\t\\S]+"}},          
-          {"name": "GIVEN_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').name.given", "constraints": {"required": true, "minLength": 1, "pattern": "[\\r\\n\\t\\S]+"}},
-          {"name": "MIDDLE_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').name.extension.valueString", "constraints": {"pattern": "[\\r\\n\\t\\S]+"}},                    
+          {"name": "FAMILY_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').name.family", "constraints": {"required": true, "pattern": "[ \\r\\n\\t\\S]+"}},          
+          {"name": "GIVEN_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').name.given", "constraints": {"required": true, "minLength": 1, "pattern": "[ \\r\\n\\t\\S]+"}},
+          {"name": "MIDDLE_NAME", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').name.extension.valueString", "constraints": {"pattern": "[ \\r\\n\\t\\S]+"}},                    
           {"name": "ADMINISTRATIVE_SEX_CODE", "type": "string", "description":"Bundle.entry.resource.where(resourceType ='Patient').gender(code)", "constraints": {"required": true,  "enum": 
           [
             "male",
