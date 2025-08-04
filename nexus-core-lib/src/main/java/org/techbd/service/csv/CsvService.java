@@ -90,7 +90,7 @@ public class CsvService {
     private void saveArchiveInteractionStatus(
             String zipFileInteractionId,
             org.jooq.Configuration jooqCfg,
-            CsvProcessingState state) {
+            CsvProcessingState state,Map<String,Object> requestParameters) {
 
         LOG.info("CsvService saveArchiveInteraction - STATUS UPDATE ONLY | zipFileInteractionId: {}, newState: {}",
                 zipFileInteractionId, state.name());
@@ -99,6 +99,7 @@ public class CsvService {
 
         try {
             updateRIHR.setInteractionId(zipFileInteractionId);
+            updateRIHR.setUri((String) requestParameters.get(Constants.REQUEST_URI));
             updateRIHR.setStatus(state.name());
             updateRIHR.setNature(Nature.UPDATE_ZIP_FILE_PROCESSING_DETAILS.getDescription());
             final var start = Instant.now();
@@ -215,8 +216,8 @@ public class CsvService {
         CsvOrchestrationEngine.OrchestrationSession session = null;
 
         try {
-            saveArchiveInteraction(interactionId, jooqCfg, requestParams, file,
-                    CsvProcessingState.PROCESSING_STARTED);
+            saveArchiveInteractionStatus(interactionId, jooqCfg,
+                    CsvProcessingState.PROCESSING_STARTED, requestParams);
             session = engine.session()
                     .withMasterInteractionId(interactionId)
                     .withSessionId(UUID.randomUUID().toString())
@@ -238,13 +239,13 @@ public class CsvService {
                     file.getOriginalFilename(),
                     (String) requestParams.get(Constants.BASE_FHIR_URL));
 
-            saveArchiveInteractionStatus(interactionId, jooqCfg, CsvProcessingState.PROCESSING_COMPLETED);
+            saveArchiveInteractionStatus(interactionId, jooqCfg, CsvProcessingState.PROCESSING_COMPLETED, requestParams);
             LOG.info("Synchronous processing completed for zipFileInteractionId: {}", interactionId);
             return result;
         } catch (Exception ex) {
             LOG.error("Synchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                     interactionId, ex.getMessage(), ex);
-            saveArchiveInteractionStatus(interactionId, jooqCfg, CsvProcessingState.PROCESSING_FAILED);
+            saveArchiveInteractionStatus(interactionId, jooqCfg, CsvProcessingState.PROCESSING_FAILED, requestParams);
             SystemDiagnosticsLogger.logResourceStats(interactionId,
                     coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor);
             throw ex;
@@ -269,8 +270,8 @@ public class CsvService {
             CsvOrchestrationEngine.OrchestrationSession session = null;
 
             try {
-                saveArchiveInteraction(interactionId, jooqCfg, requestParams, file,
-                        CsvProcessingState.PROCESSING_STARTED);
+                saveArchiveInteractionStatus(interactionId, jooqCfg,
+                        CsvProcessingState.PROCESSING_STARTED, requestParams);
 
                 session = engine.session()
                         .withMasterInteractionId(interactionId)
@@ -294,14 +295,14 @@ public class CsvService {
                         (String) requestParams.get(Constants.BASE_FHIR_URL));
 
                 saveArchiveInteractionStatus(interactionId, jooqCfg,
-                        CsvProcessingState.PROCESSING_COMPLETED);
+                        CsvProcessingState.PROCESSING_COMPLETED, requestParams);
                 LOG.info("Asynchronous processing completed for zipFileInteractionId: {}",
                         interactionId);
             } catch (Exception ex) {
                 LOG.error("Asynchronous processing failed for zipFileInteractionId: {}. Reason: {}",
                         interactionId, ex.getMessage(), ex);
                 saveArchiveInteractionStatus(interactionId, jooqCfg,
-                        CsvProcessingState.PROCESSING_FAILED);
+                        CsvProcessingState.PROCESSING_FAILED, requestParams);
                 SystemDiagnosticsLogger.logResourceStats(interactionId,
                         coreUdiPrimeJpaConfig.udiPrimaryDataSource(), asyncTaskExecutor);
             } finally {
