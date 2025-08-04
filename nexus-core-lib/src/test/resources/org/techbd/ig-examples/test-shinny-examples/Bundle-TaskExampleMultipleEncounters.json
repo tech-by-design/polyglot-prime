@@ -1,6 +1,6 @@
 {
   "resourceType" : "Bundle",
-  "id" : "TaskExample",
+  "id" : "TaskExampleMultipleEncounters",
   "meta" : {
     "lastUpdated" : "2024-02-23T00:00:00Z",
     "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile"]
@@ -765,6 +765,161 @@
     "request" : {
       "method" : "POST",
       "url" : "http://test.shinny.org/us/ny/hrsn/QuestionnaireResponse/SHINNYOutreachQuestionnaireResponse"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Encounter/EncounterExampleCBO2",
+    "resource" : {
+      "resourceType" : "Encounter",
+      "id" : "EncounterExampleCBO2",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-encounter"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Encounter_EncounterExampleCBO2\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Encounter EncounterExampleCBO2</b></p><a name=\"EncounterExampleCBO2\"> </a><a name=\"hcEncounterExampleCBO2\"> </a><a name=\"EncounterExampleCBO2-en-US\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-encounter.html\">SHINNY Encounter Profile</a></p></div><p><b>status</b>: Finished</p><p><b>class</b>: <a href=\"http://terminology.hl7.org/6.0.2/CodeSystem-v3-ActCode.html#v3-ActCode-FLD\">ActCode FLD</a>: field</p><p><b>type</b>: <span title=\"Codes:{http://snomed.info/sct 405672008}\">Direct questioning (procedure)</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>period</b>: 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</p><h3>Locations</h3><table class=\"grid\"><tr><td style=\"display: none\">-</td><td><b>Location</b></td></tr><tr><td style=\"display: none\">*</td><td><a href=\"Location-LocationExample-CBO.html\">Location uptown location</a></td></tr></table></div>"
+      },
+      "status" : "finished",
+      "class" : {
+        "system" : "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+        "code" : "FLD"
+      },
+      "type" : [{
+        "coding" : [{
+          "system" : "http://snomed.info/sct",
+          "code" : "405672008",
+          "display" : "Direct questioning (procedure)"
+        }],
+        "text" : "Direct questioning (procedure)"
+      }],
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "period" : {
+        "start" : "2024-02-23T00:00:00Z",
+        "end" : "2024-02-23T01:00:00Z"
+      },
+      "location" : [{
+        "location" : {
+          "reference" : "Location/LocationExample-CBO"
+        }
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Encounter/EncounterExampleCBO2"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Location/LocationExample-CBO",
+    "resource" : {
+      "resourceType" : "Location",
+      "id" : "LocationExample-CBO",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Location_LocationExample-CBO\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Location LocationExample-CBO</b></p><a name=\"LocationExample-CBO\"> </a><a name=\"hcLocationExample-CBO\"> </a><a name=\"LocationExample-CBO-en-US\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"http://hl7.org/fhir/us/sdoh-clinicalcare/STU2.2/StructureDefinition-SDOHCC-Location.html\">SDOHCC Location</a></p></div><p><b>status</b>: Active</p><p><b>name</b>: uptown location</p><p><b>type</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/v3-RoleCode CSC}\">community service center</span></p><p><b>address</b>: 111 Care Ridge St, New York, NY 10001</p><p><b>physicalType</b>: <span title=\"Codes:{http://terminology.hl7.org/CodeSystem/location-physical-type bu}\">Building</span></p><p><b>managingOrganization</b>: <a href=\"Organization-OrganizationExampleCBO.html\">Organization CBO</a></p></div>"
+      },
+      "status" : "active",
+      "name" : "uptown location",
+      "type" : [{
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/v3-RoleCode",
+          "code" : "CSC"
+        }]
+      }],
+      "address" : {
+        "id" : "LocationAddressExample-CBO",
+        "type" : "physical",
+        "text" : "111 Care Ridge St, New York, NY 10001",
+        "line" : ["111 Care Ridge St"],
+        "city" : "New York",
+        "district" : "New York County",
+        "state" : "NY",
+        "postalCode" : "10001"
+      },
+      "physicalType" : {
+        "coding" : [{
+          "system" : "http://terminology.hl7.org/CodeSystem/location-physical-type",
+          "code" : "bu"
+        }]
+      },
+      "managingOrganization" : {
+        "reference" : "Organization/OrganizationExampleCBO"
+      }
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Location/LocationExample-CBO"
+    }
+  },
+  {
+    "fullUrl" : "http://test.shinny.org/us/ny/hrsn/Procedure/TaskProcedureExample",
+    "resource" : {
+      "resourceType" : "Procedure",
+      "id" : "TaskProcedureExample",
+      "meta" : {
+        "lastUpdated" : "2024-02-23T00:00:00Z",
+        "profile" : ["http://test.shinny.org/us/ny/hrsn/StructureDefinition/shinny-sdoh-procedure"]
+      },
+      "text" : {
+        "status" : "generated",
+        "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><a name=\"Procedure_TaskProcedureExample\"> </a><p class=\"res-header-id\"><b>Generated Narrative: Procedure TaskProcedureExample</b></p><a name=\"TaskProcedureExample\"> </a><a name=\"hcTaskProcedureExample\"> </a><a name=\"TaskProcedureExample-en-US\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-02-23 00:00:00+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"StructureDefinition-shinny-sdoh-procedure.html\">SHINNY SDOH Procedure Profile</a></p></div><p><b>status</b>: In Progress</p><p><b>category</b>: <span title=\"Codes:{http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes food-insecurity}\">Food Insecurity</span></p><p><b>code</b>: <span title=\"Codes:{http://snomed.info/sct 710925007}\">Provision of food</span></p><p><b>subject</b>: <a href=\"Patient-PatientExample.html\">Jon Doe  Male, DoB: 1981-07-16 ( Medical record number)</a></p><p><b>encounter</b>: <a href=\"Encounter-EncounterExampleCBO2.html\">Encounter: status = finished; class = field (ActCode#FLD); type = Direct questioning (procedure); period = 2024-02-23 00:00:00+0000 --&gt; 2024-02-23 01:00:00+0000</a></p><p><b>performed</b>: 2024-07-26 17:00:00+0000 --&gt; 2024-07-26 17:12:00+0000</p><h3>Performers</h3><table class=\"grid\"><tr><td style=\"display: none\">-</td><td><b>Function</b></td><td><b>Actor</b></td><td><b>OnBehalfOf</b></td></tr><tr><td style=\"display: none\">*</td><td><span title=\"Codes:{http://snomed.info/sct 410606002}\">Social service procedure</span></td><td><a href=\"Practitioner-PractitionerExampleCBO.html\">Practitioner Bob Kelso MD</a></td><td><a href=\"Organization-OrganizationExampleCBO.html\">Organization CBO</a></td></tr></table><p><b>reasonReference</b>: </p><ul><li><a href=\"Observation-FoodInsecurity88122-7.html\">Observation Within the past 12 months we worried whether our food would run out before we got money to buy more [U.S. FSS]</a></li><li><a href=\"Observation-FoodInsecurity88123-5.html\">Observation Within the past 12 months the food we bought just didn't last and we didn't have money to get more [U.S. FSS]</a></li></ul></div>"
+      },
+      "status" : "in-progress",
+      "category" : {
+        "coding" : [{
+          "system" : "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+          "code" : "food-insecurity",
+          "display" : "Food Insecurity"
+        }]
+      },
+      "code" : {
+        "coding" : [{
+          "system" : "http://snomed.info/sct",
+          "code" : "710925007",
+          "display" : "Provision of food"
+        }]
+      },
+      "subject" : {
+        "reference" : "Patient/PatientExample"
+      },
+      "encounter" : {
+        "reference" : "Encounter/EncounterExampleCBO2"
+      },
+      "performedPeriod" : {
+        "start" : "2024-07-26T17:00:00Z",
+        "end" : "2024-07-26T17:12:00Z"
+      },
+      "performer" : [{
+        "function" : {
+          "coding" : [{
+            "system" : "http://snomed.info/sct",
+            "code" : "410606002",
+            "display" : "Social service procedure"
+          }]
+        },
+        "actor" : {
+          "reference" : "Practitioner/PractitionerExampleCBO"
+        },
+        "onBehalfOf" : {
+          "reference" : "Organization/OrganizationExampleCBO"
+        }
+      }],
+      "reasonReference" : [{
+        "reference" : "Observation/FoodInsecurity88122-7"
+      },
+      {
+        "reference" : "Observation/FoodInsecurity88123-5"
+      }]
+    },
+    "request" : {
+      "method" : "POST",
+      "url" : "http://test.shinny.org/us/ny/hrsn/Procedure/TaskProcedureExample"
     }
   }]
 }
