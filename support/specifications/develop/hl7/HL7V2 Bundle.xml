@@ -2,8 +2,8 @@
   <id>25dd1794-5435-4282-a189-4a2df9aed0a2</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>HL7V2 Bundle</name>
-  <description>Version: 0.3.1</description>
-  <revision>117</revision>
+  <description>Version: 0.3.2</description>
+  <revision>128</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -788,6 +788,40 @@ function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, 
     }&#xd;
 &#xd;
     return transformer;&#xd;
+}
+
+function getMultipleAnswersForComponent(transformer, observations) {&#xd;
+    var xml = new XML(observations);&#xd;
+    var codingArray = [];&#xd;
+    var seenCodes = {};&#xd;
+&#xd;
+    var obxList = xml..OBX;&#xd;
+&#xd;
+    for each (var obx in obxList) {&#xd;
+        var obxCode = obx[&apos;OBX.3&apos;][&apos;OBX.3.1&apos;].toString().trim();&#xd;
+&#xd;
+        if (obxCode === &apos;96778-6&apos;) {&#xd;
+            var values = obx[&apos;OBX.5&apos;];&#xd;
+&#xd;
+            for each (var val in values) {&#xd;
+                var code = val[&apos;OBX.5.1&apos;].toString().trim();&#xd;
+                var display = val[&apos;OBX.5.2&apos;].toString().trim();&#xd;
+&#xd;
+                if (code &amp;&amp; !seenCodes[code]) {&#xd;
+                    codingArray.push({&#xd;
+                        &quot;system&quot;: &quot;http://loinc.org&quot;,&#xd;
+                        &quot;code&quot;: code,&#xd;
+                        &quot;display&quot;: display&#xd;
+                    });&#xd;
+                    seenCodes[code] = true;&#xd;
+                }&#xd;
+            }&#xd;
+        }&#xd;
+    }&#xd;
+&#xd;
+    transformer.setParameter(&apos;componentAnswersXml&apos;, JSON.stringify(codingArray));&#xd;
+    logger.info(&quot;componentAnswersXml : &quot; + JSON.stringify(codingArray));&#xd;
+    return transformer;&#xd;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
@@ -1025,6 +1059,8 @@ try {
 	getConsentResourceStatus(sourceXml);&#xd;
 	getPatientMRN(sourceXml);&#xd;
 	getObservationCategoryCodes(transformer, sourceXml);
+	getMultipleAnswersForComponent(transformer, sourceXml);
+	
     // Transform
     var xmlInputStream = new java.io.StringReader(rawTransformedData);
     var xmlOutputStream = new java.io.StringWriter();
@@ -1296,7 +1332,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1754027921182</time>
+        <time>1754304674180</time>
         <timezone>Asia/Kolkata</timezone>
       </lastModified>
       <pruningSettings>
