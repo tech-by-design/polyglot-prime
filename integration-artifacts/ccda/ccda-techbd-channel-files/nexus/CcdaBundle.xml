@@ -1,9 +1,9 @@
 <channel version="4.5.3">
-  <id>83249468-2069-451d-b980-b88c3f5ecac2</id>
+  <id>6e13cb5f-88a1-4f2a-9a58-03f75baee99a</id>
   <nextMetaDataId>13</nextMetaDataId>
   <name>CcdaBundle</name>
-  <description>Version: 0.6.0</description>
-  <revision>39</revision>
+  <description>Version: 0.7.0</description>
+  <revision>1</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -259,6 +259,44 @@ function validateLowHighDates(xmlData) {
         logger.error(&quot;Validation Error: &quot; + error.message);
         throw new error(&quot;Validation Error: &quot; + error.message);
      }
+}
+
+
+
+function extractClinicalDocument(rawXml) {
+	try {
+		//var rawXml = message.toString();  // Or sourceXml.toString(), if defined
+		logger.info(&quot;rawXml: &quot; + rawXml);
+		rawXml = String(rawXml).replace(/^\uFEFF/, &apos;&apos;).trim();  // remove BOM and leading/trailing whitespace
+		var extractedXml = &quot;&quot;;
+		var xmlDeclaration = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos;;
+		
+		var hasXmlDeclaration = rawXml.indexOf(&apos;&lt;?xml&apos;) !== -1;
+		var startTag = hasXmlDeclaration ? &apos;&lt;?xml&apos; : &apos;&lt;ClinicalDocument&apos;;
+		var start = rawXml.indexOf(startTag);
+		var end = rawXml.indexOf(&apos;&lt;/ClinicalDocument&gt;&apos;);
+		
+		if (start !== -1 &amp;&amp; end !== -1) {
+		    end += &apos;&lt;/ClinicalDocument&gt;&apos;.length;
+		    extractedXml = rawXml.substring(start, end);
+		
+		    // If no XML declaration, add it manually
+		    if (!hasXmlDeclaration) {
+		        extractedXml = xmlDeclaration + extractedXml;
+		    }
+		
+		    logger.info(&quot;Final Extracted XML: &quot; + extractedXml);
+		    channelMap.put(&apos;fileContent&apos;, extractedXml);
+		} else {
+		    logger.error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
+		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Could not find ClinicalDocument boundaries in XML.&quot;)));
+		    throw new Error(&quot;Could not find ClinicalDocument boundaries in XML.&quot;);
+		}
+	} catch (error) {
+        logger.error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message)));
+	   throw new error(&quot;Error while extracting ClinicalDocument from in XML: &quot; + error.message);
+     }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
@@ -362,7 +400,6 @@ if (missingHeaders.length &gt; 0) {
 ///////////////////////////////////////////////////////////////////////////
 // Parse the incoming request (assumes multipart form data)
 var rawData = connectorMessage.getRawData();
-logger.info(&quot;rawData full **********: &quot; + rawData);
 
 // Check if rawData is empty
 if (!rawData || rawData.trim().length === 0) {
@@ -379,7 +416,7 @@ var parts = rawData.split(boundary);
 var fileContent = null;
 
 // Loop through parts to find the file part
-var i = 0;
+/*var i = 0;
 for each (var part in parts) {
     if (part.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;;&apos;) !== -1) {
         logger.info(&quot;Part count &quot; + ++i);
@@ -399,8 +436,9 @@ if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length ===
 } else {
     logger.info(&quot;fileContent not null. Size: &quot; + fileContent.length + &quot; bytes.&quot;);
     logger.info(&quot;File content: (input validation) - &quot; + fileContent);
-}
-channelMap.put(&apos;fileContent&apos;, fileContent);
+}*/
+//channelMap.put(&apos;fileContent&apos;, fileContent);
+extractClinicalDocument(rawData);
 
 //Check the file type, only .xml and .txt allowed
 var filename = null;
@@ -793,6 +831,66 @@ function getObservationCategoryCodes(transformer, observations) {
 	return transformer;
 }
 
+
+
+function getMultipleAnswersForComponent(transformer, observations) {
+    var xml = new XML(observations); // Parse the source message as XML    
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
+    default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
+    var matchingObservations = [];
+
+    // Extract all observation code attributes
+    if (channelMap.get(&apos;ehrVendor&apos;) == &apos;Medent&apos;) {
+	    matchingObservations = xml..component
+	        .structuredBody
+	        .component
+	        .section.(@ID == &apos;observations&apos;)
+	        .entry
+	        .observation
+	        .entryRelationship
+	        .observation.(code.@code == &apos;96778-6&apos;);
+     }
+     else {
+     	matchingObservations = xml..component
+	        .structuredBody
+	        .component
+	        .section.(@ID == &apos;observations&apos;)
+	        .entry
+	        .observation
+	        .entryRelationship
+	        .observation
+	        .entryRelationship
+	        .observation.(code.@code == &apos;96778-6&apos;);
+     }
+
+	var seenCodes = {};
+	var codingArray = [];
+	
+	for each (var obs in matchingObservations) {
+	    for each (var val in obs.value) {
+	        var code = val.@code.toString();
+	        var display = val.@displayName.toString();
+	
+	        if (code &amp;&amp; !seenCodes[code]) {
+	            codingArray.push({
+	                &quot;system&quot;: &quot;http://loinc.org&quot;,
+	                &quot;code&quot;: code,
+	                &quot;display&quot;: display
+	            });
+	            seenCodes[code] = true;
+	        }
+	    }
+	}
+	
+	transformer.setParameter(&apos;componentAnswersXml&apos;, JSON.stringify(codingArray));
+	logger.info(&quot;componentAnswersXml : &quot; + JSON.stringify(codingArray));
+	return transformer;
+}
+
+
+
+
+// Define Namespace Resolver
 function setResourceIdParameters(transformer) {
     	// Parse XML
 	var sourceXml = $(&apos;phi_filtered_ccd&apos;);
@@ -806,7 +904,6 @@ function setResourceIdParameters(transformer) {
 		logger.info(&apos;bundleId : &apos; + ccda_fhir_bundle_id);
 	}
 	else {
-//		var bundle = doc.getElementsByTagNameNS(&quot;urn:hl7-org:v3&quot;, &quot;ClinicalDocument&quot;);
 		transformer = generateSHA256Id(xmlDoc, &quot;ClinicalDocument&quot;, &quot;bundleId&quot;, transformer);
 	}
 	
@@ -825,16 +922,20 @@ function setResourceIdParameters(transformer) {
 	transformer = generateSHA256Id(author, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
 	
 	// Extract `observations`
-	var observations = xmlDoc.*::component
-                         .*::structuredBody
-                         .*::component
-                         .*::section.(@ID == &apos;observations&apos;)
-                         .*::entry
-                         .*::observation
-                         .*::entryRelationship
-                         .*::observation
-                         .*::entryRelationship;
-	transformer = generateSHA256Id(observations, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+	try {
+		var observations = xmlDoc.*::component
+	                         .*::structuredBody
+	                         .*::component
+	                         .*::section.(@ID == &apos;observations&apos;)
+	                         .*::entry
+	                         .*::observation
+	                         .*::entryRelationship
+	                         .*::observation
+	                         .*::entryRelationship;
+		transformer = generateSHA256Id(observations, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+	} catch (e) {
+	    logger.error(&quot;Error accessing Observations: &quot; + e);
+	}
 	
 	// Extract `sexualOrientation`
 	var sexualOrientation = xmlDoc.*::component
@@ -846,26 +947,28 @@ function setResourceIdParameters(transformer) {
 	transformer = generateSHA256Id(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
 
 	// Extract `encompassingEncounter`
-	var encounter = xmlDoc.*::componentOf.*::encompassingEncounter;
-	
-	if (encounter != undefined &amp;&amp; encounter.length() &gt; 0) {
-	    var encounterEffectiveTime = getEncounterEffectiveTime(encounter);	
-	    transformer = generateSHA256Id(encounter, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
-	} else {
-	    // Try fallback to `encounter`
-	    var encounters = xmlDoc.*::component
-                     .*::structuredBody
-                     .*::component
-                     .*::section.(@ID == &apos;encounters&apos;)
-                     .*::entry[0]
-                     .*::encounter;
-	    
-	    if (encounters != undefined &amp;&amp; encounters.length() &gt; 0) {
-	        var encounterEffectiveTime = getEncounterEffectiveTime(encounters);
-	        transformer = generateSHA256Id(encounters, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
-	    } else {
-	        logger.error(&quot;Encounter resource not found in the XML.&quot;);
-	    }
+	try {
+		var encounter = xmlDoc.*::componentOf.*::encompassingEncounter;
+		if (encounter != undefined &amp;&amp; encounter.length() &gt; 0) {
+		    var encounterEffectiveTime = getEncounterEffectiveTime(encounter);	
+		    transformer = generateSHA256Id(encounter, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
+		} else {
+		    // Try fallback to `encounter`
+		    var encounters = xmlDoc.*::component
+	                     .*::structuredBody
+	                     .*::component
+	                     .*::section.(@ID == &apos;encounters&apos;)
+	                     .*::entry[0]
+	                     .*::encounter;
+		    if (encounters != undefined &amp;&amp; encounters.length() &gt; 0) {
+		        var encounterEffectiveTime = getEncounterEffectiveTime(encounters);
+		        transformer = generateSHA256Id(encounters, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
+		    } else {
+		        logger.error(&quot;Encounter resource not found in the XML.&quot;);
+		    }
+		}
+	} catch (e) {
+	    logger.error(&quot;Error accessing encounter: &quot; + e);
 	}
 
 	///Grouper Observation Resource 
@@ -879,6 +982,7 @@ function setResourceIdParameters(transformer) {
      logger.info(&apos;grouperObservationResourceSha256Id&apos; + &quot; : &quot; + sha256Hash);
 
      transformer = getObservationCategoryCodes(transformer, sourceXml); //observations
+     transformer = getMultipleAnswersForComponent(transformer, sourceXml); //observations
 
      //For Epic files, use the value of the header variable,&apos;X-TechBD-Screening-Code&apos;, as the Grouper Screening Code, otherwise use the LOINC code &apos;100698-0&apos;
      //For Medent files, take the value from code.code
@@ -894,27 +998,52 @@ function setResourceIdParameters(transformer) {
      logger.info(&apos;grouperScreeningCode&apos; + &quot; : &quot; + grouperScreeningCode);
 
 	// Extract `location`
-	var location = xmlDoc.*::componentOf
-                         .*::encompassingEncounter
-                         .*::location
-                         .*::healthCareFacility
-                         .*::location;
-     if (location != undefined &amp;&amp; location.length() &gt; 0) {
-     	transformer = generateSHA256Id(location, &quot;Location&quot;, &quot;locationResourceId&quot;, transformer);                  
-     }
-     else {
-     	var location = xmlDoc.*::component
-                     .*::structuredBody
-                     .*::component
-                     .*::section.(@ID == &apos;encounters&apos;)
-                     .*::entry[0]
-                     .*::encounter
-                     .*::participant
-                     .*::participantRole
-                     .*::playingEntity
-                     .*::name;  
-          transformer = generateSHA256Id(location, &quot;Location&quot;, &quot;locationResourceId&quot;, transformer);             
-     }
+     try {
+	    var location;
+	
+	    // Primary location path: componentOf → encompassingEncounter → location → healthCareFacility → location
+	    if (
+	        xmlDoc.componentOf &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location
+	    ) {
+	        location = xmlDoc.componentOf.encompassingEncounter.location.healthCareFacility.location;
+	    }
+	
+	    // Fallback path: structuredBody → encounters section → encounter → participant → participantRole → playingEntity → name
+	    if (!location || location.length() == 0) {
+	        var section = xmlDoc.component.structuredBody.component.section.(@ID == &apos;encounters&apos;);
+	        if (
+	            section &amp;&amp;
+	            section.entry &amp;&amp;
+	            section.entry.length() &gt; 0 &amp;&amp;
+	            section.entry[0].encounter &amp;&amp;
+	            section.entry[0].encounter.participant &amp;&amp;
+	            section.entry[0].encounter.participant.participantRole &amp;&amp;
+	            section.entry[0].encounter.participant.participantRole.playingEntity &amp;&amp;
+	            section.entry[0].encounter.participant.participantRole.playingEntity
+	        ) {
+	            location = section.entry[0].encounter.participant.participantRole.playingEntity;
+	        }
+	    }
+	
+	    if (
+	        location &amp;&amp;
+	        location.name != undefined &amp;&amp;
+	        location.addr != undefined &amp;&amp;
+	        location.name.toString().trim() !== &quot;&quot; &amp;&amp;
+	        location.addr.toString().trim() !== &quot;&quot;
+	    ) {
+	        transformer = generateSHA256Id(location, &quot;Location&quot;, &quot;locationResourceId&quot;, transformer);
+	    } else {
+	        logger.error(&quot;Location not found in the XML.&quot;);
+	    }
+	
+	} catch (e) {
+	    logger.error(&quot;Error accessing location: &quot; + e);
+	}
      	
 	return transformer;
 }
@@ -1220,13 +1349,7 @@ logger.info(&quot;CCDAService bean loaded successfully.&quot;);
 //###################################################################
 // DB Save Functions
 //###################################################################
-
-// Function 1: Save Original CCDA Payload
-function saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse) {
-try {
-        logInfo(&quot;Attempting to save original CCDA payload for interactionId: &quot; + interactionId, channelMap);
-         // Success: Create a structured OperationOutcome JSON response
-        var successResponse = {
+var successResponse = {
             &quot;OperationOutcome&quot;: {
                 &quot;validationResults&quot;: [
                     {
@@ -1246,6 +1369,12 @@ try {
                 ]
             }
         };
+// Function 1: Save Original CCDA Payload
+function saveOriginalCcdaPayload(interactionId, tenantId, requestedPath, sourceXml, successResponse) {
+try {
+        logInfo(&quot;Attempting to save original CCDA payload for interactionId: &quot; + interactionId, channelMap);
+         // Success: Create a structured OperationOutcome JSON response
+        
        
         var saveOriginalResult = ccdaService.saveOriginalCcdaPayload(
             interactionId,
@@ -1498,8 +1627,9 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 	   });
 	
 	
-	    var interactionId = java.util.UUID.randomUUID().toString();
-	    channelMap.put(&quot;interactionId&quot;,interactionId);
+	    //var interactionId = java.util.UUID.randomUUID().toString();
+	    //channelMap.put(&quot;interactionId&quot;,interactionId);
+	    var interactionId = channelMap.get(&quot;interactionId&quot;);
 	    logger.info(&quot;InteractionId: &quot; + interactionId);
 	    var payload = JSON.stringify({
 	        executedAt: currentTimestampBegin,
@@ -1578,7 +1708,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 	
 	     if (!sourceXml || sourceXml.length === 0) {
 	         logger.error(&quot;No XML data received in the request.&quot;);
-	         responseMap.put(&apos;status&apos;, &apos;200&apos;); // Set HTTP status 200.
+	         responseMap.put(&apos;status&apos;, &apos;400&apos;); // Set HTTP status 400.
 	         responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;)));
 	         throw new Error(&quot;No XML data received in the request.&quot;);
 	     }
@@ -1839,7 +1969,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
 //#####################################################################################################
                 if (saveFhirConversionSuccess) {
                     var conversionSuccess = saveFhirConversionSuccess(interactionId, tenantId, requestedPath, jsonObject);
-
+                   // var conversionSuccess = saveFhirConversionSuccess(interactionId, tenantId, requestedPath, jsonObject);
                     if (conversionSuccess) {
                         // Setup request parameters
                         var requestParameters = channelMap.get(&quot;requestParameters&quot;);
@@ -2146,7 +2276,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
           <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
             <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;validate&apos;</name>
             <sequenceNumber>0</sequenceNumber>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
             <field>$(&apos;endpoint&apos;)</field>
             <condition>EQUALS</condition>
             <values>
@@ -2344,7 +2474,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
           <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
             <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;bundle&apos;</name>
             <sequenceNumber>0</sequenceNumber>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
             <field>$(&apos;endpoint&apos;)</field>
             <condition>EQUALS</condition>
             <values>
@@ -2354,7 +2484,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
           <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.3">
             <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
             <sequenceNumber>1</sequenceNumber>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
             <operator>AND</operator>
             <field>sourceMap.get(&apos;contextPath&apos;)</field>
             <condition>EQUALS</condition>
@@ -2454,7 +2584,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753762143545</time>
+        <time>1754297952333</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
