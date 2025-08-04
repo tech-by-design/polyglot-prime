@@ -818,19 +818,19 @@
                             "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
                         }]
               </xsl:if>
-			  <!-- <xsl:if test="//OBX.8.1"> -->
-				<!-- ,"interpretation": [ -->
-					  <!-- { -->
-						<!-- "coding": [ -->
-						  <!-- { -->
-							<!-- "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", -->
-							<!-- "code": "<xsl:value-of select='//OBX.8.1'/>", -->
-							<!-- "display": "<xsl:value-of select='//OBX.8.2'/>" -->
-						  <!-- } -->
-						<!-- ] -->
-					  <!-- } -->
-					<!-- ] -->
-			<!-- </xsl:if> -->
+			  <xsl:if test="normalize-space(OBX.8/OBX.8.1)">
+				,"interpretation": [
+					  {
+						"coding": [
+						  {
+							"system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+							"code": "<xsl:value-of select='normalize-space(OBX.8/OBX.8.1)'/>",
+							"display": "<xsl:value-of select='normalize-space(OBX.8/OBX.8.2)'/>"
+						  }
+						]
+					  }
+					]
+			</xsl:if>
             },
             "request": {
               "method": "POST",
