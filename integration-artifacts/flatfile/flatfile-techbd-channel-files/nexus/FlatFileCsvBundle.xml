@@ -2,8 +2,8 @@
   <id>e4f3a51b-3349-4565-93aa-6f76b6f50d7e</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.6.0</description>
-  <revision>39</revision>
+  <description>Version: 0.7.0</description>
+  <revision>44</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -131,7 +131,46 @@ if (tenantId == null || String(tenantId).trim() === &quot;&quot;) {
     logger.error(errorMessage);
     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
     throw errorMessage; // Stop further processing by throwing an exception
-}</script>
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Parse the incoming request (assumes multipart form data)
+var rawData = connectorMessage.getRawData();
+
+// Check if rawData is empty
+if (!rawData || rawData.trim().length === 0) {
+    errorMessage = &quot;No file provided in the request.&quot;;
+    setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    throw errorMessage;
+}
+
+// Parse the rawData as multipart form data
+var boundary = rawData.split(&quot;\r\n&quot;)[0];
+var parts = rawData.split(boundary);
+
+// Initialize variables to store file content
+var fileContent = null;
+
+// Loop through parts to find the file part
+var i = 0;
+for each (var part in parts) {
+    if (part.indexOf(&apos;Content-Disposition: form-data; name=&quot;file&quot;;&apos;) !== -1) {
+        logger.info(&quot;Part count &quot; + ++i);
+        // Extract the file content (skip headers)
+        var contentStartIndex = part.indexOf(&quot;\r\n\r\n&quot;) + 4;
+        fileContent = part.substring(contentStartIndex, part.lastIndexOf(&quot;\r\n&quot;));
+        break;
+    }
+}
+
+// Validate the file content
+if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length === 0) {
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    // Set the HTTP response status to 400 (Bad Request)
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+///////////////////////////////////////////////////////////////////////////</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.3">
           <name>FHIR validation and submission</name>
@@ -354,7 +393,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753438251708</time>
+        <time>1753953977323</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

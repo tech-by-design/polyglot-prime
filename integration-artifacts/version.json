@@ -30,16 +30,16 @@
   {
     "type": "FLAT FILE",
     "channel": "FlatFileCsvBundle.xml",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-24"
+    "date": "2025-07-31"
   },
   {
     "type": "FLAT FILE",
-    "channel": "CcdaBundleValidate.xml",
-    "version": "0.6.0",
+    "channel": "FlatFileCsvBundleValidate.xml",
+    "version": "0.7.0",
     "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-24"
+    "date": "2025-07-31"
   },
   {
     "type": "HL7v2",
@@ -51,9 +51,9 @@
   {
     "type": "HL7v2",
     "channel": "HL7V2 Bundle.xml",
-    "version": "",
-    "editedby": "",
-    "date": ""
+    "version": "0.3.1",
+    "editedby": "vinodaravind01",
+    "date": "2025-08-01"
   },
   {
     "type": "Global script",

@@ -7433,3 +7433,16 @@ BEGIN
 END;
 $function$
 ;
+
+/*******************************************************************************************
+This view provides a simplified representation of CSV validation results by selecting 
+the hub interaction ID, the corresponding ZIP file request ID, and the associated 
+validation result payload from the sat_interaction_zip_file_request table.
+*******************************************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http_validation_result CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http_validation_result
+AS SELECT hub_interaction_id,
+    sat_interaction_zip_file_request_id,
+    validation_result_payload
+   FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfr;
