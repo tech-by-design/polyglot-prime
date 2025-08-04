@@ -1875,7 +1875,7 @@ BEGIN
                 AND EXISTS (
                     SELECT 1 
                     FROM jsonb_array_elements(entry->'resource'->'code'->'coding') AS coding
-                    WHERE coding->>'code' IN ('96777-8', '97023-6', 'NYS-AHC-HRSN')
+                    WHERE coding->>'code' IN ('96777-8', '97023-6', 'NYS-AHC-HRSN', '100698-0', 'NYSAHCHRSN')
                 )
                 AND EXISTS (
                     SELECT 1
