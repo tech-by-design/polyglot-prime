@@ -141,6 +141,13 @@ public class DataIngestionController {
         if (tenantId == null || tenantId.trim().isEmpty()) {
             tenantId = Constants.DEFAULT_TENANT_ID;
         }
+        log.info("Request Headers - tenantId: {}, xForwardedFor: {}, xRealIp: {}, sourceIp: {}, destinationIp: {}, destinationPort: {}, interactionId: {}",
+        headers.get(Constants.REQ_HEADER_TENANT_ID),
+        headers.get(Constants.REQ_HEADER_X_FORWARDED_FOR),
+        headers.get(Constants.REQ_HEADER_X_REAL_IP),
+        sourceIp,
+        destinationIp,
+        destinationPort,interactionId);
 
         Instant now = Instant.now();
         String timestamp = String.valueOf(now.toEpochMilli());

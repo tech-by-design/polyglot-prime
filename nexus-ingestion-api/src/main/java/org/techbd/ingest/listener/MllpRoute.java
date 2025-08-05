@@ -97,6 +97,13 @@ public class MllpRoute extends RouteBuilder {
         if (tenantId == null || tenantId.trim().isEmpty()) {
             tenantId = Constants.DEFAULT_TENANT_ID;
         }
+        log.info("Request Headers - tenantId: {}, xForwardedFor: {}, xRealIp: {}, sourceIp: {}, destinationIp: {}, destinationPort: {}, interactionId: {}",
+        headers.get(Constants.REQ_HEADER_TENANT_ID),
+        headers.get(Constants.REQ_HEADER_X_FORWARDED_FOR),
+        headers.get(Constants.REQ_HEADER_X_REAL_IP),
+        sourceIp,
+        destinationIp,
+        destinationPort,interactionId);
         String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String fileBaseName = "hl7-message";
         String fileExtension = "hl7";

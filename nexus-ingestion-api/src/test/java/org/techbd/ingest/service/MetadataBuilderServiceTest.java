@@ -15,7 +15,7 @@ class MetadataBuilderServiceTest {
     private final MetadataBuilderService metadataBuilderService = new MetadataBuilderService();
 
     private RequestContext createContext(Map<String, String> headers,String s3Response) {
-        return new RequestContext(
+        RequestContext context = new RequestContext(
                 headers,
                 "/upload",
                 "tenant1",
@@ -35,8 +35,10 @@ class MetadataBuilderServiceTest {
                 "192.168.1.1",
                 null,
                 "192.168.1.2",
-                "8080",s3Response,"test-message-id"
+                "8080"
         );
+        context.setS3Response(s3Response);
+        return context;
     }
 
     @Test

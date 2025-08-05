@@ -101,7 +101,7 @@ public class MetadataBuilderService {
         message.put("fileSize", context.getFileSize());
         message.put("s3ObjectId", context.getObjectKey());
         message.put("s3ObjectPath", context.getFullS3Path());
-
+        message.put("messageGroupId", context.getMessageGroupId());
         if (context.getS3Response() != null) {
             message.put("s3Response", context.getS3Response());
         }
