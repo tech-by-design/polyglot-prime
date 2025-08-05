@@ -59,6 +59,7 @@ public class SqsPublishStep implements MessageProcessingStep {
         LOG.info("SqsPublishStep:: process called with MultipartFile. interactionId={}, filename={}", interactionId,
                 file != null ? file.getOriginalFilename() : "null");
         try {
+            final var messageGroupId = messageGroupService.createMessageGroupId(context,interactionId);
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
             String messageJson = objectMapper.writeValueAsString(message);
             String queueUrl = appConfig.getAws().getSqs().getFifoQueueUrl() != null
@@ -69,7 +70,7 @@ public class SqsPublishStep implements MessageProcessingStep {
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody(messageJson)
-                    .messageGroupId(messageGroupService.createMessageGroupId(context))
+                    .messageGroupId(messageGroupId)
                     .build())
                     .messageId();
             context.setMessageId(messageId);
@@ -85,6 +86,7 @@ public class SqsPublishStep implements MessageProcessingStep {
         String interactionId = context != null ? context.getInteractionId() : "unknown";
         LOG.info("SqsPublishStep:: process called with String content. interactionId={}", interactionId);
         try {
+            final var messageGroupId = messageGroupService.createMessageGroupId(context,interactionId);
             Map<String, Object> message = metadataBuilderService.buildSqsMessage(context);
             message.put("content", content);
             String messageJson = objectMapper.writeValueAsString(message);
@@ -96,7 +98,7 @@ public class SqsPublishStep implements MessageProcessingStep {
             String messageId = sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody(messageJson)
-                    .messageGroupId(messageGroupService.createMessageGroupId(context))
+                    .messageGroupId(messageGroupId)
                     .build())
                     .messageId();
             context.setMessageId(messageId);

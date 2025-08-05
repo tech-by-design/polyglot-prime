@@ -48,7 +48,7 @@ public class RequestContext {
     private final String sourceIp;
     private final String destinationIp;
     private final String destinationPort;
-
+    private String messageGroupId;
     private String s3Response;
     private String messageId;
 
