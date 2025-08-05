@@ -62,6 +62,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(
                         authorize -> authorize
+                                .requestMatchers("/ws/**").permitAll()  // Allow SOAP endpoints
                                 .requestMatchers(Constant.UNAUTHENTICATED_URLS)
                                 .permitAll()
                                 .anyRequest().authenticated())

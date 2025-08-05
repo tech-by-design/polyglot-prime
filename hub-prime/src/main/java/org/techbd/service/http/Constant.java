@@ -20,7 +20,8 @@ public class Constant {
             "/docs/api/interactive/swagger-ui/**", "/support/**",
             "/docs/api/interactive/**",
             "/docs/api/openapi/**",
-            "/error", "/error/**"
+            "/error", "/error/**",
+            "/ws/**"  // Allow SOAP endpoints
     };
 
     public static final String HOME_PAGE_URL = "/home";
