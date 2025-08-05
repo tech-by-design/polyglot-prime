@@ -2,8 +2,8 @@
   <id>e4f3a51b-3349-4565-93aa-6f76b6f50d7e</id>
   <nextMetaDataId>2</nextMetaDataId>
   <name>FlatFileCsvBundle</name>
-  <description>Version: 0.7.0</description>
-  <revision>44</revision>
+  <description>Version: 0.8.0</description>
+  <revision>58</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -326,8 +326,31 @@ if (processCSVZipFile) {
 var logInfo = globalMap.get(&quot;logInfo&quot;);
 var logError = globalMap.get(&quot;logError&quot;);
 var logDebug = globalMap.get(&quot;logDebug&quot;);
-logInfo(&quot;Validate Header and Request Parameters BEGIN in channel preprocessor : &quot;,channelMap);
+logInfo(&quot;              1. Validate Header and Request Parameters BEGIN in channel preprocessor&quot;,channelMap);
 var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+
+// Init the optional params if required
+var reqParams = channelMap.get(&quot;requestParameters&quot;);
+if (reqParams == null) {
+	logInfo(&quot;              2. requestParameters MAP is null, resetting&quot;, channelMap);
+    reqParams = new Packages.java.util.HashMap();  // ensure it&apos;s mutable
+}
+
+// Set default &quot;immediate&quot; if not present or not &quot;false&quot;
+var immediateParamVal = reqParams.get(&quot;immediate&quot;);
+var immediateStr = String(immediateParamVal);
+logInfo(&quot;              3. immediateStr: &quot; + immediateStr, channelMap);
+
+if (immediateParamVal == null || immediateStr.toLowerCase() !== &quot;false&quot;) {
+    reqParams.put(&quot;immediate&quot;, &quot;true&quot;);
+}
+
+// Set default values to other optional params here
+//
+
+channelMap.put(&quot;requestParameters&quot;, reqParams);
+logInfo(&quot;              4. Processed immediateParamVal: &quot; + immediateParamVal, channelMap);
+
 
 /*
 var requestParameters = channelMap.get(&quot;requestParameters&quot;);
@@ -344,8 +367,10 @@ if (correlationId &amp;&amp; correlationId.trim() !== &quot;&quot;) {
         return;
     }
 }
-//TODO - check and add other parameters /header validation for /Bundle
-logInfo(&quot;Validate Header and Request Parameters END  in channel preprocessor : &quot;,channelMap);</preprocessingScript>
+//TODO - check and add other parameters /header validation
+
+
+</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
 return;</postprocessingScript>
@@ -393,7 +418,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753953977323</time>
+        <time>1754305676892</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

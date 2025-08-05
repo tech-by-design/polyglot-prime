@@ -16,9 +16,9 @@
   {
     "type": "CCDA",
     "channel": "CcdaBundle.xml",
-    "version": "0.6.0",
-    "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-28"
+    "version": "0.7.0",
+    "editedby": "jewelbonnie",
+    "date": "2025-08-04"
   },
   {
     "type": "CCDA",
@@ -30,9 +30,9 @@
   {
     "type": "FLAT FILE",
     "channel": "FlatFileCsvBundle.xml",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-31"
+    "date": "2025-08-04"
   },
   {
     "type": "FLAT FILE",

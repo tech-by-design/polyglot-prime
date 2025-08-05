@@ -54,7 +54,7 @@ class SqsPublishStepTest {
         when(aws.getSqs()).thenReturn(sqs);
         when(sqs.getFifoQueueUrl()).thenReturn("http://dummy-fifo-url");
 
-        when(messageGroupService.createMessageGroupId(any())).thenReturn("group-id-123");
+        when(messageGroupService.createMessageGroupId(any(),any())).thenReturn("group-id-123");
 
         context = new RequestContext(
                 Map.of("User-Agent", "JUnit-Test"),
@@ -87,7 +87,7 @@ class SqsPublishStepTest {
         Map<String, Object> mockMessage = Map.of("key", "value");
         when(metadataBuilderService.buildSqsMessage(context)).thenReturn(mockMessage);
         when(objectMapper.writeValueAsString(mockMessage)).thenReturn("{\"key\":\"value\"}");
-        when(messageGroupService.createMessageGroupId(context)).thenReturn("msg-group-123");
+        when(messageGroupService.createMessageGroupId(any(),any())).thenReturn("msg-group-123");
         SendMessageResponse mockResponse = SendMessageResponse.builder()
                 .messageId("msg-123")
                 .build();
@@ -109,7 +109,7 @@ class SqsPublishStepTest {
         when(appConfig.getAws()).thenReturn(aws);
         when(aws.getSqs()).thenReturn(sqs);
         when(sqs.getFifoQueueUrl()).thenReturn("http://dummy-queue-url");
-        when(messageGroupService.createMessageGroupId(any())).thenReturn("group-123");
+        when(messageGroupService.createMessageGroupId(any(),any())).thenReturn("group-123");
         SendMessageResponse mockResponse = SendMessageResponse.builder()
                 .messageId("sqs-msg-id-456")
                 .build();
