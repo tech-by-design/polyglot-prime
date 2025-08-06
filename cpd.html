@@ -360,37 +360,6 @@
                                                             .description(&quot;Bad request&quot;))
                                             .addApiResponse(&quot;500&quot;,
                                                     new ApiResponse()
-                                                            .description(&quot;Server error&quot;)))));
-    
-                    // Add Mirth Endpoint 2
-                    openApi.getPaths().addPathItem(&quot;/ccda/Bundle/$validate&quot;, new PathItem()</pre></td></tr></table>
-<table class="table table-striped">
-<tr class="a">
-<th>File</th>
-<th>Line</th></tr>
-<tr class="b">
-<td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>244</td></tr>
-<tr class="a">
-<td style="text-align: left;">org/techbd/service/http/SwaggerConfig.java</td>
-<td>358</td></tr>
-<tr class="b">
-<td colspan="2" style="text-align: left;">
-<pre>.description(&quot;Multipart form-data containing the CCDA XML file for validation.&quot;)
-                                            .required(true)
-                                            .content(new io.swagger.v3.oas.models.media.Content()
-                                                    .addMediaType(&quot;multipart/form-data&quot;, new io.swagger.v3.oas.models.media.MediaType()
-                                                            .schema(new io.swagger.v3.oas.models.media.Schema&lt;&gt;()
-                                                                    .$ref(&quot;#/components/schemas/FileUpload&quot;)))))
-                                    .responses(new ApiResponses()
-                                            .addApiResponse(&quot;200&quot;,
-                                                    new ApiResponse()
-                                                            .description(&quot;Successful validation response&quot;))
-                                            .addApiResponse(&quot;400&quot;,
-                                                    new ApiResponse()
-                                                            .description(&quot;Bad request&quot;))
-                                            .addApiResponse(&quot;500&quot;,
-                                                    new ApiResponse()
                                                             .description(&quot;Server error&quot;)))));</pre></td></tr></table>
 <table class="table table-striped">
 <tr class="a">
