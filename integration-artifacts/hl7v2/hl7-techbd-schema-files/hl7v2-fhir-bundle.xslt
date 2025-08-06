@@ -263,7 +263,7 @@
 			<xsl:variable name="ombEthnicityCodes" select="'2135-2 2186-5 UNK ASKU'" />
 
 			<!-- RACE extension -->
-			<xsl:if test="//PID.10">
+			<xsl:if test="//PID.10.1">
 			  {
 				"extension": [
 				  <xsl:for-each select="//PID.10">
@@ -296,11 +296,11 @@
 				],
 				"url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
 			  }
-			  <xsl:if test="//PID.22"><xsl:text>,</xsl:text></xsl:if>
+			  <xsl:if test="//PID.22.1"><xsl:text>,</xsl:text></xsl:if>
 			</xsl:if>
 
 			<!-- ETHNICITY extension -->
-			<xsl:if test="//PID.22">
+			<xsl:if test="//PID.22.1">
 			  {
 				"extension": [
 				  <xsl:for-each select="//PID.22">
@@ -317,7 +317,7 @@
 					  }
 					}
 				  </xsl:for-each>
-				  <xsl:if test="//PID.22"><xsl:text>,</xsl:text></xsl:if>
+				  <xsl:if test="//PID.22.1"><xsl:text>,</xsl:text></xsl:if>
 				  {
 					"url": "text",
 					"valueString": "<xsl:for-each select='//PID.22'>
@@ -664,7 +664,21 @@
                                   <xsl:with-param name="questionCode" select="$questionCode"/>
                                   <xsl:with-param name="categoryCode" select="$categoryCode"/>
                                 </xsl:call-template>"
-                  }]
+                  }
+				  <xsl:choose>
+                        <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
+                          <xsl:choose>
+                            <xsl:when test="string($questionCode)= '96782-8'">
+                              , {
+                                  "system": "http://snomed.info/sct",
+                                  "code": "365458002",
+                                  "display": "Education and/or schooling finding"
+                                }
+                            </xsl:when>
+                          </xsl:choose>
+                        </xsl:when>
+                      </xsl:choose>
+				  ]
                 },
                 {
                   "coding": [{
@@ -804,6 +818,19 @@
                             "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
                         }]
               </xsl:if>
+			  <xsl:if test="normalize-space(OBX.8/OBX.8.1)">
+				,"interpretation": [
+					  {
+						"coding": [
+						  {
+							"system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+							"code": "<xsl:value-of select='normalize-space(OBX.8/OBX.8.1)'/>",
+							"display": "<xsl:value-of select='normalize-space(OBX.8/OBX.8.2)'/>"
+						  }
+						]
+					  }
+					]
+			</xsl:if>
             },
             "request": {
               "method": "POST",
@@ -1301,6 +1328,19 @@
 				  </xsl:choose>"
 				  <xsl:text>,</xsl:text>
 				</xsl:if>
+		<xsl:if test="//OBX.8.1">
+		"interpretation": [
+              {
+                "coding": [
+                  {
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                    "code": "<xsl:value-of select='//OBX.8.1'/>",
+                    "display": "<xsl:value-of select='//OBX.8.2'/>"
+                  }
+                ]
+              }
+            ],
+		</xsl:if>
         "category": [
 		  {
                 "coding": [
