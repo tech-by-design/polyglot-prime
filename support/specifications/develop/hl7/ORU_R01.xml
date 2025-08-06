@@ -1,0 +1,31 @@
+<ConformanceProfile ID="ORU_R01_Profile_v23" Name="ORU^R01" HL7Version="2.3">
+  <MessageStructure ID="ORU_R01">
+    <SegmentGroup Name="ORU_R01_Message">
+      <Segment Name="MSH" Usage="R" MinOccurs="1" MaxOccurs="1"/>
+      <Segment Name="PID" Usage="R" MinOccurs="1" MaxOccurs="1"/>
+      <Segment Name="OBR" Usage="R" MinOccurs="1" MaxOccurs="1"/>
+      <Segment Name="OBX" Usage="R" MinOccurs="1" MaxOccurs="*"/>
+    </SegmentGroup>
+  </MessageStructure>
+  <Segments>
+    <SegmentDef Name="MSH">
+      <Field Name="MSH-3" Datatype="HD" Usage="R"/>
+      <Field Name="MSH-9" Datatype="CM_MSG" Usage="R"/>
+      <Field Name="MSH-10" Datatype="ST" Usage="R"/>
+      <Field Name="MSH-12" Datatype="VID" Usage="R"/>
+    </SegmentDef>
+    <SegmentDef Name="PID">
+      <Field Name="PID-3" Datatype="CX" Usage="R"/>
+      <Field Name="PID-5" Datatype="XPN" Usage="R"/>
+    </SegmentDef>
+    <SegmentDef Name="OBR">
+      <Field Name="OBR-4" Datatype="CE" Usage="R"/>
+      <Field Name="OBR-7" Datatype="TS" Usage="O"/>
+    </SegmentDef>
+    <SegmentDef Name="OBX">
+      <Field Name="OBX-2" Datatype="ID" Usage="R"/>
+      <Field Name="OBX-3" Datatype="CE" Usage="R"/>
+      <Field Name="OBX-5" Datatype="TX" Usage="R"/>
+    </SegmentDef>
+  </Segments>
+</ConformanceProfile>
