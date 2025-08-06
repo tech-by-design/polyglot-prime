@@ -739,9 +739,8 @@ BEGIN
    
     /*----------------------------------------------------------------------------*/
 	/* Second call to insert the FHIR bundle which is generated from CCDA json with interaction_key = '/Ccda'*/
-	v_interaction_id_2            := 'ccda-2-5-9a4f-5cc8-9c5d-b65245d90fb0';
 	PERFORM techbd_udi_ingress.register_interaction_ccda_request(
-        p_interaction_id           => v_interaction_id_2,
+        p_interaction_id           => v_interaction_id,
         p_interaction_key          => '/ccda/Bundle',
         p_nature                   => '{"nature":"CCDA Validation Result", "tenant_id":"QE-123456"}'::jsonb,
         p_from_state               => 'CCDA_ACCEPT',
@@ -771,7 +770,7 @@ BEGIN
 
     RETURN NEXT ok(
             EXISTS(SELECT 1 FROM techbd_udi_ingress.hub_interaction hub_intr
-                            WHERE hub_intr.hub_interaction_id     = v_interaction_id_2
+                            WHERE hub_intr.hub_interaction_id     = v_interaction_id
                             AND hub_intr."key"                    = '/ccda/Bundle'
                             AND hub_intr.provenance               = 'CCDA'
                    ),
@@ -781,7 +780,7 @@ BEGIN
     /*Test 1 raw is inserted into sat_interaction_http_request table*/
     RETURN NEXT ok(
              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_http_request sat_intr
-                             WHERE sat_intr.hub_interaction_id     = v_interaction_id_2
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
                              AND sat_intr.provenance               = 'CCDA'
                     ),
              'CCDA - Successfully inserted one record into the table sat_interaction_http_request with "CCDA Validation Result" as nature'
@@ -790,7 +789,7 @@ BEGIN
     /*Test 1 raw is inserted into sat_interaction_ccda_request table*/
     RETURN NEXT ok(
              EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_ccda_request sat_intr
-                             WHERE sat_intr.hub_interaction_id     = v_interaction_id_2
+                             WHERE sat_intr.hub_interaction_id     = v_interaction_id
 							 AND sat_intr.uri                      = '/ccda/Bundle'
                              AND sat_intr.provenance               = 'CCDA'
                     ),
@@ -800,10 +799,11 @@ BEGIN
    /*Test record is NOT inserted into sat_interaction_user table at second call*/
    RETURN NEXT ok(
             NOT EXISTS(SELECT 1 FROM techbd_udi_ingress.sat_interaction_user sat_intr
-                   WHERE sat_intr.hub_interaction_id = v_interaction_id_2
+                   WHERE sat_intr.hub_interaction_id = v_interaction_id
 	               AND sat_intr.uri                  = '/ccda/Bundle'
-				   AND sat_intr.provenance           = 'CCDA'),
-            'CSV - Success, Not inserted into the table sat_interaction_user while second FHIR call.'
+				   AND sat_intr.provenance           = 'CCDA'
+				   AND nature 						 = 'CCDA Validation Result'),
+            'CCDA - Success, Not inserted into the table sat_interaction_user while second FHIR call.'
 	);
      
 	/*======================END of CCDA Testing==========================*/
