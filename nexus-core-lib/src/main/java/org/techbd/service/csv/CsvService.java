@@ -217,7 +217,7 @@ public class CsvService {
 
         try {
             saveArchiveInteractionStatus(interactionId, jooqCfg,
-                    CsvProcessingState.PROCESSING_STARTED, requestParams);
+                    CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
             session = engine.session()
                     .withMasterInteractionId(interactionId)
                     .withSessionId(UUID.randomUUID().toString())
@@ -271,7 +271,7 @@ public class CsvService {
 
             try {
                 saveArchiveInteractionStatus(interactionId, jooqCfg,
-                        CsvProcessingState.PROCESSING_STARTED, requestParams);
+                        CsvProcessingState.PROCESSING_INPROGRESS, requestParams);
 
                 session = engine.session()
                         .withMasterInteractionId(interactionId)
