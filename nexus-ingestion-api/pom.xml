@@ -153,6 +153,16 @@
             <artifactId>hapi-structures-v28</artifactId>
             <version>${hapi.version}</version>
         </dependency>
+         <dependency> 
+            <groupId>org.togglz</groupId> 
+            <artifactId>togglz-console-spring-boot-starter</artifactId> 
+            <version>4.4.0</version> 
+        </dependency> 
+        <dependency> 
+            <groupId>org.togglz</groupId> 
+            <artifactId>togglz-spring-web</artifactId> 
+            <version>4.4.0</version> 
+        </dependency> 
     </dependencies>
 
     <build>
