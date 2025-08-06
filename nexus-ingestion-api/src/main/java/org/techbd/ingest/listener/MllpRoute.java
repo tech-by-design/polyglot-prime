@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.techbd.ingest.commons.Constants;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.router.IngestionRouter;
+import org.techbd.ingest.feature.FeatureEnum;
 import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
@@ -85,6 +86,10 @@ public class MllpRoute extends RouteBuilder {
         exchange.getIn().getHeaders().forEach((k, v) -> {
             if (v instanceof String) {
                 headers.put(k, (String) v);
+                // ✅ Conditional debug logging of headers
+                if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+                    log.info("{} -Header: {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, k, v);
+                }
             }
         });
         String tenantId = headers.get(Constants.REQ_HEADER_TENANT_ID);

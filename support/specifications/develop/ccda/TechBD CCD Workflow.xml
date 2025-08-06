@@ -433,6 +433,7 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
 
+    //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
     var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
     logger.info(&quot;File extension: &quot; + extension);

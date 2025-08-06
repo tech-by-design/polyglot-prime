@@ -13,7 +13,7 @@
 
     <groupId>org.techbd</groupId>
     <artifactId>nexus-ingestion-api</artifactId>
-    <version>0.1.17</version>
+    <version>0.1.18</version>
     <name>nexus-ingestion-api</name>
     <description>Nexus Ingestion API</description>
 
@@ -153,6 +153,16 @@
             <artifactId>hapi-structures-v28</artifactId>
             <version>${hapi.version}</version>
         </dependency>
+         <dependency> 
+            <groupId>org.togglz</groupId> 
+            <artifactId>togglz-console-spring-boot-starter</artifactId> 
+            <version>4.4.0</version> 
+        </dependency> 
+        <dependency> 
+            <groupId>org.togglz</groupId> 
+            <artifactId>togglz-spring-web</artifactId> 
+            <version>4.4.0</version> 
+        </dependency> 
     </dependencies>
 
     <build>
