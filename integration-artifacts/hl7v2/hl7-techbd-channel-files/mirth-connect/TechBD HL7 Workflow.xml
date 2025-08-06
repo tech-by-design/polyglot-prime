@@ -3,7 +3,7 @@
   <nextMetaDataId>3</nextMetaDataId>
   <name>TechBD HL7 Workflow</name>
   <description>Version: 0.1.1</description>
-  <revision>27</revision>
+  <revision>42</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -34,7 +34,7 @@
       <xmlBody>true</xmlBody>
       <parseMultipart>true</parseMultipart>
       <includeMetadata>false</includeMetadata>
-      <binaryMimeTypes>application/.*(?&lt;!json|xml)$|image/.*|video/.*|audio/.*</binaryMimeTypes>
+      <binaryMimeTypes>text/hl7</binaryMimeTypes>
       <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
       <responseContentType>text/json</responseContentType>
       <responseDataTypeBinary>false</responseDataTypeBinary>
@@ -73,7 +73,48 @@
       <staticResources/>
     </properties>
     <transformer version="4.5.0">
-      <elements/>
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>FileName Validation</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>//Check the file type, only .hl7 and .txt allowed
+/**
+* Util function to generate json string wit hstatus and message
+*/
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+&#xd;var rawData = connectorMessage.getRawData();var filename = null;
+var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
+
+if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
+    filename = filenameMatch[1];
+    logger.info(&quot;Filename: &quot; + filename);
+
+    var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
+    var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
+    logger.info(&quot;File extension: &quot; + extension);
+
+    if (extension !== &quot;hl7&quot; &amp;&amp; extension !== &quot;txt&quot;) {
+       var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only .hl7 and .txt are allowed.&quot;;
+       setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    	  throw errorMessage; // Stop further processing by throwing an exception
+    }
+} else {
+    logger.warn(&quot;Filename not found in message content.&quot;);
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
       <inboundTemplate encoding="base64"></inboundTemplate>
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>XML</inboundDataType>
@@ -133,7 +174,7 @@
     <filter version="4.5.0">
       <elements>
         <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
-          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos; or &apos;/hl7v2/Bundle/$validate&apos;</name>
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/hl7v2/Bundle&apos; or &apos;/hl7v2/Bundle/&apos; or &apos;/hl7v2/Bundle/$validate&apos; or &apos;/hl7v2/Bundle/$validate/&apos;</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
           <field>sourceMap.get(&apos;contextPath&apos;)</field>
@@ -146,7 +187,7 @@
           </values>
         </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
         <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
-          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; is blank</name>
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
           <operator>AND</operator>
@@ -196,8 +237,125 @@
       <transformer version="4.5.0">
         <elements>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
-            <name>Common Js func.</name>
+            <name>HL7 Validation</name>
             <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>// --------------------
+// Helper: Get JSON Outcome
+// --------------------
+function getOutcome(text, severity, code) {
+    return JSON.stringify({
+        resourceType: &quot;OperationOutcome&quot;,
+        result: [{
+            severity: severity,
+            code: code,
+            details: { text: text }
+        }]
+    });
+}
+
+// --------------------
+// Helper: Extract HL7 body from raw data
+// --------------------
+function extractHL7Body(rawData) {
+    var match = rawData.match(/MSH\|[\s\S]*/);
+    return match ? match[0].trim() : &quot;&quot;;
+}
+
+// --------------------
+// Helper: Extract segments from HL7 input
+// --------------------
+function extractSegments(hl7Text) {
+    var lines = hl7Text.split(/\r\n|\n|\r/);
+    var segments = [];
+
+    for (var i = 0; i &lt; lines.length; i++) {
+        var line = lines[i].trim();
+        if (line &amp;&amp; line.includes(&apos;|&apos;)) {
+            var seg = String(line.split(&apos;|&apos;)[0].trim()); // Force to JS string
+            if (/^[A-Z0-9]{2,5}$/.test(seg)) {
+                segments.push(seg);
+            }
+        }
+    }
+
+    return segments;
+}
+
+// --------------------
+// Helper: Parse XML and get required segments
+// --------------------
+function getRequiredSegmentsFromXml(xmlPath) {
+    var File = java.io.File;
+    var FileInputStream = java.io.FileInputStream;
+    var IOUtils = Packages.org.apache.commons.io.IOUtils;
+    var SAXBuilder = Packages.org.jdom2.input.SAXBuilder;
+    var Element = Packages.org.jdom2.Element;
+
+    logger.info(&quot;Checking XML template path: &quot; + xmlPath);
+
+    try {
+        var file = new File(xmlPath);
+        if (!file.exists()) {
+            logger.error(&quot;XML file not found at: &quot; + xmlPath);
+            throw new Error(&quot;Template XML file not found.&quot;);
+        }
+
+        // Log the raw file content
+        var fis = new FileInputStream(file);
+        var fileContent = IOUtils.toString(fis, &quot;UTF-8&quot;);
+        fis.close();
+        logger.info(&quot;XML File Content:\n&quot; + fileContent);
+
+        // Parse XML with JDOM 2.x
+        var builder = new SAXBuilder();
+        var document = builder.build(file);
+
+        var root = document.getRootElement(); // &lt;ConformanceProfile&gt;
+        logger.info(&quot;Parsed XML root element: &quot; + root.getName());
+
+        var messageStructure = root.getChild(&quot;MessageStructure&quot;);
+        if (messageStructure == null) throw new Error(&quot;Missing &lt;MessageStructure&gt; in XML.&quot;);
+
+        var segmentGroup = messageStructure.getChild(&quot;SegmentGroup&quot;);
+        if (segmentGroup == null) throw new Error(&quot;Missing &lt;SegmentGroup&gt; in XML.&quot;);
+
+        var segments = segmentGroup.getChildren(&quot;Segment&quot;);
+        var requiredSegments = [];
+
+        logger.info(&quot;Total segments found in SegmentGroup: &quot; + segments.size());
+
+        for (var i = 0; i &lt; segments.size(); i++) {
+            var seg = segments.get(i);
+            var rawUsage = seg.getAttributeValue(&quot;Usage&quot;);
+            var rawName = seg.getAttributeValue(&quot;Name&quot;);
+
+            var usage = rawUsage != null ? String(rawUsage).replace(/[\s\u200B\u00A0]+/g, &quot;&quot;).toUpperCase() : &quot;&quot;;
+            var name = rawName != null ? String(rawName).replace(/[\s\u200B\u00A0]+/g, &quot;&quot;) : &quot;&quot;;
+
+            logger.info(&quot;Segment[&quot; + i + &quot;] - Raw Usage: &apos;&quot; + rawUsage + &quot;&apos;, Cleaned Usage: &apos;&quot; + usage + &quot;&apos;&quot;);
+            logger.info(&quot;Segment[&quot; + i + &quot;] - Raw Name: &apos;&quot; + rawName + &quot;&apos;, Cleaned Name: &apos;&quot; + name + &quot;&apos;&quot;);
+
+            if (usage === &quot;R&quot; &amp;&amp; name !== &quot;&quot;) {
+                requiredSegments.push(name);
+                logger.info(&quot;Added Segment: &quot; + name);
+            } else {
+                logger.info(&quot;Skipped Segment[&quot; + i + &quot;] - usage=&apos;&quot; + usage + &quot;&apos;, name=&apos;&quot; + name + &quot;&apos;&quot;);
+            }
+        }
+
+        logger.info(&quot;Final extracted required segments: &quot; + requiredSegments.join(&apos;,&apos;));
+        return requiredSegments;
+
+    } catch (e) {
+        logger.error(&quot;Error parsing XML template: &quot; + e.message);
+        throw e;
+    }
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+            <name>Common Js func.</name>
+            <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
             <script>/**
 * Replacer function to remove empty values
@@ -306,7 +464,7 @@ function sendDataLedgerSync(payload) {
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
             <name>Validate HTTP Request and collect headers</name>
-            <sequenceNumber>1</sequenceNumber>
+            <sequenceNumber>2</sequenceNumber>
             <enabled>true</enabled>
             <script>logger.info(&quot;HTTP request validation started.&quot;);
 
@@ -429,7 +587,7 @@ logger.info(&quot;HTTP request validation ended.&quot;);</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
             <name>step_validate_profile_urls_env_variables</name>
-            <sequenceNumber>2</sequenceNumber>
+            <sequenceNumber>3</sequenceNumber>
             <enabled>true</enabled>
             <script>/**
 * Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
@@ -604,11 +762,258 @@ function set_fhir_resource_profile_urls(transformer) {
 
 
 	return transformer;
+}
+
+function getConsentResourceStatus(sourceXml) {
+	try {
+		var consentInfo = {};
+	    	consentInfo.code = &apos;Consent-Status&apos;;
+	    	consentInfo.status = &quot;TechBD-Generated&quot;;
+		var xmlDoc = new XML(sourceXml); // Convert XML string to XML object			
+		//default xml namespace = &quot;urn:hl7-org:v3&quot;; // Default namespace for HL7 documents
+		var consentCode = &quot;&quot;;
+		for each (var obx in xmlDoc..OBX) {
+		    var obx32 = &quot;&quot;;
+		    if (obx[&quot;OBX.3&quot;] != null &amp;&amp; obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {
+		        obx32 = obx[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString();
+		    }
+		
+		    if (obx32 == &quot;AHC-HRSN Patient Consent&quot;) {
+		        if (obx[&quot;OBX.5&quot;] != null &amp;&amp; obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;] != null) {
+		            consentCode = obx[&quot;OBX.5&quot;][&quot;OBX.5.1&quot;].toString();
+		        }
+		        break;
+		    }
+		}
+		logger.info(&quot;Consent Code: &quot; + consentCode);
+		if (consentCode != undefined &amp;&amp; consentCode.length &gt; 0) {
+		    logger.info(&quot;Consent Code: &quot; + consentCode);
+		        consentInfo.status = &quot;provided&quot;;
+		}		
+		// Convert to JSON string (optional, for sending/logging)
+		var consentJsonString = JSON.stringify(consentInfo);
+		logger.info(&quot;Consent Info JSON: &quot; + consentJsonString);
+		channelMap.put(&apos;elaboration&apos;, consentJsonString);
+	} catch (e) {
+        var errorMsg;
+        if (e instanceof JavaException) {
+           errorMsg = &quot;Error parsing Consent Resource: &quot; + e.toString();
+        } else {
+           errorMsg = &quot;Unexpected error during getting Consent Resource: &quot; + e.message;
+        }
+        logger.error(errorMsg);
+ 
+        // Failure: Return an OperationOutcome JSON response with validation errors
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
+ 
+        throw new Error(errorMsg);
+     }
+}
+
+function getCategoryDisplay(code) {
+    switch (code) {
+        case &apos;71802-3&apos;:
+            return &apos;Housing Instability&apos;;
+        case &apos;96778-6&apos;:
+            return &apos;Inadequate Housing&apos;;
+        case &apos;96779-4&apos;:
+            return &apos;Utility Insecurity&apos;;
+        case &apos;88122-7&apos;:
+        case &apos;88123-5&apos;:
+            return &apos;Food Insecurity&apos;;
+        case &apos;93030-5&apos;:
+            return &apos;Transportation Insecurity&apos;;
+        case &apos;96780-2&apos;:
+            return &apos;Employment Status&apos;;
+        case &apos;96782-8&apos;:
+        case &apos;95618-5&apos;:
+        case &apos;95617-7&apos;:
+        case &apos;95616-9&apos;:
+        case &apos;95615-1&apos;:
+        case &apos;95614-4&apos;:
+            return &apos;SDOH Category Unspecified&apos;;
+        default:
+            return &apos;SDOH Category Unspecified&apos;;
+    }
+}
+
+function getCategoryCode(code) {
+    switch (code) {
+        case &apos;71802-3&apos;:
+            return &apos;housing-instability&apos;;
+        case &apos;96778-6&apos;:
+            return &apos;inadequate-housing&apos;;
+        case &apos;96779-4&apos;:
+            return &apos;utility-insecurity&apos;;
+        case &apos;88122-7&apos;:
+        case &apos;88123-5&apos;:
+            return &apos;food-insecurity&apos;;
+        case &apos;93030-5&apos;:
+            return &apos;transportation-insecurity&apos;;
+        case &apos;96780-2&apos;:
+            return &apos;employment-status&apos;;
+        case &apos;96782-8&apos;:
+        case &apos;95618-5&apos;:
+        case &apos;95617-7&apos;:
+        case &apos;95616-9&apos;:
+        case &apos;95615-1&apos;:
+        case &apos;95614-4&apos;:
+            return &apos;sdoh-category-unspecified&apos;;
+        default:
+            return null;
+    }
+}
+
+// Define Namespace Resolver
+function getObservationCategoryCodes(transformer, observations) {    
+    var xml = new XML(observations);  
+
+    var categorySystem = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;;
+
+	var categorySet = {};
+
+	var children = xml.children();
+    var currentOBR = null;
+
+    for each (var child in children) {
+	    var nodeName = child.name().localName;
+	
+	    if (nodeName === &apos;OBR&apos;) {
+	        currentOBR = child;
+	    } else if (nodeName === &apos;OBX&apos; &amp;&amp; currentOBR != null) {
+	        var questionCode = &quot;&quot;;
+	        var displayCode = &quot;&quot;;
+	
+	        if (child[&quot;OBX.3&quot;] != null) {
+	            if (child[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;] != null) {
+	                questionCode = child[&quot;OBX.3&quot;][&quot;OBX.3.1&quot;].toString().trim();
+	            }
+	            if (child[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;] != null) {
+	                displayCode = child[&quot;OBX.3&quot;][&quot;OBX.3.2&quot;].toString().trim();
+	            }
+	        }
+	
+	        // Filter like in XSLT logic
+	        if (questionCode === &apos;&apos; || displayCode === &apos;AHC-HRSN Patient Consent&apos;) {
+	            continue;
+	        }
+	
+	        var categoryCode = getCategoryCode(questionCode);
+	        var categoryDisplay = getCategoryDisplay(questionCode);
+	
+	        if (categoryCode &amp;&amp; !(categoryCode in categorySet)) {
+	            categorySet[categoryCode] = categoryDisplay;
+	        }
+	    }
+	}
+
+    // Build the category JSON array
+    var categoryJsonArray = [];
+    for (var code in categorySet) {
+        categoryJsonArray.push({
+            system: categorySystem,
+            code: code,
+            display: categorySet[code]
+        });
+    }
+
+     var categoryXml = JSON.stringify(categoryJsonArray);
+	
+	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
+	logger.info(&quot;categoryXml : &quot; + categoryXml);
+	return transformer;
+}
+
+function generateSHA256(inputString) {
+    //var md = MessageDigest.getInstance(&quot;SHA-256&quot;);
+    var md = Packages.java.security.MessageDigest.getInstance(&quot;SHA-256&quot;);
+    md.update(inputString.getBytes(&quot;UTF-8&quot;));   
+    var digest = md.digest();
+    return bytesToHex(digest);
+}
+
+function bytesToHex(byteArray) {
+    var hexString = new java.lang.StringBuilder();
+    for (var i = 0; i &lt; byteArray.length; i++) {
+        var hex = java.lang.Integer.toHexString(0xff &amp; byteArray[i]);
+        if (hex.length == 1) hexString.append(&apos;0&apos;);
+        hexString.append(hex);
+    }
+    return hexString.toString();
+}
+
+function getPatientMRN(sourceXml){
+	var xmlDoc = new XML(sourceXml);
+	var patientMRN = xmlDoc..PID[&quot;PID.3&quot;][&quot;PID.3.1&quot;].toString().trim();
+	channelMap.put(&apos;patientMRN&apos;, patientMRN);
+	logger.info(&quot;patientMRN: &quot; + patientMRN);
+	
+}
+
+function generateSHA256Id(sourceXml, resourceName, resourceIdName, transformer, additionalString) {
+    if (sourceXml != undefined) { 
+    	var xmlDoc = new XML(sourceXml);
+        // Get MRN and CIN from channelMap
+        var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;
+        var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;
+        var combinedText = mrn + cin;
+
+        if (typeof additionalString !== &apos;undefined&apos; &amp;&amp; additionalString != null &amp;&amp; additionalString !== &apos;&apos;) {
+            combinedText += additionalString;
+            logger.info(&quot;Including additionalString in SHA-256: &quot; + additionalString);
+        }
+
+        var resourceText = resourceName + xmlDoc.toString().trim();
+        combinedText += resourceText;
+
+        // Generate SHA-256 hash
+        var sha256Hash = generateSHA256(new java.lang.String(combinedText));
+        transformer.setParameter(resourceIdName, sha256Hash);
+        logger.info(resourceIdName + &quot; : &quot; + sha256Hash);
+    } else {
+        logger.error(resourceName + &quot; not found in the XML.&quot;);
+    }
+
+    return transformer;
+}
+
+function getMultipleAnswersForComponent(transformer, observations) {
+    var xml = new XML(observations);
+    var codingArray = [];
+    var seenCodes = {};
+
+    var obxList = xml..OBX;
+
+    for each (var obx in obxList) {
+        var obxCode = obx[&apos;OBX.3&apos;][&apos;OBX.3.1&apos;].toString().trim();
+
+        if (obxCode === &apos;96778-6&apos;) {
+            var values = obx[&apos;OBX.5&apos;];
+
+            for each (var val in values) {
+                var code = val[&apos;OBX.5.1&apos;].toString().trim();
+                var display = val[&apos;OBX.5.2&apos;].toString().trim();
+
+                if (code &amp;&amp; !seenCodes[code]) {
+                    codingArray.push({
+                        &quot;system&quot;: &quot;http://loinc.org&quot;,
+                        &quot;code&quot;: code,
+                        &quot;display&quot;: display
+                    });
+                    seenCodes[code] = true;
+                }
+            }
+        }
+    }
+
+    transformer.setParameter(&apos;componentAnswersXml&apos;, JSON.stringify(codingArray));
+    logger.info(&quot;componentAnswersXml : &quot; + JSON.stringify(codingArray));
+    return transformer;
 }</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
           <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
             <name>API endpoint processing</name>
-            <sequenceNumber>3</sequenceNumber>
+            <sequenceNumber>4</sequenceNumber>
             <enabled>true</enabled>
             <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);logger.info(&quot;Request URL: &quot; + requestedPath);
 
@@ -616,7 +1021,60 @@ if (requestedPath == &quot;/&quot;) {
 	return;
 }
 
-if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
+if (requestedPath == &quot;/hl7v2/Bundle/$validate/&quot; ||
+	requestedPath == &quot;/hl7v2/Bundle/$validate&quot;){
+	try {
+    // Step 1: Get HL7 Input
+    var raw = connectorMessage.getRawData();
+    if (!raw || raw.trim().length === 0) {
+        throw new Error(&quot;Empty HL7 message received.&quot;);
+    }
+
+    var hl7Body = extractHL7Body(raw);
+    logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
+
+    // Step 2: Extract input segments
+    var inputSegments = extractSegments(hl7Body);
+    var normalizedInput = inputSegments.map(String);
+    logger.info(&quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
+
+    // Step 3: Load required segments from XML template
+    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
+    logger.info(&quot;Extracted template:\n&quot; + xmlPath);
+    var requiredSegments = getRequiredSegmentsFromXml(xmlPath);
+    var normalizedRequired = requiredSegments.map(String);
+    logger.info(&quot;Required segments from XML template: &quot; + normalizedRequired.join(&apos;,&apos;));
+
+    // Step 4: Check for missing segments
+    var missing = [];
+    for (var i = 0; i &lt; normalizedRequired.length; i++) {
+        if (normalizedInput.indexOf(normalizedRequired[i]) === -1) {
+            missing.push(normalizedRequired[i]);
+        }
+    }
+
+    if (missing.length &gt; 0) {
+        var msg = &quot;Missing required HL7 segments: &quot; + missing.join(&apos;, &apos;);
+        responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segments&quot;));
+        throw new Error(msg);
+    }
+
+    // Step 5: Valid
+    var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
+    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;));
+    logger.info(success);
+
+	} catch (e) {
+	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
+	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
+	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;));
+	    }
+	    logger.error(&quot;Validation error: &quot; + errorMsg);
+	    throw e;
+	}	
+}
+
+else if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2/Bundle&quot;) {
 //////////////////////////////////////////////
 
 
@@ -675,9 +1133,56 @@ if (requestedPath == &quot;/hl7v2/Bundle/&quot; || requestedPath == &quot;/hl7v2
 		responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(&quot;No XML data received in the request.&quot;, &quot;Invalid&quot;)));
 		throw new Error(&quot;No XML data received in the request.&quot;);
 	}
-}
 
-
+//try {
+//    // Step 1: Get HL7 Input
+//    var raw = connectorMessage.getRawData();
+//    if (!raw || raw.trim().length === 0) {
+//        throw new Error(&quot;Empty HL7 message received.&quot;);
+//    }
+//
+//    var hl7Body = extractHL7Body(raw);
+//    logger.info(&quot;Extracted HL7:\n&quot; + hl7Body);
+//
+//    // Step 2: Extract input segments
+//    var inputSegments = extractSegments(hl7Body);
+//    var normalizedInput = inputSegments.map(String);
+//    logger.info(&quot;Extracted input segments: &quot; + normalizedInput.join(&apos;,&apos;));
+//
+//    // Step 3: Load required segments from XML template
+//    var xmlPath = java.lang.System.getenv(&quot;HL7_XSLT_PATH&quot;) + &quot;/ORU_R01.xml&quot;;
+//    logger.info(&quot;Extracted template:\n&quot; + xmlPath);
+//    var requiredSegments = getRequiredSegmentsFromXml(xmlPath);
+//    var normalizedRequired = requiredSegments.map(String);
+//    logger.info(&quot;Required segments from XML template: &quot; + normalizedRequired.join(&apos;,&apos;));
+//
+//    // Step 4: Check for missing segments
+//    var missing = [];
+//    for (var i = 0; i &lt; normalizedRequired.length; i++) {
+//        if (normalizedInput.indexOf(normalizedRequired[i]) === -1) {
+//            missing.push(normalizedRequired[i]);
+//        }
+//    }
+//
+//    if (missing.length &gt; 0) {
+//        var msg = &quot;Missing required HL7 segments: &quot; + missing.join(&apos;, &apos;);
+//        responseMap.put(&quot;finalResponse&quot;, getOutcome(msg, &quot;error&quot;, &quot;missing-segments&quot;));
+//        throw new Error(msg);
+//    }
+//
+//    // Step 5: Valid
+//    var success = &quot;HL7 message is valid against XML conformance profile.&quot;;
+//    responseMap.put(&quot;finalResponse&quot;, getOutcome(success, &quot;information&quot;, &quot;valid&quot;));
+//    logger.info(success);
+//
+//	} catch (e) {
+//	    var errorMsg = e.message || &quot;Unknown HL7 validation error.&quot;;
+//	    if (!responseMap.containsKey(&quot;finalResponse&quot;)) {
+//	        responseMap.put(&quot;finalResponse&quot;, getOutcome(errorMsg, &quot;error&quot;, &quot;unexpected-error&quot;));
+//	    }
+//	    logger.error(&quot;Validation error: &quot; + errorMsg);
+//	    throw e;
+//	}
 
 try {
     var rawTransformedData = connectorMessage.getTransformedData();
@@ -706,23 +1211,22 @@ try {
     var bundleId = java.util.UUID.randomUUID().toString();
     transformer.setParameter(&quot;bundleId&quot;, bundleId);
 
-    var patientResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;patientResourceId&quot;, patientResourceId);
+    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
 
-    var consentResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;consentResourceId&quot;, consentResourceId);
+    transformer = generateSHA256Id(rawTransformedData, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
 
-    var organizationResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;organizationResourceId&quot;, organizationResourceId);
+    transformer = generateSHA256Id(rawTransformedData, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);
 
-    var encounterResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;encounterResourceId&quot;, encounterResourceId);
+    transformer = generateSHA256Id(rawTransformedData, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer);
 
-    var sexualOrientationResourceId = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;sexualOrientationResourceId&quot;, sexualOrientationResourceId);
+	transformer = generateSHA256Id(rawTransformedData, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, currentTimestamp);
 
-    var observationResourceSha256Id = java.util.UUID.randomUUID().toString();
-    transformer.setParameter(&quot;observationResourceSha256Id&quot;, observationResourceSha256Id);
+    transformer = generateSHA256Id(rawTransformedData, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);
+
+    transformer = generateSHA256Id(rawTransformedData, &quot;observations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+
+    transformer = generateSHA256Id(rawTransformedData, &quot;groupObservations&quot;, &quot;observationResourceSha256Id&quot;, transformer);
+
 
     // Retrieve the X-TechBD-Base-FHIR-URL header
 		var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);
@@ -737,7 +1241,7 @@ try {
 		var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
 		
 		// Check if the header value is valid
-		if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() !== &quot;&quot;) {
+		if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
 		    if (validUrls.includes(customBaseFhirUrl)) {
 		        // Store valid value in channelMap
 		        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
@@ -746,11 +1250,14 @@ try {
 		        // Throw a Bad Request error if the URL is not in the valid list
 				var errorMessage = &apos;Bad Request: The provided X-TechBD-Base-FHIR-URL is invalid.&apos;;
 				logger.error(errorMessage);
-				setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
-				throw errorMessage; // Stop further processing by throwing an exception
 		    }
 		}
 
+	var sourceXml = connectorMessage.getTransformedData();
+	getConsentResourceStatus(sourceXml);
+	getPatientMRN(sourceXml);
+	getObservationCategoryCodes(transformer, sourceXml);
+	getMultipleAnswersForComponent(transformer, sourceXml);
     
 
     // Transform
@@ -781,6 +1288,7 @@ try {
     logger.error(errorMsg);
     channelMap.put(&apos;xslt_result&apos;, errorMsg);
     throw e;
+}
 }
 
 function removeEmptyValues(key, value) {   
@@ -974,6 +1482,12 @@ return value; // Keep the value as is
               <string>${uri}</string>
             </list>
           </entry>
+          <entry>
+            <string>X-TechBD-Elaboration</string>
+            <list>
+              <string>${elaboration}</string>
+            </list>
+          </entry>
         </headers>
         <parameters class="linked-hash-map">
           <entry>
@@ -1006,6 +1520,7 @@ return value; // Keep the value as is
       </properties>
       <transformer version="4.5.0">
         <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
         <inboundDataType>HL7V2</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
         <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="4.5.0">
@@ -1080,9 +1595,11 @@ return value; // Keep the value as is
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>message = message.replace(/^\s*(\r?\n)+/, &apos;&apos;);
-return message;
-</preprocessingScript>
+  <preprocessingScript>var index = message.indexOf(&quot;MSH|&quot;);
+if (index !== -1) {
+    message = message.substring(0, index) + &quot;\r\n&quot; + message.substring(index);
+}&#xd;
+return message;</preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
 
@@ -1155,7 +1672,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1752735900696</time>
+        <time>1754473964252</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
