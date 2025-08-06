@@ -424,7 +424,6 @@ if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length ===
     logger.info(&quot;File content: (input validation) - &quot; + fileContent);
 }*/
 //channelMap.put(&apos;fileContent&apos;, fileContent);
-extractClinicalDocument(rawData);
 
 //Check the file type, only .xml and .txt allowed
 var filename = null;
@@ -447,6 +446,8 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
 }
+
+extractClinicalDocument(rawData);
 
 //////////////////////////////////////////////////////
 // Read environment variables and set to global map //
