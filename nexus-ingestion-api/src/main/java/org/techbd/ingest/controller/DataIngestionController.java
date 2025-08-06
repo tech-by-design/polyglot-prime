@@ -12,8 +12,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,6 +46,22 @@ public class DataIngestionController {
         this.ingestionRouter = ingestionRouter;
         this.objectMapper = objectMapper;
         LOG.info("DataIngestionController initialized");
+    }
+
+    /**
+     * Health check endpoint using HEAD method on /ingest endpoint.
+     *
+     * @return A response entity indicating service health status.
+     */
+    @RequestMapping(value = "/", method = RequestMethod.HEAD)
+    public ResponseEntity<Void> healthCheck() {
+        try {
+            LOG.info("Health check requested via HEAD /ingest");
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            LOG.error("Health check failed", e);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+        }
     }
 
     /**
@@ -78,15 +97,8 @@ public class DataIngestionController {
         return ResponseEntity.ok(responseJson);
     }
 
-    /**
-     * Endpoint to handle string content ingestion requests.
-     *
-     * @param content The string content to be ingested.
-     * @param headers The request headers containing metadata.
-     * @param request The HTTP servlet request.
-     * @return A response entity containing the result of the ingestion process.
-     * @throws Exception If an error occurs during processing.
-     */
+
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
         // Try to extract interactionId from exception or context if possible
