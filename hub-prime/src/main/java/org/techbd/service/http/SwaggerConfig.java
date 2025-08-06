@@ -343,34 +343,34 @@ public class SwaggerConfig {
                                                             .description("Server error")))));
 
                         // Add Mirth Endpoint 4
-                        openApi.getPaths().addPathItem("/hl7v2/Bundle/$validate", new PathItem()
-                            .post(new Operation()
-                                    .tags(List.of("Tech by Design Hub HL7 Endpoints"))
-                                    .summary("HL7 endpoint to validate and convert HL7 to JSON but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /hl7v2/Bundle not /hl7v2/Bundle/$validate.")
-                                    .description("HL7 endpoint to validate and convert HL7 to JSON but not store or forward a payload to SHIN-NY.")
-                                    .addParametersItem(new Parameter()
-                                            .name("X-TechBD-Tenant-ID")
-                                            .description("Tenant ID header")
-                                            .required(true)
-                                            .in("header")
-                                            .schema(new StringSchema()))
-                                    .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                            .description("Multipart form-data containing the HL7 file for validation.")
-                                            .required(true)
-                                            .content(new io.swagger.v3.oas.models.media.Content()
-                                                    .addMediaType("multipart/form-data", new io.swagger.v3.oas.models.media.MediaType()
-                                                            .schema(new io.swagger.v3.oas.models.media.Schema<>()
-                                                                    .$ref("#/components/schemas/FileUpload")))))
-                                    .responses(new ApiResponses()
-                                            .addApiResponse("200",
-                                                    new ApiResponse()
-                                                            .description("Successful validation response"))
-                                            .addApiResponse("400",
-                                                    new ApiResponse()
-                                                            .description("Bad request"))
-                                            .addApiResponse("500",
-                                                    new ApiResponse()
-                                                            .description("Server error")))));
+                        // openApi.getPaths().addPathItem("/hl7v2/Bundle/$validate", new PathItem()
+                        //     .post(new Operation()
+                        //             .tags(List.of("Tech by Design Hub HL7 Endpoints"))
+                        //             .summary("HL7 endpoint to validate and convert HL7 to JSON but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /hl7v2/Bundle not /hl7v2/Bundle/$validate.")
+                        //             .description("HL7 endpoint to validate and convert HL7 to JSON but not store or forward a payload to SHIN-NY.")
+                        //             .addParametersItem(new Parameter()
+                        //                     .name("X-TechBD-Tenant-ID")
+                        //                     .description("Tenant ID header")
+                        //                     .required(true)
+                        //                     .in("header")
+                        //                     .schema(new StringSchema()))
+                        //             .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                        //                     .description("Multipart form-data containing the HL7 file for validation.")
+                        //                     .required(true)
+                        //                     .content(new io.swagger.v3.oas.models.media.Content()
+                        //                             .addMediaType("multipart/form-data", new io.swagger.v3.oas.models.media.MediaType()
+                        //                                     .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                        //                                             .$ref("#/components/schemas/FileUpload")))))
+                        //             .responses(new ApiResponses()
+                        //                     .addApiResponse("200",
+                        //                             new ApiResponse()
+                        //                                     .description("Successful validation response"))
+                        //                     .addApiResponse("400",
+                        //                             new ApiResponse()
+                        //                                     .description("Bad request"))
+                        //                     .addApiResponse("500",
+                        //                             new ApiResponse()
+                        //                                     .description("Server error")))));
                 })
                 .build();
     }
