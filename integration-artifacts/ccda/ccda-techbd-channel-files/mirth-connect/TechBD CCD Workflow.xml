@@ -2,8 +2,8 @@
   <id>9185f9cf-a564-4ae8-b3f6-d4240d061dd5</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.28</description>
-  <revision>27</revision>
+  <description>Version: 0.4.29</description>
+  <revision>29</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -424,7 +424,6 @@ if (!fileContent || fileContent == &apos;&apos; || fileContent.trim().length ===
     logger.info(&quot;File content: (input validation) - &quot; + fileContent);
 }*/
 //channelMap.put(&apos;fileContent&apos;, fileContent);
-extractClinicalDocument(rawData);
 
 //Check the file type, only .xml and .txt allowed
 var filename = null;
@@ -434,7 +433,7 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
     filename = filenameMatch[1];
     logger.info(&quot;Filename: &quot; + filename);
 
-    var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
+    var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
     var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
     logger.info(&quot;File extension: &quot; + extension);
 
@@ -446,6 +445,8 @@ if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
 } else {
     logger.warn(&quot;Filename not found in message content.&quot;);
 }
+
+extractClinicalDocument(rawData);
 
 //////////////////////////////////////////////////////
 // Read environment variables and set to global map //
@@ -1543,17 +1544,15 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
 			var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
 			
 			// Check if the header value is valid
-			if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() !== &quot;&quot;) {
+			if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
 			    if (validUrls.includes(customBaseFhirUrl)) {
 			        // Store valid value in channelMap
 			        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
 				   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
 			    } else {
 			        // Throw a Bad Request error if the URL is not in the valid list
-					var errorMessage = &apos;Bad Request: The provided X-TechBD-Base-FHIR-URL is invalid.&apos;;
+					var errorMessage = &apos;The provided X-TechBD-Base-FHIR-URL is invalid. Base-FHIR-URL taken from the environment variable.&apos;;
 					logger.error(errorMessage);
-					setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
-					throw errorMessage; // Stop further processing by throwing an exception
 			    }
 			}
 	
@@ -2026,7 +2025,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1753963513295</time>
+        <time>1754460917483</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
