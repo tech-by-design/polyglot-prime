@@ -77,9 +77,10 @@
   - `x-server-port`
 
   This combination of client and destination IP/port forms a stable and traceable message group identity, used to construct the `messageGroupId`.
+  ```
 
   **Note** : Accurate population of these headers by upstream infrastructure is crucial to maintain correct SQS grouping behavior.
-  ```
+
 
 - **Sample SQS Message**
   ```json
@@ -147,6 +148,12 @@
         }
       }
       ```
+
+  **Note** :This health check only verifies that the application is actively listening on the expected port.
+    It does not validate whether the network layer is correctly provisioned to accept traffic to this port —
+    including configurations such as NLB, security groups, firewall rules, or routing settings.
+
+
 - **SOAP Endpoints**
   - SOAP routes support **PIX** and **PNR** requests.
   - Standard SOAP acknowledgements are returned.
