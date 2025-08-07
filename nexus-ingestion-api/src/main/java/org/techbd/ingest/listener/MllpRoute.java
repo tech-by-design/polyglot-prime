@@ -88,7 +88,7 @@ public class MllpRoute extends RouteBuilder {
                 headers.put(k, (String) v);
                 // ✅ Conditional debug logging of headers
                 if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-                    log.info("{} -Header: {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS, k, v);
+                    log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
                 }
             }
         });

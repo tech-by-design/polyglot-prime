@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
 import org.techbd.ingest.service.router.IngestionRouter;
 
@@ -80,6 +81,13 @@ public class DataIngestionController {
             HttpServletRequest request) throws Exception {
         String interactionId = UUID.randomUUID().toString();
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
+
+         // ✅ Conditional debug logging of headers using Togglz
+         if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+            headers.forEach((k, v) -> {
+                log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
+            });
+        }
 
         if (file == null || file.isEmpty()) {
             LOG.warn("Uploaded file is empty. interactionId={}", interactionId);
