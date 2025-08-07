@@ -54,7 +54,7 @@ public class DataIngestionController {
      *
      * @return A response entity indicating service health status.
      */
-    @RequestMapping(value = "/", method = RequestMethod.HEAD)
+    @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<Void> healthCheck() {
         try {
             LOG.info("Health check requested via HEAD /ingest");
