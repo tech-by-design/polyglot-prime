@@ -1,72 +1,192 @@
-[
-  {
-    "type": "FHIR",
-    "channel": "FhirBundle.xml",
-    "version": "0.6.0",
-    "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-24"
-  },
-  {
-    "type": "FHIR",
-    "channel": "FhirBundleValidate.xml",
-    "version": "0.6.0",
-    "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-24"
-  },
-  {
-    "type": "CCDA",
-    "channel": "CcdaBundle.xml",
-    "version": "0.7.0",
-    "editedby": "jewelbonnie",
-    "date": "2025-08-04"
-  },
-  {
-    "type": "CCDA",
-    "channel": "CcdaBundleValidate.xml",
-    "version": "0.6.0",
-    "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-28"
-  },
-  {
-    "type": "FLAT FILE",
-    "channel": "FlatFileCsvBundle.xml",
-    "version": "0.8.0",
-    "editedby": "anoopvarma-2000-p",
-    "date": "2025-08-04"
-  },
-  {
-    "type": "FLAT FILE",
-    "channel": "FlatFileCsvBundleValidate.xml",
-    "version": "0.7.0",
-    "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-31"
-  },
-  {
-    "type": "HL7v2",
-    "channel": "",
-    "version": "",
-    "editedby": "",
-    "date": ""
-  },
-  {
-    "type": "HL7v2",
-    "channel": "HL7V2 Bundle.xml",
-    "version": "0.3.1",
-    "editedby": "vinodaravind01",
-    "date": "2025-08-01"
-  },
-  {
-    "type": "Global script",
-    "channel": "global-script.xml",
-    "version": "",
-    "editedby": "anoopvarma-2000-p",
-    "date": "2025-07-24"
-  },
-  {
-    "type": "AwsSqsFifoQueueListener",
-    "channel": "AwsSqsFifoQueueListener.xml",
-    "version": "",
-    "editedby": "",
-    "date": ""
+{
+  "channels": [
+    {
+      "type": "FHIR",
+      "channel": "FhirBundle.xml",
+      "version": "0.6.0",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2025-07-24"
+    },
+    {
+      "type": "FHIR",
+      "channel": "FhirBundleValidate.xml",
+      "version": "0.6.0",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2025-07-24"
+    },
+    {
+      "type": "CCDA",
+      "channel": "CcdaBundle.xml",
+      "version": "0.7.0",
+      "editedby": "jewelbonnie",
+      "date": "2025-08-04"
+    },
+    {
+      "type": "CCDA",
+      "channel": "CcdaBundleValidate.xml",
+      "version": "0.6.0",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2025-07-28"
+    },
+    {
+      "type": "FLAT FILE",
+      "channel": "FlatFileCsvBundle.xml",
+      "version": "0.8.0",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2025-08-04"
+    },
+    {
+      "type": "FLAT FILE",
+      "channel": "FlatFileCsvBundleValidate.xml",
+      "version": "0.7.0",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2025-07-31"
+    },
+    {
+      "type": "HL7v2",
+      "channel": "",
+      "version": "",
+      "editedby": "",
+      "date": ""
+    },
+    {
+      "type": "HL7v2",
+      "channel": "HL7V2 Bundle.xml",
+      "version": "0.3.1",
+      "editedby": "vinodaravind01",
+      "date": "2025-08-01"
+    },
+    {
+      "type": "Global script",
+      "channel": "global-script.xml",
+      "version": "",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2025-07-24"
+    },
+    {
+      "type": "AwsSqsFifoQueueListener",
+      "channel": "AwsSqsFifoQueueListener.xml",
+      "version": "",
+      "editedby": "",
+      "date": ""
+    }
+  ],
+  "transformations": {
+    "CCDA": [
+      {
+        "name": "CDA.xsd",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "CDA.xsl",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "cda-fhir-bundle.xslt",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "cda-fhir-bundle-epic.xslt",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "cda-fhir-bundle-medent.xslt",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "cda-phi-filter.xslt",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "cda-phi-filter-epic.xslt",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "cda-phi-filter-medent.xslt",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "datatypes.xsd",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "datatypes-base.xsd",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "NarrativeBlock.xsd",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "POCD_MT000040.xsd",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "sdtc.xsd",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "voc.xsd",
+        "type": "CCDA",
+        "version": "0.1.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      }
+    ],
+    "HL7v2": [
+      {
+        "name": "hl7v2-fhir-bundle.xslt",
+        "type": "HL7v2",
+        "version": "0.2.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      },
+      {
+        "name": "ORU_R01.xml",
+        "type": "HL7v2",
+        "version": "0.2.0",
+        "editedby": "",
+        "date": "2025-08-01"
+      }
+    ]
   }
-]
+}
