@@ -30,6 +30,28 @@
     s3://<bucket-name>/metadata/<YYYY>/<MM>/<DD>/<timestamp>/<interactionId>/metadata.json
     ```
 
+- **Sample S3 Metadata**
+  ```json
+  {
+  "key": "data/<YYYY>/<MM>/<DD>/<timestamp>-<interactionId>-<fileName>.zip",
+  "json_metadata": {
+    "headers": "<Map of request headers including IP and Port headers like x-real-ip, x-forwarded-for, x-server-ip, x-server-port>",
+    "interactionId": "<UUID>",
+    "fileName": "<file-name>.zip",
+    "queryParams": null,
+    "sourceSystem": "<source-system>",
+    "s3ObjectPath": "s3://<s3-bucket-name>/data/<YYYY>/<MM>/<DD>/<timestamp>-<interactionId>-<fileName>.zip",
+    "protocol": "<protocol-version>",
+    "uploadDate": "<YYYY-MM-DD>",
+    "fileSize": "<file-size-in-bytes>",
+    "requestUrl": "/ingest",
+    "localAddress": "<local-address>",
+    "tenantId": "<tenant-id-or-unknown>",
+    "fullRequestUrl": "http://<hostname>/ingest",
+    "remoteAddress": "<remote-address>",
+    "timestamp": "<epoch-timestamp-in-ms>"
+  }
+  ```
 - **Structured Messaging to Amazon SQS**  
   A message is pushed to **Amazon SQS** with a deterministic `messageGroupId` to ensure **FIFO** ordering and grouping.
 
@@ -88,9 +110,9 @@
   - Health check:
 
   ```bash
-  curl --head http://<hostname>/
+  curl http://<hostname>/
   ```
-
+  
 - **MLLP (Minimal Lower Layer Protocol)**
   - The application listens on ports defined via the `HL7_MLLP_PORTS` environment variable:
 
@@ -112,7 +134,19 @@
   ```bash
   curl http://<hostname>/actuator/health/mllp
   ```
-
+     - Example Response for health check***
+      ```
+      {
+        "status": "UP",
+        "details": {
+          "MLLP Ports": {
+            "Port 2575": "UP",
+            "Port 2576": "UP",
+            "Port 2577": "UP"
+          }
+        }
+      }
+      ```
 - **SOAP Endpoints**
   - SOAP routes support **PIX** and **PNR** requests.
   - Standard SOAP acknowledgements are returned.
@@ -131,7 +165,7 @@
         enabled: true
   ```
 
-  Logs can be viewed in **CloudWatch** using either the `interactionId` or by searching `DEBUG_LOG_REQUEST_HEADERS`.
+  If  `DEBUG_LOG_REQUEST_HEADERS` is enabled headers available in request can be viewed in **CloudWatch** using either the `interactionId` or by searching `DEBUG_LOG_REQUEST_HEADERS`.
 
 - **📲 Togglz REST API Endpoints**
 
