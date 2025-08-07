@@ -198,7 +198,7 @@ public class FHIRService {
                 final Map<String, Object> immediateResult = validate(requestParameters, payload, interactionId, provenance,
                         source);
                 final Map<String, Object> result = Map.of("OperationOutcome", immediateResult);
-				if (healthCheck == null || "false".equals(healthCheck)) {
+				if (!"true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
 					payloadWithDisposition = registerValidationResults(jooqCfg, requestParameters,
 							result, interactionId, groupInteractionId, masterInteractionId,
 							source, requestUriToBeOverriden);
@@ -208,7 +208,7 @@ public class FHIRService {
                     return result;
                 }
 
-                if ("true".equals(healthCheck)) {
+                if ("true".equalsIgnoreCase(healthCheck != null ? healthCheck.trim() : null)) {
                     return result;
                 }
 
