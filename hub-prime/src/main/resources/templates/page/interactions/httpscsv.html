@@ -13,6 +13,10 @@
             font-size: 14px;
             margin: 8px 0px 10px 15px;
         }
+
+        .ag-cell.capitalize-first-letter::first-letter {
+            text-transform: uppercase;
+        }
     </style>
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
@@ -74,50 +78,74 @@
 
                 // Get the JSON data
                 const data = await response.json();
-                if (!data || data.length === 0) {
+                if (!data) {
                     throw new Error('No data received from API');
                 }
 
-                // Extract file names and payloads from multiple objects in the array
-                const files = [];
-                data.forEach(item => {
-                    if (item.demographic_data_file_name && item.demographic_data_payload_text) {
-                        files.push({ name: item.demographic_data_file_name, content: item.demographic_data_payload_text });
-                    }
-                    if (item.qe_admin_data_file_name && item.qe_admin_data_payload_text) {
-                        files.push({ name: item.qe_admin_data_file_name, content: item.qe_admin_data_payload_text });
-                    }
-                    if (item.screening_profile_data_file_name && item.screening_profile_data_payload_text) {
-                        files.push({ name: item.screening_profile_data_file_name, content: item.screening_profile_data_payload_text });
-                    }
-                    if (item.screening_observation_data_file_name && item.screening_observation_data_payload_text) {
-                        files.push({ name: item.screening_observation_data_file_name, content: item.screening_observation_data_payload_text });
-                    }
-                });
+                // Extract the zip file content from the response
+                // Handle your specific query response structure
+                let zipContent = null;
 
-                if (files.length === 0) {
-                    throw new Error('No valid files found in API response');
+                // Handle different response structures
+                if (Array.isArray(data) && data.length > 0) {
+                    // If data is an array, get the first item's zip content
+                    zipContent = data[0].csv_zip_file_content;
+                } else if (data.csv_zip_file_content) {
+                    // If data is an object with csv_zip_file_content field (your query structure)
+                    zipContent = data.csv_zip_file_content;
                 }
 
-                // Create a new ZIP file
-                const zip = new JSZip();
-                files.forEach(file => {
-                    zip.file(file.name, file.content); // Add files to zip
-                });
+                if (!zipContent) {
+                    throw new Error('No zip content found in the response');
+                }
 
-                // Generate the ZIP file and trigger download
-                const zipBlob = await zip.generateAsync({ type: 'blob' });
-                const url = URL.createObjectURL(zipBlob);
+                // Decode the bytea data (assuming it's base64 encoded)
+                let binaryData;
+                try {
+                    // If the data is a base64 string, decode it
+                    if (typeof zipContent === 'string') {
+                        // Remove any data URL prefix if present
+                        const base64Data = zipContent.replace(/^data:.*,/, '');
+                        binaryData = atob(base64Data);
+                    } else {
+                        throw new Error('Zip content is not in expected string format');
+                    }
+                } catch (decodeError) {
+                    console.error('Error decoding zip content:', decodeError);
+                    throw new Error('Failed to decode zip content');
+                }
+
+                // Convert binary string to Uint8Array
+                const bytes = new Uint8Array(binaryData.length);
+                for (let i = 0; i < binaryData.length; i++) {
+                    bytes[i] = binaryData.charCodeAt(i);
+                }
+
+                // Create a Blob from the binary data
+                const blob = new Blob([bytes], { type: 'application/zip' });
+
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = csvZipFileName;
+
+                // Ensure the filename has .zip extension
+                const fileName = csvZipFileName.endsWith('.zip') ? csvZipFileName : `${csvZipFileName}.zip`;
+                link.download = fileName;
+
+                // Trigger download
                 document.body.appendChild(link);
                 link.click();
+
+                // Cleanup
                 document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                window.URL.revokeObjectURL(url);
+
+                console.log(`ZIP file "${fileName}" downloaded successfully`);
 
             } catch (error) {
                 console.error('Error downloading ZIP file:', error);
+                alert(`Failed to download ZIP file: ${error.message}`);
             }
         };
 
@@ -165,16 +193,14 @@
         document.addEventListener('DOMContentLoaded', function () {
 
             function downloadCellRenderer(params) {
-                const zip_file_hub_interaction_id = params.data.hub_interaction_id;
+                const hub_interaction_id = params.data.hub_interaction_id;
                 const csv_zip_file_name = params.data.csv_zip_file_name || '';
 
                 // Create the URL for the API call
-                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/${downloadviewName}/zip_file_hub_interaction_id/${zip_file_hub_interaction_id}.json`;
-                if (params.data.file_count === 0) {
-                    return '<button class="  text-gray-500 cursor-not-allowed px-2 py-1 " disabled><i class="fas fa-download"></i></button>';
-                }
+                const apiUrl = `/api/ux/tabular/jooq/${schemaName}/interaction_csv_zip_download/hub_interaction_id/${hub_interaction_id}.json`;
+ 
                 // Create a download link placeholder
-                return `<a href="#" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
+                return `<a href="#" title="${csv_zip_file_name}" onclick="window.downloadZipFile('${apiUrl}','${csv_zip_file_name}'); return false;" style="text-decoration: none; color: #007bff;">
                     <i class="fas fa-download"></i>
                 </a>`;
 
@@ -185,12 +211,19 @@
                 const file_name = `${params.data.csv_zip_file_name}_validation_result.json`;
                 const apiUrl = `/api/ux/tabular/jooq/${schemaName}/interaction_csv_http_validation_result/hub_interaction_id/${hub_interaction_id}.json`;
 
-                return `<a href="#" onclick="window.downloadValidationResult('${apiUrl}','${file_name}'); return false;" style="text-decoration: none; color: #007bff;">
+                return `<a href="#" title="${file_name}" onclick="window.downloadValidationResult('${apiUrl}','${file_name}'); return false;" style="text-decoration: none; color: #007bff;">
                                         <i class="fas fa-download"></i>
                                     </a>`;
 
             }
 
+            function formatStatus(text) {
+                return text
+                    .toLowerCase()
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+            }
 
             const agGridInstance = new AGGridAideBuilder()
                 .withColumnDefs([
@@ -211,11 +244,21 @@
                     },
                     { headerName: "TechBD Tenant ID", field: "tenant_id", headerTooltip: "ID of the tenant involved in the interaction", filter: "agTextColumnFilter" },
                     { headerName: "URI", field: "uri", headerTooltip: "The URI associated with the interaction", filter: "agTextColumnFilter" },
-                    { headerName: "File Count", field: "file_count", headerTooltip: "The total number of files processed, including demographic, administrative, observation, and profile files.", filter: "agNumberColumnFilter" },
+                    { headerName: "Processing Status", field: "status", headerTooltip: "The ZIP file processing status.", filter: "agTextColumnFilter" },
+                    {
+                        headerName: "CSV Issues", field: "is_failed", headerTooltip: "Issue on generating FHIR from CSV", filter: "agTextColumnFilter", cellRenderer: params => {
+                            if (params.value === 'True') {
+                                return `<a href="/data-quality/csv-validations/file-not-processed" target="_blank" class="text-blue-600 underline hover:text-blue-800 font-medium">${params.value}</a>`;
+                            } else {
+                                return params.value
+                            }
+                        }
+                    },
+                    // { headerName: "File Count", field: "file_count", headerTooltip: "The total number of files processed, including demographic, administrative, observation, and profile files.", filter: "agNumberColumnFilter" },
+                    //{ headerName: "Total Group Count", field: "gourp_count", headerTooltip: "The file group count.", filter: "agNumberColumnFilter" },
+                    //{ headerName: "FHIR Group Count", field: "grouping_files", headerTooltip: "The file group count.", filter: "agNumberColumnFilter" },
                     { headerName: "FHIR Count", field: "fhir_count", headerTooltip: "The total number of FHIR interactions associated with this HTTP request.", filter: "agNumberColumnFilter", cellRenderer: 'agGroupCellRenderer' },
                     { headerName: "FHIR Success Count", field: "fhir_count_success", headerTooltip: "The number of successful FHIR interactions where an HTTP response was forwarded.", filter: "agNumberColumnFilter" },
-                    { headerName: "Origin", field: "origin", headerTooltip: "The origin of the interaction", filter: "agNumberColumnFilter" },
-                    { headerName: "SFTP Session ID", field: "sftp_session_id", headerTooltip: "The SFTP session ID associated with the interaction", filter: "agNumberColumnFilter" },
                     {
                         headerName: "Zip File", field: "download", cellClass: "flex justify-center items-center", cellRenderer: downloadCellRenderer,
                         headerTooltip: "Download Zip File", filter: false, suppressFilter: true
@@ -264,23 +307,67 @@
 <body>
     <div layout:fragment="content">
         <div class="grid-description">
-            This widget provides a comprehensive overview of CSV-based HTTP interactions, including processed request
-            details. Key columns include the Hub Interaction ID, which serves as the unique identifier for each
-            interaction, and the Request Time timestamp indicating when the interaction occurred. The File Count
-            aggregates the number of associated demographic, administrative, observation, and profile files.
+            <div class=" text-base leading-relaxed">
 
-            The widget also highlights the total FHIR interactions (FHIR Count), breaking them down into Successful FHIR
-            Interactions and Failed FHIR Interactions. Users can click on the FHIR Count to open a dropdown, which
-            provides detailed information about each FHIR interaction, including specifics on successful and failed
-            transactions. This allows users to explore patterns in data processing outcomes, validate successful data
-            flows, and identify issues related to failed interactions.
+                <p class="mb-1">
+                    This widget presents a detailed view of CSV-based HTTP interactions processed through the system.
+                    Each row represents a single interaction initiated via a ZIP file, with essential metadata and
+                    outcomes displayed in an accessible format. The columns includes:
+                </p>
 
-            In addition, users have access to Download Zip File and Download OperationOutcome fields. These options
-            allow for direct downloading of the original zip file and the corresponding OperationOutcome response,
-            facilitating deeper analysis and debugging of specific transactions.
+                <!-- <button id="accordionToggle"
+                    class="mb-2 text-blue-700 font-semibold hover:underline focus:outline-none">
+                    ▶ Click here to view the column descriptions:
+                </button> -->
+                 <!-- <div id="accordionContent" class="hidden pl-4 border-l-2 border-blue-200"></div> -->
+                <div id="accordionContent"  >
+                    <p  >
+                        <strong>Request Time:</strong> Shows when the interaction was initiated.<br>
+                        <strong>TechBD Zip File Interaction ID:</strong> Serves as the unique reference for the
+                        submitted ZIP file. Users can use this ID to trace issues and cross-reference CSV validation
+                        results.<br>
+                        <strong>TechBD Tenant ID:</strong> Identifies the tenant associated with the request.<br>
+                        <strong>URI:</strong> Displays the endpoint involved in the interaction.<br>
+                        <strong>Processing Status:</strong> Indicates the current state of ZIP file processing (e.g.,
+                        <em>Processing Started</em>, <em>Processing Completed</em>, <em>Processing Failed</em>  <!-- <em>Received</em>--> etc.), helping
+                        users understand where the file stands in the processing pipeline.<br>
+                        <strong>CSV Issues:</strong> Highlights whether the FHIR conversion from the submitted CSV
+                        failed. If a failure occurred, a direct link is provided to the
+                        <a href="/data-quality/csv-validations/file-not-processed" class="text-blue-600 underline"
+                            target="_blank">CSV Data Quality page</a> for detailed error insights. You can use the
+                        Interaction ID to filter errors on that page.<br>
+                        <!-- <strong>File Count:</strong> Shows the number of files processed within the ZIP (demographic,
+                        administrative, observation, and profile files).<br> -->
+                        <strong>FHIR Count:</strong> Reflects the total FHIR interactions triggered by the request, and
+                        can be expanded for detailed interaction-level insight.<br>
+                        <strong>FHIR Success Count:</strong> Indicates how many of those interactions were successfully
+                        forwarded as valid FHIR resources.<br>
+                        <strong>Download Options:</strong> Users can download the original ZIP file submitted for
+                        processing and the corresponding OperationOutcome file, which contains validation results for
+                        debugging and analysis.
+                    </p>
+                </div>
 
-            Sorting and filtering options empower users to analyze interactions effectively, offering enhanced
-            flexibility in reviewing and understanding the data.
+                <p>
+                    Sorting and filtering options are available throughout the grid to help users efficiently explore,
+                    analyze, and identify issues in the interactions.
+                </p>
+
+            </div>
+
+            <script>
+                const toggleButton = document.getElementById('accordionToggle');
+                const content = document.getElementById('accordionContent');
+
+                toggleButton.addEventListener('click', () => {
+                    content.classList.toggle('hidden');
+                    toggleButton.textContent = content.classList.contains('hidden')
+                        ? '▶ Click here to view the column descriptions:'
+                        : '▼ Hide column descriptions:';
+                });
+            </script>
+
+
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>

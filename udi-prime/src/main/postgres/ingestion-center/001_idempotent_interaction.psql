@@ -4161,11 +4161,17 @@ $$ LANGUAGE plpgsql;
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http_stat CASCADE;
 
 /*******************************************************************************************
-This view summarizes CSV HTTP interactions by combining ZIP file requests with related flat 
-file records and FHIR processing results. It includes metadata such as tenant, session ID, 
-file counts, and FHIR response statistics (total, success, failure). Only records with 
-'Original Flat File CSV' or 'CSV Validation Result' nature are included.
+This view summarizes CSV-based HTTP interactions by combining ZIP file requests with related 
+flat file and FHIR request data. It includes metadata such as tenant identifiers,  
+and FHIR processing statistics (total, success).
+
+It also introduces an `is_failed` flag to identify interactions that encountered issues. 
+A hub interaction is marked as failed if it contains general errors or if any associated 
+CSV processing failed during validation or FHIR conversion.
+
+Only flat files with nature 'Original Flat File CSV' or 'CSV Validation Result' are considered.
 *******************************************************************************************/
+
 
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_http CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_http AS
@@ -4179,8 +4185,17 @@ WITH fhir_summary AS (
     WHERE nature IN ('Forwarded HTTP Response', 'Forwarded HTTP Response Error')
       AND source_type = 'CSV'
     GROUP BY source_hub_interaction_id
+),
+fhir_failure_check AS (
+    SELECT DISTINCT zip_file_hub_interaction_id AS hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
+    WHERE nature = 'Converted to FHIR' AND to_state = 'FHIR_CONVERSION_FAILED'
+),
+general_error_check AS (
+    SELECT DISTINCT sizfcr.hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfcr,
+         LATERAL jsonb_array_elements(sizfcr.general_errors) AS general_error
 )
-
 SELECT 
     sizfr.tenant_id_lower,
     sizfr.tenant_id,
@@ -4190,22 +4205,36 @@ SELECT
     sizfr.csv_zip_file_name,
     sizfr.origin,
     sizfr.sftp_session_id,
-    SUM(CASE WHEN siffcr.demographic_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
-    SUM(CASE WHEN siffcr.qe_admin_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
-    SUM(CASE WHEN siffcr.screening_observation_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
-    SUM(CASE WHEN siffcr.screening_profile_data_file_name IS NOT NULL THEN 1 ELSE 0 END) AS file_count,
+	INITCAP(REPLACE(LOWER(sizfr.status), '_', ' ')) as status,
+--	count(distinct siffcr.qe_admin_data_file_name) as grouping_files,
+--    SUM(CASE WHEN siffcr.demographic_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
+--    SUM(CASE WHEN siffcr.qe_admin_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
+--    SUM(CASE WHEN siffcr.screening_observation_data_file_name IS NOT NULL THEN 1 ELSE 0 END) +
+--    SUM(CASE WHEN siffcr.screening_profile_data_file_name IS NOT NULL THEN 1 ELSE 0 END) AS file_count,
     COALESCE(fhir_summary.fhir_count, 0) AS fhir_count,
     COALESCE(fhir_summary.fhir_count_success, 0) AS fhir_count_success,
-    COALESCE(fhir_summary.fhir_count_failed, 0) AS fhir_count_failed
+    -- is_failed condition
+    CASE 
+        WHEN general_error_check.hub_interaction_id IS NOT NULL OR fhir_failure_check.hub_interaction_id IS NOT NULL
+        THEN 'True' ELSE 'False' 
+    END AS is_failed
+
 FROM
     techbd_udi_ingress.sat_interaction_zip_file_request sizfr
 LEFT JOIN
     techbd_udi_ingress.sat_interaction_flat_file_csv_request siffcr
     ON sizfr.hub_interaction_id = siffcr.zip_file_hub_interaction_id 
-     AND (siffcr.nature = 'Original Flat File CSV'::text or siffcr.nature = 'CSV Validation Result'::text)
+     AND siffcr.nature IN ('Original Flat File CSV', 'CSV Validation Result')
 LEFT JOIN
     fhir_summary
     ON sizfr.hub_interaction_id = fhir_summary.source_hub_interaction_id
+LEFT JOIN
+    general_error_check
+    ON sizfr.hub_interaction_id = general_error_check.hub_interaction_id
+LEFT JOIN
+    fhir_failure_check
+    ON sizfr.hub_interaction_id = fhir_failure_check.hub_interaction_id
+
 GROUP BY 
     sizfr.hub_interaction_id,
     sizfr.created_at,
@@ -4213,11 +4242,15 @@ GROUP BY
     sizfr.tenant_id_lower,
     sizfr.tenant_id,
     sizfr.csv_zip_file_name,
-     sizfr.origin,
+    sizfr.origin,
     sizfr.sftp_session_id,
+	sizfr.status,
     fhir_summary.fhir_count,
     fhir_summary.fhir_count_success,
-    fhir_summary.fhir_count_failed
+    fhir_summary.fhir_count_failed,
+    general_error_check.hub_interaction_id,
+    fhir_failure_check.hub_interaction_id
+
 ORDER BY 
     sizfr.created_at DESC;
 
@@ -7569,3 +7602,20 @@ AS SELECT hub_interaction_id,
     sat_interaction_zip_file_request_id,
     validation_result_payload
    FROM techbd_udi_ingress.sat_interaction_zip_file_request sizfr;
+
+/*******************************************************************************************
+ * View for CSV Zip File Download
+ *
+ * This view provides access to CSV zip file content stored in the database for download
+ * purposes. It exposes the hub_interaction_id and the corresponding zip file content
+ * (stored as bytea) that can be retrieved and downloaded by the frontend application.
+ *
+ * Usage: Used by the downloadZipFile JavaScript function to fetch and download
+ * CSV zip files associated with specific interaction IDs.
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_csv_zip_download CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_csv_zip_download AS
+SELECT
+    hub_interaction_id,
+    csv_zip_file_content
+FROM techbd_udi_ingress.sat_interaction_zip_file_request;   
