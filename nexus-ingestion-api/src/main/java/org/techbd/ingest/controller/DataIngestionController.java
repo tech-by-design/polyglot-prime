@@ -5,7 +5,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.techbd.ingest.commons.Constants;
-import org.techbd.ingest.feature.FeatureEnum;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.service.router.IngestionRouter;
+import org.techbd.ingest.service.MessageProcessorService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,11 +37,11 @@ import lombok.extern.slf4j.Slf4j;
 public class DataIngestionController {
     private static final Logger LOG = LoggerFactory.getLogger(DataIngestionController.class.getName()); 
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-    private final IngestionRouter ingestionRouter;
+    private final MessageProcessorService messageProcessorService;
     private final ObjectMapper objectMapper;
 
-    public DataIngestionController(IngestionRouter ingestionRouter, ObjectMapper objectMapper) {
-        this.ingestionRouter = ingestionRouter;
+    public DataIngestionController(MessageProcessorService messageProcessorService, ObjectMapper objectMapper) {
+        this.messageProcessorService = messageProcessorService;
         this.objectMapper = objectMapper;
         LOG.info("DataIngestionController initialized");
     }
@@ -82,14 +80,6 @@ public class DataIngestionController {
         // Get interactionId from filter
         String interactionId = (String) request.getAttribute("interactionId");
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
-
-        //  // ✅ Conditional debug logging of headers using Togglz
-        //  if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-        //     headers.forEach((k, v) -> {
-        //         log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
-        //     });
-        // }
-
         if (file == null || file.isEmpty()) {
             LOG.warn("Uploaded file is empty. interactionId={}", interactionId);
             throw new IllegalArgumentException("Uploaded file is empty");
@@ -97,16 +87,12 @@ public class DataIngestionController {
         RequestContext context = createRequestContext(interactionId,
                 headers, request, file.getSize(), file.getOriginalFilename());
         LOG.info("DataIngestionController:: RequestContext created for interactionId={}", interactionId);
-
-        Map<String, String> responseMap = ingestionRouter.routeAndProcess(file, context);
+         Map<String, String> responseMap = messageProcessorService.processMessage(context, file);
         LOG.info("DataIngestionController:: File processed successfully. interactionId={}", interactionId);
-
         String responseJson = objectMapper.writeValueAsString(responseMap);
         LOG.info("DataIngestionController:: Returning response for interactionId={}", interactionId);
         return ResponseEntity.ok(responseJson);
     }
-
-
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {

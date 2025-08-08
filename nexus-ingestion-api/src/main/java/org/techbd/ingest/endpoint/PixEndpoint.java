@@ -1,54 +1,144 @@
 package org.techbd.ingest.endpoint;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
+import org.springframework.ws.transport.context.TransportContextHolder;
+import org.springframework.ws.transport.http.HttpServletConnection;
+import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.service.MessageProcessorService;
 import org.techbd.ingest.service.iti.AcknowledgementService;
 import org.techbd.iti.schema.MCCIIN000002UV01;
 import org.techbd.iti.schema.PRPAIN201301UV02;
 import org.techbd.iti.schema.PRPAIN201302UV02;
 import org.techbd.iti.schema.PRPAIN201304UV02;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 @Endpoint
 public class PixEndpoint {
 
+    private static final Logger log = LoggerFactory.getLogger(PixEndpoint.class);
     private static final String NAMESPACE_URI = "urn:hl7-org:v3";
-    private final AcknowledgementService ackService;
 
-    public PixEndpoint(AcknowledgementService ackService) {
+    private final AcknowledgementService ackService;
+    private final MessageProcessorService messageProcessorService;
+
+    public PixEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService) {
         this.ackService = ackService;
+        this.messageProcessorService = messageProcessorService;
     }
 
-    // ITI-44: Patient Registry Record Added
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201301UV02")
     @ResponsePayload
     public MCCIIN000002UV01 handlePixAdd(@RequestPayload PRPAIN201301UV02 request) {
-        return ackService.createAcknowledgement(
-                request.getId(), request.getSender().getDevice(),
-                "2.25.256133121442266547198931747355024016667.1.1.1",
-                "http://helprodmcccd.myhie.com:9002/pixpdq/PIXManager_Service"
-        );
+        final String interactionId = UUID.randomUUID().toString();
+        try {
+            log.info("[{}] Received PRPA_IN201301UV02 request", interactionId);
+            String pixMessage = request.toString();
+            RequestContext context = buildRequestContext(pixMessage, interactionId);
+            messageProcessorService.processMessage(context, pixMessage);
+            return ackService.createAcknowledgement(
+                request.getId(), request.getSender().getDevice(), //TODO -handle when sender information is not available
+                context.getSourceIp() + ":" + context.getDestinationPort(),
+                context.getProtocol(),interactionId
+            );
+        } catch (Exception e) {
+            log.error("[{}] Exception processing PRPA_IN201301UV02: {}", interactionId, e.getMessage(), e);
+          //TODO  - check on how should we send back acknowledgements in case of errors   
+          return ackService.createAcknowledgmentError("Internal server error");
+        }
     }
 
-    // ITI-44/46: Patient Registry Record Revised
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201302UV02")
     @ResponsePayload
     public MCCIIN000002UV01 handlePixUpdate(@RequestPayload PRPAIN201302UV02 request) {
-        return ackService.createAcknowledgement(
-                request.getId(), request.getSender().getDevice(),
-                "2.25.256133121442266547198931747355024016667.1.1.1",
-                "http://helprodmcccd.myhie.com:9002/pixpdq/PIXManager_Service"
-        );
+        final String interactionId = UUID.randomUUID().toString();
+        try {
+            log.info("[{}] Received PRPA_IN201302UV02 request", interactionId);
+            String pixMessage = request.toString();
+            RequestContext context = buildRequestContext(pixMessage, interactionId);
+            messageProcessorService.processMessage(context, pixMessage);
+            return ackService.createAcknowledgement(
+                request.getId(), request.getSender().getDevice(),//TODO -handle when sender information is not available
+                context.getSourceIp() + ":" + context.getDestinationPort(),
+                context.getProtocol(),interactionId
+            );
+        } catch (Exception e) {
+            log.error("[{}] Exception processing PRPA_IN201302UV02: {}", interactionId, e.getMessage(), e);
+            //TODO  - check on how should we send back acknowledgements in case of errors
+            return ackService.createAcknowledgmentError("Internal server error");
+        }
     }
 
-    // ITI-44: Patient Registry Duplicates Resolved
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201304UV02")
     @ResponsePayload
     public MCCIIN000002UV01 handlePixDuplicateResolved(@RequestPayload PRPAIN201304UV02 request) {
-        return ackService.createAcknowledgement(
-                request.getId(), request.getSender().getDevice(),
-                "2.25.256133121442266547198931747355024016667.1.1.1",
-                "http://helprodmcccd.myhie.com:9002/pixpdq/PIXManager_Service"
+        final String interactionId = UUID.randomUUID().toString();
+        try {
+            log.info("[{}] Received PRPA_IN201304UV02 request", interactionId);
+            String pixMessage = request.toString();
+            RequestContext context = buildRequestContext(pixMessage, interactionId);
+            messageProcessorService.processMessage(context, pixMessage);
+            return ackService.createAcknowledgement(
+                request.getId(), request.getSender().getDevice(),//TODO -handle when sender information is not available
+                context.getSourceIp() + ":" + context.getDestinationPort(),
+                context.getProtocol(),interactionId
+            );
+        } catch (Exception e) {
+            log.error("[{}] Exception processing PRPA_IN201304UV02: {}", interactionId, e.getMessage(), e);
+            //TODO  - check on how should we send back acknowledgements in case of errors   
+            return ackService.createAcknowledgmentError("Internal server error");
+        }
+    }
+
+    private RequestContext buildRequestContext(String hl7Message, String interactionId) {
+        ZonedDateTime uploadTime = ZonedDateTime.now();
+        String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest request = connection.getHttpServletRequest();
+        Map<String, String> headers = new HashMap<>();
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String header = headerNames.nextElement();
+            String value = request.getHeader(header);
+            headers.put(header, value);
+        }
+        String tenantId = headers.getOrDefault("X-Tenant-ID", "default-tenant");
+        String sourceIp = request.getRemoteAddr();
+        String destinationIp = request.getLocalAddr();
+        String destinationPort = String.valueOf(request.getLocalPort());
+        String protocol = request.getProtocol();
+        String userAgent = headers.getOrDefault("User-Agent", "");
+        String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        String fileBaseName = "soap-message";
+        String fileExtension = "xml";
+        String originalFileName = fileBaseName + "." + fileExtension;
+        String objectKey = String.format("data/%s/%s-%s-%s.%s",
+            datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
+            datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        log.debug("[{}] Request context built with source IP {}, destination port {}, user-agent: {}",
+            interactionId, sourceIp, destinationPort, userAgent);
+        return new RequestContext(
+            headers, request.getRequestURI(), tenantId, interactionId, uploadTime, timestamp,
+            originalFileName, hl7Message.length(), objectKey, metadataKey, fullS3Path,
+            userAgent, request.getRequestURL().toString(),
+            request.getQueryString() == null ? "" : request.getQueryString(),
+            protocol, destinationIp, sourceIp, sourceIp, destinationIp, destinationPort
         );
     }
 }
