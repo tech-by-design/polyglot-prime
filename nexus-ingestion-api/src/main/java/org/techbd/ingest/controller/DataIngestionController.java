@@ -79,15 +79,17 @@ public class DataIngestionController {
             @RequestParam("file") @Nonnull MultipartFile file,
             @RequestHeader Map<String, String> headers,
             HttpServletRequest request) throws Exception {
-        String interactionId = UUID.randomUUID().toString();
+        
+        // Get interactionId from filter
+        String interactionId = (String) request.getAttribute("interactionId");
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
 
-         // ✅ Conditional debug logging of headers using Togglz
-         if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-            headers.forEach((k, v) -> {
-                log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
-            });
-        }
+        //  // ✅ Conditional debug logging of headers using Togglz
+        //  if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+        //     headers.forEach((k, v) -> {
+        //         log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
+        //     });
+        // }
 
         if (file == null || file.isEmpty()) {
             LOG.warn("Uploaded file is empty. interactionId={}", interactionId);
