@@ -735,7 +735,9 @@ const migrateSP = pgSQLa.storedProcedure(
       CREATE INDEX IF NOT EXISTS sat_inter_ccda_req_payload_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING gin (payload);
       CREATE INDEX IF NOT EXISTS sat_inter_ccda_req_to_state_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (to_state);
 
-
+      ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request 
+        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL,
+        ADD COLUMN IF NOT EXISTS file_name TEXT NULL;
 
       BEGIN
         ${fileExchangeProtocol.seedDML}
@@ -857,6 +859,7 @@ const migrateSP = pgSQLa.storedProcedure(
         ADD CONSTRAINT json_action_rule_action_rule_id_pkey
         PRIMARY KEY (action_rule_id);
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_disposition_action TEXT NULL;  
+      ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
       
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ADD COLUMN IF NOT EXISTS severity TEXT NULL;     
       
@@ -1062,6 +1065,8 @@ const migrateSP = pgSQLa.storedProcedure(
                           ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id);
       ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS request_source TEXT DEFAULT NULL; 
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ADD COLUMN IF NOT EXISTS additional_details JSONB DEFAULT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_interaction_http_request ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
+      ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
 
       ${linkNexusInteraction}
       IF NOT EXISTS (
@@ -1127,6 +1132,8 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
       DROP CONSTRAINT IF EXISTS sat_interaction_flat_file_csv_request_zip_file_sat_interaction_id_fkey;
 
+      ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
       
       
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
@@ -1141,6 +1148,10 @@ const migrateSP = pgSQLa.storedProcedure(
         ADD COLUMN IF NOT EXISTS client_ip_address TEXT NULL, 
             ADD COLUMN IF NOT EXISTS hl7_payload_text TEXT NULL,
             ADD COLUMN IF NOT EXISTS origin TEXT NULL; 
+      
+      ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request 
+        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL,
+        ADD COLUMN IF NOT EXISTS file_name TEXT NULL;
 
       ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request 
 	      ADD COLUMN IF NOT EXISTS group_hub_interaction_id TEXT NULL;      
@@ -1174,6 +1185,12 @@ const migrateSP = pgSQLa.storedProcedure(
 
       UPDATE techbd_udi_ingress.sat_interaction_user 
         SET user_session_hash = md5(user_session) WHERE user_session_hash IS NULL;        
+      
+      ALTER TABLE techbd_udi_ingress.sat_interaction_user 
+        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
+      
+      ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request 
+        ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL;
 
       ${dependenciesSQL}
 
