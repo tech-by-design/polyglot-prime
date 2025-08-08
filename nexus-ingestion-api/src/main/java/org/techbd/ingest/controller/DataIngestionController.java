@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -79,15 +78,17 @@ public class DataIngestionController {
             @RequestParam("file") @Nonnull MultipartFile file,
             @RequestHeader Map<String, String> headers,
             HttpServletRequest request) throws Exception {
-        String interactionId = UUID.randomUUID().toString();
+        
+        // Get interactionId from filter
+        String interactionId = (String) request.getAttribute("interactionId");
         LOG.info("DataIngestionController:: Received ingest request. interactionId={}", interactionId);
 
-         // ✅ Conditional debug logging of headers using Togglz
-         if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
-            headers.forEach((k, v) -> {
-                log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
-            });
-        }
+        //  // ✅ Conditional debug logging of headers using Togglz
+        //  if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
+        //     headers.forEach((k, v) -> {
+        //         log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
+        //     });
+        // }
 
         if (file == null || file.isEmpty()) {
             LOG.warn("Uploaded file is empty. interactionId={}", interactionId);
