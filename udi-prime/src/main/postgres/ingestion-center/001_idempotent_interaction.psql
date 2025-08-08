@@ -4189,7 +4189,7 @@ WITH fhir_summary AS (
 fhir_failure_check AS (
     SELECT DISTINCT zip_file_hub_interaction_id AS hub_interaction_id
     FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
-    WHERE nature = 'Converted to FHIR' AND to_state = 'FHIR_CONVERSION_FAILED'
+    WHERE ((nature = 'Converted to FHIR' AND to_state = 'FHIR_CONVERSION_FAILED') OR (nature = 'CSV Validation Result' AND to_state = 'VALIDATION_FAILED'))
 ),
 general_error_check AS (
     SELECT DISTINCT sizfcr.hub_interaction_id
