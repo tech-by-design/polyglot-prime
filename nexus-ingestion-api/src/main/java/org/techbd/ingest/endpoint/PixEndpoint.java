@@ -1,87 +1,144 @@
 package org.techbd.ingest.endpoint;
 
-import org.techbd.iti.schema.*;
-
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
+import org.springframework.ws.transport.context.TransportContextHolder;
+import org.springframework.ws.transport.http.HttpServletConnection;
+import org.techbd.ingest.commons.Constants;
+import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.service.MessageProcessorService;
+import org.techbd.ingest.service.iti.AcknowledgementService;
+import org.techbd.iti.schema.MCCIIN000002UV01;
+import org.techbd.iti.schema.PRPAIN201301UV02;
+import org.techbd.iti.schema.PRPAIN201302UV02;
+import org.techbd.iti.schema.PRPAIN201304UV02;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Endpoint
 public class PixEndpoint {
 
+    private static final Logger log = LoggerFactory.getLogger(PixEndpoint.class);
     private static final String NAMESPACE_URI = "urn:hl7-org:v3";
+
+    private final AcknowledgementService ackService;
+    private final MessageProcessorService messageProcessorService;
+
+    public PixEndpoint(AcknowledgementService ackService, MessageProcessorService messageProcessorService) {
+        this.ackService = ackService;
+        this.messageProcessorService = messageProcessorService;
+    }
 
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201301UV02")
     @ResponsePayload
-    public MCCIIN000002UV01 handlePixAddRequest(@RequestPayload PRPAIN201301UV02 request) {
-
-        MCCIIN000002UV01 ack = new MCCIIN000002UV01();
-
-        // Set id (unique UUID)
-        II id = new II();
-        id.setRoot(UUID.randomUUID().toString());
-        ack.setId(id);
-
-        // creationTime - current timestamp in HL7 format (e.g., 20250805165700)
-        TS creationTime = new TS();
-        creationTime.setValue(DateTimeFormatter.ofPattern("yyyyMMddHHmmssZ")
-                .format(ZonedDateTime.now(ZoneId.of("UTC+05:30"))));
-        ack.setCreationTime(creationTime);
-
-        // interactionId - fixed
-        II interactionId = new II();
-        interactionId.setRoot("2.16.840.1.113883.1.6");
-        interactionId.setExtension("MCCI_IN000002UV01");
-        ack.setInteractionId(interactionId);
-
-        CS processingCode = new CS();
-        processingCode.setCode("P");
-        ack.setProcessingCode(processingCode);
-        CS processingModeCode = new CS();
-        processingModeCode.setCode("R");
-        ack.setProcessingModeCode(processingModeCode);
-        CS acceptAckCode = new CS();
-        acceptAckCode.setCode("NE");
-        ack.setAcceptAckCode(acceptAckCode);
-        MCCIMT000200UV01Receiver receiver = new MCCIMT000200UV01Receiver();
-        MCCIMT000100UV01Device senderDevice = request.getSender().getDevice();
-        MCCIMT000100UV01Device receiverDevice = new MCCIMT000100UV01Device();
-        receiverDevice.getId().addAll(senderDevice.getId());
-        receiverDevice.setDeterminerCode("INSTANCE");
-        // receiverDevice.setClassCode("DEV");
-        // receiver.setTypeCode("RCV");
-        // receiver.setDevice(receiverDevice);
-        ack.getReceiver().add(receiver);
-        MCCIMT000200UV01Sender sender = new MCCIMT000200UV01Sender();
-        MCCIMT000100UV01Device device = new MCCIMT000100UV01Device();
-        II senderId = new II();
-        senderId.setRoot("2.25.256133121442266547198931747355024016667.1.1.1");
-        TEL telecom = new TEL();
-        telecom.setValue("http://helprodmcccd.myhie.com:9002/pixpdq/PIXManager_Service");
-        device.getId().add(senderId);
-        device.setDeterminerCode("INSTANCE");
-        // device.setClassCode("DEV");
-        device.getTelecom().add(telecom);
-        // sender.setDevice(device);
-        // sender.setTypeCode("SND");
-        ack.setSender(sender);
-        MCCIMT000200UV01Acknowledgement ackBlock = new MCCIMT000200UV01Acknowledgement();
-        CS typeCode = new CS();
-        typeCode.setCode("CA");
-        ackBlock.setTypeCode(typeCode);
-        MCCIMT000200UV01TargetMessage targetMessage = new MCCIMT000200UV01TargetMessage();
-        II targetId = request.getId();
-        targetMessage.setId(targetId);
-        ackBlock.setTargetMessage(targetMessage);
-        ack.getAcknowledgement().add(ackBlock);
-
-        return ack;
+    public MCCIIN000002UV01 handlePixAdd(@RequestPayload PRPAIN201301UV02 request) {
+        final String interactionId = UUID.randomUUID().toString();
+        try {
+            log.info("[{}] Received PRPA_IN201301UV02 request", interactionId);
+            String pixMessage = request.toString();
+            RequestContext context = buildRequestContext(pixMessage, interactionId);
+            messageProcessorService.processMessage(context, pixMessage);
+            return ackService.createAcknowledgement(
+                request.getId(), request.getSender().getDevice(), //TODO -handle when sender information is not available
+                context.getSourceIp() + ":" + context.getDestinationPort(),
+                context.getProtocol(),interactionId
+            );
+        } catch (Exception e) {
+            log.error("[{}] Exception processing PRPA_IN201301UV02: {}", interactionId, e.getMessage(), e);
+          //TODO  - check on how should we send back acknowledgements in case of errors   
+          return ackService.createAcknowledgmentError("Internal server error");
+        }
     }
 
+    @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201302UV02")
+    @ResponsePayload
+    public MCCIIN000002UV01 handlePixUpdate(@RequestPayload PRPAIN201302UV02 request) {
+        final String interactionId = UUID.randomUUID().toString();
+        try {
+            log.info("[{}] Received PRPA_IN201302UV02 request", interactionId);
+            String pixMessage = request.toString();
+            RequestContext context = buildRequestContext(pixMessage, interactionId);
+            messageProcessorService.processMessage(context, pixMessage);
+            return ackService.createAcknowledgement(
+                request.getId(), request.getSender().getDevice(),//TODO -handle when sender information is not available
+                context.getSourceIp() + ":" + context.getDestinationPort(),
+                context.getProtocol(),interactionId
+            );
+        } catch (Exception e) {
+            log.error("[{}] Exception processing PRPA_IN201302UV02: {}", interactionId, e.getMessage(), e);
+            //TODO  - check on how should we send back acknowledgements in case of errors
+            return ackService.createAcknowledgmentError("Internal server error");
+        }
+    }
+
+    @PayloadRoot(namespace = NAMESPACE_URI, localPart = "PRPA_IN201304UV02")
+    @ResponsePayload
+    public MCCIIN000002UV01 handlePixDuplicateResolved(@RequestPayload PRPAIN201304UV02 request) {
+        final String interactionId = UUID.randomUUID().toString();
+        try {
+            log.info("[{}] Received PRPA_IN201304UV02 request", interactionId);
+            String pixMessage = request.toString();
+            RequestContext context = buildRequestContext(pixMessage, interactionId);
+            messageProcessorService.processMessage(context, pixMessage);
+            return ackService.createAcknowledgement(
+                request.getId(), request.getSender().getDevice(),//TODO -handle when sender information is not available
+                context.getSourceIp() + ":" + context.getDestinationPort(),
+                context.getProtocol(),interactionId
+            );
+        } catch (Exception e) {
+            log.error("[{}] Exception processing PRPA_IN201304UV02: {}", interactionId, e.getMessage(), e);
+            //TODO  - check on how should we send back acknowledgements in case of errors   
+            return ackService.createAcknowledgmentError("Internal server error");
+        }
+    }
+
+    private RequestContext buildRequestContext(String hl7Message, String interactionId) {
+        ZonedDateTime uploadTime = ZonedDateTime.now();
+        String timestamp = String.valueOf(uploadTime.toInstant().toEpochMilli());
+        var transportContext = TransportContextHolder.getTransportContext();
+        var connection = (HttpServletConnection) transportContext.getConnection();
+        HttpServletRequest request = connection.getHttpServletRequest();
+        Map<String, String> headers = new HashMap<>();
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String header = headerNames.nextElement();
+            String value = request.getHeader(header);
+            headers.put(header, value);
+        }
+        String tenantId = headers.getOrDefault("X-Tenant-ID", "default-tenant");
+        String sourceIp = request.getRemoteAddr();
+        String destinationIp = request.getLocalAddr();
+        String destinationPort = String.valueOf(request.getLocalPort());
+        String protocol = request.getProtocol();
+        String userAgent = headers.getOrDefault("User-Agent", "");
+        String datePath = uploadTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        String fileBaseName = "soap-message";
+        String fileExtension = "xml";
+        String originalFileName = fileBaseName + "." + fileExtension;
+        String objectKey = String.format("data/%s/%s-%s-%s.%s",
+            datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String metadataKey = String.format("metadata/%s/%s-%s-%s-%s-metadata.json",
+            datePath, timestamp, interactionId, fileBaseName, fileExtension);
+        String fullS3Path = Constants.S3_PREFIX + Constants.BUCKET_NAME + "/" + objectKey;
+        log.debug("[{}] Request context built with source IP {}, destination port {}, user-agent: {}",
+            interactionId, sourceIp, destinationPort, userAgent);
+        return new RequestContext(
+            headers, request.getRequestURI(), tenantId, interactionId, uploadTime, timestamp,
+            originalFileName, hl7Message.length(), objectKey, metadataKey, fullS3Path,
+            userAgent, request.getRequestURL().toString(),
+            request.getQueryString() == null ? "" : request.getQueryString(),
+            protocol, destinationIp, sourceIp, sourceIp, destinationIp, destinationPort
+        );
+    }
 }

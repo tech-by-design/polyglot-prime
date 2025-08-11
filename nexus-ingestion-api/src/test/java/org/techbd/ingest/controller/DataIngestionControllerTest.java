@@ -19,7 +19,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.service.router.IngestionRouter;
+import org.techbd.ingest.service.MessageProcessorService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -28,7 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 class DataIngestionControllerTest {
 
     @Mock
-    private IngestionRouter ingestionRouter;
+    private MessageProcessorService messageProcessorService;
 
     @Mock
     private HttpServletRequest servletRequest;
@@ -42,7 +42,7 @@ class DataIngestionControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         objectMapper = new ObjectMapper();
-        controller = new DataIngestionController(ingestionRouter, objectMapper);
+        controller = new DataIngestionController(messageProcessorService, objectMapper);
         when(servletRequest.getRequestURL()).thenReturn(new StringBuffer("http://localhost:8080/ingest"));
         when(servletRequest.getQueryString()).thenReturn("param=value");
         when(servletRequest.getProtocol()).thenReturn("HTTP/1.1");
@@ -68,7 +68,7 @@ class DataIngestionControllerTest {
         Map<String, String> mockHeaders = Map.of("X-Tenant-Id", "test-tenant");
         Map<String, String> mockResponse = Map.of("status", "SUCCESS", "fileName", fileName);
 
-        when(ingestionRouter.routeAndProcess(eq(mockFile), any(RequestContext.class)))
+        when(messageProcessorService.processMessage( any(RequestContext.class),eq(mockFile)))
                 .thenReturn(mockResponse);
 
         // Act
@@ -78,6 +78,6 @@ class DataIngestionControllerTest {
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
         assertThat(response.getBody()).contains("SUCCESS", fileName);
 
-        verify(ingestionRouter).routeAndProcess(eq(mockFile), any(RequestContext.class));
+        verify(messageProcessorService).processMessage(any(RequestContext.class), eq(mockFile));
     }
 }

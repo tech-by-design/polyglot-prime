@@ -4,14 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
-import org.techbd.ingest.service.router.IngestionRouter;
+import org.techbd.ingest.service.MessageProcessorService;
 
 public class MllpRouteFactoryTest {
    
     @Test
     public void testFactoryCreatesMllpRoute() {
-        IngestionRouter mockRouter = mock(IngestionRouter.class);
-        MllpRouteFactory factory = new MllpRouteFactory(mockRouter);
+        MessageProcessorService messageProcessorService = mock(MessageProcessorService.class);
+        MllpRouteFactory factory = new MllpRouteFactory(messageProcessorService);
 
         MllpRoute route = factory.create(2575);
 

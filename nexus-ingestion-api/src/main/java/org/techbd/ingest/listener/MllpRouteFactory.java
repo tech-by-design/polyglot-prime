@@ -1,19 +1,19 @@
 package org.techbd.ingest.listener;
 
 import org.springframework.stereotype.Component;
-import org.techbd.ingest.service.router.IngestionRouter;
+import org.techbd.ingest.service.MessageProcessorService;
 
 @Component
 public class MllpRouteFactory {
 
-    private final IngestionRouter ingestionRouter;
+    private final MessageProcessorService messageProcessorService;
 
-    public MllpRouteFactory(IngestionRouter ingestionRouter) {
-        this.ingestionRouter = ingestionRouter;
+    public MllpRouteFactory(MessageProcessorService messageProcessorService) {
+        this.messageProcessorService = messageProcessorService;
     }
 
     public MllpRoute create(int port) {
-        return new MllpRoute(port, ingestionRouter);
+        return new MllpRoute(port, messageProcessorService);
     }
 }
 

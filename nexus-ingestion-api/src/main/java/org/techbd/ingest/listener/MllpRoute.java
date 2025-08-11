@@ -5,14 +5,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.techbd.ingest.commons.Constants;
-import org.techbd.ingest.model.RequestContext;
-import org.techbd.ingest.service.router.IngestionRouter;
 import org.techbd.ingest.feature.FeatureEnum;
+import org.techbd.ingest.model.RequestContext;
+import org.techbd.ingest.service.MessageProcessorService;
+
 import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
@@ -25,11 +27,11 @@ public class MllpRoute extends RouteBuilder {
     private static final Logger logger = LoggerFactory.getLogger(MllpRoute.class);
 
     private final int port;
-    private final IngestionRouter ingestionRouter;
+    private final MessageProcessorService messageProcessorService;
 
-    public MllpRoute(int port, IngestionRouter ingestionRouter) {
+    public MllpRoute(int port, MessageProcessorService messageProcessorService) {
         this.port = port;
-        this.ingestionRouter = ingestionRouter;
+        this.messageProcessorService = messageProcessorService;
     }
 
     @Override
@@ -44,7 +46,7 @@ public class MllpRoute extends RouteBuilder {
                     String nack;
                     try {
                         Message hapiMsg = parser.parse(hl7Message);
-                        ingestionRouter.routeAndProcess(hl7Message, buildRequestContext(exchange, hl7Message, interactionId));
+                        messageProcessorService.processMessage(buildRequestContext(exchange, hl7Message, interactionId), hl7Message);
                         Message ack = hapiMsg.generateACK();
                         String ackMessage = addNteWithInteractionId(ack, interactionId);
                         logger.info("[PORT {}] Ack message  : {} interactionId= {}", port, ackMessage, interactionId);
@@ -86,7 +88,6 @@ public class MllpRoute extends RouteBuilder {
         exchange.getIn().getHeaders().forEach((k, v) -> {
             if (v instanceof String) {
                 headers.put(k, (String) v);
-                // ✅ Conditional debug logging of headers
                 if (FeatureEnum.isEnabled(FeatureEnum.DEBUG_LOG_REQUEST_HEADERS)) {
                     log.info("{} -Header for the InteractionId {} :  {} = {}", FeatureEnum.DEBUG_LOG_REQUEST_HEADERS,interactionId , k, v);
                 }
