@@ -95,13 +95,11 @@
 		<xsl:text>,</xsl:text>
 	  </xsl:if>
 
-	<xsl:if test="string(//XON)">
 	  <xsl:variable name="org"><xsl:call-template name="OrganizationFromXON"/></xsl:variable>
 	  <xsl:if test="normalize-space($org)">
 		<xsl:value-of select="$org"/>
 		<xsl:text>,</xsl:text>
 	  </xsl:if>
-	</xsl:if>
 	  
 	  <xsl:variable name="pid"><xsl:call-template name="PatientFromPID"/></xsl:variable>
 	  <xsl:if test="normalize-space($pid)">
