@@ -26,4 +26,5 @@ public class Constants {
     public static final String FIFO_Q_URL = System.getenv("AWS_SQS_QUEUE_NAME");
     public static final String TENANT_ID = System.getenv("TENANT_ID");
     public static final String S3_PREFIX = "s3://";
+    public static final String RAW_SOAP_ATTRIBUTE = "RAW_SOAP_MESSAGE";
     }

@@ -2,18 +2,28 @@ package org.techbd.ingest.interceptors;
 
 import java.util.UUID;
 import javax.xml.namespace.QName;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.server.EndpointInterceptor;
 import org.springframework.ws.soap.SoapHeader;
 import org.springframework.ws.soap.SoapHeaderElement;
 import org.springframework.ws.soap.SoapMessage;
+import org.techbd.ingest.commons.Constants;
 
 public class WsaHeaderInterceptor implements EndpointInterceptor {
 
-    @Override
+     @Override
     public boolean handleRequest(MessageContext messageContext, Object endpoint) throws Exception {
-        // You can extract wsa:MessageID or RelatesTo here if needed
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        messageContext.getRequest().writeTo(out);
+        String soapXml = out.toString(StandardCharsets.UTF_8);
+
+        // Store in message context so endpoint can retrieve it later
+        messageContext.setProperty(Constants.RAW_SOAP_ATTRIBUTE, soapXml);
+
         return true;
     }
 
