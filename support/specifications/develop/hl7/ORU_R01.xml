@@ -9,23 +9,30 @@
   </MessageStructure>
   <Segments>
     <SegmentDef Name="MSH">
-      <Field Name="MSH-3" Datatype="HD" Usage="R"/>
-      <Field Name="MSH-9" Datatype="CM_MSG" Usage="R"/>
-      <Field Name="MSH-10" Datatype="ST" Usage="R"/>
-      <Field Name="MSH-12" Datatype="VID" Usage="R"/>
+      <Field Name="MSH-6" Datatype="HD" Usage="O"/>
     </SegmentDef>
     <SegmentDef Name="PID">
-      <Field Name="PID-3" Datatype="CX" Usage="R"/>
-      <Field Name="PID-5" Datatype="XPN" Usage="R"/>
+      <Field Name="PID-7" Datatype="CX" Usage="R" Description="birth date"/>
+      <Field Name="PID-8" Datatype="XPN" Usage="R" Description="gender"/>
     </SegmentDef>
-    <SegmentDef Name="OBR">
-      <Field Name="OBR-4" Datatype="CE" Usage="R"/>
-      <Field Name="OBR-7" Datatype="TS" Usage="O"/>
-    </SegmentDef>
+    <!-- <SegmentDef Name="OBR"> -->
+      <!-- <Field Name="OBR-4" Datatype="CE" Usage="R"/> -->
+      <!-- <Field Name="OBR-7" Datatype="TS" Usage="O"/> -->
+    <!-- </SegmentDef> -->
     <SegmentDef Name="OBX">
       <Field Name="OBX-2" Datatype="ID" Usage="R"/>
       <Field Name="OBX-3" Datatype="CE" Usage="R"/>
-      <Field Name="OBX-5" Datatype="TX" Usage="R"/>
+	  <Field Name="OBX-3.1" Datatype="CE" Usage="R" Description="code -> coding -> code"/>
+	  <Field Name="OBX-3.2" Datatype="CE" Usage="R" Description="code -> coding -> display"/>
+	  <Field Name="OBX-5.1" Datatype="CE" Usage="O" Description="provision -> type"/>
+	  <!-- <Field Name="OBX-11" Datatype="CE" Usage="R" Description="status"/> -->
+	  <Field Name="OBX-14" Datatype="TS" Usage="R" Description="DateTime"/>
+    </SegmentDef>
+	<SegmentDef Name="PV1">
+      <Field Name="PV1-2" Datatype="TS" Usage="R"/>
+	  <Field Name="PV1-2.1" Datatype="TS" Usage="R" Description="class -> code"/>
+	  <Field Name="PV1-2.2" Datatype="TS" Usage="O" Description="class -> display"/>
+	  <Field Name="PV1-4" Datatype="TS" Usage="R"/>
     </SegmentDef>
   </Segments>
 </ConformanceProfile>
