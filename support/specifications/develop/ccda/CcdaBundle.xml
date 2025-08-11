@@ -2,8 +2,8 @@
   <id>6f5112d2-f801-4f80-a5ba-0edb634e5fc6</id>
   <nextMetaDataId>13</nextMetaDataId>
   <name>CcdaBundle</name>
-  <description>Version: 0.8.0</description>
-  <revision>28</revision>
+  <description>Version: 0.8.1</description>
+  <revision>32</revision>
   <sourceConnector version="4.5.3">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1999,7 +1999,7 @@ if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/B
                             var processFHIRBundle = globalMap.get(&quot;processFHIRBundle&quot;);
                             if (processFHIRBundle) {
                                 channelMap.put(&quot;requestUri&quot;, &quot;/Bundle&quot;);
-                                var validationResults = processFHIRBundle(tenantId, channelMap, ccdFhirBundle, responseMap);
+                                var validationResults = processFHIRBundle(tenantId, channelMap, cleanedJsonString, responseMap);
                                 responseMap.put(&quot;resultJSON&quot;, validationResults);
                                 logInfo(&quot;FHIR bundle processing completed successfully&quot;, channelMap);
                                 logInfo(&quot;Submission result: &quot; + JSON.stringify(validationResults), channelMap);
@@ -2584,7 +2584,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1754628825154</time>
+        <time>1754906130274</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
